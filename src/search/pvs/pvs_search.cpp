@@ -1,0 +1,459 @@
+/*
+ * Polaris, a UCI chess engine
+ * Copyright (C) 2023 Ciekce
+ *
+ * Polaris is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Polaris is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "pvs_search.h"
+
+#include <iostream>
+#include <algorithm>
+#include <vector>
+
+#include "../../uci.h"
+#include "../../movegen.h"
+#include "../../eval/eval.h"
+
+namespace polaris::search::pvs
+{
+	namespace
+	{
+		constexpr f64 MinReportDelay = 1.0;
+
+		constexpr i32 MinAspDepth = 6;
+
+		constexpr Score InitialWindow = 10;
+		constexpr Score MaxWindow = 500;
+
+		constexpr i32 MinNullmoveDepth = 3;
+		constexpr i32 MinLmrDepth = 3;
+
+		struct SearchStackEntry
+		{
+			Score eval{};
+			MoveList moves{};
+		};
+	}
+
+	struct PvsData
+	{
+		PvsData()
+		{
+			stack.resize(MaxDepth);
+		}
+
+		SearchData search{};
+		std::vector<SearchStackEntry> stack{};
+	};
+
+	PvsSearcher::PvsSearcher(std::optional<size_t> hashSize)
+		: m_table{hashSize ? *hashSize : DefaultHashSize} {}
+
+	void PvsSearcher::newGame()
+	{
+		m_table.clear();
+		m_pawnCache.clear();
+	}
+
+	void PvsSearcher::startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
+	{
+		if (!limiter)
+		{
+			std::cerr << "missing limiter" << std::endl;
+			return;
+		}
+
+		PvsData data{};
+		auto &searchData = data.search;
+
+		Score score{};
+		Move best{};
+
+		m_stop = false;
+
+		const auto startTime = util::g_timer.time();
+
+		for (i32 depth = 1; depth <= maxDepth && !shouldStop(searchData, *limiter); ++depth)
+		{
+			searchData.depth = depth;
+
+			const auto prevBest = best;
+
+			bool reportThisIter = true;
+
+			if (depth < MinAspDepth)
+			{
+				const auto newScore = search(data, pos, *limiter, depth, 0, -ScoreMax, ScoreMax);
+
+				if (m_stop || !data.search.move)
+					break;
+
+				score = newScore;
+				best = data.search.move;
+			}
+			else
+			{
+				auto aspDepth = depth;
+
+				auto delta = InitialWindow;
+
+				auto alpha = score - delta;
+				auto beta = score + delta;
+
+				while (!shouldStop(searchData, *limiter))
+				{
+					if (aspDepth < depth - 3)
+						aspDepth = depth - 3;
+
+					const auto newScore = search(data, pos, *limiter, aspDepth, 0, alpha, beta);
+
+					if (m_stop || !searchData.move)
+					{
+						reportThisIter = !m_stop;
+						break;
+					}
+
+					score = newScore;
+
+					if (score <= alpha || score >= beta)
+					{
+						const auto time = util::g_timer.time() - startTime;
+						if (time > MinReportDelay)
+							report(searchData, best ?: searchData.move, time, score, alpha, beta);
+					}
+
+					delta += delta / 2;
+
+					if (delta > MaxWindow)
+						delta = ScoreMate;
+
+					if (score >= beta)
+					{
+						beta += delta;
+						--aspDepth;
+					}
+					else if (score <= alpha)
+					{
+						beta = (alpha + beta) / 2;
+						alpha = std::max(alpha - delta, -ScoreMate);
+						aspDepth = depth;
+					}
+					else
+					{
+						best = searchData.move;
+						break;
+					}
+				}
+			}
+
+			limiter->update(data.search, prevBest == best);
+
+			if (reportThisIter && depth < maxDepth)
+			{
+				if (const auto move = best ?: searchData.move)
+					report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+				else
+				{
+					std::cout << "info string no legal moves" << std::endl;
+					break;
+				}
+			}
+		}
+
+		if (const auto move = best ?: searchData.move)
+		{
+			report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+			std::cout << "bestmove " << uci::moveToString(move) << std::endl;
+		}
+	}
+
+	void PvsSearcher::stop()
+	{
+		m_stop = true;
+	}
+
+	void PvsSearcher::clearHash()
+	{
+		m_table.clear();
+	}
+
+	void PvsSearcher::setHashSize(size_t size)
+	{
+		m_table.resize(size);
+	}
+
+	bool PvsSearcher::shouldStop(const SearchData &data, const limit::ISearchLimiter &limiter)
+	{
+		return m_stop || (m_stop = limiter.stop(data));
+	}
+
+	Score PvsSearcher::search(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
+		i32 depth, i32 ply, Score alpha, Score beta)
+	{
+		if (depth > 1 && shouldStop(data.search, limiter))
+			return beta;
+
+		if (depth == 0 && !pos.isCheck())
+			return qsearch(data, pos, limiter, alpha, beta, ply);
+
+		++data.search.nodes;
+
+		const auto us = pos.toMove();
+		const auto them = oppColor(us);
+
+		const bool root = ply == 0;
+		const bool pv = root || beta - alpha > 1;
+
+		const bool inCheck = pos.isCheck();
+
+		auto &stack = data.stack[ply];
+
+		const auto newBaseDepth = depth > 0 ? depth - 1 : depth;
+		++ply;
+
+		if (ply > data.search.seldepth)
+			data.search.seldepth = ply;
+
+		// mate distance pruning
+		if (!pv)
+		{
+			const auto mdAlpha = std::max(alpha, -ScoreMate + ply);
+			const auto mdBeta = std::min(beta, ScoreMate - ply - 1);
+
+			if (mdAlpha >= mdBeta)
+				return mdAlpha;
+		}
+
+		TTableEntry entry{};
+		auto hashMove = Move::null();
+
+		if (m_table.probe(entry, pos.key(), depth, alpha, beta) && !pv)
+			return entry.score;
+		else if (entry.move && pos.isPseudolegal(entry.move))
+			hashMove = entry.move;
+
+		const bool tableHit = !hashMove.isNull();
+
+		if (!root && !pos.lastMove())
+			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
+		else stack.eval = inCheck ? 0
+			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &m_pawnCache));
+
+		if (!pv && !inCheck)
+		{
+			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
+
+			// nullmove pruning (~66 elo)
+			if (depth >= MinNullmoveDepth
+				&& stack.eval >= beta
+				&& !nmpFailsLow
+				&& pos.lastMove()
+				&& !pos.nonPk(us).empty())
+			{
+				const auto R = std::min(newBaseDepth - 1, 3);
+
+				const auto guard = pos.applyMove(Move::null());
+				const auto score = -search(data, pos, limiter, newBaseDepth - R, ply, -beta, -beta + 1);
+
+				if (score >= beta)
+				{
+					if (score > (ScoreMate / 2))
+						return beta;
+					return score;
+				}
+			}
+		}
+
+		auto best = Move::null();
+		auto bestScore = -ScoreMax;
+
+		auto entryType = EntryType::Alpha;
+
+		MoveGenerator generator{pos, stack.moves, hashMove};
+		u32 legalMoves = 0;
+
+		while (const auto move = generator.next())
+		{
+#ifndef NDEBUG
+			const auto savedPos = pos;
+			{
+#endif
+
+			auto guard = pos.applyMove(move);
+
+			if (pos.isAttacked(us == Color::Black ? pos.blackKing() : pos.whiteKing(), them))
+				continue;
+
+			++legalMoves;
+
+			Score score{};
+
+			if (pos.isDrawn())
+				score = 2 - static_cast<Score>(data.search.nodes % 4);
+			else
+			{
+				auto newDepth = newBaseDepth;
+
+				// lmr (~32 elo)
+				if (depth >= MinLmrDepth
+					&& !inCheck // we are in check
+					&& !pos.isCheck() // this move gives check
+					&& legalMoves > 3)
+				{
+					auto lmr = legalMoves < 6 ? 1 : (depth / 3);
+
+					if (pv)
+						lmr = std::max(1, (lmr * 2) / 3);
+
+					newDepth -= lmr;
+				}
+
+				if (pv && legalMoves == 1)
+					score = -search(data, pos, limiter, newDepth, ply, -beta, -alpha);
+				else
+				{
+					score = -search(data, pos, limiter, newDepth, ply, -alpha - 1, -alpha);
+
+					if (score > alpha && score < beta)
+						score = -search(data, pos, limiter, newDepth, ply, -beta, -alpha);
+				}
+			}
+
+			if (score > bestScore)
+			{
+				best = move;
+				bestScore = score;
+
+				if (score > alpha)
+				{
+					if (score >= beta)
+					{
+						entryType = EntryType::Beta;
+						break;
+					}
+
+					alpha = score;
+					entryType = EntryType::Exact;
+				}
+			}
+
+#ifndef NDEBUG
+			}
+			if (!m_stop && pos != savedPos)
+			{
+				std::cerr << "corrupt board state" << std::endl;
+				pos.printHistory(move);
+				m_stop = true;
+				return beta;
+			}
+#endif
+		}
+
+		if (legalMoves == 0)
+			return pos.isCheck() ? (-ScoreMate + ply) : 0;
+
+		m_table.put(pos.key(), bestScore, best, depth, entryType);
+
+		if (root && (!m_stop || !data.search.move))
+			data.search.move = best;
+
+		return bestScore;
+	}
+
+	Score PvsSearcher::qsearch(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
+		Score alpha, Score beta, i32 ply)
+	{
+		if (shouldStop(data.search, limiter))
+			return beta;
+
+		++data.search.nodes;
+
+		auto staticEval = eval::staticEval(pos, &m_pawnCache);
+
+		if (staticEval > alpha)
+		{
+			if (staticEval >= beta)
+				return staticEval;
+
+			alpha = staticEval;
+		}
+
+		const auto us = pos.toMove();
+
+		auto &stack = data.stack[ply];
+
+		++ply;
+
+		if (ply > data.search.seldepth)
+			data.search.seldepth = ply;
+
+		auto bestScore = staticEval;
+
+		auto hashMove = m_table.probeMove(pos.key());
+		if (hashMove && !pos.isPseudolegal(hashMove))
+			hashMove = Move::null();
+
+		QMoveGenerator generator{pos, stack.moves, hashMove};
+
+		while (const auto move = generator.next())
+		{
+			auto guard = pos.applyMove(move);
+
+			if (pos.isAttacked(us == Color::Black ? pos.blackKing() : pos.whiteKing(), oppColor(us)))
+				continue;
+
+			const auto score = pos.isDrawn() ? 0 : -qsearch(data, pos, limiter, -beta, -alpha, ply);
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+
+				if (score > alpha)
+					alpha = score;
+
+				if (score >= beta)
+					break;
+			}
+		}
+
+		return bestScore;
+	}
+
+	void PvsSearcher::report(const SearchData &data, Move move, f64 time, Score score, Score alpha, Score beta)
+	{
+		const auto ms = static_cast<size_t>(time * 1000.0);
+		const auto nps = static_cast<size_t>(static_cast<f64>(data.nodes) / time);
+
+		std::cout << "info depth " << data.depth << " seldepth " << data.seldepth << " time " << ms
+			<< " nodes " << data.nodes << " nps " << nps << " score ";
+
+		score = std::clamp(score, alpha, beta);
+
+		if (std::abs(score) > ScoreMate / 2)
+		{
+			if (score > ScoreMate / 2)
+				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
+			else std::cout << "mate " << (-(ScoreMate + score) / 2);
+		}
+		else std::cout << "cp " << score;
+
+		if (score == alpha)
+			std::cout << " upperbound";
+		else if (score == beta)
+			std::cout << " lowerbound";
+
+		std::cout << " hashfull " << m_table.full() << " pv " << uci::moveToString(move) << std::endl;
+	}
+}

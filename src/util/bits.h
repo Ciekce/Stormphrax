@@ -1,0 +1,173 @@
+/*
+ * Polaris, a UCI chess engine
+ * Copyright (C) 2023 Ciekce
+ *
+ * Polaris is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Polaris is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <immintrin.h>
+#include <type_traits>
+
+#include "../types.h"
+#include "../arch.h"
+
+namespace polaris::util
+{
+	namespace fallback
+	{
+		constexpr u64 lsb(u64 v)
+		{
+			return v & -v;
+		}
+
+		constexpr u64 resetLsb(u64 v)
+		{
+			return v & (v - 1);
+		}
+
+		constexpr i32 popcnt(u64 v)
+		{
+			v -= (v >> 1) & U64(0x5555555555555555);
+			v  = (v & U64(0x3333333333333333)) + ((v >> 2) & U64(0x3333333333333333));
+			v  = (v + (v >> 4)) & U64(0x0F0F0F0F0F0F0F0F);
+			return static_cast<i32>((v * U64(0x0101010101010101)) >> 56);
+		}
+
+		constexpr i32 ctz(u64 v)
+		{
+			if (std::is_constant_evaluated())
+			{
+				if (v == 0)
+					return 64;
+
+				i32 cnt{};
+
+				while ((v & 1) == 0)
+				{
+					++cnt;
+					v >>= 1;
+				}
+
+				return cnt;
+			}
+
+			if (v == 0)
+				return 64;
+
+			return __builtin_ctzll(v);
+		}
+
+		constexpr u64 pext(u64 v, u64 mask)
+		{
+			u64 dst{};
+
+			for (u64 bit = 1; mask != 0; bit <<= 1)
+			{
+				if ((v & mask & -mask) != 0)
+					dst |= bit;
+				mask &= mask - 1;
+			}
+
+			return dst;
+		}
+
+		constexpr u64 pdep(u64 v, u64 mask)
+		{
+			u64 dst{};
+
+			for (u64 bit = 1; mask != 0; bit <<= 1)
+			{
+				if ((v & bit) != 0)
+					dst |= mask & -mask;
+				mask &= mask - 1;
+			}
+
+			return dst;
+		}
+	}
+
+	constexpr u64 lsb(u64 v)
+	{
+#if PS_HAS_BMI1
+		if (std::is_constant_evaluated())
+			return fallback::lsb(v);
+
+		return _blsi_u64(v);
+#else
+		return fallback::lsb(v);
+#endif
+	}
+
+	constexpr u64 resetLsb(u64 v)
+	{
+#if PS_HAS_BMI1
+		if (std::is_constant_evaluated())
+			return fallback::resetLsb(v);
+
+		return _blsr_u64(v);
+#else
+		return fallback::resetLsb(v);
+#endif
+	}
+
+	constexpr i32 popcnt(u64 v)
+	{
+#if PS_HAS_POPCNT
+		if (std::is_constant_evaluated())
+			return fallback::popcnt(v);
+
+		return static_cast<i32>(_mm_popcnt_u64(v));
+#else
+		return fallback::popcnt(v);
+#endif
+	}
+
+	constexpr i32 ctz(u64 v)
+	{
+#if PS_HAS_BMI1
+		if (std::is_constant_evaluated())
+			return fallback::ctz(v);
+
+		return static_cast<i32>(_mm_tzcnt_64(v));
+#else
+		return fallback::ctz(v);
+#endif
+	}
+
+	constexpr u64 pext(u64 v, u64 mask)
+	{
+#if PS_HAS_BMI2
+		if (std::is_constant_evaluated())
+			return fallback::pext(v, mask);
+
+		return _pext_u64(v, mask);
+#else
+		return fallback::pext(v, mask);
+#endif
+	}
+
+	constexpr u64 pdep(u64 v, u64 mask)
+	{
+#if PS_HAS_BMI2
+		if (std::is_constant_evaluated())
+			return fallback::pdep(v, mask);
+
+		return _pdep_u64(v, mask);
+#else
+		return fallback::pdep(v, mask);
+#endif
+	}
+}
