@@ -42,7 +42,7 @@ namespace polaris::search
 
 		virtual void newGame() = 0;
 
-		virtual void startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) = 0;
+		virtual void startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) = 0;
 		virtual void stop() = 0;
 
 		virtual bool searching() = 0;

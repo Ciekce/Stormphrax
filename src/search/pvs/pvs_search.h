@@ -41,7 +41,7 @@ namespace polaris::search::pvs
 
 		void newGame() final;
 
-		void startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) final;
+		void startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) final;
 		void stop() final;
 
 		bool searching() final;
@@ -99,6 +99,6 @@ namespace polaris::search::pvs
 		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
 		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
 
-		void report(const SearchData &data, Move move, f64 time, Score score, Score alpha, Score beta);
+		void report(const ThreadData &data, Move move, f64 time, Score score, Score alpha, Score beta);
 	};
 }

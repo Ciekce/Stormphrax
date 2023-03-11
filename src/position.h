@@ -75,7 +75,7 @@ namespace polaris
 	class Position
 	{
 	public:
-		Position(bool init = true);
+		explicit Position(bool init = true);
 		~Position() = default;
 
 		Position(const Position &) = default;

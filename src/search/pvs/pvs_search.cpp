@@ -71,7 +71,7 @@ namespace polaris::search::pvs
 		m_pawnCache.clear();
 	}
 
-	void PvsSearcher::startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
+	void PvsSearcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
 	{
 		if (!limiter)
 		{
@@ -181,7 +181,7 @@ namespace polaris::search::pvs
 						{
 							const auto time = util::g_timer.time() - startTime;
 							if (time > MinReportDelay)
-								report(searchData, best ?: searchData.move, time, score, alpha, beta);
+								report(data, best ?: searchData.move, time, score, alpha, beta);
 						}
 
 						delta += delta / 2;
@@ -213,7 +213,7 @@ namespace polaris::search::pvs
 				if (reportThisIter && depth < data.maxDepth)
 				{
 					if (const auto move = best ?: searchData.move)
-						report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+						report(data, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 					else
 					{
 						std::cout << "info string no legal moves" << std::endl;
@@ -226,7 +226,7 @@ namespace polaris::search::pvs
 			{
 				if (const auto move = best ?: searchData.move)
 				{
-					report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					report(data, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 					std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 				}
 
@@ -478,7 +478,7 @@ namespace polaris::search::pvs
 		return bestScore;
 	}
 
-	void PvsSearcher::report(const SearchData &data, Move move, f64 time, Score score, Score alpha, Score beta)
+	void PvsSearcher::report(const ThreadData &data, Move move, f64 time, Score score, Score alpha, Score beta)
 	{
 		size_t nodes = 0;
 
@@ -491,8 +491,8 @@ namespace polaris::search::pvs
 		const auto ms = static_cast<size_t>(time * 1000.0);
 		const auto nps = static_cast<size_t>(static_cast<f64>(nodes) / time);
 
-		std::cout << "info depth " << data.depth << " seldepth " << data.seldepth << " time " << ms
-			<< " nodes " << nodes << " nps " << nps << " score ";
+		std::cout << "info depth " << data.search.depth << " seldepth " << data.search.seldepth
+			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
 
@@ -509,6 +509,30 @@ namespace polaris::search::pvs
 		else if (score == beta)
 			std::cout << " lowerbound";
 
-		std::cout << " hashfull " << m_table.full() << " pv " << uci::moveToString(move) << std::endl;
+		std::cout << " hashfull " << m_table.full() << " pv " << uci::moveToString(move);
+
+		StaticVector<Move, MaxDepth> pvWritten{};
+		pvWritten.push(move);
+
+		Position pos{data.pos};
+		pos.applyMoveUnchecked<false, false>(move);
+
+		while (true)
+		{
+			const auto pvMove = m_table.probeMove(pos.key());
+
+			if (pvMove
+				&& std::find(pvWritten.begin(), pvWritten.end(), pvMove) == pvWritten.end()
+				&& pos.isPseudolegal(pvMove))
+			{
+				std::cout << ' ' << uci::moveToString(pvMove);
+
+				pvWritten.push(pvMove);
+				pos.applyMoveUnchecked<false, false>(pvMove);
+			}
+			else break;
+		}
+
+		std::cout << std::endl;
 	}
 }

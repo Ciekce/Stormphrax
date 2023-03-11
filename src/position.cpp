@@ -34,6 +34,11 @@
 #include "attacks/attacks.h"
 #include "movegen.h"
 
+
+
+#include <iostream>
+#include "uci.h"
+
 namespace polaris
 {
 	namespace
@@ -436,10 +441,8 @@ namespace polaris
 		const auto dst = move.dst();
 		const auto dstPiece = pieceAt(dst);
 
-		if (pieceColor(dstPiece) == us)
-			return false;
-
-		if (basePiece(dstPiece) == BasePiece::King)
+		if (dstPiece != Piece::None
+			&& (pieceColor(dstPiece) == us || basePiece(dstPiece) == BasePiece::King))
 			return false;
 
 		const auto them = oppColor(us);
@@ -449,11 +452,9 @@ namespace polaris
 
 		if (base == BasePiece::Pawn)
 		{
-			if (!(attacks::getPawnAttacks(src, us)
+			// sideways move, not valid attack
+			if (move.srcFile() != move.dstFile() && !(attacks::getPawnAttacks(src, us)
 				& (occupancy(them) | squareBitChecked(m_enPassant)))[dst])
-				return false;
-
-			if (move.srcFile() != move.dstFile())
 				return false;
 
 			const auto srcRank = move.srcRank();
@@ -515,8 +516,7 @@ namespace polaris
 
 					fen << static_cast<char>('0' + emptySquares);
 				}
-				else
-					fen << pieceToChar(pieceAt(rank, file));
+				else fen << pieceToChar(pieceAt(rank, file));
 			}
 
 			if (rank > 0)
