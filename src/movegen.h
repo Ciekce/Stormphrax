@@ -19,6 +19,7 @@
 #pragma once
 
 #include "types.h"
+
 #include "move.h"
 #include "position.h"
 

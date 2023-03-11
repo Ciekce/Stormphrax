@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <immintrin.h>
 #include <type_traits>
 
-#include "../types.h"
 #include "../arch.h"
 
 namespace polaris::util

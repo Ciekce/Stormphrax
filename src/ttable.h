@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <vector>
 
-#include "types.h"
 #include "core.h"
 #include "move.h"
 #include "util/range.h"

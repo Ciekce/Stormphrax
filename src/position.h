@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <string>
 #include <array>
 #include <vector>

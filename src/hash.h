@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <array>
 
-#include "types.h"
 #include "core.h"
 
 namespace polaris::hash

@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <array>
 
-#include "../types.h"
 #include "../core.h"
 #include "../bitboard.h"
 #include "util.h"

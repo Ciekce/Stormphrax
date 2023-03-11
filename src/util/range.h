@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "../types.h"
+
+#include <algorithm>
 
 namespace polaris::util
 {

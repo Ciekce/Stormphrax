@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <iostream>
 
-#include "types.h"
 #include "bitboard.h"
 #include "position.h"
 

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "types.h"
+
 #if defined(PS_NATIVE) || defined(PS_BMI2)
 	#if __BMI2__ && (defined(PS_BMI2) || defined(PS_FAST_PEXT))
 		#define PS_HAS_BMI2 1

@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <vector>
 #include <string>
-
-#include "../types.h"
 
 namespace polaris::split
 {

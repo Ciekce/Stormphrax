@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <cstdint>
 #include <array>
 
-#include "types.h"
 #include "core.h"
 #include "util/static_vector.h"
 

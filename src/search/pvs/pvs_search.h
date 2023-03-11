@@ -19,12 +19,13 @@
 #pragma once
 
 #include "../../types.h"
+
+#include <utility>
+
 #include "../search.h"
 #include "../../util/timer.h"
 #include "../../ttable.h"
 #include "../../eval/eval.h"
-
-#include <utility>
 
 namespace polaris::search::pvs
 {

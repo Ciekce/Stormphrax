@@ -19,6 +19,7 @@
 #pragma once
 
 #include "../types.h"
+
 #include "../search/search_fwd.h"
 
 namespace polaris::limit

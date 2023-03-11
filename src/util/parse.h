@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <string>
 #include <optional>
-
-#include "../types.h"
 
 namespace polaris::util
 {

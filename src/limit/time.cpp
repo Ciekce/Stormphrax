@@ -62,7 +62,7 @@ namespace polaris::limit
 		if (data.depth < 4)
 			return;
 
-		//TODO allocate more time for stable best moves
+		//TODO allocate more time for unstable best moves
 	}
 
 	bool TimeManager::stop(const search::SearchData &data) const

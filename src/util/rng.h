@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <limits>
 #include <bit>
-
-#include "../types.h"
 
 namespace polaris
 {

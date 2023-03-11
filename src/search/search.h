@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "../types.h"
+
 #include <memory>
 #include <limits>
 #include <string>
@@ -25,7 +27,6 @@
 #include <optional>
 #include <span>
 
-#include "../types.h"
 #include "search_fwd.h"
 #include "../position.h"
 #include "../limit/limit.h"
