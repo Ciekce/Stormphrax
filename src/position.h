@@ -448,8 +448,9 @@ namespace polaris
 					return true;
 
 				// KBBKB
-				if (whiteNonPk() == whiteBishops() && whiteBishops().popcount() < 3
-					&& blackNonPk() == blackBishops() && !blackBishops().multiple())
+				if (whiteNonPk() == whiteBishops() && blackNonPk() == blackBishops()
+					&& (whiteBishops().popcount() < 3 && !blackBishops().multiple()
+						|| blackBishops().popcount() < 3 && !whiteBishops().multiple()))
 					return true;
 			}
 
