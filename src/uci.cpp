@@ -384,7 +384,7 @@ namespace polaris::uci
 							else std::cerr << "unknown searcher " << valueStr << std::endl;
 						}
 					}
-					if (nameStr == "hash")
+					if (nameStr == "move overhead")
 					{
 						if (!valueEmpty)
 						{
