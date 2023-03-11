@@ -26,6 +26,7 @@
 #include <cctype>
 #include <algorithm>
 #include <iomanip>
+#include <atomic>
 
 #include "util/split.h"
 #include "util/parse.h"
@@ -49,62 +50,6 @@ namespace polaris::uci
 		constexpr auto Name = "Polaris";
 		constexpr auto Version = PS_STRINGIFY(PS_VERSION);
 		constexpr auto Author = "Ciekce";
-
-		template <typename T>
-		constexpr T ceilDiv(T n, T d)
-		{
-			return (n + d - 1) / d;
-		}
-
-#if 0
-		void orderMoves(MoveList &moves, const Position &pos)
-		{
-			std::stable_sort(moves.begin(), moves.end(), [&pos](const auto a, const auto b)
-			{
-				const auto aSrc = a.src();
-				const auto bSrc = b.src();
-
-				const auto aDst = a.dst();
-				const auto bDst = b.dst();
-
-				const auto aDstPiece = pos.pieceAt(aDst);
-				const auto bDstPiece = pos.pieceAt(bDst);
-
-				const bool aCapture = aDstPiece != Piece::None;
-				const bool bCapture = bDstPiece != Piece::None;
-
-				if (aCapture && bCapture)
-				{
-					const auto aSrcPiece = pos.pieceAt(aSrc);
-					const auto bSrcPiece = pos.pieceAt(bSrc);
-
-					const auto aCapturedValue = eval::pieceValue(aDstPiece).midgame;
-					const auto bCapturedValue = eval::pieceValue(bDstPiece).midgame;
-
-					const auto aDelta = aCapturedValue - eval::pieceValue(aSrcPiece).midgame;
-					const auto bDelta = bCapturedValue - eval::pieceValue(bSrcPiece).midgame;
-
-					if ((aDelta == bDelta && aCapturedValue > bCapturedValue)
-						|| aDelta > bDelta)
-						return true;
-					else if (aDelta < bDelta)
-						return false;
-				}
-				else if (aCapture)
-					return true;
-
-				const auto aFileDist = 3 - (squareFile(aDst) > 3 ? 7 - squareFile(aDst) : squareFile(aDst));
-				const auto bFileDist = 3 - (squareFile(bDst) > 3 ? 7 - squareFile(bDst) : squareFile(bDst));
-
-				if (aFileDist < bFileDist)
-					return true;
-				else if (aFileDist > bFileDist)
-					return false;
-
-				return false;
-			});
-		}
-#endif
 	}
 
 	i32 run()
@@ -112,7 +57,9 @@ namespace polaris::uci
 		auto searcher = search::ISearcher::createDefault();
 		auto pos = Position::starting();
 
+		std::optional<size_t> newSearcherHashSize{};
 		std::optional<size_t> hashSize{};
+
 		i32 moveOverhead = limit::DefaultMoveOverhead;
 
 		for (std::string line{}; std::getline(std::cin, line);)
@@ -136,12 +83,10 @@ namespace polaris::uci
 				std::cout << "option name Clear Hash type button\n";
 			//	std::cout << "option name Ponder type check default false\n";
 				std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
-			//	std::cout << "option name Searcher type combo default AspPVS var AlphaBeta var AspPVS var MTDf var MCTS\n";
+				std::cout << "option name Searcher type combo default AspPVS\n"; // testbed
 			//	std::cout << "option name Underpromotions type check default false\n";
 				std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 					<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
-
-				std::cout << "option name Searcher type combo default AspPVS";
 
 				for (const auto &searcherName : search::ISearcher::searchers())
 				{
@@ -153,12 +98,18 @@ namespace polaris::uci
 				std::cout << "uciok" << std::endl;
 			}
 			else if (command == "ucinewgame")
-				searcher->newGame();
+			{
+				if (searcher->searching())
+					std::cerr << "still searching" << std::endl;
+				else searcher->newGame();
+			}
 			else if (command == "isready")
 				std::cout << "readyok" << std::endl;
 			else if (command == "position")
 			{
-				if (tokens.size() > 1)
+				if (searcher->searching())
+					std::cerr << "still searching" << std::endl;
+				else if (tokens.size() > 1)
 				{
 					const auto &position = tokens[1];
 
@@ -199,146 +150,163 @@ namespace polaris::uci
 			}
 			else if (command == "go")
 			{
-				u32 depth = search::MaxDepth;
-				std::unique_ptr<limit::ISearchLimiter> limiter{};
-
-				bool tournamentTime = false;
-
-				const auto startTime = util::g_timer.time();
-
-				i64 timeRemaining{};
-				i64 increment{};
-				i32 toGo{};
-
-				for (size_t i = 1; i < tokens.size(); ++i)
+				if (searcher->searching())
+					std::cerr << "already searching" << std::endl;
+				else
 				{
-					if (tokens[i] == "depth" && ++i < tokens.size())
+					if (hashSize)
 					{
-						if (!util::tryParseU32(depth, tokens[i]))
-							std::cerr << "invalid depth " << tokens[i] << std::endl;
+						searcher->setHashSize(*hashSize);
+						hashSize = {};
 					}
-					else if (!tournamentTime && !limiter)
+
+					u32 depth = search::MaxDepth;
+					std::unique_ptr<limit::ISearchLimiter> limiter{};
+
+					bool tournamentTime = false;
+
+					const auto startTime = util::g_timer.time();
+
+					i64 timeRemaining{};
+					i64 increment{};
+					i32 toGo{};
+
+					for (size_t i = 1; i < tokens.size(); ++i)
 					{
-						if (tokens[i] == "infinite")
-							limiter = std::make_unique<limit::InfiniteLimiter>();
-						else if (tokens[i] == "nodes" && ++i < tokens.size())
+						if (tokens[i] == "depth" && ++i < tokens.size())
 						{
-							std::cout << "info string node limiting currently broken" << std::endl;
-
-							size_t nodes{};
-							if (!util::tryParseSize(nodes, tokens[i]))
-								std::cerr << "invalid node count " << tokens[i] << std::endl;
-							else limiter = std::make_unique<limit::NodeLimiter>(nodes);
+							if (!util::tryParseU32(depth, tokens[i]))
+								std::cerr << "invalid depth " << tokens[i] << std::endl;
 						}
-						else if (tokens[i] == "movetime" && ++i < tokens.size())
+						else if (!tournamentTime && !limiter)
 						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
+							if (tokens[i] == "infinite")
+								limiter = std::make_unique<limit::InfiniteLimiter>();
+							else if (tokens[i] == "nodes" && ++i < tokens.size())
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								limiter = std::make_unique<limit::MoveTimeLimiter>(static_cast<i64>(time), moveOverhead);
+								std::cout << "info string node limiting currently broken" << std::endl;
+
+								size_t nodes{};
+								if (!util::tryParseSize(nodes, tokens[i]))
+									std::cerr << "invalid node count " << tokens[i] << std::endl;
+								else
+									limiter = std::make_unique<limit::NodeLimiter>(nodes);
+							}
+							else if (tokens[i] == "movetime" && ++i < tokens.size())
+							{
+								u64 time{};
+								if (!util::tryParseU64(time, tokens[i]))
+									std::cerr << "invalid time " << tokens[i] << std::endl;
+								else
+								{
+									time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+									limiter = std::make_unique<limit::MoveTimeLimiter>(static_cast<i64>(time),
+										moveOverhead);
+								}
+							}
+							else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
+								&& tokens[i - 1] == (pos.toMove() == Color::Black ? "btime" : "wtime"))
+							{
+								tournamentTime = true;
+
+								u64 time{};
+								if (!util::tryParseU64(time, tokens[i]))
+									std::cerr << "invalid time " << tokens[i] << std::endl;
+								else
+								{
+									time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+									timeRemaining = static_cast<i64>(time);
+								}
+							}
+							else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
+								&& tokens[i - 1] == (pos.toMove() == Color::Black ? "binc" : "winc"))
+							{
+								tournamentTime = true;
+
+								u64 time{};
+								if (!util::tryParseU64(time, tokens[i]))
+									std::cerr << "invalid time " << tokens[i] << std::endl;
+								else
+								{
+									time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+									increment = static_cast<i64>(time);
+								}
+							}
+							else if (tokens[i] == "movestogo" && ++i < tokens.size())
+							{
+								tournamentTime = true;
+
+								u32 moves{};
+								if (!util::tryParseU32(moves, tokens[i]))
+									std::cerr << "invalid movestogo " << tokens[i] << std::endl;
+								else
+								{
+									moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
+									toGo = static_cast<i32>(moves);
+								}
 							}
 						}
-						else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-							&& tokens[i - 1] == (pos.toMove() == Color::Black ? "btime" : "wtime"))
+							// yeah I hate the duplication too
+						else if (tournamentTime)
 						{
-							tournamentTime = true;
-
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
+							if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
+								&& tokens[i - 1] == (pos.toMove() == Color::Black ? "btime" : "wtime"))
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								timeRemaining = static_cast<i64>(time);
+								u64 time{};
+								if (!util::tryParseU64(time, tokens[i]))
+									std::cerr << "invalid time " << tokens[i] << std::endl;
+								else
+								{
+									time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+									timeRemaining = static_cast<i64>(time);
+								}
 							}
-						}
-						else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-							&& tokens[i - 1] == (pos.toMove() == Color::Black ? "binc" : "winc"))
-						{
-							tournamentTime = true;
-
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
+							else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
+								&& tokens[i - 1] == (pos.toMove() == Color::Black ? "binc" : "winc"))
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								increment = static_cast<i64>(time);
+								u64 time{};
+								if (!util::tryParseU64(time, tokens[i]))
+									std::cerr << "invalid time " << tokens[i] << std::endl;
+								else
+								{
+									time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+									increment = static_cast<i64>(time);
+								}
 							}
-						}
-						else if (tokens[i] == "movestogo" && ++i < tokens.size())
-						{
-							tournamentTime = true;
-
-							u32 moves{};
-							if (!util::tryParseU32(moves, tokens[i]))
-								std::cerr << "invalid movestogo " << tokens[i] << std::endl;
-							else
+							else if (tokens[i] == "movestogo" && ++i < tokens.size())
 							{
-								moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-								toGo = static_cast<i32>(moves);
+								u32 moves{};
+								if (!util::tryParseU32(moves, tokens[i]))
+									std::cerr << "invalid movestogo " << tokens[i] << std::endl;
+								else
+								{
+									moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
+									toGo = static_cast<i32>(moves);
+								}
 							}
 						}
 					}
-					// yeah I hate the duplication too
-					else if (tournamentTime)
-					{
-						if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-							&& tokens[i - 1] == (pos.toMove() == Color::Black ? "btime" : "wtime"))
-						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								timeRemaining = static_cast<i64>(time);
-							}
-						}
-						else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-							&& tokens[i - 1] == (pos.toMove() == Color::Black ? "binc" : "winc"))
-						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								increment = static_cast<i64>(time);
-							}
-						}
-						else if (tokens[i] == "movestogo" && ++i < tokens.size())
-						{
-							u32 moves{};
-							if (!util::tryParseU32(moves, tokens[i]))
-								std::cerr << "invalid movestogo " << tokens[i] << std::endl;
-							else
-							{
-								moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-								toGo = static_cast<i32>(moves);
-							}
-						}
-					}
+
+					if (depth > search::MaxDepth)
+						depth = search::MaxDepth;
+
+					if (tournamentTime && timeRemaining > 0)
+						limiter = std::make_unique<limit::TimeManager>(startTime,
+							static_cast<f64>(timeRemaining) / 1000.0,
+							static_cast<f64>(increment) / 1000.0,
+							toGo, static_cast<f64>(moveOverhead) / 1000.0);
+					else if (!limiter)
+						limiter = std::make_unique<limit::InfiniteLimiter>();
+
+					searcher->startSearch(pos, static_cast<i32>(depth), std::move(limiter));
 				}
-
-				if (depth > search::MaxDepth)
-					depth = search::MaxDepth;
-
-				if (tournamentTime && timeRemaining > 0)
-					limiter = std::make_unique<limit::TimeManager>(startTime,
-						static_cast<f64>(timeRemaining) / 1000.0,
-						static_cast<f64>(increment) / 1000.0,
-						toGo, static_cast<f64>(moveOverhead) / 1000.0);
-				else if (!limiter)
-					limiter = std::make_unique<limit::InfiniteLimiter>();
-
-				searcher->startSearch(pos, static_cast<i32>(depth), std::move(limiter));
 			}
 			else if (command == "stop")
-				searcher->stop();
+			{
+				if (!searcher->searching())
+					std::cerr << "not searching" << std::endl;
+				else searcher->stop();
+			}
 			else if (command == "setoption")
 			{
 				size_t i = 1;
@@ -389,20 +357,30 @@ namespace polaris::uci
 						if (!valueEmpty)
 						{
 							if (const auto newHashSize = util::tryParseSize(valueStr))
-							{
-								hashSize = HashSizeRange.clamp(*newHashSize);
-								searcher->setHashSize(*hashSize);
-							}
+								newSearcherHashSize = hashSize = HashSizeRange.clamp(*newHashSize);
 						}
 					}
 					else if (nameStr == "clear hash")
-						searcher->clearHash();
+					{
+						if (searcher->searching())
+							std::cerr << "still searching" << std::endl;
+
+						if (hashSize)
+						{
+							searcher->setHashSize(*hashSize);
+							hashSize = {};
+						}
+						else searcher->clearHash();
+					}
 					else if (nameStr == "searcher")
 					{
 						if (!valueEmpty)
 						{
-							if (auto newSearcher = search::ISearcher::create(valueStr, hashSize))
+							if (auto newSearcher = search::ISearcher::create(valueStr, newSearcherHashSize))
+							{
+								hashSize = {};
 								searcher = std::move(*newSearcher);
+							}
 							else std::cerr << "unknown searcher " << valueStr << std::endl;
 						}
 					}

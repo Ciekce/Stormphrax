@@ -20,7 +20,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include <vector>
 
 #include "../../uci.h"
 #include "../../movegen.h"
@@ -39,27 +38,32 @@ namespace polaris::search::pvs
 
 		constexpr i32 MinNullmoveDepth = 3;
 		constexpr i32 MinLmrDepth = 3;
-
-		struct SearchStackEntry
-		{
-			Score eval{};
-			MoveList moves{};
-		};
 	}
 
-	struct PvsData
-	{
-		PvsData()
-		{
-			stack.resize(MaxDepth);
-		}
-
-		SearchData search{};
-		std::vector<SearchStackEntry> stack{};
-	};
-
 	PvsSearcher::PvsSearcher(std::optional<size_t> hashSize)
-		: m_table{hashSize ? *hashSize : DefaultHashSize} {}
+		: m_table{hashSize ? *hashSize : DefaultHashSize}
+	{
+		auto &threadData = m_threads.emplace_back();
+
+		threadData.id = m_nextThreadId++;
+		threadData.thread = std::thread{[this, &threadData]
+		{
+			run(threadData);
+		}};
+	}
+
+	PvsSearcher::~PvsSearcher()
+	{
+		m_flag.store(QuitFlag, std::memory_order_seq_cst);
+		stop();
+
+		m_signal.notify_all();
+
+		for (auto &thread : m_threads)
+		{
+			thread.thread.join();
+		}
+	}
 
 	void PvsSearcher::newGame()
 	{
@@ -75,113 +79,28 @@ namespace polaris::search::pvs
 			return;
 		}
 
-		PvsData data{};
-		auto &searchData = data.search;
+		m_flag.store(SearchFlag, std::memory_order::seq_cst);
 
-		Score score{};
-		Move best{};
-
-		m_stop = false;
-
-		const auto startTime = util::g_timer.time();
-
-		for (i32 depth = 1; depth <= maxDepth && !shouldStop(searchData, *limiter); ++depth)
+		for (auto &thread : m_threads)
 		{
-			searchData.depth = depth;
-
-			const auto prevBest = best;
-
-			bool reportThisIter = true;
-
-			if (depth < MinAspDepth)
-			{
-				const auto newScore = search(data, pos, *limiter, depth, 0, -ScoreMax, ScoreMax);
-
-				if (m_stop || !data.search.move)
-					break;
-
-				score = newScore;
-				best = data.search.move;
-			}
-			else
-			{
-				auto aspDepth = depth;
-
-				auto delta = InitialWindow;
-
-				auto alpha = score - delta;
-				auto beta = score + delta;
-
-				while (!shouldStop(searchData, *limiter))
-				{
-					if (aspDepth < depth - 3)
-						aspDepth = depth - 3;
-
-					const auto newScore = search(data, pos, *limiter, aspDepth, 0, alpha, beta);
-
-					if (m_stop || !searchData.move)
-					{
-						reportThisIter = !m_stop;
-						break;
-					}
-
-					score = newScore;
-
-					if (score <= alpha || score >= beta)
-					{
-						const auto time = util::g_timer.time() - startTime;
-						if (time > MinReportDelay)
-							report(searchData, best ?: searchData.move, time, score, alpha, beta);
-					}
-
-					delta += delta / 2;
-
-					if (delta > MaxWindow)
-						delta = ScoreMate;
-
-					if (score >= beta)
-					{
-						beta += delta;
-						--aspDepth;
-					}
-					else if (score <= alpha)
-					{
-						beta = (alpha + beta) / 2;
-						alpha = std::max(alpha - delta, -ScoreMate);
-						aspDepth = depth;
-					}
-					else
-					{
-						best = searchData.move;
-						break;
-					}
-				}
-			}
-
-			limiter->update(data.search, prevBest == best);
-
-			if (reportThisIter && depth < maxDepth)
-			{
-				if (const auto move = best ?: searchData.move)
-					report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
-				else
-				{
-					std::cout << "info string no legal moves" << std::endl;
-					break;
-				}
-			}
+			thread.maxDepth = maxDepth;
+			thread.search = SearchData{};
+			thread.pos = pos;
 		}
 
-		if (const auto move = best ?: searchData.move)
-		{
-			report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
-			std::cout << "bestmove " << uci::moveToString(move) << std::endl;
-		}
+		m_limiter = std::move(limiter);
+
+		m_signal.notify_all();
 	}
 
 	void PvsSearcher::stop()
 	{
-		m_stop = true;
+		m_stop.store(true, std::memory_order::relaxed);
+	}
+
+	bool PvsSearcher::searching()
+	{
+		return m_flag.load(std::memory_order_seq_cst) == SearchFlag;
 	}
 
 	void PvsSearcher::clearHash()
@@ -194,19 +113,146 @@ namespace polaris::search::pvs
 		m_table.resize(size);
 	}
 
-	bool PvsSearcher::shouldStop(const SearchData &data, const limit::ISearchLimiter &limiter)
+	void PvsSearcher::run(ThreadData &data)
 	{
-		return m_stop || (m_stop = limiter.stop(data));
+		while (true)
+		{
+			i32 flag{};
+
+			std::unique_lock lock{m_waitMutex};
+			m_signal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order_seq_cst); });
+
+			if (flag == QuitFlag)
+				return;
+
+			auto &searchData = data.search;
+
+			Score score{};
+			Move best{};
+
+			m_stop.store(false, std::memory_order::seq_cst);
+
+			const auto startTime = util::g_timer.time();
+
+			for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData); ++depth)
+			{
+				searchData.depth = depth;
+
+				const auto prevBest = best;
+
+				bool reportThisIter = data.id == 0;
+
+				if (depth < MinAspDepth)
+				{
+					const auto newScore = search(data, depth, 0, -ScoreMax, ScoreMax);
+
+					if (depth > 1 && m_stop.load(std::memory_order::relaxed) || !data.search.move)
+						break;
+
+					score = newScore;
+					best = data.search.move;
+				}
+				else
+				{
+					auto aspDepth = depth;
+
+					auto delta = InitialWindow;
+
+					auto alpha = score - delta;
+					auto beta = score + delta;
+
+					while (!shouldStop(searchData))
+					{
+						if (aspDepth < depth - 3)
+							aspDepth = depth - 3;
+
+						const auto newScore = search(data, aspDepth, 0, alpha, beta);
+
+						const bool stop = m_stop.load(std::memory_order::relaxed);
+						if (stop || !searchData.move)
+						{
+							reportThisIter &= !stop;
+							break;
+						}
+
+						score = newScore;
+
+						if (data.id == 0 && (score <= alpha || score >= beta))
+						{
+							const auto time = util::g_timer.time() - startTime;
+							if (time > MinReportDelay)
+								report(searchData, best ?: searchData.move, time, score, alpha, beta);
+						}
+
+						delta += delta / 2;
+
+						if (delta > MaxWindow)
+							delta = ScoreMate;
+
+						if (score >= beta)
+						{
+							beta += delta;
+							--aspDepth;
+						}
+						else if (score <= alpha)
+						{
+							beta = (alpha + beta) / 2;
+							alpha = std::max(alpha - delta, -ScoreMate);
+							aspDepth = depth;
+						}
+						else
+						{
+							best = searchData.move;
+							break;
+						}
+					}
+				}
+
+				m_limiter->update(data.search, prevBest == best);
+
+				if (reportThisIter && depth < data.maxDepth)
+				{
+					if (const auto move = best ?: searchData.move)
+						report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					else
+					{
+						std::cout << "info string no legal moves" << std::endl;
+						break;
+					}
+				}
+			}
+
+			if (data.id == 0)
+			{
+				if (const auto move = best ?: searchData.move)
+				{
+					report(searchData, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					std::cout << "bestmove " << uci::moveToString(move) << std::endl;
+				}
+
+				m_flag.store(IdleFlag, std::memory_order::seq_cst);
+			}
+		}
 	}
 
-	Score PvsSearcher::search(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
-		i32 depth, i32 ply, Score alpha, Score beta)
+	bool PvsSearcher::shouldStop(const SearchData &data)
 	{
-		if (depth > 1 && shouldStop(data.search, limiter))
+		if (m_stop.load(std::memory_order_relaxed))
+			return true;
+
+		bool shouldStop = m_limiter->stop(data);
+		return m_stop.fetch_or(shouldStop, std::memory_order_relaxed) || shouldStop;
+	}
+
+	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta)
+	{
+		if (depth > 1 && shouldStop(data.search))
 			return beta;
 
+		auto &pos = data.pos;
+
 		if (depth == 0 && !pos.isCheck())
-			return qsearch(data, pos, limiter, alpha, beta, ply);
+			return qsearch(data, alpha, beta, ply);
 
 		++data.search.nodes;
 
@@ -265,7 +311,7 @@ namespace polaris::search::pvs
 				const auto R = std::min(newBaseDepth - 1, 3);
 
 				const auto guard = pos.applyMove(Move::null());
-				const auto score = -search(data, pos, limiter, newBaseDepth - R, ply, -beta, -beta + 1);
+				const auto score = -search(data, newBaseDepth - R, ply, -beta, -beta + 1);
 
 				if (score >= beta)
 				{
@@ -321,13 +367,13 @@ namespace polaris::search::pvs
 				}
 
 				if (pv && legalMoves == 1)
-					score = -search(data, pos, limiter, newDepth, ply, -beta, -alpha);
+					score = -search(data, newDepth, ply, -beta, -alpha);
 				else
 				{
-					score = -search(data, pos, limiter, newDepth, ply, -alpha - 1, -alpha);
+					score = -search(data, newDepth, ply, -alpha - 1, -alpha);
 
 					if (score > alpha && score < beta)
-						score = -search(data, pos, limiter, newDepth, ply, -beta, -alpha);
+						score = -search(data, newDepth, ply, -beta, -alpha);
 				}
 			}
 
@@ -372,11 +418,12 @@ namespace polaris::search::pvs
 		return bestScore;
 	}
 
-	Score PvsSearcher::qsearch(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
-		Score alpha, Score beta, i32 ply)
+	Score PvsSearcher::qsearch(ThreadData &data, Score alpha, Score beta, i32 ply)
 	{
-		if (shouldStop(data.search, limiter))
+		if (shouldStop(data.search))
 			return beta;
+
+		auto &pos = data.pos;
 
 		++data.search.nodes;
 
@@ -414,7 +461,7 @@ namespace polaris::search::pvs
 			if (pos.isAttacked(us == Color::Black ? pos.blackKing() : pos.whiteKing(), oppColor(us)))
 				continue;
 
-			const auto score = pos.isDrawn() ? 0 : -qsearch(data, pos, limiter, -beta, -alpha, ply);
+			const auto score = pos.isDrawn() ? 0 : -qsearch(data, -beta, -alpha, ply);
 
 			if (score > bestScore)
 			{
@@ -433,11 +480,19 @@ namespace polaris::search::pvs
 
 	void PvsSearcher::report(const SearchData &data, Move move, f64 time, Score score, Score alpha, Score beta)
 	{
+		size_t nodes = 0;
+
+		// technically a potential race but it doesn't matter
+		for (const auto &thread : m_threads)
+		{
+			nodes += thread.search.nodes;
+		}
+
 		const auto ms = static_cast<size_t>(time * 1000.0);
-		const auto nps = static_cast<size_t>(static_cast<f64>(data.nodes) / time);
+		const auto nps = static_cast<size_t>(static_cast<f64>(nodes) / time);
 
 		std::cout << "info depth " << data.depth << " seldepth " << data.seldepth << " time " << ms
-			<< " nodes " << data.nodes << " nps " << nps << " score ";
+			<< " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
 

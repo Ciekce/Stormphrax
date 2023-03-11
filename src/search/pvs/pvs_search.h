@@ -21,6 +21,10 @@
 #include "../../types.h"
 
 #include <utility>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <vector>
 
 #include "../search.h"
 #include "../../util/timer.h"
@@ -29,34 +33,71 @@
 
 namespace polaris::search::pvs
 {
-	struct PvsData;
-
 	class PvsSearcher final : public ISearcher
 	{
 	public:
 		explicit PvsSearcher(std::optional<size_t> hashSize = {});
-		~PvsSearcher() final = default;
+		~PvsSearcher() final;
 
 		void newGame() final;
 
 		void startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) final;
 		void stop() final;
 
+		bool searching() final;
+
 		void clearHash() final;
 		void setHashSize(size_t size) final;
 
 	private:
+		static constexpr i32 IdleFlag = 0;
+		static constexpr i32 SearchFlag = 1;
+		static constexpr i32 QuitFlag = 2;
+
+		struct SearchStackEntry
+		{
+			Score eval{};
+			MoveList moves{};
+		};
+
+		struct ThreadData
+		{
+			ThreadData()
+			{
+				stack.resize(MaxDepth);
+			}
+
+			u32 id{};
+			std::thread thread{};
+
+			// this is in here so clion in its infinite wisdom doesn't
+			// mark the entire iterative deepening loop unreachable
+			i32 maxDepth{};
+			SearchData search{};
+			std::vector<SearchStackEntry> stack{};
+			Position pos{false};
+		};
+
 		TTable m_table{};
 		eval::PawnCache m_pawnCache{};
 
-		bool m_stop{};
+		u32 m_nextThreadId{};
+		std::vector<ThreadData> m_threads{};
 
-		bool shouldStop(const SearchData &data, const limit::ISearchLimiter &limiter);
+		std::mutex m_waitMutex{};
+		std::condition_variable m_signal{};
+		std::atomic_int m_flag{};
 
-		Score search(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
-			i32 depth, i32 ply, Score alpha, Score beta);
-		Score qsearch(PvsData &data, Position &pos, const limit::ISearchLimiter &limiter,
-			Score alpha, Score beta, i32 ply);
+		std::atomic_int m_stop{};
+
+		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+
+		void run(ThreadData &data);
+
+		bool shouldStop(const SearchData &data);
+
+		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
+		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
 
 		void report(const SearchData &data, Move move, f64 time, Score score, Score alpha, Score beta);
 	};

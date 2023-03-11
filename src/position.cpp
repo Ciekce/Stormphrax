@@ -94,13 +94,16 @@ namespace polaris
 	template bool Position::verify<true>();
 #endif
 
-	Position::Position()
+	Position::Position(bool init)
 	{
-		m_history.reserve(256);
-
-		for (auto &file : m_pieces)
+		if (init)
 		{
-			file.fill(Piece::None);
+			m_history.reserve(256);
+
+			for (auto &file: m_pieces)
+			{
+				file.fill(Piece::None);
+			}
 		}
 	}
 

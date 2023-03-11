@@ -45,6 +45,8 @@ namespace polaris::search
 		virtual void startSearch(Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) = 0;
 		virtual void stop() = 0;
 
+		virtual bool searching() = 0;
+
 		virtual void clearHash() = 0;
 		virtual void setHashSize(size_t size) = 0;
 

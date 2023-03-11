@@ -14,7 +14,7 @@ heavily WIP and currently pretty basic
 ### todo
 - finish eval (king safety, hanging and pinned pieces)
 - killers, history
-- proper threading (currently doesn't actually respond to `stop`)
+- god the move ordering implementation sucks
 - lazy smp
 - better time management
 - tune search constants
