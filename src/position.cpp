@@ -34,11 +34,6 @@
 #include "attacks/attacks.h"
 #include "movegen.h"
 
-
-
-#include <iostream>
-#include "uci.h"
-
 namespace polaris
 {
 	namespace
