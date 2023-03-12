@@ -68,7 +68,11 @@ namespace polaris::search::pvs
 	void PvsSearcher::newGame()
 	{
 		m_table.clear();
-		m_pawnCache.clear();
+
+		for (auto &thread : m_threads)
+		{
+			thread.pawnCache.clear();
+		}
 	}
 
 	void PvsSearcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
@@ -295,7 +299,7 @@ namespace polaris::search::pvs
 		if (!root && !pos.lastMove())
 			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
 		else stack.eval = inCheck ? 0
-			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &m_pawnCache));
+			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
 
 		if (!pv && !inCheck)
 		{
@@ -427,7 +431,7 @@ namespace polaris::search::pvs
 
 		++data.search.nodes;
 
-		auto staticEval = eval::staticEval(pos, &m_pawnCache);
+		auto staticEval = eval::staticEval(pos, &data.pawnCache);
 
 		if (staticEval > alpha)
 		{

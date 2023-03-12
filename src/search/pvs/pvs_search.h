@@ -74,12 +74,14 @@ namespace polaris::search::pvs
 			// mark the entire iterative deepening loop unreachable
 			i32 maxDepth{};
 			SearchData search{};
+
+			eval::PawnCache pawnCache{};
 			std::vector<SearchStackEntry> stack{};
+
 			Position pos{false};
 		};
 
 		TTable m_table{};
-		eval::PawnCache m_pawnCache{};
 
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
