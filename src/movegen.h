@@ -30,7 +30,7 @@ namespace polaris
 
 	void generateAll(MoveList &dst, const Position &pos);
 
-	void orderMoves(MoveList &moves, const Position &pos, Move first = Move::null());
+	void orderMoves(MoveList &moves, const Position &pos, Move first = NullMove);
 
 	struct MovegenStage
 	{
@@ -77,7 +77,7 @@ namespace polaris
 						generateQuiet(m_data, m_pos);
 					break;
 
-				default: return Move::null();
+				default: return NullMove;
 				}
 
 				if (m_idx < m_data.size() && m_data[m_idx] == m_hashMove)
@@ -114,7 +114,7 @@ namespace polaris
 			  m_hashMove{hashMove}
 		{
 			m_moves.clear();
-			m_moves.fill(Move::null());
+			m_moves.fill(NullMove);
 		}
 
 		~MoveGenerator() = default;
@@ -141,7 +141,7 @@ namespace polaris
 					orderMoves(m_moves, m_pos, m_hashMove);
 					break;
 
-				default: return Move::null();
+				default: return NullMove;
 				}
 			}
 

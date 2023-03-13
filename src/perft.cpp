@@ -37,7 +37,7 @@ namespace polaris
 			const auto opp = pos.opponent();
 
 			MoveList moves{};
-			MoveGenerator generator{pos, moves, Move::null()};
+			MoveGenerator generator{pos, moves, NullMove};
 
 			size_t total{};
 
@@ -62,7 +62,7 @@ namespace polaris
 		const auto opp = pos.opponent();
 
 		MoveList moves{};
-		MoveGenerator generator{pos, moves, Move::null()};
+		MoveGenerator generator{pos, moves, NullMove};
 
 		size_t total{};
 

@@ -102,8 +102,6 @@ namespace polaris
 			)};
 		}
 
-		[[nodiscard]] static constexpr Move null() { return Move{}; }
-
 	private:
 		explicit constexpr Move(u16 move) : m_move{move} {}
 
@@ -168,6 +166,8 @@ namespace polaris
 		MoveType m_type{MoveType::Standard};
 #endif
 	};
+
+	constexpr Move NullMove{};
 
 	// assumed upper bound for number of possible moves is 218
 	constexpr size_t DefaultMoveListCapacity = 256;

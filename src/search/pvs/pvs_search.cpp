@@ -287,7 +287,7 @@ namespace polaris::search::pvs
 		}
 
 		TTableEntry entry{};
-		auto hashMove = Move::null();
+		auto hashMove = NullMove;
 
 		if (m_table.probe(entry, pos.key(), depth, alpha, beta) && !pv)
 			return entry.score;
@@ -314,7 +314,7 @@ namespace polaris::search::pvs
 			{
 				const auto R = std::min(newBaseDepth - 1, 3);
 
-				const auto guard = pos.applyMove(Move::null());
+				const auto guard = pos.applyMove(NullMove);
 				const auto score = -search(data, newBaseDepth - R, ply, -beta, -beta + 1);
 
 				if (score >= beta)
@@ -326,7 +326,7 @@ namespace polaris::search::pvs
 			}
 		}
 
-		auto best = Move::null();
+		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
@@ -454,7 +454,7 @@ namespace polaris::search::pvs
 
 		auto hashMove = m_table.probeMove(pos.key());
 		if (hashMove && !pos.isPseudolegal(hashMove))
-			hashMove = Move::null();
+			hashMove = NullMove;
 
 		QMoveGenerator generator{pos, stack.moves, hashMove};
 

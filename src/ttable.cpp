@@ -90,14 +90,14 @@ namespace polaris
 	Move TTable::probeMove(u64 key) const
 	{
 		if (m_table.empty())
-			return Move::null();
+			return NullMove;
 
 		const auto &entry = m_table[key & m_mask];
 
 		if (key == entry.key)
 			return entry.move;
 
-		return Move::null();
+		return NullMove;
 	}
 
 	void TTable::put(u64 key, Score score, Move move, i32 depth, EntryType type)

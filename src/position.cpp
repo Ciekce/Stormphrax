@@ -1108,7 +1108,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 	Move Position::moveFromUci(const std::string &move) const
 	{
 		if (move.length() < 4 || move.length() > 5)
-			return Move::null();
+			return NullMove;
 
 		const auto src = squareFromString(move.substr(0, 2));
 		const auto dst = squareFromString(move.substr(2, 2));

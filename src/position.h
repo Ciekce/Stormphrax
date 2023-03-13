@@ -461,7 +461,7 @@ namespace polaris
 
 		[[nodiscard]] inline Move lastMove() const
 		{
-			return m_history.empty() ? Move::null() : m_history.back().move;
+			return m_history.empty() ? NullMove : m_history.back().move;
 		}
 
 		[[nodiscard]] inline Piece captureTarget(Move move) const
@@ -521,7 +521,7 @@ namespace polaris
 		void regen();
 
 #ifndef NDEBUG
-		void printHistory(Move last = Move::null());
+		void printHistory(Move last = NullMove);
 
 		template <bool CheckMaterial = true>
 		bool verify();
