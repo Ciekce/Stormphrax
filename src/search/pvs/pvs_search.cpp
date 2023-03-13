@@ -356,7 +356,7 @@ namespace polaris::search::pvs
 			{
 				auto newDepth = newBaseDepth;
 
-				// lmr (~32 elo)
+				// lmr (~124 elo)
 				if (depth >= MinLmrDepth
 					&& !inCheck // we are in check
 					&& !pos.isCheck() // this move gives check
