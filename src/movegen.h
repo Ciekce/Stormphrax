@@ -34,6 +34,14 @@ namespace polaris
 
 	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
+	struct MovegenData
+	{
+		ScoredMoveList moves{};
+
+		Move killer1{NullMove};
+		Move killer2{NullMove};
+	};
+
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
 
@@ -44,18 +52,22 @@ namespace polaris
 		static constexpr i32 Start = 0;
 		static constexpr i32 Hash = 1;
 		static constexpr i32 Noisy = 2;
-		static constexpr i32 Quiet = 3;
-		static constexpr i32 End = 4;
+		static constexpr i32 Killer1 = 3;
+		static constexpr i32 Killer2 = 4;
+		static constexpr i32 Quiet = 5;
+		static constexpr i32 End = 6;
 	};
 
-	template <bool GenerateQuiets = true>
+	template <bool Quiescence = false>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, ScoredMoveList &moves, Move hashMove)
+		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove)
 			: m_pos{pos},
-			  m_moves{moves},
-			  m_hashMove{hashMove}
+			  m_moves{data.moves},
+			  m_hashMove{hashMove},
+			  m_killer1{data.killer1},
+			  m_killer2{data.killer2}
 		{
 			m_moves.clear();
 			m_moves.fill({NullMove, 0});
@@ -80,14 +92,27 @@ namespace polaris
 
 					case MovegenStage::Noisy:
 						genNoisy();
+						if constexpr(Quiescence)
+							m_stage = MovegenStage::End;
+						break;
+
+					case MovegenStage::Killer1:
+						if (m_killer1
+							&& m_killer1 != m_hashMove
+							&& m_pos.isPseudolegal(m_killer1))
+							return m_killer1;
+						break;
+
+					case MovegenStage::Killer2:
+						if (m_killer2
+							&& m_killer2 != m_hashMove
+							&& m_pos.isPseudolegal(m_killer2))
+							return m_killer2;
 						break;
 
 					case MovegenStage::Quiet:
-						if constexpr (GenerateQuiets)
-						{
-							genQuiet();
-							break;
-						}
+						genQuiet();
+						break;
 
 					default:
 						return NullMove;
@@ -97,13 +122,19 @@ namespace polaris
 				if (m_idx == m_moves.size())
 					return NullMove;
 
-			//	swapBest();
 				const auto move = m_moves[m_idx++];
 
-				if (!m_hashMove || move.move != m_hashMove)
+				if (!move.move)
+					return NullMove;
+
+				if (move.move != m_hashMove
+					&& move.move != m_killer1
+					&& move.move != m_killer2)
 					return move.move;
 			}
 		}
+
+		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
 		static constexpr auto PromoScores = std::array {
@@ -171,10 +202,13 @@ namespace polaris
 		i32 m_stage{MovegenStage::Start};
 
 		ScoredMoveList &m_moves;
+
 		Move m_hashMove{};
+		Move m_killer1{};
+		Move m_killer2{};
 
 		u32 m_idx{};
 	};
 
-	using QMoveGenerator = MoveGenerator<false>;
+	using QMoveGenerator = MoveGenerator<true>;
 }

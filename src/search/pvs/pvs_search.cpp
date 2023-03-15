@@ -331,7 +331,7 @@ namespace polaris::search::pvs
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.moves, hashMove};
+		MoveGenerator generator{pos, stack.movegen, hashMove};
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
@@ -390,6 +390,13 @@ namespace polaris::search::pvs
 				{
 					if (score >= beta)
 					{
+						if (generator.stage() >= MovegenStage::Quiet
+							&& move != stack.movegen.killer1)
+						{
+							stack.movegen.killer2 = stack.movegen.killer1;
+							stack.movegen.killer1 = move;
+						}
+
 						entryType = EntryType::Beta;
 						break;
 					}
@@ -456,7 +463,7 @@ namespace polaris::search::pvs
 		if (hashMove && !pos.isPseudolegal(hashMove))
 			hashMove = NullMove;
 
-		QMoveGenerator generator{pos, stack.moves, hashMove};
+		QMoveGenerator generator{pos, stack.movegen, hashMove};
 
 		while (const auto move = generator.next())
 		{

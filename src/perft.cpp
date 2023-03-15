@@ -37,8 +37,8 @@ namespace polaris
 
 			const auto opp = pos.opponent();
 
-			ScoredMoveList moves{};
-			MoveGenerator generator{pos, moves, NullMove};
+			MovegenData data{};
+			MoveGenerator generator{pos, data, NullMove};
 
 			size_t total{};
 
@@ -64,8 +64,8 @@ namespace polaris
 
 		const auto start = util::g_timer.time();
 
-		ScoredMoveList moves{};
-		MoveGenerator generator{pos, moves, NullMove};
+		MovegenData data{};
+		MoveGenerator generator{pos, data, NullMove};
 
 		size_t total{};
 

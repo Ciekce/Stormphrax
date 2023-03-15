@@ -90,8 +90,10 @@ namespace polaris
 	template void Position::regen<true>();
 
 #ifndef NDEBUG
-	template bool Position::verify<false>();
-	template bool Position::verify<true>();
+	template bool Position::verify<false, false>();
+	template bool Position::verify<true, false>();
+	template bool Position::verify<false, true>();
+	template bool Position::verify<true, true>();
 #endif
 
 	Position::Position(bool init)
@@ -135,7 +137,7 @@ namespace polaris
 #ifndef NDEBUG
 			if constexpr(VerifyAll)
 			{
-				if (!verify<UpdateMaterial>())
+				if (!verify<UpdateMaterial, History>())
 				{
 					printHistory(move);
 					__builtin_trap();
@@ -251,7 +253,7 @@ namespace polaris
 #ifndef NDEBUG
 		if constexpr(VerifyAll)
 		{
-			if (!verify<UpdateMaterial>())
+			if (!verify<UpdateMaterial, History>())
 			{
 				printHistory();
 				__builtin_trap();
@@ -404,7 +406,7 @@ namespace polaris
 #ifndef NDEBUG
 		if constexpr(VerifyAll)
 		{
-			if (!verify())
+			if (!(m_history.empty() ? verify<true, false>() : verify<true, true>()))
 			{
 				printHistory(move);
 				__builtin_trap();
@@ -430,7 +432,7 @@ namespace polaris
 		const auto src = move.src();
 		const auto srcPiece = pieceAt(src);
 
-		if (pieceColor(srcPiece) != us)
+		if (srcPiece == Piece::None || pieceColor(srcPiece) != us)
 			return false;
 
 		const auto dst = move.dst();
@@ -447,26 +449,32 @@ namespace polaris
 
 		if (base == BasePiece::Pawn)
 		{
-			// sideways move, not valid attack
-			if (move.srcFile() != move.dstFile() && !(attacks::getPawnAttacks(src, us)
-				& (occupancy(them) | squareBitChecked(m_enPassant)))[dst])
-				return false;
-
 			const auto srcRank = move.srcRank();
 			const auto dstRank = move.dstRank();
 
-			i32 delta, maxDelta;
+			// backwards move
+			if ((us == Color::Black && dstRank >= srcRank)
+				|| (us == Color::White && dstRank <= srcRank))
+				return false;
 
+			// sideways move
+			if (move.srcFile() != move.dstFile())
+			{
+				// not valid attack
+				if (!(attacks::getPawnAttacks(src, us)
+					& (occupancy(them) | squareBitChecked(m_enPassant)))[dst])
+					return false;
+			}
+			// forward move onto a piece
+			else if (dstPiece != Piece::None)
+				return false;
+
+			const auto delta = std::abs(dstRank - srcRank);
+
+			i32 maxDelta;
 			if (us == Color::Black)
-			{
-				delta = srcRank - dstRank;
 				maxDelta = srcRank == 6 ? 2 : 1;
-			}
-			else
-			{
-				delta = dstRank - srcRank;
-				maxDelta = srcRank == 1 ? 2 : 1;
-			}
+			else maxDelta = srcRank == 1 ? 2 : 1;
 
 			if (delta > maxDelta)
 				return false;
@@ -1041,11 +1049,11 @@ namespace polaris
 		std::cerr << std::endl;
 	}
 
-	template <bool CheckMaterial>
+	template <bool CheckMaterial, bool HasHistory>
 	bool Position::verify()
 	{
 		Position regened{*this};
-		regened.regen<true>();
+		regened.regen<HasHistory>();
 
 		std::ostringstream out{};
 		out << std::hex << std::uppercase;
@@ -1076,7 +1084,12 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 		PS_CHECK(occupancy(Color::Black), regened.occupancy(Color::Black), "black occupancy boards")
 		PS_CHECK(occupancy(Color::White), regened.occupancy(Color::White), "white occupancy boards")
 
+		out << std::dec;
+		PS_CHECK(static_cast<u64>(m_enPassant), static_cast<u64>(regened.m_enPassant), "en passant squares")
+		out << std::hex;
+
 		PS_CHECK(m_key, regened.m_key, "keys")
+		PS_CHECK(m_pawnKey, regened.m_pawnKey, "pawn keys")
 
 		out << std::dec;
 

@@ -13,13 +13,11 @@ heavily WIP and currently pretty basic
 
 ### todo
 - finish eval (king safety, hanging and pinned pieces)
-- killers, history
-- god the move ordering implementation sucks
+- history
 - lazy smp
 - better time management
 - tune search constants
 - contempt for funsies
-- pv reporting (currently just reports the best move)
 - general cleanups ig, code quality's pretty scuffed
 - make it stronger uwu
 - nnue maybe? idk

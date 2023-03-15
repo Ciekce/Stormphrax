@@ -120,6 +120,7 @@ namespace polaris
 		[[nodiscard]] constexpr i32 dstFile() const { return squareFile(m_dst); }
 
 		[[nodiscard]] constexpr auto target() const { return m_target; }
+		[[nodiscard]] constexpr auto targetIdx() const { return static_cast<i32>(m_target) - 1; }
 
 		[[nodiscard]] constexpr auto type() const { return m_type; }
 

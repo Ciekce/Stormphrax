@@ -523,7 +523,7 @@ namespace polaris
 #ifndef NDEBUG
 		void printHistory(Move last = NullMove);
 
-		template <bool CheckMaterial = true>
+		template <bool CheckMaterial = true, bool HasHistory = true>
 		bool verify();
 #endif
 

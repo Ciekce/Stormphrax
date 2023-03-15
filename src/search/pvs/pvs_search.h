@@ -58,7 +58,7 @@ namespace polaris::search::pvs
 		struct SearchStackEntry
 		{
 			Score eval{};
-			ScoredMoveList moves{};
+			MovegenData movegen{};
 		};
 
 		struct ThreadData
