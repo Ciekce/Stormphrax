@@ -417,16 +417,6 @@ namespace polaris
 
 	bool Position::isPseudolegal(Move move) const
 	{
-		if (move.type() != MoveType::Standard)
-		{
-			//TODO
-			ScoredMoveList moves{};
-			generateAll(moves, *this);
-
-			return std::ranges::any_of(moves.begin(), moves.end(),
-				[move](const auto m) { return m.move == move; });
-		}
-
 		const auto us = toMove();
 
 		const auto src = move.src();
@@ -441,6 +431,16 @@ namespace polaris
 		if (dstPiece != Piece::None
 			&& (pieceColor(dstPiece) == us || basePiece(dstPiece) == BasePiece::King))
 			return false;
+
+		if (move.type() != MoveType::Standard)
+		{
+			//TODO
+			ScoredMoveList moves{};
+			generateAll(moves, *this);
+
+			return std::ranges::any_of(moves.begin(), moves.end(),
+				[move](const auto m) { return m.move == move; });
+		}
 
 		const auto them = oppColor(us);
 		const auto base = basePiece(srcPiece);
