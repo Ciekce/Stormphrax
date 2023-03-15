@@ -54,6 +54,7 @@ namespace polaris
 		[[nodiscard]] constexpr i32 dstFile() const { return (m_move >> 4) & 0x7; }
 
 		[[nodiscard]] constexpr auto target() const { return static_cast<BasePiece>(((m_move >> 2) & 0x3) + 1); }
+		[[nodiscard]] constexpr auto targetIdx() const { return (m_move >> 2) & 0x3; }
 
 		[[nodiscard]] constexpr auto type() const { return static_cast<MoveType>(m_move & 0x3); }
 

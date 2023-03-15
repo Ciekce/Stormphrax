@@ -22,6 +22,7 @@
 
 #include "movegen.h"
 #include "uci.h"
+#include "util/timer.h"
 
 namespace polaris
 {
@@ -36,7 +37,7 @@ namespace polaris
 
 			const auto opp = pos.opponent();
 
-			MoveList moves{};
+			ScoredMoveList moves{};
 			MoveGenerator generator{pos, moves, NullMove};
 
 			size_t total{};
@@ -61,7 +62,9 @@ namespace polaris
 
 		const auto opp = pos.opponent();
 
-		MoveList moves{};
+		const auto start = util::g_timer.time();
+
+		ScoredMoveList moves{};
 		MoveGenerator generator{pos, moves, NullMove};
 
 		size_t total{};
@@ -79,6 +82,10 @@ namespace polaris
 			std::cout << uci::moveToString(move) << '\t' << value << '\n';
 		}
 
-		std::cout << '\n' << "total " << total << std::endl;
+		const auto time = util::g_timer.time() - start;
+		const auto nps = static_cast<size_t>(static_cast<f64>(total) / time);
+
+		std::cout << "\ntotal " << total << '\n';
+		std::cout << nps << " nps" << std::endl;
 	}
 }

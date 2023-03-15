@@ -22,15 +22,22 @@
 
 #include "move.h"
 #include "position.h"
+#include "eval/material.h"
 
 namespace polaris
 {
-	void generateNoisy(MoveList &noisy, const Position &pos);
-	void generateQuiet(MoveList &quiet, const Position &pos);
+	struct ScoredMove
+	{
+		Move move;
+		i32 score;
+	};
 
-	void generateAll(MoveList &dst, const Position &pos);
+	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
-	void orderMoves(MoveList &moves, const Position &pos, Move first = NullMove);
+	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
+	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
+
+	void generateAll(ScoredMoveList &dst, const Position &pos);
 
 	struct MovegenStage
 	{
@@ -41,156 +48,133 @@ namespace polaris
 		static constexpr i32 End = 4;
 	};
 
-	/*
 	template <bool GenerateQuiets = true>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, Move hashMove)
-			: m_pos{pos},
-			  m_hashMove{hashMove} {}
-
-		~MoveGenerator() = default;
-
-		[[nodiscard]] inline Move next()
-		{
-			while (m_idx >= m_data.size())
-			{
-				++m_stage;
-
-				m_idx = m_data.size();
-
-				switch (m_stage)
-				{
-				case MovegenStage::Hash:
-					if (m_hashMove)
-						return m_hashMove;
-					break;
-
-				case MovegenStage::Noisy:
-					generateNoisy(m_data, m_pos);
-					orderMoves(m_data, m_pos);
-					break;
-
-				case MovegenStage::Quiet:
-					if constexpr(GenerateQuiets)
-						generateQuiet(m_data, m_pos);
-					break;
-
-				default: return NullMove;
-				}
-
-				if (m_idx < m_data.size() && m_data[m_idx] == m_hashMove)
-					++m_idx;
-			}
-
-			auto move = m_data[m_idx++];
-
-			if (m_hashMove && move == m_hashMove)
-				move = m_data[m_idx++];
-
-			return move;
-		}
-
-	private:
-		const Position &m_pos;
-
-		i32 m_stage{MovegenStage::Start};
-
-		Move m_hashMove{};
-
-		u32 m_idx{};
-		MoveList m_data{};
-	};
-	 */
-
-	template <bool GenerateQuiets = true>
-	class MoveGenerator
-	{
-	public:
-		MoveGenerator(const Position &pos, MoveList &moves, Move hashMove)
+		MoveGenerator(const Position &pos, ScoredMoveList &moves, Move hashMove)
 			: m_pos{pos},
 			  m_moves{moves},
 			  m_hashMove{hashMove}
 		{
 			m_moves.clear();
-			m_moves.fill(NullMove);
+			m_moves.fill({NullMove, 0});
 		}
 
 		~MoveGenerator() = default;
 
 		[[nodiscard]] inline Move next()
 		{
-			while (m_idx >= m_moves.size())
+			while (true)
 			{
-				++m_stage;
-
-				m_idx = m_moves.size();
-
-				switch (m_stage)
+				while (m_idx == m_moves.size())
 				{
-				case MovegenStage::Hash:
-					if (m_hashMove)
-						return m_hashMove;
-					break;
+					++m_stage;
 
-				case MovegenStage::Noisy:
-					generateNoisy(m_moves, m_pos);
-					if constexpr(GenerateQuiets)
-						generateQuiet(m_moves, m_pos);
-					orderMoves(m_moves, m_pos, m_hashMove);
-					break;
+					switch (m_stage)
+					{
+					case MovegenStage::Hash:
+						if (m_hashMove)
+							return m_hashMove;
+						break;
 
-				default: return NullMove;
+					case MovegenStage::Noisy:
+						genNoisy();
+						break;
+
+					case MovegenStage::Quiet:
+						if constexpr (GenerateQuiets)
+						{
+							genQuiet();
+							break;
+						}
+
+					default:
+						return NullMove;
+					}
 				}
+
+				if (m_idx == m_moves.size())
+					return NullMove;
+
+			//	swapBest();
+				const auto move = m_moves[m_idx++];
+
+				if (!m_hashMove || move.move != m_hashMove)
+					return move.move;
 			}
-
-			auto move = m_moves[m_idx++];
-
-			if (m_hashMove && move == m_hashMove)
-				move = m_moves[m_idx++];
-
-			return move;
 		}
 
 	private:
+		static constexpr auto PromoScores = std::array {
+			 1, // knight
+			-2, // bishop
+			-1, // rook
+			 2  // queen
+		};
+
+		inline void scoreNoisy()
+		{
+			for (i32 i = m_idx; i < m_moves.size(); ++i)
+			{
+				//TODO see
+				auto &move = m_moves[i];
+
+				const auto srcValue = eval::pieceValue(m_pos.pieceAt(move.move.src())).midgame;
+				// 0 for non-capture promo
+				const auto dstValue = move.move.type() == MoveType::EnPassant
+					? eval::values::Pawn.midgame
+					: eval::pieceValue(m_pos.pieceAt(move.move.dst())).midgame;
+
+				move.score = (dstValue - srcValue) * 2000 + dstValue;
+
+				if (move.move.type() == MoveType::Promotion)
+					move.score += PromoScores[move.move.targetIdx()] * 2000 * 2000;
+			}
+		}
+
+		inline void scoreQuiet()
+		{
+			for (i32 i = m_idx; i < m_moves.size(); ++i)
+			{
+				auto &move = m_moves[i];
+				// knight promos first, rook then bishop promos last
+				//TODO capture promos first
+				if (move.move.type() == MoveType::Promotion)
+					move.score = PromoScores[move.move.targetIdx()];
+				// leave rest unsorted
+			}
+		}
+
+		inline void genNoisy()
+		{
+			generateNoisy(m_moves, m_pos);
+			scoreNoisy();
+			std::sort(m_moves.begin() + m_idx, m_moves.end(), [](const auto &a, const auto &b)
+			{
+				return a.score > b.score;
+			});
+		}
+
+		inline void genQuiet()
+		{
+			generateQuiet(m_moves, m_pos);
+			scoreQuiet();
+			std::sort(m_moves.begin() + m_idx, m_moves.end(), [](const auto &a, const auto &b)
+			{
+				return a.score > b.score;
+			});
+		}
+
 		const Position &m_pos;
 
 		i32 m_stage{MovegenStage::Start};
 
-		MoveList &m_moves;
+		ScoredMoveList &m_moves;
 		Move m_hashMove{};
 
 		u32 m_idx{};
 	};
-
-#if 0
-	template <bool GenerateQuiets = true>
-	class KnownGoodMoveGenerator
-	{
-	public:
-		KnownGoodMoveGenerator(const Position &pos, Move hashMove)
-		{
-			generateNoisy(m_data, pos);
-
-			if constexpr(GenerateQuiets)
-				generateQuiet(m_data, pos);
-
-			orderMoves(m_data, pos, hashMove);
-		}
-
-		~KnownGoodMoveGenerator() = default;
-
-		[[nodiscard]] inline Move next()
-		{
-			return m_data[m_idx++];
-		}
-
-	private:
-		u32 m_idx{};
-		MoveList m_data{};
-	};
-#endif
 
 	using QMoveGenerator = MoveGenerator<false>;
 }

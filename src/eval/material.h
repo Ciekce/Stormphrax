@@ -30,22 +30,15 @@ namespace polaris::eval
 
 	namespace values
 	{
-		namespace current
-		{
-			constexpr auto Pawn = S(90, 100);
-			constexpr auto Knight = S(340, 300);
-			constexpr auto Bishop = S(350, 321);
-			constexpr auto Rook = S(502, 574);
-			constexpr auto Queen = S(1115, 1054);
-		}
+		// keep below 2000
+		constexpr auto Pawn = S(90, 100);
+		constexpr auto Knight = S(340, 300);
+		constexpr auto Bishop = S(350, 321);
+		constexpr auto Rook = S(502, 574);
+		constexpr auto Queen = S(1115, 1054);
 
-		constexpr auto King = S(std::numeric_limits<Score>::max() / 2, std::numeric_limits<Score>::max() / 2);
-
-		constexpr auto Pawn = current::Pawn;
-		constexpr auto Knight = current::Knight;
-		constexpr auto Bishop = current::Bishop;
-		constexpr auto Rook = current::Rook;
-		constexpr auto Queen = current::Queen;
+	//	constexpr auto King = S(std::numeric_limits<Score>::max() / 2, std::numeric_limits<Score>::max() / 2);
+		constexpr auto King = S(0, 0);
 
 		constexpr std::array BaseValues
 		{

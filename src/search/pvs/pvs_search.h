@@ -30,6 +30,7 @@
 #include "../../util/timer.h"
 #include "../../ttable.h"
 #include "../../eval/eval.h"
+#include "../../movegen.h"
 
 namespace polaris::search::pvs
 {
@@ -57,7 +58,7 @@ namespace polaris::search::pvs
 		struct SearchStackEntry
 		{
 			Score eval{};
-			MoveList moves{};
+			ScoredMoveList moves{};
 		};
 
 		struct ThreadData

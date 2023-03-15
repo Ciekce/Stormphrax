@@ -443,14 +443,14 @@ namespace polaris::uci
 				pos.regen();
 			else if (command == "moves")
 			{
-				MoveList moves{};
+				ScoredMoveList moves{};
 				generateAll(moves, pos);
 
 				for (u32 i = 0; i < moves.size(); ++i)
 				{
 					if (i > 0)
 						std::cout << ' ';
-					std::cout << moveToString(moves[i]);
+					std::cout << moveToString(moves[i].move);
 				}
 
 				std::cout << std::endl;
