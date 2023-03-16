@@ -376,6 +376,24 @@ namespace polaris
 			else return m_whiteKing;
 		}
 
+		[[nodiscard]] inline auto king(Color c) const
+		{
+			return c == Color::Black ? m_blackKing : m_whiteKing;
+		}
+
+		template <Color C>
+		[[nodiscard]] inline auto oppKing() const
+		{
+			if constexpr(C == Color::Black)
+				return m_whiteKing;
+			else return m_blackKing;
+		}
+
+		[[nodiscard]] inline auto oppKing(Color c) const
+		{
+			return c == Color::Black ? m_whiteKing : m_blackKing;
+		}
+
 		[[nodiscard]] inline bool isCheck() const
 		{
 			return !m_checkers.empty();

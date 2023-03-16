@@ -343,7 +343,7 @@ namespace polaris::search::pvs
 
 			auto guard = pos.applyMove(move);
 
-			if (pos.isAttacked(us == Color::Black ? pos.blackKing() : pos.whiteKing(), them))
+			if (pos.isAttacked(pos.king(us), them))
 				continue;
 
 			++legalMoves;
@@ -469,7 +469,7 @@ namespace polaris::search::pvs
 		{
 			auto guard = pos.applyMove(move);
 
-			if (pos.isAttacked(us == Color::Black ? pos.blackKing() : pos.whiteKing(), oppColor(us)))
+			if (pos.isAttacked(pos.king(us), oppColor(us)))
 				continue;
 
 			const auto score = pos.isDrawn() ? 0 : -qsearch(data, -beta, -alpha, ply);

@@ -46,7 +46,7 @@ namespace polaris
 			{
 				const auto guard = pos.applyMove<false>(move);
 
-				if (pos.isAttacked(opp == Color::Black ? pos.whiteKing() : pos.blackKing(), opp))
+				if (pos.isAttacked(pos.oppKing(opp), opp))
 					continue;
 
 				total += doPerft(pos, depth);
@@ -73,7 +73,7 @@ namespace polaris
 		{
 			const auto guard = pos.applyMove<false>(move);
 
-			if (pos.isAttacked(opp == Color::Black ? pos.whiteKing() : pos.blackKing(), opp))
+			if (pos.isAttacked(pos.oppKing(opp), opp))
 				continue;
 
 			const auto value = doPerft(pos, depth);

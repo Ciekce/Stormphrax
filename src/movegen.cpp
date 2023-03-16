@@ -314,8 +314,7 @@ namespace polaris
 
 			dstMask = pos.checkers();
 
-			pawnDstMask = kingDstMask | (promos & rayTo(us == Color::Black ? pos.blackKing() : pos.whiteKing(),
-				pos.checkers().lowestSquare()));
+			pawnDstMask = kingDstMask | (promos & rayTo(pos.king(us), pos.checkers().lowestSquare()));
 
 			// pawn that just moved is the checker
 			if (!(pos.checkers() & epPawn).empty())
@@ -350,8 +349,7 @@ namespace polaris
 				return;
 			}
 
-			pawnDstMask = dstMask = rayTo(us == Color::Black ? pos.blackKing() : pos.whiteKing(),
-				pos.checkers().lowestSquare());
+			pawnDstMask = dstMask = rayTo(pos.king(us), pos.checkers().lowestSquare());
 
 			pawnDstMask |= pos.checkers() & boards::promotionRank(us);
 		}
@@ -391,8 +389,7 @@ namespace polaris
 			}
 
 			pawnDstMask = dstMask = pos.checkers()
-				| rayTo(us == Color::Black ? pos.blackKing() : pos.whiteKing(),
-					pos.checkers().lowestSquare());
+				| rayTo(pos.king(us), pos.checkers().lowestSquare());
 
 			if (!(pos.checkers() & epPawn).empty())
 				pawnDstMask |= epMask;
