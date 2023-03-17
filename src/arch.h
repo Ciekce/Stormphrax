@@ -36,7 +36,7 @@
 	#else
 		#define PS_HAS_POPCNT 0
 	#endif
-#elif defined(PS_HASWELL)
+#elif defined(PS_MODERN)
 	#define PS_HAS_BMI2 0
 	#define PS_HAS_BMI1 1
 	#define PS_HAS_POPCNT 1

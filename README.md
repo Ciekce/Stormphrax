@@ -24,7 +24,7 @@ heavily WIP and currently pretty basic
 
 ### builds
 `bmi2`: requires BMI2 and assumes fast pext and pdep (i.e. no zen1 and 2)  
-`haswell`: requires BMI (blsi, blsr, tzcnt)  
+`modern`: requires BMI (blsi, blsr, tzcnt) - primarily useful for pre-zen3 amd cpus back to piledriver  
 `popcnt`: just needs popcnt  
 `compat`: should run on anything back to an original core 2
 

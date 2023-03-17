@@ -33,14 +33,14 @@ set(POLARIS_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/
 
 add_executable(polaris-native ${POLARIS_COMMON_SRC} ${POLARIS_BMI2_SRC} ${POLARIS_NON_BMI2_SRC})
 add_executable(polaris-bmi2 ${POLARIS_COMMON_SRC} ${POLARIS_BMI2_SRC})
-add_executable(polaris-haswell ${POLARIS_COMMON_SRC} ${POLARIS_NON_BMI2_SRC})
+add_executable(polaris-modern ${POLARIS_COMMON_SRC} ${POLARIS_NON_BMI2_SRC})
 add_executable(polaris-popcnt ${POLARIS_COMMON_SRC} ${POLARIS_NON_BMI2_SRC})
 add_executable(polaris-compat ${POLARIS_COMMON_SRC} ${POLARIS_NON_BMI2_SRC})
 
 if(NOT MSVC OR PS_CLANG)
 	target_compile_options(polaris-native PUBLIC -march=native)
-	target_compile_options(polaris-bmi2 PUBLIC -march=skylake)
-	target_compile_options(polaris-haswell PUBLIC -march=haswell)
+	target_compile_options(polaris-bmi2 PUBLIC -march=haswell)
+	target_compile_options(polaris-modern PUBLIC -march=bdver2) # piledriver
 	target_compile_options(polaris-popcnt PUBLIC -march=nehalem)
 	target_compile_options(polaris-compat PUBLIC -march=core2)
 endif()
@@ -48,13 +48,13 @@ endif()
 if(NOT MSVC)
 	target_compile_options(polaris-native PUBLIC -mtune=native)
 	target_compile_options(polaris-bmi2 PUBLIC -mtune=skylake)
-	target_compile_options(polaris-haswell PUBLIC -mtune=haswell)
+	target_compile_options(polaris-modern PUBLIC -mtune=znver2) # zen 2
 	target_compile_options(polaris-popcnt PUBLIC -mtune=sandybridge)
 	target_compile_options(polaris-compat PUBLIC -mtune=penryn)
 elseif(MSVC AND PS_CLANG)
 	target_compile_options(polaris-native PUBLIC /tune:native)
 	target_compile_options(polaris-bmi2 PUBLIC /tune:skylake)
-	target_compile_options(polaris-haswell PUBLIC /tune:haswell)
+	target_compile_options(polaris-modern PUBLIC /tune:znver2) # zen 2
 	target_compile_options(polaris-popcnt PUBLIC /tune:sandybridge)
 	target_compile_options(polaris-compat PUBLIC /tune:penryn)
 endif()
