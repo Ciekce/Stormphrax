@@ -327,6 +327,10 @@ namespace polaris::search::pvs
 			}
 		}
 
+		// check extension
+		if (inCheck)
+			++depth;
+
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
