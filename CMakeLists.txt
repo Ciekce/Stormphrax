@@ -40,7 +40,7 @@ add_executable(polaris-compat ${POLARIS_COMMON_SRC} ${POLARIS_NON_BMI2_SRC})
 if(NOT MSVC OR PS_CLANG)
 	target_compile_options(polaris-native PUBLIC -march=native)
 	target_compile_options(polaris-bmi2 PUBLIC -march=haswell)
-	target_compile_options(polaris-modern PUBLIC -march=bdver2) # piledriver
+	target_compile_options(polaris-modern PUBLIC -march=bdver2 -mno-tbm -mno-sse4a) # piledriver without amd-specific extensions
 	target_compile_options(polaris-popcnt PUBLIC -march=nehalem)
 	target_compile_options(polaris-compat PUBLIC -march=core2)
 endif()
