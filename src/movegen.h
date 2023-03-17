@@ -23,6 +23,7 @@
 #include "move.h"
 #include "position.h"
 #include "eval/material.h"
+#include "see.h"
 
 namespace polaris
 {
@@ -51,11 +52,12 @@ namespace polaris
 	{
 		static constexpr i32 Start = 0;
 		static constexpr i32 Hash = 1;
-		static constexpr i32 Noisy = 2;
+		static constexpr i32 GoodNoisy = 2;
 		static constexpr i32 Killer1 = 3;
 		static constexpr i32 Killer2 = 4;
 		static constexpr i32 Quiet = 5;
-		static constexpr i32 End = 6;
+		static constexpr i32 BadNoisy = 6;
+		static constexpr i32 End = 7;
 	};
 
 	template <bool Quiescence = false>
@@ -79,7 +81,7 @@ namespace polaris
 		{
 			while (true)
 			{
-				while (m_idx == m_moves.size())
+				while (m_idx == m_moves.size() || m_idx == m_goodNoisyEnd)
 				{
 					++m_stage;
 
@@ -90,7 +92,7 @@ namespace polaris
 							return m_hashMove;
 						break;
 
-					case MovegenStage::Noisy:
+					case MovegenStage::GoodNoisy:
 						genNoisy();
 						if constexpr(Quiescence)
 							m_stage = MovegenStage::End;
@@ -112,6 +114,9 @@ namespace polaris
 
 					case MovegenStage::Quiet:
 						genQuiet();
+						break;
+
+					case MovegenStage::BadNoisy:
 						break;
 
 					default:
@@ -161,12 +166,15 @@ namespace polaris
 
 				if (move.move.type() == MoveType::Promotion)
 					move.score += PromoScores[move.move.targetIdx()] * 2000 * 2000;
+
+				if (dstValue > 0 && !see::see(m_pos, move.move))
+					move.score -= 8 * 2000 * 2000;
 			}
 		}
 
 		inline void scoreQuiet()
 		{
-			for (i32 i = m_idx; i < m_moves.size(); ++i)
+			for (i32 i = m_noisyEnd; i < m_moves.size(); ++i)
 			{
 				auto &move = m_moves[i];
 				// knight promos first, rook then bishop promos last
@@ -181,20 +189,32 @@ namespace polaris
 		{
 			generateNoisy(m_moves, m_pos);
 			scoreNoisy();
+
 			std::sort(m_moves.begin() + m_idx, m_moves.end(), [](const auto &a, const auto &b)
 			{
 				return a.score > b.score;
 			});
+
+			m_noisyEnd = m_moves.size();
+
+			m_goodNoisyEnd = std::find_if(m_moves.begin() + m_idx, m_moves.end(), [](const auto &v)
+			{
+				return v.score < -4 * 2000 * 2000;
+			}) - m_moves.begin();
 		}
 
 		inline void genQuiet()
 		{
 			generateQuiet(m_moves, m_pos);
 			scoreQuiet();
+
+			// also sorts bad noisy moves to the end
 			std::sort(m_moves.begin() + m_idx, m_moves.end(), [](const auto &a, const auto &b)
 			{
 				return a.score > b.score;
 			});
+
+			m_goodNoisyEnd = 9999;
 		}
 
 		const Position &m_pos;
@@ -208,6 +228,9 @@ namespace polaris
 		Move m_killer2{};
 
 		u32 m_idx{};
+
+		u32 m_noisyEnd{};
+		u32 m_goodNoisyEnd{};
 	};
 
 	using QMoveGenerator = MoveGenerator<true>;

@@ -310,6 +310,30 @@ namespace polaris
 			return (score.midgame * m_phase + score.endgame * (24 - m_phase)) / 24;
 		}
 
+		[[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const
+		{
+			Bitboard attackers{};
+
+			const auto queens = blackQueens() | whiteQueens();
+
+			const auto rooks = queens | blackRooks() | whiteRooks();
+			attackers |= rooks & attacks::getRookAttacks(square, occupancy);
+
+			const auto bishops = queens | blackBishops() | whiteBishops();
+			attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
+
+			attackers |= blackPawns() & attacks::getPawnAttacks(square, Color::White);
+			attackers |= whitePawns() & attacks::getPawnAttacks(square, Color::Black);
+
+			const auto knights = blackKnights() | whiteKnights();
+			attackers |= knights & attacks::getKnightAttacks(square);
+
+			const auto kings = blackKings() | whiteKings();
+			attackers |= kings & attacks::getKingAttacks(square);
+
+			return attackers;
+		}
+
 		[[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const
 		{
 			Bitboard attackers{};
