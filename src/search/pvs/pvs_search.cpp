@@ -72,6 +72,7 @@ namespace polaris::search::pvs
 		for (auto &thread : m_threads)
 		{
 			thread.pawnCache.clear();
+			std::fill(thread.stack.begin(), thread.stack.end(), SearchStackEntry{});
 		}
 	}
 
