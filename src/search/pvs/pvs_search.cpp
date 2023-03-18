@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 #include "../../uci.h"
 #include "../../movegen.h"
@@ -38,6 +39,30 @@ namespace polaris::search::pvs
 
 		constexpr i32 MinNullmoveDepth = 3;
 		constexpr i32 MinLmrDepth = 3;
+
+		// values from viriditas
+		//TODO tune for polaris
+		constexpr f64 LmrBase = 0.77;
+		constexpr f64 LmrDivisor = 2.36;
+
+		[[nodiscard]] std::array<std::array<i32, 256>, 256> generateLmrTable()
+		{
+			std::array<std::array<i32, 256>, 256> dst{};
+
+			// neither can be 0
+			for (i32 depth = 1; depth < 256; ++depth)
+			{
+				for (i32 moves = 1; moves < 256; ++moves)
+				{
+					dst[depth][moves] = static_cast<i32>(LmrBase
+						+ std::log(static_cast<f64>(depth)) * std::log(static_cast<f64>(moves)) / LmrDivisor);
+				}
+			}
+
+			return dst;
+		}
+
+		const auto LmrTable = generateLmrTable();
 	}
 
 	PvsSearcher::PvsSearcher(std::optional<size_t> hashSize)
@@ -361,18 +386,18 @@ namespace polaris::search::pvs
 			{
 				auto newDepth = newBaseDepth;
 
-				// lmr (~124 elo)
+				// lmr
 				if (depth >= MinLmrDepth
 					&& !inCheck // we are in check
 					&& !pos.isCheck() // this move gives check
-					&& legalMoves > 3)
+					&& generator.stage() >= MovegenStage::Quiet)
 				{
-					auto lmr = legalMoves < 6 ? 1 : (depth / 3);
+					auto lmr = LmrTable[depth][legalMoves];
 
 					if (pv)
-						lmr = std::max(1, (lmr * 2) / 3);
+						lmr = std::max(1, lmr - 1);
 
-					newDepth -= lmr;
+					newDepth = std::clamp(newDepth - lmr, 1, newDepth);
 				}
 
 				if (pv && legalMoves == 1)
