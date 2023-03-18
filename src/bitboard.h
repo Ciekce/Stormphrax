@@ -42,7 +42,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto up()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return Down;
 			else return Up;
 		}
@@ -50,7 +50,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto upLeft()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return DownLeft;
 			else return UpLeft;
 		}
@@ -58,7 +58,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto upRight()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return DownRight;
 			else return UpRight;
 		}
@@ -66,7 +66,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto down()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return Up;
 			else return Down;
 		}
@@ -74,7 +74,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto downLeft()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return UpLeft;
 			else return DownLeft;
 		}
@@ -82,7 +82,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto downRight()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return UpRight;
 			else return DownRight;
 		}
@@ -323,7 +323,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftUpRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftDown();
 			else return shiftUp();
 		}
@@ -331,7 +331,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftUpLeftRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftDownLeft();
 			else return shiftUpLeft();
 		}
@@ -339,7 +339,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftUpRightRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftDownRight();
 			else return shiftUpRight();
 		}
@@ -347,7 +347,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftDownRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftUp();
 			else return shiftDown();
 		}
@@ -355,7 +355,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftDownLeftRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftUpLeft();
 			else return shiftDownLeft();
 		}
@@ -363,7 +363,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard shiftDownRightRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return shiftUpRight();
 			else return shiftDownRight();
 		}
@@ -389,7 +389,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard fillUpRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return fillDown();
 			else return fillUp();
 		}
@@ -397,7 +397,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] constexpr Bitboard fillDownRelative() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return fillUp();
 			else return fillDown();
 		}
@@ -464,7 +464,7 @@ namespace polaris
 		template <Color C>
 		constexpr auto promotionRank()
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return Rank1;
 			else return Rank8;
 		}

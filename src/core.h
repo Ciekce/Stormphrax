@@ -242,7 +242,7 @@ namespace polaris
 	template <Color C>
 	constexpr i32 relativeRank(i32 rank)
 	{
-		if constexpr(C == Color::Black)
+		if constexpr (C == Color::Black)
 			return 7 - rank;
 		else return rank;
 	}

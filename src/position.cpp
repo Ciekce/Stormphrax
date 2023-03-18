@@ -130,12 +130,12 @@ namespace polaris
 
 		if (!move)
 		{
-			if constexpr(History)
+			if constexpr (History)
 				m_history.push_back({prevKey, prevPawnKey, m_material, m_checkers, move, prevFlags,
 					static_cast<u16>(m_halfmove), Piece::None, prevEnPassant});
 
 #ifndef NDEBUG
-			if constexpr(VerifyAll)
+			if constexpr (VerifyAll)
 			{
 				if (!verify<UpdateMaterial, History>())
 				{
@@ -246,12 +246,12 @@ namespace polaris
 
 		m_phase = std::clamp(m_phase, 0, 24);
 
-		if constexpr(History)
+		if constexpr (History)
 			m_history.push_back({prevKey, prevPawnKey, prevMaterial, prevCheckers, move, prevFlags,
 				static_cast<u16>(prevHalfmove), captured, prevEnPassant});
 
 #ifndef NDEBUG
-		if constexpr(VerifyAll)
+		if constexpr (VerifyAll)
 		{
 			if (!verify<UpdateMaterial, History>())
 			{
@@ -312,7 +312,7 @@ namespace polaris
 		}
 
 #ifndef NDEBUG
-		if constexpr(VerifyAll)
+		if constexpr (VerifyAll)
 		{
 			if (!(m_history.empty() ? verify<true, false>() : verify<true, true>()))
 			{
@@ -481,10 +481,10 @@ namespace polaris
 
 			m_phase -= PhaseInc[static_cast<i32>(captured)];
 
-			if constexpr(UpdateMaterial)
+			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(captured, square);
 
-			if constexpr(UpdateKey)
+			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(captured, square);
 				m_key ^= hash;
@@ -506,10 +506,10 @@ namespace polaris
 
 		m_phase += PhaseInc[static_cast<size_t>(piece)];
 
-		if constexpr(UpdateMaterial)
+		if constexpr (UpdateMaterial)
 			m_material += eval::pieceSquareValue(piece, square);
 
-		if constexpr(UpdateKey)
+		if constexpr (UpdateKey)
 			m_key ^= hash::pieceSquare(piece, square);
 
 		return captured;
@@ -531,10 +531,10 @@ namespace polaris
 
 			m_phase -= PhaseInc[static_cast<size_t>(piece)];
 
-			if constexpr(UpdateMaterial)
+			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(piece, square);
 
-			if constexpr(UpdateKey)
+			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(piece, square);
 				m_key ^= hash;
@@ -563,10 +563,10 @@ namespace polaris
 
 			m_phase -= PhaseInc[static_cast<size_t>(captured)];
 
-			if constexpr(UpdateMaterial)
+			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(captured, dst);
 
-			if constexpr(UpdateKey)
+			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(captured, dst);
 				m_key ^= hash;
@@ -588,10 +588,10 @@ namespace polaris
 		else if (piece == Piece::WhiteKing)
 			m_whiteKing = dst;
 
-		if constexpr(UpdateMaterial)
+		if constexpr (UpdateMaterial)
 			m_material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
 
-		if constexpr(UpdateKey)
+		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
 			m_key ^= hash;
@@ -617,11 +617,11 @@ namespace polaris
 
 			m_phase -= PhaseInc[static_cast<size_t>(captured)];
 
-			if constexpr(UpdateMaterial)
+			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(captured, dst);
 
 			// cannot capture a pawn when promoting
-			if constexpr(UpdateKey)
+			if constexpr (UpdateKey)
 				m_key ^= hash::pieceSquare(captured, dst);
 		}
 
@@ -639,11 +639,11 @@ namespace polaris
 		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
 		occupancy(color) ^= mask;
 
-		if constexpr(UpdateMaterial)
+		if constexpr (UpdateMaterial)
 			m_material += eval::pieceSquareValue(coloredTarget, dst)
 				- eval::pieceSquareValue(pawn, src);
 
-		if constexpr(UpdateKey)
+		if constexpr (UpdateKey)
 		{
 			const auto pawnHash = hash::pieceSquare(pawn, src);
 			m_key ^= pawnHash ^ hash::pieceSquare(coloredTarget, dst);
@@ -700,11 +700,11 @@ namespace polaris
 		board(pawn) ^= mask;
 		occupancy(color) ^= mask;
 
-		if constexpr(UpdateMaterial)
+		if constexpr (UpdateMaterial)
 			m_material += eval::pieceSquareValue(pawn, dst)
 				- eval::pieceSquareValue(pawn, src);
 
-		if constexpr(UpdateKey)
+		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(pawn, src) ^ hash::pieceSquare(pawn, dst);
 			m_key ^= hash;
@@ -728,10 +728,10 @@ namespace polaris
 
 		// pawns do not affect game phase
 
-		if constexpr(UpdateMaterial)
+		if constexpr (UpdateMaterial)
 			m_material -= eval::pieceSquareValue(enemyPawn, pawnSquare);
 
-		if constexpr(UpdateKey)
+		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(enemyPawn, pawnSquare);
 			m_key ^= hash;// ^ hash::enPassant(file);
@@ -907,7 +907,7 @@ namespace polaris
 			| board(Piece::WhiteQueen)
 			| board(Piece::WhiteKing);
 
-		if constexpr(EnPassantFromMoves)
+		if constexpr (EnPassantFromMoves)
 		{
 			m_enPassant = Square::None;
 
@@ -1001,7 +1001,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 		out << std::dec;
 
-		if constexpr(CheckMaterial)
+		if constexpr (CheckMaterial)
 		{
 			if (m_material != regened.m_material)
 			{

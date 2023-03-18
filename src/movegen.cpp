@@ -212,7 +212,7 @@ namespace polaris
 		{
 			precalculated<BasePiece::King, attacks::KingAttacks>(dst, pos, dstMask);
 
-			if constexpr(Castling)
+			if constexpr (Castling)
 			{
 				if (!pos.isCheck())
 				{

@@ -100,7 +100,7 @@ namespace polaris::util
 
 	inline std::optional<size_t> tryParseSize(const std::string &value, u32 radix = 10)
 	{
-		if constexpr(sizeof(size_t) == 8)
+		if constexpr (sizeof(size_t) == 8)
 			return tryParseU64(value, radix);
 		else return tryParseU32(value, radix);
 	}

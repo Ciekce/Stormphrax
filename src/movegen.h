@@ -94,7 +94,7 @@ namespace polaris
 
 					case MovegenStage::GoodNoisy:
 						genNoisy();
-						if constexpr(Quiescence)
+						if constexpr (Quiescence)
 							m_stage = MovegenStage::End;
 						break;
 

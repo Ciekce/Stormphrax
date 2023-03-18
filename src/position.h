@@ -105,7 +105,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto occupancy() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return m_blackPop;
 			else return m_whitePop;
 		}
@@ -168,7 +168,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto pawns() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackPawns();
 			else return whitePawns();
 		}
@@ -176,7 +176,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto knights() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackKnights();
 			else return whiteKnights();
 		}
@@ -184,7 +184,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto bishops() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackBishops();
 			else return whiteBishops();
 		}
@@ -192,7 +192,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto rooks() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackRooks();
 			else return whiteRooks();
 		}
@@ -200,7 +200,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto queens() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackQueens();
 			else return whiteQueens();
 		}
@@ -208,7 +208,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto kings() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackKings();
 			else return whiteKings();
 		}
@@ -216,7 +216,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto minors() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackMinors();
 			else return whiteMinors();
 		}
@@ -224,7 +224,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto majors() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackMajors();
 			else return whiteMajors();
 		}
@@ -232,7 +232,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto nonPk() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return blackNonPk();
 			else return whiteNonPk();
 		}
@@ -395,7 +395,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return m_blackKing;
 			else return m_whiteKing;
 		}
@@ -408,7 +408,7 @@ namespace polaris
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
-			if constexpr(C == Color::Black)
+			if constexpr (C == Color::Black)
 				return m_whiteKing;
 			else return m_blackKing;
 		}
