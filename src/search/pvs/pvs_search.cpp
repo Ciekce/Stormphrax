@@ -40,7 +40,7 @@ namespace polaris::search::pvs
 		constexpr i32 MinNullmoveDepth = 3;
 		constexpr i32 MinLmrDepth = 3;
 
-		// values from viriditas
+		// values from viridithas
 		//TODO tune for polaris
 		constexpr f64 LmrBase = 0.77;
 		constexpr f64 LmrDivisor = 2.36;
