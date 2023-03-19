@@ -196,7 +196,7 @@ namespace polaris
 			while (!pieces.empty())
 			{
 				const auto srcSquare = pieces.popLowestSquare();
-				const auto attacks = Attacks[static_cast<size_t>(srcSquare)];
+				const auto attacks = Attacks[static_cast<usize>(srcSquare)];
 
 				pushStandards(dst, srcSquare, attacks & dstMask);
 			}
@@ -314,7 +314,7 @@ namespace polaris
 
 			dstMask = pos.checkers();
 
-			pawnDstMask = kingDstMask | (promos & rayTo(pos.king(us), pos.checkers().lowestSquare()));
+			pawnDstMask = kingDstMask | (promos & rayBetween(pos.king(us), pos.checkers().lowestSquare()));
 
 			// pawn that just moved is the checker
 			if (!(pos.checkers() & epPawn).empty())
@@ -349,7 +349,7 @@ namespace polaris
 				return;
 			}
 
-			pawnDstMask = dstMask = rayTo(pos.king(us), pos.checkers().lowestSquare());
+			pawnDstMask = dstMask = rayBetween(pos.king(us), pos.checkers().lowestSquare());
 
 			pawnDstMask |= pos.checkers() & boards::promotionRank(us);
 		}
@@ -389,7 +389,7 @@ namespace polaris
 			}
 
 			pawnDstMask = dstMask = pos.checkers()
-				| rayTo(pos.king(us), pos.checkers().lowestSquare());
+				| rayBetween(pos.king(us), pos.checkers().lowestSquare());
 
 			if (!(pos.checkers() & epPawn).empty())
 				pawnDstMask |= epMask;

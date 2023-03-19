@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 namespace polaris
 {
@@ -34,6 +35,8 @@ namespace polaris
 
 	using f32 = float;
 	using f64 = double;
+
+	using usize = std::size_t;
 }
 
 #define I64(V) INT64_C(V)

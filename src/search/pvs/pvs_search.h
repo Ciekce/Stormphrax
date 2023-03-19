@@ -37,7 +37,7 @@ namespace polaris::search::pvs
 	class PvsSearcher final : public ISearcher
 	{
 	public:
-		explicit PvsSearcher(std::optional<size_t> hashSize = {});
+		explicit PvsSearcher(std::optional<usize> hashSize = {});
 		~PvsSearcher() final;
 
 		void newGame() final;
@@ -48,7 +48,7 @@ namespace polaris::search::pvs
 		bool searching() final;
 
 		void clearHash() final;
-		void setHashSize(size_t size) final;
+		void setHashSize(usize size) final;
 
 	private:
 		static constexpr i32 IdleFlag = 0;

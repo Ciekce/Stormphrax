@@ -29,7 +29,7 @@ namespace polaris::search
 {
 	namespace
 	{
-		using SearcherFunc = std::function<std::unique_ptr<search::ISearcher>(std::optional<size_t>)>;
+		using SearcherFunc = std::function<std::unique_ptr<search::ISearcher>(std::optional<usize>)>;
 
 		class Searchers
 		{
@@ -43,7 +43,7 @@ namespace polaris::search
 			}
 
 			[[nodiscard]] inline std::optional<std::unique_ptr<ISearcher>> create(const std::string &name,
-				std::optional<size_t> hashSize)
+				std::optional<usize> hashSize)
 			{
 				if (const auto itr = m_searchers.find(name); itr != m_searchers.end())
 					return itr->second(hashSize);
@@ -83,7 +83,7 @@ namespace polaris::search
 	}
 
 	std::optional<std::unique_ptr<ISearcher>> ISearcher::create(const std::string &name,
-		std::optional<size_t> hashSize)
+		std::optional<usize> hashSize)
 	{
 		return s_searchers.create(name, hashSize);
 	}

@@ -23,18 +23,18 @@
 
 namespace polaris
 {
-	TTable::TTable(size_t size)
+	TTable::TTable(usize size)
 	{
 		resize(size);
 	}
 
-	void TTable::resize(size_t size)
+	void TTable::resize(usize size)
 	{
 		clear();
 
 		size *= 1024 * 1024;
 
-		const size_t capacity = std::bit_floor(size / sizeof(TTableEntry));
+		const usize capacity = std::bit_floor(size / sizeof(TTableEntry));
 
 		//TODO handle oom
 		m_table.resize(capacity);

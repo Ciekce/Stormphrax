@@ -462,20 +462,20 @@ namespace polaris
 		constexpr Bitboard All{Bitboard::All};
 
 		template <Color C>
-		constexpr auto promotionRank()
+		[[nodiscard]] constexpr auto promotionRank()
 		{
 			if constexpr (C == Color::Black)
 				return Rank1;
 			else return Rank8;
 		}
 
-		constexpr auto promotionRank(Color c)
+		[[nodiscard]] constexpr auto promotionRank(Color c)
 		{
 			return c == Color::Black ? Rank1 : Rank8;
 		}
 
 		template <Color C>
-		constexpr auto rank(i32 idx)
+		[[nodiscard]] constexpr auto rank(i32 idx)
 		{
 			return Ranks[relativeRank<C>(idx)];
 		}

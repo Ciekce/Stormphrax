@@ -39,7 +39,7 @@ namespace polaris::attacks
 	{
 		std::array<Bitboard, 64> dst{};
 
-		for (size_t i = 0; i < dst.size(); ++i)
+		for (usize i = 0; i < dst.size(); ++i)
 		{
 			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
@@ -62,7 +62,7 @@ namespace polaris::attacks
 	{
 		std::array<Bitboard, 64> dst{};
 
-		for (size_t i = 0; i < dst.size(); ++i)
+		for (usize i = 0; i < dst.size(); ++i)
 		{
 			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
@@ -86,7 +86,7 @@ namespace polaris::attacks
 	{
 		std::array<Bitboard, 64> dst{};
 
-		for (size_t i = 0; i < dst.size(); ++i)
+		for (usize i = 0; i < dst.size(); ++i)
 		{
 			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
@@ -105,18 +105,18 @@ namespace polaris::attacks
 
 	constexpr Bitboard getKnightAttacks(Square src)
 	{
-		return KnightAttacks[static_cast<size_t>(src)];
+		return KnightAttacks[static_cast<usize>(src)];
 	}
 
 	constexpr Bitboard getKingAttacks(Square src)
 	{
-		return KingAttacks[static_cast<size_t>(src)];
+		return KingAttacks[static_cast<usize>(src)];
 	}
 
 	constexpr Bitboard getPawnAttacks(Square src, Color color)
 	{
 		const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
-		return attacks[static_cast<size_t>(src)];
+		return attacks[static_cast<usize>(src)];
 	}
 
 	inline Bitboard getQueenAttacks(Square src, Bitboard occupancy)

@@ -28,7 +28,7 @@ namespace polaris
 {
 	namespace
 	{
-		size_t doPerft(Position &pos, i32 depth)
+		usize doPerft(Position &pos, i32 depth)
 		{
 			if (depth == 0)
 				return 1;
@@ -40,7 +40,7 @@ namespace polaris
 			MovegenData data{};
 			MoveGenerator generator{pos, data, NullMove};
 
-			size_t total{};
+			usize total{};
 
 			while (const auto move = generator.next())
 			{
@@ -67,7 +67,7 @@ namespace polaris
 		MovegenData data{};
 		MoveGenerator generator{pos, data, NullMove};
 
-		size_t total{};
+		usize total{};
 
 		while (const auto move = generator.next())
 		{
@@ -83,7 +83,7 @@ namespace polaris
 		}
 
 		const auto time = util::g_timer.time() - start;
-		const auto nps = static_cast<size_t>(static_cast<f64>(total) / time);
+		const auto nps = static_cast<usize>(static_cast<f64>(total) / time);
 
 		std::cout << "\ntotal " << total << '\n';
 		std::cout << nps << " nps" << std::endl;

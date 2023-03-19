@@ -26,7 +26,7 @@ namespace polaris
 		{
 			out << " +---+---+---+---+---+---+---+---+\n";
 
-			for (size_t file = 0; file < 8; ++file)
+			for (usize file = 0; file < 8; ++file)
 			{
 				out << " | " << (board[toSquare(rank, file)] ? '1' : ' ');
 			}
@@ -42,7 +42,7 @@ namespace polaris
 	{
 		for (i32 rank = 7; rank >= 0; --rank)
 		{
-			for (size_t file = 0; file < 8; ++file)
+			for (usize file = 0; file < 8; ++file)
 			{
 				if (file > 0)
 					out << ' ';
@@ -60,7 +60,7 @@ namespace polaris
 		{
 			out << " +---+---+---+---+---+---+---+---+\n";
 
-			for (size_t file = 0; file < 8; ++file)
+			for (usize file = 0; file < 8; ++file)
 			{
 				out << " | " << pieceToChar(position.pieceAt(rank, file));
 			}

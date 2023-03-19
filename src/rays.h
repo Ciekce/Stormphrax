@@ -62,7 +62,7 @@ namespace polaris
 
 	constexpr auto Rays = generateRays();
 
-	constexpr Bitboard rayTo(Square src, Square dst)
+	constexpr Bitboard rayBetween(Square src, Square dst)
 	{
 		return Rays[static_cast<i32>(src)][static_cast<i32>(dst)];
 	}

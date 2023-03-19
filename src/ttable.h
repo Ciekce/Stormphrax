@@ -28,8 +28,8 @@
 
 namespace polaris
 {
-	constexpr u32 DefaultHashSize = 64;
-	constexpr util::Range<size_t> HashSizeRange{1, 131072};
+	constexpr usize DefaultHashSize = 64;
+	constexpr util::Range<usize> HashSizeRange{1, 131072};
 
 	enum class EntryType : u8
 	{
@@ -38,6 +38,7 @@ namespace polaris
 		Exact
 	};
 
+	//TODO shrincc
 	struct TTableEntry
 	{
 		u64 key;
@@ -47,13 +48,15 @@ namespace polaris
 		EntryType type;
 	};
 
+	static_assert(sizeof(TTableEntry) == 16);
+
 	class TTable
 	{
 	public:
-		explicit TTable(size_t size = DefaultHashSize);
+		explicit TTable(usize size = DefaultHashSize);
 		~TTable() = default;
 
-		void resize(size_t size);
+		void resize(usize size);
 
 		bool probe(TTableEntry &dst, u64 key, i32 depth, Score alpha, Score beta) const;
 		[[nodiscard]] Move probeMove(u64 key) const;
@@ -76,6 +79,6 @@ namespace polaris
 		u64 m_mask{};
 		std::vector<TTableEntry> m_table{};
 
-		size_t m_entries{};
+		usize m_entries{};
 	};
 }

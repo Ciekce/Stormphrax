@@ -172,7 +172,7 @@ namespace polaris
 	constexpr Move NullMove{};
 
 	// assumed upper bound for number of possible moves is 218
-	constexpr size_t DefaultMoveListCapacity = 256;
+	constexpr usize DefaultMoveListCapacity = 256;
 
 	using MoveList = StaticVector<Move, DefaultMoveListCapacity>;
 }

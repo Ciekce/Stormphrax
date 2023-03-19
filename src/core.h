@@ -355,8 +355,6 @@ namespace polaris
 		[[nodiscard]] TaperedScore colored(Color color) const
 		{
 			return color == Color::White ? *this : -*this;
-			//	const auto mult = static_cast<Score>(color);
-			//	return {midgame * mult, endgame * mult};
 		}
 	};
 

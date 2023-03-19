@@ -30,7 +30,7 @@ namespace polaris
 {
 	class Move;
 
-	template <typename T, size_t Capacity>
+	template <typename T, usize Capacity>
 	class StaticVector
 	{
 	public:
@@ -61,18 +61,18 @@ namespace polaris
 
 		[[nodiscard]] inline auto empty() const { return m_size == 0; }
 
-		[[nodiscard]] inline auto operator[](size_t i) const { return m_data[i]; }
+		[[nodiscard]] inline auto operator[](usize i) const { return m_data[i]; }
 
 		[[nodiscard]] inline auto begin() { return m_data.begin(); }
 		[[nodiscard]] inline auto end() { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
 
-		[[nodiscard]] inline auto &operator[](size_t i) { return m_data[i]; }
+		[[nodiscard]] inline auto &operator[](usize i) { return m_data[i]; }
 
 		[[nodiscard]] inline auto begin() const { return m_data.begin(); }
 		[[nodiscard]] inline auto end() const { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
 
 	private:
 		std::array<T, Capacity> m_data{};
-		size_t m_size{0};
+		usize m_size{0};
 	};
 }

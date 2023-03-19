@@ -39,7 +39,7 @@ namespace polaris::limit
 	class NodeLimiter final : public ISearchLimiter
 	{
 	public:
-		explicit NodeLimiter(size_t maxNodes) : m_maxNodes{maxNodes} {}
+		explicit NodeLimiter(usize maxNodes) : m_maxNodes{maxNodes} {}
 
 		~NodeLimiter() final = default;
 
@@ -49,6 +49,6 @@ namespace polaris::limit
 		}
 
 	private:
-		size_t m_maxNodes;
+		usize m_maxNodes;
 	};
 }

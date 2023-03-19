@@ -33,7 +33,7 @@ namespace polaris
 		explicit inline Jsf64Rng(u64 seed)
 			: m_b{seed}, m_c{seed}, m_d{seed}
 		{
-			for (size_t i = 0; i < 20; ++i)
+			for (usize i = 0; i < 20; ++i)
 			{
 				nextU64();
 			}

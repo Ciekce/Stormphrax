@@ -28,20 +28,20 @@ namespace polaris::hash
 {
 	namespace sizes
 	{
-		constexpr size_t PieceSquares = 12 * 64;
-		constexpr size_t Color = 1;
-		constexpr size_t Castling = 16;
-		constexpr size_t EnPassant = 8;
+		constexpr usize PieceSquares = 12 * 64;
+		constexpr usize Color = 1;
+		constexpr usize Castling = 16;
+		constexpr usize EnPassant = 8;
 
-		constexpr size_t Total = PieceSquares + Color + Castling + EnPassant;
+		constexpr usize Total = PieceSquares + Color + Castling + EnPassant;
 	}
 
 	namespace offsets
 	{
-		constexpr size_t PieceSquares = 0;
-		constexpr size_t Color = PieceSquares + sizes::PieceSquares;
-		constexpr size_t Castling = Color + sizes::Color;
-		constexpr size_t EnPassant = Castling + sizes::Castling;
+		constexpr usize PieceSquares = 0;
+		constexpr usize Color = PieceSquares + sizes::PieceSquares;
+		constexpr usize Castling = Color + sizes::Color;
+		constexpr usize EnPassant = Castling + sizes::Castling;
 	}
 
 	extern const std::array<u64, sizes::Total> Hashes;
@@ -51,7 +51,7 @@ namespace polaris::hash
 		if (piece == Piece::None || square == Square::None)
 			return 0;
 
-		return Hashes[offsets::PieceSquares + static_cast<size_t>(square) * 12 + static_cast<size_t>(piece)];
+		return Hashes[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
 	}
 
 	// for flipping
@@ -67,7 +67,7 @@ namespace polaris::hash
 
 	inline u64 castling(PositionFlags flags)
 	{
-		return Hashes[offsets::Castling + static_cast<size_t>(flags & PositionFlags::AllCastling)];
+		return Hashes[offsets::Castling + static_cast<usize>(flags & PositionFlags::AllCastling)];
 	}
 
 	inline u64 enPassant(u32 file)

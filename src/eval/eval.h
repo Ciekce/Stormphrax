@@ -29,9 +29,7 @@ namespace polaris::eval
 {
 	constexpr Score Tempo = 16;
 
-	constexpr size_t PawnCacheEntries = 262144;
-
-	static_assert(util::resetLsb(PawnCacheEntries) == 0);
+	constexpr usize PawnCacheEntries = 262144;
 
 	struct PawnCacheEntry
 	{
@@ -39,6 +37,9 @@ namespace polaris::eval
 		TaperedScore eval{};
 		Bitboard passers{};
 	};
+
+	static_assert(util::resetLsb(PawnCacheEntries) == 0); // power of 2
+	static_assert(sizeof(PawnCacheEntry) == 24);
 
 	class PawnCache
 	{
@@ -52,7 +53,7 @@ namespace polaris::eval
 
 		inline PawnCacheEntry &probe(u64 key)
 		{
-			constexpr size_t PawnCacheMask = PawnCacheEntries - 1;
+			constexpr usize PawnCacheMask = PawnCacheEntries - 1;
 			return m_cache[key & PawnCacheMask];
 		}
 
@@ -79,8 +80,4 @@ namespace polaris::eval
 	}
 
 	void printEval(const Position &pos, PawnCache *pawnCache = nullptr);
-
-	void _registerTunableParams();
 }
-
-#define PS_KOI 0

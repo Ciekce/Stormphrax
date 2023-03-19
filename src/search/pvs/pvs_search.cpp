@@ -65,7 +65,7 @@ namespace polaris::search::pvs
 		const auto LmrTable = generateLmrTable();
 	}
 
-	PvsSearcher::PvsSearcher(std::optional<size_t> hashSize)
+	PvsSearcher::PvsSearcher(std::optional<usize> hashSize)
 		: m_table{hashSize ? *hashSize : DefaultHashSize}
 	{
 		auto &threadData = m_threads.emplace_back();
@@ -138,7 +138,7 @@ namespace polaris::search::pvs
 		m_table.clear();
 	}
 
-	void PvsSearcher::setHashSize(size_t size)
+	void PvsSearcher::setHashSize(usize size)
 	{
 		m_table.resize(size);
 	}
@@ -521,7 +521,7 @@ namespace polaris::search::pvs
 
 	void PvsSearcher::report(const ThreadData &data, Move move, f64 time, Score score, Score alpha, Score beta)
 	{
-		size_t nodes = 0;
+		usize nodes = 0;
 
 		// technically a potential race but it doesn't matter
 		for (const auto &thread : m_threads)
@@ -529,8 +529,8 @@ namespace polaris::search::pvs
 			nodes += thread.search.nodes;
 		}
 
-		const auto ms = static_cast<size_t>(time * 1000.0);
-		const auto nps = static_cast<size_t>(static_cast<f64>(nodes) / time);
+		const auto ms = static_cast<usize>(time * 1000.0);
+		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
 		std::cout << "info depth " << data.search.depth << " seldepth " << data.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";

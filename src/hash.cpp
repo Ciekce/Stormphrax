@@ -26,13 +26,13 @@ namespace polaris::hash
 	{
 		constexpr u64 Seed = U64(0xD06C659954EC904A);
 
-		std::array<u64, sizes::Total> _generateHashes()
+		std::array<u64, sizes::Total> generateHashes()
 		{
 			std::array<u64, sizes::Total> hashes{};
 
 			Jsf64Rng rng{Seed};
 
-			for (u64 &hash : hashes)
+			for (auto &hash : hashes)
 			{
 				hash = rng.nextU64();
 			}
@@ -41,5 +41,5 @@ namespace polaris::hash
 		}
 	}
 
-	const std::array<u64, sizes::Total> Hashes = _generateHashes();
+	const std::array<u64, sizes::Total> Hashes = generateHashes();
 }

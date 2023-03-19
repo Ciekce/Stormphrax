@@ -57,10 +57,10 @@ namespace polaris::uci
 		auto searcher = search::ISearcher::createDefault();
 		auto pos = Position::starting();
 
-		std::optional<size_t> newSearcherHashSize{};
-		std::optional<size_t> hashSize{};
+		std::optional<usize> newSearcherHashSize{};
+		std::optional<usize> hashSize{};
 
-		i32 moveOverhead = limit::DefaultMoveOverhead;
+		auto moveOverhead = limit::DefaultMoveOverhead;
 
 		for (std::string line{}; std::getline(std::cin, line);)
 		{
@@ -81,8 +81,8 @@ namespace polaris::uci
 				std::cout << "option name Hash type spin default " << DefaultHashSize
 					<< " min " << HashSizeRange.min() << " max " << HashSizeRange.max() << '\n';
 				std::cout << "option name Clear Hash type button\n";
-			//	std::cout << "option name Ponder type check default false\n";
 				std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
+				//TODO
 			//	std::cout << "option name Underpromotions type check default false\n";
 				std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 					<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
@@ -114,7 +114,7 @@ namespace polaris::uci
 				{
 					const auto &position = tokens[1];
 
-					size_t next = 2;
+					usize next = 2;
 
 					if (position == "startpos")
 						pos = Position::starting();
@@ -122,7 +122,7 @@ namespace polaris::uci
 					{
 						std::ostringstream fen{};
 
-						for (size_t i = 0; i < 6 && next < tokens.size(); ++i, ++next)
+						for (usize i = 0; i < 6 && next < tokens.size(); ++i, ++next)
 						{
 							fen << tokens[next] << ' ';
 						}
@@ -172,7 +172,7 @@ namespace polaris::uci
 					i64 increment{};
 					i32 toGo{};
 
-					for (size_t i = 1; i < tokens.size(); ++i)
+					for (usize i = 1; i < tokens.size(); ++i)
 					{
 						if (tokens[i] == "depth" && ++i < tokens.size())
 						{
@@ -187,7 +187,7 @@ namespace polaris::uci
 							{
 								std::cout << "info string node limiting currently broken" << std::endl;
 
-								size_t nodes{};
+								usize nodes{};
 								if (!util::tryParseSize(nodes, tokens[i]))
 									std::cerr << "invalid node count " << tokens[i] << std::endl;
 								else
@@ -247,7 +247,7 @@ namespace polaris::uci
 								}
 							}
 						}
-							// yeah I hate the duplication too
+						// yeah I hate the duplication too
 						else if (tournamentTime)
 						{
 							if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
@@ -310,7 +310,7 @@ namespace polaris::uci
 			}
 			else if (command == "setoption")
 			{
-				size_t i = 1;
+				usize i = 1;
 
 				for (; i < tokens.size() - 1 && tokens[i] != "name"; ++i) {}
 
@@ -427,13 +427,7 @@ namespace polaris::uci
 				std::cout << std::endl;
 			}
 			else if (command == "eval")
-			{
-			//	const auto staticEval = eval::staticEvalAbs(pos);
-			//	printScore(std::cout, staticEval);
-			//	std::cout << std::endl;
-			//	std::cout << (staticEval > 0 ? "+" : "") << (static_cast<f64>(staticEval) / 100.0) << std::endl;
 				eval::printEval(pos);
-			}
 			else if (command == "checkers")
 			{
 				std::cout << '\n';
@@ -459,7 +453,7 @@ namespace polaris::uci
 			{
 				u32 depth = 6;
 
-				for (size_t i = 1; i < tokens.size(); ++i)
+				for (usize i = 1; i < tokens.size(); ++i)
 				{
 					if (tokens[i] == "depth" && ++i < tokens.size())
 					{
@@ -481,28 +475,6 @@ namespace polaris::uci
 
 		return 0;
 	}
-
-	/*
-	void printInfoNoPv(const SearchData &stats, u32 depth, Score score, Color toMove, f64 hashFilled)
-	{
-		std::cout << "info";
-
-		const auto totalNodes = stats.standardNodes + stats.quiescenceNodes;
-
-		std::cout << " depth " << depth;
-		std::cout << " seldepth " << stats.seldepth;
-		std::cout << " nodes " << totalNodes;
-		std::cout << " nps " << static_cast<size_t>(std::lround(static_cast<f64>(totalNodes) / stats.time));
-
-		std::cout << " score ";
-
-		if (std::abs(score) > 500000)
-			std::cout << "mate " << (static_cast<i32>(Mate - std::abs(score)) / 2 * static_cast<i32>(toMove));
-		else std::cout << "cp " << score;
-
-		std::cout << " hashfull " << static_cast<i32>(std::round(hashFilled * 1000));
-	}
-	 */
 
 	std::string moveToString(Move move)
 	{

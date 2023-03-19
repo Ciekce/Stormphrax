@@ -504,7 +504,7 @@ namespace polaris
 		else if (piece == Piece::WhiteKing)
 			m_whiteKing = square;
 
-		m_phase += PhaseInc[static_cast<size_t>(piece)];
+		m_phase += PhaseInc[static_cast<usize>(piece)];
 
 		if constexpr (UpdateMaterial)
 			m_material += eval::pieceSquareValue(piece, square);
@@ -529,7 +529,7 @@ namespace polaris
 			board(piece)[square] = false;
 			occupancy(pieceColor(piece))[square] = false;
 
-			m_phase -= PhaseInc[static_cast<size_t>(piece)];
+			m_phase -= PhaseInc[static_cast<usize>(piece)];
 
 			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(piece, square);
@@ -561,7 +561,7 @@ namespace polaris
 			board(captured)[dst] = false;
 			occupancy(pieceColor(captured))[dst] = false;
 
-			m_phase -= PhaseInc[static_cast<size_t>(captured)];
+			m_phase -= PhaseInc[static_cast<usize>(captured)];
 
 			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(captured, dst);
@@ -615,7 +615,7 @@ namespace polaris
 			board(captured)[dst] = false;
 			occupancy(pieceColor(captured))[dst] = false;
 
-			m_phase -= PhaseInc[static_cast<size_t>(captured)];
+			m_phase -= PhaseInc[static_cast<usize>(captured)];
 
 			if constexpr (UpdateMaterial)
 				m_material -= eval::pieceSquareValue(captured, dst);
@@ -751,7 +751,7 @@ namespace polaris
 			board(captured)[dst] = true;
 			occupancy(pieceColor(captured))[dst] = true;
 
-			m_phase += PhaseInc[static_cast<size_t>(captured)];
+			m_phase += PhaseInc[static_cast<usize>(captured)];
 		}
 
 		const auto target = dstSlot;
@@ -940,7 +940,7 @@ namespace polaris
 #ifndef NDEBUG
 	void Position::printHistory(Move last)
 	{
-		for (size_t i = 0; i < m_history.size(); ++i)
+		for (usize i = 0; i < m_history.size(); ++i)
 		{
 			if (i != 0)
 				std::cerr << ' ';

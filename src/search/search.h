@@ -48,12 +48,12 @@ namespace polaris::search
 		virtual bool searching() = 0;
 
 		virtual void clearHash() = 0;
-		virtual void setHashSize(size_t size) = 0;
+		virtual void setHashSize(usize size) = 0;
 
 		[[nodiscard]] static std::span<const std::string> searchers();
 
 		[[nodiscard]] static std::unique_ptr<ISearcher> createDefault();
 		[[nodiscard]] static std::optional<std::unique_ptr<ISearcher>> create(const std::string &name,
-			std::optional<size_t> hashSize);
+			std::optional<usize> hashSize);
 	};
 }
