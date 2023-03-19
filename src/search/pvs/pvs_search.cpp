@@ -340,7 +340,7 @@ namespace polaris::search::pvs
 			{
 				const auto R = std::min(newBaseDepth - 1, 3);
 
-				const auto guard = pos.applyMove(NullMove);
+				const auto guard = pos.applyMove(NullMove, &m_table);
 				const auto score = -search(data, newBaseDepth - R, ply, -beta, -beta + 1);
 
 				if (score >= beta)
@@ -371,7 +371,7 @@ namespace polaris::search::pvs
 			{
 #endif
 
-			auto guard = pos.applyMove(move);
+			auto guard = pos.applyMove(move, &m_table);
 
 			if (pos.isAttacked(pos.king(us), them))
 				continue;
@@ -497,7 +497,7 @@ namespace polaris::search::pvs
 
 		while (const auto move = generator.next())
 		{
-			auto guard = pos.applyMove(move);
+			auto guard = pos.applyMove(move, &m_table);
 
 			if (pos.isAttacked(pos.king(us), oppColor(us)))
 				continue;

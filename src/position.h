@@ -29,8 +29,7 @@
 #include "bitboard.h"
 #include "move.h"
 #include "attacks/attacks.h"
-
-#include <iostream>
+#include "ttable.h"
 
 namespace polaris
 {
@@ -82,13 +81,13 @@ namespace polaris
 		Position(Position &&) = default;
 
 		template <bool UpdateMaterial = true, bool History = true>
-		void applyMoveUnchecked(Move move);
+		void applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr);
 
 		template <bool UpdateMaterial = true>
-		[[nodiscard]] inline HistoryGuard applyMove(Move move)
+		[[nodiscard]] inline HistoryGuard applyMove(Move move, TTable *prefetchTt = nullptr)
 		{
 			HistoryGuard guard{*this};
-			applyMoveUnchecked<UpdateMaterial>(move);
+			applyMoveUnchecked<UpdateMaterial>(move, prefetchTt);
 			return guard;
 		}
 

@@ -51,10 +51,10 @@ namespace polaris
 		m_pos.popMove();
 	}
 
-	template void Position::applyMoveUnchecked<false, false>(Move move);
-	template void Position::applyMoveUnchecked<true, false>(Move move);
-	template void Position::applyMoveUnchecked<false, true>(Move move);
-	template void Position::applyMoveUnchecked<true, true>(Move move);
+	template void Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt);
+	template void Position::applyMoveUnchecked<true, false>(Move move, TTable *prefetchTt);
+	template void Position::applyMoveUnchecked<false, true>(Move move, TTable *prefetchTt);
+	template void Position::applyMoveUnchecked<true, true>(Move move, TTable *prefetchTt);
 
 	template Piece Position::setPiece<false, false>(Square, Piece);
 	template Piece Position::setPiece<true, false>(Square, Piece);
@@ -110,7 +110,7 @@ namespace polaris
 	}
 
 	template <bool UpdateMaterial, bool History>
-	void Position::applyMoveUnchecked(Move move)
+	void Position::applyMoveUnchecked(Move move, TTable *prefetchTt)
 	{
 		const auto prevKey = m_key;
 		const auto prevPawnKey = m_pawnKey;
@@ -241,6 +241,9 @@ namespace polaris
 			m_key ^= hash::castling( m_flags & PositionFlags::AllCastling);
 			m_key ^= hash::castling(oldFlags & PositionFlags::AllCastling);
 		}
+
+		if (prefetchTt)
+			prefetchTt->prefetch(m_key);
 
 		m_checkers = calcCheckers();
 
