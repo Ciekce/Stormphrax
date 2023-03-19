@@ -63,6 +63,11 @@ namespace polaris::search::pvs
 		}
 
 		const auto LmrTable = generateLmrTable();
+
+		inline Score drawScore(usize nodes)
+		{
+			return 2 - static_cast<Score>(nodes % 4);
+		}
 	}
 
 	PvsSearcher::PvsSearcher(std::optional<usize> hashSize)
@@ -381,7 +386,7 @@ namespace polaris::search::pvs
 			Score score{};
 
 			if (pos.isDrawn())
-				score = 2 - static_cast<Score>(data.search.nodes % 4);
+				score = drawScore(data.search.nodes);
 			else
 			{
 				auto newDepth = newBaseDepth;
@@ -449,7 +454,7 @@ namespace polaris::search::pvs
 		}
 
 		if (legalMoves == 0)
-			return pos.isCheck() ? (-ScoreMate + ply) : 0;
+			return inCheck ? (-ScoreMate + ply) : 0;
 
 		m_table.put(pos.key(), bestScore, best, depth, entryType);
 
@@ -502,7 +507,9 @@ namespace polaris::search::pvs
 			if (pos.isAttacked(pos.king(us), oppColor(us)))
 				continue;
 
-			const auto score = pos.isDrawn() ? 0 : -qsearch(data, -beta, -alpha, ply);
+			const auto score = pos.isDrawn()
+				? drawScore(data.search.nodes)
+				: -qsearch(data, -beta, -alpha, ply);
 
 			if (score > bestScore)
 			{
