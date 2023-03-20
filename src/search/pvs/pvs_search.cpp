@@ -64,6 +64,9 @@ namespace polaris::search::pvs
 
 		const auto LmrTable = generateLmrTable();
 
+		constexpr i32 MaxRfpDepth = 8;
+		constexpr Score RfpMargin = 75;
+
 		inline Score drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -355,6 +358,11 @@ namespace polaris::search::pvs
 					return score;
 				}
 			}
+
+			// reverse futility pruning
+			if (depth <= MaxRfpDepth
+				&& stack.eval >= beta + RfpMargin * depth)
+				return stack.eval;
 		}
 
 		// check extension
