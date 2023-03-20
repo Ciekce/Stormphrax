@@ -88,7 +88,7 @@ namespace polaris::attacks
 		}
 	}
 
-	const auto   RookAttacks = generateRookAttacks();
-	const auto BishopAttacks = generateBishopAttacks();
+	const std::array<Bitboard,   RookData.tableSize>   RookAttacks =   generateRookAttacks();
+	const std::array<Bitboard, BishopData.tableSize> BishopAttacks = generateBishopAttacks();
 }
 #endif // !PS_HAS_BMI2
