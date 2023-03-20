@@ -337,6 +337,11 @@ namespace polaris::search::pvs
 
 		if (!pv && !inCheck)
 		{
+			// reverse futility pruning
+			if (depth <= MaxRfpDepth
+				&& stack.eval >= beta + RfpMargin * depth)
+				return stack.eval;
+
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
 
 			// nullmove pruning (~66 elo)
@@ -358,11 +363,6 @@ namespace polaris::search::pvs
 					return score;
 				}
 			}
-
-			// reverse futility pruning
-			if (depth <= MaxRfpDepth
-				&& stack.eval >= beta + RfpMargin * depth)
-				return stack.eval;
 		}
 
 		// check extension
