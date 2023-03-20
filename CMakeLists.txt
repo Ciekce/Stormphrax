@@ -50,13 +50,13 @@ if(NOT MSVC)
 	target_compile_options(polaris-bmi2 PUBLIC -mtune=skylake)
 	target_compile_options(polaris-modern PUBLIC -mtune=znver2) # zen 2
 	target_compile_options(polaris-popcnt PUBLIC -mtune=sandybridge)
-	target_compile_options(polaris-compat PUBLIC -mtune=penryn)
+	target_compile_options(polaris-compat PUBLIC -mtune=core2)
 elseif(MSVC AND PS_CLANG)
 	target_compile_options(polaris-native PUBLIC /tune:native)
 	target_compile_options(polaris-bmi2 PUBLIC /tune:skylake)
 	target_compile_options(polaris-modern PUBLIC /tune:znver2) # zen 2
 	target_compile_options(polaris-popcnt PUBLIC /tune:sandybridge)
-	target_compile_options(polaris-compat PUBLIC /tune:penryn)
+	target_compile_options(polaris-compat PUBLIC /tune:core2)
 endif()
 
 if(PS_FAST_PEXT)
