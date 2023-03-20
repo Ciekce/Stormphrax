@@ -48,7 +48,7 @@ namespace polaris::util
 	}
 }
 #else // assume posix
-#include <unistd.h>
+#include <time.h>
 
 namespace polaris::util
 {

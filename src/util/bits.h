@@ -142,7 +142,7 @@ namespace polaris::util
 		if (std::is_constant_evaluated())
 			return fallback::ctz(v);
 
-		return static_cast<i32>(_mm_tzcnt_64(v));
+		return static_cast<i32>(__tzcnt_u64(v));
 #else
 		return fallback::ctz(v);
 #endif

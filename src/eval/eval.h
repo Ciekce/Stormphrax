@@ -21,6 +21,7 @@
 #include "../types.h"
 
 #include <vector>
+#include <cstring>
 
 #include "../core.h"
 #include "../position.h"

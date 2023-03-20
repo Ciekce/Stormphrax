@@ -50,7 +50,7 @@ namespace polaris
 	static_assert(sizeof(PreviousMove) == 40);
 #endif
 
-	[[nodiscard]] constexpr auto squareToString(Square square)
+	[[nodiscard]] inline auto squareToString(Square square)
 	{
 		constexpr std::array Files{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 		constexpr std::array Ranks{'1', '2', '3', '4', '5', '6', '7', '8'};

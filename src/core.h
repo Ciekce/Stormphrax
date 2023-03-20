@@ -145,6 +145,7 @@ namespace polaris
 		case Piece:: WhiteQueen: return 'Q';
 		case Piece::  BlackKing: return 'k';
 		case Piece::  WhiteKing: return 'K';
+		default: return ' ';
 		}
 	}
 
@@ -173,6 +174,7 @@ namespace polaris
 		case BasePiece::  Rook: return 'r';
 		case BasePiece:: Queen: return 'q';
 		case BasePiece::  King: return 'k';
+		default: return ' ';
 		}
 	}
 

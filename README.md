@@ -28,10 +28,16 @@ heavily WIP and currently pretty basic
 `popcnt`: just needs popcnt  
 `compat`: should run on anything back to an original core 2
 
-alternatively build the cmake target `polaris-native` for a binary tuned for your specific CPU  
+alternatively build the cmake target `polaris-native` for a binary tuned for your specific CPU (see below)  
 note that this does *not* automatically disable pext and pdep for pre-zen3 AMD CPUs that implement them in microcode, see the cmake option `PS_FAST_PEXT`
 
 builds other than `bmi2` are untested and might crash on CPUs lacking newer instructions, I don't have older hardware to test them on  
 `compat` is likely quite a bit weaker than the others due to heavy use of popcnt in evaluation
 
-testing is run with clang 15 on my 9900k (that's it, that's the only machine)
+### building
+requires a competent c++20 compiler (tested with clang 15 and gcc 11)
+```bash
+> cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
+> cmake --build build/ --target polaris-<BUILD>
+```
+replace `<BUILD>` with your preferred build (`native`/`bmi2`/`modern`/`popcnt`/`compat`)

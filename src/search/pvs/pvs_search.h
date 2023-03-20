@@ -24,6 +24,7 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <vector>
 
 #include "../search.h"

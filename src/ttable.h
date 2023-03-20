@@ -48,7 +48,9 @@ namespace polaris
 		EntryType type;
 	};
 
+#ifdef NDEBUG
 	static_assert(sizeof(TTableEntry) == 16);
+#endif
 
 	class TTable
 	{
