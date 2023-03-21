@@ -29,7 +29,6 @@ namespace polaris::uci
 {
 	i32 run();
 
-//	void printInfoNoPv(const SearchData &stats, u32 depth, Score score, Color toMove, f64 hashFilled);
 	[[nodiscard]] std::string moveToString(Move move);
 
 #ifndef NDEBUG
