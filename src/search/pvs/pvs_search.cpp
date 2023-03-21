@@ -299,8 +299,6 @@ namespace polaris::search::pvs
 		if (depth == 0 && !pos.isCheck())
 			return qsearch(data, alpha, beta, ply);
 
-		++data.search.nodes;
-
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
@@ -396,6 +394,7 @@ namespace polaris::search::pvs
 			if (pos.isAttacked(pos.king(us), them))
 				continue;
 
+			++data.search.nodes;
 			++legalMoves;
 
 			Score score{};
