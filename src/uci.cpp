@@ -141,8 +141,8 @@ namespace polaris::uci
 			std::cout << "option name Hash type spin default " << DefaultHashSize
 				<< " min " << HashSizeRange.min() << " max " << HashSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
-			std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 			//TODO
+		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 		//	std::cout << "option name Underpromotions type check default false\n";
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';

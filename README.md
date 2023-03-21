@@ -14,7 +14,7 @@ heavily WIP and currently pretty basic
 ## Strength
 | Version | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) |
 |:-------:|:--------------------------------------------------------:|:---------------------------------------------------------:|
-| 1.2.0   |                         2332                             |                           ~2300                           |
+|  1.2.0  |                           2332                           |               ~2300 (very few games played)               |
 
 
 ## Features
@@ -35,6 +35,14 @@ heavily WIP and currently pretty basic
 - contempt
 - make it stronger uwu
 - [Chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) support
+
+## UCI options
+| Name          |  Type   | Default value | Valid values | Description                                                                                                     |
+|:--------------|:-------:|:-------------:|:------------:|:----------------------------------------------------------------------------------------------------------------|
+| Hash          | integer |      64       | [1, 131072]  | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2.     |
+| Clear Hash    | button  |      N/A      |     N/A      | Clears the transposition table.                                                                                 |
+| Move Overhead | integer |      100      | [30, 50000]  | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
+| Searcher      | string  |    AspPVS     |    AspPVS    | Searcher used internally. Only AspPVS (principal variation search with aspiration windows) currently supported. |
 
 ## Builds
 `bmi2`: requires BMI2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
