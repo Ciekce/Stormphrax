@@ -103,6 +103,6 @@ namespace polaris::search::pvs
 		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
 		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
 
-		void report(const ThreadData &data, Move move, f64 time, Score score, Score alpha, Score beta);
+		void report(const ThreadData &data, i32 depth, Move move, f64 time, Score score, Score alpha, Score beta);
 	};
 }

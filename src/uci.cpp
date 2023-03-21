@@ -354,7 +354,9 @@ namespace polaris::uci
 					}
 				}
 
-				if (depth > search::MaxDepth)
+				if (depth == 0)
+					return;
+				else if (depth > search::MaxDepth)
 					depth = search::MaxDepth;
 
 				if (tournamentTime && timeRemaining > 0)

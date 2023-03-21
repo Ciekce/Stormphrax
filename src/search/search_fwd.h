@@ -26,8 +26,8 @@ namespace polaris::search
 {
 	struct SearchData
 	{
-		u32 depth{};
-		u32 seldepth{};
+		i32 depth{};
+		i32 seldepth{};
 		usize nodes{};
 		Move move{};
 	};

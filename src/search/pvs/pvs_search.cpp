@@ -172,6 +172,8 @@ namespace polaris::search::pvs
 
 			const auto startTime = util::g_timer.time();
 
+			i32 depthCompleted{};
+
 			for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData); ++depth)
 			{
 				searchData.depth = depth;
@@ -183,6 +185,8 @@ namespace polaris::search::pvs
 				if (depth < MinAspDepth)
 				{
 					const auto newScore = search(data, depth, 0, -ScoreMax, ScoreMax);
+
+					depthCompleted = depth;
 
 					if (depth > 1 && m_stop.load(std::memory_order::relaxed) || !data.search.move)
 						break;
@@ -219,7 +223,7 @@ namespace polaris::search::pvs
 						{
 							const auto time = util::g_timer.time() - startTime;
 							if (time > MinReportDelay)
-								report(data, best ?: searchData.move, time, score, alpha, beta);
+								report(data, data.search.depth, best ?: searchData.move, time, score, alpha, beta);
 						}
 
 						delta += delta / 2;
@@ -241,6 +245,7 @@ namespace polaris::search::pvs
 						else
 						{
 							best = searchData.move;
+							depthCompleted = depth;
 							break;
 						}
 					}
@@ -251,7 +256,8 @@ namespace polaris::search::pvs
 				if (reportThisIter && depth < data.maxDepth)
 				{
 					if (const auto move = best ?: searchData.move)
-						report(data, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+						report(data, searchData.depth, move,
+							util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 					else
 					{
 						std::cout << "info string no legal moves" << std::endl;
@@ -264,9 +270,10 @@ namespace polaris::search::pvs
 			{
 				if (const auto move = best ?: searchData.move)
 				{
-					report(data, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					report(data, depthCompleted, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 					std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 				}
+				else std::cout << "info string no legal moves" << std::endl;
 
 				m_flag.store(IdleFlag, std::memory_order::seq_cst);
 			}
@@ -534,7 +541,8 @@ namespace polaris::search::pvs
 		return bestScore;
 	}
 
-	void PvsSearcher::report(const ThreadData &data, Move move, f64 time, Score score, Score alpha, Score beta)
+	void PvsSearcher::report(const ThreadData &data, i32 depth,
+		Move move, f64 time, Score score, Score alpha, Score beta)
 	{
 		usize nodes = 0;
 
@@ -547,7 +555,7 @@ namespace polaris::search::pvs
 		const auto ms = static_cast<usize>(time * 1000.0);
 		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
-		std::cout << "info depth " << data.search.depth << " seldepth " << data.search.seldepth
+		std::cout << "info depth " << depth << " seldepth " << data.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
