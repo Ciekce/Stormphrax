@@ -485,8 +485,6 @@ namespace polaris::search::pvs
 
 		auto &pos = data.pos;
 
-		++data.search.nodes;
-
 		auto staticEval = eval::staticEval(pos, &data.pawnCache);
 
 		if (staticEval > alpha)
@@ -520,6 +518,8 @@ namespace polaris::search::pvs
 
 			if (pos.isAttacked(pos.king(us), oppColor(us)))
 				continue;
+
+			++data.search.nodes;
 
 			const auto score = pos.isDrawn()
 				? drawScore(data.search.nodes)
