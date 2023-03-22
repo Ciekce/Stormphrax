@@ -39,6 +39,7 @@
 #include "limit/trivial.h"
 #include "limit/time.h"
 #include "perft.h"
+#include "bench.h"
 
 #include "hash.h"
 #include "eval/material.h"
@@ -74,6 +75,7 @@ namespace polaris::uci
 			void handleRegen();
 			void handleMoves();
 			void handlePerft(const std::vector<std::string> &tokens);
+			void handleBench(const std::vector<std::string> &tokens);
 #ifndef NDEBUG
 			void handleVerify();
 #endif
@@ -128,6 +130,8 @@ namespace polaris::uci
 					handleMoves();
 				else if (command == "perft")
 					handlePerft(tokens);
+				else if (command == "bench")
+					handleBench(tokens);
 			}
 
 			return 0;
@@ -543,6 +547,62 @@ namespace polaris::uci
 			}
 
 			perft(m_pos, static_cast<i32>(depth));
+		}
+
+		void UciHandler::handleBench(const std::vector<std::string> &tokens)
+		{
+			if (m_searcher->searching())
+			{
+				std::cerr << "already searching" << std::endl;
+				return;
+			}
+
+			i32 depth = 13;
+			usize hash = 16;
+
+			if (tokens.size() > 1)
+			{
+				if (const auto newDepth = util::tryParseU32(tokens[1]))
+					depth = static_cast<i32>(*newDepth);
+				else
+				{
+					std::cout << "info string invalid depth " << tokens[1] << std::endl;
+					return;
+				}
+			}
+
+			if (tokens.size() > 2)
+			{
+				if (const auto newThreads = util::tryParseU32(tokens[2]))
+				{
+					if (*newThreads > 1)
+						std::cout << "info string multiple search threads not yet supported, using 1" << std::endl;
+				}
+				else
+				{
+					std::cout << "info string invalid thread count " << tokens[2] << std::endl;
+					return;
+				}
+			}
+
+			if (tokens.size() > 3)
+			{
+				if (const auto newHash = util::tryParseSize(tokens[3]))
+					hash = static_cast<i32>(*newHash);
+				else
+				{
+					std::cout << "info string invalid hash " << tokens[3] << std::endl;
+					return;
+				}
+			}
+
+			m_searcher->setHashSize(hash);
+			std::cout << "info string set hash size to " << hash << std::endl;
+
+			if (depth == 0)
+				depth = 1;
+
+			bench::run(*m_searcher, depth);
 		}
 
 #ifndef NDEBUG

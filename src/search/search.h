@@ -35,6 +35,12 @@ namespace polaris::search
 {
 	constexpr i32 MaxDepth = 255;
 
+	struct BenchData
+	{
+		SearchData search{};
+		f64 time{};
+	};
+
 	class ISearcher
 	{
 	public:
@@ -44,6 +50,8 @@ namespace polaris::search
 
 		virtual void startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) = 0;
 		virtual void stop() = 0;
+
+		virtual void runBench(BenchData &data, const Position &pos, i32 depth) = 0;
 
 		virtual bool searching() = 0;
 

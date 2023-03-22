@@ -46,6 +46,8 @@ namespace polaris::search::pvs
 		void startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) final;
 		void stop() final;
 
+		void runBench(BenchData &data, const Position &pos, i32 depth) final;
+
 		bool searching() final;
 
 		void clearHash() final;
@@ -99,6 +101,8 @@ namespace polaris::search::pvs
 		void run(ThreadData &data);
 
 		bool shouldStop(const SearchData &data);
+
+		void searchRoot(ThreadData &data, bool shouldReport);
 
 		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
 		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
