@@ -2,7 +2,7 @@
 
 # Polaris
 
-[![License](https://img.shields.io/github/license/Ciekce/Polaris?style=for-the-badge)](https://github.com/Ciekce/Polaris/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Ciekce/Polaris?style=for-the-badge)](https://github.com/Ciekce/Polaris/blob/main/LICENSE)  
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/Ciekce/Polaris?style=for-the-badge)](https://github.com/Ciekce/Polaris/releases/latest)
 [![Commits since latest release](https://img.shields.io/github/commits-since/Ciekce/Polaris/latest?style=for-the-badge)](https://github.com/Ciekce/Polaris/commits/main)
 
