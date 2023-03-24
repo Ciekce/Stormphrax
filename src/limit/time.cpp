@@ -37,24 +37,18 @@ namespace polaris::limit
 	TimeManager::TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
 		: m_startTime{start}
 	{
-	//	std::cout << "info string remaining " << remaining << " increment " << increment
-	//		<< " toGo " << toGo << " overhead " << overhead << std::endl;
-
 		const auto limit = std::max(0.001, remaining - overhead);
 
 		if (toGo == 0)
-			toGo = 35;
+			toGo = 25;
 
-		if (toGo < 15)
-			toGo = 15;
+		if (toGo < 8)
+			toGo = 8;
 
-		m_time = limit / static_cast<f64>(toGo) + increment;
+		m_time = limit / static_cast<f64>(toGo) + increment * 3 / 4;
 
 		if (m_time > limit)
 			m_time = limit;
-
-	//	std::cout << "info string allocated " << (m_time * 1000.0)
-	//		<< " ms, max " << (m_maxTime * 1000.0) << " ms" << std::endl;
 	}
 
 	void TimeManager::update(const search::SearchData &data, bool stableBestMove)
