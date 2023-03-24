@@ -32,87 +32,87 @@ namespace polaris::eval
 #define S(Mg, Eg) TaperedScore{(Mg), (Eg)}
 
 		// pawn structure
-		constexpr auto DoubledPawn = S(-19, -20);
+		constexpr auto DoubledPawn = S(-17, -22);
 		// idea from weiss
-		constexpr auto DoubledGappedPawn = S(-6, -10);
-		constexpr auto PawnDefender = S(15, 20);
-		constexpr auto OpenPawn = S(-12, -9);
+		constexpr auto DoubledGappedPawn = S(-3, -15);
+		constexpr auto PawnDefender = S(18, 15);
+		constexpr auto OpenPawn = S(-12, -6);
 
 		constexpr auto PawnPhalanx = std::array {
-			S(0, 0), S(5, 2), S(20, 16), S(27, 29), S(49, 62), S(125, 182), S(112, 276)
+			S(0, 0), S(3, 6), S(23, 10), S(26, 26), S(44, 62), S(118, 139), S(20, 265)
 		};
 
 		constexpr auto Passer = std::array {
-			S(0, 0), S(-6, 17), S(-20, 30), S(-10, 59), S(11, 79), S(32, 113), S(134, 118)
+			S(0, 0), S(4, 6), S(-2, 13), S(-11, 45), S(15, 67), S(11, 141), S(49, 155)
 		};
 
 		constexpr auto DefendedPasser = std::array {
-			S(0, 0), S(0, 0), S(18, -22), S(11, -19), S(17, -8), S(40, 17), S(92, 28)
+			S(0, 0), S(0, 0), S(3, -8), S(3, -10), S(7, 1), S(32, 16), S(157, -12)
 		};
 
 		constexpr auto BlockedPasser = std::array {
-			S(0, 0), S(-12, 1), S(-4, 2), S(-9, -11), S(-12, -34), S(-11, -78), S(-93, -71)
+			S(0, 0), S(-10, -6), S(-10, 1), S(-4, -12), S(-13, -28), S(7, -94), S(29, -146)
 		};
 
 		constexpr auto CandidatePasser = std::array {
-			S(0, 0), S(2, 8), S(-5, 9), S(2, 23), S(17, 27), S(66, 70), S(0, 0)
+			S(0, 0), S(8, -4), S(1, -1), S(3, 12), S(21, 15), S(51, 60), S(0, 0)
 		};
 
-		constexpr auto DoubledPasser = S(28, -36);
-		constexpr auto PasserHelper = S(-11, 20);
+		constexpr auto DoubledPasser = S(16, -24);
+		constexpr auto PasserHelper = S(-8, 14);
 
 		// pawns
-		constexpr auto PawnAttackingMinor = S(46, 13);
-		constexpr auto PawnAttackingRook = S(55, -6);
-		constexpr auto PawnAttackingQueen = S(40, -6);
+		constexpr auto PawnAttackingMinor = S(53, 17);
+		constexpr auto PawnAttackingRook = S(101, -31);
+		constexpr auto PawnAttackingQueen = S(58, -16);
 
-		constexpr auto PasserSquareRule = S(-26, 119);
+		constexpr auto PasserSquareRule = S(13, 105);
 
 		// minors
-		constexpr auto MinorBehindPawn = S(10, 15);
+		constexpr auto MinorBehindPawn = S(5, 19);
 
-		constexpr auto MinorAttackingRook = S(40, -2);
-		constexpr auto MinorAttackingQueen = S(33, 4);
+		constexpr auto MinorAttackingRook = S(41, 0);
+		constexpr auto MinorAttackingQueen = S(29, 2);
 
 		// knights
-		constexpr auto KnightOutpost = S(27, 19);
+		constexpr auto KnightOutpost = S(26, 16);
 
 		// bishops
-		constexpr auto BishopPair = S(27, 66);
+		constexpr auto BishopPair = S(26, 60);
 
 		// rooks
-		constexpr auto RookOnOpenFile = S(25, 4);
-		constexpr auto RookOnSemiOpenFile = S(5, -2);
-		constexpr auto RookSupportingPasser = S(9, 7);
-		constexpr auto RookAttackingQueen = S(45, -9);
+		constexpr auto RookOnOpenFile = S(32, -3);
+		constexpr auto RookOnSemiOpenFile = S(2, -2);
+		constexpr auto RookSupportingPasser = S(8, 12);
+		constexpr auto RookAttackingQueen = S(58, -25);
 
 		// queens
 
 		// kings
-		constexpr auto KingOnOpenFile = S(-67, -1);
-		constexpr auto KingOnSemiOpenFile = S(-3, 4);
+		constexpr auto KingOnOpenFile = S(-65, -3);
+		constexpr auto KingOnSemiOpenFile = S(2, 2);
 
 		// mobility
 		constexpr auto KnightMobility = std::array {
-			S(-42, -16), S(-21, -17), S(-10, -11), S(-3, -7), S(3, 4), S(8, 15), S(16, 15), S(21, 13),
-			S(27, 4)
+			S(-43, -13), S(-23, -8), S(-13, -5), S(-8, 0), S(3, 3), S(9, 11), S(16, 10), S(21, 9),
+			S(38, -8)
 		};
 
 		constexpr auto BishopMobility = std::array {
-			S(-49, -8), S(-37, 10), S(-22, -18), S(-13, -18), S(-4, -14), S(1, -3), S(6, 3), S(9, 7),
-			S(11, 11), S(16, 7), S(24, 4), S(30, 4), S(18, 17), S(11, -3)
+			S(-54, 4), S(-39, -14), S(-26, -24), S(-18, -16), S(-9, -8), S(-5, 1), S(0, 7), S(3, 9),
+			S(2, 14), S(11, 9), S(21, 4), S(47, 0), S(6, 25), S(60, -10)
 		};
 
 		constexpr auto RookMobility = std::array {
-			S(-48, -38), S(-30, -4), S(-24, 0), S(-19, -4), S(-16, -11), S(-10, -11), S(-5, -8), S(3, -3),
-			S(9, 3), S(14, 8), S(18, 10), S(24, 14), S(30, 14), S(34, 11), S(20, 17)
+			S(-50, -38), S(-36, -15), S(-29, -15), S(-23, -10), S(-21, -7), S(-14, -4), S(-10, 2), S(-2, 4),
+			S(8, 6), S(16, 8), S(19, 12), S(28, 14), S(29, 19), S(47, 11), S(38, 12)
 		};
 
 		constexpr auto QueenMobility = std::array {
-			S(-92, -227), S(-29, -152), S(-28, -22), S(-28, 59), S(-26, 61), S(-22, 51), S(-17, 40), S(-11, 7),
-			S(-3, -14), S(3, -25), S(7, -23), S(10, -13), S(13, -11), S(11, 4), S(12, 12), S(13, 19),
-			S(11, 30), S(10, 36), S(16, 37), S(25, 36), S(24, 44), S(49, 34), S(39, 43), S(39, 40),
-			S(11, 56), S(49, -6), S(-35, -51), S(-52, -66)
+			S(-34, 73), S(-33, 230), S(-34, 88), S(-35, 54), S(-32, 51), S(-25, -21), S(-20, -59), S(-17, -70),
+			S(-14, -69), S(-8, -76), S(-6, -62), S(-3, -51), S(-4, -46), S(4, -42), S(5, -31), S(1, -15),
+			S(0, -5), S(16, -19), S(12, -5), S(28, -10), S(34, -6), S(65, -19), S(43, -3), S(85, -13),
+			S(36, 4), S(43, 0), S(-42, 63), S(-66, 58)
 		};
 #undef S
 
