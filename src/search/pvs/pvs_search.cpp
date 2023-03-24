@@ -323,7 +323,9 @@ namespace polaris::search::pvs
 
 		auto &pos = data.pos;
 
-		if (depth == 0 && !pos.isCheck())
+		const bool inCheck = pos.isCheck();
+
+		if (depth == 0 && !inCheck)
 			return qsearch(data, alpha, beta, ply);
 
 		const auto us = pos.toMove();
@@ -331,8 +333,6 @@ namespace polaris::search::pvs
 
 		const bool root = ply == 0;
 		const bool pv = root || beta - alpha > 1;
-
-		const bool inCheck = pos.isCheck();
 
 		auto &stack = data.stack[ply];
 
@@ -397,7 +397,8 @@ namespace polaris::search::pvs
 			}
 		}
 
-		// check extension
+		// increase depth for tt if in check
+		// honestly no idea why this gains
 		if (inCheck)
 			++depth;
 
