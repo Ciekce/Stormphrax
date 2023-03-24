@@ -602,24 +602,27 @@ namespace polaris::search::pvs
 
 		std::cout << " hashfull " << m_table.full() << " pv " << uci::moveToString(move);
 
-		StaticVector<Move, MaxDepth> pvWritten{};
-		pvWritten.push(move);
-
 		Position pos{data.pos};
 		pos.applyMoveUnchecked<false, false>(move);
+
+		StaticVector<u64, MaxDepth> positionsHit{};
+		positionsHit.push(pos.key());
 
 		while (true)
 		{
 			const auto pvMove = m_table.probeMove(pos.key());
 
-			if (pvMove
-				&& std::find(pvWritten.begin(), pvWritten.end(), pvMove) == pvWritten.end()
-				&& pos.isPseudolegal(pvMove))
+			if (pvMove && pos.isPseudolegal(pvMove))
 			{
-				std::cout << ' ' << uci::moveToString(pvMove);
-
-				pvWritten.push(pvMove);
 				pos.applyMoveUnchecked<false, false>(pvMove);
+
+				if (std::find(positionsHit.begin(), positionsHit.end(), pos.key()) == positionsHit.end()
+					&& !pos.isAttacked(pos.king(pos.opponent()), pos.toMove()))
+				{
+					std::cout << ' ' << uci::moveToString(pvMove);
+					positionsHit.push(pos.key());
+				}
+				else break;
 			}
 			else break;
 		}
