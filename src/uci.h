@@ -27,6 +27,13 @@
 
 namespace polaris::uci
 {
+	struct GlobalOptions
+	{
+		bool underpromotions{false};
+	};
+
+	extern const GlobalOptions &g_uciOpts;
+
 	i32 run();
 
 	[[nodiscard]] std::string moveToString(Move move);

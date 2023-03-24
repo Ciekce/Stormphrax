@@ -52,6 +52,8 @@ namespace polaris::uci
 		constexpr auto Version = PS_STRINGIFY(PS_VERSION);
 		constexpr auto Author = "Ciekce";
 
+		GlobalOptions s_uciOpts{};
+
 		class UciHandler
 		{
 		public:
@@ -139,6 +141,8 @@ namespace polaris::uci
 
 		void UciHandler::handleUci()
 		{
+			static const GlobalOptions defaultOps{};
+
 			std::cout << "id name " << Name << ' ' << Version << '\n';
 			std::cout << "id author " << Author << '\n';
 
@@ -147,7 +151,8 @@ namespace polaris::uci
 			std::cout << "option name Clear Hash type button\n";
 			//TODO
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
-		//	std::cout << "option name Underpromotions type check default false\n";
+			std::cout << "option name Underpromotions type check default "
+				<< (defaultOps.underpromotions ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 
@@ -460,7 +465,15 @@ namespace polaris::uci
 						else std::cerr << "unknown searcher " << valueStr << std::endl;
 					}
 				}
-				if (nameStr == "move overhead")
+				else if (nameStr == "underpromotions")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newUnderpromotions = util::tryParseBool(valueStr))
+							s_uciOpts.underpromotions = *newUnderpromotions;
+					}
+				}
+				else if (nameStr == "move overhead")
 				{
 					if (!valueEmpty)
 					{
@@ -613,6 +626,8 @@ namespace polaris::uci
 		}
 #endif
 	}
+
+	const GlobalOptions &g_uciOpts = s_uciOpts;
 
 	i32 run()
 	{

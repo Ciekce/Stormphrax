@@ -37,12 +37,13 @@ heavily WIP and currently pretty basic
 - [Chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) support
 
 ## UCI options
-| Name          |  Type   | Default value | Valid values | Description                                                                                                     |
-|:--------------|:-------:|:-------------:|:------------:|:----------------------------------------------------------------------------------------------------------------|
-| Hash          | integer |      64       | [1, 131072]  | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2.     |
-| Clear Hash    | button  |      N/A      |     N/A      | Clears the transposition table.                                                                                 |
-| Move Overhead | integer |      100      | [30, 50000]  | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
-| Searcher      | string  |    AspPVS     |    AspPVS    | Searcher used internally. Only AspPVS (principal variation search with aspiration windows) currently supported. |
+| Name            |  Type   | Default value |  Valid values   | Description                                                                                                     |
+|:----------------|:-------:|:-------------:|:---------------:|:----------------------------------------------------------------------------------------------------------------|
+| Hash            | integer |      64       |   [1, 131072]   | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2.     |
+| Clear Hash      | button  |      N/A      |       N/A       | Clears the transposition table.                                                                                 |
+| Underpromotions |  check  |    `false`    | `false`, `true` | Whether underpromotions to rooks and bishops are generated.                                                     |
+| Move Overhead   | integer |      100      |   [30, 50000]   | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
+| Searcher        | string  |    AspPVS     |     AspPVS      | Searcher used internally. Only AspPVS (principal variation search with aspiration windows) currently supported. |
 
 ## Builds
 `bmi2`: requires BMI2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
