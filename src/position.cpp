@@ -42,8 +42,8 @@ namespace polaris
 		constexpr bool VerifyAll = true;
 #endif
 
-		constexpr std::array PhaseInc{0, 0, 1, 1, 1, 1, 2, 2, 4, 4, 0, 0, 0};
-		constexpr std::array PhaseIncBase{0, 1, 1, 2, 4, 0, 0};
+		constexpr auto PhaseInc = std::array{0, 0, 1, 1, 1, 1, 2, 2, 4, 4, 0, 0, 0};
+		constexpr auto PhaseIncBase = std::array{0, 1, 1, 2, 4, 0, 0};
 	}
 
 	HistoryGuard::~HistoryGuard()

@@ -40,8 +40,7 @@ namespace polaris::eval
 	//	constexpr auto King = S(std::numeric_limits<Score>::max() / 2, std::numeric_limits<Score>::max() / 2);
 		constexpr auto King = S(0, 0);
 
-		constexpr std::array BaseValues
-		{
+		constexpr auto BaseValues = std::array {
 			Pawn,
 			Knight,
 			Bishop,
@@ -51,8 +50,7 @@ namespace polaris::eval
 			TaperedScore{}
 		};
 
-		constexpr std::array Values
-		{
+		constexpr auto Values = std::array {
 			Pawn,
 			Pawn,
 			Knight,

@@ -52,8 +52,8 @@ namespace polaris
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
-		constexpr std::array Files{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-		constexpr std::array Ranks{'1', '2', '3', '4', '5', '6', '7', '8'};
+		constexpr auto Files = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+		constexpr auto Ranks = std::array{'1', '2', '3', '4', '5', '6', '7', '8'};
 
 		const auto s = static_cast<u32>(square);
 		return std::string{Files[s % 8], Ranks[s / 8]};

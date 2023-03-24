@@ -40,23 +40,23 @@ namespace polaris::eval
 		constexpr auto OpenPawn = S(-15, -11);
 		constexpr auto BlockedPawn = S(-14, -13);
 
-		constexpr std::array PawnPhalanx {
+		constexpr auto PawnPhalanx = std::array {
 			S(0, 0), S(6, 2), S(25, 20), S(33, 36), S(61, 77), S(155, 225), S(139, 341)
 		};
 
-		constexpr std::array Passer {
+		constexpr auto Passer = std::array {
 			S(0, 0), S(-7, 21), S(-25, 37), S(-12, 73), S(13, 98), S(39, 140), S(166, 146)
 		};
 
-		constexpr std::array DefendedPasser {
+		constexpr auto DefendedPasser = std::array {
 			S(0, 0), S(0, 0), S(22, -27), S(13, -24), S(21, -10), S(49, 21), S(114, 34)
 		};
 
-		constexpr std::array BlockedPasser {
+		constexpr auto BlockedPasser = std::array {
 			S(0, 0), S(-15, 1), S(-5, 2), S(-11, -14), S(-15, -42), S(-13, -97), S(-115, -88)
 		};
 
-		constexpr std::array CandidatePasser {
+		constexpr auto CandidatePasser = std::array {
 			S(0, 0), S(2, 10), S(-6, 11), S(3, 28), S(21, 33), S(82, 87), S(264, 185)
 		};
 
@@ -93,22 +93,22 @@ namespace polaris::eval
 		// kings
 
 		// mobility
-		constexpr std::array KnightMobility {
+		constexpr auto KnightMobility = std::array {
 			S(-13, 99), S(13, 98), S(27, 106), S(35, 111), S(43, 124), S(49, 138), S(58, 138), S(65, 135),
 			S(72, 124)
 		};
 
-		constexpr std::array BishopMobility {
+		constexpr auto BishopMobility = std::array {
 			S(-10, 110), S(5, 132), S(23, 98), S(34, 98), S(45, 103), S(51, 116), S(58, 123), S(61, 129),
 			S(64, 133), S(70, 129), S(80, 125), S(87, 125), S(72, 141), S(64, 116)
 		};
 
-		constexpr std::array RookMobility {
+		constexpr auto RookMobility = std::array {
 			S(-33, 128), S(-11, 170), S(-4, 175), S(3, 170), S(6, 161), S(14, 161), S(20, 165), S(29, 171),
 			S(37, 178), S(43, 184), S(48, 187), S(55, 192), S(63, 192), S(68, 188), S(50, 195)
 		};
 
-		constexpr std::array QueenMobility {
+		constexpr auto QueenMobility = std::array {
 			S(-101, 73), S(-24, 166), S(-23, 326), S(-22, 427), S(-20, 429), S(-15, 416), S(-9, 403), S(-1, 362),
 			S(9, 336), S(16, 322), S(21, 325), S(24, 337), S(28, 340), S(26, 359), S(27, 368), S(28, 377),
 			S(26, 391), S(25, 398), S(32, 399), S(43, 398), S(42, 408), S(73, 396), S(60, 407), S(61, 403),

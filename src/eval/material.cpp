@@ -25,7 +25,7 @@ namespace polaris::eval
 #define S(Mg, Eg) TaperedScore{(Mg), (Eg)}
 		namespace
 		{
-			constexpr std::array BonusTables {
+			constexpr auto BonusTables = std::array {
 				std::array { // pawns
 					S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0),
 					S(30, 151), S(42, 111), S(4, 129), S(46, 74), S(8, 68), S(43, 62), S(-34, 110), S(-66, 143),

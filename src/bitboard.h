@@ -451,8 +451,8 @@ namespace polaris
 		constexpr Bitboard FileG{Bitboard::FileG};
 		constexpr Bitboard FileH{Bitboard::FileH};
 
-		constexpr std::array Ranks{Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8};
-		constexpr std::array Files{FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH};
+		constexpr auto Ranks = std::array{Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8};
+		constexpr auto Files = std::array{FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH};
 
 		constexpr Bitboard  DarkSquares{Bitboard:: DarkSquares};
 		constexpr Bitboard LightSquares{Bitboard::LightSquares};
