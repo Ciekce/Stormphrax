@@ -20,7 +20,7 @@
 
 #include "types.h"
 
-#define PS_TUNE_SEARCH 1
+#define PS_TUNE_SEARCH 0
 
 namespace polaris::tunable
 {
