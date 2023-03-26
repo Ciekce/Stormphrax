@@ -32,9 +32,7 @@ namespace polaris::uci
 	{
 		bool underpromotions{false};
 
-#if PS_TUNE_SEARCH
 		tunable::TunableData tunable{};
-#endif
 	};
 
 	extern const GlobalOptions &g_uciOpts;
