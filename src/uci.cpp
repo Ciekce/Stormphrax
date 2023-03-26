@@ -481,6 +481,18 @@ namespace polaris::uci
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
 					}
 				}
+#if PS_TUNE_SEARCH
+				else if (nameStr == "maxrfpdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_uciOpts.tunable.maxRfpDepth, valueStr);
+				}
+				else if (nameStr == "rfpmargin")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_uciOpts.tunable.rfpMargin, valueStr);
+				}
+#endif
 			}
 		}
 

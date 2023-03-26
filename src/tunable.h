@@ -20,30 +20,41 @@
 
 #include "types.h"
 
-#include <string>
+#define PS_TUNE_SEARCH 1
 
-#include "core.h"
-#include "move.h"
-#include "tunable.h"
-
-namespace polaris::uci
+namespace polaris::tunable
 {
-	struct GlobalOptions
+	namespace defaults
 	{
-		bool underpromotions{false};
+		constexpr i32 MaxRfpDepth = 8;
+		constexpr i32 RfpMargin = 75;
+	}
 
-#if PS_TUNE_SEARCH
-		tunable::TunableData tunable{};
-#endif
+	struct TunableData
+	{
+		i32 maxRfpDepth{defaults::MaxRfpDepth};
+		i32 rfpMargin{defaults::RfpMargin};
 	};
 
-	extern const GlobalOptions &g_uciOpts;
+#if PS_TUNE_SEARCH
+	inline i32 maxRfpDepth(const TunableData &data)
+	{
+		return data.maxRfpDepth;
+	}
 
-	i32 run();
+	inline i32 rfpMargin(const TunableData &data)
+	{
+		return data.rfpMargin;
+	}
+#else
+	inline i32 maxRfpDepth([[maybe_unused]] const TunableData &data)
+	{
+		return defaults::MaxRfpDepth;
+	}
 
-	[[nodiscard]] std::string moveToString(Move move);
-
-#ifndef NDEBUG
-	[[nodiscard]] std::string moveAndTypeToString(Move move);
+	inline i32 rfpMargin([[maybe_unused]] const TunableData &data)
+	{
+		return defaults::RfpMargin;
+	}
 #endif
 }

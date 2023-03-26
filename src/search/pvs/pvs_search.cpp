@@ -65,9 +65,6 @@ namespace polaris::search::pvs
 
 		const auto LmrTable = generateLmrTable();
 
-		constexpr i32 MaxRfpDepth = 8;
-		constexpr Score RfpMargin = 75;
-
 		inline Score drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -370,8 +367,8 @@ namespace polaris::search::pvs
 		if (!pv && !inCheck)
 		{
 			// reverse futility pruning
-			if (depth <= MaxRfpDepth
-				&& stack.eval >= beta + RfpMargin * depth)
+			if (depth <= tunable::maxRfpDepth(uci::g_uciOpts.tunable)
+				&& stack.eval >= beta + tunable::rfpMargin(uci::g_uciOpts.tunable) * depth)
 				return stack.eval;
 
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
