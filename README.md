@@ -28,7 +28,6 @@ heavily WIP and currently pretty basic
 
 ## To-do
 - finish eval (king safety, hanging and pinned pieces)
-- history
 - lazy SMP
 - better time management
 - tune search constants
