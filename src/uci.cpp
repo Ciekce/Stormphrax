@@ -134,6 +134,10 @@ namespace polaris::uci
 					handlePerft(tokens);
 				else if (command == "bench")
 					handleBench(tokens);
+#ifndef NDEBUG
+				else if (command == "verify")
+					handleVerify();
+#endif
 			}
 
 			return 0;
@@ -654,10 +658,23 @@ namespace polaris::uci
 
 		std::ostringstream str{};
 
-		str << squareToString(move.src()) << squareToString(move.dst());
+		str << squareToString(move.src());
 
-		if (move.type() == MoveType::Promotion)
-			str << basePieceToChar(move.target());
+		const auto type = move.type();
+
+		if (type != MoveType::Castling)
+		{
+			str << squareToString(move.dst());
+			if (type == MoveType::Promotion)
+				str << basePieceToChar(move.target());
+		}
+		else
+		{
+			const auto dst = move.srcFile() < move.dstFile()
+				? toSquare(move.srcRank(), 6)
+				: toSquare(move.srcRank(), 2);
+			str << squareToString(dst);
+		}
 
 		return str.str();
 	}

@@ -339,8 +339,14 @@ namespace polaris
 		const auto dst = move.dst();
 		const auto dstPiece = pieceAt(dst);
 
+		// we're capturing something
 		if (dstPiece != Piece::None
-			&& (pieceColor(dstPiece) == us || basePiece(dstPiece) == BasePiece::King))
+			// we're capturing our own piece          and either not castling
+			&& ((pieceColor(dstPiece) == us && (move.type() != MoveType::Castling
+			           // or trying to castle with a non-rook
+					|| dstPiece != colorPiece(BasePiece::Rook, us)))
+				// or trying to capture a king
+				|| basePiece(dstPiece) == BasePiece::King))
 			return false;
 
 		if (move.type() != MoveType::Standard)
@@ -657,32 +663,26 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::castle(Square src, Square dst)
+	void Position::castle(Square kingSrc, Square rookSrc)
 	{
-		movePiece<UpdateKey, UpdateMaterial>(src, dst);
+		const auto rank = squareRank(kingSrc);
 
-		if (pieceAt(dst) == Piece::BlackKing)
-			m_blackKing = dst;
-		else m_whiteKing = dst;
+		Square kingDst, rookDst;
 
-		// castling cannot affect check
-
-		u32 rank = squareRank(dst);
-		u32 file = squareFile(dst);
-
-		Square rookSrc, rookDst;
-
-		if (file == 6)
+		if (squareFile(kingSrc) < squareFile(rookSrc))
 		{
-			rookSrc = toSquare(rank, 7);
+			// short
+			kingDst = toSquare(rank, 6);
 			rookDst = toSquare(rank, 5);
 		}
-		else // queenside
+		else
 		{
-			rookSrc = toSquare(rank, 0);
+			// long
+			kingDst = toSquare(rank, 2);
 			rookDst = toSquare(rank, 3);
 		}
 
+		movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
 		movePiece<UpdateKey, UpdateMaterial>(rookSrc, rookDst);
 	}
 
@@ -772,30 +772,26 @@ namespace polaris
 		occupancy(color) ^= mask;
 	}
 
-	void Position::uncastle(Square src, Square dst)
+	void Position::uncastle(Square kingSrc, Square rookSrc)
 	{
-		movePiece<false, false>(dst, src);
+		const auto rank = squareRank(kingSrc);
 
-		if (pieceAt(src) == Piece::BlackKing)
-			m_blackKing = src;
-		else m_whiteKing = src;
+		Square kingDst, rookDst;
 
-		u32 rank = squareRank(dst);
-		u32 file = squareFile(dst);
-
-		Square rookSrc, rookDst;
-
-		if (file == 6)
+		if (squareFile(kingSrc) < squareFile(rookSrc))
 		{
-			rookSrc = toSquare(rank, 7);
+			// short
+			kingDst = toSquare(rank, 6);
 			rookDst = toSquare(rank, 5);
 		}
-		else // queenside
+		else
 		{
-			rookSrc = toSquare(rank, 0);
+			// long
+			kingDst = toSquare(rank, 2);
 			rookDst = toSquare(rank, 3);
 		}
 
+		movePiece<false, false>(kingDst, kingSrc);
 		movePiece<false, false>(rookDst, rookSrc);
 	}
 
@@ -1045,7 +1041,10 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 			if ((srcPiece == Piece::BlackKing || srcPiece == Piece::WhiteKing)
 				&& std::abs(squareFile(src) - squareFile(dst)) == 2)
-				return Move::castling(src, dst);
+			{
+				const auto rookFile = squareFile(src) < squareFile(dst) ? 7 : 0;
+				return Move::castling(src, toSquare(squareRank(src), rookFile));
+			}
 
 			if ((srcPiece == Piece::BlackPawn || srcPiece == Piece::WhitePawn)
 				&& dst == m_enPassant)

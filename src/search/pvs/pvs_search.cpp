@@ -484,12 +484,12 @@ namespace polaris::search::pvs
 							const auto adjustment = depth * depth;
 
 							data.history[static_cast<i32>(pos.pieceAt(move.src()))]
-								[static_cast<i32>(move.dst())] += adjustment;
+								[static_cast<i32>(moveActualDst(move))] += adjustment;
 
 							for (const auto prevQuiet : data.quietsTried)
 							{
 								data.history[static_cast<i32>(pos.pieceAt(prevQuiet.src()))]
-									[static_cast<i32>(prevQuiet.dst())] -= adjustment;
+									[static_cast<i32>(moveActualDst(prevQuiet))] -= adjustment;
 							}
 						}
 

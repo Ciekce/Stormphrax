@@ -171,6 +171,17 @@ namespace polaris
 
 	constexpr Move NullMove{};
 
+	// returns the king's actual destination square for
+	// castling moves, otherwise just the move's destination
+	// used to avoid inflating the history of the generally
+	// bad moves of putting the king in a corner when castling
+	constexpr Square moveActualDst(Move move)
+	{
+		if (move.type() == MoveType::Castling)
+			return toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
+		else return move.dst();
+	}
+
 	// assumed upper bound for number of possible moves is 218
 	constexpr usize DefaultMoveListCapacity = 256;
 

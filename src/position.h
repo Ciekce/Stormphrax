@@ -594,12 +594,12 @@ namespace polaris
 		template <bool UpdateKey = true, bool UpdateMaterial = true>
 		Piece promotePawn(Square src, Square dst, BasePiece target);
 		template <bool UpdateKey = true, bool UpdateMaterial = true>
-		void castle(Square src, Square dst);
+		void castle(Square kingSrc, Square rookSrc);
 		template <bool UpdateKey = true, bool UpdateMaterial = true>
 		Piece enPassant(Square src, Square dst);
 
 		void unpromotePawn(Square src, Square dst, Piece captured);
-		void uncastle(Square src, Square dst);
+		void uncastle(Square kingSrc, Square rookSrc);
 		void undoEnPassant(Square src, Square dst);
 
 		[[nodiscard]] inline Bitboard calcCheckers() const

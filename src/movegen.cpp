@@ -222,24 +222,24 @@ namespace polaris
 						if (testFlags(pos.castling(), PositionFlags::BlackKingside)
 							&& (occupancy & U64(0x6000000000000000)).empty()
 							&& !pos.isAttacked(Square::F8, Color::White))
-							pushCastling(dst, pos.blackKing(), Square::G8);
+							pushCastling(dst, pos.blackKing(), Square::H8);
 
 						if (testFlags(pos.castling(), PositionFlags::BlackQueenside)
 							&& (occupancy & U64(0x0E00000000000000)).empty()
 							&& !pos.isAttacked(Square::D8, Color::White))
-							pushCastling(dst, pos.blackKing(), Square::C8);
+							pushCastling(dst, pos.blackKing(), Square::A8);
 					}
 					else
 					{
 						if (testFlags(pos.castling(), PositionFlags::WhiteKingside)
 							&& (occupancy & U64(0x0000000000000060)).empty()
 							&& !pos.isAttacked(Square::F1, Color::Black))
-							pushCastling(dst, pos.whiteKing(), Square::G1);
+							pushCastling(dst, pos.whiteKing(), Square::H1);
 
 						if (testFlags(pos.castling(), PositionFlags::WhiteQueenside)
 							&& (occupancy & U64(0x000000000000000E)).empty()
 							&& !pos.isAttacked(Square::D1, Color::Black))
-							pushCastling(dst, pos.whiteKing(), Square::C1);
+							pushCastling(dst, pos.whiteKing(), Square::A1);
 					}
 				}
 			}

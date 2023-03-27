@@ -183,7 +183,7 @@ namespace polaris
 
 				if (m_history)
 					move.score = (*m_history)[static_cast<i32>(m_pos.pieceAt(move.move.src()))]
-						[static_cast<i32>(move.move.dst())];
+						[static_cast<i32>(moveActualDst(move.move))];
 
 				// knight promos first, rook then bishop promos last
 				//TODO capture promos first
