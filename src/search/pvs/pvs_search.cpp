@@ -394,11 +394,6 @@ namespace polaris::search::pvs
 			}
 		}
 
-		// increase depth for tt if in check
-		// honestly no idea why this gains
-		if (inCheck)
-			++depth;
-
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
@@ -495,7 +490,9 @@ namespace polaris::search::pvs
 		if (legalMoves == 0)
 			return inCheck ? (-ScoreMate + ply) : 0;
 
-		m_table.put(pos.key(), bestScore, best, depth, entryType);
+		// increase depth for tt if in check
+		// honestly no idea why this gains
+		m_table.put(pos.key(), bestScore, best, inCheck ? depth + 1 : depth, entryType);
 
 		if (root && (!m_stop || !data.search.move))
 			data.search.move = best;
