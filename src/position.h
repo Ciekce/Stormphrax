@@ -579,8 +579,8 @@ namespace polaris
 	private:
 		[[nodiscard]] inline auto &board(Piece piece) { return m_boards[static_cast<i32>(piece)]; }
 
-		[[nodiscard]] inline auto &pieceAt(u32 rank, u32 file) { return m_pieces[rank][file]; }
-		[[nodiscard]] inline auto &pieceAt(Square square) { return pieceAt(squareRank(square), squareFile(square)); }
+		[[nodiscard]] inline auto &pieceRefAt(u32 rank, u32 file) { return m_pieces[rank][file]; }
+		[[nodiscard]] inline auto &pieceRefAt(Square square) { return pieceRefAt(squareRank(square), squareFile(square)); }
 
 		[[nodiscard]] inline auto &occupancy(Color color) { return color == Color::White ? m_whitePop : m_blackPop; }
 

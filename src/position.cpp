@@ -474,7 +474,7 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::setPiece(Square square, Piece piece)
 	{
-		auto &slot = pieceAt(square);
+		auto &slot = pieceRefAt(square);
 		const auto captured = slot;
 
 		if (captured != Piece::None)
@@ -521,7 +521,7 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::removePiece(Square square)
 	{
-		auto &slot = pieceAt(square);
+		auto &slot = pieceRefAt(square);
 
 		const auto piece = slot;
 
@@ -552,8 +552,8 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::movePiece(Square src, Square dst)
 	{
-		auto &srcSlot = pieceAt(src);
-		auto &dstSlot = pieceAt(dst);
+		auto &srcSlot = pieceRefAt(src);
+		auto &dstSlot = pieceRefAt(dst);
 
 		const auto piece = srcSlot;
 
@@ -608,8 +608,8 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::promotePawn(Square src, Square dst, BasePiece target)
 	{
-		auto &srcSlot = pieceAt(src);
-		auto &dstSlot = pieceAt(dst);
+		auto &srcSlot = pieceRefAt(src);
+		auto &dstSlot = pieceRefAt(dst);
 
 		const auto captured = dstSlot;
 
@@ -689,8 +689,8 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::enPassant(Square src, Square dst)
 	{
-		auto &srcSlot = pieceAt(src);
-		auto &dstSlot = pieceAt(dst);
+		auto &srcSlot = pieceRefAt(src);
+		auto &dstSlot = pieceRefAt(dst);
 
 		const auto pawn = srcSlot;
 		const auto color = pieceColor(pawn);
@@ -720,7 +720,7 @@ namespace polaris
 		rank = rank == 2 ? 3 : 4;
 
 		const auto pawnSquare = toSquare(rank, file);
-		auto &pawnSlot = pieceAt(pawnSquare);
+		auto &pawnSlot = pieceRefAt(pawnSquare);
 
 		const auto enemyPawn = pawnSlot;
 
@@ -746,8 +746,8 @@ namespace polaris
 
 	void Position::unpromotePawn(Square src, Square dst, Piece captured)
 	{
-		auto &srcSlot = pieceAt(src);
-		auto &dstSlot = pieceAt(dst);
+		auto &srcSlot = pieceRefAt(src);
+		auto &dstSlot = pieceRefAt(dst);
 
 		if (captured != Piece::None)
 		{
@@ -801,8 +801,8 @@ namespace polaris
 
 	void Position::undoEnPassant(Square src, Square dst)
 	{
-		auto &srcSlot = pieceAt(src);
-		auto &dstSlot = pieceAt(dst);
+		auto &srcSlot = pieceRefAt(src);
+		auto &dstSlot = pieceRefAt(dst);
 
 		const auto pawn = dstSlot;
 		const auto color = pieceColor(pawn);
@@ -825,7 +825,7 @@ namespace polaris
 		const auto square = toSquare(rank, file);
 		const auto enemyPawn = colorPiece(BasePiece::Pawn, opp);
 
-		pieceAt(square) = enemyPawn;
+		pieceRefAt(square) = enemyPawn;
 
 		board(enemyPawn)[square] = true;
 		occupancy(opp)[square] = true;
@@ -1156,7 +1156,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					fileIdx += *emptySquares;
 				else if (const auto piece = pieceFromChar(c); piece != Piece::None)
 				{
-					position.pieceAt(7 - rankIdx, fileIdx) = piece;
+					position.pieceRefAt(7 - rankIdx, fileIdx) = piece;
 					++fileIdx;
 				}
 				else

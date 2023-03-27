@@ -82,6 +82,9 @@ namespace polaris::search::pvs
 			eval::PawnCache pawnCache{};
 			std::vector<SearchStackEntry> stack{};
 
+			HistoryTable history{};
+			MoveList quietsTried{};
+
 			Position pos{false};
 		};
 

@@ -43,6 +43,8 @@ namespace polaris
 		Move killer2{NullMove};
 	};
 
+	using HistoryTable = std::array<std::array<i32, 64>, 12>;
+
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
 
@@ -64,12 +66,13 @@ namespace polaris
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove)
+		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_moves{data.moves},
 			  m_hashMove{hashMove},
 			  m_killer1{data.killer1},
-			  m_killer2{data.killer2}
+			  m_killer2{data.killer2},
+			  m_history{history}
 		{
 			m_moves.clear();
 			m_moves.fill({NullMove, 0});
@@ -177,11 +180,15 @@ namespace polaris
 			for (i32 i = m_noisyEnd; i < m_moves.size(); ++i)
 			{
 				auto &move = m_moves[i];
+
+				if (m_history)
+					move.score = (*m_history)[static_cast<i32>(m_pos.pieceAt(move.move.src()))]
+						[static_cast<i32>(move.move.dst())];
+
 				// knight promos first, rook then bishop promos last
 				//TODO capture promos first
 				if (move.move.type() == MoveType::Promotion)
-					move.score = PromoScores[move.move.targetIdx()];
-				// leave rest unsorted
+					move.score += PromoScores[move.move.targetIdx()] * 2000;
 			}
 		}
 
@@ -226,6 +233,8 @@ namespace polaris
 		Move m_hashMove{};
 		Move m_killer1{};
 		Move m_killer2{};
+
+		const HistoryTable *m_history{};
 
 		u32 m_idx{};
 

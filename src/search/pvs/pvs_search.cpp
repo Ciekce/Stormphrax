@@ -104,6 +104,7 @@ namespace polaris::search::pvs
 		{
 			thread.pawnCache.clear();
 			std::fill(thread.stack.begin(), thread.stack.end(), SearchStackEntry{});
+			thread.history = HistoryTable{};
 		}
 	}
 
@@ -311,6 +312,15 @@ namespace polaris::search::pvs
 
 			m_flag.store(IdleFlag, std::memory_order::seq_cst);
 		}
+
+		// age history entries
+		for (i32 piece = 0; piece < 12; ++piece)
+		{
+			for (i32 dst = 0; dst < 64; ++dst)
+			{
+				data.history[piece][dst] /= 2;
+			}
+		}
 	}
 
 	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta)
@@ -394,12 +404,14 @@ namespace polaris::search::pvs
 			}
 		}
 
+		data.quietsTried.clear();
+
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.movegen, hashMove};
+		MoveGenerator generator{pos, stack.movegen, hashMove, &data.history};
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
@@ -450,6 +462,8 @@ namespace polaris::search::pvs
 				}
 			}
 
+			const bool quiet = generator.stage() >= MovegenStage::Quiet;
+
 			if (score > bestScore)
 			{
 				best = move;
@@ -459,11 +473,24 @@ namespace polaris::search::pvs
 				{
 					if (score >= beta)
 					{
-						if (generator.stage() >= MovegenStage::Quiet
-							&& move != stack.movegen.killer1)
+						if (quiet)
 						{
-							stack.movegen.killer2 = stack.movegen.killer1;
-							stack.movegen.killer1 = move;
+							if (move != stack.movegen.killer1)
+							{
+								stack.movegen.killer2 = stack.movegen.killer1;
+								stack.movegen.killer1 = move;
+							}
+
+							const auto adjustment = depth * depth;
+
+							data.history[static_cast<i32>(pos.pieceAt(move.src()))]
+								[static_cast<i32>(move.dst())] += adjustment;
+
+							for (const auto prevQuiet : data.quietsTried)
+							{
+								data.history[static_cast<i32>(pos.pieceAt(prevQuiet.src()))]
+									[static_cast<i32>(prevQuiet.dst())] -= adjustment;
+							}
 						}
 
 						entryType = EntryType::Beta;
@@ -474,6 +501,9 @@ namespace polaris::search::pvs
 					entryType = EntryType::Exact;
 				}
 			}
+
+			if (quiet)
+				data.quietsTried.push(move);
 
 #ifndef NDEBUG
 			}
