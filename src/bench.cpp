@@ -86,6 +86,8 @@ namespace polaris::bench
 		{
 			const auto pos = *Position::fromFen(fen);
 
+			searcher.newGame();
+
 			search::BenchData data{};
 			searcher.runBench(data, pos, depth);
 
