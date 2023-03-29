@@ -14,7 +14,7 @@ note: the latest release, 1.3.0, predates chess960 support - build from source i
 ## Strength
 | Version | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) |
 |:-------:|:--------------------------------------------------------:|:---------------------------------------------------------:|
-|  1.2.0  |                           2332                           |               ~2300 (very few games played)               |
+|  1.2.0  |                           2326                           |               ~2300 (very few games played)               |
 
 
 ## Features
