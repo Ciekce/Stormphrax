@@ -40,19 +40,22 @@
 #include "limit/time.h"
 #include "perft.h"
 #include "bench.h"
+#include "opts.h"
 
 #include "hash.h"
 #include "eval/material.h"
 
-namespace polaris::uci
+namespace polaris
 {
+	using namespace uci;
+
 	namespace
 	{
 		constexpr auto Name = "Polaris";
 		constexpr auto Version = PS_STRINGIFY(PS_VERSION);
 		constexpr auto Author = "Ciekce";
 
-		GlobalOptions s_uciOpts{};
+		GlobalOptions s_opts{};
 
 		class UciHandler
 		{
@@ -155,6 +158,8 @@ namespace polaris::uci
 			std::cout << "option name Clear Hash type button\n";
 			//TODO
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
+			std::cout << "option name UCI_Chess960 type check default "
+				<< (defaultOps.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name Underpromotions type check default "
 				<< (defaultOps.underpromotions ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
@@ -469,12 +474,20 @@ namespace polaris::uci
 						else std::cerr << "unknown searcher " << valueStr << std::endl;
 					}
 				}
+				else if (nameStr == "uci_chess960")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newChess960 = util::tryParseBool(valueStr))
+							s_opts.chess960 = *newChess960;
+					}
+				}
 				else if (nameStr == "underpromotions")
 				{
 					if (!valueEmpty)
 					{
 						if (const auto newUnderpromotions = util::tryParseBool(valueStr))
-							s_uciOpts.underpromotions = *newUnderpromotions;
+							s_opts.underpromotions = *newUnderpromotions;
 					}
 				}
 				else if (nameStr == "move overhead")
@@ -643,40 +656,43 @@ namespace polaris::uci
 #endif
 	}
 
-	const GlobalOptions &g_uciOpts = s_uciOpts;
+	const GlobalOptions &g_opts = s_opts;
 
-	i32 run()
+	namespace uci
 	{
-		UciHandler handler{};
-		return handler.run();
-	}
-
-	std::string moveToString(Move move)
-	{
-		if (!move)
-			return "0000";
-
-		std::ostringstream str{};
-
-		str << squareToString(move.src());
-
-		const auto type = move.type();
-
-		if (type != MoveType::Castling)
+		i32 run()
 		{
-			str << squareToString(move.dst());
-			if (type == MoveType::Promotion)
-				str << basePieceToChar(move.target());
-		}
-		else
-		{
-			const auto dst = move.srcFile() < move.dstFile()
-				? toSquare(move.srcRank(), 6)
-				: toSquare(move.srcRank(), 2);
-			str << squareToString(dst);
+			UciHandler handler{};
+			return handler.run();
 		}
 
-		return str.str();
+		std::string moveToString(Move move)
+		{
+			if (!move)
+				return "0000";
+
+			std::ostringstream str{};
+
+			str << squareToString(move.src());
+
+			const auto type = move.type();
+
+			if (type != MoveType::Castling || g_opts.chess960)
+			{
+				str << squareToString(move.dst());
+				if (type == MoveType::Promotion)
+					str << basePieceToChar(move.target());
+			}
+			else
+			{
+				const auto dst = move.srcFile() < move.dstFile()
+					? toSquare(move.srcRank(), 6)
+					: toSquare(move.srcRank(), 2);
+				str << squareToString(dst);
+			}
+
+			return str.str();
+		}
 	}
 
 #ifndef NDEBUG

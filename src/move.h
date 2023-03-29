@@ -25,6 +25,7 @@
 
 #include "core.h"
 #include "util/static_vector.h"
+#include "opts.h"
 
 namespace polaris
 {
@@ -177,7 +178,7 @@ namespace polaris
 	// bad moves of putting the king in a corner when castling
 	constexpr Square moveActualDst(Move move)
 	{
-		if (move.type() == MoveType::Castling)
+		if (move.type() == MoveType::Castling && !g_opts.chess960)
 			return toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
 		else return move.dst();
 	}

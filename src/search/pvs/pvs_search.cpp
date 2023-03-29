@@ -26,6 +26,7 @@
 #include "../../movegen.h"
 #include "../../eval/eval.h"
 #include "../../limit/trivial.h"
+#include "../../opts.h"
 
 namespace polaris::search::pvs
 {
@@ -377,8 +378,8 @@ namespace polaris::search::pvs
 		if (!pv && !inCheck)
 		{
 			// reverse futility pruning
-			if (depth <= tunable::maxRfpDepth(uci::g_uciOpts.tunable)
-				&& stack.eval >= beta + tunable::rfpMargin(uci::g_uciOpts.tunable) * depth)
+			if (depth <= tunable::maxRfpDepth(g_opts.tunable)
+				&& stack.eval >= beta + tunable::rfpMargin(g_opts.tunable) * depth)
 				return stack.eval;
 
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;

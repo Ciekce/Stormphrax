@@ -249,17 +249,14 @@ namespace polaris
 		else return rank;
 	}
 
-	ENUM_FLAGS(u8, PositionFlags)
+	struct CastlingRooks
 	{
-		None = 0x00,
-		BlackKingside = 0x01,
-		BlackQueenside = 0x02,
-		WhiteKingside = 0x04,
-		WhiteQueenside = 0x08,
-		BlackCastling = BlackKingside | BlackQueenside,
-		WhiteCastling = WhiteKingside | WhiteQueenside,
-		AllCastling = BlackCastling | WhiteCastling,
-		BlackToMove = 0x10
+		Square blackShort{Square::None};
+		Square blackLong {Square::None};
+		Square whiteShort{Square::None};
+		Square whiteLong {Square::None};
+
+		[[nodiscard]] inline bool operator==(const CastlingRooks &other) const = default;
 	};
 
 	using Score = i32;

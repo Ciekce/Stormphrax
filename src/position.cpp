@@ -33,6 +33,7 @@
 #include "util/split.h"
 #include "attacks/attacks.h"
 #include "movegen.h"
+#include "opts.h"
 
 namespace polaris
 {
@@ -114,10 +115,10 @@ namespace polaris
 	{
 		const auto prevKey = m_key;
 		const auto prevPawnKey = m_pawnKey;
-		const auto prevFlags = m_flags;
+		const auto prevCastlingRooks = m_castlingRooks;
 		const auto prevEnPassant = m_enPassant;
 
-		m_flags ^= PositionFlags::BlackToMove;
+		m_blackToMove = !m_blackToMove;
 
 		m_key ^= hash::color();
 		m_pawnKey ^= hash::color();
@@ -131,8 +132,8 @@ namespace polaris
 		if (!move)
 		{
 			if constexpr (History)
-				m_history.push_back({prevKey, prevPawnKey, m_material, m_checkers, move, prevFlags,
-					static_cast<u16>(m_halfmove), Piece::None, prevEnPassant});
+				m_history.push_back({prevKey, prevPawnKey, m_material, m_checkers, prevCastlingRooks,
+					move, static_cast<u16>(m_halfmove), Piece::None, prevEnPassant});
 
 #ifndef NDEBUG
 			if constexpr (VerifyAll)
@@ -162,7 +163,7 @@ namespace polaris
 		if (currColor == Color::Black)
 			++m_fullmove;
 
-		auto castlingMask = PositionFlags::None;
+		auto newCastlingRooks = m_castlingRooks;
 
 		const auto moving = pieceAt(moveSrc);
 
@@ -177,22 +178,22 @@ namespace polaris
 
 		if (moving == Piece::BlackRook)
 		{
-			if (moveSrc == Square::A8)
-				castlingMask |= PositionFlags::BlackQueenside;
-			else if (moveSrc == Square::H8)
-				castlingMask |= PositionFlags::BlackKingside;
+			if (moveSrc == m_castlingRooks.blackShort)
+				newCastlingRooks.blackShort = Square::None;
+			if (moveSrc == m_castlingRooks.blackLong)
+				newCastlingRooks.blackLong = Square::None;
 		}
 		else if (moving == Piece::WhiteRook)
 		{
-			if (moveSrc == Square::A1)
-				castlingMask |= PositionFlags::WhiteQueenside;
-			else if (moveSrc == Square::H1)
-				castlingMask |= PositionFlags::WhiteKingside;
+			if (moveSrc == m_castlingRooks.whiteShort)
+				newCastlingRooks.whiteShort = Square::None;
+			if (moveSrc == m_castlingRooks.whiteLong)
+				newCastlingRooks.whiteLong = Square::None;
 		}
 		else if (moving == Piece::BlackKing)
-			castlingMask |= PositionFlags::BlackCastling;
+			newCastlingRooks.blackShort = newCastlingRooks.blackLong = Square::None;
 		else if (moving == Piece::WhiteKing)
-			castlingMask |= PositionFlags::WhiteCastling;
+			newCastlingRooks.whiteShort = newCastlingRooks.whiteLong = Square::None;
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
 			m_enPassant = toSquare(5, move.srcFile());
@@ -216,30 +217,31 @@ namespace polaris
 
 		if (captured == Piece::BlackRook)
 		{
-			if (moveDst == Square::A8)
-				castlingMask |= PositionFlags::BlackQueenside;
-			else if (moveDst == Square::H8)
-				castlingMask |= PositionFlags::BlackKingside;
+			if (moveDst == m_castlingRooks.blackShort)
+				newCastlingRooks.blackShort = Square::None;
+			if (moveDst == m_castlingRooks.blackLong)
+				newCastlingRooks.blackLong = Square::None;
 		}
 		else if (captured == Piece::WhiteRook)
 		{
-			if (moveDst == Square::A1)
-				castlingMask |= PositionFlags::WhiteQueenside;
-			else if (moveDst == Square::H1)
-				castlingMask |= PositionFlags::WhiteKingside;
+			if (moveDst == m_castlingRooks.whiteShort)
+				newCastlingRooks.whiteShort = Square::None;
+			if (moveDst == m_castlingRooks.whiteLong)
+				newCastlingRooks.whiteLong = Square::None;
 		}
 		else if (moveType == MoveType::Castling)
-			castlingMask |= pieceColor(moving) == Color::Black
-				? PositionFlags::BlackCastling
-				: PositionFlags::WhiteCastling;
-
-		if (castlingMask != PositionFlags::None)
 		{
-			const auto oldFlags = m_flags;
-			m_flags &= ~castlingMask;
+			if (pieceColor(moving) == Color::Black)
+				newCastlingRooks.blackShort = newCastlingRooks.blackLong = Square::None;
+			else newCastlingRooks.whiteShort = newCastlingRooks.whiteLong = Square::None;
+		}
 
-			m_key ^= hash::castling( m_flags & PositionFlags::AllCastling);
-			m_key ^= hash::castling(oldFlags & PositionFlags::AllCastling);
+		if (newCastlingRooks != m_castlingRooks)
+		{
+			m_key ^= hash::castling(newCastlingRooks);
+			m_key ^= hash::castling( m_castlingRooks);
+
+			m_castlingRooks = newCastlingRooks;
 		}
 
 		if (prefetchTt)
@@ -250,8 +252,8 @@ namespace polaris
 		m_phase = std::clamp(m_phase, 0, 24);
 
 		if constexpr (History)
-			m_history.push_back({prevKey, prevPawnKey, prevMaterial, prevCheckers, move, prevFlags,
-				static_cast<u16>(prevHalfmove), captured, prevEnPassant});
+			m_history.push_back({prevKey, prevPawnKey, prevMaterial, prevCheckers, prevCastlingRooks,
+				move, static_cast<u16>(prevHalfmove), captured, prevEnPassant});
 
 #ifndef NDEBUG
 		if constexpr (VerifyAll)
@@ -282,8 +284,10 @@ namespace polaris
 
 		m_key = prevMove.key;
 		m_pawnKey = prevMove.pawnKey;
-		m_flags = prevMove.flags;
+		m_castlingRooks = prevMove.castlingRooks;
 		m_enPassant = prevMove.enPassant;
+
+		m_blackToMove = !m_blackToMove;
 
 		if (!move)
 			return;
@@ -445,20 +449,31 @@ namespace polaris
 
 		fen << (toMove() == Color::White ? " w " : " b ");
 
-		if (castling() == PositionFlags::None)
+		if (m_castlingRooks == CastlingRooks{})
 			fen << '-';
+		else if (g_opts.chess960)
+		{
+			constexpr auto BlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+			constexpr auto WhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+
+			if (m_castlingRooks.whiteShort != Square::None)
+				fen << WhiteFiles[squareFile(m_castlingRooks.whiteShort)];
+			if (m_castlingRooks.whiteLong != Square::None)
+				fen << WhiteFiles[squareFile(m_castlingRooks.whiteLong)];
+			if (m_castlingRooks.blackShort != Square::None)
+				fen << BlackFiles[squareFile(m_castlingRooks.blackShort)];
+			if (m_castlingRooks.blackLong != Square::None)
+				fen << BlackFiles[squareFile(m_castlingRooks.blackLong)];
+		}
 		else
 		{
-			if (testFlags(m_flags, PositionFlags::WhiteKingside))
+			if (m_castlingRooks.whiteShort != Square::None)
 				fen << 'K';
-
-			if (testFlags(m_flags,  PositionFlags::WhiteQueenside))
+			if (m_castlingRooks.whiteLong  != Square::None)
 				fen << 'Q';
-
-			if (testFlags(m_flags,  PositionFlags::BlackKingside))
+			if (m_castlingRooks.blackShort != Square::None)
 				fen << 'k';
-
-			if (testFlags(m_flags,  PositionFlags::BlackQueenside))
+			if (m_castlingRooks.blackLong  != Square::None)
 				fen << 'q';
 		}
 
@@ -682,8 +697,17 @@ namespace polaris
 			rookDst = toSquare(rank, 3);
 		}
 
-		movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
-		movePiece<UpdateKey, UpdateMaterial>(rookSrc, rookDst);
+		if (g_opts.chess960)
+		{
+			const auto rook = removePiece<UpdateKey, UpdateMaterial>(rookSrc);
+			movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
+			setPiece<UpdateKey, UpdateMaterial>(rookDst, rook);
+		}
+		else
+		{
+			movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
+			movePiece<UpdateKey, UpdateMaterial>(rookSrc, rookDst);
+		}
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
@@ -791,8 +815,17 @@ namespace polaris
 			rookDst = toSquare(rank, 3);
 		}
 
-		movePiece<false, false>(kingDst, kingSrc);
-		movePiece<false, false>(rookDst, rookSrc);
+		if (g_opts.chess960)
+		{
+			const auto rook = removePiece<false, false>(rookDst);
+			movePiece<false, false>(kingDst, kingSrc);
+			setPiece<false, false>(rookSrc, rook);
+		}
+		else
+		{
+			movePiece<false, false>(kingDst, kingSrc);
+			movePiece<false, false>(rookDst, rookSrc);
+		}
 	}
 
 	void Position::undoEnPassant(Square src, Square dst)
@@ -932,7 +965,7 @@ namespace polaris
 		m_key ^= colorHash;
 		m_pawnKey ^= colorHash;
 
-		m_key ^= hash::castling(castling());
+		m_key ^= hash::castling(m_castlingRooks);
 		m_key ^= hash::enPassant(m_enPassant);
 	}
 
@@ -1039,11 +1072,19 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 		{
 			const auto srcPiece = pieceAt(src);
 
-			if ((srcPiece == Piece::BlackKing || srcPiece == Piece::WhiteKing)
-				&& std::abs(squareFile(src) - squareFile(dst)) == 2)
+			if (srcPiece == Piece::BlackKing || srcPiece == Piece::WhiteKing)
 			{
-				const auto rookFile = squareFile(src) < squareFile(dst) ? 7 : 0;
-				return Move::castling(src, toSquare(squareRank(src), rookFile));
+				if (g_opts.chess960)
+				{
+					if (pieceAt(dst) == colorPiece(BasePiece::Rook, pieceColor(srcPiece)))
+						return Move::castling(src, dst);
+					else return Move::standard(src, dst);
+				}
+				else if (std::abs(squareFile(src) - squareFile(dst)) == 2)
+				{
+					const auto rookFile = squareFile(src) < squareFile(dst) ? 7 : 0;
+					return Move::castling(src, toSquare(squareRank(src), rookFile));
+				}
 			}
 
 			if ((srcPiece == Piece::BlackPawn || srcPiece == Piece::WhitePawn)
@@ -1075,7 +1116,10 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 		position.m_pieces[7][3] = Piece::BlackQueen;
 		position.m_pieces[7][4] = Piece::BlackKing;
 
-		position.m_flags = PositionFlags::AllCastling;
+		position.m_castlingRooks.blackShort = Square::H8;
+		position.m_castlingRooks.blackLong  = Square::A8;
+		position.m_castlingRooks.whiteShort = Square::H1;
+		position.m_castlingRooks.whiteLong  = Square::A1;
 
 		position.regen();
 
@@ -1191,7 +1235,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 		switch (color[0])
 		{
-		case 'b': position.m_flags |= PositionFlags::BlackToMove; break;
+		case 'b': position.m_blackToMove = true; break;
 		case 'w': break;
 		default:
 			std::cerr << "invalid next move color in fen " << fen << std::endl;
@@ -1208,25 +1252,74 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 		if (castlingFlags.length() != 1 || castlingFlags[0] != '-')
 		{
-			for (char flag : castlingFlags)
+			if (g_opts.chess960)
 			{
-				switch (flag)
+				for (i32 rank = 0; rank < 8; ++rank)
 				{
-				case 'k':
-				case 'h':
-					position.m_flags |= PositionFlags::BlackKingside; break;
-				case 'q':
-				case 'a':
-					position.m_flags |= PositionFlags::BlackQueenside; break;
-				case 'K':
-				case 'H':
-					position.m_flags |= PositionFlags::WhiteKingside; break;
-				case 'Q':
-				case 'A':
-					position.m_flags |= PositionFlags::WhiteQueenside; break;
-				default:
-					std::cerr << "invalid castling availability in fen " << fen << std::endl;
-					return {};
+					for (i32 file = 0; file < 8; ++file)
+					{
+						const auto square = toSquare(rank, file);
+
+						if (position.pieceAt(square) == Piece::BlackKing)
+							position.m_blackKing = square;
+						else if (position.pieceAt(square) == Piece::WhiteKing)
+							position.m_whiteKing = square;
+					}
+				}
+
+				for (char flag : castlingFlags)
+				{
+					if (flag >= 'a' && flag <= 'h')
+					{
+						const auto file = static_cast<i32>(flag - 'a');
+						const auto kingFile = squareFile(position.m_blackKing);
+
+						if (file == kingFile)
+						{
+							std::cerr << "invalid castling availability in fen " << fen << std::endl;
+							return {};
+						}
+
+						if (file < kingFile)
+							position.m_castlingRooks.blackLong = toSquare(7, file);
+						else position.m_castlingRooks.blackShort = toSquare(7, file);
+					}
+					else if (flag >= 'A' && flag <= 'H')
+					{
+						const auto file = static_cast<i32>(flag - 'A');
+						const auto kingFile = squareFile(position.m_whiteKing);
+
+						if (file == kingFile)
+						{
+							std::cerr << "invalid castling availability in fen " << fen << std::endl;
+							return {};
+						}
+
+						if (file < kingFile)
+							position.m_castlingRooks.whiteLong = toSquare(0, file);
+						else position.m_castlingRooks.whiteShort = toSquare(0, file);
+					}
+					else
+					{
+						std::cerr << "invalid castling availability in fen " << fen << std::endl;
+						return {};
+					}
+				}
+			}
+			else
+			{
+				for (char flag : castlingFlags)
+				{
+					switch (flag)
+					{
+					case 'k': position.m_castlingRooks.blackShort = Square::H8; break;
+					case 'q': position.m_castlingRooks.blackLong  = Square::A8; break;
+					case 'K': position.m_castlingRooks.whiteShort = Square::H1; break;
+					case 'Q': position.m_castlingRooks.whiteLong  = Square::A1; break;
+					default:
+						std::cerr << "invalid castling availability in fen " << fen << std::endl;
+						return {};
+					}
 				}
 			}
 		}

@@ -20,19 +20,17 @@
 
 #include "types.h"
 
-#include <string>
-
-#include "core.h"
-#include "move.h"
 #include "tunable.h"
 
-namespace polaris::uci
+namespace polaris
 {
-	i32 run();
+	struct GlobalOptions
+	{
+		bool underpromotions{false};
+		bool chess960{false};
 
-	[[nodiscard]] std::string moveToString(Move move);
+		tunable::TunableData tunable{};
+	};
 
-#ifndef NDEBUG
-	[[nodiscard]] std::string moveAndTypeToString(Move move);
-#endif
+	extern const GlobalOptions &g_opts;
 }

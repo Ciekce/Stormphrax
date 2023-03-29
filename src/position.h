@@ -39,15 +39,15 @@ namespace polaris
 		u64 pawnKey;
 		TaperedScore material;
 		Bitboard checkers;
+		CastlingRooks castlingRooks;
 		Move move;
-		PositionFlags flags;
 		u16 halfmove;
 		Piece captured;
 		Square enPassant;
 	};
 
 #ifdef NDEBUG
-	static_assert(sizeof(PreviousMove) == 40);
+	static_assert(sizeof(PreviousMove) == 48);
 #endif
 
 	[[nodiscard]] inline auto squareToString(Square square)
@@ -285,15 +285,16 @@ namespace polaris
 
 		[[nodiscard]] inline auto toMove() const
 		{
-			return testFlags(m_flags, PositionFlags::BlackToMove) ? Color::Black : Color::White;
+			return m_blackToMove ? Color::Black : Color::White;
 		}
 
 		[[nodiscard]] inline auto opponent() const
 		{
-			return testFlags(m_flags, PositionFlags::BlackToMove) ? Color::White : Color::Black;
+			return m_blackToMove ? Color::White : Color::Black;
 		}
 
-		[[nodiscard]] inline auto castling() const { return m_flags & PositionFlags::AllCastling; }
+		[[nodiscard]] inline const auto &castlingRooks() const { return m_castlingRooks; }
+
 		[[nodiscard]] inline auto enPassant() const { return m_enPassant; }
 
 		[[nodiscard]] inline auto material() const { return m_material; }
@@ -384,6 +385,18 @@ namespace polaris
 			if (const auto rooks = queens | this->rooks(attacker);
 				!(rooks & attacks::getRookAttacks(square, occupancy)).empty())
 				return true;
+
+			return false;
+		}
+
+		[[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const
+		{
+			while (squares)
+			{
+				const auto square = squares.popLowestSquare();
+				if (isAttacked(square, attacker))
+					return true;
+			}
 
 			return false;
 		}
@@ -535,7 +548,7 @@ namespace polaris
 		{
 			// every other field is a function of these
 			return m_boards == other.m_boards
-				&& m_flags == other.m_flags
+				&& m_castlingRooks == other.m_castlingRooks
 				&& m_enPassant == other.m_enPassant
 				&& m_halfmove == other.m_halfmove
 				&& m_fullmove == other.m_fullmove;
@@ -614,7 +627,9 @@ namespace polaris
 		Bitboard m_blackPop{};
 		Bitboard m_whitePop{};
 
-		PositionFlags m_flags{};
+		bool m_blackToMove{};
+
+		CastlingRooks m_castlingRooks{};
 
 		Square m_enPassant{Square::None};
 

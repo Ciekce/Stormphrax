@@ -65,9 +65,25 @@ namespace polaris::hash
 		return c == Color::White ? 0 : color();
 	}
 
-	inline u64 castling(PositionFlags flags)
+	inline u64 castling(const CastlingRooks &castlingRooks)
 	{
-		return Hashes[offsets::Castling + static_cast<usize>(flags & PositionFlags::AllCastling)];
+		constexpr usize BlackShort = 0x01;
+		constexpr usize BlackLong  = 0x02;
+		constexpr usize WhiteShort = 0x04;
+		constexpr usize WhiteLong  = 0x08;
+
+		usize flags{};
+
+		if (castlingRooks.blackShort != Square::None)
+			flags |= BlackShort;
+		if (castlingRooks.blackLong  != Square::None)
+			flags |= BlackLong;
+		if (castlingRooks.whiteShort != Square::None)
+			flags |= WhiteShort;
+		if (castlingRooks.whiteLong  != Square::None)
+			flags |= WhiteLong;
+
+		return Hashes[offsets::Castling + flags];
 	}
 
 	inline u64 enPassant(u32 file)
