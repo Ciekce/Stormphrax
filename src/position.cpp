@@ -211,7 +211,7 @@ namespace polaris
 		{
 		case MoveType::Standard: captured = movePiece<true, UpdateMaterial>(moveSrc, moveDst); break;
 		case MoveType::Promotion: captured = promotePawn<true, UpdateMaterial>(moveSrc, moveDst, move.target()); break;
-		case MoveType::Castling: castle(moveSrc, moveDst); break;
+		case MoveType::Castling: castle<true, UpdateMaterial>(moveSrc, moveDst); break;
 		case MoveType::EnPassant: captured = enPassant<true, UpdateMaterial>(moveSrc, moveDst); break;
 		}
 
