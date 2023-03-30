@@ -422,6 +422,8 @@ namespace polaris::search::pvs
 			{
 #endif
 
+			const auto movingPiece = pos.pieceAt(move.src());
+
 			auto guard = pos.applyMove(move, &m_table);
 
 			if (pos.isAttacked(pos.king(us), them))
@@ -484,13 +486,13 @@ namespace polaris::search::pvs
 
 							const auto adjustment = depth * depth;
 
-							data.history[static_cast<i32>(pos.pieceAt(move.src()))]
+							data.history[static_cast<i32>(movingPiece)]
 								[static_cast<i32>(moveActualDst(move))] += adjustment;
 
 							for (const auto prevQuiet : data.quietsTried)
 							{
-								data.history[static_cast<i32>(pos.pieceAt(prevQuiet.src()))]
-									[static_cast<i32>(moveActualDst(prevQuiet))] -= adjustment;
+								data.history[static_cast<i32>(prevQuiet.moving)]
+									[static_cast<i32>(prevQuiet.dst)] -= adjustment;
 							}
 						}
 
@@ -504,7 +506,7 @@ namespace polaris::search::pvs
 			}
 
 			if (quiet)
-				data.quietsTried.push(move);
+				data.quietsTried.push({movingPiece, moveActualDst(move)});
 
 #ifndef NDEBUG
 			}

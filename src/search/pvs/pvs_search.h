@@ -64,6 +64,12 @@ namespace polaris::search::pvs
 			MovegenData movegen{};
 		};
 
+		struct HistoryMove
+		{
+			Piece moving;
+			Square dst;
+		};
+
 		struct ThreadData
 		{
 			ThreadData()
@@ -83,7 +89,7 @@ namespace polaris::search::pvs
 			std::vector<SearchStackEntry> stack{};
 
 			HistoryTable history{};
-			MoveList quietsTried{};
+			StaticVector<HistoryMove, DefaultMoveListCapacity> quietsTried{};
 
 			Position pos{false};
 		};

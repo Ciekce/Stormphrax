@@ -693,30 +693,30 @@ namespace polaris
 
 			return str.str();
 		}
-	}
 
 #ifndef NDEBUG
-	std::string moveAndTypeToString(Move move)
-	{
-		if (!move)
-			return "0000";
-
-		std::ostringstream str{};
-
-		if (move.type() != MoveType::Standard)
+		std::string moveAndTypeToString(Move move)
 		{
-			switch (move.type())
+			if (!move)
+				return "0000";
+
+			std::ostringstream str{};
+
+			if (move.type() != MoveType::Standard)
 			{
-			case MoveType::Promotion: str << "p:"; break;
-			case MoveType::Castling: str << "c:"; break;
-			case MoveType::EnPassant: str << "e:"; break;
-			default: __builtin_unreachable();
+				switch (move.type())
+				{
+				case MoveType::Promotion: str << "p:"; break;
+				case MoveType::Castling: str << "c:"; break;
+				case MoveType::EnPassant: str << "e:"; break;
+				default: __builtin_unreachable();
+				}
 			}
+
+			str << moveToString(move);
+
+			return str.str();
 		}
-
-		str << moveToString(move);
-
-		return str.str();
-	}
 #endif
+	}
 }
