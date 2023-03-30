@@ -707,7 +707,7 @@ namespace polaris
 				switch (move.type())
 				{
 				case MoveType::Promotion: str << "p:"; break;
-				case MoveType::Castling: str << "c:"; break;
+				case MoveType::Castling:  str << "c:"; break;
 				case MoveType::EnPassant: str << "e:"; break;
 				default: __builtin_unreachable();
 				}

@@ -33,21 +33,36 @@
 
 namespace polaris
 {
-	struct PreviousMove
+	struct BoardState
 	{
-		u64 key;
-		u64 pawnKey;
-		TaperedScore material;
-		Bitboard checkers;
-		CastlingRooks castlingRooks;
-		Move move;
-		u16 halfmove;
-		Piece captured;
-		Square enPassant;
+		std::array<Bitboard, 12> boards{};
+		std::array<std::array<Piece, 8>, 8> pieces{};
+
+		u64 key{};
+		u64 pawnKey{};
+
+		TaperedScore material{};
+
+		Bitboard checkers{};
+
+		Score phase{};
+
+		CastlingRooks castlingRooks{};
+
+		Move lastMove{NullMove};
+
+		u16 halfmove{};
+
+		Piece captured{};
+
+		Square enPassant{};
+
+		Square blackKing{};
+		Square whiteKing{};
 	};
 
 #ifdef NDEBUG
-	static_assert(sizeof(PreviousMove) == 48);
+//	static_assert(sizeof(BoardState) == 48);
 #endif
 
 	[[nodiscard]] inline auto squareToString(Square square)
@@ -95,7 +110,7 @@ namespace polaris
 
 		[[nodiscard]] bool isPseudolegal(Move move) const;
 
-		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return m_pieces[rank][file]; }
+		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return m_states.back().pieces[rank][file]; }
 		[[nodiscard]] inline auto pieceAt(Square square) const { return pieceAt(squareRank(square), squareFile(square)); }
 
 		[[nodiscard]] inline auto blackOccupancy() const { return m_blackPop; }
@@ -113,26 +128,26 @@ namespace polaris
 
 		[[nodiscard]] inline auto occupancy() const { return m_whitePop | m_blackPop; }
 
-		[[nodiscard]] inline auto board(Piece piece) const { return m_boards[static_cast<i32>(piece)]; }
+		[[nodiscard]] inline auto board(Piece piece) const { return m_states.back().boards[static_cast<i32>(piece)]; }
 		[[nodiscard]] inline auto board(BasePiece piece, Color color) const { return board(colorPiece(piece, color)); }
 
-		[[nodiscard]] inline auto blackPawns() const { return m_boards[static_cast<i32>(Piece::BlackPawn)]; }
-		[[nodiscard]] inline auto whitePawns() const { return m_boards[static_cast<i32>(Piece::WhitePawn)]; }
+		[[nodiscard]] inline auto blackPawns() const { return m_states.back().boards[static_cast<i32>(Piece::BlackPawn)]; }
+		[[nodiscard]] inline auto whitePawns() const { return m_states.back().boards[static_cast<i32>(Piece::WhitePawn)]; }
 
-		[[nodiscard]] inline auto blackKnights() const { return m_boards[static_cast<i32>(Piece::BlackKnight)]; }
-		[[nodiscard]] inline auto whiteKnights() const { return m_boards[static_cast<i32>(Piece::WhiteKnight)]; }
+		[[nodiscard]] inline auto blackKnights() const { return m_states.back().boards[static_cast<i32>(Piece::BlackKnight)]; }
+		[[nodiscard]] inline auto whiteKnights() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteKnight)]; }
 
-		[[nodiscard]] inline auto blackBishops() const { return m_boards[static_cast<i32>(Piece::BlackBishop)]; }
-		[[nodiscard]] inline auto whiteBishops() const { return m_boards[static_cast<i32>(Piece::WhiteBishop)]; }
+		[[nodiscard]] inline auto blackBishops() const { return m_states.back().boards[static_cast<i32>(Piece::BlackBishop)]; }
+		[[nodiscard]] inline auto whiteBishops() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteBishop)]; }
 
-		[[nodiscard]] inline auto blackRooks() const { return m_boards[static_cast<i32>(Piece::BlackRook)]; }
-		[[nodiscard]] inline auto whiteRooks() const { return m_boards[static_cast<i32>(Piece::WhiteRook)]; }
+		[[nodiscard]] inline auto blackRooks() const { return m_states.back().boards[static_cast<i32>(Piece::BlackRook)]; }
+		[[nodiscard]] inline auto whiteRooks() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteRook)]; }
 
-		[[nodiscard]] inline auto blackQueens() const { return m_boards[static_cast<i32>(Piece::BlackQueen)]; }
-		[[nodiscard]] inline auto whiteQueens() const { return m_boards[static_cast<i32>(Piece::WhiteQueen)]; }
+		[[nodiscard]] inline auto blackQueens() const { return m_states.back().boards[static_cast<i32>(Piece::BlackQueen)]; }
+		[[nodiscard]] inline auto whiteQueens() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteQueen)]; }
 
-		[[nodiscard]] inline auto blackKings() const { return m_boards[static_cast<i32>(Piece::BlackKing)]; }
-		[[nodiscard]] inline auto whiteKings() const { return m_boards[static_cast<i32>(Piece::WhiteKing)]; }
+		[[nodiscard]] inline auto blackKings() const { return m_states.back().boards[static_cast<i32>(Piece::BlackKing)]; }
+		[[nodiscard]] inline auto whiteKings() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteKing)]; }
 
 		[[nodiscard]] inline auto blackMinors() const
 		{
@@ -238,32 +253,32 @@ namespace polaris
 
 		[[nodiscard]] inline auto pawns(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackPawn : Piece::WhitePawn)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackPawn : Piece::WhitePawn)];
 		}
 
 		[[nodiscard]] inline auto knights(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackKnight : Piece::WhiteKnight)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackKnight : Piece::WhiteKnight)];
 		}
 
 		[[nodiscard]] inline auto bishops(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackBishop : Piece::WhiteBishop)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackBishop : Piece::WhiteBishop)];
 		}
 
 		[[nodiscard]] inline auto rooks(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackRook : Piece::WhiteRook)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackRook : Piece::WhiteRook)];
 		}
 
 		[[nodiscard]] inline auto queens(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackQueen : Piece::WhiteQueen)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackQueen : Piece::WhiteQueen)];
 		}
 
 		[[nodiscard]] inline auto kings(Color color) const
 		{
-			return m_boards[static_cast<i32>(color == Color::Black ? Piece::BlackKing : Piece::WhiteKing)];
+			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackKing : Piece::WhiteKing)];
 		}
 
 		[[nodiscard]] inline auto minors(Color color) const
@@ -281,7 +296,7 @@ namespace polaris
 			return color == Color::Black ? blackNonPk() : whiteNonPk();
 		}
 
-		[[nodiscard]] inline const auto &pieces() const { return m_pieces; }
+		[[nodiscard]] inline const auto &pieces() const { return m_states.back().pieces; }
 
 		[[nodiscard]] inline auto toMove() const
 		{
@@ -293,21 +308,21 @@ namespace polaris
 			return m_blackToMove ? Color::White : Color::Black;
 		}
 
-		[[nodiscard]] inline const auto &castlingRooks() const { return m_castlingRooks; }
+		[[nodiscard]] inline const auto &castlingRooks() const { return m_states.back().castlingRooks; }
 
-		[[nodiscard]] inline auto enPassant() const { return m_enPassant; }
+		[[nodiscard]] inline auto enPassant() const { return m_states.back().enPassant; }
 
-		[[nodiscard]] inline auto material() const { return m_material; }
+		[[nodiscard]] inline auto material() const { return m_states.back().material; }
 
-		[[nodiscard]] inline auto halfmove() const { return m_halfmove; }
+		[[nodiscard]] inline auto halfmove() const { return m_states.back().halfmove; }
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
-		[[nodiscard]] inline auto key() const { return m_key; }
-		[[nodiscard]] inline auto pawnKey() const { return m_pawnKey; }
+		[[nodiscard]] inline auto key() const { return m_states.back().key; }
+		[[nodiscard]] inline auto pawnKey() const { return m_states.back().pawnKey; }
 
 		[[nodiscard]] inline auto interpScore(TaperedScore score) const
 		{
-			return (score.midgame * m_phase + score.endgame * (24 - m_phase)) / 24;
+			return (score.midgame * m_states.back().phase + score.endgame * (24 - m_states.back().phase)) / 24;
 		}
 
 		[[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const
@@ -401,57 +416,57 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline auto blackKing() const { return m_blackKing; }
-		[[nodiscard]] inline auto whiteKing() const { return m_whiteKing; }
+		[[nodiscard]] inline auto blackKing() const { return m_states.back().blackKing; }
+		[[nodiscard]] inline auto whiteKing() const { return m_states.back().whiteKing; }
 
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
 			if constexpr (C == Color::Black)
-				return m_blackKing;
-			else return m_whiteKing;
+				return m_states.back().blackKing;
+			else return m_states.back().whiteKing;
 		}
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
-			return c == Color::Black ? m_blackKing : m_whiteKing;
+			return c == Color::Black ? m_states.back().blackKing : m_states.back().whiteKing;
 		}
 
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
 			if constexpr (C == Color::Black)
-				return m_whiteKing;
-			else return m_blackKing;
+				return m_states.back().whiteKing;
+			else return m_states.back().blackKing;
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
-			return c == Color::Black ? m_whiteKing : m_blackKing;
+			return c == Color::Black ? m_states.back().whiteKing : m_states.back().blackKing;
 		}
 
 		[[nodiscard]] inline bool isCheck() const
 		{
-			return !m_checkers.empty();
+			return !m_states.back().checkers.empty();
 		}
 
-		[[nodiscard]] inline auto checkers() const { return m_checkers; }
+		[[nodiscard]] inline auto checkers() const { return m_states.back().checkers; }
 
 		[[nodiscard]] inline bool isDrawn() const
 		{
 			// TODO handle mate
-			if (m_halfmove >= 100)
+			if (m_states.back().halfmove >= 100)
 				return true;
 
 			/*
-			const auto last = static_cast<i32>(m_history.size() - 2);
+			const auto last = static_cast<i32>(m_states.size() - 2);
 			const auto lastIrreversible = std::max(0, last - m_halfmove);
 
 		//	i32 repetitions = 1;
 
 			for (i32 i = last; i >= lastIrreversible; i -= 2)
 			{
-				if (m_history[i].key == m_key
+				if (m_states[i].key == m_key
 		//			&& ++repetitions == 3
 					)
 					return true;
@@ -460,9 +475,9 @@ namespace polaris
 
 			i32 repetitions = 1;
 
-			for (i32 i = static_cast<i32>(m_history.size() - 1); i >= 0; --i)
+			for (i32 i = static_cast<i32>(m_states.size() - 1); i >= 0; --i)
 			{
-				if (m_history[i].key == m_key
+				if (m_states[i].key == m_states.back().key
 					&& ++repetitions == 3)
 					return true;
 			}
@@ -515,7 +530,7 @@ namespace polaris
 
 		[[nodiscard]] inline Move lastMove() const
 		{
-			return m_history.empty() ? NullMove : m_history.back().move;
+			return m_states.empty() ? NullMove : m_states.back().lastMove;
 		}
 
 		[[nodiscard]] inline Piece captureTarget(Move move) const
@@ -541,32 +556,32 @@ namespace polaris
 
 		[[nodiscard]] std::string toFen() const;
 
-		// for debugging
-		[[maybe_unused]] void clearHistory();
-
 		[[nodiscard]] inline bool operator==(const Position &other) const
 		{
+			const auto &ourState = m_states.back();
+			const auto &theirState = other.m_states.back();
+
 			// every other field is a function of these
-			return m_boards == other.m_boards
-				&& m_castlingRooks == other.m_castlingRooks
-				&& m_enPassant == other.m_enPassant
-				&& m_halfmove == other.m_halfmove
+			return ourState.boards == theirState.boards
+				&& ourState.castlingRooks == theirState.castlingRooks
+				&& ourState.enPassant == theirState.enPassant
+				&& ourState.halfmove == theirState.halfmove
 				&& m_fullmove == other.m_fullmove;
 		}
 
 		[[nodiscard]] inline bool deepEquals(const Position &other) const
 		{
 			return *this == other
-				&& m_pieces == other.m_pieces
+				&& m_states.back().pieces == other.m_states.back().pieces
 				&& m_blackPop == other.m_blackPop
 				&& m_whitePop == other.m_whitePop
-				&& m_blackKing == other.m_blackKing
-				&& m_whiteKing == other.m_whiteKing
-				&& m_checkers == other.m_checkers
-				&& m_phase == other.m_phase
-				&& m_material == other.m_material
-				&& m_key == other.m_key
-				&& m_pawnKey == other.m_pawnKey;
+				&& m_states.back().blackKing == other.m_states.back().blackKing
+				&& m_states.back().whiteKing == other.m_states.back().whiteKing
+				&& m_states.back().checkers == other.m_states.back().checkers
+				&& m_states.back().phase == other.m_states.back().phase
+				&& m_states.back().material == other.m_states.back().material
+				&& m_states.back().key == other.m_states.back().key
+				&& m_states.back().pawnKey == other.m_states.back().pawnKey;
 		}
 
 		void regenMaterial();
@@ -590,9 +605,12 @@ namespace polaris
 		[[nodiscard]] static std::optional<Position> fromFen(const std::string &fen);
 
 	private:
-		[[nodiscard]] inline auto &board(Piece piece) { return m_boards[static_cast<i32>(piece)]; }
+		[[nodiscard]] inline auto &currState() { return m_states.back(); }
+		[[nodiscard]] inline const auto &currState() const { return m_states.back(); }
 
-		[[nodiscard]] inline auto &pieceRefAt(u32 rank, u32 file) { return m_pieces[rank][file]; }
+		[[nodiscard]] inline auto &board(Piece piece) { return currState().boards[static_cast<i32>(piece)]; }
+
+		[[nodiscard]] inline auto &pieceRefAt(u32 rank, u32 file) { return currState().pieces[rank][file]; }
 		[[nodiscard]] inline auto &pieceRefAt(Square square) { return pieceRefAt(squareRank(square), squareFile(square)); }
 
 		[[nodiscard]] inline auto &occupancy(Color color) { return color == Color::White ? m_whitePop : m_blackPop; }
@@ -611,43 +629,20 @@ namespace polaris
 		template <bool UpdateKey = true, bool UpdateMaterial = true>
 		Piece enPassant(Square src, Square dst);
 
-		void unpromotePawn(Square src, Square dst, Piece captured);
-		void uncastle(Square kingSrc, Square rookSrc);
-		void undoEnPassant(Square src, Square dst);
-
 		[[nodiscard]] inline Bitboard calcCheckers() const
 		{
 			const auto c = toMove();
-			return attackersTo(c == Color::White ? m_whiteKing : m_blackKing, oppColor(c));
+			return attackersTo(c == Color::White ? currState().whiteKing : currState().blackKing, oppColor(c));
 		}
-
-		std::array<Bitboard, 12> m_boards{};
-		std::array<std::array<Piece, 8>, 8> m_pieces{};
 
 		Bitboard m_blackPop{};
 		Bitboard m_whitePop{};
 
 		bool m_blackToMove{};
 
-		CastlingRooks m_castlingRooks{};
-
-		Square m_enPassant{Square::None};
-
-		Square m_blackKing{Square::None};
-		Square m_whiteKing{Square::None};
-
-		Bitboard m_checkers{};
-
-		Score m_phase{};
-		TaperedScore m_material{};
-
-		i32 m_halfmove{};
 		i32 m_fullmove{1};
 
-		u64 m_key{};
-		u64 m_pawnKey{};
-
-		std::vector<PreviousMove> m_history{};
+		std::vector<BoardState> m_states{};
 	};
 
 	[[nodiscard]] Square squareFromString(const std::string &str);
