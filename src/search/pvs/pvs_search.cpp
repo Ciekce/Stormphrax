@@ -213,6 +213,7 @@ namespace polaris::search::pvs
 		for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData); ++depth)
 		{
 			searchData.depth = depth;
+			searchData.seldepth = 0;
 
 			const auto prevBest = best;
 
