@@ -249,6 +249,11 @@ namespace polaris
 		else return rank;
 	}
 
+	constexpr i32 relativeRank(Color c, i32 rank)
+	{
+		return c == Color::Black ? 7 - rank : rank;
+	}
+
 	struct CastlingRooks
 	{
 		Square blackShort{Square::None};

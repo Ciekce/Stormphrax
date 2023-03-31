@@ -343,6 +343,10 @@ namespace polaris
 				|| (us == Color::White && dstRank <= srcRank))
 				return false;
 
+			// non-promotion move to back rank
+			if (dstRank == relativeRank(us, 7))
+				return false;
+
 			// sideways move
 			if (move.srcFile() != move.dstFile())
 			{
