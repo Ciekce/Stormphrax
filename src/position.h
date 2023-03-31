@@ -506,6 +506,10 @@ namespace polaris
 
 		[[nodiscard]] inline bool isLikelyDrawn() const
 		{
+			if (!blackPawns().empty() || !whitePawns().empty()
+				|| !blackMajors().empty() || !whiteMajors().empty())
+				return false;
+
 			// KNK or KNNK
 			if ((blackNonPk().empty() && whiteNonPk() == whiteKnights() && whiteKnights().popcount() < 3)
 				|| (whiteNonPk().empty() && blackNonPk() == blackKnights() && blackKnights().popcount() < 3))
@@ -514,8 +518,7 @@ namespace polaris
 			if (!blackNonPk().empty() && !whiteNonPk().empty())
 			{
 				// KNKN or KNKB or KBKB (OCB handled in isDrawn())
-				if ((whiteNonPk() ^ whiteMinors()).empty() && !whiteMinors().multiple()
-					&& (blackNonPk() ^ blackMinors()).empty() && !blackMinors().multiple())
+				if (!whiteMinors().multiple() && !blackMinors().multiple())
 					return true;
 
 				// KBBKB
@@ -640,7 +643,7 @@ namespace polaris
 
 		bool m_blackToMove{};
 
-		i32 m_fullmove{1};
+		u32 m_fullmove{1};
 
 		std::vector<BoardState> m_states{};
 	};
