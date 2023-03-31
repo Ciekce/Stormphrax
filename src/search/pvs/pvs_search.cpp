@@ -405,7 +405,7 @@ namespace polaris::search::pvs
 			}
 		}
 
-		data.quietsTried.clear();
+		stack.quietsTried.clear();
 
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
@@ -489,7 +489,7 @@ namespace polaris::search::pvs
 							data.history[static_cast<i32>(movingPiece)]
 								[static_cast<i32>(moveActualDst(move))] += adjustment;
 
-							for (const auto prevQuiet : data.quietsTried)
+							for (const auto prevQuiet : stack.quietsTried)
 							{
 								data.history[static_cast<i32>(prevQuiet.moving)]
 									[static_cast<i32>(prevQuiet.dst)] -= adjustment;
@@ -506,7 +506,7 @@ namespace polaris::search::pvs
 			}
 
 			if (quiet)
-				data.quietsTried.push({movingPiece, moveActualDst(move)});
+				stack.quietsTried.push({movingPiece, moveActualDst(move)});
 
 #ifndef NDEBUG
 			}

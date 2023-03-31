@@ -62,7 +62,7 @@ namespace polaris
 	};
 
 #ifdef NDEBUG
-//	static_assert(sizeof(BoardState) == 48);
+	static_assert(sizeof(BoardState) == 208);
 #endif
 
 	[[nodiscard]] inline auto squareToString(Square square)
