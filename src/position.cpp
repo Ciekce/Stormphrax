@@ -310,7 +310,7 @@ namespace polaris
 
 		// we're capturing something
 		if (dstPiece != Piece::None
-			// we're capturing our own piece          and either not castling
+			// we're capturing our own piece    and either not castling
 			&& ((pieceColor(dstPiece) == us && (move.type() != MoveType::Castling
 					// or trying to castle with a non-rook
 					|| dstPiece != colorPiece(BasePiece::Rook, us)))
@@ -837,6 +837,8 @@ namespace polaris
 
 		state.key ^= hash::castling(state.castlingRooks);
 		state.key ^= hash::enPassant(state.enPassant);
+
+		state.checkers = calcCheckers();
 	}
 
 #ifndef NDEBUG
