@@ -55,7 +55,7 @@ namespace polaris
 
 		Piece captured{};
 
-		Square enPassant{};
+		Square enPassant{Square::None};
 
 		Square blackKing{};
 		Square whiteKing{};
