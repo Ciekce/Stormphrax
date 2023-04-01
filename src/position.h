@@ -53,12 +53,12 @@ namespace polaris
 
 		u16 halfmove{};
 
-		Piece captured{};
+		Piece captured{Piece::None};
 
 		Square enPassant{Square::None};
 
-		Square blackKing{};
-		Square whiteKing{};
+		Square blackKing{Square::None};
+		Square whiteKing{Square::None};
 	};
 
 #ifdef NDEBUG
