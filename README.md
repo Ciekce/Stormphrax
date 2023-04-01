@@ -8,8 +8,7 @@
 
 </div>
 
-a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine  
-note: the latest release, 1.3.0, predates chess960 support - build from source if you need this functionality before the next release
+a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine
 
 ## Strength
 | Version | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) |
