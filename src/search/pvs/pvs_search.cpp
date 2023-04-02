@@ -332,6 +332,9 @@ namespace polaris::search::pvs
 
 		auto &pos = data.pos;
 
+		if (ply >= MaxDepth)
+			return eval::staticEval(pos);
+
 		const bool inCheck = pos.isCheck();
 
 		if (depth == 0 && !inCheck)
@@ -541,7 +544,7 @@ namespace polaris::search::pvs
 
 		auto &pos = data.pos;
 
-		auto staticEval = eval::staticEval(pos, &data.pawnCache);
+		const auto staticEval = eval::staticEval(pos, &data.pawnCache);
 
 		if (staticEval > alpha)
 		{
@@ -550,6 +553,9 @@ namespace polaris::search::pvs
 
 			alpha = staticEval;
 		}
+
+		if (ply >= MaxDepth)
+			return staticEval;
 
 		const auto us = pos.toMove();
 
