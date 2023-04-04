@@ -99,9 +99,10 @@ namespace polaris
 
 	Position::Position(bool init)
 	{
+		m_states.reserve(256);
+
 		if (init)
 		{
-			m_states.reserve(256);
 			m_states.push_back({});
 
 			for (auto &file: currState().pieces)
