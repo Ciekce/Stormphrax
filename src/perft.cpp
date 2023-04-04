@@ -58,6 +58,11 @@ namespace polaris
 
 	void perft(Position &pos, i32 depth)
 	{
+		std::cout << doPerft(pos, depth) << std::endl;
+	}
+
+	void splitPerft(Position &pos, i32 depth)
+	{
 		--depth;
 
 		const auto opp = pos.opponent();

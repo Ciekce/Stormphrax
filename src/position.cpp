@@ -500,7 +500,13 @@ namespace polaris
 			currState().material += eval::pieceSquareValue(piece, square);
 
 		if constexpr (UpdateKey)
-			currState().key ^= hash::pieceSquare(piece, square);
+		{
+			const auto hash = hash::pieceSquare(piece, square);
+			currState().key ^= hash;
+
+			if (basePiece(piece) == BasePiece::Pawn)
+				currState().pawnKey ^= hash;
+		}
 
 		return captured;
 	}
@@ -666,7 +672,10 @@ namespace polaris
 		if (g_opts.chess960)
 		{
 			const auto rook = removePiece<UpdateKey, UpdateMaterial>(rookSrc);
-			movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
+
+			if (kingSrc != kingDst)
+				movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
+
 			setPiece<UpdateKey, UpdateMaterial>(rookDst, rook);
 		}
 		else
@@ -1178,6 +1187,54 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 						if (file < kingFile)
 							state.castlingRooks.whiteLong = toSquare(0, file);
 						else state.castlingRooks.whiteShort = toSquare(0, file);
+					}
+					else if (flag == 'k')
+					{
+						for (i32 file = squareFile(state.blackKing) + 1; file < 8; ++file)
+						{
+							const auto square = toSquare(7, file);
+							if (position.pieceAt(square) == Piece::BlackRook)
+							{
+								state.castlingRooks.blackShort = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'K')
+					{
+						for (i32 file = squareFile(state.whiteKing) + 1; file < 8; ++file)
+						{
+							const auto square = toSquare(0, file);
+							if (position.pieceAt(square) == Piece::WhiteRook)
+							{
+								state.castlingRooks.whiteShort = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'q')
+					{
+						for (i32 file = squareFile(state.blackKing) - 1; file >= 0; --file)
+						{
+							const auto square = toSquare(7, file);
+							if (position.pieceAt(square) == Piece::BlackRook)
+							{
+								state.castlingRooks.blackLong = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'Q')
+					{
+						for (i32 file = squareFile(state.whiteKing) - 1; file >= 0; --file)
+						{
+							const auto square = toSquare(0, file);
+							if (position.pieceAt(square) == Piece::WhiteRook)
+							{
+								state.castlingRooks.whiteLong = square;
+								break;
+							}
+						}
 					}
 					else
 					{

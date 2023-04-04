@@ -26,4 +26,5 @@
 namespace polaris
 {
 	void perft(Position &pos, i32 depth);
+	void splitPerft(Position &pos, i32 depth);
 }

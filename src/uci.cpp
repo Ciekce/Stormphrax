@@ -80,6 +80,7 @@ namespace polaris
 			void handleRegen();
 			void handleMoves();
 			void handlePerft(const std::vector<std::string> &tokens);
+			void handleSplitperft(const std::vector<std::string> &tokens);
 			void handleBench(const std::vector<std::string> &tokens);
 #ifndef NDEBUG
 			void handleVerify();
@@ -135,6 +136,8 @@ namespace polaris
 					handleMoves();
 				else if (command == "perft")
 					handlePerft(tokens);
+				else if (command == "splitperft")
+					handleSplitperft(tokens);
 				else if (command == "bench")
 					handleBench(tokens);
 #ifndef NDEBUG
@@ -579,16 +582,32 @@ namespace polaris
 		{
 			u32 depth = 6;
 
-			for (usize i = 1; i < tokens.size(); ++i)
+			if (tokens.size() > 1)
 			{
-				if (tokens[i] == "depth" && ++i < tokens.size())
+				if (!util::tryParseU32(depth, tokens[1]))
 				{
-					if (!util::tryParseU32(depth, tokens[i]))
-						std::cerr << "invalid depth " << tokens[i] << std::endl;
+					std::cerr << "invalid depth " << tokens[1] << std::endl;
+					return;
 				}
 			}
 
 			perft(m_pos, static_cast<i32>(depth));
+		}
+
+		void UciHandler::handleSplitperft(const std::vector<std::string> &tokens)
+		{
+			u32 depth = 6;
+
+			if (tokens.size() > 1)
+			{
+				if (!util::tryParseU32(depth, tokens[1]))
+				{
+					std::cerr << "invalid depth " << tokens[1] << std::endl;
+					return;
+				}
+			}
+
+			splitPerft(m_pos, static_cast<i32>(depth));
 		}
 
 		void UciHandler::handleBench(const std::vector<std::string> &tokens)
