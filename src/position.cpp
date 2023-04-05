@@ -34,6 +34,7 @@
 #include "attacks/attacks.h"
 #include "movegen.h"
 #include "opts.h"
+#include "rays.h"
 
 namespace polaris
 {
@@ -306,22 +307,24 @@ namespace polaris
 		if (srcPiece == Piece::None || pieceColor(srcPiece) != us)
 			return false;
 
+		const auto type = move.type();
+
 		const auto dst = move.dst();
 		const auto dstPiece = pieceAt(dst);
 
 		// we're capturing something
 		if (dstPiece != Piece::None
 			// we're capturing our own piece    and either not castling
-			&& ((pieceColor(dstPiece) == us && (move.type() != MoveType::Castling
+			&& ((pieceColor(dstPiece) == us && (type != MoveType::Castling
 					// or trying to castle with a non-rook
 					|| dstPiece != colorPiece(BasePiece::Rook, us)))
 				// or trying to capture a king
 				|| basePiece(dstPiece) == BasePiece::King))
 			return false;
 
-		if (move.type() != MoveType::Standard)
+		// take advantage of evasion generation if in check
+		if (isCheck())
 		{
-			//TODO
 			ScoredMoveList moves{};
 			generateAll(moves, *this);
 
@@ -329,13 +332,77 @@ namespace polaris
 				[move](const auto m) { return m.move == move; });
 		}
 
-		const auto them = oppColor(us);
 		const auto base = basePiece(srcPiece);
-
+		const auto them = oppColor(us);
 		const auto occ = m_blackPop | m_whitePop;
+
+		if (type == MoveType::Castling)
+		{
+			if (base != BasePiece::King || isCheck())
+				return false;
+
+			const auto homeRank = relativeRank(us, 0);
+
+			// wrong rank
+			if (move.srcRank() != homeRank || move.dstRank() != homeRank)
+				return false;
+
+			const auto rooks = currState().castlingRooks;
+			const auto rank = squareRank(src);
+
+			Square kingDst, rookDst;
+
+			if (squareFile(src) < squareFile(dst))
+			{
+				// no castling rights
+				if (dst != (us == Color::Black ? rooks.blackShort : rooks.whiteShort))
+					return false;
+
+				kingDst = toSquare(rank, 6);
+				rookDst = toSquare(rank, 5);
+			}
+			else
+			{
+				// no castling rights
+				if (dst != (us == Color::Black ? rooks.blackLong : rooks.whiteLong))
+					return false;
+
+				kingDst = toSquare(rank, 2);
+				rookDst = toSquare(rank, 3);
+			}
+
+			// same checks as for movegen
+			if (g_opts.chess960)
+			{
+				const auto toKingDst = rayBetween(src, kingDst);
+				const auto toRook = rayBetween(src, dst);
+
+				const auto castleOcc = occ ^ squareBit(src) ^ squareBit(dst);
+
+				return (castleOcc & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
+					&& !anyAttacked(toKingDst | squareBit(kingDst), them);
+			}
+			else
+			{
+				if (dst == rooks.blackShort)
+					return (occ & U64(0x6000000000000000)).empty()
+						&& !isAttacked(Square::F8, Color::White);
+				else if (dst == rooks.blackLong)
+					return (occ & U64(0x0E00000000000000)).empty()
+						&& !isAttacked(Square::D8, Color::White);
+				else if (dst == rooks.whiteShort)
+					return (occ & U64(0x0000000000000060)).empty()
+						&& !isAttacked(Square::F1, Color::Black);
+				else return (occ & U64(0x000000000000000E)).empty()
+						&& !isAttacked(Square::D1, Color::Black);
+			}
+		}
 
 		if (base == BasePiece::Pawn)
 		{
+			if (type == MoveType::EnPassant && currState().enPassant == Square::None)
+				return false;
+
 			const auto srcRank = move.srcRank();
 			const auto dstRank = move.dstRank();
 
@@ -344,8 +411,10 @@ namespace polaris
 				|| (us == Color::White && dstRank <= srcRank))
 				return false;
 
-			// non-promotion move to back rank
-			if (dstRank == relativeRank(us, 7))
+			const auto promoRank = relativeRank(us, 7);
+
+			// non-promotion move to back rank, or promotion move to any other rank
+			if ((type == MoveType::Promotion) != (dstRank == promoRank))
 				return false;
 
 			// sideways move
@@ -376,6 +445,9 @@ namespace polaris
 		}
 		else
 		{
+			if (type == MoveType::Promotion || type == MoveType::EnPassant)
+				return false;
+
 			Bitboard attacks{};
 
 			switch (base)
