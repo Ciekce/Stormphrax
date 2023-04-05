@@ -15,6 +15,8 @@ if(MSVC)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 endif()
 
+find_package(Threads REQUIRED)
+
 include(CheckIPOSupported)
 check_ipo_supported(RESULT LTO_SUPPORTED)
 
@@ -74,4 +76,6 @@ foreach(TARGET ${TARGETS})
 
 	string(REPLACE "-" "-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")
+
+	target_link_libraries(${TARGET} Threads::Threads)
 endforeach()
