@@ -20,7 +20,10 @@
 
 #include "../types.h"
 
+#ifdef __x86_64__
 #include <immintrin.h>
+#endif
+
 #include <type_traits>
 
 #include "../arch.h"
