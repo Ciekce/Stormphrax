@@ -32,87 +32,87 @@ namespace polaris::eval
 #define S(Mg, Eg) TaperedScore{(Mg), (Eg)}
 
 		// pawn structure
-		constexpr auto DoubledPawn = S(-17, -22);
+		constexpr auto DoubledPawn = S(-18, -25);
 		// idea from weiss
-		constexpr auto DoubledGappedPawn = S(-3, -15);
-		constexpr auto PawnDefender = S(18, 15);
-		constexpr auto OpenPawn = S(-12, -6);
+		constexpr auto DoubledGappedPawn = S(-4, -18);
+		constexpr auto PawnDefender = S(17, 14);
+		constexpr auto OpenPawn = S(-11, -7);
 
 		constexpr auto PawnPhalanx = std::array {
-			S(0, 0), S(3, 6), S(23, 10), S(26, 26), S(44, 62), S(118, 139), S(20, 265)
+			S(0, 0), S(3, 5), S(22, 10), S(25, 25), S(44, 61), S(118, 136), S(23, 259)
 		};
 
 		constexpr auto Passer = std::array {
-			S(0, 0), S(4, 6), S(-2, 13), S(-11, 45), S(15, 67), S(11, 141), S(49, 155)
+			S(0, 0), S(0, 7), S(-4, 14), S(-13, 45), S(12, 66), S(8, 138), S(48, 152)
 		};
 
 		constexpr auto DefendedPasser = std::array {
-			S(0, 0), S(0, 0), S(3, -8), S(3, -10), S(7, 1), S(32, 16), S(157, -12)
+			S(0, 0), S(0, 0), S(4, -9), S(5, -11), S(8, 0), S(33, 15), S(154, -12)
 		};
 
 		constexpr auto BlockedPasser = std::array {
-			S(0, 0), S(-10, -6), S(-10, 1), S(-4, -12), S(-13, -28), S(7, -94), S(29, -146)
+			S(0, 0), S(-9, -3), S(-9, 3), S(-5, -8), S(-13, -24), S(5, -87), S(29, -138)
 		};
 
 		constexpr auto CandidatePasser = std::array {
-			S(0, 0), S(8, -4), S(1, -1), S(3, 12), S(21, 15), S(51, 60), S(0, 0)
+			S(0, 0), S(7, -3), S(1, 0), S(3, 12), S(20, 16), S(46, 60), S(0, 0)
 		};
 
-		constexpr auto DoubledPasser = S(16, -24);
-		constexpr auto PasserHelper = S(-8, 14);
+		constexpr auto DoubledPasser = S(17, -26);
+		constexpr auto PasserHelper = S(-8, 13);
 
 		// pawns
-		constexpr auto PawnAttackingMinor = S(53, 17);
-		constexpr auto PawnAttackingRook = S(101, -31);
-		constexpr auto PawnAttackingQueen = S(58, -16);
+		constexpr auto PawnAttackingMinor = S(52, 17);
+		constexpr auto PawnAttackingRook = S(98, -31);
+		constexpr auto PawnAttackingQueen = S(57, -16);
 
-		constexpr auto PasserSquareRule = S(13, 105);
+		constexpr auto PasserSquareRule = S(12, 102);
 
 		// minors
-		constexpr auto MinorBehindPawn = S(5, 19);
+		constexpr auto MinorBehindPawn = S(5, 18);
 
-		constexpr auto MinorAttackingRook = S(41, 0);
-		constexpr auto MinorAttackingQueen = S(29, 2);
+		constexpr auto MinorAttackingRook = S(40, 0);
+		constexpr auto MinorAttackingQueen = S(27, 3);
 
 		// knights
-		constexpr auto KnightOutpost = S(26, 16);
+		constexpr auto KnightOutpost = S(25, 16);
 
 		// bishops
-		constexpr auto BishopPair = S(26, 60);
+		constexpr auto BishopPair = S(26, 59);
 
 		// rooks
-		constexpr auto RookOnOpenFile = S(32, -3);
-		constexpr auto RookOnSemiOpenFile = S(2, -2);
-		constexpr auto RookSupportingPasser = S(8, 12);
-		constexpr auto RookAttackingQueen = S(58, -25);
+		constexpr auto RookOnOpenFile = S(41, 2);
+		constexpr auto RookOnSemiOpenFile = S(15, 9);
+		constexpr auto RookSupportingPasser = S(17, 14);
+		constexpr auto RookAttackingQueen = S(55, -23);
 
 		// queens
 
 		// kings
-		constexpr auto KingOnOpenFile = S(-65, -3);
-		constexpr auto KingOnSemiOpenFile = S(2, 2);
+		constexpr auto KingOnOpenFile = S(-71, 2);
+		constexpr auto KingOnSemiOpenFile = S(-30, 18);
 
 		// mobility
 		constexpr auto KnightMobility = std::array {
-			S(-43, -13), S(-23, -8), S(-13, -5), S(-8, 0), S(3, 3), S(9, 11), S(16, 10), S(21, 9),
-			S(38, -8)
+			S(-42, -12), S(-23, -8), S(-12, -5), S(-8, 0), S(3, 3), S(8, 11), S(16, 10), S(20, 9),
+			S(36, -8)
 		};
 
 		constexpr auto BishopMobility = std::array {
-			S(-54, 4), S(-39, -14), S(-26, -24), S(-18, -16), S(-9, -8), S(-5, 1), S(0, 7), S(3, 9),
-			S(2, 14), S(11, 9), S(21, 4), S(47, 0), S(6, 25), S(60, -10)
+			S(-53, 5), S(-38, -13), S(-26, -23), S(-18, -16), S(-9, -8), S(-5, 0), S(0, 7), S(3, 9),
+			S(2, 13), S(11, 9), S(21, 3), S(46, 0), S(7, 24), S(58, -10)
 		};
 
 		constexpr auto RookMobility = std::array {
-			S(-50, -38), S(-36, -15), S(-29, -15), S(-23, -10), S(-21, -7), S(-14, -4), S(-10, 2), S(-2, 4),
-			S(8, 6), S(16, 8), S(19, 12), S(28, 14), S(29, 19), S(47, 11), S(38, 12)
+			S(-42, -38), S(-29, -15), S(-23, -15), S(-18, -11), S(-17, -7), S(-11, -4), S(-9, 2), S(-4, 4),
+			S(5, 7), S(11, 9), S(14, 12), S(23, 14), S(25, 18), S(42, 11), S(34, 11)
 		};
 
 		constexpr auto QueenMobility = std::array {
-			S(-34, 73), S(-33, 230), S(-34, 88), S(-35, 54), S(-32, 51), S(-25, -21), S(-20, -59), S(-17, -70),
-			S(-14, -69), S(-8, -76), S(-6, -62), S(-3, -51), S(-4, -46), S(4, -42), S(5, -31), S(1, -15),
-			S(0, -5), S(16, -19), S(12, -5), S(28, -10), S(34, -6), S(65, -19), S(43, -3), S(85, -13),
-			S(36, 4), S(43, 0), S(-42, 63), S(-66, 58)
+			S(-31, 63), S(-31, 222), S(-32, 89), S(-33, 53), S(-31, 49), S(-24, -23), S(-20, -58), S(-17, -68),
+			S(-14, -66), S(-8, -73), S(-7, -59), S(-3, -49), S(-4, -45), S(4, -40), S(5, -29), S(0, -14),
+			S(0, -4), S(16, -18), S(12, -5), S(27, -9), S(33, -5), S(64, -19), S(44, -3), S(83, -12),
+			S(35, 4), S(41, 0), S(-42, 62), S(-66, 57)
 		};
 #undef S
 
@@ -238,8 +238,8 @@ namespace polaris::eval
 
 			m_whiteData.pawnAttacks = whitePawnLeftAttacks | whitePawnRightAttacks;
 
-			m_blackData.semiOpen = ~whitePawns.fillFile();
-			m_whiteData.semiOpen = ~blackPawns.fillFile();
+			m_blackData.semiOpen = ~blackPawns.fillFile();
+			m_whiteData.semiOpen = ~whitePawns.fillFile();
 
 			m_blackData.available = ~(pos.blackOccupancy() | m_whiteData.pawnAttacks);
 			m_whiteData.available = ~(pos.whiteOccupancy() | m_blackData.pawnAttacks);
@@ -418,7 +418,8 @@ namespace polaris::eval
 
 			ours.pawnStructure += DoubledGappedPawn * (up.template shiftUpRelative<Us>() & ourPawns).popcount();
 			ours.pawnStructure += PawnDefender * (ours.pawnAttacks & ourPawns).popcount();
-			ours.pawnStructure += OpenPawn * (ourPawns & ours.semiOpen & ~ours.pawnAttacks).popcount();
+			ours.pawnStructure += OpenPawn * (ourPawns
+				& ~theirPawns.template fillDownRelative<Us>() & ~ours.pawnAttacks).popcount();
 
 			auto phalanx = ourPawns & ourPawns.shiftLeft();
 			while (!phalanx.empty())
@@ -453,7 +454,7 @@ namespace polaris::eval
 
 					ours.passers |= pawn;
 				}
-				else if (!(pawn & ours.semiOpen).empty())
+				else if (!(pawn & theirs.semiOpen).empty())
 				{
 					const auto stop = pawn.template shiftUpRelative<Us>();
 
