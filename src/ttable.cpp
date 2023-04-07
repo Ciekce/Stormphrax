@@ -46,38 +46,36 @@ namespace polaris
 		m_mask = capacity - 1;
 	}
 
-	bool TTable::probe(TTableEntry &dst, u64 key, i32 depth, Score alpha, Score beta) const
+	bool TTable::probe(ProbedTTableEntry &dst, u64 key, i32 depth, Score alpha, Score beta) const
 	{
 		if (m_table.empty())
 			return false;
 
 		const auto &entry = m_table[key & m_mask];
 
-		if (key == entry.key)
+		if (static_cast<u16>(key >> 48) == entry.key)
 		{
 			dst.move = entry.move;
 
 			if (entry.depth > depth)
 			{
+				dst.type = entry.type;
+
 				switch (entry.type)
 				{
 				case EntryType::Alpha:
 					if (entry.score <= alpha)
-					{
-						dst = entry;
 						dst.score = alpha;
-					}
 					else return false;
 					break;
 				case EntryType::Beta:
 					if (entry.score >= beta)
-					{
-						dst = entry;
 						dst.score = beta;
-					}
 					else return false;
 					break;
-				default: dst = entry; break;
+				default: // exact
+					dst.score = static_cast<i32>(entry.score);
+					break;
 				}
 
 				return true;
@@ -94,7 +92,7 @@ namespace polaris
 
 		const auto &entry = m_table[key & m_mask];
 
-		if (key == entry.key)
+		if (static_cast<u16>(key >> 48) == entry.key)
 			return entry.move;
 
 		return NullMove;
@@ -107,14 +105,21 @@ namespace polaris
 
 		auto &entry = m_table[key & m_mask];
 
-		if (key == entry.key && entry.depth > depth)
+		const auto entryKey = static_cast<u16>(key >> 48);
+
+		if (entryKey == entry.key && entry.depth > depth)
 			return;
 
 		if (entry.key == 0)
 			++m_entries;
 
-		entry.key = key;
-		entry.score = score;
+#ifndef NDEBUG
+		if (std::abs(score) > std::numeric_limits<i16>::max())
+			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
+#endif
+
+		entry.key = entryKey;
+		entry.score = static_cast<i16>(score);
 		entry.move = move;
 		entry.depth = depth;
 		entry.type = type;

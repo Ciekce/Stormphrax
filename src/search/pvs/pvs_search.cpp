@@ -364,7 +364,7 @@ namespace polaris::search::pvs
 				return mdAlpha;
 		}
 
-		TTableEntry entry{};
+		ProbedTTableEntry entry{};
 		auto hashMove = NullMove;
 
 		if (m_table.probe(entry, pos.key(), depth, alpha, beta) && !pv)

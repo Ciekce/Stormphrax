@@ -38,19 +38,25 @@ namespace polaris
 		Exact
 	};
 
-	//TODO shrincc
 	struct TTableEntry
 	{
-		u64 key;
-		i32 score;
+		u16 key;
+		i16 score;
 		Move move;
 		u8 depth;
 		EntryType type;
 	};
 
 #ifdef NDEBUG
-	static_assert(sizeof(TTableEntry) == 16);
+	static_assert(sizeof(TTableEntry) == 8);
 #endif
+
+	struct ProbedTTableEntry
+	{
+		i32 score;
+		Move move;
+		EntryType type;
+	};
 
 	class TTable
 	{
@@ -60,7 +66,7 @@ namespace polaris
 
 		void resize(usize size);
 
-		bool probe(TTableEntry &dst, u64 key, i32 depth, Score alpha, Score beta) const;
+		bool probe(ProbedTTableEntry &dst, u64 key, i32 depth, Score alpha, Score beta) const;
 		[[nodiscard]] Move probeMove(u64 key) const;
 
 		void put(u64 key, Score score, Move move, i32 depth, EntryType type);
