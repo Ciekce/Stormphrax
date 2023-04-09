@@ -33,10 +33,31 @@
 
 namespace polaris
 {
+	class PositionBoards
+	{
+	public:
+		PositionBoards() = default;
+		~PositionBoards() = default;
+
+		[[nodiscard]] inline Bitboard &forPiece(Piece piece)
+		{
+			return m_boards[static_cast<i32>(piece)];
+		}
+
+		[[nodiscard]] inline const Bitboard &forPiece(Piece piece) const
+		{
+			return m_boards[static_cast<i32>(piece)];
+		}
+
+		[[nodiscard]] inline bool operator==(const PositionBoards &other) const = default;
+
+	private:
+		std::array<Bitboard, 12> m_boards{};
+	};
+
 	struct BoardState
 	{
-		std::array<Bitboard, 12> boards{};
-		std::array<std::array<Piece, 8>, 8> pieces{};
+		PositionBoards boards{};
 
 		u64 key{};
 		u64 pawnKey{};
@@ -62,7 +83,7 @@ namespace polaris
 	};
 
 #ifdef NDEBUG
-	static_assert(sizeof(BoardState) == 208);
+	static_assert(sizeof(BoardState) == 144);
 #endif
 
 	[[nodiscard]] inline auto squareToString(Square square)
@@ -110,9 +131,6 @@ namespace polaris
 
 		[[nodiscard]] bool isPseudolegal(Move move) const;
 
-		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return m_states.back().pieces[rank][file]; }
-		[[nodiscard]] inline auto pieceAt(Square square) const { return pieceAt(squareRank(square), squareFile(square)); }
-
 		[[nodiscard]] inline auto blackOccupancy() const { return m_blackPop; }
 		[[nodiscard]] inline auto whiteOccupancy() const { return m_whitePop; }
 
@@ -128,26 +146,26 @@ namespace polaris
 
 		[[nodiscard]] inline auto occupancy() const { return m_whitePop | m_blackPop; }
 
-		[[nodiscard]] inline auto board(Piece piece) const { return m_states.back().boards[static_cast<i32>(piece)]; }
+		[[nodiscard]] inline auto board(Piece piece) const { return m_states.back().boards.forPiece(piece); }
 		[[nodiscard]] inline auto board(BasePiece piece, Color color) const { return board(colorPiece(piece, color)); }
 
-		[[nodiscard]] inline auto blackPawns() const { return m_states.back().boards[static_cast<i32>(Piece::BlackPawn)]; }
-		[[nodiscard]] inline auto whitePawns() const { return m_states.back().boards[static_cast<i32>(Piece::WhitePawn)]; }
+		[[nodiscard]] inline auto blackPawns() const { return m_states.back().boards.forPiece(Piece::BlackPawn); }
+		[[nodiscard]] inline auto whitePawns() const { return m_states.back().boards.forPiece(Piece::WhitePawn); }
 
-		[[nodiscard]] inline auto blackKnights() const { return m_states.back().boards[static_cast<i32>(Piece::BlackKnight)]; }
-		[[nodiscard]] inline auto whiteKnights() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteKnight)]; }
+		[[nodiscard]] inline auto blackKnights() const { return m_states.back().boards.forPiece(Piece::BlackKnight); }
+		[[nodiscard]] inline auto whiteKnights() const { return m_states.back().boards.forPiece(Piece::WhiteKnight); }
 
-		[[nodiscard]] inline auto blackBishops() const { return m_states.back().boards[static_cast<i32>(Piece::BlackBishop)]; }
-		[[nodiscard]] inline auto whiteBishops() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteBishop)]; }
+		[[nodiscard]] inline auto blackBishops() const { return m_states.back().boards.forPiece(Piece::BlackBishop); }
+		[[nodiscard]] inline auto whiteBishops() const { return m_states.back().boards.forPiece(Piece::WhiteBishop); }
 
-		[[nodiscard]] inline auto blackRooks() const { return m_states.back().boards[static_cast<i32>(Piece::BlackRook)]; }
-		[[nodiscard]] inline auto whiteRooks() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteRook)]; }
+		[[nodiscard]] inline auto blackRooks() const { return m_states.back().boards.forPiece(Piece::BlackRook); }
+		[[nodiscard]] inline auto whiteRooks() const { return m_states.back().boards.forPiece(Piece::WhiteRook); }
 
-		[[nodiscard]] inline auto blackQueens() const { return m_states.back().boards[static_cast<i32>(Piece::BlackQueen)]; }
-		[[nodiscard]] inline auto whiteQueens() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteQueen)]; }
+		[[nodiscard]] inline auto blackQueens() const { return m_states.back().boards.forPiece(Piece::BlackQueen); }
+		[[nodiscard]] inline auto whiteQueens() const { return m_states.back().boards.forPiece(Piece::WhiteQueen); }
 
-		[[nodiscard]] inline auto blackKings() const { return m_states.back().boards[static_cast<i32>(Piece::BlackKing)]; }
-		[[nodiscard]] inline auto whiteKings() const { return m_states.back().boards[static_cast<i32>(Piece::WhiteKing)]; }
+		[[nodiscard]] inline auto blackKings() const { return m_states.back().boards.forPiece(Piece::BlackKing); }
+		[[nodiscard]] inline auto whiteKings() const { return m_states.back().boards.forPiece(Piece::WhiteKing); }
 
 		[[nodiscard]] inline auto blackMinors() const
 		{
@@ -253,32 +271,32 @@ namespace polaris
 
 		[[nodiscard]] inline auto pawns(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackPawn : Piece::WhitePawn)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackPawn : Piece::WhitePawn);
 		}
 
 		[[nodiscard]] inline auto knights(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackKnight : Piece::WhiteKnight)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackKnight : Piece::WhiteKnight);
 		}
 
 		[[nodiscard]] inline auto bishops(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackBishop : Piece::WhiteBishop)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackBishop : Piece::WhiteBishop);
 		}
 
 		[[nodiscard]] inline auto rooks(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackRook : Piece::WhiteRook)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackRook : Piece::WhiteRook);
 		}
 
 		[[nodiscard]] inline auto queens(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackQueen : Piece::WhiteQueen)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackQueen : Piece::WhiteQueen);
 		}
 
 		[[nodiscard]] inline auto kings(Color color) const
 		{
-			return m_states.back().boards[static_cast<i32>(color == Color::Black ? Piece::BlackKing : Piece::WhiteKing)];
+			return m_states.back().boards.forPiece(color == Color::Black ? Piece::BlackKing : Piece::WhiteKing);
 		}
 
 		[[nodiscard]] inline auto minors(Color color) const
@@ -296,7 +314,45 @@ namespace polaris
 			return color == Color::Black ? blackNonPk() : whiteNonPk();
 		}
 
-		[[nodiscard]] inline const auto &pieces() const { return m_states.back().pieces; }
+		[[nodiscard]] inline auto pieceAt(Square square) const
+		{
+			const auto bit = Bitboard::fromSquare(square);
+
+			if (!(m_blackPop & bit).empty())
+			{
+				for (const auto piece : {
+					Piece::BlackPawn,
+					Piece::BlackKnight,
+					Piece::BlackBishop,
+					Piece::BlackRook,
+					Piece::BlackQueen,
+					Piece::BlackKing
+				})
+				{
+					if (!(board(piece) & bit).empty())
+						return piece;
+				}
+			}
+			else if (!(m_whitePop & bit).empty())
+			{
+				for (const auto piece: {
+					Piece::WhitePawn,
+					Piece::WhiteKnight,
+					Piece::WhiteBishop,
+					Piece::WhiteRook,
+					Piece::WhiteQueen,
+					Piece::WhiteKing
+				})
+				{
+					if (!(board(piece) & bit).empty())
+						return piece;
+				}
+			}
+
+			return Piece::None;
+		}
+
+		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return pieceAt(toSquare(rank, file)); }
 
 		[[nodiscard]] inline auto toMove() const
 		{
@@ -575,7 +631,6 @@ namespace polaris
 		[[nodiscard]] inline bool deepEquals(const Position &other) const
 		{
 			return *this == other
-				&& m_states.back().pieces == other.m_states.back().pieces
 				&& m_blackPop == other.m_blackPop
 				&& m_whitePop == other.m_whitePop
 				&& m_states.back().blackKing == other.m_states.back().blackKing
@@ -611,10 +666,7 @@ namespace polaris
 		[[nodiscard]] inline auto &currState() { return m_states.back(); }
 		[[nodiscard]] inline const auto &currState() const { return m_states.back(); }
 
-		[[nodiscard]] inline auto &board(Piece piece) { return currState().boards[static_cast<i32>(piece)]; }
-
-		[[nodiscard]] inline auto &pieceRefAt(u32 rank, u32 file) { return currState().pieces[rank][file]; }
-		[[nodiscard]] inline auto &pieceRefAt(Square square) { return pieceRefAt(squareRank(square), squareFile(square)); }
+		[[nodiscard]] inline auto &board(Piece piece) { return currState().boards.forPiece(piece); }
 
 		[[nodiscard]] inline auto &occupancy(Color color) { return color == Color::White ? m_whitePop : m_blackPop; }
 

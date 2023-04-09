@@ -103,14 +103,7 @@ namespace polaris
 		m_states.reserve(256);
 
 		if (init)
-		{
 			m_states.push_back({});
-
-			for (auto &file: currState().pieces)
-			{
-				file.fill(Piece::None);
-			}
-		}
 	}
 
 	template <bool UpdateMaterial, bool History>
@@ -534,13 +527,14 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::setPiece(Square square, Piece piece)
 	{
-		auto &slot = pieceRefAt(square);
-		const auto captured = slot;
+		const auto captured = pieceAt(square);
+
+		const auto mask = Bitboard::fromSquare(square);
 
 		if (captured != Piece::None)
 		{
-			board(captured)[square] = false;
-			occupancy(pieceColor(captured))[square] = false;
+			board(captured) ^= mask;
+			occupancy(pieceColor(captured)) ^= mask;
 
 			currState().phase -= PhaseInc[static_cast<i32>(captured)];
 
@@ -557,10 +551,8 @@ namespace polaris
 			}
 		}
 
-		slot = piece;
-
-		board(piece)[square] = true;
-		occupancy(pieceColor(piece))[square] = true;
+		board(piece) ^= mask;
+		occupancy(pieceColor(piece)) ^= mask;
 
 		if (piece == Piece::BlackKing)
 			currState().blackKing = square;
@@ -587,16 +579,14 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::removePiece(Square square)
 	{
-		auto &slot = pieceRefAt(square);
-
-		const auto piece = slot;
+		const auto piece = pieceAt(square);
 
 		if (piece != Piece::None)
 		{
-			slot = Piece::None;
+			const auto mask = Bitboard::fromSquare(square);
 
-			board(piece)[square] = false;
-			occupancy(pieceColor(piece))[square] = false;
+			board(piece) ^= mask;
+			occupancy(pieceColor(piece)) ^= mask;
 
 			currState().phase -= PhaseInc[static_cast<usize>(piece)];
 
@@ -618,12 +608,8 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::movePiece(Square src, Square dst)
 	{
-		auto &srcSlot = pieceRefAt(src);
-		auto &dstSlot = pieceRefAt(dst);
-
-		const auto piece = srcSlot;
-
-		const auto captured = dstSlot;
+		const auto piece = pieceAt(src);
+		const auto captured = pieceAt(dst);
 
 		if (captured != Piece::None)
 		{
@@ -643,9 +629,6 @@ namespace polaris
 					currState().pawnKey ^= hash;
 			}
 		}
-
-		srcSlot = Piece::None;
-		dstSlot = piece;
 
 		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
 
@@ -674,10 +657,7 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::promotePawn(Square src, Square dst, BasePiece target)
 	{
-		auto &srcSlot = pieceRefAt(src);
-		auto &dstSlot = pieceRefAt(dst);
-
-		const auto captured = dstSlot;
+		const auto captured = pieceAt(dst);
 
 		if (captured != Piece::None)
 		{
@@ -694,13 +674,10 @@ namespace polaris
 				currState().key ^= hash::pieceSquare(captured, dst);
 		}
 
-		const auto pawn = srcSlot;
-		const auto color = pieceColor(pawn);
+		const auto color = m_blackPop[src] ? Color::Black : Color::White;
+		const auto pawn = colorPiece(BasePiece::Pawn, color);
 
 		const auto coloredTarget = colorPiece(target, color);
-
-		srcSlot = Piece::None;
-		dstSlot = coloredTarget;
 
 		board(pawn)[src] = false;
 		board(coloredTarget)[dst] = true;
@@ -761,14 +738,8 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::enPassant(Square src, Square dst)
 	{
-		auto &srcSlot = pieceRefAt(src);
-		auto &dstSlot = pieceRefAt(dst);
-
-		const auto pawn = srcSlot;
+		const auto pawn = pieceAt(src);
 		const auto color = pieceColor(pawn);
-
-		srcSlot = Piece::None;
-		dstSlot = pawn;
 
 		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
 
@@ -792,11 +763,7 @@ namespace polaris
 		rank = rank == 2 ? 3 : 4;
 
 		const auto pawnSquare = toSquare(rank, file);
-		auto &pawnSlot = pieceRefAt(pawnSquare);
-
-		const auto enemyPawn = pawnSlot;
-
-		pawnSlot = Piece::None;
+		const auto enemyPawn = pieceAt(pawnSquare);
 
 		board(enemyPawn)[pawnSquare] = false;
 		occupancy(pieceColor(enemyPawn))[pawnSquare] = false;
@@ -818,18 +785,17 @@ namespace polaris
 
 	void Position::regenMaterial()
 	{
-		currState().material = TaperedScore{};
+		auto &state = currState();
 
-		for (u32 rank = 0; rank < 8; ++rank)
+		state.material = TaperedScore{};
+
+		auto occ = occupancy();
+		while (occ)
 		{
-			for (u32 file = 0; file < 8; ++file)
-			{
-				if (const auto piece = currState().pieces[rank][file]; piece != Piece::None)
-				{
-					const auto square = toSquare(rank, file);
-					currState().material += eval::pieceSquareValue(piece, square);
-				}
-			}
+			const auto square = occ.popLowestSquare();
+			const auto piece = pieceAt(square);
+
+			state.material += eval::pieceSquareValue(piece, square);
 		}
 	}
 
@@ -837,14 +803,22 @@ namespace polaris
 	void Position::regen()
 	{
 		auto &state = currState();
-		
-		for (auto &board : state.boards)
-		{
-			board.clear();
-		}
+
+		m_blackPop = blackPawns()
+			| blackKnights()
+			| blackBishops()
+			| blackRooks()
+			| blackQueens()
+			| blackKings();
+
+		m_whitePop = whitePawns()
+			| whiteKnights()
+			| whiteBishops()
+			| whiteRooks()
+			| whiteQueens()
+			| whiteKings();
 
 		state.phase = 0;
-	//	state.material = {0, 0};
 		state.key = 0;
 		state.pawnKey = 0;
 
@@ -852,19 +826,15 @@ namespace polaris
 		{
 			for (u32 file = 0; file < 8; ++file)
 			{
-				if (const auto piece = state.pieces[rank][file]; piece != Piece::None)
+				const auto square = toSquare(rank, file);
+				if (const auto piece = pieceAt(square); piece != Piece::None)
 				{
-					const auto square = toSquare(rank, file);
-
-					board(piece)[square] = true;
-
 					if (piece == Piece::BlackKing)
 						state.blackKing = square;
 					else if (piece == Piece::WhiteKing)
 						state.whiteKing = square;
 
 					state.phase += PhaseInc[static_cast<i32>(piece)];
-				//	state.material += eval::pieceSquareValue(piece, square);
 
 					const auto hash = hash::pieceSquare(piece, toSquare(rank, file));
 					state.key ^= hash;
@@ -880,20 +850,6 @@ namespace polaris
 
 		if (state.phase > 24)
 			state.phase = 24;
-
-		m_blackPop = board(Piece::BlackPawn)
-			| board(Piece::BlackKnight)
-			| board(Piece::BlackBishop)
-			| board(Piece::BlackRook)
-			| board(Piece::BlackQueen)
-			| board(Piece::BlackKing);
-
-		m_whitePop = board(Piece::WhitePawn)
-			| board(Piece::WhiteKnight)
-			| board(Piece::WhiteBishop)
-			| board(Piece::WhiteRook)
-			| board(Piece::WhiteQueen)
-			| board(Piece::WhiteKing);
 
 		if constexpr (EnPassantFromMoves)
 		{
@@ -1059,22 +1015,22 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 		auto &state = position.currState();
 
-		state.pieces[0][0] = state.pieces[0][7] = Piece::WhiteRook;
-		state.pieces[0][1] = state.pieces[0][6] = Piece::WhiteKnight;
-		state.pieces[0][2] = state.pieces[0][5] = Piece::WhiteBishop;
+		state.boards.forPiece(Piece::WhiteRook) = U64(0x0000000000000081);
+		state.boards.forPiece(Piece::WhiteKnight) = U64(0x0000000000000042);
+		state.boards.forPiece(Piece::WhiteBishop) = U64(0x0000000000000024);
 
-		state.pieces[0][3] = Piece::WhiteQueen;
-		state.pieces[0][4] = Piece::WhiteKing;
+		state.boards.forPiece(Piece::WhiteQueen)[Square::D1] = true;
+		state.boards.forPiece(Piece::WhiteKing)[Square::E1] = true;
 
-		state.pieces[1].fill(Piece::WhitePawn);
-		state.pieces[6].fill(Piece::BlackPawn);
+		state.boards.forPiece(Piece::WhitePawn) = U64(0x000000000000FF00);
+		state.boards.forPiece(Piece::BlackPawn) = U64(0x00FF000000000000);
 
-		state.pieces[7][0] = state.pieces[7][7] = Piece::BlackRook;
-		state.pieces[7][1] = state.pieces[7][6] = Piece::BlackKnight;
-		state.pieces[7][2] = state.pieces[7][5] = Piece::BlackBishop;
+		state.boards.forPiece(Piece::BlackRook) = U64(0x8100000000000000);
+		state.boards.forPiece(Piece::BlackKnight) = U64(0x4200000000000000);
+		state.boards.forPiece(Piece::BlackBishop) = U64(0x2400000000000000);
 
-		state.pieces[7][3] = Piece::BlackQueen;
-		state.pieces[7][4] = Piece::BlackKing;
+		state.boards.forPiece(Piece::BlackQueen)[Square::D8] = true;
+		state.boards.forPiece(Piece::BlackKing)[Square::E8] = true;
 
 		state.castlingRooks.blackShort = Square::H8;
 		state.castlingRooks.blackLong  = Square::A8;
@@ -1159,7 +1115,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					fileIdx += *emptySquares;
 				else if (const auto piece = pieceFromChar(c); piece != Piece::None)
 				{
-					position.pieceRefAt(7 - rankIdx, fileIdx) = piece;
+					position.setPiece<false, false>(toSquare(7 - rankIdx, fileIdx), piece);
 					++fileIdx;
 				}
 				else
