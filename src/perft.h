@@ -21,7 +21,7 @@
 #include "types.h"
 
 #include "core.h"
-#include "position.h"
+#include "position/position.h"
 
 namespace polaris
 {

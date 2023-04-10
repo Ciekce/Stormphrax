@@ -24,7 +24,7 @@
 #include <cstring>
 
 #include "../core.h"
-#include "../position.h"
+#include "../position/position.h"
 
 namespace polaris::eval
 {

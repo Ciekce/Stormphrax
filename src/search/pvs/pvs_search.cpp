@@ -331,6 +331,7 @@ namespace polaris::search::pvs
 			return beta;
 
 		auto &pos = data.pos;
+		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos);
@@ -393,7 +394,7 @@ namespace polaris::search::pvs
 				&& stack.eval >= beta
 				&& !nmpFailsLow
 				&& pos.lastMove()
-				&& !pos.nonPk(us).empty())
+				&& !boards.nonPk(us).empty())
 			{
 				const auto R = std::min(newBaseDepth - 1, 3);
 
@@ -426,7 +427,7 @@ namespace polaris::search::pvs
 			{
 #endif
 
-			const auto movingPiece = pos.pieceAt(move.src());
+			const auto movingPiece = boards.pieceAt(move.src());
 
 			auto guard = pos.applyMove(move, &m_table);
 

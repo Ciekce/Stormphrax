@@ -106,11 +106,13 @@ namespace polaris
 			constexpr auto LeftOffset = offsets::upLeft<Us>();
 			constexpr auto RightOffset = offsets::upRight<Us>();
 
-			const auto theirs = pos.occupancy<Them>();
+			const auto &boards = pos.boards();
+
+			const auto theirs = boards.occupancy<Them>();
 
 			const auto forwardDstMask = dstMask & PromotionRank & ~theirs;
 
-			const auto pawns = pos.pawns<Us>();
+			const auto pawns = boards.pawns<Us>();
 
 			const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
 			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
@@ -141,7 +143,7 @@ namespace polaris
 		}
 
 		template <Color Us>
-		void generatePawnsQuiet_(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
+		void generatePawnsQuiet_(ScoredMoveList &quiet, const PositionBoards &boards, Bitboard dstMask, Bitboard occ)
 		{
 			constexpr auto Them = oppColor(Us);
 
@@ -154,11 +156,11 @@ namespace polaris
 			constexpr auto  LeftOffset = offsets::upLeft <Us>();
 			constexpr auto RightOffset = offsets::upRight<Us>();
 
-			const auto theirs = pos.occupancy<Them>();
+			const auto theirs = boards.occupancy<Them>();
 
 			const auto forwardDstMask = dstMask & ~theirs;
 
-			const auto pawns = pos.pawns<Us>();
+			const auto pawns = boards.pawns<Us>();
 
 			const auto  leftAttacks = pawns.template shiftUpLeftRelative <Us>() & dstMask;
 			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
@@ -182,16 +184,16 @@ namespace polaris
 		inline void generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
 		{
 			if (pos.toMove() == Color::Black)
-				generatePawnsQuiet_<Color::Black>(quiet, pos, dstMask, occ);
-			else generatePawnsQuiet_<Color::White>(quiet, pos, dstMask, occ);
+				generatePawnsQuiet_<Color::Black>(quiet, pos.boards(), dstMask, occ);
+			else generatePawnsQuiet_<Color::White>(quiet, pos.boards(), dstMask, occ);
 		}
 
 		template <BasePiece Piece, const std::array<Bitboard, 64> &Attacks>
 		inline void precalculated(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			const auto us = pos.toMove();
-			auto pieces = pos.board(Piece, us);
 
+			auto pieces = pos.boards().forPiece(Piece, us);
 			while (!pieces.empty())
 			{
 				const auto srcSquare = pieces.popLowestSquare();
@@ -206,15 +208,15 @@ namespace polaris
 			precalculated<BasePiece::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
 		}
 
-		inline void generateFrcCastling(ScoredMoveList &dst, const Position &pos,
+		inline void generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
 			Square king, Square kingDst, Square rook, Square rookDst)
 		{
 			const auto toKingDst = rayBetween(king, kingDst);
 			const auto toRook = rayBetween(king, rook);
 
-			const auto occupancy = pos.occupancy() ^ squareBit(king) ^ squareBit(rook);
+			const auto occ = occupancy ^ squareBit(king) ^ squareBit(rook);
 
-			if ((occupancy & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
+			if ((occ & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
 				&& !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.opponent()))
 				pushCastling(dst, king, rook);
 		}
@@ -229,6 +231,7 @@ namespace polaris
 				if (!pos.isCheck())
 				{
 					const auto &castlingRooks = pos.castlingRooks();
+					const auto occupancy = pos.boards().occupancy();
 
 					// this branch is cheaper than the extra checks the chess960 castling movegen does
 					if (g_opts.chess960)
@@ -236,26 +239,28 @@ namespace polaris
 						if (pos.toMove() == Color::Black)
 						{
 							if (castlingRooks.blackShort != Square::None)
-								generateFrcCastling(dst, pos, pos.blackKing(), Square::G8,
+								generateFrcCastling(dst, pos, occupancy,
+									pos.blackKing(), Square::G8,
 									castlingRooks.blackShort, Square::F8);
 							if (castlingRooks.blackLong != Square::None)
-								generateFrcCastling(dst, pos, pos.blackKing(), Square::C8,
+								generateFrcCastling(dst, pos, occupancy,
+									pos.blackKing(), Square::C8,
 									castlingRooks.blackLong, Square::D8);
 						}
 						else
 						{
 							if (castlingRooks.whiteShort != Square::None)
-								generateFrcCastling(dst, pos, pos.whiteKing(), Square::G1,
+								generateFrcCastling(dst, pos, occupancy,
+									pos.whiteKing(), Square::G1,
 									castlingRooks.whiteShort, Square::F1);
 							if (castlingRooks.whiteLong != Square::None)
-								generateFrcCastling(dst, pos, pos.whiteKing(), Square::C1,
+								generateFrcCastling(dst, pos, occupancy,
+									pos.whiteKing(), Square::C1,
 									castlingRooks.whiteLong, Square::D1);
 						}
 					}
 					else
 					{
-						const auto occupancy = pos.occupancy();
-
 						if (pos.toMove() == Color::Black)
 						{
 							if (castlingRooks.blackShort != Square::None
@@ -287,18 +292,20 @@ namespace polaris
 
 		void generateSliders(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
+			const auto &boards = pos.boards();
+
 			const auto us = pos.toMove();
 			const auto them = oppColor(us);
 
-			const auto ours = pos.occupancy(us);
-			const auto theirs = pos.occupancy(them);
+			const auto ours = boards.occupancy(us);
+			const auto theirs = boards.occupancy(them);
 
 			const auto occupancy = ours | theirs;
 
-			const auto queens = pos.queens(us);
+			const auto queens = boards.queens(us);
 
-			auto rooks = queens | pos.rooks(us);
-			auto bishops = queens | pos.bishops(us);
+			auto rooks = queens | boards.rooks(us);
+			auto bishops = queens | boards.bishops(us);
 
 			while (!rooks.empty())
 			{
@@ -320,12 +327,14 @@ namespace polaris
 
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos)
 	{
+		const auto &boards = pos.boards();
+
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const auto ours = pos.occupancy(us);
+		const auto ours = boards.occupancy(us);
 
-		const auto kingDstMask = pos.occupancy(them);
+		const auto kingDstMask = boards.occupancy(them);
 
 		auto dstMask = kingDstMask;
 
@@ -368,11 +377,13 @@ namespace polaris
 
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos)
 	{
+		const auto &boards = pos.boards();
+
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const auto ours = pos.occupancy(us);
-		const auto theirs = pos.occupancy(them);
+		const auto ours = boards.occupancy(us);
+		const auto theirs = boards.occupancy(them);
 
 		const auto kingDstMask = ~(ours | theirs);
 
@@ -402,9 +413,11 @@ namespace polaris
 
 	void generateAll(ScoredMoveList &dst, const Position &pos)
 	{
+		const auto &boards = pos.boards();
+
 		const auto us = pos.toMove();
 
-		const auto kingDstMask = ~pos.occupancy(pos.toMove());
+		const auto kingDstMask = ~boards.occupancy(pos.toMove());
 
 		auto dstMask = kingDstMask;
 
@@ -436,7 +449,7 @@ namespace polaris
 
 		generateSliders(dst, pos, dstMask);
 		generatePawnsNoisy(dst, pos, pawnDstMask);
-		generatePawnsQuiet(dst, pos, dstMask, pos.occupancy());
+		generatePawnsQuiet(dst, pos, dstMask, boards.occupancy());
 		generateKnights(dst, pos, dstMask);
 		generateKings<true>(dst, pos, kingDstMask);
 	}

@@ -225,8 +225,10 @@ namespace polaris::eval
 		Evaluator::Evaluator(const Position &pos, PawnCache *pawnCache)
 			: m_pos{pos}
 		{
-			const auto blackPawns = pos.blackPawns();
-			const auto whitePawns = pos.whitePawns();
+			const auto &boards = pos.boards();
+
+			const auto blackPawns = boards.blackPawns();
+			const auto whitePawns = boards.whitePawns();
 
 			const auto blackPawnLeftAttacks = blackPawns.shiftDownLeft();
 			const auto blackPawnRightAttacks = blackPawns.shiftDownRight();
@@ -241,8 +243,8 @@ namespace polaris::eval
 			m_blackData.semiOpen = ~blackPawns.fillFile();
 			m_whiteData.semiOpen = ~whitePawns.fillFile();
 
-			m_blackData.available = ~(pos.blackOccupancy() | m_whiteData.pawnAttacks);
-			m_whiteData.available = ~(pos.whiteOccupancy() | m_blackData.pawnAttacks);
+			m_blackData.available = ~(boards.blackOccupancy() | m_whiteData.pawnAttacks);
+			m_whiteData.available = ~(boards.whiteOccupancy() | m_blackData.pawnAttacks);
 
 			m_openFiles = m_blackData.semiOpen & m_whiteData.semiOpen;
 
@@ -258,8 +260,8 @@ namespace polaris::eval
 
 					m_cachedPawnStructureEval = true;
 
-					m_blackData.passers = cacheEntry.passers & pos.blackOccupancy();
-					m_whiteData.passers = cacheEntry.passers & pos.whiteOccupancy();
+					m_blackData.passers = cacheEntry.passers & boards.blackOccupancy();
+					m_whiteData.passers = cacheEntry.passers & boards.whiteOccupancy();
 				}
 				else
 				{
@@ -408,8 +410,10 @@ namespace polaris::eval
 		{
 			constexpr auto Them = oppColor(Us);
 
-			const auto ourPawns = pos.pawns<Us>();
-			const auto theirPawns = pos.pawns<Them>();
+			const auto &boards = pos.boards();
+
+			const auto ourPawns = boards.pawns<Us>();
+			const auto theirPawns = boards.pawns<Them>();
 
 			const auto up = ourPawns.template shiftUpRelative<Us>();
 
@@ -481,9 +485,11 @@ namespace polaris::eval
 		{
 			constexpr auto Them = oppColor(Us);
 
-			ours.pawns += PawnAttackingMinor * (ours.pawnAttacks & pos.template minors<Them>()).popcount();
-			ours.pawns += PawnAttackingRook  * (ours.pawnAttacks & pos.template  rooks<Them>()).popcount();
-			ours.pawns += PawnAttackingQueen * (ours.pawnAttacks & pos.template queens<Them>()).popcount();
+			const auto &boards = pos.boards();
+
+			ours.pawns += PawnAttackingMinor * (ours.pawnAttacks & boards.template minors<Them>()).popcount();
+			ours.pawns += PawnAttackingRook  * (ours.pawnAttacks & boards.template  rooks<Them>()).popcount();
+			ours.pawns += PawnAttackingQueen * (ours.pawnAttacks & boards.template queens<Them>()).popcount();
 
 			auto passers = ours.passers;
 			while (!passers.empty())
@@ -495,12 +501,12 @@ namespace polaris::eval
 
 				const auto promotion = toSquare(relativeRank<Us>(7), squareFile(square));
 
-				if (pos.template nonPk<Them>().empty()
+				if (boards.template nonPk<Them>().empty()
 					&& (std::min(5, chebyshev(square, promotion)) + (Us == pos.toMove() ? 1 : 0))
 						< chebyshev(pos.template king<Them>(), promotion))
 					ours.pawns += PasserSquareRule;
 
-				if (!(passer.template shiftUpRelative<Us>() & pos.occupancy()).empty())
+				if (!(passer.template shiftUpRelative<Us>() & boards.occupancy()).empty())
 					ours.pawns += BlockedPasser[rank];
 			}
 		}
@@ -510,13 +516,15 @@ namespace polaris::eval
 		{
 			constexpr auto Them = oppColor(Us);
 
-			auto knights = pos.knights<Us>();
+			const auto &boards = pos.boards();
+
+			auto knights = boards.knights<Us>();
 
 			if (knights.empty())
 				return;
 
 			ours.knights += MinorBehindPawn
-				* (knights.template shiftUpRelative<Us>() & pos.template pawns<Us>()).popcount();
+				* (knights.template shiftUpRelative<Us>() & boards.template pawns<Us>()).popcount();
 
 			while (!knights.empty())
 			{
@@ -525,13 +533,13 @@ namespace polaris::eval
 
 				if ((AntiPasserMasks<Us>[static_cast<i32>(square)]
 					& ~boards::Files[squareFile(square)]
-					& pos.template pawns<Them>()).empty() && !(knight & ours.pawnAttacks).empty())
+					& boards.template pawns<Them>()).empty() && !(knight & ours.pawnAttacks).empty())
 					ours.knights += KnightOutpost;
 
 				const auto attacks = attacks::getKnightAttacks(square);
 
-				ours.knights += MinorAttackingRook  * (attacks & pos.template  rooks<Them>()).popcount();
-				ours.knights += MinorAttackingQueen * (attacks & pos.template queens<Them>()).popcount();
+				ours.knights += MinorAttackingRook  * (attacks & boards.template  rooks<Them>()).popcount();
+				ours.knights += MinorAttackingQueen * (attacks & boards.template queens<Them>()).popcount();
 
 				ours.mobility += KnightMobility[(attacks & ours.available).popcount()];
 			}
@@ -542,20 +550,22 @@ namespace polaris::eval
 		{
 			constexpr auto Them = oppColor(Us);
 
-			auto bishops = pos.bishops<Us>();
+			const auto &boards = pos.boards();
+
+			auto bishops = boards.bishops<Us>();
 
 			if (bishops.empty())
 				return;
 
 			ours.bishops += MinorBehindPawn
-				* (bishops.template shiftUpRelative<Us>() & pos.template pawns<Us>()).popcount();
+				* (bishops.template shiftUpRelative<Us>() & boards.template pawns<Us>()).popcount();
 
 			if (!(bishops & boards::DarkSquares).empty()
 				&& !(bishops & boards::LightSquares).empty())
 				ours.bishops += BishopPair;
 
-			const auto occupancy = pos.occupancy();
-			const auto xrayOcc = occupancy ^ pos.template bishops<Us>() ^ pos.template queens<Us>();
+			const auto occupancy = boards.occupancy();
+			const auto xrayOcc = occupancy ^ boards.template bishops<Us>() ^ boards.template queens<Us>();
 
 			while (!bishops.empty())
 			{
@@ -563,8 +573,8 @@ namespace polaris::eval
 
 				const auto attacks = attacks::getBishopAttacks(square, occupancy);
 
-				ours.bishops += MinorAttackingRook  * (attacks & pos.template  rooks<Them>()).popcount();
-				ours.bishops += MinorAttackingQueen * (attacks & pos.template queens<Them>()).popcount();
+				ours.bishops += MinorAttackingRook  * (attacks & boards.template  rooks<Them>()).popcount();
+				ours.bishops += MinorAttackingQueen * (attacks & boards.template queens<Them>()).popcount();
 
 				const auto mobilityAttacks = attacks::getBishopAttacks(square, xrayOcc);
 				ours.mobility += BishopMobility[(mobilityAttacks & ours.available).popcount()];
@@ -576,13 +586,15 @@ namespace polaris::eval
 		{
 			constexpr auto Them = oppColor(Us);
 
-			auto rooks = pos.rooks<Us>();
+			const auto &boards = pos.boards();
+
+			auto rooks = boards.rooks<Us>();
 
 			if (rooks.empty())
 				return;
 
-			const auto occupancy = pos.occupancy();
-			const auto xrayOcc = occupancy ^ pos.template rooks<Us>() ^ pos.template queens<Us>();
+			const auto occupancy = boards.occupancy();
+			const auto xrayOcc = occupancy ^ boards.template rooks<Us>() ^ boards.template queens<Us>();
 
 			while (!rooks.empty())
 			{
@@ -599,7 +611,7 @@ namespace polaris::eval
 
 				const auto attacks = attacks::getRookAttacks(square, occupancy);
 
-				ours.rooks += RookAttackingQueen * (attacks & pos.template queens<Them>()).popcount();
+				ours.rooks += RookAttackingQueen * (attacks & boards.template queens<Them>()).popcount();
 
 				const auto mobilityAttacks = attacks::getRookAttacks(square, xrayOcc);
 				ours.mobility += RookMobility[(mobilityAttacks & ours.available).popcount()];
@@ -609,14 +621,16 @@ namespace polaris::eval
 		template <Color Us>
 		void Evaluator::evalQueens(const Position &pos, EvalData &ours, const EvalData &theirs)
 		{
-			auto queens = pos.queens<Us>();
+			const auto &boards = pos.boards();
+
+			auto queens = boards.queens<Us>();
 
 			if (queens.empty())
 				return;
 
-			const auto occupancy = pos.occupancy();
-			const auto xrayOcc = occupancy ^ pos.template bishops<Us>()
-			    ^ pos.template rooks<Us>() ^ pos.template queens<Us>();
+			const auto occupancy = boards.occupancy();
+			const auto xrayOcc = occupancy ^ boards.template bishops<Us>()
+			    ^ boards.template rooks<Us>() ^ boards.template queens<Us>();
 
 			while (!queens.empty())
 			{
@@ -630,7 +644,9 @@ namespace polaris::eval
 		template <Color Us>
 		void Evaluator::evalKing(const Position &pos, EvalData &ours, const EvalData &theirs)
 		{
-			const auto king = pos.template kings<Us>();
+			const auto &boards = pos.boards();
+
+			const auto king = boards.template kings<Us>();
 
 			if (!(king & m_openFiles).empty())
 				ours.kings += KingOnOpenFile;

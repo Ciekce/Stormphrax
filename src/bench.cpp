@@ -20,7 +20,7 @@
 
 #include <array>
 
-#include "position.h"
+#include "position/position.h"
 
 namespace polaris::bench
 {
