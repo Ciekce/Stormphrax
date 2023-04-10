@@ -23,7 +23,7 @@
 #include <iostream>
 
 #include "bitboard.h"
-#include "position.h"
+#include "position/position.h"
 
 namespace polaris
 {

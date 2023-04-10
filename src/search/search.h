@@ -28,7 +28,7 @@
 #include <span>
 
 #include "search_fwd.h"
-#include "../position.h"
+#include "../position/position.h"
 #include "../limit/limit.h"
 
 namespace polaris::search

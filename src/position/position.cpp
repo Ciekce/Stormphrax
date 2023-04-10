@@ -21,20 +21,20 @@
 #ifndef NDEBUG
 #include <iostream>
 #include <iomanip>
-#include "uci.h"
-#include "pretty.h"
+#include "../uci.h"
+#include "../pretty.h"
 #endif
 #include <algorithm>
 #include <sstream>
 
-#include "hash.h"
-#include "eval/material.h"
-#include "util/parse.h"
-#include "util/split.h"
-#include "attacks/attacks.h"
-#include "movegen.h"
-#include "opts.h"
-#include "rays.h"
+#include "../hash.h"
+#include "../eval/material.h"
+#include "../util/parse.h"
+#include "../util/split.h"
+#include "../attacks/attacks.h"
+#include "../movegen.h"
+#include "../opts.h"
+#include "../rays.h"
 
 namespace polaris
 {
@@ -114,7 +114,7 @@ namespace polaris
 		prevState.lastMove = move;
 
 		if constexpr (History)
-			m_states.push_back(currState());
+			m_states.push_back(prevState);
 
 		auto &state = currState();
 
@@ -157,7 +157,7 @@ namespace polaris
 
 		auto newCastlingRooks = state.castlingRooks;
 
-		const auto moving = pieceAt(moveSrc);
+		const auto moving = state.boards.pieceAt(moveSrc);
 
 #ifndef NDEBUG
 		if (moving == Piece::None)
@@ -272,30 +272,18 @@ namespace polaris
 		if (!currState().lastMove)
 			return;
 
-		m_blackPop = board(Piece::BlackPawn)
-			| board(Piece::BlackKnight)
-			| board(Piece::BlackBishop)
-			| board(Piece::BlackRook)
-			| board(Piece::BlackQueen)
-			| board(Piece::BlackKing);
-
-		m_whitePop = board(Piece::WhitePawn)
-			| board(Piece::WhiteKnight)
-			| board(Piece::WhiteBishop)
-			| board(Piece::WhiteRook)
-			| board(Piece::WhiteQueen)
-			| board(Piece::WhiteKing);
-
 		if (toMove() == Color::Black)
 			--m_fullmove;
 	}
 
 	bool Position::isPseudolegal(Move move) const
 	{
+		const auto &state = currState();
+
 		const auto us = toMove();
 
 		const auto src = move.src();
-		const auto srcPiece = pieceAt(src);
+		const auto srcPiece = state.boards.pieceAt(src);
 
 		if (srcPiece == Piece::None || pieceColor(srcPiece) != us)
 			return false;
@@ -303,7 +291,7 @@ namespace polaris
 		const auto type = move.type();
 
 		const auto dst = move.dst();
-		const auto dstPiece = pieceAt(dst);
+		const auto dstPiece = state.boards.pieceAt(dst);
 
 		// we're capturing something
 		if (dstPiece != Piece::None
@@ -327,7 +315,7 @@ namespace polaris
 
 		const auto base = basePiece(srcPiece);
 		const auto them = oppColor(us);
-		const auto occ = m_blackPop | m_whitePop;
+		const auto occ = state.boards.occupancy();
 
 		if (type == MoveType::Castling)
 		{
@@ -340,7 +328,6 @@ namespace polaris
 			if (move.srcRank() != homeRank || move.dstRank() != homeRank)
 				return false;
 
-			const auto rooks = currState().castlingRooks;
 			const auto rank = squareRank(src);
 
 			Square kingDst, rookDst;
@@ -348,7 +335,7 @@ namespace polaris
 			if (squareFile(src) < squareFile(dst))
 			{
 				// no castling rights
-				if (dst != (us == Color::Black ? rooks.blackShort : rooks.whiteShort))
+				if (dst != (us == Color::Black ? state.castlingRooks.blackShort : state.castlingRooks.whiteShort))
 					return false;
 
 				kingDst = toSquare(rank, 6);
@@ -357,7 +344,7 @@ namespace polaris
 			else
 			{
 				// no castling rights
-				if (dst != (us == Color::Black ? rooks.blackLong : rooks.whiteLong))
+				if (dst != (us == Color::Black ? state.castlingRooks.blackLong : state.castlingRooks.whiteLong))
 					return false;
 
 				kingDst = toSquare(rank, 2);
@@ -377,13 +364,13 @@ namespace polaris
 			}
 			else
 			{
-				if (dst == rooks.blackShort)
+				if (dst == state.castlingRooks.blackShort)
 					return (occ & U64(0x6000000000000000)).empty()
 						&& !isAttacked(Square::F8, Color::White);
-				else if (dst == rooks.blackLong)
+				else if (dst == state.castlingRooks.blackLong)
 					return (occ & U64(0x0E00000000000000)).empty()
 						&& !isAttacked(Square::D8, Color::White);
-				else if (dst == rooks.whiteShort)
+				else if (dst == state.castlingRooks.whiteShort)
 					return (occ & U64(0x0000000000000060)).empty()
 						&& !isAttacked(Square::F1, Color::Black);
 				else return (occ & U64(0x000000000000000E)).empty()
@@ -393,7 +380,7 @@ namespace polaris
 
 		if (base == BasePiece::Pawn)
 		{
-			if (type == MoveType::EnPassant && currState().enPassant == Square::None)
+			if (type == MoveType::EnPassant && state.enPassant == Square::None)
 				return false;
 
 			const auto srcRank = move.srcRank();
@@ -415,7 +402,7 @@ namespace polaris
 			{
 				// not valid attack
 				if (!(attacks::getPawnAttacks(src, us)
-					& (occupancy(them) | squareBitChecked(currState().enPassant)))[dst])
+					& (state.boards.occupancy(them) | squareBitChecked(state.enPassant)))[dst])
 					return false;
 			}
 			// forward move onto a piece
@@ -470,14 +457,14 @@ namespace polaris
 		{
 			for (i32 file = 0; file < 8; ++file)
 			{
-				if (pieceAt(rank, file) == Piece::None)
+				if (state.boards.pieceAt(rank, file) == Piece::None)
 				{
 					u32 emptySquares = 1;
-					for (; file < 7 && pieceAt(rank, file + 1) == Piece::None; ++file, ++emptySquares) {}
+					for (; file < 7 && state.boards.pieceAt(rank, file + 1) == Piece::None; ++file, ++emptySquares) {}
 
 					fen << static_cast<char>('0' + emptySquares);
 				}
-				else fen << pieceToChar(pieceAt(rank, file));
+				else fen << pieceToChar(state.boards.pieceAt(rank, file));
 			}
 
 			if (rank > 0)
@@ -527,50 +514,48 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::setPiece(Square square, Piece piece)
 	{
-		const auto captured = pieceAt(square);
+		auto &state = currState();
 
-		const auto mask = Bitboard::fromSquare(square);
+		const auto captured = state.boards.pieceAt(square);
 
 		if (captured != Piece::None)
 		{
-			board(captured) ^= mask;
-			occupancy(pieceColor(captured)) ^= mask;
+			state.boards.removePiece(square, captured);
 
-			currState().phase -= PhaseInc[static_cast<i32>(captured)];
+			state.phase -= PhaseInc[static_cast<i32>(captured)];
 
 			if constexpr (UpdateMaterial)
-				currState().material -= eval::pieceSquareValue(captured, square);
+				state.material -= eval::pieceSquareValue(captured, square);
 
 			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(captured, square);
-				currState().key ^= hash;
+				state.key ^= hash;
 
 				if (basePiece(captured) == BasePiece::Pawn)
-					currState().pawnKey ^= hash;
+					state.pawnKey ^= hash;
 			}
 		}
 
-		board(piece) ^= mask;
-		occupancy(pieceColor(piece)) ^= mask;
+		state.boards.setPiece(square, piece);
 
 		if (piece == Piece::BlackKing)
-			currState().blackKing = square;
+			state.blackKing = square;
 		else if (piece == Piece::WhiteKing)
-			currState().whiteKing = square;
+			state.whiteKing = square;
 
-		currState().phase += PhaseInc[static_cast<usize>(piece)];
+		state.phase += PhaseInc[static_cast<usize>(piece)];
 
 		if constexpr (UpdateMaterial)
-			currState().material += eval::pieceSquareValue(piece, square);
+			state.material += eval::pieceSquareValue(piece, square);
 
 		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(piece, square);
-			currState().key ^= hash;
+			state.key ^= hash;
 
 			if (basePiece(piece) == BasePiece::Pawn)
-				currState().pawnKey ^= hash;
+				state.pawnKey ^= hash;
 		}
 
 		return captured;
@@ -579,26 +564,25 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::removePiece(Square square)
 	{
-		const auto piece = pieceAt(square);
+		auto &state = currState();
+
+		const auto piece = state.boards.pieceAt(square);
 
 		if (piece != Piece::None)
 		{
-			const auto mask = Bitboard::fromSquare(square);
+			state.boards.removePiece(square, piece);
 
-			board(piece) ^= mask;
-			occupancy(pieceColor(piece)) ^= mask;
-
-			currState().phase -= PhaseInc[static_cast<usize>(piece)];
+			state.phase -= PhaseInc[static_cast<usize>(piece)];
 
 			if constexpr (UpdateMaterial)
-				currState().material -= eval::pieceSquareValue(piece, square);
+				state.material -= eval::pieceSquareValue(piece, square);
 
 			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(piece, square);
-				currState().key ^= hash;
+				state.key ^= hash;
 				if (basePiece(piece) == BasePiece::Pawn)
-					currState().pawnKey ^= hash;
+					state.pawnKey ^= hash;
 			}
 		}
 
@@ -608,47 +592,45 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::movePiece(Square src, Square dst)
 	{
-		const auto piece = pieceAt(src);
-		const auto captured = pieceAt(dst);
+		auto &state = currState();
+
+		const auto captured = state.boards.pieceAt(dst);
 
 		if (captured != Piece::None)
 		{
-			board(captured)[dst] = false;
-			occupancy(pieceColor(captured))[dst] = false;
-
-			currState().phase -= PhaseInc[static_cast<usize>(captured)];
+			state.boards.removePiece(dst, captured);
+			state.phase -= PhaseInc[static_cast<usize>(captured)];
 
 			if constexpr (UpdateMaterial)
-				currState().material -= eval::pieceSquareValue(captured, dst);
+				state.material -= eval::pieceSquareValue(captured, dst);
 
 			if constexpr (UpdateKey)
 			{
 				const auto hash = hash::pieceSquare(captured, dst);
-				currState().key ^= hash;
+				state.key ^= hash;
 				if (basePiece(captured) == BasePiece::Pawn)
-					currState().pawnKey ^= hash;
+					state.pawnKey ^= hash;
 			}
 		}
 
-		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
+		const auto piece = state.boards.pieceAt(src);
 
-		board(piece) ^= mask;
-		occupancy(pieceColor(piece)) ^= mask;
+		state.boards.movePiece(src, dst, piece);
 
 		if (piece == Piece::BlackKing)
-			currState().blackKing = dst;
+			state.blackKing = dst;
 		else if (piece == Piece::WhiteKing)
-			currState().whiteKing = dst;
+			state.whiteKing = dst;
 
 		if constexpr (UpdateMaterial)
-			currState().material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
+			state.material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
 
 		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
-			currState().key ^= hash;
+			state.key ^= hash;
 			if (basePiece(piece) == BasePiece::Pawn)
-				currState().pawnKey ^= hash;
+				state.pawnKey ^= hash;
 		}
 
 		return captured;
@@ -657,43 +639,43 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::promotePawn(Square src, Square dst, BasePiece target)
 	{
-		const auto captured = pieceAt(dst);
+		auto &state = currState();
+
+		const auto captured = state.boards.pieceAt(dst);
 
 		if (captured != Piece::None)
 		{
-			board(captured)[dst] = false;
-			occupancy(pieceColor(captured))[dst] = false;
+			state.boards.removePiece(dst, captured);
 
-			currState().phase -= PhaseInc[static_cast<usize>(captured)];
+			state.phase -= PhaseInc[static_cast<usize>(captured)];
 
 			if constexpr (UpdateMaterial)
-				currState().material -= eval::pieceSquareValue(captured, dst);
+				state.material -= eval::pieceSquareValue(captured, dst);
 
 			// cannot capture a pawn when promoting
 			if constexpr (UpdateKey)
-				currState().key ^= hash::pieceSquare(captured, dst);
+				state.key ^= hash::pieceSquare(captured, dst);
 		}
 
-		const auto color = m_blackPop[src] ? Color::Black : Color::White;
+		const auto color = state.boards.blackOccupancy()[src] ? Color::Black : Color::White;
 		const auto pawn = colorPiece(BasePiece::Pawn, color);
 
-		const auto coloredTarget = colorPiece(target, color);
+		state.boards.moveAndChangePiece(src, dst, pawn, target);
 
-		board(pawn)[src] = false;
-		board(coloredTarget)[dst] = true;
-
-		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
-		occupancy(color) ^= mask;
-
-		if constexpr (UpdateMaterial)
-			currState().material += eval::pieceSquareValue(coloredTarget, dst)
-				- eval::pieceSquareValue(pawn, src);
-
-		if constexpr (UpdateKey)
+		if constexpr(UpdateMaterial || UpdateKey)
 		{
-			const auto pawnHash = hash::pieceSquare(pawn, src);
-			currState().key ^= pawnHash ^ hash::pieceSquare(coloredTarget, dst);
-			currState().pawnKey ^= pawnHash;
+			const auto coloredTarget = colorPiece(target, color);
+
+			if constexpr (UpdateMaterial)
+				state.material += eval::pieceSquareValue(coloredTarget, dst)
+					- eval::pieceSquareValue(pawn, src);
+
+			if constexpr (UpdateKey)
+			{
+				const auto pawnHash = hash::pieceSquare(pawn, src);
+				state.key ^= pawnHash ^ hash::pieceSquare(coloredTarget, dst);
+				state.pawnKey ^= pawnHash;
+			}
 		}
 
 		return captured;
@@ -738,46 +720,44 @@ namespace polaris
 	template <bool UpdateKey, bool UpdateMaterial>
 	Piece Position::enPassant(Square src, Square dst)
 	{
-		const auto pawn = pieceAt(src);
+		auto &state = currState();
+
+		const auto pawn = state.boards.pieceAt(src);
 		const auto color = pieceColor(pawn);
 
-		const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
-
-		board(pawn) ^= mask;
-		occupancy(color) ^= mask;
+		state.boards.movePiece(src, dst, pawn);
 
 		if constexpr (UpdateMaterial)
-			currState().material += eval::pieceSquareValue(pawn, dst)
+			state.material += eval::pieceSquareValue(pawn, dst)
 				- eval::pieceSquareValue(pawn, src);
 
 		if constexpr (UpdateKey)
 		{
 			const auto hash = hash::pieceSquare(pawn, src) ^ hash::pieceSquare(pawn, dst);
-			currState().key ^= hash;
-			currState().pawnKey ^= hash;
+			state.key ^= hash;
+			state.pawnKey ^= hash;
 		}
 
-		u32 rank = squareRank(dst);
-		u32 file = squareFile(dst);
+		auto rank = squareRank(dst);
+		const auto file = squareFile(dst);
 
 		rank = rank == 2 ? 3 : 4;
 
-		const auto pawnSquare = toSquare(rank, file);
-		const auto enemyPawn = pieceAt(pawnSquare);
+		const auto captureSquare = toSquare(rank, file);
+		const auto enemyPawn = state.boards.pieceAt(captureSquare);
 
-		board(enemyPawn)[pawnSquare] = false;
-		occupancy(pieceColor(enemyPawn))[pawnSquare] = false;
+		state.boards.removePiece(captureSquare, enemyPawn);
 
 		// pawns do not affect game phase
 
 		if constexpr (UpdateMaterial)
-			currState().material -= eval::pieceSquareValue(enemyPawn, pawnSquare);
+			state.material -= eval::pieceSquareValue(enemyPawn, captureSquare);
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(enemyPawn, pawnSquare);
-			currState().key ^= hash;// ^ hash::enPassant(file);
-			currState().pawnKey ^= hash;
+			const auto hash = hash::pieceSquare(enemyPawn, captureSquare);
+			state.key ^= hash;
+			state.pawnKey ^= hash;
 		}
 
 		return enemyPawn;
@@ -789,11 +769,11 @@ namespace polaris
 
 		state.material = TaperedScore{};
 
-		auto occ = occupancy();
+		auto occ = state.boards.occupancy();
 		while (occ)
 		{
 			const auto square = occ.popLowestSquare();
-			const auto piece = pieceAt(square);
+			const auto piece = state.boards.pieceAt(square);
 
 			state.material += eval::pieceSquareValue(piece, square);
 		}
@@ -804,20 +784,6 @@ namespace polaris
 	{
 		auto &state = currState();
 
-		m_blackPop = blackPawns()
-			| blackKnights()
-			| blackBishops()
-			| blackRooks()
-			| blackQueens()
-			| blackKings();
-
-		m_whitePop = whitePawns()
-			| whiteKnights()
-			| whiteBishops()
-			| whiteRooks()
-			| whiteQueens()
-			| whiteKings();
-
 		state.phase = 0;
 		state.key = 0;
 		state.pawnKey = 0;
@@ -827,7 +793,7 @@ namespace polaris
 			for (u32 file = 0; file < 8; ++file)
 			{
 				const auto square = toSquare(rank, file);
-				if (const auto piece = pieceAt(square); piece != Piece::None)
+				if (const auto piece = state.boards.pieceAt(square); piece != Piece::None)
 				{
 					if (piece == Piece::BlackKing)
 						state.blackKing = square;
@@ -845,7 +811,6 @@ namespace polaris
 			}
 		}
 
-		//
 		regenMaterial();
 
 		if (state.phase > 24)
@@ -861,7 +826,7 @@ namespace polaris
 
 				if (lastMove && lastMove.type() == MoveType::Standard)
 				{
-					const auto piece = pieceAt(lastMove.dst());
+					const auto piece = state.boards.pieceAt(lastMove.dst());
 
 					if (basePiece(piece) == BasePiece::Pawn
 						&& std::abs(lastMove.srcRank() - lastMove.dstRank()) == 2)
@@ -923,20 +888,6 @@ namespace polaris
 			out << '\n'; \
 			failed = true; \
 		}
-#define PS_CHECK_PIECE(P, Str) PS_CHECK(board(P), regened.board(P), Str " boards")
-#define PS_CHECK_PIECES(P, Str) \
-PS_CHECK_PIECE(Piece::Black ## P, "black " Str) \
-PS_CHECK_PIECE(Piece::White ## P, "white " Str)
-
-		PS_CHECK_PIECES(Pawn, "pawn")
-		PS_CHECK_PIECES(Knight, "knight")
-		PS_CHECK_PIECES(Bishop, "bishop")
-		PS_CHECK_PIECES(Rook, "rook")
-		PS_CHECK_PIECES(Queen, "queen")
-		PS_CHECK_PIECES(King, "king")
-
-		PS_CHECK(occupancy(Color::Black), regened.occupancy(Color::Black), "black occupancy boards")
-		PS_CHECK(occupancy(Color::White), regened.occupancy(Color::White), "white occupancy boards")
 
 		out << std::dec;
 		PS_CHECK(static_cast<u64>(currState().enPassant), static_cast<u64>(regened.currState().enPassant), "en passant squares")
@@ -984,13 +935,15 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 			return Move::promotion(src, dst, basePieceFromChar(move[4]));
 		else
 		{
-			const auto srcPiece = pieceAt(src);
+			const auto &state = currState();
+
+			const auto srcPiece = state.boards.pieceAt(src);
 
 			if (srcPiece == Piece::BlackKing || srcPiece == Piece::WhiteKing)
 			{
 				if (g_opts.chess960)
 				{
-					if (pieceAt(dst) == colorPiece(BasePiece::Rook, pieceColor(srcPiece)))
+					if (state.boards.pieceAt(dst) == colorPiece(BasePiece::Rook, pieceColor(srcPiece)))
 						return Move::castling(src, dst);
 					else return Move::standard(src, dst);
 				}
@@ -1002,7 +955,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 			}
 
 			if ((srcPiece == Piece::BlackPawn || srcPiece == Piece::WhitePawn)
-				&& dst == currState().enPassant)
+				&& dst == state.enPassant)
 				return Move::enPassant(src, dst);
 
 			return Move::standard(src, dst);
@@ -1015,22 +968,15 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 
 		auto &state = position.currState();
 
-		state.boards.forPiece(Piece::WhiteRook) = U64(0x0000000000000081);
-		state.boards.forPiece(Piece::WhiteKnight) = U64(0x0000000000000042);
-		state.boards.forPiece(Piece::WhiteBishop) = U64(0x0000000000000024);
+		state.boards.forPiece(BasePiece::Pawn) = U64(0x00FF00000000FF00);
+		state.boards.forPiece(BasePiece::Knight) = U64(0x4200000000000042);
+		state.boards.forPiece(BasePiece::Bishop) = U64(0x2400000000000024);
+		state.boards.forPiece(BasePiece::Rook) = U64(0x8100000000000081);
+		state.boards.forPiece(BasePiece::Queen) = U64(0x0800000000000008);
+		state.boards.forPiece(BasePiece::King) = U64(0x1000000000000010);
 
-		state.boards.forPiece(Piece::WhiteQueen)[Square::D1] = true;
-		state.boards.forPiece(Piece::WhiteKing)[Square::E1] = true;
-
-		state.boards.forPiece(Piece::WhitePawn) = U64(0x000000000000FF00);
-		state.boards.forPiece(Piece::BlackPawn) = U64(0x00FF000000000000);
-
-		state.boards.forPiece(Piece::BlackRook) = U64(0x8100000000000000);
-		state.boards.forPiece(Piece::BlackKnight) = U64(0x4200000000000000);
-		state.boards.forPiece(Piece::BlackBishop) = U64(0x2400000000000000);
-
-		state.boards.forPiece(Piece::BlackQueen)[Square::D8] = true;
-		state.boards.forPiece(Piece::BlackKing)[Square::E8] = true;
+		state.boards.forColor(Color::Black) = U64(0xFFFF000000000000);
+		state.boards.forColor(Color::White) = U64(0x000000000000FFFF);
 
 		state.castlingRooks.blackShort = Square::H8;
 		state.castlingRooks.blackLong  = Square::A8;
@@ -1090,6 +1036,8 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 			return {};
 		}
 
+		auto &state = position.currState();
+
 		u32 rankIdx = 0;
 
 		const auto ranks = split::split(tokens[0], '/');
@@ -1115,7 +1063,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					fileIdx += *emptySquares;
 				else if (const auto piece = pieceFromChar(c); piece != Piece::None)
 				{
-					position.setPiece<false, false>(toSquare(7 - rankIdx, fileIdx), piece);
+					state.boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
 					++fileIdx;
 				}
 				else
@@ -1166,8 +1114,6 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 			return {};
 		}
 
-		auto &state = position.currState();
-
 		if (castlingFlags.length() != 1 || castlingFlags[0] != '-')
 		{
 			if (g_opts.chess960)
@@ -1178,9 +1124,9 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					{
 						const auto square = toSquare(rank, file);
 
-						if (position.pieceAt(square) == Piece::BlackKing)
+						if (state.boards.pieceAt(square) == Piece::BlackKing)
 							state.blackKing = square;
-						else if (position.pieceAt(square) == Piece::WhiteKing)
+						else if (state.boards.pieceAt(square) == Piece::WhiteKing)
 							state.whiteKing = square;
 					}
 				}
@@ -1190,7 +1136,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					if (flag >= 'a' && flag <= 'h')
 					{
 						const auto file = static_cast<i32>(flag - 'a');
-						const auto kingFile = squareFile(position.currState().blackKing);
+						const auto kingFile = squareFile(state.blackKing);
 
 						if (file == kingFile)
 						{
@@ -1205,7 +1151,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 					else if (flag >= 'A' && flag <= 'H')
 					{
 						const auto file = static_cast<i32>(flag - 'A');
-						const auto kingFile = squareFile(position.currState().whiteKing);
+						const auto kingFile = squareFile(state.whiteKing);
 
 						if (file == kingFile)
 						{
@@ -1222,7 +1168,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 						for (i32 file = squareFile(state.blackKing) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(7, file);
-							if (position.pieceAt(square) == Piece::BlackRook)
+							if (state.boards.pieceAt(square) == Piece::BlackRook)
 							{
 								state.castlingRooks.blackShort = square;
 								break;
@@ -1234,7 +1180,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 						for (i32 file = squareFile(state.whiteKing) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(0, file);
-							if (position.pieceAt(square) == Piece::WhiteRook)
+							if (state.boards.pieceAt(square) == Piece::WhiteRook)
 							{
 								state.castlingRooks.whiteShort = square;
 								break;
@@ -1246,7 +1192,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 						for (i32 file = squareFile(state.blackKing) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(7, file);
-							if (position.pieceAt(square) == Piece::BlackRook)
+							if (state.boards.pieceAt(square) == Piece::BlackRook)
 							{
 								state.castlingRooks.blackLong = square;
 								break;
@@ -1258,7 +1204,7 @@ PS_CHECK_PIECE(Piece::White ## P, "white " Str)
 						for (i32 file = squareFile(state.whiteKing) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(0, file);
-							if (position.pieceAt(square) == Piece::WhiteRook)
+							if (state.boards.pieceAt(square) == Piece::WhiteRook)
 							{
 								state.castlingRooks.whiteLong = square;
 								break;

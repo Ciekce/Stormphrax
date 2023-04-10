@@ -30,7 +30,7 @@
 
 #include "util/split.h"
 #include "util/parse.h"
-#include "position.h"
+#include "position/position.h"
 #include "search/search.h"
 #include "movegen.h"
 #include "eval/eval.h"

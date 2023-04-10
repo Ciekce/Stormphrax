@@ -23,7 +23,7 @@
 #include <array>
 
 #include "core.h"
-#include "position.h"
+#include "position/position.h"
 #include "attacks/attacks.h"
 
 namespace polaris::see
@@ -64,7 +64,7 @@ namespace polaris::see
 		return Values[static_cast<i32>(piece) * 2];
 	}
 
-	inline Score gain(const Position &pos, Move move)
+	inline Score gain(const PositionBoards &boards, Move move)
 	{
 		const auto type = move.type();
 
@@ -73,7 +73,7 @@ namespace polaris::see
 		else if (type == MoveType::EnPassant)
 			return values::Pawn;
 
-		auto score = value(pos.pieceAt(move.dst()));
+		auto score = value(boards.pieceAt(move.dst()));
 
 		if (type == MoveType::Promotion)
 			score += value(move.target()) - values::Pawn;
@@ -81,44 +81,45 @@ namespace polaris::see
 		return score;
 	}
 
-	[[nodiscard]] inline BasePiece popLeastValuable(const Position &pos, Bitboard &occ, Bitboard attackers, Color color)
+	[[nodiscard]] inline BasePiece popLeastValuable(const PositionBoards &boards,
+		Bitboard &occ, Bitboard attackers, Color color)
 	{
-		auto board = attackers & pos.pawns(color);
+		auto board = attackers & boards.pawns(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
 			return BasePiece::Pawn;
 		}
 
-		board = attackers & pos.knights(color);
+		board = attackers & boards.knights(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
 			return BasePiece::Knight;
 		}
 
-		board = attackers & pos.bishops(color);
+		board = attackers & boards.bishops(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
 			return BasePiece::Bishop;
 		}
 
-		board = attackers & pos.rooks(color);
+		board = attackers & boards.rooks(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
 			return BasePiece::Rook;
 		}
 
-		board = attackers & pos.queens(color);
+		board = attackers & boards.queens(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
 			return BasePiece::Queen;
 		}
 
-		board = attackers & pos.kings(color);
+		board = attackers & boards.kings(color);
 		if (!board.empty())
 		{
 			occ ^= board.lowestBit();
@@ -131,27 +132,29 @@ namespace polaris::see
 	// basically ported from ethereal and weiss (their implementation is the same)
 	inline bool see(const Position &pos, Move move)
 	{
+		const auto &boards = pos.boards();
+
 		const auto color = pos.toMove();
 
 		auto next = move.type() == MoveType::Promotion
 			? move.target()
-			: basePiece(pos.pieceAt(move.src()));
+			: basePiece(boards.pieceAt(move.src()));
 
-		auto score = gain(pos, move) - value(next);
+		auto score = gain(boards, move) - value(next);
 
 		if (score >= 0)
 			return true;
 
 		const auto square = move.dst();
 
-		auto occupancy = pos.occupancy()
+		auto occupancy = boards.occupancy()
 			^ squareBit(move.src())
 			^ squareBit(square);
 
-		const auto queens = pos.blackQueens() | pos.whiteQueens();
+		const auto queens = boards.blackQueens() | boards.whiteQueens();
 
-		const auto bishops = queens | pos.blackBishops() | pos.whiteBishops();
-		const auto rooks = queens | pos.blackRooks() | pos.whiteRooks();
+		const auto bishops = queens | boards.blackBishops() | boards.whiteBishops();
+		const auto rooks = queens | boards.blackRooks() | boards.whiteRooks();
 
 		auto attackers = pos.allAttackersTo(square, occupancy);
 
@@ -159,12 +162,12 @@ namespace polaris::see
 
 		while (true)
 		{
-			const auto ourAttackers = attackers & pos.occupancy(us);
+			const auto ourAttackers = attackers & boards.occupancy(us);
 
 			if (ourAttackers.empty())
 				break;
 
-			next = popLeastValuable(pos, occupancy, ourAttackers, us);
+			next = popLeastValuable(boards, occupancy, ourAttackers, us);
 
 			if (next == BasePiece::Pawn
 				|| next == BasePiece::Bishop
@@ -184,7 +187,7 @@ namespace polaris::see
 			{
 				// our only attacker is our king, but the opponent still has defenders
 				if (next == BasePiece::King
-					&& !(attackers & pos.occupancy(us)).empty())
+					&& !(attackers & boards.occupancy(us)).empty())
 					us = oppColor(us);
 				break;
 			}

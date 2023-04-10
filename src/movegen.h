@@ -21,7 +21,7 @@
 #include "types.h"
 
 #include "move.h"
-#include "position.h"
+#include "position/position.h"
 #include "eval/material.h"
 #include "see.h"
 
@@ -154,16 +154,18 @@ namespace polaris
 
 		inline void scoreNoisy()
 		{
+			const auto &boards = m_pos.boards();
+
 			for (i32 i = m_idx; i < m_moves.size(); ++i)
 			{
 				//TODO see
 				auto &move = m_moves[i];
 
-				const auto srcValue = eval::pieceValue(m_pos.pieceAt(move.move.src())).midgame;
+				const auto srcValue = eval::pieceValue(boards.pieceAt(move.move.src())).midgame;
 				// 0 for non-capture promo
 				const auto dstValue = move.move.type() == MoveType::EnPassant
 					? eval::values::Pawn.midgame
-					: eval::pieceValue(m_pos.pieceAt(move.move.dst())).midgame;
+					: eval::pieceValue(boards.pieceAt(move.move.dst())).midgame;
 
 				move.score = (dstValue - srcValue) * 2000 + dstValue;
 
@@ -177,12 +179,14 @@ namespace polaris
 
 		inline void scoreQuiet()
 		{
+			const auto &boards = m_pos.boards();
+
 			for (i32 i = m_noisyEnd; i < m_moves.size(); ++i)
 			{
 				auto &move = m_moves[i];
 
 				if (m_history)
-					move.score = (*m_history)[static_cast<i32>(m_pos.pieceAt(move.move.src()))]
+					move.score = (*m_history)[static_cast<i32>(boards.pieceAt(move.move.src()))]
 						[static_cast<i32>(moveActualDst(move.move))];
 
 				// knight promos first, rook then bishop promos last

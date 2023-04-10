@@ -56,13 +56,15 @@ namespace polaris
 
 	void printBoard(std::ostream &out, const Position &position)
 	{
+		const auto &boards = position.boards();
+
 		for (i32 rank = 7; rank >= 0; --rank)
 		{
 			out << " +---+---+---+---+---+---+---+---+\n";
 
 			for (usize file = 0; file < 8; ++file)
 			{
-				out << " | " << pieceToChar(position.pieceAt(rank, file));
+				out << " | " << pieceToChar(boards.pieceAt(rank, file));
 			}
 
 			out << " | " << (rank + 1) << "\n";
