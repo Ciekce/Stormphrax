@@ -27,7 +27,7 @@
 namespace polaris::limit
 {
 	constexpr i32 DefaultMoveOverhead = 100;
-	constexpr util::Range<i32> MoveOverheadRange{30, 50000};
+	constexpr util::Range<i32> MoveOverheadRange{0, 50000};
 
 	class MoveTimeLimiter final : public ISearchLimiter
 	{
