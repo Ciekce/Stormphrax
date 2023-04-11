@@ -155,7 +155,7 @@ namespace polaris
 
 		static constexpr auto CenterSquares{U64(0x0000001818000000)};
 
-		static constexpr auto All{UINT16_C(0xFFFFFFFFFFFFFFFF)};
+		static constexpr auto All{U64(0xFFFFFFFFFFFFFFFF)};
 
 		constexpr Bitboard(u64 board = 0) : m_board{board} {}
 
