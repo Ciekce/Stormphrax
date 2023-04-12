@@ -55,6 +55,9 @@ namespace polaris
 		constexpr auto Version = PS_STRINGIFY(PS_VERSION);
 		constexpr auto Author = "Ciekce";
 
+		constexpr u32 DefaultThreadCount = 1;
+		constexpr auto ThreadCountRange = util::Range<u32>{1, 1};
+
 		GlobalOptions s_opts{};
 
 		class UciHandler
@@ -159,6 +162,8 @@ namespace polaris
 			std::cout << "option name Hash type spin default " << DefaultHashSize
 				<< " min " << HashSizeRange.min() << " max " << HashSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
+			std::cout << "option name Threads type spin default " << DefaultThreadCount
+				<< " min " << ThreadCountRange.min() << " max " << ThreadCountRange.max() << '\n';
 			//TODO
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 			std::cout << "option name UCI_Chess960 type check default "
