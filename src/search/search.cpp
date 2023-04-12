@@ -77,9 +77,9 @@ namespace polaris::search
 		return s_searchers.searchers();
 	}
 
-	std::unique_ptr<ISearcher> ISearcher::createDefault()
+	std::unique_ptr<ISearcher> ISearcher::createDefault(std::optional<usize> hashSize)
 	{
-		return std::make_unique<pvs::PvsSearcher>();
+		return std::make_unique<pvs::PvsSearcher>(hashSize);
 	}
 
 	std::optional<std::unique_ptr<ISearcher>> ISearcher::create(const std::string &name,

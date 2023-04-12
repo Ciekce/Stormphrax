@@ -17,8 +17,19 @@
  */
 
 #include "uci.h"
+#include "bench.h"
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] const char *argv[])
+using namespace polaris;
+
+int main(int argc, const char *argv[])
 {
-	return polaris::uci::run();
+	if (argc > 1 && std::string{argv[1]} == "bench")
+	{
+		auto searcher = search::ISearcher::createDefault(16);
+		bench::run(*searcher, 12);
+
+		return 0;
+	}
+
+	return uci::run();
 }

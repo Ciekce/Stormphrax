@@ -60,7 +60,7 @@ namespace polaris::search
 
 		[[nodiscard]] static std::span<const std::string> searchers();
 
-		[[nodiscard]] static std::unique_ptr<ISearcher> createDefault();
+		[[nodiscard]] static std::unique_ptr<ISearcher> createDefault(std::optional<usize> hashSize = {});
 		[[nodiscard]] static std::optional<std::unique_ptr<ISearcher>> create(const std::string &name,
 			std::optional<usize> hashSize);
 	};
