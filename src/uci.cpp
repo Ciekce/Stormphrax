@@ -623,7 +623,7 @@ namespace polaris
 				return;
 			}
 
-			i32 depth = 13;
+			i32 depth = 12;
 			usize hash = 16;
 
 			if (tokens.size() > 1)
