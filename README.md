@@ -58,6 +58,7 @@ Alternatively, build the CMake target `polaris-native` for a binary tuned for yo
 - Builds other than `bmi2` are untested and might crash on CPUs lacking newer instructions; I don't have older hardware to test them on.
 
 ## Building
+**The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
 Requires CMake and a competent C++20 compiler (tested with Clang 15 on Windows and GCC 11 on Ubuntu)
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
