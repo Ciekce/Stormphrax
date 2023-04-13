@@ -48,4 +48,6 @@
 	#define PS_HAS_BMI2 0
 	#define PS_HAS_BMI1 0
 	#define PS_HAS_POPCNT 0
+#else
+#error no arch specified
 #endif
