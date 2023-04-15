@@ -14,7 +14,9 @@ LDFLAGS :=
 
 ifeq ($(OS), Windows_NT)
 	SUFFIX := .exe
-	LDFLAGS := -fuse-ld=lld-link
+	LDFLAGS += -fuse-ld=lld-link
+else
+	LDFLAGS += -lpthread
 endif
 
 OUT := $(EXE)$(SUFFIX)
