@@ -13,9 +13,21 @@ CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION
 LDFLAGS :=
 
 ifeq ($(OS), Windows_NT)
+	DETECTED_OS := Windows
 	SUFFIX := .exe
-	LDFLAGS += -fuse-ld=lld-link
+# don't support gcc on windows, too much of a pain for now
+	ifeq (,$(findstring clang,$(shell $(CXX) --version)))
+		$(error GCC and MSVC unsupported on Windows)
+	endif
+	LDFLAGS += -fuse-ld=lld
 else
+	DETECTED_OS := $(shell uname -s)
+	SUFFIX :=
+	ifneq (,$(findstring clang,$(shell $(CXX) --version)))
+		ifneq ($(DETECTED_OS),Darwin)
+			LDFLAGS += -fuse-ld=lld
+		endif
+	endif
 	LDFLAGS += -lpthread
 endif
 
