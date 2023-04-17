@@ -51,7 +51,15 @@ namespace polaris
 			return m_boards[static_cast<i32>(piece)] & (c == Color::Black ? m_blackPop : m_whitePop);
 		}
 
-		[[nodiscard]] inline auto &forColor(Color color) { return color == Color::White ? m_whitePop : m_blackPop; }
+		[[nodiscard]] inline auto &forColor(Color color)
+		{
+			return color == Color::Black ? m_blackPop : m_whitePop;
+		}
+
+		[[nodiscard]] inline auto forColor(Color color) const
+		{
+			return color == Color::Black ? m_blackPop : m_whitePop;
+		}
 
 		[[nodiscard]] inline auto blackOccupancy() const { return m_blackPop; }
 		[[nodiscard]] inline auto whiteOccupancy() const { return m_whitePop; }
@@ -64,56 +72,76 @@ namespace polaris
 			else return m_whitePop;
 		}
 
-		[[nodiscard]] inline auto occupancy(Color color) const { return color == Color::Black ? m_blackPop : m_whitePop; }
-
 		[[nodiscard]] inline auto occupancy() const { return m_whitePop | m_blackPop; }
 
-		[[nodiscard]] inline auto blackPawns() const { return forPiece(BasePiece::Pawn) & m_blackPop; }
-		[[nodiscard]] inline auto whitePawns() const { return forPiece(BasePiece::Pawn) & m_whitePop; }
+		[[nodiscard]] inline auto pawns() const { return forPiece(BasePiece::Pawn); }
+		[[nodiscard]] inline auto knights() const { return forPiece(BasePiece::Knight); }
+		[[nodiscard]] inline auto bishops() const { return forPiece(BasePiece::Bishop); }
+		[[nodiscard]] inline auto rooks() const { return forPiece(BasePiece::Rook); }
+		[[nodiscard]] inline auto queens() const { return forPiece(BasePiece::Queen); }
+		[[nodiscard]] inline auto kings() const { return forPiece(BasePiece::King); }
 
-		[[nodiscard]] inline auto blackKnights() const { return forPiece(BasePiece::Knight) & m_blackPop; }
-		[[nodiscard]] inline auto whiteKnights() const { return forPiece(BasePiece::Knight) & m_whitePop; }
+		[[nodiscard]] inline auto blackPawns() const { return pawns() & m_blackPop; }
+		[[nodiscard]] inline auto whitePawns() const { return pawns() & m_whitePop; }
 
-		[[nodiscard]] inline auto blackBishops() const { return forPiece(BasePiece::Bishop) & m_blackPop; }
-		[[nodiscard]] inline auto whiteBishops() const { return forPiece(BasePiece::Bishop) & m_whitePop; }
+		[[nodiscard]] inline auto blackKnights() const { return knights() & m_blackPop; }
+		[[nodiscard]] inline auto whiteKnights() const { return knights() & m_whitePop; }
 
-		[[nodiscard]] inline auto blackRooks() const { return forPiece(BasePiece::Rook) & m_blackPop; }
-		[[nodiscard]] inline auto whiteRooks() const { return forPiece(BasePiece::Rook) & m_whitePop; }
+		[[nodiscard]] inline auto blackBishops() const { return bishops() & m_blackPop; }
+		[[nodiscard]] inline auto whiteBishops() const { return bishops() & m_whitePop; }
 
-		[[nodiscard]] inline auto blackQueens() const { return forPiece(BasePiece::Queen) & m_blackPop; }
-		[[nodiscard]] inline auto whiteQueens() const { return forPiece(BasePiece::Queen) & m_whitePop; }
+		[[nodiscard]] inline auto blackRooks() const { return rooks() & m_blackPop; }
+		[[nodiscard]] inline auto whiteRooks() const { return rooks() & m_whitePop; }
 
-		[[nodiscard]] inline auto blackKings() const { return forPiece(BasePiece::King) & m_blackPop; }
-		[[nodiscard]] inline auto whiteKings() const { return forPiece(BasePiece::King) & m_whitePop; }
+		[[nodiscard]] inline auto blackQueens() const { return queens() & m_blackPop; }
+		[[nodiscard]] inline auto whiteQueens() const { return queens() & m_whitePop; }
+
+		[[nodiscard]] inline auto blackKings() const { return kings() & m_blackPop; }
+		[[nodiscard]] inline auto whiteKings() const { return kings() & m_whitePop; }
+
+		[[nodiscard]] inline auto minors() const
+		{
+			return knights() | bishops();
+		}
 
 		[[nodiscard]] inline auto blackMinors() const
 		{
-			return blackKnights() | blackBishops();
+			return minors() & m_blackPop;
 		}
 
 		[[nodiscard]] inline auto whiteMinors() const
 		{
-			return whiteKnights() | whiteBishops();
+			return minors() & m_whitePop;
+		}
+
+		[[nodiscard]] inline auto majors() const
+		{
+			return rooks() | queens();
 		}
 
 		[[nodiscard]] inline auto blackMajors() const
 		{
-			return blackRooks() | blackQueens();
+			return majors() & m_blackPop;
 		}
 
 		[[nodiscard]] inline auto whiteMajors() const
 		{
-			return whiteRooks() | whiteQueens();
+			return majors() & m_whitePop;
+		}
+
+		[[nodiscard]] inline auto nonPk() const
+		{
+			return minors() | majors();
 		}
 
 		[[nodiscard]] inline auto blackNonPk() const
 		{
-			return blackMinors() | blackMajors();
+			return nonPk() & m_blackPop;
 		}
 
 		[[nodiscard]] inline auto whiteNonPk() const
 		{
-			return whiteMinors() | whiteMajors();
+			return nonPk() & m_whitePop;
 		}
 
 		template <Color C>

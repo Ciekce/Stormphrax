@@ -151,10 +151,10 @@ namespace polaris::see
 			^ squareBit(move.src())
 			^ squareBit(square);
 
-		const auto queens = boards.blackQueens() | boards.whiteQueens();
+		const auto queens = boards.queens();
 
-		const auto bishops = queens | boards.blackBishops() | boards.whiteBishops();
-		const auto rooks = queens | boards.blackRooks() | boards.whiteRooks();
+		const auto bishops = queens | boards.bishops();
+		const auto rooks = queens | boards.rooks();
 
 		auto attackers = pos.allAttackersTo(square, occupancy);
 
@@ -162,7 +162,7 @@ namespace polaris::see
 
 		while (true)
 		{
-			const auto ourAttackers = attackers & boards.occupancy(us);
+			const auto ourAttackers = attackers & boards.forColor(us);
 
 			if (ourAttackers.empty())
 				break;
@@ -187,7 +187,7 @@ namespace polaris::see
 			{
 				// our only attacker is our king, but the opponent still has defenders
 				if (next == BasePiece::King
-					&& !(attackers & boards.occupancy(us)).empty())
+					&& !(attackers & boards.forColor(us)).empty())
 					us = oppColor(us);
 				break;
 			}

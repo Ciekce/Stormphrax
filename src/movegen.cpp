@@ -297,8 +297,8 @@ namespace polaris
 			const auto us = pos.toMove();
 			const auto them = oppColor(us);
 
-			const auto ours = boards.occupancy(us);
-			const auto theirs = boards.occupancy(them);
+			const auto ours = boards.forColor(us);
+			const auto theirs = boards.forColor(them);
 
 			const auto occupancy = ours | theirs;
 
@@ -332,9 +332,9 @@ namespace polaris
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const auto ours = boards.occupancy(us);
+		const auto ours = boards.forColor(us);
 
-		const auto kingDstMask = boards.occupancy(them);
+		const auto kingDstMask = boards.forColor(them);
 
 		auto dstMask = kingDstMask;
 
@@ -382,8 +382,8 @@ namespace polaris
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const auto ours = boards.occupancy(us);
-		const auto theirs = boards.occupancy(them);
+		const auto ours = boards.forColor(us);
+		const auto theirs = boards.forColor(them);
 
 		const auto kingDstMask = ~(ours | theirs);
 
@@ -417,7 +417,7 @@ namespace polaris
 
 		const auto us = pos.toMove();
 
-		const auto kingDstMask = ~boards.occupancy(pos.toMove());
+		const auto kingDstMask = ~boards.forColor(pos.toMove());
 
 		auto dstMask = kingDstMask;
 

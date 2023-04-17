@@ -402,7 +402,7 @@ namespace polaris
 			{
 				// not valid attack
 				if (!(attacks::getPawnAttacks(src, us)
-					& (state.boards.occupancy(them) | squareBitChecked(state.enPassant)))[dst])
+					& (state.boards.forColor(them) | squareBitChecked(state.enPassant)))[dst])
 					return false;
 			}
 			// forward move onto a piece

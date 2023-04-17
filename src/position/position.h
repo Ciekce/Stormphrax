@@ -148,21 +148,21 @@ namespace polaris
 
 			Bitboard attackers{};
 
-			const auto queens = boards.blackQueens() | boards.whiteQueens();
+			const auto queens = boards.queens();
 
-			const auto rooks = queens | boards.blackRooks() | boards.whiteRooks();
+			const auto rooks = queens | boards.rooks();
 			attackers |= rooks & attacks::getRookAttacks(square, occupancy);
 
-			const auto bishops = queens | boards.blackBishops() | boards.whiteBishops();
+			const auto bishops = queens | boards.bishops();
 			attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
 			attackers |= boards.blackPawns() & attacks::getPawnAttacks(square, Color::White);
 			attackers |= boards.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
 
-			const auto knights = boards.blackKnights() | boards.whiteKnights();
+			const auto knights = boards.knights();
 			attackers |= knights & attacks::getKnightAttacks(square);
 
-			const auto kings = boards.blackKings() | boards.whiteKings();
+			const auto kings = boards.kings();
 			attackers |= kings & attacks::getKingAttacks(square);
 
 			return attackers;
@@ -292,12 +292,11 @@ namespace polaris
 
 			const auto &boards = this->boards();
 
-			if (!boards.blackPawns().empty() || !boards.whitePawns().empty()
-				|| !boards.blackMajors().empty() || !boards.whiteMajors().empty())
+			if (!boards.pawns().empty() || !boards.majors().empty())
 				return false;
 
 			// KK
-			if (boards.blackNonPk().empty() && boards.whiteNonPk().empty())
+			if (boards.nonPk().empty())
 				return true;
 
 			// KNK or KBK
@@ -318,8 +317,7 @@ namespace polaris
 		{
 			const auto &boards = this->boards();
 
-			if (!boards.blackPawns().empty() || !boards.whitePawns().empty()
-				|| !boards.blackMajors().empty() || !boards.whiteMajors().empty())
+			if (!boards.pawns().empty() || !boards.majors().empty())
 				return false;
 
 			// KNK or KNNK
@@ -327,14 +325,14 @@ namespace polaris
 				|| (boards.whiteNonPk().empty() && boards.blackNonPk() == boards.blackKnights() && boards.blackKnights().popcount() < 3))
 				return true;
 
-			if (!boards.blackNonPk().empty() && !boards.whiteNonPk().empty())
+			if (!boards.nonPk().empty())
 			{
 				// KNKN or KNKB or KBKB (OCB handled in isDrawn())
 				if (!boards.whiteMinors().multiple() && !boards.blackMinors().multiple())
 					return true;
 
 				// KBBKB
-				if (boards.whiteNonPk() == boards.whiteBishops() && boards.blackNonPk() == boards.blackBishops()
+				if (boards.nonPk() == boards.bishops()
 					&& (boards.whiteBishops().popcount() < 3 && !boards.blackBishops().multiple()
 						|| boards.blackBishops().popcount() < 3 && !boards.whiteBishops().multiple()))
 					return true;
