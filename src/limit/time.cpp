@@ -61,10 +61,10 @@ namespace polaris::limit
 
 	bool TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) const
 	{
-		if (data.nodes == 0 || (data.nodes % 1024) != 0)
+		if (data.depth < 5)
 			return false;
 
-		if (data.depth < 5)
+		if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0))
 			return false;
 
 		const auto elapsed = util::g_timer.time() - m_startTime;
