@@ -396,11 +396,13 @@ namespace polaris::search::pvs
 		else stack.eval = inCheck ? 0
 			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
 
+		const bool improving = !inCheck && ply > 1 && stack.eval > data.stack[ply - 2].eval;
+
 		if (!pv && !inCheck)
 		{
 			// reverse futility pruning
 			if (depth <= tunable::maxRfpDepth(g_opts.tunable)
-				&& stack.eval >= beta + tunable::rfpMargin(g_opts.tunable) * depth)
+				&& stack.eval >= beta + tunable::rfpMargin(g_opts.tunable) * depth / (improving ? 2 : 1))
 				return stack.eval;
 
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
