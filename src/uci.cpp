@@ -287,14 +287,13 @@ namespace polaris
 						}
 						else if (tokens[i] == "movetime" && ++i < tokens.size())
 						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
+							i64 time{};
+							if (!util::tryParseI64(time, tokens[i]))
 								std::cerr << "invalid time " << tokens[i] << std::endl;
 							else
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
-								limiter = std::make_unique<limit::MoveTimeLimiter>(static_cast<i64>(time),
-									m_moveOverhead);
+								time = std::max<i64>(time, 1);
+								limiter = std::make_unique<limit::MoveTimeLimiter>(time, m_moveOverhead);
 							}
 						}
 						else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
@@ -302,12 +301,12 @@ namespace polaris
 						{
 							tournamentTime = true;
 
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
+							i64 time{};
+							if (!util::tryParseI64(time, tokens[i]))
 								std::cerr << "invalid time " << tokens[i] << std::endl;
 							else
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+								time = std::max<i64>(time, 1);
 								timeRemaining = static_cast<i64>(time);
 							}
 						}
@@ -316,12 +315,12 @@ namespace polaris
 						{
 							tournamentTime = true;
 
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
+							i64 time{};
+							if (!util::tryParseI64(time, tokens[i]))
 								std::cerr << "invalid time " << tokens[i] << std::endl;
 							else
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+								time = std::max<i64>(time, 1);
 								increment = static_cast<i64>(time);
 							}
 						}
@@ -345,24 +344,24 @@ namespace polaris
 						if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
 							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
 						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
+							i64 time{};
+							if (!util::tryParseI64(time, tokens[i]))
 								std::cerr << "invalid time " << tokens[i] << std::endl;
 							else
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+								time = std::max<i64>(time, 1);
 								timeRemaining = static_cast<i64>(time);
 							}
 						}
 						else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
 							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
 						{
-							u64 time{};
-							if (!util::tryParseU64(time, tokens[i]))
+							i64 time{};
+							if (!util::tryParseI64(time, tokens[i]))
 								std::cerr << "invalid time " << tokens[i] << std::endl;
 							else
 							{
-								time = std::clamp<u64>(time, 1, static_cast<u64>(std::numeric_limits<i64>::max()));
+								time = std::max<i64>(time, 1);
 								increment = static_cast<i64>(time);
 							}
 						}

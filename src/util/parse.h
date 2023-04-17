@@ -98,6 +98,28 @@ namespace polaris::util
 		else return false;
 	}
 
+	[[nodiscard]] inline std::optional<i64> tryParseI64(const std::string &value, u32 radix = 10)
+	{
+		try
+		{
+			return std::stoll(value, nullptr, static_cast<i32>(radix));
+		}
+		catch (...)
+		{
+			return {};
+		}
+	}
+
+	inline bool tryParseI64(i64 &dst, const std::string &value, u32 radix = 10)
+	{
+		if (const auto parsed = tryParseI64(value, radix))
+		{
+			dst = *parsed;
+			return true;
+		}
+		else return false;
+	}
+
 	[[nodiscard]] inline std::optional<usize> tryParseSize(const std::string &value, u32 radix = 10)
 	{
 		if constexpr (sizeof(usize) == 8)
