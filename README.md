@@ -59,7 +59,7 @@ Alternatively, build the CMake target `polaris-native` for a binary tuned for yo
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Windows, GCC 11 and Clang 15 and 16 on Linux, and Apple Clang 15 on macOS on Apple Silicon)
+Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Windows, GCC 11 and Clang 15 and 16 on Linux, and Apple Clang 14 on macOS on Apple Silicon)
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
 > cmake --build build/ --target polaris-<BUILD>
