@@ -13,9 +13,9 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 ## Strength
 | Version | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) |
 |:-------:|:--------------------------------------------------------:|:---------------------------------------------------------:|:--------------------------------------------------------------:|
-|  1.4.x  |                            -                             |                  ~2670 (testing ongoing)                  |                              2455                              |
-|  1.3.0  |                           2513                           |                           2449                            |                              N/A                               |
-|  1.2.0  |                           2326                           |               ~2300 (very few games played)               |                              N/A                               |
+|  1.4.x  |                            -                             |                           2620                            |                              2455                              |
+|  1.3.0  |                           2515                           |                           2449                            |                              N/A                               |
+|  1.2.0  |                           2324                           |               ~2300 (very few games played)               |                              N/A                               |
 
 ## Features
 - standard PVS with aspiration windows, nullmove pruning etc
@@ -59,7 +59,7 @@ Alternatively, build the CMake target `polaris-native` for a binary tuned for yo
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler (tested with Clang 15 on Windows and GCC 11 on Ubuntu)
+Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Windows, GCC 11 and Clang 15 and 16 on Linux, and Apple Clang 15 on macOS on Apple Silicon)
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
 > cmake --build build/ --target polaris-<BUILD>
