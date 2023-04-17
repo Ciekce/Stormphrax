@@ -30,7 +30,7 @@ namespace polaris::limit
 		InfiniteLimiter() = default;
 		~InfiniteLimiter() final = default;
 
-		[[nodiscard]] inline bool stop(const search::SearchData &data) const final
+		[[nodiscard]] inline bool stop(const search::SearchData &data, bool allowSoftTimeout) const final
 		{
 			return false;
 		}
@@ -43,7 +43,7 @@ namespace polaris::limit
 
 		~NodeLimiter() final = default;
 
-		[[nodiscard]] inline bool stop(const search::SearchData &data) const final
+		[[nodiscard]] inline bool stop(const search::SearchData &data, bool allowSoftTimeout) const final
 		{
 			return data.nodes >= m_maxNodes;
 		}

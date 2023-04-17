@@ -109,7 +109,7 @@ namespace polaris::search::pvs
 
 		void run(ThreadData &data);
 
-		bool shouldStop(const SearchData &data);
+		bool shouldStop(const SearchData &data, bool allowSoftTimeout);
 
 		void searchRoot(ThreadData &data, bool shouldReport);
 
