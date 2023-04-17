@@ -86,10 +86,10 @@ namespace polaris::search::pvs
 
 	PvsSearcher::~PvsSearcher()
 	{
-		m_flag.store(QuitFlag, std::memory_order_seq_cst);
 		stop();
 
-		m_signal.notify_all();
+		m_flag.store(QuitFlag, std::memory_order::seq_cst);
+		m_startSignal.notify_all();
 
 		for (auto &thread : m_threads)
 		{
@@ -128,12 +128,21 @@ namespace polaris::search::pvs
 
 		m_limiter = std::move(limiter);
 
-		m_signal.notify_all();
+		m_runningThreads.store(static_cast<i32>(m_threads.size()));
+
+		m_startSignal.notify_all();
 	}
 
 	void PvsSearcher::stop()
 	{
 		m_stop.store(true, std::memory_order::relaxed);
+
+		// safe, always runs from uci thread
+		if (m_runningThreads.load() > 0)
+		{
+			std::unique_lock lock{m_stopMutex};
+			m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order_seq_cst) == 0; });
+		}
 	}
 
 	void PvsSearcher::runBench(BenchData &data, const Position &pos, i32 depth)
@@ -147,7 +156,7 @@ namespace polaris::search::pvs
 
 		const auto start = util::g_timer.time();
 
-		searchRoot(threadData, false);
+		searchRoot(threadData, true);
 
 		const auto time = util::g_timer.time() - start;
 
@@ -176,13 +185,13 @@ namespace polaris::search::pvs
 		{
 			i32 flag{};
 
-			std::unique_lock lock{m_waitMutex};
-			m_signal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order_seq_cst); });
+			std::unique_lock lock{m_startMutex};
+			m_startSignal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order_seq_cst); });
 
 			if (flag == QuitFlag)
 				return;
 
-			searchRoot(data, true);
+			searchRoot(data, false);
 		}
 	}
 
@@ -195,11 +204,11 @@ namespace polaris::search::pvs
 		return m_stop.fetch_or(shouldStop, std::memory_order_relaxed) || shouldStop;
 	}
 
-	void PvsSearcher::searchRoot(ThreadData &data, bool shouldReport)
+	void PvsSearcher::searchRoot(ThreadData &data, bool bench)
 	{
 		auto &searchData = data.search;
 
-		shouldReport &= data.id == 0;
+		bool shouldReport = !bench && data.id == 0;
 
 		Score score{};
 		Move best{};
@@ -311,17 +320,24 @@ namespace polaris::search::pvs
 				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 			}
 			else std::cout << "info string no legal moves" << std::endl;
-
-			m_flag.store(IdleFlag, std::memory_order::seq_cst);
 		}
 
-		// age history entries
-		for (i32 piece = 0; piece < 12; ++piece)
+		if (!bench)
 		{
-			for (i32 dst = 0; dst < 64; ++dst)
+			// age history entries
+			for (i32 piece = 0; piece < 12; ++piece)
 			{
-				data.history[piece][dst] /= 2;
+				for (i32 dst = 0; dst < 64; ++dst)
+				{
+					data.history[piece][dst] /= 2;
+				}
 			}
+
+			--m_runningThreads;
+			m_stopSignal.notify_all();
+
+			if (shouldReport)
+				m_flag.store(IdleFlag, std::memory_order::seq_cst);
 		}
 	}
 

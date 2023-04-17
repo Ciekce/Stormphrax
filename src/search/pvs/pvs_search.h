@@ -99,11 +99,15 @@ namespace polaris::search::pvs
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
 
-		std::mutex m_waitMutex{};
-		std::condition_variable m_signal{};
+		std::mutex m_startMutex{};
+		std::condition_variable m_startSignal{};
 		std::atomic_int m_flag{};
 
 		std::atomic_int m_stop{};
+
+		std::mutex m_stopMutex{};
+		std::condition_variable m_stopSignal{};
+		std::atomic_int m_runningThreads{};
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
 
@@ -111,7 +115,7 @@ namespace polaris::search::pvs
 
 		bool shouldStop(const SearchData &data, bool allowSoftTimeout);
 
-		void searchRoot(ThreadData &data, bool shouldReport);
+		void searchRoot(ThreadData &data, bool bench);
 
 		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
 		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
