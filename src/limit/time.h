@@ -54,7 +54,7 @@ namespace polaris::limit
 	private:
 		f64 m_startTime;
 
-		f64 m_maxTime{};
 		f64 m_softTime{};
+		f64 m_maxTime{};
 	};
 }
