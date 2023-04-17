@@ -309,7 +309,7 @@ namespace polaris
 			ScoredMoveList moves{};
 			generateAll(moves, *this);
 
-			return std::ranges::any_of(moves.begin(), moves.end(),
+			return std::any_of(moves.begin(), moves.end(),
 				[move](const auto m) { return m.move == move; });
 		}
 
