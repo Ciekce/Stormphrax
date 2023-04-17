@@ -31,6 +31,6 @@ namespace polaris::limit
 
 		virtual void update(const search::SearchData &data, bool stableBestMove) {}
 
-		[[nodiscard]] virtual bool stop(const search::SearchData &data) const = 0;
+		[[nodiscard]] virtual bool stop(const search::SearchData &data, bool allowSoftTimeout) const = 0;
 	};
 }

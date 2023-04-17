@@ -186,12 +186,12 @@ namespace polaris::search::pvs
 		}
 	}
 
-	bool PvsSearcher::shouldStop(const SearchData &data)
+	bool PvsSearcher::shouldStop(const SearchData &data, bool allowSoftTimeout)
 	{
 		if (m_stop.load(std::memory_order_relaxed))
 			return true;
 
-		bool shouldStop = m_limiter->stop(data);
+		bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
 		return m_stop.fetch_or(shouldStop, std::memory_order_relaxed) || shouldStop;
 	}
 
@@ -210,7 +210,7 @@ namespace polaris::search::pvs
 
 		i32 depthCompleted{};
 
-		for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData); ++depth)
+		for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData, true); ++depth)
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;
@@ -240,7 +240,7 @@ namespace polaris::search::pvs
 				auto alpha = score - delta;
 				auto beta = score + delta;
 
-				while (!shouldStop(searchData))
+				while (!shouldStop(searchData, false))
 				{
 					if (aspDepth < depth - 3)
 						aspDepth = depth - 3;
@@ -327,7 +327,7 @@ namespace polaris::search::pvs
 
 	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta)
 	{
-		if (depth > 1 && shouldStop(data.search))
+		if (depth > 1 && shouldStop(data.search, false))
 			return beta;
 
 		auto &pos = data.pos;
@@ -540,7 +540,7 @@ namespace polaris::search::pvs
 
 	Score PvsSearcher::qsearch(ThreadData &data, Score alpha, Score beta, i32 ply)
 	{
-		if (shouldStop(data.search))
+		if (shouldStop(data.search, false))
 			return beta;
 
 		auto &pos = data.pos;

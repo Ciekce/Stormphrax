@@ -35,7 +35,7 @@ namespace polaris::limit
 		explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
 		~MoveTimeLimiter() final = default;
 
-		[[nodiscard]] bool stop(const search::SearchData &data) const final;
+		[[nodiscard]] bool stop(const search::SearchData &data, bool allowSoftTimeout) const final;
 
 	private:
 		f64 m_maxTime;
@@ -49,11 +49,12 @@ namespace polaris::limit
 
 		void update(const search::SearchData &data, bool stableBestMove) final;
 
-		[[nodiscard]] bool stop(const search::SearchData &data) const final;
+		[[nodiscard]] bool stop(const search::SearchData &data, bool allowSoftTimeout) const final;
 
 	private:
 		f64 m_startTime;
 
-		f64 m_time{};
+		f64 m_softTime{};
+		f64 m_maxTime{};
 	};
 }
