@@ -42,9 +42,6 @@ namespace polaris::limit
 		if (toGo == 0)
 			toGo = 25;
 
-		if (toGo < 8)
-			toGo = 8;
-
 		const auto baseTime = limit / static_cast<f64>(toGo) + increment * 3 / 4;
 
 		m_softTime = std::min(baseTime * 0.6, limit);
