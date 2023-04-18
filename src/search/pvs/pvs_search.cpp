@@ -230,7 +230,7 @@ namespace polaris::search::pvs
 
 			if (depth < MinAspDepth)
 			{
-				const auto newScore = search(data, depth, 0, -ScoreMax, ScoreMax);
+				const auto newScore = search(data, depth, 1, -ScoreMax, ScoreMax);
 
 				depthCompleted = depth;
 
@@ -254,7 +254,7 @@ namespace polaris::search::pvs
 					if (aspDepth < depth - 3)
 						aspDepth = depth - 3;
 
-					const auto newScore = search(data, aspDepth, 0, alpha, beta);
+					const auto newScore = search(data, aspDepth, 1, alpha, beta);
 
 					const bool stop = m_stop.load(std::memory_order::relaxed);
 					if (stop || !searchData.move)
@@ -360,13 +360,13 @@ namespace polaris::search::pvs
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const bool root = ply == 0;
+		const bool root = ply == 1;
 		const bool pv = root || beta - alpha > 1;
 
 		auto &stack = data.stack[ply];
 
 		const auto newBaseDepth = depth > 0 ? depth - 1 : depth;
-		++ply;
+		const auto newPly = ply + 1;
 
 		if (ply > data.search.seldepth)
 			data.search.seldepth = ply;
@@ -417,7 +417,7 @@ namespace polaris::search::pvs
 				const auto R = std::min(newBaseDepth - 1, 3);
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
-				const auto score = -search(data, newBaseDepth - R, ply, -beta, -beta + 1);
+				const auto score = -search(data, newBaseDepth - R, newPly, -beta, -beta + 1);
 
 				if (score >= beta)
 				{
@@ -478,13 +478,13 @@ namespace polaris::search::pvs
 				}
 
 				if (pv && legalMoves == 1)
-					score = -search(data, newDepth, ply, -beta, -alpha);
+					score = -search(data, newDepth, newPly, -beta, -alpha);
 				else
 				{
-					score = -search(data, newDepth, ply, -alpha - 1, -alpha);
+					score = -search(data, newDepth, newPly, -alpha - 1, -alpha);
 
 					if (score > alpha && score < beta)
-						score = -search(data, newDepth, ply, -beta, -alpha);
+						score = -search(data, newDepth, newPly, -beta, -alpha);
 				}
 			}
 
