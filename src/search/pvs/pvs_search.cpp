@@ -141,7 +141,7 @@ namespace polaris::search::pvs
 		if (m_runningThreads.load() > 0)
 		{
 			std::unique_lock lock{m_stopMutex};
-			m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order_seq_cst) == 0; });
+			m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order::seq_cst) == 0; });
 		}
 	}
 
@@ -166,7 +166,7 @@ namespace polaris::search::pvs
 
 	bool PvsSearcher::searching()
 	{
-		return m_flag.load(std::memory_order_seq_cst) == SearchFlag;
+		return m_flag.load(std::memory_order::seq_cst) == SearchFlag;
 	}
 
 	void PvsSearcher::clearHash()
@@ -186,7 +186,7 @@ namespace polaris::search::pvs
 			i32 flag{};
 
 			std::unique_lock lock{m_startMutex};
-			m_startSignal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order_seq_cst); });
+			m_startSignal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order::seq_cst); });
 
 			if (flag == QuitFlag)
 				return;
@@ -197,11 +197,11 @@ namespace polaris::search::pvs
 
 	bool PvsSearcher::shouldStop(const SearchData &data, bool allowSoftTimeout)
 	{
-		if (m_stop.load(std::memory_order_relaxed))
+		if (m_stop.load(std::memory_order::relaxed))
 			return true;
 
 		bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
-		return m_stop.fetch_or(shouldStop, std::memory_order_relaxed) || shouldStop;
+		return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
 	}
 
 	void PvsSearcher::searchRoot(ThreadData &data, bool bench)
