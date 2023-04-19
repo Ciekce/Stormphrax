@@ -58,17 +58,12 @@ namespace polaris::search::pvs
 		static constexpr i32 SearchFlag = 1;
 		static constexpr i32 QuitFlag = 2;
 
-		struct HistoryMove
-		{
-			Piece moving;
-			Square dst;
-		};
-
 		struct SearchStackEntry
 		{
-			Score eval{};
-			MovegenData movegen{};
 			StaticVector<HistoryMove, DefaultMoveListCapacity> quietsTried{};
+			MovegenData movegen{};
+			Score eval{};
+			HistoryMove currMove{};
 		};
 
 		struct ThreadData

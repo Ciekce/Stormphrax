@@ -329,7 +329,7 @@ namespace polaris::search::pvs
 			{
 				for (i32 dst = 0; dst < 64; ++dst)
 				{
-					data.history[piece][dst] /= 2;
+					data.history[piece][dst].score /= 2;
 				}
 			}
 
@@ -396,6 +396,8 @@ namespace polaris::search::pvs
 		else stack.eval = inCheck ? 0
 			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
 
+		stack.currMove = {};
+
 		const bool improving = !inCheck && ply > 1 && stack.eval > data.stack[ply - 2].eval;
 
 		if (!pv && !inCheck)
@@ -430,12 +432,14 @@ namespace polaris::search::pvs
 
 		stack.quietsTried.clear();
 
+		const auto prevMove = data.stack[ply - 1].currMove;
+
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.movegen, hashMove, &data.history};
+		MoveGenerator generator{pos, stack.movegen, hashMove, prevMove, &data.history};
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
@@ -454,6 +458,8 @@ namespace polaris::search::pvs
 
 			++data.search.nodes;
 			++legalMoves;
+
+			stack.currMove = {movingPiece, moveActualDst(move)};
 
 			Score score{};
 
@@ -509,14 +515,18 @@ namespace polaris::search::pvs
 
 							const auto adjustment = depth * depth;
 
-							data.history[static_cast<i32>(movingPiece)]
-								[static_cast<i32>(moveActualDst(move))] += adjustment;
+							data.history[static_cast<i32>(stack.currMove.moving)]
+								[static_cast<i32>(stack.currMove.dst)].score += adjustment;
 
 							for (const auto prevQuiet : stack.quietsTried)
 							{
 								data.history[static_cast<i32>(prevQuiet.moving)]
-									[static_cast<i32>(prevQuiet.dst)] -= adjustment;
+									[static_cast<i32>(prevQuiet.dst)].score -= adjustment;
 							}
+
+							if (prevMove.moving != Piece::None)
+								data.history[static_cast<i32>(prevMove.moving)]
+									[static_cast<i32>(prevMove.dst)].countermove = move;
 						}
 
 						entryType = EntryType::Beta;
@@ -529,7 +539,7 @@ namespace polaris::search::pvs
 			}
 
 			if (quiet)
-				stack.quietsTried.push({movingPiece, moveActualDst(move)});
+				stack.quietsTried.push(stack.currMove);
 
 #ifndef NDEBUG
 			}
