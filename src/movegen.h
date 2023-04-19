@@ -24,6 +24,7 @@
 #include "position/position.h"
 #include "eval/material.h"
 #include "see.h"
+#include "history.h"
 
 namespace polaris
 {
@@ -42,20 +43,6 @@ namespace polaris
 		Move killer1{NullMove};
 		Move killer2{NullMove};
 	};
-
-	struct HistoryMove
-	{
-		Piece moving{Piece::None};
-		Square dst{Square::None};
-	};
-
-	struct HistoryEntry
-	{
-		i32 score{};
-		Move countermove{NullMove};
-	};
-
-	using HistoryTable = std::array<std::array<HistoryEntry, 64>, 12>;
 
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
@@ -131,10 +118,9 @@ namespace polaris
 						break;
 
 					case MovegenStage::Countermove:
-						if (m_history && m_prevMove.moving != Piece::None)
+						if (m_history && m_prevMove)
 						{
-							m_countermove = (*m_history)[static_cast<i32>(m_prevMove.moving)]
-								[static_cast<i32>(m_prevMove.dst)].countermove;
+							m_countermove = m_history->entry(m_prevMove).countermove;
 							if (m_countermove
 								&& m_countermove != m_hashMove
 								&& m_countermove != m_killer1
@@ -236,8 +222,7 @@ namespace polaris
 				auto &move = m_moves[i];
 
 				if (m_history)
-					move.score = (*m_history)[static_cast<i32>(boards.pieceAt(move.move.src()))]
-						[static_cast<i32>(moveActualDst(move.move))].score;
+					move.score = m_history->entry(HistoryMove::from(boards, move.move)).score;
 
 				// knight promos first, rook then bishop promos last
 				//TODO capture promos first

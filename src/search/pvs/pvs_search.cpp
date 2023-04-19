@@ -105,7 +105,7 @@ namespace polaris::search::pvs
 		{
 			thread.pawnCache.clear();
 			std::fill(thread.stack.begin(), thread.stack.end(), SearchStackEntry{});
-			thread.history = HistoryTable{};
+			thread.history.clear();
 		}
 	}
 
@@ -324,14 +324,7 @@ namespace polaris::search::pvs
 
 		if (!bench)
 		{
-			// age history entries
-			for (i32 piece = 0; piece < 12; ++piece)
-			{
-				for (i32 dst = 0; dst < 64; ++dst)
-				{
-					data.history[piece][dst].score /= 2;
-				}
-			}
+			data.history.age();
 
 			--m_runningThreads;
 			m_stopSignal.notify_all();
@@ -515,18 +508,15 @@ namespace polaris::search::pvs
 
 							const auto adjustment = depth * depth;
 
-							data.history[static_cast<i32>(stack.currMove.moving)]
-								[static_cast<i32>(stack.currMove.dst)].score += adjustment;
+							data.history.entry(stack.currMove).score += adjustment;
 
 							for (const auto prevQuiet : stack.quietsTried)
 							{
-								data.history[static_cast<i32>(prevQuiet.moving)]
-									[static_cast<i32>(prevQuiet.dst)].score -= adjustment;
+								data.history.entry(prevQuiet).score -= adjustment;
 							}
 
-							if (prevMove.moving != Piece::None)
-								data.history[static_cast<i32>(prevMove.moving)]
-									[static_cast<i32>(prevMove.dst)].countermove = move;
+							if (prevMove)
+								data.history.entry(prevMove).countermove = move;
 						}
 
 						entryType = EntryType::Beta;
