@@ -154,7 +154,7 @@ namespace polaris
 
 		void UciHandler::handleUci()
 		{
-			static const GlobalOptions defaultOps{};
+			static const GlobalOptions defaultOpts{};
 
 			std::cout << "id name " << Name << ' ' << Version << '\n';
 			std::cout << "id author " << Author << '\n';
@@ -167,9 +167,9 @@ namespace polaris
 			//TODO
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 			std::cout << "option name UCI_Chess960 type check default "
-				<< (defaultOps.chess960 ? "true" : "false") << '\n';
+				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name Underpromotions type check default "
-				<< (defaultOps.underpromotions ? "true" : "false") << '\n';
+				<< (defaultOpts.underpromotions ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 
