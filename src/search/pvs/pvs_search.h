@@ -75,7 +75,7 @@ namespace polaris::search::pvs
 		{
 			ThreadData()
 			{
-				stack.resize(MaxDepth);
+				stack.resize(MaxDepth + 1);
 			}
 
 			u32 id{};
