@@ -43,7 +43,19 @@ namespace polaris
 		Move killer2{NullMove};
 	};
 
-	using HistoryTable = std::array<std::array<i32, 64>, 12>;
+	struct HistoryMove
+	{
+		Piece moving{Piece::None};
+		Square dst{Square::None};
+	};
+
+	struct HistoryEntry
+	{
+		i32 score{};
+		Move countermove{NullMove};
+	};
+
+	using HistoryTable = std::array<std::array<HistoryEntry, 64>, 12>;
 
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
@@ -57,19 +69,22 @@ namespace polaris
 		static constexpr i32 GoodNoisy = 2;
 		static constexpr i32 Killer1 = 3;
 		static constexpr i32 Killer2 = 4;
-		static constexpr i32 Quiet = 5;
-		static constexpr i32 BadNoisy = 6;
-		static constexpr i32 End = 7;
+		static constexpr i32 Countermove = 5;
+		static constexpr i32 Quiet = 6;
+		static constexpr i32 BadNoisy = 7;
+		static constexpr i32 End = 8;
 	};
 
 	template <bool Quiescence = false>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove, const HistoryTable *history = nullptr)
+		MoveGenerator(const Position &pos, MovegenData &data,
+			Move hashMove, HistoryMove prevMove = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_moves{data.moves},
 			  m_hashMove{hashMove},
+			  m_prevMove{prevMove},
 			  m_killer1{data.killer1},
 			  m_killer2{data.killer2},
 			  m_history{history}
@@ -115,6 +130,20 @@ namespace polaris
 							return m_killer2;
 						break;
 
+					case MovegenStage::Countermove:
+						if (m_history && m_prevMove.moving != Piece::None)
+						{
+							m_countermove = (*m_history)[static_cast<i32>(m_prevMove.moving)]
+								[static_cast<i32>(m_prevMove.dst)].countermove;
+							if (m_countermove
+								&& m_countermove != m_hashMove
+								&& m_countermove != m_killer1
+								&& m_countermove != m_killer2
+								&& m_pos.isPseudolegal(m_countermove))
+								return m_countermove;
+						}
+						break;
+
 					case MovegenStage::Quiet:
 						genQuiet();
 						break;
@@ -134,7 +163,8 @@ namespace polaris
 
 				if (move != m_hashMove
 					&& move != m_killer1
-					&& move != m_killer2)
+					&& move != m_killer2
+					&& move != m_countermove)
 					return move;
 			}
 		}
@@ -207,7 +237,7 @@ namespace polaris
 
 				if (m_history)
 					move.score = (*m_history)[static_cast<i32>(boards.pieceAt(move.move.src()))]
-						[static_cast<i32>(moveActualDst(move.move))];
+						[static_cast<i32>(moveActualDst(move.move))].score;
 
 				// knight promos first, rook then bishop promos last
 				//TODO capture promos first
@@ -248,11 +278,16 @@ namespace polaris
 
 		ScoredMoveList &m_moves;
 
-		Move m_hashMove{};
-		Move m_killer1{};
-		Move m_killer2{};
+		Move m_hashMove;
 
-		const HistoryTable *m_history{};
+		HistoryMove m_prevMove;
+
+		Move m_killer1;
+		Move m_killer2;
+
+		Move m_countermove{NullMove};
+
+		const HistoryTable *m_history;
 
 		u32 m_idx{};
 
