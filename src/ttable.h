@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <vector>
+#include <atomic>
 
 #include "core.h"
 #include "move.h"
