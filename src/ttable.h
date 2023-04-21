@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <atomic>
+#include <cstring>
 
 #include "core.h"
 #include "move.h"
