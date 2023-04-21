@@ -21,6 +21,8 @@
 #include "types.h"
 
 #include <vector>
+#include <atomic>
+#include <cstring>
 
 #include "core.h"
 #include "move.h"
@@ -84,9 +86,31 @@ namespace polaris
 		}
 
 	private:
-		u64 m_mask{};
-		std::vector<TTableEntry> m_table{};
+		[[nodiscard]] inline TTableEntry loadEntry(u64 key) const
+		{
+			const auto *ptr = static_cast<volatile const i64 *>(&m_table[key & m_mask]);
+			const auto v = *ptr;
 
-		usize m_entries{};
+			TTableEntry entry{};
+			std::memcpy(&entry, &v, sizeof(TTableEntry));
+
+			return entry;
+		}
+
+		inline void exchangeEntry(u64 key, TTableEntry &entry)
+		{
+			i64 v{};
+			std::memcpy(&v, &entry, sizeof(TTableEntry));
+
+			auto *ptr = static_cast<volatile i64 *>(&m_table[key & m_mask]);
+			__atomic_exchange(ptr, &v, &v, __ATOMIC_ACQUIRE);
+
+			std::memcpy(&entry, &v, sizeof(TTableEntry));
+		}
+
+		u64 m_mask{};
+		std::vector<i64> m_table{};
+
+		std::atomic_size_t m_entries{};
 	};
 }
