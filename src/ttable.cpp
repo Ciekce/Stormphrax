@@ -51,7 +51,7 @@ namespace polaris
 		if (m_table.empty())
 			return false;
 
-		const auto &entry = m_table[key & m_mask];
+		const auto entry = loadEntry(key);
 
 		if (static_cast<u16>(key >> 48) == entry.key)
 		{
@@ -90,7 +90,7 @@ namespace polaris
 		if (m_table.empty())
 			return NullMove;
 
-		const auto &entry = m_table[key & m_mask];
+		const auto entry = loadEntry(key);
 
 		if (static_cast<u16>(key >> 48) == entry.key)
 			return entry.move;
@@ -103,15 +103,12 @@ namespace polaris
 		if (m_table.empty())
 			return;
 
-		auto &entry = m_table[key & m_mask];
+		auto entry = loadEntry(key);
 
 		const auto entryKey = static_cast<u16>(key >> 48);
 
 		if (entryKey == entry.key && entry.depth > depth)
 			return;
-
-		if (entry.key == 0)
-			++m_entries;
 
 #ifndef NDEBUG
 		if (std::abs(score) > std::numeric_limits<i16>::max())
@@ -123,6 +120,11 @@ namespace polaris
 		entry.move = move;
 		entry.depth = depth;
 		entry.type = type;
+
+		exchangeEntry(key, entry);
+
+		if (entry.key == 0)
+			++m_entries;
 	}
 
 	void TTable::clear()
@@ -135,6 +137,7 @@ namespace polaris
 
 	u32 TTable::full() const
 	{
-		return static_cast<u32>(static_cast<f64>(m_entries) / static_cast<f64>(m_table.capacity()) * 1000.0);
+		return static_cast<u32>(static_cast<f64>(m_entries.load(std::memory_order::relaxed))
+			/ static_cast<f64>(m_table.capacity()) * 1000.0);
 	}
 }
