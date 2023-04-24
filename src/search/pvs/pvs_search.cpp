@@ -87,14 +87,7 @@ namespace polaris::search::pvs
 	PvsSearcher::~PvsSearcher()
 	{
 		stop();
-
-		m_flag.store(QuitFlag, std::memory_order::seq_cst);
-		m_startSignal.notify_all();
-
-		for (auto &thread : m_threads)
-		{
-			thread.thread.join();
-		}
+		stopThreads();
 	}
 
 	void PvsSearcher::newGame()
@@ -118,6 +111,7 @@ namespace polaris::search::pvs
 		}
 
 		m_flag.store(SearchFlag, std::memory_order::seq_cst);
+		m_stop.store(false, std::memory_order::seq_cst);
 
 		for (auto &thread : m_threads)
 		{
@@ -136,12 +130,16 @@ namespace polaris::search::pvs
 	void PvsSearcher::stop()
 	{
 		m_stop.store(true, std::memory_order::relaxed);
+		m_flag.store(IdleFlag, std::memory_order::seq_cst);
 
 		// safe, always runs from uci thread
 		if (m_runningThreads.load() > 0)
 		{
 			std::unique_lock lock{m_stopMutex};
-			m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order::seq_cst) == 0; });
+			m_stopSignal.wait(lock, [this]
+			{
+				return m_runningThreads.load(std::memory_order::seq_cst) == 0;
+			});
 		}
 	}
 
@@ -153,6 +151,8 @@ namespace polaris::search::pvs
 
 		threadData.pos = pos;
 		threadData.maxDepth = depth;
+
+		m_stop.store(false, std::memory_order::seq_cst);
 
 		const auto start = util::g_timer.time();
 
@@ -169,6 +169,33 @@ namespace polaris::search::pvs
 		return m_flag.load(std::memory_order::seq_cst) == SearchFlag;
 	}
 
+	void PvsSearcher::setThreads(u32 threads)
+	{
+		if (threads != m_threads.size())
+		{
+			stopThreads();
+
+			m_flag.store(IdleFlag, std::memory_order::seq_cst);
+
+			m_threads.clear();
+			m_threads.shrink_to_fit();
+			m_threads.reserve(threads);
+
+			m_nextThreadId = 0;
+
+			for (i32 i = 0; i < threads; ++i)
+			{
+				auto &threadData = m_threads.emplace_back();
+
+				threadData.id = m_nextThreadId++;
+				threadData.thread = std::thread{[this, &threadData]
+				{
+					run(threadData);
+				}};
+			}
+		}
+	}
+
 	void PvsSearcher::clearHash()
 	{
 		m_table.clear();
@@ -179,14 +206,31 @@ namespace polaris::search::pvs
 		m_table.resize(size);
 	}
 
+	void PvsSearcher::stopThreads()
+	{
+	m_flag.store(QuitFlag, std::memory_order::seq_cst);
+		m_startSignal.notify_all();
+
+		for (auto &thread : m_threads)
+		{
+			thread.thread.join();
+		}
+	}
+
 	void PvsSearcher::run(ThreadData &data)
 	{
 		while (true)
 		{
 			i32 flag{};
 
-			std::unique_lock lock{m_startMutex};
-			m_startSignal.wait(lock, [this, &flag] { return flag = m_flag.load(std::memory_order::seq_cst); });
+			{
+				std::unique_lock lock{m_startMutex};
+				m_startSignal.wait(lock, [this, &flag]
+				{
+					flag = m_flag.load(std::memory_order::seq_cst);
+					return flag != IdleFlag;
+				});
+			}
 
 			if (flag == QuitFlag)
 				return;
@@ -213,13 +257,12 @@ namespace polaris::search::pvs
 		Score score{};
 		Move best{};
 
-		m_stop.store(false, std::memory_order::seq_cst);
-
 		const auto startTime = shouldReport ? util::g_timer.time() : 0.0;
+		const auto startDepth = 1 + static_cast<i32>(data.id) % 16;
 
 		i32 depthCompleted{};
 
-		for (i32 depth = 1; depth <= data.maxDepth && !shouldStop(searchData, true); ++depth)
+		for (i32 depth = startDepth; depth <= data.maxDepth && !shouldStop(searchData, true); ++depth)
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;

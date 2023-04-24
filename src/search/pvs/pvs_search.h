@@ -50,6 +50,8 @@ namespace polaris::search::pvs
 
 		bool searching() final;
 
+		void setThreads(u32 threads) final;
+
 		void clearHash() final;
 		void setHashSize(usize size) final;
 
@@ -105,6 +107,8 @@ namespace polaris::search::pvs
 		std::atomic_int m_runningThreads{};
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+
+		void stopThreads();
 
 		void run(ThreadData &data);
 

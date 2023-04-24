@@ -28,7 +28,6 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 
 ## To-do
 - finish eval (king safety, hanging and pinned pieces)
-- lazy SMP
 - better time management
 - tune search constants
 - contempt
@@ -39,6 +38,7 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 |:----------------|:-------:|:-------------:|:---------------:|:----------------------------------------------------------------------------------------------------------------|
 | Hash            | integer |      64       |   [1, 131072]   | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2.     |
 | Clear Hash      | button  |      N/A      |       N/A       | Clears the transposition table.                                                                                 |
+| Threads         | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                               |
 | UCI_Chess960    |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                       |
 | Underpromotions |  check  |    `false`    | `false`, `true` | Whether underpromotions to rooks and bishops are generated.                                                     |
 | Move Overhead   | integer |      100      |   [30, 50000]   | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
