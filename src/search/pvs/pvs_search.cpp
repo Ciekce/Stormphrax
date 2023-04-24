@@ -409,7 +409,7 @@ namespace polaris::search::pvs
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
-				const auto R = std::min(depth - 1, 4);
+				const auto R = std::min(depth, 4);
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
 				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1);
