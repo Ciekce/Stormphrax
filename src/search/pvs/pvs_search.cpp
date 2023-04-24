@@ -402,17 +402,17 @@ namespace polaris::search::pvs
 
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
 
-			// nullmove pruning (~66 elo)
+			// nullmove pruning
 			if (depth >= MinNullmoveDepth
 				&& stack.eval >= beta
 				&& !nmpFailsLow
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
-				const auto R = std::min(newBaseDepth - 1, 3);
+				const auto R = std::min(depth - 1, 4);
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
-				const auto score = -search(data, newBaseDepth - R, newPly, -beta, -beta + 1);
+				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1);
 
 				if (score >= beta)
 				{
