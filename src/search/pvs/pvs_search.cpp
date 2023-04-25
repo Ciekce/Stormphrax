@@ -207,7 +207,7 @@ namespace polaris::search::pvs
 
 	void PvsSearcher::stopThreads()
 	{
-	m_flag.store(QuitFlag, std::memory_order::seq_cst);
+		m_flag.store(QuitFlag, std::memory_order::seq_cst);
 		m_startSignal.notify_all();
 
 		for (auto &thread : m_threads)
