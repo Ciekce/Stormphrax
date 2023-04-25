@@ -41,6 +41,9 @@ namespace polaris::search
 		f64 time{};
 	};
 
+	constexpr u32 DefaultThreadCount = 1;
+	constexpr auto ThreadCountRange = util::Range<u32>{1,  2048};
+
 	class ISearcher
 	{
 	public:
@@ -54,6 +57,8 @@ namespace polaris::search
 		virtual void runBench(BenchData &data, const Position &pos, i32 depth) = 0;
 
 		virtual bool searching() = 0;
+
+		virtual void setThreads(u32 threads) = 0;
 
 		virtual void clearHash() = 0;
 		virtual void setHashSize(usize size) = 0;

@@ -55,9 +55,6 @@ namespace polaris
 		constexpr auto Version = PS_STRINGIFY(PS_VERSION);
 		constexpr auto Author = "Ciekce";
 
-		constexpr u32 DefaultThreadCount = 1;
-		constexpr auto ThreadCountRange = util::Range<u32>{1, 1};
-
 		GlobalOptions s_opts{};
 
 		class UciHandler
@@ -162,8 +159,8 @@ namespace polaris
 			std::cout << "option name Hash type spin default " << DefaultHashSize
 				<< " min " << HashSizeRange.min() << " max " << HashSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
-			std::cout << "option name Threads type spin default " << DefaultThreadCount
-				<< " min " << ThreadCountRange.min() << " max " << ThreadCountRange.max() << '\n';
+			std::cout << "option name Threads type spin default " << search::DefaultThreadCount
+				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
 			//TODO
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 			std::cout << "option name UCI_Chess960 type check default "
@@ -469,16 +466,15 @@ namespace polaris
 					}
 					else m_searcher->clearHash();
 				}
-				else if (nameStr == "searcher")
+				else if (nameStr == "threads")
 				{
+					if (m_searcher->searching())
+						std::cerr << "still searching" << std::endl;
+
 					if (!valueEmpty)
 					{
-						if (auto newSearcher = search::ISearcher::create(valueStr, m_newSearcherHashSize))
-						{
-							m_hashSize = {};
-							m_searcher = std::move(*newSearcher);
-						}
-						else std::cerr << "unknown searcher " << valueStr << std::endl;
+						if (const auto newThreads = util::tryParseU32(valueStr))
+							m_searcher->setThreads(search::ThreadCountRange.clamp(*newThreads));
 					}
 				}
 				else if (nameStr == "uci_chess960")
@@ -503,6 +499,18 @@ namespace polaris
 					{
 						if (const auto newMoveOverhead = util::tryParseI32(valueStr))
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+					}
+				}
+				else if (nameStr == "searcher")
+				{
+					if (!valueEmpty)
+					{
+						if (auto newSearcher = search::ISearcher::create(valueStr, m_newSearcherHashSize))
+						{
+							m_hashSize = {};
+							m_searcher = std::move(*newSearcher);
+						}
+						else std::cerr << "unknown searcher " << valueStr << std::endl;
 					}
 				}
 #if PS_TUNE_SEARCH
