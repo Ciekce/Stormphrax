@@ -44,7 +44,7 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 | Threads         | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                               |
 | UCI_Chess960    |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                       |
 | Underpromotions |  check  |    `false`    | `false`, `true` | Whether underpromotions to rooks and bishops are generated.                                                     |
-| Move Overhead   | integer |      100      |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
+| Move Overhead   | integer |      10       |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
 | Searcher        | string  |    AspPVS     |     AspPVS      | Searcher used internally. Only AspPVS (principal variation search with aspiration windows) currently supported. |
 
 ## Builds
