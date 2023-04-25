@@ -29,6 +29,10 @@ else
 		endif
 	endif
 	LDFLAGS += -lpthread
+# don't ask
+ifdef IS_COSMO
+    CXXFLAGS += -stdlib=libc++
+endif
 endif
 
 OUT := $(EXE)$(SUFFIX)
