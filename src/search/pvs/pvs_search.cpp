@@ -117,7 +117,6 @@ namespace polaris::search::pvs
 			return;
 		}
 
-		m_flag.store(SearchFlag, std::memory_order::seq_cst);
 
 		for (auto &thread : m_threads)
 		{
@@ -130,6 +129,7 @@ namespace polaris::search::pvs
 
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
 
+		m_flag.store(SearchFlag, std::memory_order::seq_cst);
 		m_startSignal.notify_all();
 	}
 
