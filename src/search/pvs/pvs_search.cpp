@@ -110,9 +110,6 @@ namespace polaris::search::pvs
 			return;
 		}
 
-		m_flag.store(SearchFlag, std::memory_order::seq_cst);
-		m_stop.store(false, std::memory_order::seq_cst);
-
 		for (auto &thread : m_threads)
 		{
 			thread.maxDepth = maxDepth;
@@ -122,8 +119,10 @@ namespace polaris::search::pvs
 
 		m_limiter = std::move(limiter);
 
+		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
 
+		m_flag.store(SearchFlag, std::memory_order::seq_cst);
 		m_startSignal.notify_all();
 	}
 
@@ -445,17 +444,17 @@ namespace polaris::search::pvs
 
 			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
 
-			// nullmove pruning (~66 elo)
+			// nullmove pruning
 			if (depth >= MinNullmoveDepth
 				&& stack.eval >= beta
 				&& !nmpFailsLow
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
-				const auto R = std::min(newBaseDepth - 1, 3);
+				const auto R = std::min(depth, 3 + depth / 4);
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
-				const auto score = -search(data, newBaseDepth - R, newPly, -beta, -beta + 1);
+				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1);
 
 				if (score >= beta)
 				{
