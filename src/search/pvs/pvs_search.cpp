@@ -66,6 +66,11 @@ namespace polaris::search::pvs
 
 		const auto LmrTable = generateLmrTable();
 
+		constexpr i32 MaxSeePruningDepth = 9;
+
+		constexpr Score QuietSeeThreshold = -50;
+		constexpr Score NoisySeeThreshold = -90;
+
 		inline Score drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -483,6 +488,14 @@ namespace polaris::search::pvs
 			const auto savedPos = pos;
 			{
 #endif
+
+			// see pruning
+			if (!root
+				&& bestScore > -ScoreMate / 2
+				&& depth <= MaxSeePruningDepth
+				&& generator.stage() >= MovegenStage::Quiet
+				&& !see::see(pos, move, depth * (pos.isNoisy(move) ? NoisySeeThreshold : QuietSeeThreshold)))
+				continue;
 
 			const auto movingPiece = boards.pieceAt(move.src());
 

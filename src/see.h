@@ -130,17 +130,22 @@ namespace polaris::see
 	}
 
 	// basically ported from ethereal and weiss (their implementation is the same)
-	inline bool see(const Position &pos, Move move)
+	inline bool see(const Position &pos, Move move, Score threshold = 0)
 	{
 		const auto &boards = pos.boards();
 
 		const auto color = pos.toMove();
 
+		auto score = gain(boards, move) - threshold;
+
+		if (score < 0)
+			return false;
+
 		auto next = move.type() == MoveType::Promotion
 			? move.target()
 			: basePiece(boards.pieceAt(move.src()));
 
-		auto score = gain(boards, move) - value(next);
+		score -= value(next);
 
 		if (score >= 0)
 			return true;
