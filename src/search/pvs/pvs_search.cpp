@@ -524,6 +524,12 @@ namespace polaris::search::pvs
 				{
 					score = -search(data, newDepth, newPly, -alpha - 1, -alpha);
 
+					if (score > alpha && newDepth < newBaseDepth)
+					{
+						newDepth = newBaseDepth;
+						score = -search(data, newDepth, newPly, -alpha - 1, -alpha);
+					}
+
 					if (score > alpha && score < beta)
 						score = -search(data, newDepth, newPly, -beta, -alpha);
 				}
