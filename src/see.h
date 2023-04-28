@@ -31,11 +31,11 @@ namespace polaris::see
 	namespace values
 	{
 		constexpr Score Pawn = 100;
-		constexpr Score Knight = 300;
-		constexpr Score Bishop = 325;
-		constexpr Score Rook = 600;
-		constexpr Score Queen = 1100;
-		constexpr Score King = 99999;
+		constexpr Score Knight = 450;
+		constexpr Score Bishop = 450;
+		constexpr Score Rook = 650;
+		constexpr Score Queen = 1250;
+		constexpr Score King = 0;
 	}
 
 	constexpr auto Values = std::array {
