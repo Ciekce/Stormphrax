@@ -207,6 +207,11 @@ namespace polaris
 		case MoveType::EnPassant: prevState.captured = enPassant<true, UpdateMaterial>(moveSrc, moveDst); break;
 		}
 
+		if (prevState.captured == Piece::None
+			&& basePiece(moving) != BasePiece::Pawn)
+			++state.halfmove;
+		else state.halfmove = 0;
+
 		if (prevState.captured == Piece::BlackRook)
 		{
 			if (moveDst == state.castlingRooks.blackShort)
