@@ -397,6 +397,9 @@ namespace polaris::search::pvs
 		if (depth == 0 && !inCheck)
 			return qsearch(data, alpha, beta, ply);
 
+		if (inCheck)
+			++depth;
+
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
