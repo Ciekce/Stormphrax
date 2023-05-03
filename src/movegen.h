@@ -66,12 +66,13 @@ namespace polaris
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data,
-			Move hashMove, HistoryMove prevMove = {}, const HistoryTable *history = nullptr)
+		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove,
+			HistoryMove prevMove = {}, HistoryMove prevPrevMove = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_moves{data.moves},
 			  m_hashMove{hashMove},
 			  m_prevMove{prevMove},
+			  m_prevPrevMove{prevPrevMove},
 			  m_killer1{data.killer1},
 			  m_killer2{data.killer2},
 			  m_history{history}
@@ -222,7 +223,16 @@ namespace polaris
 				auto &move = m_moves[i];
 
 				if (m_history)
-					move.score = m_history->entry(HistoryMove::from(boards, move.move)).score;
+				{
+					const auto historyMove = HistoryMove::from(boards, move.move);
+
+					move.score = m_history->entry(historyMove).score;
+
+					if (m_prevMove)
+						move.score += m_history->contEntry(m_prevMove).score(historyMove);
+					if (m_prevPrevMove)
+						move.score += m_history->contEntry(m_prevPrevMove).score(historyMove);
+				}
 
 				// knight promos first, rook then bishop promos last
 				//TODO capture promos first
@@ -266,6 +276,7 @@ namespace polaris
 		Move m_hashMove;
 
 		HistoryMove m_prevMove;
+		HistoryMove m_prevPrevMove;
 
 		Move m_killer1;
 		Move m_killer2;

@@ -55,6 +55,28 @@ namespace polaris
 		Move countermove{NullMove};
 	};
 
+	class ContinuationEntry
+	{
+	public:
+		ContinuationEntry() = default;
+		~ContinuationEntry() = default;
+
+		[[nodiscard]] inline auto &score(HistoryMove move)
+		{
+			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto score(HistoryMove move) const
+		{
+			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+	private:
+		using Table = std::array<std::array<i32, 64>, 12>;
+
+		Table m_table;
+	};
+
 	class HistoryTable
 	{
 	public:
@@ -69,6 +91,16 @@ namespace polaris
 		[[nodiscard]] inline const auto &entry(HistoryMove move) const
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto &contEntry(HistoryMove move)
+		{
+			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline const auto &contEntry(HistoryMove move) const
+		{
+			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
 		inline void age()
@@ -89,7 +121,9 @@ namespace polaris
 
 	private:
 		using Table = std::array<std::array<HistoryEntry, 64>, 12>;
+		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
 
 		Table m_table{};
+		ContinuationTable m_continuationTable{};
 	};
 }

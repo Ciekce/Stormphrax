@@ -151,20 +151,22 @@ namespace polaris::search::pvs
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
 
-		ThreadData threadData{};
+		// this struct is a small boulder the size of a large boulder
+		// and overflows the stack if not on the heap
+		auto threadData = std::make_unique<ThreadData>();
 
-		threadData.pos = pos;
-		threadData.maxDepth = depth;
+		threadData->pos = pos;
+		threadData->maxDepth = depth;
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
 		const auto start = util::g_timer.time();
 
-		searchRoot(threadData, true);
+		searchRoot(*threadData, true);
 
 		const auto time = util::g_timer.time() - start;
 
-		data.search = threadData.search;
+		data.search = threadData->search;
 		data.time = time;
 	}
 
@@ -477,13 +479,14 @@ namespace polaris::search::pvs
 		stack.quietsTried.clear();
 
 		const auto prevMove = data.stack[ply - 1].currMove;
+		const auto prevPrevMove = ply > 1 ? data.stack[ply - 2].currMove : HistoryMove{};
 
 		auto best = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.movegen, hashMove, prevMove, &data.history};
+		MoveGenerator generator{pos, stack.movegen, hashMove, prevMove, prevPrevMove, &data.history};
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
@@ -573,11 +576,24 @@ namespace polaris::search::pvs
 
 							const auto adjustment = depth * depth;
 
+							auto *prevContEntry = prevMove ? &data.history.contEntry(prevMove) : nullptr;
+							auto *prevPrevContEntry = prevPrevMove ? &data.history.contEntry(prevPrevMove) : nullptr;
+
 							data.history.entry(stack.currMove).score += adjustment;
+
+							if (prevContEntry)
+								prevContEntry->score(stack.currMove) += adjustment;
+							if (prevPrevContEntry)
+								prevPrevContEntry->score(stack.currMove) += adjustment;
 
 							for (const auto prevQuiet : stack.quietsTried)
 							{
 								data.history.entry(prevQuiet).score -= adjustment;
+
+								if (prevContEntry)
+									prevContEntry->score(prevQuiet) -= adjustment;
+								if (prevPrevContEntry)
+									prevPrevContEntry->score(prevQuiet) -= adjustment;
 							}
 
 							if (prevMove)
