@@ -397,6 +397,7 @@ namespace polaris::search::pvs
 		if (depth == 0 && !inCheck)
 			return qsearch(data, alpha, beta, ply);
 
+		// check extension
 		if (inCheck)
 			++depth;
 
