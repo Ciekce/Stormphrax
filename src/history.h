@@ -74,7 +74,7 @@ namespace polaris
 	private:
 		using Table = std::array<std::array<i32, 64>, 12>;
 
-		Table m_table;
+		Table m_table{};
 	};
 
 	class HistoryTable
@@ -117,6 +117,7 @@ namespace polaris
 		inline void clear()
 		{
 			m_table = Table{};
+			m_continuationTable = ContinuationTable{};
 		}
 
 	private:
