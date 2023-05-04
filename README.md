@@ -27,7 +27,6 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
   - `pext`/`pdep` for rooks
   - `pext` for bishops
 - lazy SMP
-  - note: the current implementation seems to perform very poorly on ARM machines, and as I only have x86 machines to debug on I cannot resolve that yet
 
 ## To-do
 - finish eval (king safety, hanging and pinned pieces)
