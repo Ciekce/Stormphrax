@@ -56,6 +56,7 @@ namespace polaris
 	struct ProbedTTableEntry
 	{
 		i32 score;
+		i32 depth;
 		Move move;
 		EntryType type;
 	};

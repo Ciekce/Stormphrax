@@ -66,13 +66,14 @@ namespace polaris::search::pvs
 			MovegenData movegen{};
 			Score eval{};
 			HistoryMove currMove{};
+			Move excluded{};
 		};
 
 		struct ThreadData
 		{
 			ThreadData()
 			{
-				stack.resize(MaxDepth + 1);
+				stack.resize(MaxDepth + 2);
 			}
 
 			u32 id{};

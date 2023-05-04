@@ -55,6 +55,7 @@ namespace polaris
 
 		if (static_cast<u16>(key >> 48) == entry.key)
 		{
+			dst.depth = entry.depth;
 			dst.move = entry.move;
 
 			if (entry.depth > depth)
