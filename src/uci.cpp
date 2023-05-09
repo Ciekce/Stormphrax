@@ -630,7 +630,7 @@ namespace polaris
 				return;
 			}
 
-			i32 depth = 12;
+			i32 depth = bench::DefaultBenchDepth;
 			usize hash = 16;
 
 			if (tokens.size() > 1)

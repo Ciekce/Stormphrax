@@ -26,7 +26,7 @@ int main(int argc, const char *argv[])
 	if (argc > 1 && std::string{argv[1]} == "bench")
 	{
 		auto searcher = search::ISearcher::createDefault(16);
-		bench::run(*searcher, 12);
+		bench::run(*searcher);
 
 		return 0;
 	}
