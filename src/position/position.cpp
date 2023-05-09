@@ -236,7 +236,7 @@ namespace polaris
 		if (newCastlingRooks != state.castlingRooks)
 		{
 			state.key ^= hash::castling(newCastlingRooks);
-			state.key ^= hash::castling( state.castlingRooks);
+			state.key ^= hash::castling(state.castlingRooks);
 
 			state.castlingRooks = newCastlingRooks;
 		}

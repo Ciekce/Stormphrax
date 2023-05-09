@@ -415,7 +415,6 @@ namespace polaris
 		[[nodiscard]] static std::optional<Position> fromFen(const std::string &fen);
 
 	private:
-
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
 		Piece setPiece(Square square, Piece piece);
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
