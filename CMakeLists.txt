@@ -49,7 +49,7 @@ endif()
 
 if(NOT MSVC)
 	target_compile_options(polaris-native PUBLIC -mtune=native)
-	target_compile_options(polaris-bmi2 PUBLIC -mtune=skylake)
+	target_compile_options(polaris-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(polaris-modern PUBLIC -mtune=znver2) # zen 2
 	target_compile_options(polaris-popcnt PUBLIC -mtune=sandybridge)
 	target_compile_options(polaris-compat PUBLIC -mtune=core2)
