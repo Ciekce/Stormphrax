@@ -535,11 +535,6 @@ namespace polaris::search::pvs
 					continue;
 			}
 
-#ifndef NDEBUG
-			const auto savedPos = pos;
-			{
-#endif
-
 			const auto movingPiece = boards.pieceAt(move.src());
 
 			auto guard = pos.applyMove(move, &m_table);
@@ -668,17 +663,6 @@ namespace polaris::search::pvs
 
 			if (quietOrLosing)
 				stack.quietsTried.push(stack.currMove);
-
-#ifndef NDEBUG
-			}
-			if (!m_stop && pos != savedPos)
-			{
-				std::cerr << "corrupt board state" << std::endl;
-				pos.printHistory(move);
-				m_stop = true;
-				return beta;
-			}
-#endif
 		}
 
 		if (legalMoves == 0)
