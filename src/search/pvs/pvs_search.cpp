@@ -73,6 +73,11 @@ namespace polaris::search::pvs
 
 		constexpr i32 MinSingularityDepth = 8;
 
+		constexpr i32 MaxFpDepth = 8;
+
+		constexpr Score FpMargin = 250;
+		constexpr Score FpScale = 60;
+
 		inline Score drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -512,13 +517,23 @@ namespace polaris::search::pvs
 			if (move == stack.excluded)
 				continue;
 
-			// see pruning
-			if (!root
-				&& bestScore > -ScoreMate / 2
-				&& depth <= MaxSeePruningDepth
-				&& generator.stage() >= MovegenStage::Quiet
-				&& !see::see(pos, move, depth * (pos.isNoisy(move) ? NoisySeeThreshold : QuietSeeThreshold)))
-				continue;
+			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
+
+			const auto baseLmr = LmrTable[depth][legalMoves + 1];
+
+			if (!root && quietOrLosing && bestScore > -ScoreMate / 2)
+			{
+				// futility pruning
+				if (!inCheck
+					&& depth <= MaxFpDepth
+					&& stack.eval + FpMargin + std::max(0, depth - baseLmr) * FpScale <= alpha)
+					break;
+
+				// see pruning
+				if (depth <= MaxSeePruningDepth
+					&& !see::see(pos, move, depth * (pos.isNoisy(move) ? NoisySeeThreshold : QuietSeeThreshold)))
+					continue;
+			}
 
 #ifndef NDEBUG
 			const auto savedPos = pos;
@@ -575,7 +590,7 @@ namespace polaris::search::pvs
 					&& !pos.isCheck() // this move gives check
 					&& generator.stage() >= MovegenStage::Quiet)
 				{
-					auto lmr = LmrTable[depth][legalMoves];
+					auto lmr = baseLmr;
 
 					if (pv)
 						lmr = std::max(1, lmr - 1);
@@ -599,8 +614,6 @@ namespace polaris::search::pvs
 				}
 			}
 
-			const bool quiet = generator.stage() >= MovegenStage::Quiet;
-
 			if (score > bestScore)
 			{
 				best = move;
@@ -610,7 +623,7 @@ namespace polaris::search::pvs
 				{
 					if (score >= beta)
 					{
-						if (quiet)
+						if (quietOrLosing)
 						{
 							if (move != stack.movegen.killer1)
 							{
@@ -653,7 +666,7 @@ namespace polaris::search::pvs
 				}
 			}
 
-			if (quiet)
+			if (quietOrLosing)
 				stack.quietsTried.push(stack.currMove);
 
 #ifndef NDEBUG
