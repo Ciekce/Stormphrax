@@ -174,7 +174,8 @@ namespace polaris::search::pvs
 
 	bool PvsSearcher::searching()
 	{
-		return m_flag.load(std::memory_order::seq_cst) == SearchFlag;
+		std::unique_lock lock{m_searchMutex};
+		return m_flag.load(std::memory_order::relaxed) == SearchFlag;
 	}
 
 	void PvsSearcher::setThreads(u32 threads)
@@ -365,6 +366,9 @@ namespace polaris::search::pvs
 
 		if (shouldReport)
 		{
+			if (!bench)
+				m_searchMutex.lock();
+
 			if (const auto move = best ?: searchData.move)
 			{
 				report(data, depthCompleted, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
@@ -381,7 +385,10 @@ namespace polaris::search::pvs
 			m_stopSignal.notify_all();
 
 			if (shouldReport)
-				m_flag.store(IdleFlag, std::memory_order::seq_cst);
+			{
+				m_flag.store(IdleFlag, std::memory_order::relaxed);
+				m_searchMutex.unlock();
+			}
 		}
 	}
 

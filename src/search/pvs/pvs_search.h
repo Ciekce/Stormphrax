@@ -97,6 +97,8 @@ namespace polaris::search::pvs
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
 
+		std::mutex m_searchMutex{};
+
 		std::mutex m_startMutex{};
 		std::condition_variable m_startSignal{};
 		std::atomic_int m_flag{};
