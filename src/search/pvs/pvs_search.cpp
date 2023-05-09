@@ -587,8 +587,8 @@ namespace polaris::search::pvs
 				{
 					auto lmr = baseLmr;
 
-					if (pv)
-						lmr = std::max(1, lmr - 1);
+					if (!pv)
+						++lmr;
 
 					reduction = std::clamp(lmr, 0, newBaseDepth - 1);
 				}
