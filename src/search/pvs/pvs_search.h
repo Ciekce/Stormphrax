@@ -119,7 +119,7 @@ namespace polaris::search::pvs
 
 		void searchRoot(ThreadData &data, bool bench);
 
-		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta);
+		Score search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta, bool cutnode);
 		Score qsearch(ThreadData &data, Score alpha, Score beta, i32 ply);
 
 		void report(const ThreadData &data, i32 depth, Move move, f64 time, Score score, Score alpha, Score beta);

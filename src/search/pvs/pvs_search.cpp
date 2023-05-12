@@ -78,6 +78,8 @@ namespace polaris::search::pvs
 		constexpr Score FpMargin = 250;
 		constexpr Score FpScale = 60;
 
+		constexpr i32 MinIirDepth = 4;
+
 		inline Score drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -287,7 +289,7 @@ namespace polaris::search::pvs
 
 			if (depth < MinAspDepth)
 			{
-				const auto newScore = search(data, depth, 1, -ScoreMax, ScoreMax);
+				const auto newScore = search(data, depth, 1, -ScoreMax, ScoreMax, false);
 
 				depthCompleted = depth;
 
@@ -311,7 +313,7 @@ namespace polaris::search::pvs
 					if (aspDepth < depth - 3)
 						aspDepth = depth - 3;
 
-					const auto newScore = search(data, aspDepth, 1, alpha, beta);
+					const auto newScore = search(data, aspDepth, 1, alpha, beta, false);
 
 					const bool stop = m_stop.load(std::memory_order::relaxed);
 					if (stop || !searchData.move)
@@ -397,7 +399,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta)
+	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta, bool cutnode)
 	{
 		if (depth > 1 && shouldStop(data.search, false))
 			return beta;
@@ -429,9 +431,6 @@ namespace polaris::search::pvs
 
 		const auto &prevStack = data.stack[realPly - 1];
 
-		const auto newBaseDepth = depth > 0 ? depth - 1 : 0;
-		const auto newPly = ply + 1;
-
 		if (realPly > data.search.seldepth)
 			data.search.seldepth = realPly;
 
@@ -454,7 +453,17 @@ namespace polaris::search::pvs
 				return entry.score;
 			else if (entry.move && pos.isPseudolegal(entry.move))
 				hashMove = entry.move;
+
+			if (!hashMove
+				&& !inCheck
+				&& !stack.excluded
+				&& (pv || cutnode)
+				&& depth >= MinIirDepth)
+				--depth;
 		}
+
+		const auto newBaseDepth = depth > 0 ? depth - 1 : 0;
+		const auto newPly = ply + 1;
 
 		const bool tableHit = !hashMove.isNull();
 
@@ -488,7 +497,7 @@ namespace polaris::search::pvs
 				const auto R = std::min(depth, 3 + depth / 3 + std::min((stack.eval - beta) / 200, 3));
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
-				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1);
+				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
 				{
@@ -562,7 +571,8 @@ namespace polaris::search::pvs
 				data.stack[newPly].excluded = move;
 				pos.popMove();
 
-				const auto score = search(data, singularityDepth, newPly, -singularityBeta - 1, -singularityBeta);
+				const auto score = search(data, singularityDepth, newPly,
+					-singularityBeta - 1, -singularityBeta, cutnode);
 
 				data.stack[newPly].excluded = NullMove;
 				pos.applyMoveUnchecked(move);
@@ -596,16 +606,16 @@ namespace polaris::search::pvs
 				const auto newDepth = newBaseDepth + extension;
 
 				if (pv && legalMoves == 1)
-					score = -search(data, newDepth - reduction, newPly, -beta, -alpha);
+					score = -search(data, newDepth - reduction, newPly, -beta, -alpha, false);
 				else
 				{
-					score = -search(data, newDepth - reduction, newPly, -alpha - 1, -alpha);
+					score = -search(data, newDepth - reduction, newPly, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduction > 0)
-						score = -search(data, newDepth, newPly, -alpha - 1, -alpha);
+						score = -search(data, newDepth, newPly, -alpha - 1, -alpha, !cutnode);
 
 					if (score > alpha && score < beta)
-						score = -search(data, newDepth, newPly, -beta, -alpha);
+						score = -search(data, newDepth, newPly, -beta, -alpha, false);
 				}
 			}
 
