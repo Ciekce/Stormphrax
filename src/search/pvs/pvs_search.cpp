@@ -454,6 +454,7 @@ namespace polaris::search::pvs
 			else if (entry.move && pos.isPseudolegal(entry.move))
 				hashMove = entry.move;
 
+			// internal iterative reduction
 			if (!hashMove
 				&& !inCheck
 				&& !stack.excluded
