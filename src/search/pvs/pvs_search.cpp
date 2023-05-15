@@ -502,7 +502,7 @@ namespace polaris::search::pvs
 
 				if (score >= beta)
 				{
-					if (score > (ScoreMate / 2))
+					if (score > ScoreWin)
 						return beta;
 					return score;
 				}
@@ -531,7 +531,7 @@ namespace polaris::search::pvs
 
 			const auto baseLmr = LmrTable[depth][legalMoves + 1];
 
-			if (!root && quietOrLosing && bestScore > -ScoreMate / 2)
+			if (!root && quietOrLosing && bestScore > -ScoreWin)
 			{
 				// futility pruning
 				if (!inCheck
@@ -778,9 +778,9 @@ namespace polaris::search::pvs
 
 		score = std::clamp(score, alpha, beta);
 
-		if (std::abs(score) > ScoreMate / 2)
+		if (std::abs(score) > ScoreWin)
 		{
-			if (score > ScoreMate / 2)
+			if (score > ScoreWin)
 				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
 			else std::cout << "mate " << (-(ScoreMate + score) / 2);
 		}

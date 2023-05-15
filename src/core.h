@@ -378,6 +378,7 @@ namespace polaris
 		return {rhs.midgame * lhs, rhs.endgame * lhs};
 	}
 
-	constexpr auto ScoreMax = std::numeric_limits<Score>::max();
-	constexpr auto ScoreMate = ScoreMax / 2;
+	constexpr auto ScoreMax = 32767;
+	constexpr auto ScoreMate = 32766;
+	constexpr auto ScoreWin = 30000;
 }
