@@ -536,6 +536,7 @@ namespace polaris::search::pvs
 				// futility pruning
 				if (!inCheck
 					&& depth <= MaxFpDepth
+					&& alpha < ScoreWin
 					&& stack.eval + FpMargin + std::max(0, depth - baseLmr) * FpScale <= alpha)
 					break;
 
