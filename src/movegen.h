@@ -195,7 +195,6 @@ namespace polaris
 
 			for (i32 i = m_idx; i < m_moves.size(); ++i)
 			{
-				//TODO see
 				auto &move = m_moves[i];
 
 				const auto srcValue = eval::pieceValue(boards.pieceAt(move.move.src())).midgame;

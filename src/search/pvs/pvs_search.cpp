@@ -412,12 +412,12 @@ namespace polaris::search::pvs
 
 		const bool inCheck = pos.isCheck();
 
-		if (depth <= 0 && !inCheck)
-			return qsearch(data, alpha, beta, ply);
-
 		// check extension
 		if (inCheck)
 			++depth;
+
+		if (depth <= 0)
+			return qsearch(data, alpha, beta, ply);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -455,11 +455,11 @@ namespace polaris::search::pvs
 				hashMove = entry.move;
 
 			// internal iterative reduction
-			if (!hashMove
-				&& !inCheck
+			if (!inCheck
+				&& depth >= MinIirDepth
 				&& !stack.excluded
-				&& (pv || cutnode)
-				&& depth >= MinIirDepth)
+				&& !hashMove
+				&& (pv || cutnode))
 				--depth;
 		}
 
@@ -486,12 +486,10 @@ namespace polaris::search::pvs
 				&& stack.eval >= beta + tunable::rfpMargin(g_opts.tunable) * depth / (improving ? 2 : 1))
 				return stack.eval;
 
-			const bool nmpFailsLow = tableHit && (entry.type == EntryType::Alpha) && entry.score < beta;
-
 			// nullmove pruning
 			if (depth >= MinNullmoveDepth
 				&& stack.eval >= beta
-				&& !nmpFailsLow
+				&& !(tableHit && entry.type == EntryType::Alpha && entry.score < beta)
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
@@ -501,11 +499,7 @@ namespace polaris::search::pvs
 				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
-				{
-					if (score > ScoreWin)
-						return beta;
-					return score;
-				}
+					return score > ScoreWin ? beta : score;
 			}
 		}
 
@@ -750,10 +744,12 @@ namespace polaris::search::pvs
 				bestScore = score;
 
 				if (score > alpha)
-					alpha = score;
+				{
+					if (score >= beta)
+						break;
 
-				if (score >= beta)
-					break;
+					alpha = score;
+				}
 			}
 		}
 
