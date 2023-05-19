@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <array>
+#include <utility>
 
 #include "core.h"
 #include "move.h"
@@ -28,6 +29,12 @@
 
 namespace polaris
 {
+	inline void updateHistoryScore(i32 &score, i32 adjustment)
+	{
+		score -= (score * std::abs(adjustment)) / 324;
+		score += adjustment * 32;
+	}
+
 	struct HistoryMove
 	{
 		Piece moving{Piece::None};

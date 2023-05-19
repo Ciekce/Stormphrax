@@ -632,26 +632,26 @@ namespace polaris::search::pvs
 								stack.movegen.killer1 = move;
 							}
 
-							const auto adjustment = depth * depth;
+							const auto adjustment = depth * depth + depth - 1;
 
 							auto *prevContEntry = prevMove ? &data.history.contEntry(prevMove) : nullptr;
 							auto *prevPrevContEntry = prevPrevMove ? &data.history.contEntry(prevPrevMove) : nullptr;
 
-							data.history.entry(stack.currMove).score += adjustment;
+							updateHistoryScore(data.history.entry(stack.currMove).score, adjustment);
 
 							if (prevContEntry)
-								prevContEntry->score(stack.currMove) += adjustment;
+								updateHistoryScore(prevContEntry->score(stack.currMove), adjustment);
 							if (prevPrevContEntry)
-								prevPrevContEntry->score(stack.currMove) += adjustment;
+								updateHistoryScore(prevPrevContEntry->score(stack.currMove), adjustment);
 
 							for (const auto prevQuiet : stack.quietsTried)
 							{
-								data.history.entry(prevQuiet).score -= adjustment;
+								updateHistoryScore(data.history.entry(prevQuiet).score,  -adjustment);
 
 								if (prevContEntry)
-									prevContEntry->score(prevQuiet) -= adjustment;
+									updateHistoryScore(prevContEntry->score(prevQuiet), -adjustment);
 								if (prevPrevContEntry)
-									prevPrevContEntry->score(prevQuiet) -= adjustment;
+									updateHistoryScore(prevPrevContEntry->score(prevQuiet), -adjustment);
 							}
 
 							if (prevMove)
