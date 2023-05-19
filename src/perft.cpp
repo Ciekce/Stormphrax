@@ -37,12 +37,12 @@ namespace polaris
 
 			const auto opp = pos.opponent();
 
-			MovegenData data{};
-			MoveGenerator generator{pos, data, NullMove};
+			ScoredMoveList moves{};
+			generateAll(moves, pos);
 
 			usize total{};
 
-			while (const auto move = generator.next())
+			for (const auto [move, score] : moves)
 			{
 				const auto guard = pos.applyMove<false>(move);
 
@@ -69,12 +69,12 @@ namespace polaris
 
 		const auto start = util::g_timer.time();
 
-		MovegenData data{};
-		MoveGenerator generator{pos, data, NullMove};
+		ScoredMoveList moves{};
+		generateAll(moves, pos);
 
 		usize total{};
 
-		while (const auto move = generator.next())
+		for (const auto [move, score] : moves)
 		{
 			const auto guard = pos.applyMove<false>(move);
 
