@@ -49,9 +49,7 @@ namespace polaris
 		EntryType type;
 	};
 
-#ifdef NDEBUG
 	static_assert(sizeof(TTableEntry) == 8);
-#endif
 
 	struct ProbedTTableEntry
 	{

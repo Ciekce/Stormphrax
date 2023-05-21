@@ -26,6 +26,7 @@
 #endif
 #include <algorithm>
 #include <sstream>
+#include <cassert>
 
 #include "../hash.h"
 #include "../eval/material.h"
@@ -262,13 +263,7 @@ namespace polaris
 
 	void Position::popMove()
 	{
-#ifndef NDEBUG
-		if (m_states.size() <= 1)
-		{
-			std::cerr << "popMove() with no previous move?" << std::endl;
-			return;
-		}
-#endif
+		assert(m_states.size() > 1 && "popMove() with no previous move?");
 
 		m_states.pop_back();
 

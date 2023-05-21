@@ -19,7 +19,6 @@
 #include "time.h"
 
 #include <algorithm>
-#include <iostream>
 
 namespace polaris::limit
 {

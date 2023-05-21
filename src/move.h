@@ -43,7 +43,6 @@ namespace polaris
 		constexpr Move() = default;
 		constexpr ~Move() = default;
 
-#ifdef NDEBUG
 		[[nodiscard]] constexpr auto src() const { return static_cast<Square>(m_move >> 10); }
 
 		[[nodiscard]] constexpr i32 srcRank() const { return  m_move >> 13; }
@@ -108,66 +107,6 @@ namespace polaris
 		explicit constexpr Move(u16 move) : m_move{move} {}
 
 		u16 m_move{};
-#else
-	public:
-		[[nodiscard]] constexpr auto src() const { return m_src; }
-
-		[[nodiscard]] constexpr i32 srcRank() const { return squareRank(m_src); }
-		[[nodiscard]] constexpr i32 srcFile() const { return squareFile(m_src); }
-
-		[[nodiscard]] constexpr auto dst() const { return m_dst; }
-
-		[[nodiscard]] constexpr i32 dstRank() const { return squareRank(m_dst); }
-		[[nodiscard]] constexpr i32 dstFile() const { return squareFile(m_dst); }
-
-		[[nodiscard]] constexpr auto target() const { return m_target; }
-		[[nodiscard]] constexpr auto targetIdx() const { return static_cast<i32>(m_target) - 1; }
-
-		[[nodiscard]] constexpr auto type() const { return m_type; }
-
-		[[nodiscard]] constexpr bool isNull() const { return src() == dst(); }
-
-		[[nodiscard]] explicit constexpr operator bool() const { return !isNull(); }
-
-		constexpr auto operator==(Move other) const
-		{
-			return m_src == other.m_src
-				&& m_dst == other.m_dst
-				&& m_target == other.m_target
-				&& m_type == other.m_type;
-		}
-
-		[[nodiscard]] static constexpr Move standard(Square src, Square dst)
-		{
-			return Move{src, dst, BasePiece::None, MoveType::Standard};
-		}
-
-		[[nodiscard]] static constexpr Move promotion(Square src, Square dst, BasePiece target)
-		{
-			return Move{src, dst, target, MoveType::Promotion};
-		}
-
-		[[nodiscard]] static constexpr Move castling(Square src, Square dst)
-		{
-			return Move{src, dst, BasePiece::None, MoveType::Castling};
-		}
-
-		[[nodiscard]] static constexpr Move enPassant(Square src, Square dst)
-		{
-			return Move{src, dst, BasePiece::None, MoveType::EnPassant};
-		}
-
-		[[nodiscard]] static constexpr Move null() { return Move{}; }
-
-	private:
-		constexpr Move(Square src, Square dst, BasePiece target, MoveType type)
-			: m_src{src}, m_dst{dst}, m_target{target}, m_type{type} {}
-
-		Square m_src{Square::None};
-		Square m_dst{Square::None};
-		BasePiece m_target{BasePiece::None};
-		MoveType m_type{MoveType::Standard};
-#endif
 	};
 
 	constexpr Move NullMove{};

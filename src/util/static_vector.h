@@ -24,8 +24,6 @@
 #include <cstddef>
 #include <algorithm>
 
-#include <iostream>
-
 namespace polaris
 {
 	class Move;
@@ -45,14 +43,12 @@ namespace polaris
 		inline void fill(const T &v)
 		{
 			// horrible dirty hack
-#ifdef NDEBUG
 			if constexpr (std::is_same_v<T, Move>)
 			{
 				auto *data = reinterpret_cast<u16 *>(m_data.data());
 				std::fill(data, data + Capacity, v.data());
 				return;
 			}
-#endif
 
 			m_data.fill(v);
 		}

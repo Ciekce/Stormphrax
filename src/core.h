@@ -23,6 +23,7 @@
 #include <cmath>
 #include <utility>
 #include <algorithm>
+#include <cassert>
 
 #include "util/bitfield.h"
 #include "util/cemath.h"
@@ -71,41 +72,27 @@ namespace polaris
 
 	[[nodiscard]] constexpr auto colorPiece(BasePiece piece, Color color)
 	{
-#ifndef NDEBUG
-		if (piece == BasePiece::None || color == Color::None)
-			return Piece::None;
-#endif
+		assert(piece != BasePiece::None);
+		assert(color != Color::None);
 
 		return static_cast<Piece>((static_cast<i32>(piece) << 1) + (color == Color::White ? 1 : 0));
 	}
 
 	[[nodiscard]] constexpr auto basePiece(Piece piece)
 	{
-#ifndef NDEBUG
-		if (piece == Piece::None)
-			return BasePiece::None;
-#endif
-
+		assert(piece != Piece::None);
 		return static_cast<BasePiece>(static_cast<i32>(piece) >> 1);
 	}
 
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
-#ifndef NDEBUG
-		if (piece == Piece::None)
-			return Color::None;
-#endif
-
+		assert(piece != Piece::None);
 		return (static_cast<i32>(piece) % 2 == 0) ? Color::Black : Color::White;
 	}
 
 	[[nodiscard]] constexpr auto flipPieceColor(Piece piece)
 	{
-#ifndef NDEBUG
-		if (piece == Piece::None)
-			return Piece::None;
-#endif
-
+		assert(piece != Piece::None);
 		return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
 	}
 

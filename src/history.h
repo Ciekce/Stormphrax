@@ -22,6 +22,7 @@
 
 #include <array>
 #include <utility>
+#include <cstring>
 
 #include "core.h"
 #include "move.h"
@@ -123,8 +124,8 @@ namespace polaris
 
 		inline void clear()
 		{
-			m_table = Table{};
-			m_continuationTable = ContinuationTable{};
+			std::memset(m_table.data(), 0, sizeof(HistoryEntry) * 64 * 12);
+			std::memset(m_continuationTable.data(), 0, sizeof(i32) * 64 * 12 * 64 * 12);
 		}
 
 	private:

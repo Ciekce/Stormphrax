@@ -21,10 +21,7 @@
 #include "../types.h"
 
 #include <array>
-
-#ifndef NDEBUG
 #include <iostream>
-#endif
 
 #include "../bitboard.h"
 
@@ -286,13 +283,11 @@ namespace polaris
 					return colorPiece(piece, color);
 			}
 
-#ifndef NDEBUG
 			std::cerr << "bit set in " << (color == Color::Black ? "black" : "white")
 				<< " occupancy bitboard but no piece found" << std::endl;
-			__builtin_trap();
-#endif
 
-			return Piece::None;
+			assert(false);
+			__builtin_unreachable();
 		}
 
 		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return pieceAt(toSquare(rank, file)); }

@@ -59,9 +59,7 @@ namespace polaris
 		Square whiteKing{Square::None};
 	};
 
-#ifdef NDEBUG
 	static_assert(sizeof(BoardState) == 112);
-#endif
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
