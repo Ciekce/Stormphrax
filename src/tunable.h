@@ -26,35 +26,95 @@ namespace polaris::tunable
 {
 	namespace defaults
 	{
+		constexpr i32 MinAspDepth = 6;
+
+		constexpr Score InitialWindow = 10;
+		constexpr Score MaxWindow = 500;
+
+		constexpr i32 MinNmpDepth = 3;
+
+		constexpr i32 MinLmrDepth = 3;
+
 		constexpr i32 MaxRfpDepth = 8;
-		constexpr i32 RfpMargin = 75;
+		constexpr Score RfpMargin = 75;
+
+		constexpr i32 MaxSeePruningDepth = 9;
+
+		constexpr Score QuietSeeThreshold = -50;
+		constexpr Score NoisySeeThreshold = -90;
+
+		constexpr i32 MinSingularityDepth = 8;
+
+		constexpr i32 MaxFpDepth = 8;
+
+		constexpr Score FpMargin = 250;
+		constexpr Score FpScale = 60;
+
+		constexpr i32 MinIirDepth = 4;
 	}
 
 	struct TunableData
 	{
+		i32 minAspDepth{defaults::MinAspDepth};
+
+		Score initialWindow{defaults::InitialWindow};
+		Score maxWindow{defaults::MaxWindow};
+
+		i32 minNmpDepth{defaults::MinNmpDepth};
+
+		i32 minLmrDepth{defaults::MinLmrDepth};
+
 		i32 maxRfpDepth{defaults::MaxRfpDepth};
-		i32 rfpMargin{defaults::RfpMargin};
+		Score rfpMargin{defaults::RfpMargin};
+
+		i32 maxSeePruningDepth{defaults::MaxSeePruningDepth};
+
+		Score quietSeeThreshold{defaults::QuietSeeThreshold};
+		Score noisySeeThreshold{defaults::NoisySeeThreshold};
+
+		i32 minSingularityDepth{defaults::MinSingularityDepth};
+
+		i32 maxFpDepth{defaults::MaxFpDepth};
+
+		Score fpMargin{defaults::FpMargin};
+		Score fpScale{defaults::FpScale};
+
+		i32 minIirDepth{defaults::MinIirDepth};
 	};
 
 #if PS_TUNE_SEARCH
-	inline i32 maxRfpDepth(const TunableData &data)
-	{
-		return data.maxRfpDepth;
-	}
+	extern const TunableData &g_tunable;
 
-	inline i32 rfpMargin(const TunableData &data)
-	{
-		return data.rfpMargin;
-	}
+#define PS_TUNABLE_PARAM(DefaultName, Name) inline auto Name() { return g_tunable.Name; }
 #else
-	inline i32 maxRfpDepth([[maybe_unused]] const TunableData &data)
-	{
-		return defaults::MaxRfpDepth;
-	}
-
-	inline i32 rfpMargin([[maybe_unused]] const TunableData &data)
-	{
-		return defaults::RfpMargin;
-	}
+#define PS_TUNABLE_PARAM(DefaultName, Name) constexpr auto Name() { return defaults::DefaultName; }
 #endif
+
+	PS_TUNABLE_PARAM(MinAspDepth, minAspDepth)
+
+	PS_TUNABLE_PARAM(InitialWindow, initialWindow)
+	PS_TUNABLE_PARAM(MaxWindow, maxWindow)
+
+	PS_TUNABLE_PARAM(MinNmpDepth, minNmpDepth)
+
+	PS_TUNABLE_PARAM(MinLmrDepth, minLmrDepth)
+
+	PS_TUNABLE_PARAM(MaxRfpDepth, maxRfpDepth)
+	PS_TUNABLE_PARAM(RfpMargin, rfpMargin)
+
+	PS_TUNABLE_PARAM(MaxSeePruningDepth, maxSeePruningDepth)
+
+	PS_TUNABLE_PARAM(QuietSeeThreshold, quietSeeThreshold)
+	PS_TUNABLE_PARAM(NoisySeeThreshold, noisySeeThreshold)
+
+	PS_TUNABLE_PARAM(MinSingularityDepth, minSingularityDepth)
+
+	PS_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
+
+	PS_TUNABLE_PARAM(FpMargin, fpMargin)
+	PS_TUNABLE_PARAM(FpScale, fpScale)
+
+	PS_TUNABLE_PARAM(MinIirDepth, minIirDepth)
+
+#undef PS_TUNABLE_PARAM
 }

@@ -30,17 +30,11 @@
 
 namespace polaris::search::pvs
 {
+	using namespace polaris::tunable;
+
 	namespace
 	{
 		constexpr f64 MinReportDelay = 1.0;
-
-		constexpr i32 MinAspDepth = 6;
-
-		constexpr Score InitialWindow = 10;
-		constexpr Score MaxWindow = 500;
-
-		constexpr i32 MinNullmoveDepth = 3;
-		constexpr i32 MinLmrDepth = 3;
 
 		// values from viridithas
 		//TODO tune for polaris
@@ -65,20 +59,6 @@ namespace polaris::search::pvs
 		}
 
 		const auto LmrTable = generateLmrTable();
-
-		constexpr i32 MaxSeePruningDepth = 9;
-
-		constexpr Score QuietSeeThreshold = -50;
-		constexpr Score NoisySeeThreshold = -90;
-
-		constexpr i32 MinSingularityDepth = 8;
-
-		constexpr i32 MaxFpDepth = 8;
-
-		constexpr Score FpMargin = 250;
-		constexpr Score FpScale = 60;
-
-		constexpr i32 MinIirDepth = 4;
 
 		inline Score drawScore(usize nodes)
 		{
@@ -287,7 +267,7 @@ namespace polaris::search::pvs
 
 			bool reportThisIter = shouldReport;
 
-			if (depth < MinAspDepth)
+			if (depth < minAspDepth())
 			{
 				const auto newScore = search(data, depth, 1, -ScoreMax, ScoreMax, false);
 
@@ -303,7 +283,7 @@ namespace polaris::search::pvs
 			{
 				auto aspDepth = depth;
 
-				auto delta = InitialWindow;
+				auto delta = initialWindow();
 
 				auto alpha = score - delta;
 				auto beta = score + delta;
@@ -333,7 +313,7 @@ namespace polaris::search::pvs
 
 					delta += delta / 2;
 
-					if (delta > MaxWindow)
+					if (delta > maxWindow())
 						delta = ScoreMate;
 
 					if (score >= beta)
@@ -456,7 +436,7 @@ namespace polaris::search::pvs
 
 			// internal iterative reduction
 			if (!inCheck
-				&& depth >= MinIirDepth
+				&& depth >= minIirDepth()
 				&& !stack.excluded
 				&& !hashMove
 				&& (pv || cutnode))
@@ -482,12 +462,12 @@ namespace polaris::search::pvs
 		if (!pv && !inCheck && !stack.excluded)
 		{
 			// reverse futility pruning
-			if (depth <= tunable::maxRfpDepth(g_opts.tunable)
-				&& stack.eval >= beta + tunable::rfpMargin(g_opts.tunable) * depth / (improving ? 2 : 1))
+			if (depth <= maxRfpDepth()
+				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
 				return stack.eval;
 
 			// nullmove pruning
-			if (depth >= MinNullmoveDepth
+			if (depth >= minNmpDepth()
 				&& stack.eval >= beta
 				&& !(tableHit && entry.type == EntryType::Alpha && entry.score < beta)
 				&& pos.lastMove()
@@ -529,14 +509,14 @@ namespace polaris::search::pvs
 			{
 				// futility pruning
 				if (!inCheck
-					&& depth <= MaxFpDepth
+					&& depth <= maxFpDepth()
 					&& alpha < ScoreWin
-					&& stack.eval + FpMargin + std::max(0, depth - baseLmr) * FpScale <= alpha)
+					&& stack.eval + fpMargin() + std::max(0, depth - baseLmr) * fpScale() <= alpha)
 					break;
 
 				// see pruning
-				if (depth <= MaxSeePruningDepth
-					&& !see::see(pos, move, depth * (pos.isNoisy(move) ? NoisySeeThreshold : QuietSeeThreshold)))
+				if (depth <= maxSeePruningDepth()
+					&& !see::see(pos, move, depth * (pos.isNoisy(move) ? noisySeeThreshold() : quietSeeThreshold())))
 					continue;
 			}
 
@@ -555,7 +535,7 @@ namespace polaris::search::pvs
 			i32 extension{};
 
 			// singular extension
-			if (depth >= MinSingularityDepth
+			if (depth >= minSingularityDepth()
 				&& move == hashMove
 				&& !stack.excluded
 				&& entry.depth >= depth - 3
@@ -586,7 +566,7 @@ namespace polaris::search::pvs
 				i32 reduction{};
 
 				// lmr
-				if (depth >= MinLmrDepth
+				if (depth >= minLmrDepth()
 					&& !inCheck // we are in check
 					&& !pos.isCheck() // this move gives check
 					&& generator.stage() >= MovegenStage::Quiet)

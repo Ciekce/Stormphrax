@@ -41,6 +41,7 @@
 #include "perft.h"
 #include "bench.h"
 #include "opts.h"
+#include "tunable.h"
 
 #include "hash.h"
 #include "eval/material.h"
@@ -56,6 +57,10 @@ namespace polaris
 		constexpr auto Author = "Ciekce";
 
 		GlobalOptions s_opts{};
+
+#if PS_TUNE_SEARCH
+		tunable::TunableData s_tunable{};
+#endif
 
 		class UciHandler
 		{
@@ -514,15 +519,80 @@ namespace polaris
 					}
 				}
 #if PS_TUNE_SEARCH
+				else if (nameStr == "minaspdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.minAspDepth, valueStr);
+				}
+				else if (nameStr == "initialwindow")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.initialWindow, valueStr);
+				}
+				else if (nameStr == "maxwindow")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxWindow, valueStr);
+				}
+				else if (nameStr == "minnmpdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.minNmpDepth, valueStr);
+				}
+				else if (nameStr == "minlmrdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.minLmrDepth, valueStr);
+				}
 				else if (nameStr == "maxrfpdepth")
 				{
 					if (!valueEmpty)
-						util::tryParseI32(s_uciOpts.tunable.maxRfpDepth, valueStr);
+						util::tryParseI32(s_tunable.maxRfpDepth, valueStr);
 				}
 				else if (nameStr == "rfpmargin")
 				{
 					if (!valueEmpty)
-						util::tryParseI32(s_uciOpts.tunable.rfpMargin, valueStr);
+						util::tryParseI32(s_tunable.rfpMargin, valueStr);
+				}
+				else if (nameStr == "maxseepruningdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxSeePruningDepth, valueStr);
+				}
+				else if (nameStr == "quietseethreshold")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.quietSeeThreshold, valueStr);
+				}
+				else if (nameStr == "noisyseethreshold")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.noisySeeThreshold, valueStr);
+				}
+				else if (nameStr == "minsingularitydepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.minSingularityDepth, valueStr);
+				}
+				else if (nameStr == "maxfpdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxFpDepth, valueStr);
+				}
+				else if (nameStr == "fpmargin")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.fpMargin, valueStr);
+				}
+				else if (nameStr == "fpscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.fpScale, valueStr);
+				}
+				else if (nameStr == "miniirdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.minIirDepth, valueStr);
 				}
 #endif
 			}
@@ -688,6 +758,13 @@ namespace polaris
 	}
 
 	const GlobalOptions &g_opts = s_opts;
+
+#if PS_TUNE_SEARCH
+	namespace tunable
+	{
+		const tunable::TunableData &g_tunable = s_tunable;
+	}
+#endif
 
 	namespace uci
 	{

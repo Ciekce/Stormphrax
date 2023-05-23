@@ -20,16 +20,12 @@
 
 #include "types.h"
 
-#include "tunable.h"
-
 namespace polaris
 {
 	struct GlobalOptions
 	{
 		bool underpromotions{false};
 		bool chess960{false};
-
-		tunable::TunableData tunable{};
 	};
 
 	extern const GlobalOptions &g_opts;
