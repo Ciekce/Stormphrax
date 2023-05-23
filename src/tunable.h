@@ -20,7 +20,7 @@
 
 #include "types.h"
 
-#define PS_TUNE_SEARCH 0
+#define PS_TUNE_SEARCH 1
 
 namespace polaris::tunable
 {
@@ -28,10 +28,17 @@ namespace polaris::tunable
 	{
 		constexpr i32 MinAspDepth = 6;
 
-		constexpr Score InitialWindow = 10;
-		constexpr Score MaxWindow = 500;
+		constexpr i32 MaxAspReduction = 3;
+
+		constexpr Score InitialAspWindow = 10;
+		constexpr Score MaxAspWindow = 500;
 
 		constexpr i32 MinNmpDepth = 3;
+
+		constexpr Score NmpReductionBase = 3;
+		constexpr Score NmpReductionDepthScale = 3;
+		constexpr Score NmpReductionEvalScale = 200;
+		constexpr Score MaxNmpEvalReduction = 3;
 
 		constexpr i32 MinLmrDepth = 3;
 
@@ -45,6 +52,9 @@ namespace polaris::tunable
 
 		constexpr i32 MinSingularityDepth = 8;
 
+		constexpr i32 SingularityDepthMargin = 3;
+		constexpr i32 SingularityDepthScale = 2;
+
 		constexpr i32 MaxFpDepth = 8;
 
 		constexpr Score FpMargin = 250;
@@ -57,10 +67,17 @@ namespace polaris::tunable
 	{
 		i32 minAspDepth{defaults::MinAspDepth};
 
-		Score initialWindow{defaults::InitialWindow};
-		Score maxWindow{defaults::MaxWindow};
+		i32 maxAspReduction{defaults::MaxAspReduction};
+
+		Score initialAspWindow{defaults::InitialAspWindow};
+		Score maxAspWindow{defaults::MaxAspWindow};
 
 		i32 minNmpDepth{defaults::MinNmpDepth};
+
+		Score nmpReductionBase{defaults::NmpReductionBase};
+		Score nmpReductionDepthScale{defaults::NmpReductionDepthScale};
+		Score nmpReductionEvalScale{defaults::NmpReductionEvalScale};
+		Score maxNmpEvalReduction{defaults::MaxNmpEvalReduction};
 
 		i32 minLmrDepth{defaults::MinLmrDepth};
 
@@ -73,6 +90,9 @@ namespace polaris::tunable
 		Score noisySeeThreshold{defaults::NoisySeeThreshold};
 
 		i32 minSingularityDepth{defaults::MinSingularityDepth};
+
+		i32 singularityDepthMargin{defaults::SingularityDepthMargin};
+		i32 singularityDepthScale{defaults::SingularityDepthScale};
 
 		i32 maxFpDepth{defaults::MaxFpDepth};
 
@@ -92,10 +112,17 @@ namespace polaris::tunable
 
 	PS_TUNABLE_PARAM(MinAspDepth, minAspDepth)
 
-	PS_TUNABLE_PARAM(InitialWindow, initialWindow)
-	PS_TUNABLE_PARAM(MaxWindow, maxWindow)
+	PS_TUNABLE_PARAM(MaxAspReduction, maxAspReduction)
+
+	PS_TUNABLE_PARAM(InitialAspWindow, initialAspWindow)
+	PS_TUNABLE_PARAM(MaxAspWindow, maxAspWindow)
 
 	PS_TUNABLE_PARAM(MinNmpDepth, minNmpDepth)
+
+	PS_TUNABLE_PARAM(NmpReductionBase, nmpReductionBase)
+	PS_TUNABLE_PARAM(NmpReductionDepthScale, nmpReductionDepthScale)
+	PS_TUNABLE_PARAM(NmpReductionEvalScale, nmpReductionEvalScale)
+	PS_TUNABLE_PARAM(MaxNmpEvalReduction, maxNmpEvalReduction)
 
 	PS_TUNABLE_PARAM(MinLmrDepth, minLmrDepth)
 
@@ -108,6 +135,9 @@ namespace polaris::tunable
 	PS_TUNABLE_PARAM(NoisySeeThreshold, noisySeeThreshold)
 
 	PS_TUNABLE_PARAM(MinSingularityDepth, minSingularityDepth)
+
+	PS_TUNABLE_PARAM(SingularityDepthMargin, singularityDepthMargin)
+	PS_TUNABLE_PARAM(SingularityDepthScale, singularityDepthScale)
 
 	PS_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
 

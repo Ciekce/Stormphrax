@@ -524,20 +524,45 @@ namespace polaris
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.minAspDepth, valueStr);
 				}
-				else if (nameStr == "initialwindow")
+				else if (nameStr == "maxaspreduction")
 				{
 					if (!valueEmpty)
-						util::tryParseI32(s_tunable.initialWindow, valueStr);
+						util::tryParseI32(s_tunable.maxAspReduction, valueStr);
 				}
-				else if (nameStr == "maxwindow")
+				else if (nameStr == "initialaspwindow")
 				{
 					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxWindow, valueStr);
+						util::tryParseI32(s_tunable.initialAspWindow, valueStr);
+				}
+				else if (nameStr == "maxaspwindow")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxAspWindow, valueStr);
 				}
 				else if (nameStr == "minnmpdepth")
 				{
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.minNmpDepth, valueStr);
+				}
+				else if (nameStr == "nmpreductionbase")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.nmpReductionBase, valueStr);
+				}
+				else if (nameStr == "nmpreductiondepthscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.nmpReductionDepthScale, valueStr);
+				}
+				else if (nameStr == "nmpreductionevalscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.nmpReductionEvalScale, valueStr);
+				}
+				else if (nameStr == "maxnmpevalreduction")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxNmpEvalReduction, valueStr);
 				}
 				else if (nameStr == "minlmrdepth")
 				{
@@ -573,6 +598,16 @@ namespace polaris
 				{
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.minSingularityDepth, valueStr);
+				}
+				else if (nameStr == "singularitydepthmargin")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.singularityDepthMargin, valueStr);
+				}
+				else if (nameStr == "singularitydepthscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.singularityDepthScale, valueStr);
 				}
 				else if (nameStr == "maxfpdepth")
 				{
