@@ -39,9 +39,7 @@ namespace polaris
 	struct MovegenData
 	{
 		ScoredMoveList moves{};
-
-		Move killer1{NullMove};
-		Move killer2{NullMove};
+		Move killer{NullMove};
 	};
 
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
@@ -54,12 +52,11 @@ namespace polaris
 		static constexpr i32 Start = 0;
 		static constexpr i32 Hash = 1;
 		static constexpr i32 GoodNoisy = 2;
-		static constexpr i32 Killer1 = 3;
-		static constexpr i32 Killer2 = 4;
-		static constexpr i32 Countermove = 5;
-		static constexpr i32 Quiet = 6;
-		static constexpr i32 BadNoisy = 7;
-		static constexpr i32 End = 8;
+		static constexpr i32 Killer = 3;
+		static constexpr i32 Countermove = 4;
+		static constexpr i32 Quiet = 5;
+		static constexpr i32 BadNoisy = 6;
+		static constexpr i32 End = 7;
 	};
 
 	template <bool Quiescence = false>
@@ -73,8 +70,7 @@ namespace polaris
 			  m_hashMove{hashMove},
 			  m_prevMove{prevMove},
 			  m_prevPrevMove{prevPrevMove},
-			  m_killer1{data.killer1},
-			  m_killer2{data.killer2},
+			  m_killer{data.killer},
 			  m_history{history}
 		{
 			m_moves.clear();
@@ -104,18 +100,11 @@ namespace polaris
 							m_stage = MovegenStage::End;
 						break;
 
-					case MovegenStage::Killer1:
-						if (m_killer1
-							&& m_killer1 != m_hashMove
-							&& m_pos.isPseudolegal(m_killer1))
-							return m_killer1;
-						break;
-
-					case MovegenStage::Killer2:
-						if (m_killer2
-							&& m_killer2 != m_hashMove
-							&& m_pos.isPseudolegal(m_killer2))
-							return m_killer2;
+					case MovegenStage::Killer:
+						if (m_killer
+							&& m_killer != m_hashMove
+							&& m_pos.isPseudolegal(m_killer))
+							return m_killer;
 						break;
 
 					case MovegenStage::Countermove:
@@ -124,8 +113,7 @@ namespace polaris
 							m_countermove = m_history->entry(m_prevMove).countermove;
 							if (m_countermove
 								&& m_countermove != m_hashMove
-								&& m_countermove != m_killer1
-								&& m_countermove != m_killer2
+								&& m_countermove != m_killer
 								&& m_pos.isPseudolegal(m_countermove))
 								return m_countermove;
 						}
@@ -149,8 +137,7 @@ namespace polaris
 				const auto move = findNext();
 
 				if (move != m_hashMove
-					&& move != m_killer1
-					&& move != m_killer2
+					&& move != m_killer
 					&& move != m_countermove)
 					return move;
 			}
@@ -277,8 +264,7 @@ namespace polaris
 		HistoryMove m_prevMove;
 		HistoryMove m_prevPrevMove;
 
-		Move m_killer1;
-		Move m_killer2;
+		Move m_killer;
 
 		Move m_countermove{NullMove};
 

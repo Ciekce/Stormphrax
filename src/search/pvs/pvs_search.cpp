@@ -608,11 +608,7 @@ namespace polaris::search::pvs
 					{
 						if (quietOrLosing)
 						{
-							if (move != stack.movegen.killer1)
-							{
-								stack.movegen.killer2 = stack.movegen.killer1;
-								stack.movegen.killer1 = move;
-							}
+							stack.movegen.killer = move;
 
 							const auto adjustment = depth * depth + depth - 1;
 
