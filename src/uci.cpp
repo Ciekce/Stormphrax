@@ -31,7 +31,7 @@
 #include "util/split.h"
 #include "util/parse.h"
 #include "position/position.h"
-#include "search/search.h"
+#include "search.h"
 #include "movegen.h"
 #include "eval/eval.h"
 #include "pretty.h"
@@ -91,7 +91,7 @@ namespace polaris
 			void handleVerify();
 #endif
 
-			std::unique_ptr<search::ISearcher> m_searcher{search::ISearcher::createDefault()};
+			search::Searcher m_searcher{};
 
 			Position m_pos{Position::starting()};
 
@@ -175,23 +175,14 @@ namespace polaris
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 
-			std::cout << "option name Searcher type combo default AspPVS";
-
-			for (const auto &searcherName : search::ISearcher::searchers())
-			{
-				std::cout << " var " << searcherName;
-			}
-
-			std::cout << '\n';
-
 			std::cout << "uciok" << std::endl;
 		}
 
 		void UciHandler::handleUcinewgame()
 		{
-			if (m_searcher->searching())
+			if (m_searcher.searching())
 				std::cerr << "still searching" << std::endl;
-			else m_searcher->newGame();
+			else m_searcher.newGame();
 		}
 
 		void UciHandler::handleIsready()
@@ -201,7 +192,7 @@ namespace polaris
 
 		void UciHandler::handlePosition(const std::vector<std::string> &tokens)
 		{
-			if (m_searcher->searching())
+			if (m_searcher.searching())
 				std::cerr << "still searching" << std::endl;
 			else if (tokens.size() > 1)
 			{
@@ -245,13 +236,13 @@ namespace polaris
 
 		void UciHandler::handleGo(const std::vector<std::string> &tokens)
 		{
-			if (m_searcher->searching())
+			if (m_searcher.searching())
 				std::cerr << "already searching" << std::endl;
 			else
 			{
 				if (m_hashSize)
 				{
-					m_searcher->setHashSize(*m_hashSize);
+					m_searcher.setHashSize(*m_hashSize);
 					m_hashSize = {};
 				}
 
@@ -394,15 +385,15 @@ namespace polaris
 				else if (!limiter)
 					limiter = std::make_unique<limit::InfiniteLimiter>();
 
-				m_searcher->startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
+				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
 			}
 		}
 
 		void UciHandler::handleStop()
 		{
-			if (!m_searcher->searching())
+			if (!m_searcher.searching())
 				std::cerr << "not searching" << std::endl;
-			else m_searcher->stop();
+			else m_searcher.stop();
 		}
 
 		//TODO refactor
@@ -461,25 +452,25 @@ namespace polaris
 				}
 				else if (nameStr == "clear hash")
 				{
-					if (m_searcher->searching())
+					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
 
 					if (m_hashSize)
 					{
-						m_searcher->setHashSize(*m_hashSize);
+						m_searcher.setHashSize(*m_hashSize);
 						m_hashSize = {};
 					}
-					else m_searcher->clearHash();
+					else m_searcher.clearHash();
 				}
 				else if (nameStr == "threads")
 				{
-					if (m_searcher->searching())
+					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
 
 					if (!valueEmpty)
 					{
 						if (const auto newThreads = util::tryParseU32(valueStr))
-							m_searcher->setThreads(search::ThreadCountRange.clamp(*newThreads));
+							m_searcher.setThreads(search::ThreadCountRange.clamp(*newThreads));
 					}
 				}
 				else if (nameStr == "uci_chess960")
@@ -504,18 +495,6 @@ namespace polaris
 					{
 						if (const auto newMoveOverhead = util::tryParseI32(valueStr))
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
-					}
-				}
-				else if (nameStr == "searcher")
-				{
-					if (!valueEmpty)
-					{
-						if (auto newSearcher = search::ISearcher::create(valueStr, m_newSearcherHashSize))
-						{
-							m_hashSize = {};
-							m_searcher = std::move(*newSearcher);
-						}
-						else std::cerr << "unknown searcher " << valueStr << std::endl;
 					}
 				}
 #if PS_TUNE_SEARCH
@@ -729,7 +708,7 @@ namespace polaris
 
 		void UciHandler::handleBench(const std::vector<std::string> &tokens)
 		{
-			if (m_searcher->searching())
+			if (m_searcher.searching())
 			{
 				std::cerr << "already searching" << std::endl;
 				return;
@@ -774,13 +753,13 @@ namespace polaris
 				}
 			}
 
-			m_searcher->setHashSize(hash);
+			m_searcher.setHashSize(hash);
 			std::cout << "info string set hash size to " << hash << std::endl;
 
 			if (depth == 0)
 				depth = 1;
 
-			bench::run(*m_searcher, depth);
+			bench::run(m_searcher, depth);
 		}
 
 #ifndef NDEBUG

@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include "../types.h"
+#include "types.h"
 
-#include "../move.h"
+#include "move.h"
 
 namespace polaris::search
 {

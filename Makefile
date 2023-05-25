@@ -3,7 +3,7 @@
 
 EXE = polaris
 
-SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/hash.cpp src/position/position.cpp src/eval/material.cpp src/movegen.cpp src/attacks/black_magic/attacks.cpp src/search/search.cpp src/search/pvs/pvs_search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/eval.cpp src/perft.cpp src/bench.cpp
+SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/hash.cpp src/position/position.cpp src/eval/material.cpp src/movegen.cpp src/attacks/black_magic/attacks.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/eval.cpp src/perft.cpp src/bench.cpp
 
 SUFFIX :=
 

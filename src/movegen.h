@@ -36,12 +36,6 @@ namespace polaris
 
 	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
-	struct MovegenData
-	{
-		ScoredMoveList moves{};
-		Move killer{NullMove};
-	};
-
 	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
 	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
 
@@ -50,27 +44,27 @@ namespace polaris
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
-		static constexpr i32 Hash = 1;
-		static constexpr i32 GoodNoisy = 2;
-		static constexpr i32 Killer = 3;
-		static constexpr i32 Countermove = 4;
-		static constexpr i32 Quiet = 5;
-		static constexpr i32 BadNoisy = 6;
-		static constexpr i32 End = 7;
+		static constexpr i32 Hash = Start + 1;
+		static constexpr i32 GoodNoisy = Hash + 1;
+		static constexpr i32 Killer = GoodNoisy + 1;
+		static constexpr i32 Countermove = Killer + 1;
+		static constexpr i32 Quiet = Countermove + 1;
+		static constexpr i32 BadNoisy = Quiet + 1;
+		static constexpr i32 End = BadNoisy + 1;
 	};
 
 	template <bool Quiescence = false>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move hashMove,
+		MoveGenerator(const Position &pos, Move killer, ScoredMoveList &moves, Move hashMove,
 			HistoryMove prevMove = {}, HistoryMove prevPrevMove = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
-			  m_moves{data.moves},
+			  m_moves{moves},
 			  m_hashMove{hashMove},
 			  m_prevMove{prevMove},
 			  m_prevPrevMove{prevPrevMove},
-			  m_killer{data.killer},
+			  m_killer{killer},
 			  m_history{history}
 		{
 			m_moves.clear();

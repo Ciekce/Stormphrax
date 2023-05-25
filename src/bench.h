@@ -20,11 +20,11 @@
 
 #include "types.h"
 
-#include "search/search.h"
+#include "search.h"
 
 namespace polaris::bench
 {
 	constexpr i32 DefaultBenchDepth = 14;
 
-	void run(search::ISearcher &searcher, i32 depth = DefaultBenchDepth);
+	void run(search::Searcher &searcher, i32 depth = DefaultBenchDepth);
 }

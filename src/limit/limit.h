@@ -20,7 +20,7 @@
 
 #include "../types.h"
 
-#include "../search/search_fwd.h"
+#include "../search_fwd.h"
 
 namespace polaris::limit
 {

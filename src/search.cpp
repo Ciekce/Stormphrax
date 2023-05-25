@@ -16,19 +16,19 @@
  * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "pvs_search.h"
+#include "search.h"
 
 #include <iostream>
 #include <algorithm>
 #include <cmath>
 
-#include "../../uci.h"
-#include "../../movegen.h"
-#include "../../eval/eval.h"
-#include "../../limit/trivial.h"
-#include "../../opts.h"
+#include "uci.h"
+#include "movegen.h"
+#include "eval/eval.h"
+#include "limit/trivial.h"
+#include "opts.h"
 
-namespace polaris::search::pvs
+namespace polaris::search
 {
 	using namespace polaris::tunable;
 
@@ -66,7 +66,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	PvsSearcher::PvsSearcher(std::optional<usize> hashSize)
+	Searcher::Searcher(std::optional<usize> hashSize)
 		: m_table{hashSize ? *hashSize : DefaultHashSize}
 	{
 		auto &threadData = m_threads.emplace_back();
@@ -78,13 +78,13 @@ namespace polaris::search::pvs
 		}};
 	}
 
-	PvsSearcher::~PvsSearcher()
+	Searcher::~Searcher()
 	{
 		stop();
 		stopThreads();
 	}
 
-	void PvsSearcher::newGame()
+	void Searcher::newGame()
 	{
 		m_table.clear();
 
@@ -96,7 +96,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	void PvsSearcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
+	void Searcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
 	{
 		if (!limiter)
 		{
@@ -120,7 +120,7 @@ namespace polaris::search::pvs
 		m_startSignal.notify_all();
 	}
 
-	void PvsSearcher::stop()
+	void Searcher::stop()
 	{
 		m_stop.store(true, std::memory_order::relaxed);
 		m_flag.store(IdleFlag, std::memory_order::seq_cst);
@@ -136,7 +136,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	void PvsSearcher::runBench(BenchData &data, const Position &pos, i32 depth)
+	void Searcher::runBench(BenchData &data, const Position &pos, i32 depth)
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
 
@@ -159,13 +159,7 @@ namespace polaris::search::pvs
 		data.time = time;
 	}
 
-	bool PvsSearcher::searching()
-	{
-		std::unique_lock lock{m_searchMutex};
-		return m_flag.load(std::memory_order::relaxed) == SearchFlag;
-	}
-
-	void PvsSearcher::setThreads(u32 threads)
+	void Searcher::setThreads(u32 threads)
 	{
 		if (threads != m_threads.size())
 		{
@@ -192,17 +186,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	void PvsSearcher::clearHash()
-	{
-		m_table.clear();
-	}
-
-	void PvsSearcher::setHashSize(usize size)
-	{
-		m_table.resize(size);
-	}
-
-	void PvsSearcher::stopThreads()
+	void Searcher::stopThreads()
 	{
 		m_flag.store(QuitFlag, std::memory_order::seq_cst);
 		m_startSignal.notify_all();
@@ -213,7 +197,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	void PvsSearcher::run(ThreadData &data)
+	void Searcher::run(ThreadData &data)
 	{
 		while (true)
 		{
@@ -235,16 +219,7 @@ namespace polaris::search::pvs
 		}
 	}
 
-	bool PvsSearcher::shouldStop(const SearchData &data, bool allowSoftTimeout)
-	{
-		if (m_stop.load(std::memory_order::relaxed))
-			return true;
-
-		bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
-		return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
-	}
-
-	void PvsSearcher::searchRoot(ThreadData &data, bool bench)
+	void Searcher::searchRoot(ThreadData &data, bool bench)
 	{
 		auto &searchData = data.search;
 
@@ -269,7 +244,7 @@ namespace polaris::search::pvs
 
 			if (depth < minAspDepth())
 			{
-				const auto newScore = search(data, depth, 1, -ScoreMax, ScoreMax, false);
+				const auto newScore = search(data, depth, 1, 0, -ScoreMax, ScoreMax, false);
 
 				depthCompleted = depth;
 
@@ -292,7 +267,7 @@ namespace polaris::search::pvs
 				{
 					aspDepth = std::max(aspDepth, depth - maxAspReduction());
 
-					const auto newScore = search(data, aspDepth, 1, alpha, beta, false);
+					const auto newScore = search(data, aspDepth, 1, 0, alpha, beta, false);
 
 					const bool stop = m_stop.load(std::memory_order::relaxed);
 					if (stop || !searchData.move)
@@ -378,7 +353,8 @@ namespace polaris::search::pvs
 		}
 	}
 
-	Score PvsSearcher::search(ThreadData &data, i32 depth, i32 ply, Score alpha, Score beta, bool cutnode)
+	Score Searcher::search(ThreadData &data, i32 depth,
+		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode)
 	{
 		if (depth > 1 && shouldStop(data.search, false))
 			return beta;
@@ -396,7 +372,7 @@ namespace polaris::search::pvs
 			++depth;
 
 		if (depth <= 0)
-			return qsearch(data, alpha, beta, ply);
+			return qsearch(data, ply, moveStackIdx + 1, alpha, beta);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -442,9 +418,6 @@ namespace polaris::search::pvs
 				--depth;
 		}
 
-		const auto newBaseDepth = depth > 0 ? depth - 1 : 0;
-		const auto newPly = ply + 1;
-
 		const bool tableHit = !hashMove.isNull();
 
 		if (!root && !pos.lastMove())
@@ -452,7 +425,7 @@ namespace polaris::search::pvs
 		else if (stack.excluded)
 			stack.eval = data.stack[ply - 1].eval; // not prevStack
 		else stack.eval = inCheck ? 0
-			: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
+				: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
 
 		stack.currMove = {};
 
@@ -474,11 +447,11 @@ namespace polaris::search::pvs
 			{
 				const auto R = std::min(depth,
 					nmpReductionBase()
-					+ depth / nmpReductionDepthScale()
-					+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
+						+ depth / nmpReductionDepthScale()
+						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
 
 				const auto guard = pos.applyMove(NullMove, &m_table);
-				const auto score = -search(data, depth - R, newPly, -beta, -beta + 1, !cutnode);
+				const auto score = -search(data, depth - R, ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
@@ -494,8 +467,9 @@ namespace polaris::search::pvs
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
+		MoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx],
+			hashMove, prevMove, prevPrevMove, &data.history};
 
-		MoveGenerator generator{pos, stack.movegen, hashMove, prevMove, prevPrevMove, &data.history};
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
@@ -546,13 +520,13 @@ namespace polaris::search::pvs
 				const auto singularityBeta = std::max(-ScoreMate, entry.score - singularityDepthScale() * depth);
 				const auto singularityDepth = (depth - 1) / 2;
 
-				data.stack[newPly].excluded = move;
+				data.stack[ply + 1].excluded = move;
 				pos.popMove();
 
-				const auto score = search(data, singularityDepth, newPly,
+				const auto score = search(data, singularityDepth, ply + 1, moveStackIdx + 1,
 					-singularityBeta - 1, -singularityBeta, cutnode);
 
-				data.stack[newPly].excluded = NullMove;
+				data.stack[ply + 1].excluded = NullMove;
 				pos.applyMoveUnchecked(move);
 
 				if (score < singularityBeta)
@@ -578,22 +552,22 @@ namespace polaris::search::pvs
 					if (!pv)
 						++lmr;
 
-					reduction = std::clamp(lmr, 0, newBaseDepth - 1);
+					reduction = std::clamp(lmr, 0, depth - 2);
 				}
 
-				const auto newDepth = newBaseDepth + extension;
+				const auto newDepth = depth - 1 + extension;
 
 				if (pv && legalMoves == 1)
-					score = -search(data, newDepth - reduction, newPly, -beta, -alpha, false);
+					score = -search(data, newDepth - reduction, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
-					score = -search(data, newDepth - reduction, newPly, -alpha - 1, -alpha, true);
+					score = -search(data, newDepth - reduction, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduction > 0)
-						score = -search(data, newDepth, newPly, -alpha - 1, -alpha, !cutnode);
+						score = -search(data, newDepth, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 
 					if (score > alpha && score < beta)
-						score = -search(data, newDepth, newPly, -beta, -alpha, false);
+						score = -search(data, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
 			}
 
@@ -608,7 +582,7 @@ namespace polaris::search::pvs
 					{
 						if (quietOrLosing)
 						{
-							stack.movegen.killer = move;
+							stack.killer = move;
 
 							const auto adjustment = depth * depth + depth - 1;
 
@@ -667,7 +641,7 @@ namespace polaris::search::pvs
 		return bestScore;
 	}
 
-	Score PvsSearcher::qsearch(ThreadData &data, Score alpha, Score beta, i32 ply)
+	Score Searcher::qsearch(ThreadData &data, i32 ply, u32 moveStackIdx, Score alpha, Score beta)
 	{
 		if (shouldStop(data.search, false))
 			return beta;
@@ -702,7 +676,7 @@ namespace polaris::search::pvs
 		if (hashMove && !pos.isPseudolegal(hashMove))
 			hashMove = NullMove;
 
-		QMoveGenerator generator{pos, stack.movegen, hashMove};
+		QMoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx], hashMove};
 
 		while (const auto move = generator.next())
 		{
@@ -715,7 +689,7 @@ namespace polaris::search::pvs
 
 			const auto score = pos.isDrawn()
 				? drawScore(data.search.nodes)
-				: -qsearch(data, -beta, -alpha, ply);
+				: -qsearch(data, ply, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
 			{
@@ -734,7 +708,7 @@ namespace polaris::search::pvs
 		return bestScore;
 	}
 
-	void PvsSearcher::report(const ThreadData &data, i32 depth,
+	void Searcher::report(const ThreadData &data, i32 depth,
 		Move move, f64 time, Score score, Score alpha, Score beta)
 	{
 		usize nodes = 0;
