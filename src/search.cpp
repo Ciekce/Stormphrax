@@ -535,7 +535,7 @@ namespace polaris::search
 
 			Score score{};
 
-			if (pos.isDrawn())
+			if (pos.isDrawn(false))
 				score = drawScore(data.search.nodes);
 			else
 			{
@@ -687,7 +687,7 @@ namespace polaris::search
 
 			++data.search.nodes;
 
-			const auto score = pos.isDrawn()
+			const auto score = pos.isDrawn(false)
 				? drawScore(data.search.nodes)
 				: -qsearch(data, ply, moveStackIdx + 1, -beta, -alpha);
 

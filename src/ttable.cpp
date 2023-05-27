@@ -21,6 +21,10 @@
 #include <cstring>
 #include <bit>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 namespace polaris
 {
 	TTable::TTable(usize size)

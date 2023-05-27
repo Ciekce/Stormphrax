@@ -273,7 +273,7 @@ namespace polaris
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
 
-		[[nodiscard]] inline bool isDrawn() const
+		[[nodiscard]] inline bool isDrawn(bool threefold) const
 		{
 			// TODO handle mate
 			if (m_states.back().halfmove >= 100)
@@ -281,12 +281,12 @@ namespace polaris
 
 			const auto currKey = currState().key;
 
-			i32 repetitions = 1;
+			i32 repetitionsLeft = threefold ? 2 : 1;
 
 			for (i32 i = static_cast<i32>(m_hashes.size() - 1); i >= 0; --i)
 			{
 				if (m_hashes[i] == currKey
-					&& ++repetitions == 3)
+					&& --repetitionsLeft == 0)
 					return true;
 			}
 
