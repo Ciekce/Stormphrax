@@ -90,13 +90,17 @@ namespace polaris::search
 
 		struct SearchStackEntry
 		{
-			StaticVector<HistoryMove, DefaultMoveListCapacity> quietsTried{};
-
 			Move killer{NullMove};
 
 			Score eval{};
 			HistoryMove currMove{};
 			Move excluded{};
+		};
+
+		struct MoveStackEntry
+		{
+			ScoredMoveList moves{};
+			StaticVector<HistoryMove, 64> quietsTried{};
 		};
 
 		struct ThreadData
@@ -118,7 +122,7 @@ namespace polaris::search
 			eval::PawnCache pawnCache{};
 
 			std::vector<SearchStackEntry> stack{};
-			std::vector<ScoredMoveList> moveStack{};
+			std::vector<MoveStackEntry> moveStack{};
 
 			HistoryTable history{};
 

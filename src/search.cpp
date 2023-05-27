@@ -381,19 +381,18 @@ namespace polaris::search
 		const bool pv = root || beta - alpha > 1;
 
 		auto &stack = data.stack[ply];
+		auto &moveStack = data.moveStack[moveStackIdx];
 
-		const auto realPly = stack.excluded ? ply - 1 : ply;
+		const auto &prevStack = data.stack[ply - 1];
 
-		const auto &prevStack = data.stack[realPly - 1];
-
-		if (realPly > data.search.seldepth)
-			data.search.seldepth = realPly;
+		if (ply > data.search.seldepth)
+			data.search.seldepth = ply;
 
 		// mate distance pruning
 		if (!pv)
 		{
-			const auto mdAlpha = std::max(alpha, -ScoreMate + realPly);
-			const auto mdBeta = std::min(beta, ScoreMate - realPly - 1);
+			const auto mdAlpha = std::max(alpha, -ScoreMate + ply);
+			const auto mdBeta = std::min(beta, ScoreMate - ply - 1);
 
 			if (mdAlpha >= mdBeta)
 				return mdAlpha;
@@ -429,7 +428,7 @@ namespace polaris::search
 
 		stack.currMove = {};
 
-		const bool improving = !inCheck && realPly > 1 && stack.eval > data.stack[realPly - 2].eval;
+		const bool improving = !inCheck && ply > 1 && stack.eval > data.stack[ply - 2].eval;
 
 		if (!pv && !inCheck && !stack.excluded)
 		{
@@ -458,7 +457,7 @@ namespace polaris::search
 			}
 		}
 
-		stack.quietsTried.clear();
+		moveStack.quietsTried.clear();
 
 		const auto prevMove = prevStack.currMove;
 		const auto prevPrevMove = ply > 1 ? data.stack[ply - 2].currMove : HistoryMove{};
@@ -467,7 +466,7 @@ namespace polaris::search
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
-		MoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx],
+		MoveGenerator generator{pos, stack.killer, moveStack.moves,
 			hashMove, prevMove, prevPrevMove, &data.history};
 
 		u32 legalMoves = 0;
@@ -520,13 +519,13 @@ namespace polaris::search
 				const auto singularityBeta = std::max(-ScoreMate, entry.score - singularityDepthScale() * depth);
 				const auto singularityDepth = (depth - 1) / 2;
 
-				data.stack[ply + 1].excluded = move;
+				data.stack[ply].excluded = move;
 				pos.popMove();
 
-				const auto score = search(data, singularityDepth, ply + 1, moveStackIdx + 1,
+				const auto score = search(data, singularityDepth, ply, moveStackIdx + 1,
 					-singularityBeta - 1, -singularityBeta, cutnode);
 
-				data.stack[ply + 1].excluded = NullMove;
+				data.stack[ply].excluded = NullMove;
 				pos.applyMoveUnchecked(move);
 
 				if (score < singularityBeta)
@@ -596,7 +595,7 @@ namespace polaris::search
 							if (prevPrevContEntry)
 								updateHistoryScore(prevPrevContEntry->score(stack.currMove), adjustment);
 
-							for (const auto prevQuiet : stack.quietsTried)
+							for (const auto prevQuiet : moveStack.quietsTried)
 							{
 								updateHistoryScore(data.history.entry(prevQuiet).score,  -adjustment);
 
@@ -620,14 +619,14 @@ namespace polaris::search
 			}
 
 			if (quietOrLosing)
-				stack.quietsTried.push(stack.currMove);
+				moveStack.quietsTried.push(stack.currMove);
 		}
 
 		if (legalMoves == 0)
 		{
 			if (stack.excluded)
 				return alpha;
-			return inCheck ? (-ScoreMate + realPly) : 0;
+			return inCheck ? (-ScoreMate + ply) : 0;
 		}
 
 		// increase depth for tt if in check
@@ -676,7 +675,7 @@ namespace polaris::search
 		if (hashMove && !pos.isPseudolegal(hashMove))
 			hashMove = NullMove;
 
-		QMoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx], hashMove};
+		QMoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx].moves, hashMove};
 
 		while (const auto move = generator.next())
 		{
