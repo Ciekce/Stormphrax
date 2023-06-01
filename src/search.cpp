@@ -509,29 +509,6 @@ namespace polaris::search
 
 			i32 extension{};
 
-			// singular extension
-			if (depth >= minSingularityDepth()
-				&& move == hashMove
-				&& !stack.excluded
-				&& entry.depth >= depth - singularityDepthMargin()
-				&& entry.type != EntryType::Alpha)
-			{
-				const auto singularityBeta = std::max(-ScoreMate, entry.score - singularityDepthScale() * depth);
-				const auto singularityDepth = (depth - 1) / 2;
-
-				data.stack[ply].excluded = move;
-				pos.popMove();
-
-				const auto score = search(data, singularityDepth, ply, moveStackIdx + 1,
-					-singularityBeta - 1, -singularityBeta, cutnode);
-
-				data.stack[ply].excluded = NullMove;
-				pos.applyMoveUnchecked(move);
-
-				if (score < singularityBeta)
-					extension = 1;
-			}
-
 			Score score{};
 
 			if (pos.isDrawn(false))
