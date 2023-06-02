@@ -624,7 +624,9 @@ namespace polaris::search
 
 		auto &pos = data.pos;
 
-		const auto staticEval = eval::staticEval(pos, &data.pawnCache);
+		const auto staticEval = pos.isCheck()
+			? -ScoreMax
+			: eval::staticEval(pos, &data.pawnCache);
 
 		if (staticEval > alpha)
 		{
