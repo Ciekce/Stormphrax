@@ -321,6 +321,8 @@ namespace polaris::eval
 
 			m_final = pos.interpScore(m_total);
 
+			m_final = (m_final * (200 - pos.halfmove())) / 200;
+
 			if (pos.isLikelyDrawn())
 				m_final /= 8;
 		}
