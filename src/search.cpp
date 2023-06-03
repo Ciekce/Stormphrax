@@ -233,7 +233,12 @@ namespace polaris::search
 
 		i32 depthCompleted{};
 
-		for (i32 depth = startDepth; depth <= data.maxDepth && !shouldStop(searchData, true); ++depth)
+		bool hitSoftTimeout = false;
+
+		for (i32 depth = startDepth;
+			depth <= data.maxDepth
+				&& !(hitSoftTimeout = shouldStop(searchData, true));
+			++depth)
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;
@@ -332,7 +337,8 @@ namespace polaris::search
 
 			if (const auto move = best ?: searchData.move)
 			{
-				report(data, depthCompleted, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+				if (!hitSoftTimeout)
+					report(data, depthCompleted, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 			}
 			else std::cout << "info string no legal moves" << std::endl;
