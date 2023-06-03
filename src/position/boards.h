@@ -33,6 +33,16 @@ namespace polaris
 		PositionBoards() = default;
 		~PositionBoards() = default;
 
+		[[nodiscard]] inline auto &forColor(Color color)
+		{
+			return m_colors[static_cast<i32>(color)];
+		}
+
+		[[nodiscard]] inline auto forColor(Color color) const
+		{
+			return m_colors[static_cast<i32>(color)];
+		}
+
 		[[nodiscard]] inline Bitboard &forPiece(BasePiece piece)
 		{
 			return m_boards[static_cast<i32>(piece)];
@@ -45,31 +55,19 @@ namespace polaris
 
 		[[nodiscard]] inline Bitboard forPiece(BasePiece piece, Color c) const
 		{
-			return m_boards[static_cast<i32>(piece)] & (c == Color::Black ? m_blackPop : m_whitePop);
+			return m_boards[static_cast<i32>(piece)] & forColor(c);
 		}
 
-		[[nodiscard]] inline auto &forColor(Color color)
-		{
-			return color == Color::Black ? m_blackPop : m_whitePop;
-		}
-
-		[[nodiscard]] inline auto forColor(Color color) const
-		{
-			return color == Color::Black ? m_blackPop : m_whitePop;
-		}
-
-		[[nodiscard]] inline auto blackOccupancy() const { return m_blackPop; }
-		[[nodiscard]] inline auto whiteOccupancy() const { return m_whitePop; }
+		[[nodiscard]] inline auto blackOccupancy() const { return m_colors[0]; }
+		[[nodiscard]] inline auto whiteOccupancy() const { return m_colors[1]; }
 
 		template <Color C>
 		[[nodiscard]] inline auto occupancy() const
 		{
-			if constexpr (C == Color::Black)
-				return m_blackPop;
-			else return m_whitePop;
+			return m_colors[static_cast<i32>(C)];
 		}
 
-		[[nodiscard]] inline auto occupancy() const { return m_whitePop | m_blackPop; }
+		[[nodiscard]] inline auto occupancy() const { return m_colors[0] | m_colors[1]; }
 
 		[[nodiscard]] inline auto pawns() const { return forPiece(BasePiece::Pawn); }
 		[[nodiscard]] inline auto knights() const { return forPiece(BasePiece::Knight); }
@@ -78,23 +76,23 @@ namespace polaris
 		[[nodiscard]] inline auto queens() const { return forPiece(BasePiece::Queen); }
 		[[nodiscard]] inline auto kings() const { return forPiece(BasePiece::King); }
 
-		[[nodiscard]] inline auto blackPawns() const { return pawns() & m_blackPop; }
-		[[nodiscard]] inline auto whitePawns() const { return pawns() & m_whitePop; }
+		[[nodiscard]] inline auto blackPawns() const { return pawns() & blackOccupancy(); }
+		[[nodiscard]] inline auto whitePawns() const { return pawns() & whiteOccupancy(); }
 
-		[[nodiscard]] inline auto blackKnights() const { return knights() & m_blackPop; }
-		[[nodiscard]] inline auto whiteKnights() const { return knights() & m_whitePop; }
+		[[nodiscard]] inline auto blackKnights() const { return knights() & blackOccupancy(); }
+		[[nodiscard]] inline auto whiteKnights() const { return knights() & whiteOccupancy(); }
 
-		[[nodiscard]] inline auto blackBishops() const { return bishops() & m_blackPop; }
-		[[nodiscard]] inline auto whiteBishops() const { return bishops() & m_whitePop; }
+		[[nodiscard]] inline auto blackBishops() const { return bishops() & blackOccupancy(); }
+		[[nodiscard]] inline auto whiteBishops() const { return bishops() & whiteOccupancy(); }
 
-		[[nodiscard]] inline auto blackRooks() const { return rooks() & m_blackPop; }
-		[[nodiscard]] inline auto whiteRooks() const { return rooks() & m_whitePop; }
+		[[nodiscard]] inline auto blackRooks() const { return rooks() & blackOccupancy(); }
+		[[nodiscard]] inline auto whiteRooks() const { return rooks() & whiteOccupancy(); }
 
-		[[nodiscard]] inline auto blackQueens() const { return queens() & m_blackPop; }
-		[[nodiscard]] inline auto whiteQueens() const { return queens() & m_whitePop; }
+		[[nodiscard]] inline auto blackQueens() const { return queens() & blackOccupancy(); }
+		[[nodiscard]] inline auto whiteQueens() const { return queens() & whiteOccupancy(); }
 
-		[[nodiscard]] inline auto blackKings() const { return kings() & m_blackPop; }
-		[[nodiscard]] inline auto whiteKings() const { return kings() & m_whitePop; }
+		[[nodiscard]] inline auto blackKings() const { return kings() & blackOccupancy(); }
+		[[nodiscard]] inline auto whiteKings() const { return kings() & whiteOccupancy(); }
 
 		[[nodiscard]] inline auto minors() const
 		{
@@ -103,12 +101,12 @@ namespace polaris
 
 		[[nodiscard]] inline auto blackMinors() const
 		{
-			return minors() & m_blackPop;
+			return minors() & blackOccupancy();
 		}
 
 		[[nodiscard]] inline auto whiteMinors() const
 		{
-			return minors() & m_whitePop;
+			return minors() & whiteOccupancy();
 		}
 
 		[[nodiscard]] inline auto majors() const
@@ -118,12 +116,12 @@ namespace polaris
 
 		[[nodiscard]] inline auto blackMajors() const
 		{
-			return majors() & m_blackPop;
+			return majors() & blackOccupancy();
 		}
 
 		[[nodiscard]] inline auto whiteMajors() const
 		{
-			return majors() & m_whitePop;
+			return majors() & whiteOccupancy();
 		}
 
 		[[nodiscard]] inline auto nonPk() const
@@ -133,12 +131,12 @@ namespace polaris
 
 		[[nodiscard]] inline auto blackNonPk() const
 		{
-			return nonPk() & m_blackPop;
+			return nonPk() & blackOccupancy();
 		}
 
 		[[nodiscard]] inline auto whiteNonPk() const
 		{
-			return nonPk() & m_whitePop;
+			return nonPk() & whiteOccupancy();
 		}
 
 		template <Color C>
@@ -264,9 +262,9 @@ namespace polaris
 
 			Color color;
 
-			if (!(m_blackPop & bit).empty())
+			if (!(blackOccupancy() & bit).empty())
 				color = Color::Black;
-			else if (!(m_whitePop & bit).empty())
+			else if (!(whiteOccupancy() & bit).empty())
 				color = Color::White;
 			else return Piece::None;
 
@@ -326,9 +324,7 @@ namespace polaris
 		[[nodiscard]] inline bool operator==(const PositionBoards &other) const = default;
 
 	private:
+		std::array<Bitboard, 2> m_colors{};
 		std::array<Bitboard, 6> m_boards{};
-
-		Bitboard m_blackPop{};
-		Bitboard m_whitePop{};
 	};
 }

@@ -60,14 +60,14 @@ namespace polaris
 
 	enum class Color : i8
 	{
-		None = 0,
-		Black = -1,
-		White = 1
+		Black = 0,
+		White,
+		None
 	};
 
 	[[nodiscard]] constexpr auto oppColor(Color color)
 	{
-		return static_cast<Color>(-static_cast<i32>(color));
+		return static_cast<Color>(!static_cast<i32>(color));
 	}
 
 	[[nodiscard]] constexpr auto colorPiece(BasePiece piece, Color color)
@@ -75,7 +75,7 @@ namespace polaris
 		assert(piece != BasePiece::None);
 		assert(color != Color::None);
 
-		return static_cast<Piece>((static_cast<i32>(piece) << 1) + (color == Color::White ? 1 : 0));
+		return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
 	}
 
 	[[nodiscard]] constexpr auto basePiece(Piece piece)
@@ -87,7 +87,7 @@ namespace polaris
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
 		assert(piece != Piece::None);
-		return (static_cast<i32>(piece) % 2 == 0) ? Color::Black : Color::White;
+		return static_cast<Color>(static_cast<i32>(piece) & 1);
 	}
 
 	[[nodiscard]] constexpr auto flipPieceColor(Piece piece)
@@ -195,16 +195,6 @@ namespace polaris
 		return static_cast<i32>(square) & 0x7;
 	}
 
-	[[nodiscard]] constexpr auto squareRank(i32 square)
-	{
-		return square >> 3;
-	}
-
-	[[nodiscard]] constexpr auto squareFile(i32 square)
-	{
-		return square & 0x7;
-	}
-
 	[[nodiscard]] constexpr auto squareBit(Square square)
 	{
 		return U64(1) << static_cast<i32>(square);
@@ -253,11 +243,6 @@ namespace polaris
 	};
 
 	using Score = i32;
-
-	constexpr auto colorScore(Color color)
-	{
-		return static_cast<Score>(color);
-	}
 
 	struct TaperedScore
 	{

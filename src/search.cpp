@@ -374,7 +374,7 @@ namespace polaris::search
 			++depth;
 
 		if (depth <= 0)
-			return qsearch(data, ply, moveStackIdx + 1, alpha, beta);
+			return qsearch(data, ply, moveStackIdx, alpha, beta);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);

@@ -543,10 +543,8 @@ namespace polaris
 
 		state.boards.setPiece(square, piece);
 
-		if (piece == Piece::BlackKing)
-			state.blackKing = square;
-		else if (piece == Piece::WhiteKing)
-			state.whiteKing = square;
+		if (basePiece(piece) == BasePiece::King)
+			state.kings[static_cast<i32>(pieceColor(piece))] = square;
 
 		state.phase += PhaseInc[static_cast<usize>(piece)];
 
@@ -621,10 +619,8 @@ namespace polaris
 
 		state.boards.movePiece(src, dst, piece);
 
-		if (piece == Piece::BlackKing)
-			state.blackKing = dst;
-		else if (piece == Piece::WhiteKing)
-			state.whiteKing = dst;
+		if (basePiece(piece) == BasePiece::King)
+			state.kings[static_cast<i32>(pieceColor(piece))] = dst;
 
 		if constexpr (UpdateMaterial)
 			state.material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
@@ -799,10 +795,8 @@ namespace polaris
 				const auto square = toSquare(rank, file);
 				if (const auto piece = state.boards.pieceAt(square); piece != Piece::None)
 				{
-					if (piece == Piece::BlackKing)
-						state.blackKing = square;
-					else if (piece == Piece::WhiteKing)
-						state.whiteKing = square;
+					if (basePiece(piece) == BasePiece::King)
+						state.kings[static_cast<i32>(pieceColor(piece))] = square;
 
 					state.phase += PhaseInc[static_cast<i32>(piece)];
 
@@ -1128,10 +1122,9 @@ namespace polaris
 					{
 						const auto square = toSquare(rank, file);
 
-						if (state.boards.pieceAt(square) == Piece::BlackKing)
-							state.blackKing = square;
-						else if (state.boards.pieceAt(square) == Piece::WhiteKing)
-							state.whiteKing = square;
+						const auto piece = state.boards.pieceAt(square);
+						if (basePiece(piece) == BasePiece::King)
+							state.kings[static_cast<i32>(pieceColor(piece))] = square;
 					}
 				}
 
@@ -1140,7 +1133,7 @@ namespace polaris
 					if (flag >= 'a' && flag <= 'h')
 					{
 						const auto file = static_cast<i32>(flag - 'a');
-						const auto kingFile = squareFile(state.blackKing);
+						const auto kingFile = squareFile(state.blackKing());
 
 						if (file == kingFile)
 						{
@@ -1155,7 +1148,7 @@ namespace polaris
 					else if (flag >= 'A' && flag <= 'H')
 					{
 						const auto file = static_cast<i32>(flag - 'A');
-						const auto kingFile = squareFile(state.whiteKing);
+						const auto kingFile = squareFile(state.whiteKing());
 
 						if (file == kingFile)
 						{
@@ -1169,7 +1162,7 @@ namespace polaris
 					}
 					else if (flag == 'k')
 					{
-						for (i32 file = squareFile(state.blackKing) + 1; file < 8; ++file)
+						for (i32 file = squareFile(state.blackKing()) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(7, file);
 							if (state.boards.pieceAt(square) == Piece::BlackRook)
@@ -1181,7 +1174,7 @@ namespace polaris
 					}
 					else if (flag == 'K')
 					{
-						for (i32 file = squareFile(state.whiteKing) + 1; file < 8; ++file)
+						for (i32 file = squareFile(state.whiteKing()) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(0, file);
 							if (state.boards.pieceAt(square) == Piece::WhiteRook)
@@ -1193,7 +1186,7 @@ namespace polaris
 					}
 					else if (flag == 'q')
 					{
-						for (i32 file = squareFile(state.blackKing) - 1; file >= 0; --file)
+						for (i32 file = squareFile(state.blackKing()) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(7, file);
 							if (state.boards.pieceAt(square) == Piece::BlackRook)
@@ -1205,7 +1198,7 @@ namespace polaris
 					}
 					else if (flag == 'Q')
 					{
-						for (i32 file = squareFile(state.whiteKing) - 1; file >= 0; --file)
+						for (i32 file = squareFile(state.whiteKing()) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(0, file);
 							if (state.boards.pieceAt(square) == Piece::WhiteRook)

@@ -671,8 +671,7 @@ namespace polaris::eval
 
 	Score staticEval(const Position &pos, PawnCache *pawnCache)
 	{
-		return Evaluator{pos, pawnCache}.eval() * colorScore(pos.toMove()) + Tempo;
-		//return pos.interpScore(pos.material()) * colorScore(pos.toMove()) + Tempo;
+		return Evaluator{pos, pawnCache}.eval() * (pos.toMove() == Color::Black ? -1 : 1) + Tempo;
 	}
 
 	void printEval(const Position &pos, PawnCache *pawnCache)

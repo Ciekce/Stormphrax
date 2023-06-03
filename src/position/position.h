@@ -55,8 +55,17 @@ namespace polaris
 
 		Square enPassant{Square::None};
 
-		Square blackKing{Square::None};
-		Square whiteKing{Square::None};
+		std::array<Square, 2> kings{Square::None, Square::None};
+
+		[[nodiscard]] inline auto blackKing() const
+		{
+			return kings[0];
+		}
+
+		[[nodiscard]] inline auto whiteKing() const
+		{
+			return kings[1];
+		}
 	};
 
 	static_assert(sizeof(BoardState) == 112);
@@ -237,33 +246,29 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline auto blackKing() const { return currState().blackKing; }
-		[[nodiscard]] inline auto whiteKing() const { return currState().whiteKing; }
+		[[nodiscard]] inline auto blackKing() const { return currState().kings[0]; }
+		[[nodiscard]] inline auto whiteKing() const { return currState().kings[1]; }
 
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
-			if constexpr (C == Color::Black)
-				return currState().blackKing;
-			else return currState().whiteKing;
+			return currState().kings[static_cast<i32>(C)];
 		}
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
-			return c == Color::Black ? currState().blackKing : currState().whiteKing;
+			return currState().kings[static_cast<i32>(c)];
 		}
 
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
-			if constexpr (C == Color::Black)
-				return currState().whiteKing;
-			else return currState().blackKing;
+			return currState().kings[!static_cast<i32>(C)];
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
-			return c == Color::Black ? currState().whiteKing : currState().blackKing;
+			return currState().kings[!static_cast<i32>(c)];
 		}
 
 		[[nodiscard]] inline bool isCheck() const
@@ -385,8 +390,7 @@ namespace polaris
 		[[nodiscard]] inline bool deepEquals(const Position &other) const
 		{
 			return *this == other
-				&& currState().blackKing == other.m_states.back().blackKing
-				&& currState().whiteKing == other.m_states.back().whiteKing
+				&& currState().kings == other.m_states.back().kings
 				&& currState().checkers == other.m_states.back().checkers
 				&& currState().phase == other.m_states.back().phase
 				&& currState().material == other.m_states.back().material
@@ -434,7 +438,7 @@ namespace polaris
 			const auto color = toMove();
 			const auto &state = currState();
 
-			return attackersTo(color == Color::White ? state.whiteKing : state.blackKing, oppColor(color));
+			return attackersTo(state.kings[static_cast<i32>(color)], oppColor(color));
 		}
 
 		bool m_blackToMove{};
