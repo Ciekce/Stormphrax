@@ -417,7 +417,7 @@ namespace polaris::search
 				--depth;
 		}
 
-		const bool tableHit = !hashMove.isNull();
+		const bool ttHit = entry.type != EntryType::None;
 
 		if (!root && !pos.lastMove())
 			stack.eval = eval::flipTempo(-prevStack.eval);
@@ -440,7 +440,7 @@ namespace polaris::search
 			// nullmove pruning
 			if (depth >= minNmpDepth()
 				&& stack.eval >= beta
-				&& !(tableHit && entry.type == EntryType::Alpha && entry.score < beta)
+				&& !(ttHit && entry.type == EntryType::Alpha && entry.score < beta)
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{

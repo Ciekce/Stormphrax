@@ -57,7 +57,8 @@ namespace polaris
 
 		const auto entry = loadEntry(key);
 
-		if (static_cast<u16>(key >> 48) == entry.key)
+		if (entry.type != EntryType::None
+			&& static_cast<u16>(key >> 48) == entry.key)
 		{
 			dst.depth = entry.depth;
 			dst.move = entry.move;
@@ -136,7 +137,7 @@ namespace polaris
 
 		exchangeEntry(key, entry);
 
-		if (entry.key == 0)
+		if (entry.type == EntryType::None)
 			++m_entries;
 	}
 

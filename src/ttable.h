@@ -35,7 +35,8 @@ namespace polaris
 
 	enum class EntryType : u8
 	{
-		Alpha = 0,
+		None = 0,
+		Alpha,
 		Beta,
 		Exact
 	};
