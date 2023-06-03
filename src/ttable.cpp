@@ -62,11 +62,10 @@ namespace polaris
 		{
 			dst.depth = entry.depth;
 			dst.move = entry.move;
+			dst.type = entry.type;
 
 			if (entry.depth > depth)
 			{
-				dst.type = entry.type;
-
 				switch (entry.type)
 				{
 				case EntryType::Alpha:
@@ -87,6 +86,7 @@ namespace polaris
 				return true;
 			}
 		}
+		else dst.type = EntryType::None;
 
 		return false;
 	}
