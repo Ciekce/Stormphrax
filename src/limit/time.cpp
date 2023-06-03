@@ -43,8 +43,8 @@ namespace polaris::limit
 
 		const auto baseTime = limit / static_cast<f64>(toGo) + increment * 3 / 4;
 
-		m_softTime = std::min(baseTime * 0.6, limit);
-		m_maxTime  = std::min(baseTime * 2.0, limit);
+		m_maxTime  = limit / 2.0;
+		m_softTime = std::min(baseTime * 0.6, m_maxTime);
 	}
 
 	void TimeManager::update(const search::SearchData &data, bool stableBestMove)
