@@ -135,6 +135,7 @@ namespace polaris
 		entry.score = static_cast<i16>(score);
 		entry.move = move;
 		entry.depth = depth;
+		entry.age = m_currentAge;
 		entry.type = type;
 
 		exchangeEntry(key, entry);
