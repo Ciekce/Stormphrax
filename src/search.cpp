@@ -347,6 +347,8 @@ namespace polaris::search
 
 			if (shouldReport)
 			{
+				m_table.age();
+
 				m_flag.store(IdleFlag, std::memory_order::relaxed);
 				m_searchMutex.unlock();
 			}

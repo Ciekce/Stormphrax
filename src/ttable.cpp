@@ -115,8 +115,10 @@ namespace polaris
 
 		// always replace empty entries
 		const bool replace = entry.key == 0
-			// otherwise, always replace with PV entries
+			// always replace with PV entries
 			|| type == EntryType::Exact
+			// always replace entries from previous searches
+			|| entry.age != m_currentAge
 			// otherwise, replace if the depth is greater
 			// only replace entries from the same position if the depth is significantly greater
 			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
@@ -144,6 +146,7 @@ namespace polaris
 	void TTable::clear()
 	{
 		m_entries = 0;
+		m_currentAge = 0;
 
 		if (!m_table.empty())
 			std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
