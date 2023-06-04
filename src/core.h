@@ -24,7 +24,7 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
-#include <bit>
+#include <cstring>
 
 #include "util/bitfield.h"
 #include "util/cemath.h"
@@ -257,16 +257,24 @@ namespace polaris
 			assert(std::numeric_limits<i16>::min() <= endgame && std::numeric_limits<i16>::max() >= endgame);
 		}
 
-		[[nodiscard]] constexpr Score midgame() const
+		[[nodiscard]] inline Score midgame() const
 		{
-			const auto eg = static_cast<u16>(m_score);
-			return static_cast<Score>(std::bit_cast<i16>(eg));
+			const auto mg = static_cast<u16>(m_score);
+
+			i16 v{};
+			std::memcpy(&v, &mg, sizeof(mg));
+
+			return static_cast<Score>(v);
 		}
 
-		[[nodiscard]] constexpr Score endgame() const
+		[[nodiscard]] inline Score endgame() const
 		{
 			const auto eg = static_cast<u16>(static_cast<u32>(m_score + 0x8000) >> 16);
-			return static_cast<Score>(std::bit_cast<i16>(eg));
+
+			i16 v{};
+			std::memcpy(&v, &eg, sizeof(eg));
+
+			return static_cast<Score>(v);
 		}
 
 		[[nodiscard]] constexpr TaperedScore operator+(const TaperedScore &other) const
