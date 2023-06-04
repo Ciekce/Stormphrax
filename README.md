@@ -45,7 +45,6 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 | UCI_Chess960    |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                       |
 | Underpromotions |  check  |    `false`    | `false`, `true` | Whether underpromotions to rooks and bishops are generated.                                                     |
 | Move Overhead   | integer |      10       |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
-| Searcher        | string  |    AspPVS     |     AspPVS      | Searcher used internally. Only AspPVS (principal variation search with aspiration windows) currently supported. |
 
 ## Builds
 `bmi2`: requires BMI2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
