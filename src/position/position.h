@@ -146,7 +146,8 @@ namespace polaris
 
 		[[nodiscard]] inline auto interpScore(TaperedScore score) const
 		{
-			return (score.midgame * currState().phase + score.endgame * (24 - currState().phase)) / 24;
+			const auto &state = currState();
+			return (score.midgame() * state.phase + score.endgame() * (24 - state.phase)) / 24;
 		}
 
 		[[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const

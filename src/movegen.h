@@ -178,11 +178,11 @@ namespace polaris
 			{
 				auto &move = m_moves[i];
 
-				const auto srcValue = eval::pieceValue(boards.pieceAt(move.move.src())).midgame;
+				const auto srcValue = eval::pieceValue(boards.pieceAt(move.move.src())).midgame();
 				// 0 for non-capture promo
 				const auto dstValue = move.move.type() == MoveType::EnPassant
-					? eval::values::Pawn.midgame
-					: eval::pieceValue(boards.pieceAt(move.move.dst())).midgame;
+					? eval::values::Pawn.midgame()
+					: eval::pieceValue(boards.pieceAt(move.move.dst())).midgame();
 
 				move.score = (dstValue - srcValue) * 2000 + dstValue;
 

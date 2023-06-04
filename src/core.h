@@ -24,6 +24,7 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
+#include <bit>
 
 #include "util/bitfield.h"
 #include "util/cemath.h"
@@ -244,111 +245,75 @@ namespace polaris
 
 	using Score = i32;
 
-	struct TaperedScore
+	class TaperedScore
 	{
-		Score midgame;
-		Score endgame;
+	public:
+		constexpr TaperedScore() : m_score{} {}
 
-		inline TaperedScore operator+(const TaperedScore &other) const
+		constexpr TaperedScore(Score midgame, Score endgame)
+			: m_score{static_cast<i32>(static_cast<u32>(endgame) << 16) + midgame}
 		{
-			return {midgame + other.midgame,
-				endgame + other.endgame};
+			assert(std::numeric_limits<i16>::min() <= midgame && std::numeric_limits<i16>::max() >= midgame);
+			assert(std::numeric_limits<i16>::min() <= endgame && std::numeric_limits<i16>::max() >= endgame);
 		}
 
-		inline TaperedScore operator+(Score other) const
+		[[nodiscard]] constexpr Score midgame() const
 		{
-			return {midgame + other,
-				endgame + other};
+			const auto eg = static_cast<u16>(m_score);
+			return static_cast<Score>(std::bit_cast<i16>(eg));
 		}
 
-		inline TaperedScore &operator+=(const TaperedScore &other)
+		[[nodiscard]] constexpr Score endgame() const
 		{
-			midgame += other.midgame;
-			endgame += other.endgame;
+			const auto eg = static_cast<u16>(static_cast<u32>(m_score + 0x8000) >> 16);
+			return static_cast<Score>(std::bit_cast<i16>(eg));
+		}
 
+		[[nodiscard]] constexpr TaperedScore operator+(const TaperedScore &other) const
+		{
+			return TaperedScore{m_score + other.m_score};
+		}
+
+		constexpr TaperedScore &operator+=(const TaperedScore &other)
+		{
+			m_score += other.m_score;
 			return *this;
 		}
 
-		inline TaperedScore &operator+=(Score other)
+		[[nodiscard]] constexpr TaperedScore operator-(const TaperedScore &other) const
 		{
-			midgame += other;
-			endgame += other;
+			return TaperedScore{m_score - other.m_score};
+		}
 
+		constexpr TaperedScore &operator-=(const TaperedScore &other)
+		{
+			m_score -= other.m_score;
 			return *this;
 		}
 
-		inline TaperedScore operator-(const TaperedScore &other) const
+		[[nodiscard]] constexpr TaperedScore operator*(i32 v) const
 		{
-			return {midgame - other.midgame,
-				endgame - other.endgame};
+			return TaperedScore{m_score * v};
 		}
 
-		inline TaperedScore operator-(Score other) const
+		constexpr TaperedScore &operator*=(i32 v)
 		{
-			return {midgame - other,
-				endgame - other};
-		}
-
-		inline TaperedScore &operator-=(const TaperedScore &other)
-		{
-			midgame -= other.midgame;
-			endgame -= other.endgame;
-
+			m_score *= v;
 			return *this;
 		}
 
-		inline TaperedScore &operator-=(Score other)
+		[[nodiscard]] constexpr TaperedScore operator-() const
 		{
-			midgame -= other;
-			endgame -= other;
-
-			return *this;
+			return TaperedScore{-m_score};
 		}
 
-		inline TaperedScore operator*(Score other) const
-		{
-			return {midgame * other,
-				endgame * other};
-		}
+		[[nodiscard]] constexpr bool operator==(const TaperedScore &other) const = default;
 
-		inline TaperedScore &operator*=(Score other)
-		{
-			midgame *= other;
-			endgame *= other;
+	private:
+		explicit constexpr TaperedScore(i32 score) : m_score{score} {}
 
-			return *this;
-		}
-
-		inline TaperedScore operator-() const
-		{
-			return {-midgame, -endgame};
-		}
-
-		[[nodiscard]] inline bool operator==(const TaperedScore &other) const
-		{
-			return midgame == other.midgame && endgame == other.endgame;
-		}
-
-		[[nodiscard]] TaperedScore colored(Color color) const
-		{
-			return color == Color::White ? *this : -*this;
-		}
+		i32 m_score;
 	};
-
-	inline TaperedScore operator+(Score lhs, const TaperedScore &rhs)
-	{
-		return {rhs.midgame + lhs, rhs.endgame + lhs};
-	}
-
-	inline TaperedScore operator-(Score lhs, const TaperedScore &rhs)
-	{
-		return {rhs.midgame - lhs, rhs.endgame - lhs};
-	}
-
-	inline TaperedScore operator*(Score lhs, const TaperedScore &rhs)
-	{
-		return {rhs.midgame * lhs, rhs.endgame * lhs};
-	}
 
 	constexpr auto ScoreMax = 32767;
 	constexpr auto ScoreMate = 32766;

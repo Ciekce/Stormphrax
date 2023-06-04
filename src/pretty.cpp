@@ -102,9 +102,9 @@ namespace polaris
 	void printScore(std::ostream &out, TaperedScore score)
 	{
 		out << '[';
-		printScore(out, score.midgame);
+		printScore(out, score.midgame());
 		out << ", ";
-		printScore(out, score.endgame);
+		printScore(out, score.endgame());
 		out << ']';
 	}
 }
