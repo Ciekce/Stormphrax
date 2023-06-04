@@ -13,11 +13,11 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 ## Strength
 | Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) | [MCERL](https://www.chessengeria.com/mcerl) |
 |:-------:|:---------------------------------------------------------:|:--------------------------------------------------------:|:--------------------------------------------------------------:|:-------------------------------------------:|
-|  1.6.x  |                  ~2800 (testing ongoing)                  |                           2883                           |                              2745                              |                      -                      |
-|  1.5.0  |                           2678                            |                           2747                           |                              2509                              |                    2713                     |
+|  1.6.x  |                           2806                            |                           2885                           |                              2745                              |                      -                      |
+|  1.5.0  |                           2679                            |                           2749                           |                              2509                              |                    2713                     |
 |  1.4.x  |                           2640                            |                            -                             |                              2456                              |                      -                      |
-|  1.3.0  |                           2450                            |                           2510                           |                              N/A                               |                      -                      |
-|  1.2.0  |               ~2300 (very few games played)               |                           2327                           |                              N/A                               |                      -                      |
+|  1.3.0  |                           2450                            |                           2513                           |                              N/A                               |                      -                      |
+|  1.2.0  |               ~2300 (very few games played)               |                           2330                           |                              N/A                               |                      -                      |
 
 ## Features
 - standard PVS with aspiration windows, nullmove pruning etc
