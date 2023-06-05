@@ -8,7 +8,7 @@ SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/hash.cpp src/position
 SUFFIX :=
 
 CXX := clang++
-CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION=$(shell git rev-parse --short HEAD)
+CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION=OpenBench
 
 LDFLAGS :=
 
