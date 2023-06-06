@@ -49,7 +49,7 @@ namespace polaris
 				if (pos.isAttacked(pos.oppKing(opp), opp))
 					continue;
 
-				total += doPerft(pos, depth);
+				total += depth == 0 ? 1 : doPerft(pos, depth);
 			}
 
 			return total;
