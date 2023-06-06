@@ -24,7 +24,6 @@ namespace polaris
 {
 	struct GlobalOptions
 	{
-		bool underpromotions{false};
 		bool chess960{false};
 	};
 

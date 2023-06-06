@@ -171,8 +171,6 @@ namespace polaris
 		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
 			std::cout << "option name UCI_Chess960 type check default "
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
-			std::cout << "option name Underpromotions type check default "
-				<< (defaultOpts.underpromotions ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 
@@ -480,14 +478,6 @@ namespace polaris
 					{
 						if (const auto newChess960 = util::tryParseBool(valueStr))
 							s_opts.chess960 = *newChess960;
-					}
-				}
-				else if (nameStr == "underpromotions")
-				{
-					if (!valueEmpty)
-					{
-						if (const auto newUnderpromotions = util::tryParseBool(valueStr))
-							s_opts.underpromotions = *newUnderpromotions;
 					}
 				}
 				else if (nameStr == "move overhead")

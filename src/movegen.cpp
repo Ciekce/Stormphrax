@@ -70,12 +70,8 @@ namespace polaris
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
 				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Knight), 0});
-
-				if (g_opts.underpromotions)
-				{
-					quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Rook), 0});
-					quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Bishop), 0});
-				}
+				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Rook), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Bishop), 0});
 			}
 		}
 
