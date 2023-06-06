@@ -28,7 +28,7 @@ else
             LDFLAGS += -fuse-ld=lld
         endif
     endif
-    LDFLAGS += -lpthread
+    LDFLAGS += -pthread
 # don't ask
 ifdef IS_COSMO
     CXXFLAGS += -stdlib=libc++
