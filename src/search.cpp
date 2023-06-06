@@ -249,7 +249,7 @@ namespace polaris::search
 
 			if (depth < minAspDepth())
 			{
-				const auto newScore = search(data, depth, 1, 0, -ScoreMax, ScoreMax, false);
+				const auto newScore = search(data, depth, 0, 0, -ScoreMax, ScoreMax, false);
 
 				depthCompleted = depth;
 
@@ -272,7 +272,7 @@ namespace polaris::search
 				{
 					aspDepth = std::max(aspDepth, depth - maxAspReduction());
 
-					const auto newScore = search(data, aspDepth, 1, 0, alpha, beta, false);
+					const auto newScore = search(data, aspDepth, 0, 0, alpha, beta, false);
 
 					const bool stop = m_stop.load(std::memory_order::relaxed);
 					if (stop || !searchData.move)
@@ -385,13 +385,11 @@ namespace polaris::search
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const bool root = ply == 1;
+		const bool root = ply == 0;
 		const bool pv = root || beta - alpha > 1;
 
 		auto &stack = data.stack[ply];
 		auto &moveStack = data.moveStack[moveStackIdx];
-
-		const auto &prevStack = data.stack[ply - 1];
 
 		if (ply > data.search.seldepth)
 			data.search.seldepth = ply;
@@ -428,7 +426,7 @@ namespace polaris::search
 		const bool ttHit = entry.type != EntryType::None;
 
 		if (!root && !pos.lastMove())
-			stack.eval = eval::flipTempo(-prevStack.eval);
+			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
 		else if (stack.excluded)
 			stack.eval = data.stack[ply - 1].eval; // not prevStack
 		else stack.eval = inCheck ? 0
@@ -467,7 +465,7 @@ namespace polaris::search
 
 		moveStack.quietsTried.clear();
 
-		const auto prevMove = prevStack.currMove;
+		const auto prevMove = ply > 0 ? data.stack[ply - 1].currMove : HistoryMove{};
 		const auto prevPrevMove = ply > 1 ? data.stack[ply - 2].currMove : HistoryMove{};
 
 		auto best = NullMove;
