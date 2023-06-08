@@ -49,45 +49,45 @@ namespace polaris
 		constexpr auto PhaseIncBase = std::array{0, 1, 1, 2, 4, 0, 0};
 	}
 
-	HistoryGuard::~HistoryGuard()
-	{
-		m_pos.popMove();
-	}
+	template bool Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt);
+	template bool Position::applyMoveUnchecked<true, false>(Move move, TTable *prefetchTt);
+	template bool Position::applyMoveUnchecked<false, true>(Move move, TTable *prefetchTt);
+	template bool Position::applyMoveUnchecked<true, true>(Move move, TTable *prefetchTt);
 
-	template void Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt);
-	template void Position::applyMoveUnchecked<true, false>(Move move, TTable *prefetchTt);
-	template void Position::applyMoveUnchecked<false, true>(Move move, TTable *prefetchTt);
-	template void Position::applyMoveUnchecked<true, true>(Move move, TTable *prefetchTt);
+	template void Position::setPiece<false, false>(Piece, Square);
+	template void Position::setPiece<true, false>(Piece, Square);
+	template void Position::setPiece<false, true>(Piece, Square);
+	template void Position::setPiece<true, true>(Piece, Square);
 
-	template Piece Position::setPiece<false, false>(Square, Piece);
-	template Piece Position::setPiece<true, false>(Square, Piece);
-	template Piece Position::setPiece<false, true>(Square, Piece);
-	template Piece Position::setPiece<true, true>(Square, Piece);
+	template void Position::removePiece<false, false>(Piece, Square);
+	template void Position::removePiece<true, false>(Piece, Square);
+	template void Position::removePiece<false, true>(Piece, Square);
+	template void Position::removePiece<true, true>(Piece, Square);
 
-	template Piece Position::removePiece<false, false>(Square);
-	template Piece Position::removePiece<true, false>(Square);
-	template Piece Position::removePiece<false, true>(Square);
-	template Piece Position::removePiece<true, true>(Square);
+	template void Position::movePieceNoCap<false, false>(Piece, Square, Square);
+	template void Position::movePieceNoCap<true, false>(Piece, Square, Square);
+	template void Position::movePieceNoCap<false, true>(Piece, Square, Square);
+	template void Position::movePieceNoCap<true, true>(Piece, Square, Square);
 
-	template Piece Position::movePiece<false, false>(Square, Square);
-	template Piece Position::movePiece<true, false>(Square, Square);
-	template Piece Position::movePiece<false, true>(Square, Square);
-	template Piece Position::movePiece<true, true>(Square, Square);
+	template Piece Position::movePiece<false, false>(Piece, Square, Square);
+	template Piece Position::movePiece<true, false>(Piece, Square, Square);
+	template Piece Position::movePiece<false, true>(Piece, Square, Square);
+	template Piece Position::movePiece<true, true>(Piece, Square, Square);
 
-	template Piece Position::promotePawn<false, false>(Square, Square, BasePiece);
-	template Piece Position::promotePawn<true, false>(Square, Square, BasePiece);
-	template Piece Position::promotePawn<false, true>(Square, Square, BasePiece);
-	template Piece Position::promotePawn<true, true>(Square, Square, BasePiece);
+	template Piece Position::promotePawn<false, false>(Piece, Square, Square, BasePiece);
+	template Piece Position::promotePawn<true, false>(Piece, Square, Square, BasePiece);
+	template Piece Position::promotePawn<false, true>(Piece, Square, Square, BasePiece);
+	template Piece Position::promotePawn<true, true>(Piece, Square, Square, BasePiece);
 
-	template void Position::castle<false, false>(Square, Square);
-	template void Position::castle<true, false>(Square, Square);
-	template void Position::castle<false, true>(Square, Square);
-	template void Position::castle<true, true>(Square, Square);
+	template void Position::castle<false, false>(Piece, Square, Square);
+	template void Position::castle<true, false>(Piece, Square, Square);
+	template void Position::castle<false, true>(Piece, Square, Square);
+	template void Position::castle<true, true>(Piece, Square, Square);
 
-	template Piece Position::enPassant<false, false>(Square, Square);
-	template Piece Position::enPassant<true, false>(Square, Square);
-	template Piece Position::enPassant<false, true>(Square, Square);
-	template Piece Position::enPassant<true, true>(Square, Square);
+	template Piece Position::enPassant<false, false>(Piece, Square, Square);
+	template Piece Position::enPassant<true, false>(Piece, Square, Square);
+	template Piece Position::enPassant<false, true>(Piece, Square, Square);
+	template Piece Position::enPassant<true, true>(Piece, Square, Square);
 
 	template void Position::regen<false>();
 	template void Position::regen<true>();
@@ -109,7 +109,7 @@ namespace polaris
 	}
 
 	template <bool UpdateMaterial, bool StateHistory>
-	void Position::applyMoveUnchecked(Move move, TTable *prefetchTt)
+	bool Position::applyMoveUnchecked(Move move, TTable *prefetchTt)
 	{
 		auto &prevState = currState();
 
@@ -146,7 +146,7 @@ namespace polaris
 			}
 #endif
 
-			return;
+			return true;
 		}
 
 		const auto moveType = move.type();
@@ -171,6 +171,19 @@ namespace polaris
 			__builtin_trap();
 		}
 #endif
+
+		auto captured = Piece::None;
+
+		switch (moveType)
+		{
+		case MoveType::Standard: captured = movePiece<true, UpdateMaterial>(moving, moveSrc, moveDst); break;
+		case MoveType::Promotion: captured = promotePawn<true, UpdateMaterial>(moving, moveSrc, moveDst, move.target()); break;
+		case MoveType::Castling: castle<true, UpdateMaterial>(moving, moveSrc, moveDst); break;
+		case MoveType::EnPassant: captured = enPassant<true, UpdateMaterial>(moving, moveSrc, moveDst); break;
+		}
+
+		if (isAttacked(state.boards, state.king(currColor), toMove()))
+			return false;
 
 		if (moving == Piece::BlackRook)
 		{
@@ -201,29 +214,19 @@ namespace polaris
 			state.key ^= hash::enPassant(state.enPassant);
 		}
 
-		prevState.captured = Piece::None;
-
-		switch (moveType)
-		{
-		case MoveType::Standard: prevState.captured = movePiece<true, UpdateMaterial>(moveSrc, moveDst); break;
-		case MoveType::Promotion: prevState.captured = promotePawn<true, UpdateMaterial>(moveSrc, moveDst, move.target()); break;
-		case MoveType::Castling: castle<true, UpdateMaterial>(moveSrc, moveDst); break;
-		case MoveType::EnPassant: prevState.captured = enPassant<true, UpdateMaterial>(moveSrc, moveDst); break;
-		}
-
-		if (prevState.captured == Piece::None
+		if (captured == Piece::None
 			&& basePiece(moving) != BasePiece::Pawn)
 			++state.halfmove;
 		else state.halfmove = 0;
 
-		if (prevState.captured == Piece::BlackRook)
+		if (captured == Piece::BlackRook)
 		{
 			if (moveDst == state.castlingRooks.blackShort)
 				newCastlingRooks.blackShort = Square::None;
 			if (moveDst == state.castlingRooks.blackLong)
 				newCastlingRooks.blackLong = Square::None;
 		}
-		else if (prevState.captured == Piece::WhiteRook)
+		else if (captured == Piece::WhiteRook)
 		{
 			if (moveDst == state.castlingRooks.whiteShort)
 				newCastlingRooks.whiteShort = Square::None;
@@ -262,6 +265,8 @@ namespace polaris
 			}
 		}
 #endif
+
+		return true;
 	}
 
 	void Position::popMove()
@@ -516,35 +521,14 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::setPiece(Square square, Piece piece)
+	void Position::setPiece(Piece piece, Square square)
 	{
 		auto &state = currState();
-
-		const auto captured = state.boards.pieceAt(square);
-
-		if (captured != Piece::None)
-		{
-			state.boards.removePiece(square, captured);
-
-			state.phase -= PhaseInc[static_cast<i32>(captured)];
-
-			if constexpr (UpdateMaterial)
-				state.material -= eval::pieceSquareValue(captured, square);
-
-			if constexpr (UpdateKey)
-			{
-				const auto hash = hash::pieceSquare(captured, square);
-				state.key ^= hash;
-
-				if (basePiece(captured) == BasePiece::Pawn)
-					state.pawnKey ^= hash;
-			}
-		}
 
 		state.boards.setPiece(square, piece);
 
 		if (basePiece(piece) == BasePiece::King)
-			state.kings[static_cast<i32>(pieceColor(piece))] = square;
+			state.king(pieceColor(piece)) = square;
 
 		state.phase += PhaseInc[static_cast<usize>(piece)];
 
@@ -559,40 +543,53 @@ namespace polaris
 			if (basePiece(piece) == BasePiece::Pawn)
 				state.pawnKey ^= hash;
 		}
-
-		return captured;
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::removePiece(Square square)
+	void Position::removePiece(Piece piece, Square square)
 	{
 		auto &state = currState();
 
-		const auto piece = state.boards.pieceAt(square);
+		state.boards.removePiece(square, piece);
 
-		if (piece != Piece::None)
+		state.phase -= PhaseInc[static_cast<usize>(piece)];
+
+		if constexpr (UpdateMaterial)
+			state.material -= eval::pieceSquareValue(piece, square);
+
+		if constexpr (UpdateKey)
 		{
-			state.boards.removePiece(square, piece);
-
-			state.phase -= PhaseInc[static_cast<usize>(piece)];
-
-			if constexpr (UpdateMaterial)
-				state.material -= eval::pieceSquareValue(piece, square);
-
-			if constexpr (UpdateKey)
-			{
-				const auto hash = hash::pieceSquare(piece, square);
-				state.key ^= hash;
-				if (basePiece(piece) == BasePiece::Pawn)
-					state.pawnKey ^= hash;
-			}
+			const auto hash = hash::pieceSquare(piece, square);
+			state.key ^= hash;
+			if (basePiece(piece) == BasePiece::Pawn)
+				state.pawnKey ^= hash;
 		}
-
-		return piece;
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::movePiece(Square src, Square dst)
+	void Position::movePieceNoCap(Piece piece, Square src, Square dst)
+	{
+		auto &state = currState();
+
+		state.boards.movePiece(src, dst, piece);
+
+		if (basePiece(piece) == BasePiece::King)
+			state.king(pieceColor(piece)) = dst;
+
+		if constexpr (UpdateMaterial)
+			state.material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
+
+		if constexpr (UpdateKey)
+		{
+			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
+			state.key ^= hash;
+			if (basePiece(piece) == BasePiece::Pawn)
+				state.pawnKey ^= hash;
+		}
+	}
+
+	template <bool UpdateKey, bool UpdateMaterial>
+	Piece Position::movePiece(Piece piece, Square src, Square dst)
 	{
 		auto &state = currState();
 
@@ -615,12 +612,10 @@ namespace polaris
 			}
 		}
 
-		const auto piece = state.boards.pieceAt(src);
-
 		state.boards.movePiece(src, dst, piece);
 
 		if (basePiece(piece) == BasePiece::King)
-			state.kings[static_cast<i32>(pieceColor(piece))] = dst;
+			state.king(pieceColor(piece)) = dst;
 
 		if constexpr (UpdateMaterial)
 			state.material += eval::pieceSquareValue(piece, dst) - eval::pieceSquareValue(piece, src);
@@ -637,7 +632,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::promotePawn(Square src, Square dst, BasePiece target)
+	Piece Position::promotePawn(Piece pawn, Square src, Square dst, BasePiece target)
 	{
 		auto &state = currState();
 
@@ -657,14 +652,11 @@ namespace polaris
 				state.key ^= hash::pieceSquare(captured, dst);
 		}
 
-		const auto color = state.boards.blackOccupancy()[src] ? Color::Black : Color::White;
-		const auto pawn = colorPiece(BasePiece::Pawn, color);
-
 		state.boards.moveAndChangePiece(src, dst, pawn, target);
 
 		if constexpr(UpdateMaterial || UpdateKey)
 		{
-			const auto coloredTarget = colorPiece(target, color);
+			const auto coloredTarget = copyPieceColor(pawn, target);
 
 			if constexpr (UpdateMaterial)
 				state.material += eval::pieceSquareValue(coloredTarget, dst)
@@ -682,7 +674,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::castle(Square kingSrc, Square rookSrc)
+	void Position::castle(Piece king, Square kingSrc, Square rookSrc)
 	{
 		const auto rank = squareRank(kingSrc);
 
@@ -701,28 +693,29 @@ namespace polaris
 			rookDst = toSquare(rank, 3);
 		}
 
+		const auto rook = copyPieceColor(king, BasePiece::Rook);
+
 		if (g_opts.chess960)
 		{
-			const auto rook = removePiece<UpdateKey, UpdateMaterial>(rookSrc);
+			removePiece<UpdateKey, UpdateMaterial>(rook, rookSrc);
 
 			if (kingSrc != kingDst)
-				movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
+				movePieceNoCap<UpdateKey, UpdateMaterial>(king, kingSrc, kingDst);
 
-			setPiece<UpdateKey, UpdateMaterial>(rookDst, rook);
+			setPiece<UpdateKey, UpdateMaterial>(rook, rookDst);
 		}
 		else
 		{
-			movePiece<UpdateKey, UpdateMaterial>(kingSrc, kingDst);
-			movePiece<UpdateKey, UpdateMaterial>(rookSrc, rookDst);
+			movePieceNoCap<UpdateKey, UpdateMaterial>(king, kingSrc, kingDst);
+			movePieceNoCap<UpdateKey, UpdateMaterial>(rook, rookSrc, rookDst);
 		}
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::enPassant(Square src, Square dst)
+	Piece Position::enPassant(Piece pawn, Square src, Square dst)
 	{
 		auto &state = currState();
 
-		const auto pawn = state.boards.pieceAt(src);
 		const auto color = pieceColor(pawn);
 
 		state.boards.movePiece(src, dst, pawn);
@@ -744,7 +737,7 @@ namespace polaris
 		rank = rank == 2 ? 3 : 4;
 
 		const auto captureSquare = toSquare(rank, file);
-		const auto enemyPawn = state.boards.pieceAt(captureSquare);
+		const auto enemyPawn = flipPieceColor(pawn);
 
 		state.boards.removePiece(captureSquare, enemyPawn);
 
@@ -796,7 +789,7 @@ namespace polaris
 				if (const auto piece = state.boards.pieceAt(square); piece != Piece::None)
 				{
 					if (basePiece(piece) == BasePiece::King)
-						state.kings[static_cast<i32>(pieceColor(piece))] = square;
+						state.king(pieceColor(piece)) = square;
 
 					state.phase += PhaseInc[static_cast<i32>(piece)];
 
@@ -941,7 +934,7 @@ namespace polaris
 			{
 				if (g_opts.chess960)
 				{
-					if (state.boards.pieceAt(dst) == colorPiece(BasePiece::Rook, pieceColor(srcPiece)))
+					if (state.boards.pieceAt(dst) == copyPieceColor(srcPiece, BasePiece::Rook))
 						return Move::castling(src, dst);
 					else return Move::standard(src, dst);
 				}
@@ -1124,7 +1117,7 @@ namespace polaris
 
 						const auto piece = state.boards.pieceAt(square);
 						if (basePiece(piece) == BasePiece::King)
-							state.kings[static_cast<i32>(pieceColor(piece))] = square;
+							state.king(pieceColor(piece)) = square;
 					}
 				}
 

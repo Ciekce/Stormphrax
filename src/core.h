@@ -97,6 +97,14 @@ namespace polaris
 		return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
 	}
 
+	[[nodiscard]] constexpr auto copyPieceColor(Piece piece, BasePiece target)
+	{
+		assert(piece != Piece::None);
+		assert(target != BasePiece::None);
+
+		return colorPiece(target, pieceColor(piece));
+	}
+
 	[[nodiscard]] constexpr auto pieceFromChar(char c)
 	{
 		switch (c)

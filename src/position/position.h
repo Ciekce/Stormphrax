@@ -39,10 +39,9 @@ namespace polaris
 		u64 key{};
 		u64 pawnKey{};
 
-		TaperedScore material{};
-
 		Bitboard checkers{};
 
+		TaperedScore material{};
 		Score phase{};
 
 		CastlingRooks castlingRooks{};
@@ -50,8 +49,6 @@ namespace polaris
 		Move lastMove{NullMove};
 
 		u16 halfmove{};
-
-		Piece captured{Piece::None};
 
 		Square enPassant{Square::None};
 
@@ -65,6 +62,16 @@ namespace polaris
 		[[nodiscard]] inline auto whiteKing() const
 		{
 			return kings[1];
+		}
+
+		[[nodiscard]] inline auto king(Color c) const
+		{
+			return kings[static_cast<i32>(c)];
+		}
+
+		[[nodiscard]] inline auto &king(Color c)
+		{
+			return kings[static_cast<i32>(c)];
 		}
 	};
 
@@ -84,11 +91,14 @@ namespace polaris
 	class HistoryGuard
 	{
 	public:
-		explicit HistoryGuard(Position &pos) : m_pos{pos} {}
-		~HistoryGuard();
+		explicit HistoryGuard(Position &pos, bool legal) : m_pos{pos}, m_legal{legal} {}
+		inline ~HistoryGuard();
+
+		[[nodiscard]] explicit operator bool() const { return m_legal; }
 
 	private:
 		Position &m_pos;
+		bool m_legal{};
 	};
 
 	class Position
@@ -101,14 +111,12 @@ namespace polaris
 		Position(Position &&) = default;
 
 		template <bool UpdateMaterial = true, bool StateHistory = true>
-		void applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr);
+		bool applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr);
 
 		template <bool UpdateMaterial = true>
 		[[nodiscard]] inline HistoryGuard applyMove(Move move, TTable *prefetchTt = nullptr)
 		{
-			HistoryGuard guard{*this};
-			applyMoveUnchecked<UpdateMaterial>(move, prefetchTt);
-			return guard;
+			return HistoryGuard{*this, applyMoveUnchecked<UpdateMaterial>(move, prefetchTt)};
 		}
 
 		void popMove();
@@ -204,10 +212,8 @@ namespace polaris
 			return attackers;
 		}
 
-		[[nodiscard]] inline bool isAttacked(Square square, Color attacker) const
+		[[nodiscard]] inline bool isAttacked(const PositionBoards &boards, Square square, Color attacker) const
 		{
-			const auto &boards = this->boards();
-
 			const auto occ = boards.occupancy();
 
 			if (const auto knights = boards.knights(attacker);
@@ -235,6 +241,11 @@ namespace polaris
 			return false;
 		}
 
+		[[nodiscard]] inline bool isAttacked(Square square, Color attacker) const
+		{
+			return isAttacked(boards(), square, attacker);
+		}
+
 		[[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const
 		{
 			while (squares)
@@ -247,29 +258,29 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline auto blackKing() const { return currState().kings[0]; }
-		[[nodiscard]] inline auto whiteKing() const { return currState().kings[1]; }
+		[[nodiscard]] inline auto blackKing() const { return currState().blackKing(); }
+		[[nodiscard]] inline auto whiteKing() const { return currState().whiteKing(); }
 
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
-			return currState().kings[static_cast<i32>(C)];
+			return currState().king(C);
 		}
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
-			return currState().kings[static_cast<i32>(c)];
+			return currState().king(c);
 		}
 
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
-			return currState().kings[!static_cast<i32>(C)];
+			return currState().king(oppColor(C));
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
-			return currState().kings[!static_cast<i32>(c)];
+			return currState().king(oppColor(c));
 		}
 
 		[[nodiscard]] inline bool isCheck() const
@@ -421,25 +432,28 @@ namespace polaris
 
 	private:
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece setPiece(Square square, Piece piece);
+		void setPiece(Piece piece, Square square);
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece removePiece(Square square);
+		void removePiece(Piece piece, Square square);
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece movePiece(Square src, Square dst);
+		void movePieceNoCap(Piece piece, Square src, Square dst);
 
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece promotePawn(Square src, Square dst, BasePiece target);
+		[[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst);
+
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		void castle(Square kingSrc, Square rookSrc);
+		Piece promotePawn(Piece pawn, Square src, Square dst, BasePiece target);
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece enPassant(Square src, Square dst);
+		void castle(Piece king, Square kingSrc, Square rookSrc);
+		template <bool UpdateKeys = true, bool UpdateMaterial = true>
+		Piece enPassant(Piece pawn, Square src, Square dst);
 
 		[[nodiscard]] inline Bitboard calcCheckers() const
 		{
 			const auto color = toMove();
 			const auto &state = currState();
 
-			return attackersTo(state.kings[static_cast<i32>(color)], oppColor(color));
+			return attackersTo(state.king(color), oppColor(color));
 		}
 
 		bool m_blackToMove{};
@@ -449,6 +463,11 @@ namespace polaris
 		std::vector<BoardState> m_states{};
 		std::vector<u64> m_hashes{};
 	};
+
+	HistoryGuard::~HistoryGuard()
+	{
+		m_pos.popMove();
+	}
 
 	[[nodiscard]] Square squareFromString(const std::string &str);
 }

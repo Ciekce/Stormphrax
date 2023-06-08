@@ -503,9 +503,9 @@ namespace polaris::search
 
 			const auto movingPiece = boards.pieceAt(move.src());
 
-			auto guard = pos.applyMove(move, &m_table);
+			const auto guard = pos.applyMove(move, &m_table);
 
-			if (pos.isAttacked(pos.king(us), them))
+			if (!guard)
 				continue;
 
 			++data.search.nodes;
@@ -664,9 +664,9 @@ namespace polaris::search
 
 		while (const auto move = generator.next())
 		{
-			auto guard = pos.applyMove(move, &m_table);
+			const auto guard = pos.applyMove(move, &m_table);
 
-			if (pos.isAttacked(pos.king(us), oppColor(us)))
+			if (!guard)
 				continue;
 
 			++data.search.nodes;
@@ -750,10 +750,9 @@ namespace polaris::search
 
 			if (pvMove && pos.isPseudolegal(pvMove))
 			{
-				pos.applyMoveUnchecked<false, false>(pvMove);
+				const bool legal = pos.applyMoveUnchecked<false, false>(pvMove);
 
-				if (std::find(positionsHit.begin(), positionsHit.end(), pos.key()) == positionsHit.end()
-					&& !pos.isAttacked(pos.king(pos.opponent()), pos.toMove()))
+				if (legal && std::find(positionsHit.begin(), positionsHit.end(), pos.key()) == positionsHit.end())
 				{
 					std::cout << ' ' << uci::moveToString(pvMove);
 					positionsHit.push(pos.key());
