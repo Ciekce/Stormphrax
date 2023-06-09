@@ -613,7 +613,7 @@ namespace polaris::search
 		}
 
 		// increase depth for tt if in check
-		// honestly no idea why this gains
+		// https://chess.swehosting.se/test/1456/
 		if (!stack.excluded)
 			m_table.put(pos.key(), bestScore, best, inCheck ? depth + 1 : depth, entryType);
 
