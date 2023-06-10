@@ -429,8 +429,7 @@ namespace polaris::search
 			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
 		else if (stack.excluded)
 			stack.eval = data.stack[ply - 1].eval; // not prevStack
-		else stack.eval = inCheck ? 0
-				: (entry.score != 0 ? entry.score : eval::staticEval(pos, &data.pawnCache));
+		else stack.eval = inCheck ? 0 : eval::staticEval(pos, &data.pawnCache);
 
 		stack.currMove = {};
 
