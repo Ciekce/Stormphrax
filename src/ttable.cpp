@@ -64,7 +64,7 @@ namespace polaris
 			dst.move = entry.move;
 			dst.type = entry.type;
 
-			if (entry.depth > depth)
+			if (entry.depth >= depth)
 			{
 				switch (entry.type)
 				{
