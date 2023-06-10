@@ -13,25 +13,37 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 ## Strength
 | Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) | [MCERL](https://www.chessengeria.com/mcerl) |
 |:-------:|:---------------------------------------------------------:|:--------------------------------------------------------:|:--------------------------------------------------------------:|:-------------------------------------------:|
-|  1.6.x  |                           2806                            |                           2885                           |                              2745                              |                      -                      |
-|  1.5.0  |                           2679                            |                           2749                           |                              2509                              |                    2713                     |
-|  1.4.x  |                           2640                            |                            -                             |                              2456                              |                      -                      |
+|  1.7.0  |                             -                             |                            -                             |                              2839                              |                      -                      |
+|  1.6.x  |                           2806                            |                           2884                           |                              2745                              |                      -                      |
+|  1.5.0  |                           2679                            |                           2749                           |                              2508                              |                    2713                     |
+|  1.4.x  |                           2640                            |                            -                             |                              2455                              |                      -                      |
 |  1.3.0  |                           2450                            |                           2513                           |                              N/A                               |                      -                      |
-|  1.2.0  |               ~2300 (very few games played)               |                           2330                           |                              N/A                               |                      -                      |
+|  1.2.0  |               ~2300 (very few games played)               |                           2329                           |                              N/A                               |                      -                      |
 
 ## Features
-- standard PVS with aspiration windows, nullmove pruning etc
+- standard PVS with quiescence search and iterative deepening
+  - aspiration windows
+  - check extensions
+  - continuation history (1- and 2-ply)
+  - countermoves
+  - futility pruning
+  - history
+  - internal iterative reduction
+  - killers (1 per ply)
+  - late move reductions
+  - mate distance pruning
+  - nullmove pruning
+  - reverse futility pruning
+  - SEE move ordering and pruning
 - Texel-tuned HCE (private tuner because that code hurts me to reread)
   - tuner based on Andrew Grant's [paper](https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf)
-  - tuned on the lichess-big3-resolved dataset
+  - tuned on a combination of the Zurichess and lichess-big3-resolved datasets
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
   - `pext` for bishops
 - lazy SMP
 
 ## To-do
-- finish eval (king safety, hanging and pinned pieces)
-- better time management
 - tune search constants
 - contempt
 - make it stronger uwu
