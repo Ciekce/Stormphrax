@@ -409,7 +409,7 @@ namespace polaris::search
 
 		if (!stack.excluded)
 		{
-			if (m_table.probe(entry, pos.key(), depth, alpha, beta) && !pv)
+			if (m_table.probe(entry, pos.key(), depth, ply, alpha, beta) && !pv)
 				return entry.score;
 			else if (entry.move && pos.isPseudolegal(entry.move))
 				hashMove = entry.move;
@@ -615,7 +615,7 @@ namespace polaris::search
 		// increase depth for tt if in check
 		// https://chess.swehosting.se/test/1456/
 		if (!stack.excluded)
-			m_table.put(pos.key(), bestScore, best, inCheck ? depth + 1 : depth, entryType);
+			m_table.put(pos.key(), bestScore, best, inCheck ? depth + 1 : depth, ply, entryType);
 
 		if (root && (!m_stop || !data.search.move))
 			data.search.move = best;
@@ -649,15 +649,13 @@ namespace polaris::search
 
 		auto &stack = data.stack[ply];
 
-		++ply;
-
-		if (ply > data.search.seldepth)
-			data.search.seldepth = ply;
+		if (ply + 1 > data.search.seldepth)
+			data.search.seldepth = ply + 1;
 
 		ProbedTTableEntry entry{};
 		auto hashMove = NullMove;
 
-		if (m_table.probe(entry, pos.key(), 0, alpha, beta))
+		if (m_table.probe(entry, pos.key(), 0, ply, alpha, beta))
 			return entry.score;
 		else if (entry.move && pos.isPseudolegal(entry.move))
 			hashMove = entry.move;
@@ -680,7 +678,7 @@ namespace polaris::search
 
 			const auto score = pos.isDrawn(false)
 				? drawScore(data.search.nodes)
-				: -qsearch(data, ply, moveStackIdx + 1, -beta, -alpha);
+				: -qsearch(data, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
 			{
@@ -700,7 +698,7 @@ namespace polaris::search
 			}
 		}
 
-		m_table.put(pos.key(), bestScore, best, 0, entryType);
+		m_table.put(pos.key(), bestScore, best, 0, ply, entryType);
 
 		return bestScore;
 	}
