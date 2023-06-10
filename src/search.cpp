@@ -472,6 +472,7 @@ namespace polaris::search
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
+
 		MoveGenerator generator{pos, stack.killer, moveStack.moves,
 			hashMove, prevMove, prevPrevMove, &data.history};
 
@@ -654,13 +655,20 @@ namespace polaris::search
 		if (ply > data.search.seldepth)
 			data.search.seldepth = ply;
 
+		ProbedTTableEntry entry{};
+		auto hashMove = NullMove;
+
+		if (m_table.probe(entry, pos.key(), 0, alpha, beta))
+			return entry.score;
+		else if (entry.move && pos.isPseudolegal(entry.move))
+			hashMove = entry.move;
+
+		auto best = NullMove;
 		auto bestScore = staticEval;
 
-		auto hashMove = m_table.probeMove(pos.key());
-		if (hashMove && !pos.isPseudolegal(hashMove))
-			hashMove = NullMove;
+		auto entryType = EntryType::Alpha;
 
-		QMoveGenerator generator{pos, stack.killer, data.moveStack[moveStackIdx].moves, hashMove};
+		QMoveGenerator generator{pos, NullMove, data.moveStack[moveStackIdx].moves, hashMove};
 
 		while (const auto move = generator.next())
 		{
@@ -682,12 +690,18 @@ namespace polaris::search
 				if (score > alpha)
 				{
 					if (score >= beta)
+					{
+						entryType = EntryType::Beta;
 						break;
+					}
 
 					alpha = score;
+					entryType = EntryType::Exact;
 				}
 			}
 		}
+
+		m_table.put(pos.key(), bestScore, best, 0, entryType);
 
 		return bestScore;
 	}
