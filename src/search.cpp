@@ -27,6 +27,7 @@
 #include "eval/eval.h"
 #include "limit/trivial.h"
 #include "opts.h"
+#include "syzygy/tbprobe.h"
 
 namespace polaris::search
 {
@@ -78,12 +79,6 @@ namespace polaris::search
 		}};
 	}
 
-	Searcher::~Searcher()
-	{
-		stop();
-		stopThreads();
-	}
-
 	void Searcher::newGame()
 	{
 		m_table.clear();
@@ -102,6 +97,66 @@ namespace polaris::search
 		{
 			std::cerr << "missing limiter" << std::endl;
 			return;
+		}
+
+		const auto &boards = pos.boards();
+
+		// probe syzygy tb for a move
+		if (g_opts.syzygyEnabled
+			&& boards.occupancy().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+		{
+			const auto epSq = pos.enPassant();
+			const auto result = tb_probe_root(
+				boards.whiteOccupancy(),
+				boards.blackOccupancy(),
+				boards.kings(),
+				boards.queens(),
+				boards.rooks(),
+				boards.bishops(),
+				boards.knights(),
+				boards.pawns(),
+				pos.halfmove(), 0,
+				epSq == Square::None ? 0 : static_cast<i32>(epSq),
+				pos.toMove() == Color::White,
+				nullptr
+			);
+
+			if (result != TB_RESULT_FAILED)
+			{
+				static constexpr auto PromoPieces = std::array {
+					BasePiece::None,
+					BasePiece::Queen,
+					BasePiece::Rook,
+					BasePiece::Bishop,
+					BasePiece::Knight
+				};
+
+				++m_threads[0].search.tbhits;
+
+				const auto wdl = TB_GET_WDL(result);
+
+				const auto score = wdl == TB_WIN ? ScoreTbWin
+					: wdl == TB_LOSS ? -ScoreTbWin
+					: 0; // draw
+
+				const auto src = static_cast<Square>(TB_GET_FROM(result));
+				const auto dst = static_cast<Square>(TB_GET_TO  (result));
+
+				const auto promo = PromoPieces[TB_GET_PROMOTES(result)];
+				const bool ep = TB_GET_EP(result);
+
+				const auto move = ep ? Move::enPassant(src, dst)
+					: promo != BasePiece::None ? Move::promotion(src, dst, promo)
+					: Move::standard(src, dst);
+
+				// for pv printing
+				m_threads[0].pos = pos;
+
+				report(m_threads[0], 1, move, 0.0, score, -ScoreMax, ScoreMax, true);
+				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
+
+				return;
+			}
 		}
 
 		for (auto &thread : m_threads)
@@ -425,6 +480,82 @@ namespace polaris::search
 
 		const bool ttHit = entry.type != EntryType::None;
 
+		const auto pieceCount = boards.occupancy().popcount();
+
+		auto syzygyMin = -ScoreMate;
+		auto syzygyMax =  ScoreMate;
+
+		const auto syzygyPieceLimit = std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST));
+
+		// probe syzygy tb
+		if (!root
+			&& !stack.excluded
+			&& g_opts.syzygyEnabled
+			&& pieceCount <= syzygyPieceLimit
+			&& (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
+			&& pos.halfmove() == 0
+			&& pos.castlingRooks() == CastlingRooks{})
+		{
+			const auto epSq = pos.enPassant();
+			const auto wdl = tb_probe_wdl(
+				boards.whiteOccupancy(),
+				boards.blackOccupancy(),
+				boards.kings(),
+				boards.queens(),
+				boards.rooks(),
+				boards.bishops(),
+				boards.knights(),
+				boards.pawns(),
+				0, 0,
+				epSq == Square::None ? 0 : static_cast<i32>(epSq),
+				us == Color::White
+			);
+
+			if (wdl != TB_RESULT_FAILED)
+			{
+				++data.search.tbhits;
+
+				Score tbScore{};
+				EntryType tbEntryType{};
+
+				if (wdl == TB_WIN)
+				{
+					tbScore = ScoreTbWin - ply;
+					tbEntryType = EntryType::Beta;
+				}
+				else if (wdl == TB_LOSS)
+				{
+					tbScore = -ScoreTbWin + ply;
+					tbEntryType = EntryType::Alpha;
+				}
+				else // draw
+				{
+					tbScore = drawScore(data.search.nodes);
+					tbEntryType = EntryType::Exact;
+				}
+
+				if (tbEntryType == EntryType::Exact
+					|| tbEntryType == EntryType::Alpha && tbScore <= alpha
+					|| tbEntryType == EntryType::Beta && tbScore >= beta)
+				{
+					m_table.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
+					return tbScore;
+				}
+
+				if (pv)
+				{
+					if (tbEntryType == EntryType::Alpha)
+						syzygyMax = tbScore;
+					else if (tbEntryType == EntryType::Beta)
+					{
+						if (tbScore > alpha)
+							alpha = tbScore;
+						syzygyMin = tbScore;
+					}
+				}
+			}
+		}
+
 		if (!root && !pos.lastMove())
 			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
 		else if (stack.excluded)
@@ -612,6 +743,8 @@ namespace polaris::search
 			return inCheck ? (-ScoreMate + ply) : 0;
 		}
 
+		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
+
 		// increase depth for tt if in check
 		// https://chess.swehosting.se/test/1456/
 		if (!stack.excluded)
@@ -704,7 +837,7 @@ namespace polaris::search
 	}
 
 	void Searcher::report(const ThreadData &data, i32 depth,
-		Move move, f64 time, Score score, Score alpha, Score beta)
+		Move move, f64 time, Score score, Score alpha, Score beta, bool tb)
 	{
 		usize nodes = 0;
 
@@ -714,20 +847,22 @@ namespace polaris::search
 			nodes += thread.search.nodes;
 		}
 
-		const auto ms = static_cast<usize>(time * 1000.0);
-		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
+		const auto ms = time < 0.0 ? 0 : static_cast<usize>(time * 1000.0);
+		const auto nps = time < 0.0 ? 0 : static_cast<usize>(static_cast<f64>(nodes) / time);
 
 		std::cout << "info depth " << depth << " seldepth " << data.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
 
-		if (std::abs(score) > ScoreWin)
+		if (std::abs(score) > ScoreTbWin)
 		{
-			if (score > ScoreWin)
+			if (score > 0)
 				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
 			else std::cout << "mate " << (-(ScoreMate + score) / 2);
 		}
+		else if (tb)
+			std::cout << "cp " << score;
 		else
 		{
 			// adjust score to 100cp == 50% probability
@@ -741,13 +876,42 @@ namespace polaris::search
 			std::cout << " lowerbound";
 
 		// wdl display
-		const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
-		const auto wdlWin  = uci::winRateModel( score, plyFromStartpos);
-		const auto wdlLoss = uci::winRateModel(-score, plyFromStartpos);
-		const auto wdlDraw = 1000 - wdlWin - wdlLoss;
-		std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
+		if (tb)
+		{
+			if (score > ScoreWin)
+				std::cout << " wdl 1000 0 0";
+			else if (score < -ScoreWin)
+				std::cout << " wdl 0 0 1000";
+			else std::cout << " wdl 0 1000 0";
+		}
+		else
+		{
+			const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
 
-		std::cout << " hashfull " << m_table.full() << " pv " << uci::moveToString(move);
+			const auto wdlWin  = uci::winRateModel( score, plyFromStartpos);
+			const auto wdlLoss = uci::winRateModel(-score, plyFromStartpos);
+
+			const auto wdlDraw = 1000 - wdlWin - wdlLoss;
+
+			std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
+		}
+
+		std::cout << " hashfull " << m_table.full();
+
+		if (g_opts.syzygyEnabled)
+		{
+			usize tbhits = 0;
+
+			// technically a potential race but it doesn't matter
+			for (const auto &thread : m_threads)
+			{
+				tbhits += thread.search.tbhits;
+			}
+
+			std::cout << " tbhits " << tbhits;
+		}
+
+		std::cout << " pv " << uci::moveToString(move);
 
 		Position pos{data.pos};
 		pos.applyMoveUnchecked<false, false>(move);

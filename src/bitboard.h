@@ -417,6 +417,11 @@ namespace polaris
 			return m_board == other;
 		}
 
+		[[nodiscard]] constexpr bool operator==(i32 other) const
+		{
+			return m_board == other;
+		}
+
 		[[nodiscard]] constexpr static Bitboard fromSquare(Square square)
 		{
 			return squareBit(square);

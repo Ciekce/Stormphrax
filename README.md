@@ -86,3 +86,6 @@ If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want t
 > cmake --build build/ --target polaris-native
 ```
 Disabling the CMake option `PS_FAST_PEXT` builds the non-BMI2 attack getters.
+
+## Credit
+Polaris uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license.

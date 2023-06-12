@@ -25,6 +25,10 @@ namespace polaris
 	struct GlobalOptions
 	{
 		bool chess960{false};
+
+		bool syzygyEnabled{false};
+		i32 syzygyProbeDepth{1};
+		i32 syzygyProbeLimit{7};
 	};
 
 	extern const GlobalOptions &g_opts;

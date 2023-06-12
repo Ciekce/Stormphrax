@@ -29,6 +29,7 @@ namespace polaris::search
 		i32 depth{};
 		i32 seldepth{};
 		usize nodes{};
+		usize tbhits{};
 		Move move{};
 	};
 }

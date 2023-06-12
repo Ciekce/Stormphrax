@@ -43,6 +43,7 @@
 #include "bench.h"
 #include "opts.h"
 #include "tunable.h"
+#include "syzygy/tbprobe.h"
 
 #include "hash.h"
 #include "eval/material.h"
@@ -67,7 +68,7 @@ namespace polaris
 		{
 		public:
 			UciHandler() = default;
-			~UciHandler() = default;
+			~UciHandler();
 
 			i32 run();
 
@@ -92,6 +93,8 @@ namespace polaris
 			void handleVerify();
 #endif
 
+			bool m_fathomInitialized{false};
+
 			search::Searcher m_searcher{};
 
 			Position m_pos{Position::starting()};
@@ -101,6 +104,15 @@ namespace polaris
 
 			i32 m_moveOverhead{limit::DefaultMoveOverhead};
 		};
+
+		UciHandler::~UciHandler()
+		{
+			// can't do this in a destructor, because it will run after tb_free is called
+			m_searcher.quit();
+
+			if (m_fathomInitialized)
+				tb_free();
+		}
 
 		i32 UciHandler::run()
 		{
@@ -173,6 +185,13 @@ namespace polaris
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
+			std::cout << "option name SyzygyPath type string default <empty>\n";
+			std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth
+				<< " min " << search::SyzygyProbeDepthRange.min()
+				<< " max " << search::SyzygyProbeDepthRange.max() << '\n';
+			std::cout << "option name SyzygyProbeLimit type spin default " << defaultOpts.syzygyProbeLimit
+				<< " min " << search::SyzygyProbeLimitRange.min()
+				<< " max " << search::SyzygyProbeLimitRange.max() << '\n';
 
 			std::cout << "uciok" << std::endl;
 		}
@@ -486,6 +505,41 @@ namespace polaris
 					{
 						if (const auto newMoveOverhead = util::tryParseI32(valueStr))
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+					}
+				}
+				else if (nameStr == "syzygypath")
+				{
+					if (m_searcher.searching())
+						std::cerr << "still searching" << std::endl;
+
+					m_fathomInitialized = true;
+
+					if (valueEmpty)
+					{
+						s_opts.syzygyEnabled = false;
+						tb_init("");
+					}
+					else
+					{
+						s_opts.syzygyEnabled = valueStr != "<empty>";
+						if (!tb_init(valueStr.c_str()))
+							std::cerr << "failed to initialize Fathom" << std::endl;
+					}
+				}
+				else if (nameStr == "syzygyprobedepth")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr))
+							s_opts.syzygyProbeDepth = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
+					}
+				}
+				else if (nameStr == "syzygyprobelimit")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr))
+							s_opts.syzygyProbeLimit = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
 					}
 				}
 #if PS_TUNE_SEARCH
