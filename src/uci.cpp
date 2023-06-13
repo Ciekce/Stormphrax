@@ -99,9 +99,6 @@ namespace polaris
 
 			Position m_pos{Position::starting()};
 
-			std::optional<usize> m_newSearcherHashSize{};
-			std::optional<usize> m_hashSize{};
-
 			i32 m_moveOverhead{limit::DefaultMoveOverhead};
 		};
 
@@ -258,12 +255,6 @@ namespace polaris
 				std::cerr << "already searching" << std::endl;
 			else
 			{
-				if (m_hashSize)
-				{
-					m_searcher.setHashSize(*m_hashSize);
-					m_hashSize = {};
-				}
-
 				u32 depth = search::MaxDepth;
 				std::unique_ptr<limit::ISearchLimiter> limiter{};
 
@@ -465,7 +456,7 @@ namespace polaris
 					if (!valueEmpty)
 					{
 						if (const auto newHashSize = util::tryParseSize(valueStr))
-							m_newSearcherHashSize = m_hashSize = HashSizeRange.clamp(*newHashSize);
+							m_searcher.setHashSize(HashSizeRange.clamp(*newHashSize));
 					}
 				}
 				else if (nameStr == "clear hash")
@@ -473,12 +464,7 @@ namespace polaris
 					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
 
-					if (m_hashSize)
-					{
-						m_searcher.setHashSize(*m_hashSize);
-						m_hashSize = {};
-					}
-					else m_searcher.clearHash();
+					m_searcher.clearHash();
 				}
 				else if (nameStr == "threads")
 				{
