@@ -921,7 +921,7 @@ namespace polaris::search
 
 		while (true)
 		{
-			const auto pvMove = m_table.probeMove(pos.key());
+			const auto pvMove = m_table.probePvMove(pos.key());
 
 			if (pvMove && pos.isPseudolegal(pvMove))
 			{

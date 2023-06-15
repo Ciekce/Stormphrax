@@ -73,7 +73,7 @@ namespace polaris
 		void resize(usize size);
 
 		bool probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const;
-		[[nodiscard]] Move probeMove(u64 key) const;
+		[[nodiscard]] Move probePvMove(u64 key) const;
 
 		void put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type);
 

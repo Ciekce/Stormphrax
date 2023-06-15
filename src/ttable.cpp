@@ -109,14 +109,15 @@ namespace polaris
 		return false;
 	}
 
-	Move TTable::probeMove(u64 key) const
+	Move TTable::probePvMove(u64 key) const
 	{
 		if (m_table.empty())
 			return NullMove;
 
 		const auto entry = loadEntry(key);
 
-		if (static_cast<u16>(key >> 48) == entry.key)
+		if (entry.type == EntryType::Exact
+		    && static_cast<u16>(key >> 48) == entry.key)
 			return entry.move;
 
 		return NullMove;
