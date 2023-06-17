@@ -22,7 +22,6 @@
 
 #include "move.h"
 #include "position/position.h"
-#include "eval/material.h"
 #include "see.h"
 #include "history.h"
 
