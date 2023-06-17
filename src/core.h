@@ -85,6 +85,11 @@ namespace polaris
 		return static_cast<BasePiece>(static_cast<i32>(piece) >> 1);
 	}
 
+	[[nodiscard]] constexpr auto basePieceUnchecked(Piece piece)
+	{
+		return static_cast<BasePiece>(static_cast<i32>(piece) >> 1);
+	}
+
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
 		assert(piece != Piece::None);

@@ -140,6 +140,27 @@ namespace polaris
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
+		static constexpr auto MvvLva = std::array {
+			std::array { // pawn capturing
+				89, 586382, 626402, 846512, 2041109, 0, -178000
+			},
+			std::array { // knight capturing
+				-585911, 382, 40402, 260512, 1455109, 0, -764000
+			},
+			std::array { // bishop capturing
+				-625911, -39618, 402, 220512, 1415109, 0, -804000
+			},
+			std::array { // rook capturing
+				-845911, -259618, -219598, 512, 1195109, 0, -1024000
+			},
+			std::array { // queen capturing
+				-2039911, -1453618, -1413598, -1193488, 1109, 0, -2218000
+			},
+			std::array { // king capturing
+				178089, 764382, 804402, 1024512, 2219109, 0, 0
+			}
+		};
+
 		static constexpr auto PromoScores = std::array {
 			 1, // knight
 			-2, // bishop
@@ -178,18 +199,17 @@ namespace polaris
 			{
 				auto &move = m_moves[i];
 
-				const auto srcValue = eval::pieceValue(boards.pieceAt(move.move.src())).midgame();
-				// 0 for non-capture promo
-				const auto dstValue = move.move.type() == MoveType::EnPassant
-					? eval::values::Pawn.midgame()
-					: eval::pieceValue(boards.pieceAt(move.move.dst())).midgame();
+				const auto captured = move.move.type() == MoveType::EnPassant
+					? BasePiece::Pawn
+					: basePieceUnchecked(boards.pieceAt(move.move.dst()));
 
-				move.score = (dstValue - srcValue) * 2000 + dstValue;
+				move.score = MvvLva[static_cast<i32>(basePiece(boards.pieceAt(move.move.src())))]
+					[static_cast<i32>(captured)];
 
 				if (move.move.type() == MoveType::Promotion)
 					move.score += PromoScores[move.move.targetIdx()] * 2000 * 2000;
 
-				if (dstValue > 0 && !see::see(m_pos, move.move))
+				if (captured != BasePiece::None && !see::see(m_pos, move.move))
 					move.score -= 8 * 2000 * 2000;
 			}
 		}
