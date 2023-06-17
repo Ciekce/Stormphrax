@@ -59,7 +59,12 @@ namespace polaris::search
 	{
 	public:
 		explicit Searcher(std::optional<usize> hashSize = {});
-		~Searcher() = default;
+
+		~Searcher()
+		{
+			if (!m_quit)
+				quit();
+		}
 
 		void newGame();
 
@@ -88,6 +93,8 @@ namespace polaris::search
 
 		inline void quit()
 		{
+			m_quit = true;
+
 			stop();
 			stopThreads();
 		}
@@ -137,6 +144,8 @@ namespace polaris::search
 
 			Position pos{};
 		};
+
+		bool m_quit{false};
 
 		TTable m_table{};
 
