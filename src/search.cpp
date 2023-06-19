@@ -657,13 +657,15 @@ namespace polaris::search
 				// lmr
 				if (depth >= minLmrDepth()
 					&& !inCheck // we are in check
-					&& !pos.isCheck() // this move gives check
 					&& generator.stage() >= MovegenStage::Quiet)
 				{
 					auto lmr = baseLmr;
 
 					if (!pv)
 						++lmr;
+
+					if (pos.isCheck()) // this move gives check
+						--lmr;
 
 					reduction = std::clamp(lmr, 0, depth - 2);
 				}
