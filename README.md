@@ -2,9 +2,12 @@
 
 # Polaris
 
-[![License](https://img.shields.io/github/license/Ciekce/Polaris?style=for-the-badge)](https://github.com/Ciekce/Polaris/blob/main/LICENSE)  
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Ciekce/Polaris?style=for-the-badge)](https://github.com/Ciekce/Polaris/releases/latest)
-[![Commits since latest release](https://img.shields.io/github/commits-since/Ciekce/Polaris/latest?style=for-the-badge)](https://github.com/Ciekce/Polaris/commits/main)
+[![License][license-badge]][license-link]  
+[![GitHub release (latest by date)][release-badge]][release-link]
+[![Commits since latest release][commits-badge]][commits-link]
+
+![LGBTQ+ friendly][lgbtqp-badge]
+![trans rights][trans-rights-badge]
 
 </div>
 
@@ -89,3 +92,14 @@ Disabling the CMake option `PS_FAST_PEXT` builds the non-BMI2 attack getters.
 
 ## Credit
 Polaris uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license.
+
+[license-badge]: https://img.shields.io/github/license/Ciekce/Polaris?style=for-the-badge
+[release-badge]: https://img.shields.io/github/v/release/Ciekce/Polaris?style=for-the-badge
+[commits-badge]: https://img.shields.io/github/commits-since/Ciekce/Polaris/latest?style=for-the-badge
+
+[license-link]: https://github.com/Ciekce/Polaris/blob/main/LICENSE
+[release-link]: https://github.com/Ciekce/Polaris/releases/latest
+[commits-link]: https://github.com/Ciekce/Polaris/commits/main
+
+[lgbtqp-badge]: https://pride-badges.pony.workers.dev/static/v1?label=lgbtq%2B%20friendly&stripeWidth=6&stripeColors=E40303,FF8C00,FFED00,008026,24408E,732982
+[trans-rights-badge]: https://pride-badges.pony.workers.dev/static/v1?label=trans%20rights&stripeWidth=6&stripeColors=5BCEFA,F5A9B8,FFFFFF,F5A9B8,5BCEFA
