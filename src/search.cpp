@@ -595,6 +595,8 @@ namespace polaris::search
 
 		moveStack.quietsTried.clear();
 
+		const i32 minLmrMoves = pv ? 3 : 2;
+
 		const auto prevMove = ply > 0 ? data.stack[ply - 1].currMove : HistoryMove{};
 		const auto prevPrevMove = ply > 1 ? data.stack[ply - 2].currMove : HistoryMove{};
 
@@ -656,6 +658,7 @@ namespace polaris::search
 
 				// lmr
 				if (depth >= minLmrDepth()
+					&& legalMoves >= minLmrMoves
 					&& !inCheck // we are in check
 					&& generator.stage() >= MovegenStage::Quiet)
 				{
@@ -673,7 +676,7 @@ namespace polaris::search
 				const auto newDepth = depth - 1 + extension;
 
 				if (pv && legalMoves == 1)
-					score = -search(data, newDepth - reduction, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
+					score = -search(data, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
 					score = -search(data, newDepth - reduction, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
