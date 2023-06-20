@@ -24,7 +24,7 @@
 
 namespace polaris::bench
 {
-	constexpr i32 DefaultBenchDepth = 14;
+	constexpr i32 DefaultBenchDepth = 15;
 
 	void run(search::Searcher &searcher, i32 depth = DefaultBenchDepth);
 }
