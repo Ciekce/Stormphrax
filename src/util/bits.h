@@ -103,7 +103,7 @@ namespace polaris::util
 		}
 	}
 
-	[[nodiscard]] constexpr auto lsb(u64 v)
+	[[nodiscard]] constexpr auto lsb(u64 v) -> u64
 	{
 #if PS_HAS_BMI1
 		if (std::is_constant_evaluated())
@@ -115,7 +115,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr auto resetLsb(u64 v)
+	[[nodiscard]] constexpr auto resetLsb(u64 v) -> u64
 	{
 #if PS_HAS_BMI1
 		if (std::is_constant_evaluated())
