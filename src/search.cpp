@@ -893,9 +893,7 @@ namespace polaris::search
 		{
 			const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
 
-			const auto wdlWin  = uci::winRateModel( score, plyFromStartpos);
-			const auto wdlLoss = uci::winRateModel(-score, plyFromStartpos);
-
+			const auto [wdlWin, wdlLoss]  = uci::winRateModel( score, plyFromStartpos);
 			const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
 			std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;

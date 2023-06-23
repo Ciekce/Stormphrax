@@ -819,7 +819,7 @@ namespace polaris
 			return handler.run();
 		}
 
-		i32 winRateModel(Score povScore, u32 ply)
+		std::pair<i32, i32> winRateModel(Score povScore, u32 ply)
 		{
 			constexpr auto As = std::array { 
 				-16.47359643, 125.09292680, -150.78265049, 133.46169058
@@ -828,15 +828,19 @@ namespace polaris
 				-10.64392182, 68.80469735, -98.63536151, 100.12391368
 			};
 
-			static_assert(uci::NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+			static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
 
 			const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
+
 			const auto a = (((As[0] * m + As[1]) * m + As[2]) * m) + As[3];
 			const auto b = (((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3];
 
 			const auto x = std::clamp(static_cast<f64>(povScore), -4000.0, 4000.0);
 
-			return static_cast<i32>(0.5 + 1000.0 / (1.0 + std::exp((a - x) / b)));
+			return {
+				static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a - x) / b)))),
+				static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a + x) / b))))
+			};
 		}
 
 		std::string moveToString(Move move)

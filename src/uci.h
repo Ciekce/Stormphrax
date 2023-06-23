@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <string>
+#include <utility>
 
 #include "core.h"
 #include "move.h"
@@ -32,7 +33,7 @@ namespace polaris::uci
 
 	i32 run();
 
-	[[nodiscard]] i32 winRateModel(Score povScore, u32 ply);
+	[[nodiscard]] std::pair<i32, i32> winRateModel(Score povScore, u32 ply);
 
 	[[nodiscard]] std::string moveToString(Move move);
 
