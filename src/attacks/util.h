@@ -30,7 +30,7 @@ namespace polaris::attacks
 {
 	namespace internal
 	{
-		constexpr Bitboard edges(i32 dir)
+		constexpr auto edges(i32 dir)
 		{
 			switch (dir)
 			{
@@ -46,7 +46,7 @@ namespace polaris::attacks
 			}
 		}
 
-		constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy)
+		constexpr auto generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy)
 		{
 			Bitboard dst{};
 
@@ -74,7 +74,7 @@ namespace polaris::attacks
 	}
 
 	template <i32 ...Dirs>
-	consteval std::array<Bitboard, 64> generateEmptyBoardAttacks()
+	consteval auto generateEmptyBoardAttacks()
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -96,7 +96,7 @@ namespace polaris::attacks
 		= generateEmptyBoardAttacks<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>();
 
 	template <i32 ...Dirs>
-	consteval Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy)
+	consteval auto genAllSlidingAttacks(Square src, Bitboard occupancy)
 	{
 		Bitboard dst{};
 
@@ -108,15 +108,23 @@ namespace polaris::attacks
 		return dst;
 	}
 
-	consteval Bitboard genRookAttacks(Square src, Bitboard occupancy)
+	consteval auto genRookAttacks(Square src, Bitboard occupancy)
 	{
-		return genAllSlidingAttacks
-		    <offsets::Up, offsets::Down, offsets::Left, offsets::Right>(src, occupancy);
+		return genAllSlidingAttacks<
+			offsets::Up,
+			offsets::Down,
+			offsets::Left,
+			offsets::Right
+		>(src, occupancy);
 	}
 
-	consteval Bitboard genBishopAttacks(Square src, Bitboard occupancy)
+	consteval auto genBishopAttacks(Square src, Bitboard occupancy)
 	{
-		return genAllSlidingAttacks
-			<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>(src, occupancy);
+		return genAllSlidingAttacks<
+			offsets::UpLeft,
+			offsets::UpRight,
+			offsets::DownLeft,
+			offsets::DownRight
+		>(src, occupancy);
 	}
 }

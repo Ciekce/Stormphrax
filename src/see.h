@@ -54,17 +54,17 @@ namespace polaris::see
 		static_cast<Score>(0)
 	};
 
-	constexpr Score value(Piece piece)
+	constexpr auto value(Piece piece)
 	{
 		return Values[static_cast<i32>(piece)];
 	}
 
-	constexpr Score value(BasePiece piece)
+	constexpr auto value(BasePiece piece)
 	{
 		return Values[static_cast<i32>(piece) * 2];
 	}
 
-	inline Score gain(const PositionBoards &boards, Move move)
+	inline auto gain(const PositionBoards &boards, Move move)
 	{
 		const auto type = move.type();
 
@@ -81,7 +81,7 @@ namespace polaris::see
 		return score;
 	}
 
-	[[nodiscard]] inline BasePiece popLeastValuable(const PositionBoards &boards,
+	[[nodiscard]] inline auto popLeastValuable(const PositionBoards &boards,
 		Bitboard &occ, Bitboard attackers, Color color)
 	{
 		auto board = attackers & boards.pawns(color);
@@ -130,7 +130,7 @@ namespace polaris::see
 	}
 
 	// basically ported from ethereal and weiss (their implementation is the same)
-	inline bool see(const Position &pos, Move move, Score threshold = 0)
+	inline auto see(const Position &pos, Move move, Score threshold = 0)
 	{
 		const auto &boards = pos.boards();
 

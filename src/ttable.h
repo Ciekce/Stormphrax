@@ -47,11 +47,8 @@ namespace polaris
 		i16 score;
 		Move move;
 		u8 depth;
-		struct
-		{
-			u8 age : 6;
-			EntryType type : 2;
-		};
+		u8 age : 6;
+		EntryType type : 2;
 	};
 
 	static_assert(sizeof(TTableEntry) == 8);
@@ -70,18 +67,18 @@ namespace polaris
 		explicit TTable(usize size = DefaultHashSize);
 		~TTable() = default;
 
-		void resize(usize size);
+		auto resize(usize size) -> void;
 
-		bool probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const;
-		[[nodiscard]] Move probePvMove(u64 key) const;
+		auto probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool;
+		[[nodiscard]] auto probePvMove(u64 key) const -> Move;
 
-		void put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type);
+		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
 
-		void clear();
+		auto clear() -> void;
 
-		[[nodiscard]] u32 full() const;
+		[[nodiscard]] auto full() const -> u32;
 
-		inline void prefetch(u64 key)
+		inline auto prefetch(u64 key)
 		{
 			if (m_table.empty())
 				return;
@@ -89,13 +86,13 @@ namespace polaris
 			__builtin_prefetch(&m_table[key & m_mask]);
 		}
 
-		inline void age()
+		inline auto age()
 		{
 			m_currentAge = (m_currentAge + 1) % 64;
 		}
 
 	private:
-		[[nodiscard]] inline TTableEntry loadEntry(u64 key) const
+		[[nodiscard]] inline auto loadEntry(u64 key) const
 		{
 			const auto *ptr = static_cast<volatile const i64 *>(&m_table[key & m_mask]);
 			const auto v = *ptr;
@@ -106,7 +103,7 @@ namespace polaris
 			return entry;
 		}
 
-		inline void exchangeEntry(u64 key, TTableEntry &entry)
+		inline auto exchangeEntry(u64 key, TTableEntry &entry)
 		{
 			i64 v{};
 			std::memcpy(&v, &entry, sizeof(TTableEntry));

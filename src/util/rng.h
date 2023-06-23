@@ -41,7 +41,7 @@ namespace polaris
 
 		~Jsf64Rng() = default;
 
-		inline u64 nextU64()
+		inline auto nextU64() -> u64
 		{
 			const auto e = m_a - std::rotl(m_b, 7);
 			m_a = m_b ^ std::rotl(m_c, 13);
@@ -51,12 +51,12 @@ namespace polaris
 			return m_d;
 		}
 
-		inline u32 nextU32()
+		inline auto nextU32()
 		{
 			return static_cast<u32>(nextU64() >> 32);
 		}
 
-		inline u32 nextU32(u32 bound)
+		inline auto nextU32(u32 bound) -> u32
 		{
 			if (bound == 0)
 				return 0;
@@ -88,10 +88,10 @@ namespace polaris
 			return static_cast<u32>(m >> 32);
 		}
 
-		inline u64 operator()() { return nextU64(); }
+		inline auto operator()() { return nextU64(); }
 
-		constexpr static u64 min() { return std::numeric_limits<u64>::min(); }
-		constexpr static u64 max() { return std::numeric_limits<u64>::max(); }
+		constexpr static auto min() { return std::numeric_limits<u64>::min(); }
+		constexpr static auto max() { return std::numeric_limits<u64>::max(); }
 
 	private:
 		u64 m_a{0xF1EA5EED};

@@ -72,7 +72,7 @@ namespace polaris::eval
 		extern const std::array<std::array<TaperedScore, 64>, 12> PieceSquareTables;
 	}
 
-	inline TaperedScore pieceSquareValue(Piece piece, Square square)
+	inline auto pieceSquareValue(Piece piece, Square square)
 	{
 		return pst::PieceSquareTables[static_cast<i32>(piece)][static_cast<i32>(square)];
 	}

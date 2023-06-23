@@ -28,9 +28,9 @@ namespace polaris::util
 		Timer();
 		~Timer() = default;
 
-		[[nodiscard]] f64 time() const;
+		[[nodiscard]] auto time() const -> f64;
 
-		[[nodiscard]] static i64 roughTimeMs();
+		[[nodiscard]] static auto roughTimeMs() -> i64;
 
 	private:
 #ifdef _WIN32

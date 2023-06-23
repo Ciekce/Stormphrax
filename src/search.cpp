@@ -27,7 +27,7 @@
 #include "eval/eval.h"
 #include "limit/trivial.h"
 #include "opts.h"
-#include "syzygy/tbprobe.h"
+#include "3rdparty/fathom/tbprobe.h"
 
 namespace polaris::search
 {
@@ -42,7 +42,7 @@ namespace polaris::search
 		constexpr f64 LmrBase = 0.77;
 		constexpr f64 LmrDivisor = 2.36;
 
-		[[nodiscard]] std::array<std::array<i32, 256>, 256> generateLmrTable()
+		[[nodiscard]] auto generateLmrTable()
 		{
 			std::array<std::array<i32, 256>, 256> dst{};
 
@@ -61,7 +61,7 @@ namespace polaris::search
 
 		const auto LmrTable = generateLmrTable();
 
-		inline Score drawScore(usize nodes)
+		inline auto drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
 		}
@@ -79,7 +79,7 @@ namespace polaris::search
 		}};
 	}
 
-	void Searcher::newGame()
+	auto Searcher::newGame() -> void
 	{
 		m_table.clear();
 
@@ -91,7 +91,8 @@ namespace polaris::search
 		}
 	}
 
-	void Searcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter)
+	auto Searcher::startSearch(const Position &pos,
+		i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void
 	{
 		if (!limiter)
 		{
@@ -175,7 +176,7 @@ namespace polaris::search
 		m_startSignal.notify_all();
 	}
 
-	void Searcher::stop()
+	auto Searcher::stop() -> void
 	{
 		m_stop.store(true, std::memory_order::relaxed);
 		m_flag.store(IdleFlag, std::memory_order::seq_cst);
@@ -191,7 +192,7 @@ namespace polaris::search
 		}
 	}
 
-	void Searcher::runBench(BenchData &data, const Position &pos, i32 depth)
+	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
 
@@ -214,7 +215,7 @@ namespace polaris::search
 		data.time = time;
 	}
 
-	void Searcher::setThreads(u32 threads)
+	auto Searcher::setThreads(u32 threads) -> void
 	{
 		if (threads != m_threads.size())
 		{
@@ -241,7 +242,7 @@ namespace polaris::search
 		}
 	}
 
-	void Searcher::stopThreads()
+	auto Searcher::stopThreads() -> void
 	{
 		m_flag.store(QuitFlag, std::memory_order::seq_cst);
 		m_startSignal.notify_all();
@@ -252,7 +253,7 @@ namespace polaris::search
 		}
 	}
 
-	void Searcher::run(ThreadData &data)
+	auto Searcher::run(ThreadData &data) -> void
 	{
 		while (true)
 		{
@@ -274,7 +275,7 @@ namespace polaris::search
 		}
 	}
 
-	void Searcher::searchRoot(ThreadData &data, bool bench)
+	auto Searcher::searchRoot(ThreadData &data, bool bench) -> void
 	{
 		auto &searchData = data.search;
 
@@ -416,8 +417,8 @@ namespace polaris::search
 		}
 	}
 
-	Score Searcher::search(ThreadData &data, i32 depth,
-		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode)
+	auto Searcher::search(ThreadData &data, i32 depth,
+		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
 		if (depth > 1 && shouldStop(data.search, false))
 			return beta;
@@ -761,7 +762,7 @@ namespace polaris::search
 		return bestScore;
 	}
 
-	Score Searcher::qsearch(ThreadData &data, i32 ply, u32 moveStackIdx, Score alpha, Score beta)
+	auto Searcher::qsearch(ThreadData &data, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
 		if (shouldStop(data.search, false))
 			return beta;
@@ -841,8 +842,8 @@ namespace polaris::search
 		return bestScore;
 	}
 
-	void Searcher::report(const ThreadData &data, i32 depth,
-		Move move, f64 time, Score score, Score alpha, Score beta, bool tb)
+	auto Searcher::report(const ThreadData &data, i32 depth,
+		Move move, f64 time, Score score, Score alpha, Score beta, bool tb) -> void
 	{
 		usize nodes = 0;
 
@@ -893,7 +894,7 @@ namespace polaris::search
 		{
 			const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
 
-			const auto [wdlWin, wdlLoss]  = uci::winRateModel( score, plyFromStartpos);
+			const auto [wdlWin, wdlLoss]  = uci::winRateModel(score, plyFromStartpos);
 			const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
 			std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;

@@ -33,7 +33,7 @@ namespace polaris::attacks
 	extern const std::array<     u16, bmi2::  RookData.tableSize>   RookAttacks;
 	extern const std::array<Bitboard, bmi2::BishopData.tableSize> BishopAttacks;
 
-	inline Bitboard getRookAttacks(Square src, Bitboard occupancy)
+	inline auto getRookAttacks(Square src, Bitboard occupancy) -> Bitboard
 	{
 		const auto s = static_cast<i32>(src);
 
@@ -45,7 +45,7 @@ namespace polaris::attacks
 		return attacks;
 	}
 
-	inline Bitboard getBishopAttacks(Square src, Bitboard occupancy)
+	inline auto getBishopAttacks(Square src, Bitboard occupancy)
 	{
 		const auto s = static_cast<i32>(src);
 

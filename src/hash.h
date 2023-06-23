@@ -33,20 +33,20 @@ namespace polaris::hash
 		constexpr usize Castling = 16;
 		constexpr usize EnPassant = 8;
 
-		constexpr usize Total = PieceSquares + Color + Castling + EnPassant;
+		constexpr auto Total = PieceSquares + Color + Castling + EnPassant;
 	}
 
 	namespace offsets
 	{
 		constexpr usize PieceSquares = 0;
-		constexpr usize Color = PieceSquares + sizes::PieceSquares;
-		constexpr usize Castling = Color + sizes::Color;
-		constexpr usize EnPassant = Castling + sizes::Castling;
+		constexpr auto Color = PieceSquares + sizes::PieceSquares;
+		constexpr auto Castling = Color + sizes::Color;
+		constexpr auto EnPassant = Castling + sizes::Castling;
 	}
 
 	extern const std::array<u64, sizes::Total> Hashes;
 
-	inline u64 pieceSquare(Piece piece, Square square)
+	inline auto pieceSquare(Piece piece, Square square) -> u64
 	{
 		if (piece == Piece::None || square == Square::None)
 			return 0;
@@ -55,17 +55,17 @@ namespace polaris::hash
 	}
 
 	// for flipping
-	inline u64 color()
+	inline auto color()
 	{
 		return Hashes[offsets::Color];
 	}
 
-	inline u64 color(Color c)
+	inline auto color(Color c)
 	{
 		return c == Color::White ? 0 : color();
 	}
 
-	inline u64 castling(const CastlingRooks &castlingRooks)
+	inline auto castling(const CastlingRooks &castlingRooks)
 	{
 		constexpr usize BlackShort = 0x01;
 		constexpr usize BlackLong  = 0x02;
@@ -86,12 +86,12 @@ namespace polaris::hash
 		return Hashes[offsets::Castling + flags];
 	}
 
-	inline u64 enPassant(u32 file)
+	inline auto enPassant(u32 file)
 	{
 		return Hashes[offsets::EnPassant + file];
 	}
 
-	inline u64 enPassant(Square square)
+	inline auto enPassant(Square square) -> u64
 	{
 		if (square == Square::None)
 			return 0;

@@ -26,7 +26,7 @@ namespace polaris::hash
 	{
 		constexpr u64 Seed = U64(0xD06C659954EC904A);
 
-		std::array<u64, sizes::Total> generateHashes()
+		auto generateHashes()
 		{
 			std::array<u64, sizes::Total> hashes{};
 

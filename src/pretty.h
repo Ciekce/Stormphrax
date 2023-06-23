@@ -27,11 +27,11 @@
 
 namespace polaris
 {
-	void printBitboard(std::ostream &out, Bitboard board);
-	void printBitboardCompact(std::ostream &out, Bitboard board);
+	auto printBitboard(std::ostream &out, Bitboard board) -> void;
+	auto printBitboardCompact(std::ostream &out, Bitboard board) -> void;
 
-	void printBoard(std::ostream &out, const Position &position);
+	auto printBoard(std::ostream &out, const Position &position) -> void;
 
-	void printScore(std::ostream &out, Score score);
-	void printScore(std::ostream &out, TaperedScore score);
+	auto printScore(std::ostream &out, Score score) -> void;
+	auto printScore(std::ostream &out, TaperedScore score) -> void;
 }

@@ -52,13 +52,13 @@ namespace polaris::eval
 
 		~PawnCache() = default;
 
-		inline PawnCacheEntry &probe(u64 key)
+		inline auto probe(u64 key) -> PawnCacheEntry &
 		{
 			constexpr usize PawnCacheMask = PawnCacheEntries - 1;
 			return m_cache[key & PawnCacheMask];
 		}
 
-		inline void clear()
+		inline auto clear()
 		{
 			std::memset(m_cache.data(), 0, m_cache.size() * sizeof(PawnCacheEntry));
 		}
@@ -67,18 +67,18 @@ namespace polaris::eval
 		std::vector<PawnCacheEntry> m_cache{};
 	};
 
-	Score staticEval(const Position &pos, PawnCache *pawnCache = nullptr);
+	auto staticEval(const Position &pos, PawnCache *pawnCache = nullptr) -> Score;
 
-	inline Score staticEvalAbs(const Position &pos, PawnCache *pawnCache = nullptr)
+	inline auto staticEvalAbs(const Position &pos, PawnCache *pawnCache = nullptr)
 	{
 		const auto eval = staticEval(pos, pawnCache);
 		return pos.toMove() == Color::Black ? -eval : eval;
 	}
 
-	inline Score flipTempo(Score score)
+	inline auto flipTempo(Score score)
 	{
 		return score + Tempo * 2;
 	}
 
-	void printEval(const Position &pos, PawnCache *pawnCache = nullptr);
+	auto printEval(const Position &pos, PawnCache *pawnCache = nullptr) -> void;
 }

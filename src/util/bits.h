@@ -32,17 +32,17 @@ namespace polaris::util
 {
 	namespace fallback
 	{
-		[[nodiscard]] constexpr u64 lsb(u64 v)
+		[[nodiscard]] constexpr auto lsb(u64 v)
 		{
 			return v & -v;
 		}
 
-		[[nodiscard]] constexpr u64 resetLsb(u64 v)
+		[[nodiscard]] constexpr auto resetLsb(u64 v)
 		{
 			return v & (v - 1);
 		}
 
-		[[nodiscard]] constexpr i32 popcnt(u64 v)
+		[[nodiscard]] constexpr auto popcnt(u64 v)
 		{
 			v -= (v >> 1) & U64(0x5555555555555555);
 			v  = (v & U64(0x3333333333333333)) + ((v >> 2) & U64(0x3333333333333333));
@@ -50,7 +50,7 @@ namespace polaris::util
 			return static_cast<i32>((v * U64(0x0101010101010101)) >> 56);
 		}
 
-		[[nodiscard]] constexpr i32 ctz(u64 v)
+		[[nodiscard]] constexpr auto ctz(u64 v)
 		{
 			if (std::is_constant_evaluated())
 			{
@@ -74,7 +74,7 @@ namespace polaris::util
 			return __builtin_ctzll(v);
 		}
 
-		[[nodiscard]] constexpr u64 pext(u64 v, u64 mask)
+		[[nodiscard]] constexpr auto pext(u64 v, u64 mask)
 		{
 			u64 dst{};
 
@@ -88,7 +88,7 @@ namespace polaris::util
 			return dst;
 		}
 
-		[[nodiscard]] constexpr u64 pdep(u64 v, u64 mask)
+		[[nodiscard]] constexpr auto pdep(u64 v, u64 mask)
 		{
 			u64 dst{};
 
@@ -103,7 +103,7 @@ namespace polaris::util
 		}
 	}
 
-	[[nodiscard]] constexpr u64 lsb(u64 v)
+	[[nodiscard]] constexpr auto lsb(u64 v)
 	{
 #if PS_HAS_BMI1
 		if (std::is_constant_evaluated())
@@ -115,7 +115,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr u64 resetLsb(u64 v)
+	[[nodiscard]] constexpr auto resetLsb(u64 v)
 	{
 #if PS_HAS_BMI1
 		if (std::is_constant_evaluated())
@@ -127,7 +127,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr i32 popcnt(u64 v)
+	[[nodiscard]] constexpr auto popcnt(u64 v)
 	{
 #if PS_HAS_POPCNT
 		if (std::is_constant_evaluated())
@@ -139,7 +139,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr i32 ctz(u64 v)
+	[[nodiscard]] constexpr auto ctz(u64 v)
 	{
 #if PS_HAS_BMI1
 		if (std::is_constant_evaluated())
@@ -151,7 +151,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr u64 pext(u64 v, u64 mask)
+	[[nodiscard]] constexpr auto pext(u64 v, u64 mask)
 	{
 #if PS_HAS_BMI2
 		if (std::is_constant_evaluated())
@@ -163,7 +163,7 @@ namespace polaris::util
 #endif
 	}
 
-	[[nodiscard]] constexpr u64 pdep(u64 v, u64 mask)
+	[[nodiscard]] constexpr auto pdep(u64 v, u64 mask)
 	{
 #if PS_HAS_BMI2
 		if (std::is_constant_evaluated())

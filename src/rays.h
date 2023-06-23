@@ -28,7 +28,7 @@
 
 namespace polaris
 {
-	consteval std::array<std::array<Bitboard, 64>, 64> generateRays()
+	consteval auto generateRays()
 	{
 		std::array<std::array<Bitboard, 64>, 64> dst{};
 
@@ -62,7 +62,7 @@ namespace polaris
 
 	constexpr auto Rays = generateRays();
 
-	constexpr Bitboard rayBetween(Square src, Square dst)
+	constexpr auto rayBetween(Square src, Square dst)
 	{
 		return Rays[static_cast<i32>(src)][static_cast<i32>(dst)];
 	}

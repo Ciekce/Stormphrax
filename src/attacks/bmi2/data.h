@@ -54,7 +54,7 @@ namespace polaris::attacks::bmi2
 		u32 tableSize;
 	};
 
-	consteval RookData_ generateRookData()
+	consteval auto generateRookData()
 	{
 		RookData_ dst{};
 
@@ -77,7 +77,7 @@ namespace polaris::attacks::bmi2
 		return dst;
 	}
 
-	consteval BishopData_ generateBishopData()
+	consteval auto generateBishopData()
 	{
 		BishopData_ dst{};
 

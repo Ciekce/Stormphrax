@@ -35,12 +35,12 @@ namespace polaris
 		StaticVector() = default;
 		~StaticVector() = default;
 
-		inline void push(const T &elem) { m_data[m_size++] = elem; }
-		inline void push(T &&elem) { m_data[m_size++] = std::move(elem); }
+		inline auto push(const T &elem) { m_data[m_size++] = elem; }
+		inline auto push(T &&elem) { m_data[m_size++] = std::move(elem); }
 
-		inline void clear() { m_size = 0; }
+		inline auto clear() { m_size = 0; }
 
-		inline void fill(const T &v)
+		inline auto fill(const T &v)
 		{
 			// horrible dirty hack
 			if constexpr (std::is_same_v<T, Move>)
@@ -62,7 +62,7 @@ namespace polaris
 		[[nodiscard]] inline auto begin() { return m_data.begin(); }
 		[[nodiscard]] inline auto end() { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
 
-		[[nodiscard]] inline auto &operator[](usize i) { return m_data[i]; }
+		[[nodiscard]] inline auto operator[](usize i) -> auto & { return m_data[i]; }
 
 		[[nodiscard]] inline auto begin() const { return m_data.begin(); }
 		[[nodiscard]] inline auto end() const { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }

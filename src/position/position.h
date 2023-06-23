@@ -111,24 +111,24 @@ namespace polaris
 		Position(Position &&) = default;
 
 		template <bool UpdateMaterial = true, bool StateHistory = true>
-		bool applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr);
+		auto applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr) -> bool;
 
 		template <bool UpdateMaterial = true>
-		[[nodiscard]] inline HistoryGuard applyMove(Move move, TTable *prefetchTt = nullptr)
+		[[nodiscard]] inline auto applyMove(Move move, TTable *prefetchTt = nullptr)
 		{
 			return HistoryGuard{*this, applyMoveUnchecked<UpdateMaterial>(move, prefetchTt)};
 		}
 
-		void popMove();
+		auto popMove() -> void;
 
-		[[nodiscard]] bool isPseudolegal(Move move) const;
+		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
 
 	private:
-		[[nodiscard]] inline auto &currState() { return m_states.back(); }
-		[[nodiscard]] inline const auto &currState() const { return m_states.back(); }
+		[[nodiscard]] inline auto currState() -> auto & { return m_states.back(); }
+		[[nodiscard]] inline auto currState() const -> const auto & { return m_states.back(); }
 
 	public:
-		[[nodiscard]] inline const auto &boards() const { return currState().boards; }
+		[[nodiscard]] inline auto boards() const -> const auto & { return currState().boards; }
 
 		[[nodiscard]] inline auto toMove() const
 		{
@@ -140,7 +140,7 @@ namespace polaris
 			return m_blackToMove ? Color::White : Color::Black;
 		}
 
-		[[nodiscard]] inline const auto &castlingRooks() const { return currState().castlingRooks; }
+		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return currState().castlingRooks; }
 
 		[[nodiscard]] inline auto enPassant() const { return currState().enPassant; }
 
@@ -158,7 +158,7 @@ namespace polaris
 			return (score.midgame() * state.phase + score.endgame() * (24 - state.phase)) / 24;
 		}
 
-		[[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const
+		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
 			const auto &boards = this->boards();
 
@@ -184,7 +184,7 @@ namespace polaris
 			return attackers;
 		}
 
-		[[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const
+		[[nodiscard]] inline auto attackersTo(Square square, Color attacker) const
 		{
 			const auto &boards = this->boards();
 
@@ -212,7 +212,7 @@ namespace polaris
 			return attackers;
 		}
 
-		[[nodiscard]] inline bool isAttacked(const PositionBoards &boards, Square square, Color attacker) const
+		[[nodiscard]] inline auto isAttacked(const PositionBoards &boards, Square square, Color attacker) const
 		{
 			const auto occ = boards.occupancy();
 
@@ -241,12 +241,12 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline bool isAttacked(Square square, Color attacker) const
+		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
 			return isAttacked(boards(), square, attacker);
 		}
 
-		[[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const
+		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
 		{
 			while (squares)
 			{
@@ -290,7 +290,7 @@ namespace polaris
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
 
-		[[nodiscard]] inline bool isDrawn(bool threefold) const
+		[[nodiscard]] inline auto isDrawn(bool threefold) const
 		{
 			// TODO handle mate
 			if (m_states.back().halfmove >= 100)
@@ -330,7 +330,7 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline bool isLikelyDrawn() const
+		[[nodiscard]] inline auto isLikelyDrawn() const
 		{
 			const auto &boards = this->boards();
 
@@ -358,12 +358,12 @@ namespace polaris
 			return false;
 		}
 
-		[[nodiscard]] inline Move lastMove() const
+		[[nodiscard]] inline auto lastMove() const
 		{
 			return m_states.empty() ? NullMove : currState().lastMove;
 		}
 
-		[[nodiscard]] inline Piece captureTarget(Move move) const
+		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
 			const auto type = move.type();
 
@@ -374,7 +374,7 @@ namespace polaris
 			else return boards().pieceAt(move.dst());
 		}
 
-		[[nodiscard]] inline bool isNoisy(Move move) const
+		[[nodiscard]] inline auto isNoisy(Move move) const
 		{
 			const auto type = move.type();
 
@@ -384,9 +384,9 @@ namespace polaris
 					|| boards().pieceAt(move.dst()) != Piece::None);
 		}
 
-		[[nodiscard]] std::string toFen() const;
+		[[nodiscard]] auto toFen() const -> std::string;
 
-		[[nodiscard]] inline bool operator==(const Position &other) const
+		[[nodiscard]] inline auto operator==(const Position &other) const
 		{
 			const auto &ourState = currState();
 			const auto &theirState = other.m_states.back();
@@ -399,7 +399,7 @@ namespace polaris
 				&& m_fullmove == other.m_fullmove;
 		}
 
-		[[nodiscard]] inline bool deepEquals(const Position &other) const
+		[[nodiscard]] inline auto deepEquals(const Position &other) const
 		{
 			return *this == other
 				&& currState().kings == other.m_states.back().kings
@@ -410,45 +410,45 @@ namespace polaris
 				&& currState().pawnKey == other.m_states.back().pawnKey;
 		}
 
-		void regenMaterial();
+		auto regenMaterial() -> void;
 
 		template <bool EnPassantFromMoves = false>
-		void regen();
+		auto regen() -> void;
 
 #ifndef NDEBUG
-		void printHistory(Move last = NullMove);
+		auto printHistory(Move last = NullMove) -> void;
 
 		template <bool CheckMaterial = true, bool HasHistory = true>
-		bool verify();
+		auto verify() -> bool;
 #endif
 
-		[[nodiscard]] Move moveFromUci(const std::string &move) const;
+		[[nodiscard]] auto moveFromUci(const std::string &move) const -> Move;
 
-		Position &operator=(const Position &) = default;
-		Position &operator=(Position &&) = default;
+		auto operator=(const Position &) -> Position & = default;
+		auto operator=(Position &&) -> Position & = default;
 
-		[[nodiscard]] static Position starting();
-		[[nodiscard]] static std::optional<Position> fromFen(const std::string &fen);
+		[[nodiscard]] static auto starting() -> Position;
+		[[nodiscard]] static auto fromFen(const std::string &fen) -> std::optional<Position>;
 
 	private:
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		void setPiece(Piece piece, Square square);
+		auto setPiece(Piece piece, Square square) -> void;
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		void removePiece(Piece piece, Square square);
+		auto removePiece(Piece piece, Square square) -> void;
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		void movePieceNoCap(Piece piece, Square src, Square dst);
+		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
 
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		[[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst);
+		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst) -> Piece;
 
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece promotePawn(Piece pawn, Square src, Square dst, BasePiece target);
+		auto promotePawn(Piece pawn, Square src, Square dst, BasePiece target) -> Piece;
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		void castle(Piece king, Square kingSrc, Square rookSrc);
+		auto castle(Piece king, Square kingSrc, Square rookSrc) -> void;
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		Piece enPassant(Piece pawn, Square src, Square dst);
+		auto enPassant(Piece pawn, Square src, Square dst) -> Piece;
 
-		[[nodiscard]] inline Bitboard calcCheckers() const
+		[[nodiscard]] inline auto calcCheckers() const
 		{
 			const auto color = toMove();
 			const auto &state = currState();
@@ -469,5 +469,5 @@ namespace polaris
 		m_pos.popMove();
 	}
 
-	[[nodiscard]] Square squareFromString(const std::string &str);
+	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;
 }

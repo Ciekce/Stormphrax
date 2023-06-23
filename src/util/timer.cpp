@@ -34,7 +34,7 @@ namespace polaris::util
 		QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&m_initTime));
 	}
 
-	f64 Timer::time() const
+	auto Timer::time() const -> f64
 	{
 		u64 time{};
 		QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&time));
@@ -42,7 +42,7 @@ namespace polaris::util
 		return static_cast<f64>(time - m_initTime) / m_frequency;
 	}
 
-	i64 Timer::roughTimeMs()
+	auto Timer::roughTimeMs() -> i64
 	{
 		return static_cast<i64>(GetTickCount64());
 	}
@@ -60,7 +60,7 @@ namespace polaris::util
 		m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
 	}
 
-	f64 Timer::time() const
+	auto Timer::time() const -> f64
 	{
 		struct timespec time{};
 		clock_gettime(CLOCK_MONOTONIC, &time);

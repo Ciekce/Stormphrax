@@ -35,7 +35,7 @@
 
 namespace polaris::attacks
 {
-	constexpr std::array<Bitboard, 64> generateKnightAttacks()
+	constexpr auto generateKnightAttacks()
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -58,7 +58,7 @@ namespace polaris::attacks
 		return dst;
 	}
 
-	constexpr std::array<Bitboard, 64> generateKingAttacks()
+	constexpr auto generateKingAttacks()
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -82,7 +82,7 @@ namespace polaris::attacks
 	}
 
 	template <Color Us>
-	constexpr std::array<Bitboard, 64> generatePawnAttacks()
+	constexpr auto generatePawnAttacks()
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -103,23 +103,23 @@ namespace polaris::attacks
 	constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
 	constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
 
-	constexpr Bitboard getKnightAttacks(Square src)
+	constexpr auto getKnightAttacks(Square src)
 	{
 		return KnightAttacks[static_cast<usize>(src)];
 	}
 
-	constexpr Bitboard getKingAttacks(Square src)
+	constexpr auto getKingAttacks(Square src)
 	{
 		return KingAttacks[static_cast<usize>(src)];
 	}
 
-	constexpr Bitboard getPawnAttacks(Square src, Color color)
+	constexpr auto getPawnAttacks(Square src, Color color)
 	{
 		const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
 		return attacks[static_cast<usize>(src)];
 	}
 
-	inline Bitboard getQueenAttacks(Square src, Bitboard occupancy)
+	inline auto getQueenAttacks(Square src, Bitboard occupancy)
 	{
 		return getRookAttacks(src, occupancy)
 			| getBishopAttacks(src, occupancy);

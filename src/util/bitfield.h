@@ -34,13 +34,13 @@ enum class T : UT
 namespace polaris
 {
 	template <typename T>
-	constexpr bool testFlags(T field, T flags)
+	constexpr auto testFlags(T field, T flags)
 	{
 		return (field & flags) != T::None;
 	}
 
 	template <typename T>
-	constexpr T setFlags(T field, T flags, bool v)
+	constexpr auto setFlags(T field, T flags, bool v)
 	{
 		if (v)
 			field |= flags;
@@ -50,7 +50,7 @@ namespace polaris
 	}
 
 	template <typename T>
-	constexpr T flipFlags(T field, T flags)
+	constexpr auto flipFlags(T field, T flags)
 	{
 		return field ^ flags;
 	}

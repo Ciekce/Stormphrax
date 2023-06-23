@@ -35,10 +35,10 @@ namespace polaris
 
 	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
-	void generateNoisy(ScoredMoveList &noisy, const Position &pos);
-	void generateQuiet(ScoredMoveList &quiet, const Position &pos);
+	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void;
+	auto generateQuiet(ScoredMoveList &quiet, const Position &pos) -> void;
 
-	void generateAll(ScoredMoveList &dst, const Position &pos);
+	auto generateAll(ScoredMoveList &dst, const Position &pos) -> void;
 
 	struct MovegenStage
 	{
@@ -72,7 +72,7 @@ namespace polaris
 
 		~MoveGenerator() = default;
 
-		[[nodiscard]] inline Move next()
+		[[nodiscard]] inline auto next()
 		{
 			while (true)
 			{
@@ -167,7 +167,7 @@ namespace polaris
 			 2  // queen
 		};
 
-		inline Move findNext()
+		inline auto findNext()
 		{
 			if (m_stage == MovegenStage::GoodNoisy)
 				return m_moves[m_idx++].move;
@@ -190,7 +190,7 @@ namespace polaris
 			return m_moves[m_idx++].move;
 		}
 
-		inline void scoreNoisy()
+		inline auto scoreNoisy()
 		{
 			const auto &boards = m_pos.boards();
 
@@ -213,7 +213,7 @@ namespace polaris
 			}
 		}
 
-		inline void scoreQuiet()
+		inline auto scoreQuiet()
 		{
 			const auto &boards = m_pos.boards();
 
@@ -240,7 +240,7 @@ namespace polaris
 			}
 		}
 
-		inline void genNoisy()
+		inline auto genNoisy()
 		{
 			generateNoisy(m_moves, m_pos);
 			scoreNoisy();
@@ -258,7 +258,7 @@ namespace polaris
 			}) - m_moves.begin();
 		}
 
-		inline void genQuiet()
+		inline auto genQuiet()
 		{
 			generateQuiet(m_moves, m_pos);
 			scoreQuiet();

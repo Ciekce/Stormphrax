@@ -25,14 +25,14 @@
 
 namespace polaris::util
 {
-	[[nodiscard]] inline std::optional<u32> tryParseDigit(char c)
+	[[nodiscard]] inline auto tryParseDigit(char c) -> std::optional<u32>
 	{
 		if (c >= '0' && c <= '9')
 			return static_cast<u32>(c - '0');
 		else return {};
 	}
 
-	[[nodiscard]] inline std::optional<u32> tryParseU32(const std::string &value, u32 radix = 10)
+	[[nodiscard]] inline auto tryParseU32(const std::string &value, u32 radix = 10) -> std::optional<u32>
 	{
 		try
 		{
@@ -44,7 +44,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseU32(u32 &dst, const std::string &value, u32 radix = 10)
+	inline auto tryParseU32(u32 &dst, const std::string &value, u32 radix = 10)
 	{
 		if (const auto parsed = tryParseU32(value, radix))
 		{
@@ -54,7 +54,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<i32> tryParseI32(const std::string &value, u32 radix = 10)
+	[[nodiscard]] inline auto tryParseI32(const std::string &value, u32 radix = 10) -> std::optional<i32>
 	{
 		try
 		{
@@ -66,7 +66,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseI32(i32 &dst, const std::string &value, u32 radix = 10)
+	inline auto tryParseI32(i32 &dst, const std::string &value, u32 radix = 10)
 	{
 		if (const auto parsed = tryParseI32(value, radix))
 		{
@@ -76,7 +76,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<u64> tryParseU64(const std::string &value, u32 radix = 10)
+	[[nodiscard]] inline auto tryParseU64(const std::string &value, u32 radix = 10) -> std::optional<u64>
 	{
 		try
 		{
@@ -88,7 +88,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseU64(u64 &dst, const std::string &value, u32 radix = 10)
+	inline auto tryParseU64(u64 &dst, const std::string &value, u32 radix = 10)
 	{
 		if (const auto parsed = tryParseU64(value, radix))
 		{
@@ -98,7 +98,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<i64> tryParseI64(const std::string &value, u32 radix = 10)
+	[[nodiscard]] inline auto tryParseI64(const std::string &value, u32 radix = 10) -> std::optional<i64>
 	{
 		try
 		{
@@ -110,7 +110,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseI64(i64 &dst, const std::string &value, u32 radix = 10)
+	inline auto tryParseI64(i64 &dst, const std::string &value, u32 radix = 10)
 	{
 		if (const auto parsed = tryParseI64(value, radix))
 		{
@@ -120,14 +120,14 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<usize> tryParseSize(const std::string &value, u32 radix = 10)
+	[[nodiscard]] inline auto tryParseSize(const std::string &value, u32 radix = 10) -> std::optional<usize>
 	{
 		if constexpr (sizeof(usize) == 8)
 			return tryParseU64(value, radix);
 		else return tryParseU32(value, radix);
 	}
 
-	inline bool tryParseSize(usize &dst, const std::string &value, u32 radix = 10)
+	inline auto tryParseSize(usize &dst, const std::string &value, u32 radix = 10)
 	{
 		if (const auto parsed = tryParseSize(value, radix))
 		{
@@ -137,7 +137,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<bool> tryParseBool(const std::string &value)
+	[[nodiscard]] inline auto tryParseBool(const std::string &value) -> std::optional<bool>
 	{
 		if (value == "true")
 			return true;
@@ -146,7 +146,7 @@ namespace polaris::util
 		else return {};
 	}
 
-	inline bool tryParseBool(bool &dst, const std::string &value)
+	inline auto tryParseBool(bool &dst, const std::string &value)
 	{
 		if (const auto parsed = tryParseBool(value))
 		{
@@ -156,7 +156,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<f32> tryParseF32(const std::string &value)
+	[[nodiscard]] inline auto tryParseF32(const std::string &value) -> std::optional<f32>
 	{
 		try
 		{
@@ -168,7 +168,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseF32(f32 &dst, const std::string &value)
+	inline auto tryParseF32(f32 &dst, const std::string &value)
 	{
 		if (const auto parsed = tryParseF32(value))
 		{
@@ -178,7 +178,7 @@ namespace polaris::util
 		else return false;
 	}
 
-	[[nodiscard]] inline std::optional<f64> tryParseF64(const std::string &value)
+	[[nodiscard]] inline auto tryParseF64(const std::string &value) -> std::optional<f64>
 	{
 		try
 		{
@@ -190,7 +190,7 @@ namespace polaris::util
 		}
 	}
 
-	inline bool tryParseF64(f64 &dst, const std::string &value)
+	inline auto tryParseF64(f64 &dst, const std::string &value)
 	{
 		if (const auto parsed = tryParseF64(value))
 		{

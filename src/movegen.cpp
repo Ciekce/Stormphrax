@@ -31,7 +31,7 @@ namespace polaris
 {
 	namespace
 	{
-		inline void pushStandards(ScoredMoveList &dst, i32 offset, Bitboard board)
+		inline auto pushStandards(ScoredMoveList &dst, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
@@ -42,7 +42,7 @@ namespace polaris
 			}
 		}
 
-		inline void pushStandards(ScoredMoveList &dst, Square srcSquare, Bitboard board)
+		inline auto pushStandards(ScoredMoveList &dst, Square srcSquare, Bitboard board)
 		{
 			while (!board.empty())
 			{
@@ -51,7 +51,7 @@ namespace polaris
 			}
 		}
 
-		inline void pushQueenPromotions(ScoredMoveList &noisy, i32 offset, Bitboard board)
+		inline auto pushQueenPromotions(ScoredMoveList &noisy, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
@@ -62,7 +62,7 @@ namespace polaris
 			}
 		}
 
-		inline void pushUnderpromotions(ScoredMoveList &quiet, i32 offset, Bitboard board)
+		inline auto pushUnderpromotions(ScoredMoveList &quiet, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
@@ -75,12 +75,12 @@ namespace polaris
 			}
 		}
 
-		inline void pushCastling(ScoredMoveList &dst, Square srcSquare, Square dstSquare)
+		inline auto pushCastling(ScoredMoveList &dst, Square srcSquare, Square dstSquare)
 		{
 			dst.push({Move::castling(srcSquare, dstSquare), 0});
 		}
 
-		inline void pushEnPassants(ScoredMoveList &noisy, i32 offset, Bitboard board)
+		inline auto pushEnPassants(ScoredMoveList &noisy, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
@@ -92,7 +92,7 @@ namespace polaris
 		}
 
 		template <Color Us>
-		void generatePawnsNoisy_(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
+		auto generatePawnsNoisy_(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
 		{
 			constexpr auto Them = oppColor(Us);
 
@@ -131,7 +131,7 @@ namespace polaris
 			}
 		}
 
-		inline void generatePawnsNoisy(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
+		inline auto generatePawnsNoisy(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
 		{
 			if (pos.toMove() == Color::Black)
 				generatePawnsNoisy_<Color::Black>(noisy, pos, dstMask);
@@ -139,7 +139,7 @@ namespace polaris
 		}
 
 		template <Color Us>
-		void generatePawnsQuiet_(ScoredMoveList &quiet, const PositionBoards &boards, Bitboard dstMask, Bitboard occ)
+		auto generatePawnsQuiet_(ScoredMoveList &quiet, const PositionBoards &boards, Bitboard dstMask, Bitboard occ)
 		{
 			constexpr auto Them = oppColor(Us);
 
@@ -177,7 +177,7 @@ namespace polaris
 			pushStandards(quiet, ForwardOffset, singles);
 		}
 
-		inline void generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
+		inline auto generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
 		{
 			if (pos.toMove() == Color::Black)
 				generatePawnsQuiet_<Color::Black>(quiet, pos.boards(), dstMask, occ);
@@ -185,7 +185,7 @@ namespace polaris
 		}
 
 		template <BasePiece Piece, const std::array<Bitboard, 64> &Attacks>
-		inline void precalculated(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
+		inline auto precalculated(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			const auto us = pos.toMove();
 
@@ -199,12 +199,12 @@ namespace polaris
 			}
 		}
 
-		void generateKnights(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
+		auto generateKnights(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			precalculated<BasePiece::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
 		}
 
-		inline void generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
+		inline auto generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
 			Square king, Square kingDst, Square rook, Square rookDst)
 		{
 			const auto toKingDst = rayBetween(king, kingDst);
@@ -218,7 +218,7 @@ namespace polaris
 		}
 
 		template <bool Castling>
-		void generateKings(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
+		auto generateKings(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			precalculated<BasePiece::King, attacks::KingAttacks>(dst, pos, dstMask);
 
@@ -286,7 +286,7 @@ namespace polaris
 			}
 		}
 
-		void generateSliders(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
+		auto generateSliders(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			const auto &boards = pos.boards();
 
@@ -321,7 +321,7 @@ namespace polaris
 		}
 	}
 
-	void generateNoisy(ScoredMoveList &noisy, const Position &pos)
+	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void
 	{
 		const auto &boards = pos.boards();
 
@@ -371,7 +371,7 @@ namespace polaris
 		generateKings<false>(noisy, pos, kingDstMask);
 	}
 
-	void generateQuiet(ScoredMoveList &quiet, const Position &pos)
+	auto generateQuiet(ScoredMoveList &quiet, const Position &pos) -> void
 	{
 		const auto &boards = pos.boards();
 
@@ -407,7 +407,7 @@ namespace polaris
 		generateKings<true>(quiet, pos, kingDstMask);
 	}
 
-	void generateAll(ScoredMoveList &dst, const Position &pos)
+	auto generateAll(ScoredMoveList &dst, const Position &pos) -> void
 	{
 		const auto &boards = pos.boards();
 

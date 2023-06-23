@@ -25,7 +25,7 @@ namespace polaris::limit
 	MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead)
 		: m_maxTime{util::g_timer.time() + static_cast<f64>(std::max(I64(1), time - overhead)) / 1000.0} {}
 
-	bool MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) const
+	auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool
 	{
 		return data.depth > 2
 			&& data.nodes > 0
@@ -47,7 +47,7 @@ namespace polaris::limit
 		m_softTime = std::min(baseTime * 0.6, m_maxTime);
 	}
 
-	void TimeManager::update(const search::SearchData &data, bool stableBestMove)
+	auto TimeManager::update(const search::SearchData &data, bool stableBestMove) -> void
 	{
 		if (data.depth < 4)
 			return;
@@ -55,7 +55,7 @@ namespace polaris::limit
 		//TODO allocate more time for unstable best moves
 	}
 
-	bool TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) const
+	auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool
 	{
 		if (data.depth < 5)
 			return false;

@@ -28,7 +28,7 @@ namespace polaris
 {
 	namespace
 	{
-		usize doPerft(Position &pos, i32 depth)
+		auto doPerft(Position &pos, i32 depth) -> usize
 		{
 			if (depth == 0)
 				return 1;
@@ -56,12 +56,12 @@ namespace polaris
 		}
 	}
 
-	void perft(Position &pos, i32 depth)
+	auto perft(Position &pos, i32 depth) -> void
 	{
 		std::cout << doPerft(pos, depth) << std::endl;
 	}
 
-	void splitPerft(Position &pos, i32 depth)
+	auto splitPerft(Position &pos, i32 depth) -> void
 	{
 		--depth;
 

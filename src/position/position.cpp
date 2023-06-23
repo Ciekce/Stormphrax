@@ -49,48 +49,48 @@ namespace polaris
 		constexpr auto PhaseIncBase = std::array{0, 1, 1, 2, 4, 0, 0};
 	}
 
-	template bool Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt);
-	template bool Position::applyMoveUnchecked<true, false>(Move move, TTable *prefetchTt);
-	template bool Position::applyMoveUnchecked<false, true>(Move move, TTable *prefetchTt);
-	template bool Position::applyMoveUnchecked<true, true>(Move move, TTable *prefetchTt);
+	template auto Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt) -> bool;
+	template auto Position::applyMoveUnchecked<true, false>(Move move, TTable *prefetchTt) -> bool;
+	template auto Position::applyMoveUnchecked<false, true>(Move move, TTable *prefetchTt) -> bool;
+	template auto Position::applyMoveUnchecked<true, true>(Move move, TTable *prefetchTt) -> bool;
 
-	template void Position::setPiece<false, false>(Piece, Square);
-	template void Position::setPiece<true, false>(Piece, Square);
-	template void Position::setPiece<false, true>(Piece, Square);
-	template void Position::setPiece<true, true>(Piece, Square);
+	template auto Position::setPiece<false, false>(Piece, Square) -> void;
+	template auto Position::setPiece<true, false>(Piece, Square) -> void;
+	template auto Position::setPiece<false, true>(Piece, Square) -> void;
+	template auto Position::setPiece<true, true>(Piece, Square) -> void;
 
-	template void Position::removePiece<false, false>(Piece, Square);
-	template void Position::removePiece<true, false>(Piece, Square);
-	template void Position::removePiece<false, true>(Piece, Square);
-	template void Position::removePiece<true, true>(Piece, Square);
+	template auto Position::removePiece<false, false>(Piece, Square) -> void;
+	template auto Position::removePiece<true, false>(Piece, Square) -> void;
+	template auto Position::removePiece<false, true>(Piece, Square) -> void;
+	template auto Position::removePiece<true, true>(Piece, Square) -> void;
 
-	template void Position::movePieceNoCap<false, false>(Piece, Square, Square);
-	template void Position::movePieceNoCap<true, false>(Piece, Square, Square);
-	template void Position::movePieceNoCap<false, true>(Piece, Square, Square);
-	template void Position::movePieceNoCap<true, true>(Piece, Square, Square);
+	template auto Position::movePieceNoCap<false, false>(Piece, Square, Square) -> void;
+	template auto Position::movePieceNoCap<true, false>(Piece, Square, Square) -> void;
+	template auto Position::movePieceNoCap<false, true>(Piece, Square, Square) -> void;
+	template auto Position::movePieceNoCap<true, true>(Piece, Square, Square) -> void;
 
-	template Piece Position::movePiece<false, false>(Piece, Square, Square);
-	template Piece Position::movePiece<true, false>(Piece, Square, Square);
-	template Piece Position::movePiece<false, true>(Piece, Square, Square);
-	template Piece Position::movePiece<true, true>(Piece, Square, Square);
+	template auto Position::movePiece<false, false>(Piece, Square, Square) -> Piece;
+	template auto Position::movePiece<true, false>(Piece, Square, Square) -> Piece;
+	template auto Position::movePiece<false, true>(Piece, Square, Square) -> Piece;
+	template auto Position::movePiece<true, true>(Piece, Square, Square) -> Piece;
 
-	template Piece Position::promotePawn<false, false>(Piece, Square, Square, BasePiece);
-	template Piece Position::promotePawn<true, false>(Piece, Square, Square, BasePiece);
-	template Piece Position::promotePawn<false, true>(Piece, Square, Square, BasePiece);
-	template Piece Position::promotePawn<true, true>(Piece, Square, Square, BasePiece);
+	template auto Position::promotePawn<false, false>(Piece, Square, Square, BasePiece) -> Piece;
+	template auto Position::promotePawn<true, false>(Piece, Square, Square, BasePiece) -> Piece;
+	template auto Position::promotePawn<false, true>(Piece, Square, Square, BasePiece) -> Piece;
+	template auto Position::promotePawn<true, true>(Piece, Square, Square, BasePiece) -> Piece;
 
-	template void Position::castle<false, false>(Piece, Square, Square);
-	template void Position::castle<true, false>(Piece, Square, Square);
-	template void Position::castle<false, true>(Piece, Square, Square);
-	template void Position::castle<true, true>(Piece, Square, Square);
+	template auto Position::castle<false, false>(Piece, Square, Square) -> void;
+	template auto Position::castle<true, false>(Piece, Square, Square) -> void;
+	template auto Position::castle<false, true>(Piece, Square, Square) -> void;
+	template auto Position::castle<true, true>(Piece, Square, Square) -> void;
 
-	template Piece Position::enPassant<false, false>(Piece, Square, Square);
-	template Piece Position::enPassant<true, false>(Piece, Square, Square);
-	template Piece Position::enPassant<false, true>(Piece, Square, Square);
-	template Piece Position::enPassant<true, true>(Piece, Square, Square);
+	template auto Position::enPassant<false, false>(Piece, Square, Square) -> Piece;
+	template auto Position::enPassant<true, false>(Piece, Square, Square) -> Piece;
+	template auto Position::enPassant<false, true>(Piece, Square, Square) -> Piece;
+	template auto Position::enPassant<true, true>(Piece, Square, Square) -> Piece;
 
-	template void Position::regen<false>();
-	template void Position::regen<true>();
+	template auto Position::regen<false>() -> void;
+	template auto Position::regen<true>() -> void;
 
 #ifndef NDEBUG
 	template bool Position::verify<false, false>();
@@ -109,7 +109,7 @@ namespace polaris
 	}
 
 	template <bool UpdateMaterial, bool StateHistory>
-	bool Position::applyMoveUnchecked(Move move, TTable *prefetchTt)
+	auto Position::applyMoveUnchecked(Move move, TTable *prefetchTt) -> bool
 	{
 		auto &prevState = currState();
 
@@ -269,7 +269,7 @@ namespace polaris
 		return true;
 	}
 
-	void Position::popMove()
+	auto Position::popMove() -> void
 	{
 		assert(m_states.size() > 1 && "popMove() with no previous move?");
 
@@ -285,7 +285,7 @@ namespace polaris
 			--m_fullmove;
 	}
 
-	bool Position::isPseudolegal(Move move) const
+	auto Position::isPseudolegal(Move move) const -> bool
 	{
 		const auto &state = currState();
 
@@ -456,7 +456,7 @@ namespace polaris
 		return true;
 	}
 
-	std::string Position::toFen() const
+	auto Position::toFen() const -> std::string
 	{
 		const auto &state = currState();
 
@@ -521,7 +521,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::setPiece(Piece piece, Square square)
+	auto Position::setPiece(Piece piece, Square square) -> void
 	{
 		auto &state = currState();
 
@@ -546,7 +546,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::removePiece(Piece piece, Square square)
+	auto Position::removePiece(Piece piece, Square square) -> void
 	{
 		auto &state = currState();
 
@@ -567,7 +567,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::movePieceNoCap(Piece piece, Square src, Square dst)
+	auto Position::movePieceNoCap(Piece piece, Square src, Square dst) -> void
 	{
 		auto &state = currState();
 
@@ -589,7 +589,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::movePiece(Piece piece, Square src, Square dst)
+	auto Position::movePiece(Piece piece, Square src, Square dst) -> Piece
 	{
 		auto &state = currState();
 
@@ -632,7 +632,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::promotePawn(Piece pawn, Square src, Square dst, BasePiece target)
+	auto Position::promotePawn(Piece pawn, Square src, Square dst, BasePiece target) -> Piece
 	{
 		auto &state = currState();
 
@@ -674,7 +674,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	void Position::castle(Piece king, Square kingSrc, Square rookSrc)
+	auto Position::castle(Piece king, Square kingSrc, Square rookSrc) -> void
 	{
 		const auto rank = squareRank(kingSrc);
 
@@ -712,7 +712,7 @@ namespace polaris
 	}
 
 	template <bool UpdateKey, bool UpdateMaterial>
-	Piece Position::enPassant(Piece pawn, Square src, Square dst)
+	auto Position::enPassant(Piece pawn, Square src, Square dst) -> Piece
 	{
 		auto &state = currState();
 
@@ -756,7 +756,7 @@ namespace polaris
 		return enemyPawn;
 	}
 
-	void Position::regenMaterial()
+	auto Position::regenMaterial() -> void
 	{
 		auto &state = currState();
 
@@ -773,7 +773,7 @@ namespace polaris
 	}
 
 	template <bool EnPassantFromMoves>
-	void Position::regen()
+	auto Position::regen() -> void
 	{
 		auto &state = currState();
 
@@ -840,7 +840,7 @@ namespace polaris
 	}
 
 #ifndef NDEBUG
-	void Position::printHistory(Move last)
+	auto Position::printHistory(Move last) -> void
 	{
 		for (usize i = 0; i < m_states.size() - 1; ++i)
 		{
@@ -860,7 +860,7 @@ namespace polaris
 	}
 
 	template <bool CheckMaterial, bool HasHistory>
-	bool Position::verify()
+	auto Position::verify() -> bool
 	{
 		Position regened{*this};
 		regened.regen<HasHistory>();
@@ -914,7 +914,7 @@ namespace polaris
 	}
 #endif
 
-	Move Position::moveFromUci(const std::string &move) const
+	auto Position::moveFromUci(const std::string &move) const -> Move
 	{
 		if (move.length() < 4 || move.length() > 5)
 			return NullMove;
@@ -979,7 +979,7 @@ namespace polaris
 		return position;
 	}
 
-	std::optional<Position> Position::fromFen(const std::string &fen)
+	auto Position::fromFen(const std::string &fen) -> std::optional<Position>
 	{
 		Position position{};
 
@@ -1262,7 +1262,7 @@ namespace polaris
 		return position;
 	}
 
-	Square squareFromString(const std::string &str)
+	auto squareFromString(const std::string &str) -> Square
 	{
 		if (str.length() != 2)
 			return Square::None;

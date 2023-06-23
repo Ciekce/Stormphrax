@@ -30,7 +30,7 @@
 
 namespace polaris
 {
-	inline void updateHistoryScore(i32 &score, i32 adjustment)
+	inline auto updateHistoryScore(i32 &score, i32 adjustment)
 	{
 		score -= (score * std::abs(adjustment)) / 324;
 		score += adjustment * 32;
@@ -46,12 +46,12 @@ namespace polaris
 			return moving != Piece::None;
 		}
 
-		[[nodiscard]] static inline HistoryMove from(const PositionBoards &boards, Move move)
+		[[nodiscard]] static inline auto from(const PositionBoards &boards, Move move)
 		{
-			return {boards.pieceAt(move.src()), moveActualDst(move)};
+			return HistoryMove{boards.pieceAt(move.src()), moveActualDst(move)};
 		}
 
-		[[nodiscard]] static inline HistoryMove from(const Position &pos, Move move)
+		[[nodiscard]] static inline auto from(const Position &pos, Move move)
 		{
 			return from(pos.boards(), move);
 		}
@@ -69,7 +69,7 @@ namespace polaris
 		ContinuationEntry() = default;
 		~ContinuationEntry() = default;
 
-		[[nodiscard]] inline auto &score(HistoryMove move)
+		[[nodiscard]] inline auto score(HistoryMove move) -> auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
@@ -91,27 +91,27 @@ namespace polaris
 		HistoryTable() = default;
 		~HistoryTable() = default;
 
-		[[nodiscard]] inline auto &entry(HistoryMove move)
+		[[nodiscard]] inline auto entry(HistoryMove move) -> auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline const auto &entry(HistoryMove move) const
+		[[nodiscard]] inline auto entry(HistoryMove move) const -> const auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline auto &contEntry(HistoryMove move)
+		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
 		{
 			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline const auto &contEntry(HistoryMove move) const
+		[[nodiscard]] inline auto contEntry(HistoryMove move) const -> const auto &
 		{
 			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		inline void age()
+		inline auto age()
 		{
 			for (auto &pieceTable : m_table)
 			{
@@ -122,7 +122,7 @@ namespace polaris
 			}
 		}
 
-		inline void clear()
+		inline auto clear()
 		{
 			std::memset(m_table.data(), 0, sizeof(HistoryEntry) * 64 * 12);
 			std::memset(m_continuationTable.data(), 0, sizeof(i32) * 64 * 12 * 64 * 12);

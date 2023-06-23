@@ -20,7 +20,7 @@
 
 namespace polaris
 {
-	void printBitboard(std::ostream &out, Bitboard board)
+	auto printBitboard(std::ostream &out, Bitboard board) -> void
 	{
 		for (i32 rank = 7; rank >= 0; --rank)
 		{
@@ -38,7 +38,7 @@ namespace polaris
 		out << "   a   b   c   d   e   f   g   h\n\n";
 	}
 
-	void printBitboardCompact(std::ostream &out, Bitboard board)
+	auto printBitboardCompact(std::ostream &out, Bitboard board) -> void
 	{
 		for (i32 rank = 7; rank >= 0; --rank)
 		{
@@ -54,7 +54,7 @@ namespace polaris
 		}
 	}
 
-	void printBoard(std::ostream &out, const Position &position)
+	auto printBoard(std::ostream &out, const Position &position) -> void
 	{
 		const auto &boards = position.boards();
 
@@ -76,7 +76,7 @@ namespace polaris
 		out << (position.toMove() == Color::White ? "White" : "Black") << " to move\n";
 	}
 
-	void printScore(std::ostream &out, Score score)
+	auto printScore(std::ostream &out, Score score) -> void
 	{
 		if (score == 0)
 		{
@@ -99,7 +99,7 @@ namespace polaris
 		out << d;
 	}
 
-	void printScore(std::ostream &out, TaperedScore score)
+	auto printScore(std::ostream &out, TaperedScore score) -> void
 	{
 		out << '[';
 		printScore(out, score.midgame());

@@ -31,12 +31,12 @@ namespace polaris::util
 		constexpr Range(T min, T max)
 			: m_min{min}, m_max{max} {}
 
-		[[nodiscard]] constexpr bool contains(T v) const
+		[[nodiscard]] constexpr auto contains(T v) const
 		{
 			return m_min <= v && v <= m_max;
 		}
 
-		[[nodiscard]] constexpr T clamp(T v) const
+		[[nodiscard]] constexpr auto clamp(T v) const
 		{
 			return std::clamp(v, m_min, m_max);
 		}

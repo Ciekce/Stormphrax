@@ -25,11 +25,11 @@
 #ifndef TBCONFIG_H
 #define TBCONFIG_H
 
-#include "../core.h"
-#include "../eval/material.h"
-#include "../util/bits.h"
-#include "../attacks/attacks.h"
-#include "../search.h"
+#include "../../core.h"
+#include "../../eval/material.h"
+#include "../../util/bits.h"
+#include "../../attacks/attacks.h"
+#include "../../search.h"
 
 /****************************************************************************/
 /* BUILD CONFIG:                                                            */

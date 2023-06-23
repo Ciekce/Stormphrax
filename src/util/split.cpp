@@ -22,7 +22,7 @@
 
 namespace polaris::split
 {
-	std::vector<std::string> split(const std::string &str, char delim)
+	auto split(const std::string &str, char delim) -> std::vector<std::string>
 	{
 		std::vector<std::string> result{};
 

@@ -21,7 +21,7 @@
 
 using namespace polaris;
 
-int main(int argc, const char *argv[])
+auto main(i32 argc, const char *argv[]) -> i32
 {
 	if (argc > 1 && std::string{argv[1]} == "bench")
 	{

@@ -29,7 +29,7 @@ namespace polaris
 {
 	namespace
 	{
-		inline Score scoreToTt(Score score, i32 ply)
+		inline auto scoreToTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
 				return score + ply;
@@ -38,7 +38,7 @@ namespace polaris
 			return score;
 		}
 
-		inline Score scoreFromTt(Score score, i32 ply)
+		inline auto scoreFromTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
 				return score - ply;
@@ -53,7 +53,7 @@ namespace polaris
 		resize(size);
 	}
 
-	void TTable::resize(usize size)
+	auto TTable::resize(usize size) -> void
 	{
 		clear();
 
@@ -71,7 +71,7 @@ namespace polaris
 		m_mask = capacity - 1;
 	}
 
-	bool TTable::probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const
+	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool
 	{
 		if (m_table.empty())
 			return false;
@@ -109,7 +109,7 @@ namespace polaris
 		return false;
 	}
 
-	Move TTable::probePvMove(u64 key) const
+	auto TTable::probePvMove(u64 key) const -> Move
 	{
 		if (m_table.empty())
 			return NullMove;
@@ -123,7 +123,7 @@ namespace polaris
 		return NullMove;
 	}
 
-	void TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type)
+	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
 		if (m_table.empty())
 			return;
@@ -163,7 +163,7 @@ namespace polaris
 			++m_entries;
 	}
 
-	void TTable::clear()
+	auto TTable::clear() -> void
 	{
 		m_entries = 0;
 		m_currentAge = 0;
@@ -172,7 +172,7 @@ namespace polaris
 			std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
 	}
 
-	u32 TTable::full() const
+	auto TTable::full() const -> u32
 	{
 		return static_cast<u32>(static_cast<f64>(m_entries.load(std::memory_order::relaxed))
 			/ static_cast<f64>(m_table.capacity()) * 1000.0);

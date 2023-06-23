@@ -88,7 +88,7 @@ namespace polaris::eval
 				}
 			};
 
-			std::array<std::array<TaperedScore, 64>, 12> createPsts()
+			auto createPsts() -> std::array<std::array<TaperedScore, 64>, 12>
 			{
 				std::array<std::array<TaperedScore, 64>, 12> psts{};
 

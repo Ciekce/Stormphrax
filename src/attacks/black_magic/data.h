@@ -101,7 +101,7 @@ namespace polaris::attacks::black_magic
 		u32 tableSize;
 	};
 
-	consteval Data generateRookData()
+	consteval auto generateRookData()
 	{
 		Data dst{};
 
@@ -124,7 +124,7 @@ namespace polaris::attacks::black_magic
 		return dst;
 	}
 
-	consteval Data generateBishopData()
+	consteval auto generateBishopData()
 	{
 		Data dst{};
 

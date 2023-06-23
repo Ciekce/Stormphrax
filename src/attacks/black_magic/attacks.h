@@ -33,7 +33,7 @@ namespace polaris::attacks
 	extern const std::array<Bitboard, black_magic::  RookData.tableSize>   RookAttacks;
 	extern const std::array<Bitboard, black_magic::BishopData.tableSize> BishopAttacks;
 
-	[[nodiscard]] inline u64 getRookIdx(Bitboard occupancy, Square src)
+	[[nodiscard]] inline auto getRookIdx(Bitboard occupancy, Square src)
 	{
 		const auto s = static_cast<i32>(src);
 
@@ -45,7 +45,7 @@ namespace polaris::attacks
 		return ((occupancy | data.mask) * magic) >> shift;
 	}
 
-	[[nodiscard]] inline u64 getBishopIdx(Bitboard occupancy, Square src)
+	[[nodiscard]] inline auto getBishopIdx(Bitboard occupancy, Square src)
 	{
 		const auto s = static_cast<i32>(src);
 
@@ -57,7 +57,7 @@ namespace polaris::attacks
 		return ((occupancy | data.mask) * magic) >> shift;
 	}
 
-	[[nodiscard]] inline Bitboard getRookAttacks(Square src, Bitboard occupancy)
+	[[nodiscard]] inline auto getRookAttacks(Square src, Bitboard occupancy)
 	{
 		const auto s = static_cast<i32>(src);
 
@@ -67,7 +67,7 @@ namespace polaris::attacks
 		return RookAttacks[data.offset + idx];
 	}
 
-	[[nodiscard]] inline Bitboard getBishopAttacks(Square src, Bitboard occupancy)
+	[[nodiscard]] inline auto getBishopAttacks(Square src, Bitboard occupancy)
 	{
 		const auto s = static_cast<i32>(src);
 

@@ -25,7 +25,7 @@ namespace polaris::attacks
 
 	namespace
 	{
-		std::array<Bitboard, RookData.tableSize> generateRookAttacks()
+		auto generateRookAttacks()
 		{
 			std::array<Bitboard, RookData.tableSize> dst{};
 
@@ -55,7 +55,7 @@ namespace polaris::attacks
 			return dst;
 		}
 
-		std::array<Bitboard, BishopData.tableSize> generateBishopAttacks()
+		auto generateBishopAttacks()
 		{
 			std::array<Bitboard, BishopData.tableSize> dst{};
 

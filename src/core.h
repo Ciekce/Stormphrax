@@ -222,7 +222,7 @@ namespace polaris
 		return U64(1) << static_cast<i32>(square);
 	}
 
-	[[nodiscard]] constexpr i32 chebyshev(Square s1, Square s2)
+	[[nodiscard]] constexpr auto chebyshev(Square s1, Square s2)
 	{
 		const auto x1 = squareFile(s1);
 		const auto x2 = squareFile(s2);
@@ -234,14 +234,14 @@ namespace polaris
 	}
 
 	template <Color C>
-	constexpr i32 relativeRank(i32 rank)
+	constexpr auto relativeRank(i32 rank)
 	{
 		if constexpr (C == Color::Black)
 			return 7 - rank;
 		else return rank;
 	}
 
-	constexpr i32 relativeRank(Color c, i32 rank)
+	constexpr auto relativeRank(Color c, i32 rank)
 	{
 		return c == Color::Black ? 7 - rank : rank;
 	}
@@ -270,7 +270,7 @@ namespace polaris
 			assert(std::numeric_limits<i16>::min() <= endgame && std::numeric_limits<i16>::max() >= endgame);
 		}
 
-		[[nodiscard]] inline Score midgame() const
+		[[nodiscard]] inline auto midgame() const
 		{
 			const auto mg = static_cast<u16>(m_score);
 
@@ -280,7 +280,7 @@ namespace polaris
 			return static_cast<Score>(v);
 		}
 
-		[[nodiscard]] inline Score endgame() const
+		[[nodiscard]] inline auto endgame() const
 		{
 			const auto eg = static_cast<u16>(static_cast<u32>(m_score + 0x8000) >> 16);
 
@@ -290,40 +290,40 @@ namespace polaris
 			return static_cast<Score>(v);
 		}
 
-		[[nodiscard]] constexpr TaperedScore operator+(const TaperedScore &other) const
+		[[nodiscard]] constexpr auto operator+(const TaperedScore &other) const
 		{
 			return TaperedScore{m_score + other.m_score};
 		}
 
-		constexpr TaperedScore &operator+=(const TaperedScore &other)
+		constexpr auto operator+=(const TaperedScore &other) -> auto &
 		{
 			m_score += other.m_score;
 			return *this;
 		}
 
-		[[nodiscard]] constexpr TaperedScore operator-(const TaperedScore &other) const
+		[[nodiscard]] constexpr auto operator-(const TaperedScore &other) const
 		{
 			return TaperedScore{m_score - other.m_score};
 		}
 
-		constexpr TaperedScore &operator-=(const TaperedScore &other)
+		constexpr auto operator-=(const TaperedScore &other) -> auto &
 		{
 			m_score -= other.m_score;
 			return *this;
 		}
 
-		[[nodiscard]] constexpr TaperedScore operator*(i32 v) const
+		[[nodiscard]] constexpr auto operator*(i32 v) const
 		{
 			return TaperedScore{m_score * v};
 		}
 
-		constexpr TaperedScore &operator*=(i32 v)
+		constexpr auto operator*=(i32 v) -> auto &
 		{
 			m_score *= v;
 			return *this;
 		}
 
-		[[nodiscard]] constexpr TaperedScore operator-() const
+		[[nodiscard]] constexpr auto operator-() const
 		{
 			return TaperedScore{-m_score};
 		}
