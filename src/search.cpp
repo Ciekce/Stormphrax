@@ -786,10 +786,8 @@ namespace polaris::search
 
 		const auto us = pos.toMove();
 
-		auto &stack = data.stack[ply];
-
-		if (ply + 1 > data.search.seldepth)
-			data.search.seldepth = ply + 1;
+		if (ply > data.search.seldepth)
+			data.search.seldepth = ply;
 
 		ProbedTTableEntry entry{};
 		auto ttMove = NullMove;
