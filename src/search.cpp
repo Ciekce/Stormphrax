@@ -655,31 +655,31 @@ namespace polaris::search
 				score = drawScore(data.search.nodes);
 			else
 			{
-				i32 reduction{};
-
-				// lmr
-				if (depth >= minLmrDepth()
-					&& legalMoves >= minLmrMoves
-					&& !inCheck // we are in check
-					&& generator.stage() >= MovegenStage::Quiet)
-				{
-					auto lmr = baseLmr;
-
-					if (!pv)
-						++lmr;
-
-					if (pos.isCheck()) // this move gives check
-						--lmr;
-
-					reduction = std::clamp(lmr, 0, depth - 2);
-				}
-
 				const auto newDepth = depth - 1 + extension;
 
 				if (pv && legalMoves == 1)
 					score = -search(data, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
+					i32 reduction{};
+
+					// lmr
+					if (depth >= minLmrDepth()
+						&& legalMoves >= minLmrMoves
+						&& !inCheck // we are in check
+						&& generator.stage() >= MovegenStage::Quiet)
+					{
+						auto lmr = baseLmr;
+
+						if (!pv)
+							++lmr;
+
+						if (pos.isCheck()) // this move gives check
+							--lmr;
+
+						reduction = std::clamp(lmr, 0, depth - 2);
+					}
+
 					score = -search(data, newDepth - reduction, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduction > 0)
