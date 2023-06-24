@@ -43,8 +43,8 @@ namespace polaris
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
-		static constexpr i32 Hash = Start + 1;
-		static constexpr i32 GoodNoisy = Hash + 1;
+		static constexpr i32 TtMove = Start + 1;
+		static constexpr i32 GoodNoisy = TtMove + 1;
 		static constexpr i32 Killer = GoodNoisy + 1;
 		static constexpr i32 Countermove = Killer + 1;
 		static constexpr i32 Quiet = Countermove + 1;
@@ -56,11 +56,11 @@ namespace polaris
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, Move killer, ScoredMoveList &moves, Move hashMove,
+		MoveGenerator(const Position &pos, Move killer, ScoredMoveList &moves, Move ttMove,
 			HistoryMove prevMove = {}, HistoryMove prevPrevMove = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_moves{moves},
-			  m_hashMove{hashMove},
+			  m_ttMove{ttMove},
 			  m_prevMove{prevMove},
 			  m_prevPrevMove{prevPrevMove},
 			  m_killer{killer},
@@ -82,9 +82,9 @@ namespace polaris
 
 					switch (m_stage)
 					{
-					case MovegenStage::Hash:
-						if (m_hashMove)
-							return m_hashMove;
+					case MovegenStage::TtMove:
+						if (m_ttMove)
+							return m_ttMove;
 						break;
 
 					case MovegenStage::GoodNoisy:
@@ -95,7 +95,7 @@ namespace polaris
 
 					case MovegenStage::Killer:
 						if (m_killer
-							&& m_killer != m_hashMove
+							&& m_killer != m_ttMove
 							&& m_pos.isPseudolegal(m_killer))
 							return m_killer;
 						break;
@@ -105,7 +105,7 @@ namespace polaris
 						{
 							m_countermove = m_history->entry(m_prevMove).countermove;
 							if (m_countermove
-								&& m_countermove != m_hashMove
+								&& m_countermove != m_ttMove
 								&& m_countermove != m_killer
 								&& m_pos.isPseudolegal(m_countermove))
 								return m_countermove;
@@ -129,7 +129,7 @@ namespace polaris
 
 				const auto move = findNext();
 
-				if (move != m_hashMove
+				if (move != m_ttMove
 					&& move != m_killer
 					&& move != m_countermove)
 					return move;
@@ -272,7 +272,7 @@ namespace polaris
 
 		ScoredMoveList &m_moves;
 
-		Move m_hashMove;
+		Move m_ttMove;
 
 		HistoryMove m_prevMove;
 		HistoryMove m_prevPrevMove;

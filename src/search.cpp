@@ -461,20 +461,20 @@ namespace polaris::search
 		}
 
 		ProbedTTableEntry entry{};
-		auto hashMove = NullMove;
+		auto ttMove = NullMove;
 
 		if (!stack.excluded)
 		{
 			if (m_table.probe(entry, pos.key(), depth, ply, alpha, beta) && !pv)
 				return entry.score;
 			else if (entry.move && pos.isPseudolegal(entry.move))
-				hashMove = entry.move;
+				ttMove = entry.move;
 
 			// internal iterative reduction
 			if (!inCheck
 				&& depth >= minIirDepth()
 				&& !stack.excluded
-				&& !hashMove
+				&& !ttMove
 				&& (pv || cutnode))
 				--depth;
 		}
@@ -607,7 +607,7 @@ namespace polaris::search
 		auto entryType = EntryType::Alpha;
 
 		MoveGenerator generator{pos, stack.killer, moveStack.moves,
-			hashMove, prevMove, prevPrevMove, &data.history};
+			ttMove, prevMove, prevPrevMove, &data.history};
 
 		u32 legalMoves = 0;
 
@@ -792,19 +792,19 @@ namespace polaris::search
 			data.search.seldepth = ply + 1;
 
 		ProbedTTableEntry entry{};
-		auto hashMove = NullMove;
+		auto ttMove = NullMove;
 
 		if (m_table.probe(entry, pos.key(), 0, ply, alpha, beta))
 			return entry.score;
 		else if (entry.move && pos.isPseudolegal(entry.move))
-			hashMove = entry.move;
+			ttMove = entry.move;
 
 		auto best = NullMove;
 		auto bestScore = staticEval;
 
 		auto entryType = EntryType::Alpha;
 
-		QMoveGenerator generator{pos, NullMove, data.moveStack[moveStackIdx].moves, hashMove};
+		QMoveGenerator generator{pos, NullMove, data.moveStack[moveStackIdx].moves, ttMove};
 
 		while (const auto move = generator.next())
 		{
