@@ -668,7 +668,6 @@ namespace polaris::search
 					// lmr
 					if (depth >= minLmrDepth()
 						&& legalMoves >= minLmrMoves
-						&& !inCheck // we are in check
 						&& generator.stage() >= MovegenStage::Quiet)
 					{
 						auto lmr = baseLmr;
