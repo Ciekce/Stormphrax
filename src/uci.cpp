@@ -818,11 +818,11 @@ namespace polaris
 
 		auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>
 		{
-			constexpr auto As = std::array { 
-				-16.47359643, 125.09292680, -150.78265049, 133.46169058
+			constexpr auto As = std::array {
+				-9.50613608, 80.39483574, -91.01771303, 103.05370743
 			};
-			constexpr auto Bs = std::array { 
-				-10.64392182, 68.80469735, -98.63536151, 100.12391368
+			constexpr auto Bs = std::array {
+				-6.41966158, 43.76916282, -63.29152600, 76.95812720
 			};
 
 			static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));

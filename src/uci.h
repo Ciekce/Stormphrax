@@ -29,7 +29,7 @@
 
 namespace polaris::uci
 {
-	constexpr Score NormalizationK = 91;
+	constexpr Score NormalizationK = 82;
 
 	auto run() -> i32;
 
