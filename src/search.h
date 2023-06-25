@@ -116,7 +116,7 @@ namespace polaris::search
 		struct MoveStackEntry
 		{
 			ScoredMoveList moves{};
-			StaticVector<HistoryMove, 64> quietsTried{};
+			StaticVector<HistoryMove, 256> quietsTried{};
 			StaticVector<std::pair<HistoryMove, Piece>, 64> noisiesTried{};
 		};
 
