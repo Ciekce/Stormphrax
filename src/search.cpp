@@ -595,6 +595,7 @@ namespace polaris::search
 		}
 
 		moveStack.quietsTried.clear();
+		moveStack.noisiesTried.clear();
 
 		const i32 minLmrMoves = pv ? 3 : 2;
 
@@ -617,6 +618,7 @@ namespace polaris::search
 				continue;
 
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
+			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
 
 			const auto baseLmr = LmrTable[depth][legalMoves + 1];
 
@@ -631,7 +633,7 @@ namespace polaris::search
 
 				// see pruning
 				if (depth <= maxSeePruningDepth()
-					&& !see::see(pos, move, depth * (pos.isNoisy(move) ? noisySeeThreshold() : quietSeeThreshold())))
+					&& !see::see(pos, move, depth * (noisy ? noisySeeThreshold() : quietSeeThreshold())))
 					continue;
 			}
 
@@ -699,15 +701,27 @@ namespace polaris::search
 				{
 					if (score >= beta)
 					{
+						const auto adjustment = depth * depth + depth - 1;
+
+						auto *prevContEntry = (quietOrLosing && prevMove)
+							? &data.history.contEntry(prevMove) : nullptr;
+						auto *prevPrevContEntry = (!noisy && prevPrevMove)
+							? &data.history.contEntry(prevPrevMove) : nullptr;
+
 						if (quietOrLosing)
 						{
 							stack.killer = move;
+							if (prevMove)
+								data.history.entry(prevMove).countermove = move;
+						}
 
-							const auto adjustment = depth * depth + depth - 1;
-
-							auto *prevContEntry = prevMove ? &data.history.contEntry(prevMove) : nullptr;
-							auto *prevPrevContEntry = prevPrevMove ? &data.history.contEntry(prevPrevMove) : nullptr;
-
+						if (noisy)
+							updateHistoryScore(
+								data.history.captureScore(stack.currMove, captured),
+								adjustment
+							);
+						else
+						{
 							updateHistoryScore(data.history.entry(stack.currMove).score, adjustment);
 
 							if (prevContEntry)
@@ -717,16 +731,21 @@ namespace polaris::search
 
 							for (const auto prevQuiet : moveStack.quietsTried)
 							{
-								updateHistoryScore(data.history.entry(prevQuiet).score,  -adjustment);
+								updateHistoryScore(data.history.entry(prevQuiet).score, -adjustment);
 
 								if (prevContEntry)
 									updateHistoryScore(prevContEntry->score(prevQuiet), -adjustment);
 								if (prevPrevContEntry)
 									updateHistoryScore(prevPrevContEntry->score(prevQuiet), -adjustment);
 							}
+						}
 
-							if (prevMove)
-								data.history.entry(prevMove).countermove = move;
+						for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
+						{
+							updateHistoryScore(
+								data.history.captureScore(prevNoisy, prevCaptured),
+								-adjustment
+							);
 						}
 
 						entryType = EntryType::Beta;
@@ -738,8 +757,9 @@ namespace polaris::search
 				}
 			}
 
-			if (quietOrLosing)
-				moveStack.quietsTried.push(stack.currMove);
+			if (noisy)
+				moveStack.noisiesTried.push({stack.currMove, captured});
+			else moveStack.quietsTried.push(stack.currMove);
 		}
 
 		if (legalMoves == 0)

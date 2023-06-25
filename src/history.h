@@ -101,6 +101,18 @@ namespace polaris
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
+		[[nodiscard]] inline auto captureScore(HistoryMove move, Piece captured) -> auto &
+		{
+			return m_captureTable[static_cast<i32>(captured)]
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto captureScore(HistoryMove move, Piece captured) const -> const auto &
+		{
+			return m_captureTable[static_cast<i32>(captured)]
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
 		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
 		{
 			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
@@ -125,14 +137,18 @@ namespace polaris
 		inline auto clear()
 		{
 			std::memset(m_table.data(), 0, sizeof(HistoryEntry) * 64 * 12);
+			std::memset(m_captureTable.data(), 0, sizeof(i32) * 64 * 12 * 13);
 			std::memset(m_continuationTable.data(), 0, sizeof(i32) * 64 * 12 * 64 * 12);
 		}
 
 	private:
 		using Table = std::array<std::array<HistoryEntry, 64>, 12>;
+		// 13 to account for non-capture queen promos
+		using CaptureTable = std::array<std::array<std::array<i32, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
 
 		Table m_table{};
+		CaptureTable m_captureTable{};
 		ContinuationTable m_continuationTable{};
 	};
 }

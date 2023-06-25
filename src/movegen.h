@@ -139,32 +139,19 @@ namespace polaris
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		static constexpr auto MvvLva = std::array {
-			std::array { // pawn capturing
-				89, 586382, 626402, 846512, 2041109, 0, -178000
-			},
-			std::array { // knight capturing
-				-585911, 382, 40402, 260512, 1455109, 0, -764000
-			},
-			std::array { // bishop capturing
-				-625911, -39618, 402, 220512, 1415109, 0, -804000
-			},
-			std::array { // rook capturing
-				-845911, -259618, -219598, 512, 1195109, 0, -1024000
-			},
-			std::array { // queen capturing
-				-2039911, -1453618, -1413598, -1193488, 1109, 0, -2218000
-			},
-			std::array { // king capturing
-				178089, 764382, 804402, 1024512, 2219109, 0, 0
-			}
+		static constexpr auto Mvv = std::array {
+			10, // pawn
+			38, // knight
+			40, // bishop
+			50, // rook
+			110 // queen
 		};
 
 		static constexpr auto PromoScores = std::array {
-			 1, // knight
-			-2, // bishop
-			-1, // rook
-			 2  // queen
+			-1, // knight
+			-3, // bishop
+			-2, // rook
+			 0  // queen
 		};
 
 		inline auto findNext()
@@ -199,17 +186,23 @@ namespace polaris
 				auto &move = m_moves[i];
 
 				const auto captured = move.move.type() == MoveType::EnPassant
-					? BasePiece::Pawn
-					: basePieceUnchecked(boards.pieceAt(move.move.dst()));
+					? colorPiece(BasePiece::Pawn, m_pos.opponent())
+					: boards.pieceAt(move.move.dst());
 
-				move.score = MvvLva[static_cast<i32>(basePiece(boards.pieceAt(move.move.src())))]
-					[static_cast<i32>(captured)];
+				if (m_history)
+				{
+					const auto historyMove = HistoryMove::from(boards, move.move);
+					move.score = m_history->captureScore(historyMove, captured);
+				}
 
-				if (move.move.type() == MoveType::Promotion)
-					move.score += PromoScores[move.move.targetIdx()] * 2000 * 2000;
+				if (captured != Piece::None)
+					move.score += Mvv[static_cast<i32>(basePiece(captured))];
 
-				if (captured != BasePiece::None && !see::see(m_pos, move.move))
-					move.score -= 8 * 2000 * 2000;
+				if ((captured != Piece::None || move.move.target() == BasePiece::Queen)
+					&& see::see(m_pos, move.move))
+					move.score += 8 * 2000 * 2000;
+				else if (move.move.type() == MoveType::Promotion)
+					move.score += PromoScores[move.move.targetIdx()] * 2000;
 			}
 		}
 
@@ -254,7 +247,7 @@ namespace polaris
 
 			m_goodNoisyEnd = std::find_if(m_moves.begin() + m_idx, m_moves.end(), [](const auto &v)
 			{
-				return v.score < -4 * 2000 * 2000;
+				return v.score < 4 * 2000 * 2000;
 			}) - m_moves.begin();
 		}
 

@@ -117,6 +117,7 @@ namespace polaris::search
 		{
 			ScoredMoveList moves{};
 			StaticVector<HistoryMove, 64> quietsTried{};
+			StaticVector<std::pair<HistoryMove, Piece>, 64> noisiesTried{};
 		};
 
 		struct ThreadData

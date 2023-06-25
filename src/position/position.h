@@ -24,6 +24,7 @@
 #include <vector>
 #include <stack>
 #include <optional>
+#include <utility>
 
 #include "boards.h"
 #include "../move.h"
@@ -382,6 +383,21 @@ namespace polaris
 				&& (type == MoveType::EnPassant
 					|| move.target() == BasePiece::Queen
 					|| boards().pieceAt(move.dst()) != Piece::None);
+		}
+
+		[[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece>
+		{
+			const auto type = move.type();
+
+			if (type == MoveType::Castling)
+				return {false, Piece::None};
+			else if (type == MoveType::EnPassant)
+				return {true, colorPiece(BasePiece::Pawn, toMove())};
+			else
+			{
+				const auto captured = boards().pieceAt(move.dst());
+				return {captured != Piece::None || move.target() == BasePiece::Queen, captured};
+			}
 		}
 
 		[[nodiscard]] auto toFen() const -> std::string;
