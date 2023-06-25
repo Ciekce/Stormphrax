@@ -31,6 +31,9 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
   - countermoves
   - futility pruning
   - history
+    - countermove history
+    - follow-up history
+    - capture history
   - internal iterative reduction
   - killers (1 per ply)
   - late move reductions
@@ -38,6 +41,7 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
   - nullmove pruning
   - reverse futility pruning
   - SEE move ordering and pruning
+  - Syzygy tablebase support
 - Texel-tuned HCE (private tuner because that code hurts me to reread)
   - tuner based on Andrew Grant's [paper](https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf)
   - tuned on a combination of the Zurichess and lichess-big3-resolved datasets
@@ -52,14 +56,16 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 - make it stronger uwu
 
 ## UCI options
-| Name            |  Type   | Default value |  Valid values   | Description                                                                                                     |
-|:----------------|:-------:|:-------------:|:---------------:|:----------------------------------------------------------------------------------------------------------------|
-| Hash            | integer |      64       |   [1, 131072]   | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2.     |
-| Clear Hash      | button  |      N/A      |       N/A       | Clears the transposition table.                                                                                 |
-| Threads         | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                               |
-| UCI_Chess960    |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                       |
-| Underpromotions |  check  |    `false`    | `false`, `true` | Whether underpromotions to rooks and bishops are generated.                                                     |
-| Move Overhead   | integer |      10       |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                               |
+| Name             |  Type   | Default value |  Valid values   | Description                                                                                                 |
+|:-----------------|:-------:|:-------------:|:---------------:|:------------------------------------------------------------------------------------------------------------|
+| Hash             | integer |      64       |   [1, 131072]   | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2. |
+| Clear Hash       | button  |      N/A      |       N/A       | Clears the transposition table.                                                                             |
+| Threads          | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                           |
+| UCI_Chess960     |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                   |
+| Move Overhead    | integer |      10       |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                           |
+| SyzygyPath       | string  |    <empty>    |    any path     | Location of Syzygy tablebases to probe during search.                                                       |
+| SyzygyProbeDepth |  spin   |       1       |    [1, 255]     | Minimum depth to probe Syzygy tablebases at.                                                                |
+| SyzygyProbeLimit |  spin   |       7       |     [0, 7]      | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
 
 ## Builds
 `bmi2`: requires BMI2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
