@@ -20,6 +20,8 @@
 
 #include "../types.h"
 
+#include <array>
+
 #include "limit.h"
 #include "../util/timer.h"
 #include "../util/range.h"
@@ -47,7 +49,8 @@ namespace polaris::limit
 		TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
 		~TimeManager() final = default;
 
-		auto update(const search::SearchData &data, bool stableBestMove) -> void final;
+		auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final;
+		auto updateMoveNodes(Move move, usize nodes) -> void final;
 
 		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final;
 
@@ -56,5 +59,9 @@ namespace polaris::limit
 
 		f64 m_softTime{};
 		f64 m_maxTime{};
+
+		f64 m_scale{1.0};
+
+		std::array<std::array<usize, 64>, 64> m_moveNodeCounts{};
 	};
 }

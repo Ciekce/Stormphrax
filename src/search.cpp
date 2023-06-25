@@ -279,12 +279,12 @@ namespace polaris::search
 	{
 		auto &searchData = data.search;
 
-		bool shouldReport = !bench && data.id == 0;
+		const bool reportAndUpdate = !bench && data.id == 0;
 
 		Score score{};
 		Move best{};
 
-		const auto startTime = shouldReport ? util::g_timer.time() : 0.0;
+		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
 		const auto startDepth = 1 + static_cast<i32>(data.id) % 16;
 
 		i32 depthCompleted{};
@@ -301,7 +301,7 @@ namespace polaris::search
 
 			const auto prevBest = best;
 
-			bool reportThisIter = shouldReport;
+			bool reportThisIter = reportAndUpdate;
 
 			if (depth < minAspDepth())
 			{
@@ -339,7 +339,7 @@ namespace polaris::search
 
 					score = newScore;
 
-					if (shouldReport && (score <= alpha || score >= beta))
+					if (reportAndUpdate && (score <= alpha || score >= beta))
 					{
 						const auto time = util::g_timer.time() - startTime;
 						if (time > MinReportDelay)
@@ -371,7 +371,8 @@ namespace polaris::search
 				}
 			}
 
-			m_limiter->update(data.search, prevBest == best);
+			if (reportAndUpdate)
+				m_limiter->update(data.search, best, data.search.nodes);
 
 			if (reportThisIter && depth < data.maxDepth)
 			{
@@ -386,7 +387,7 @@ namespace polaris::search
 			}
 		}
 
-		if (shouldReport)
+		if (reportAndUpdate)
 		{
 			if (!bench)
 				m_searchMutex.lock();
@@ -407,7 +408,7 @@ namespace polaris::search
 			--m_runningThreads;
 			m_stopSignal.notify_all();
 
-			if (shouldReport)
+			if (reportAndUpdate)
 			{
 				m_table.age();
 
@@ -617,6 +618,8 @@ namespace polaris::search
 			if (move == stack.excluded)
 				continue;
 
+			const auto prevNodes = data.search.nodes;
+
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
 			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
 
@@ -690,6 +693,9 @@ namespace polaris::search
 						score = -search(data, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
 			}
+
+			if (root && data.id == 0)
+				m_limiter->updateMoveNodes(move, data.search.nodes - prevNodes);
 
 			if (score > bestScore)
 			{
