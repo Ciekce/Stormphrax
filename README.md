@@ -27,12 +27,11 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 - standard PVS with quiescence search and iterative deepening
   - aspiration windows
   - check extensions
-  - continuation history (1- and 2-ply)
   - countermoves
   - futility pruning
   - history
-    - countermove history
-    - follow-up history
+    - countermove history (1-ply continuation history)
+    - follow-up history (2-ply continuation history)
     - capture history
   - internal iterative reduction
   - killers (1 per ply)
