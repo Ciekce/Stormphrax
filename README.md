@@ -62,7 +62,7 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 | Threads          | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                           |
 | UCI_Chess960     |  check  |    `false`    | `false`, `true` | Whether Polaris plays Chess960 instead of standard chess.                                                   |
 | Move Overhead    | integer |      10       |   [0, 50000]    | Amount of time Polaris assumes to be lost to overhead when making a move (in ms).                           |
-| SyzygyPath       | string  |    <empty>    |    any path     | Location of Syzygy tablebases to probe during search.                                                       |
+| SyzygyPath       | string  |   \<empty\>   |    any path     | Location of Syzygy tablebases to probe during search.                                                       |
 | SyzygyProbeDepth |  spin   |       1       |    [1, 255]     | Minimum depth to probe Syzygy tablebases at.                                                                |
 | SyzygyProbeLimit |  spin   |       7       |     [0, 7]      | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
 
