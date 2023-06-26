@@ -132,7 +132,7 @@ namespace polaris::search
 					BasePiece::Knight
 				};
 
-				++m_threads[0].search.tbhits;
+				m_threads[0].search.tbhits = 1;
 
 				const auto wdl = TB_GET_WDL(result);
 
