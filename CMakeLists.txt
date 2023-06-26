@@ -12,6 +12,8 @@ endif()
 
 if(MSVC)
 	add_compile_options(/EHsc)
+	# for fathom
+	add_compile_definitions(_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING _CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 endif()
 

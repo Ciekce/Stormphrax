@@ -19,6 +19,8 @@ ifeq ($(OS), Windows_NT)
     ifeq (,$(findstring clang,$(shell $(CXX) --version)))
         $(error GCC and MSVC unsupported on Windows)
     endif
+# for fathom
+    CXXFLAGS += -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING -D_CRT_SECURE_NO_WARNINGS
     LDFLAGS += -fuse-ld=lld
 else
     DETECTED_OS := $(shell uname -s)
