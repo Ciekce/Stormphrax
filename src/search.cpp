@@ -132,8 +132,6 @@ namespace polaris::search
 					BasePiece::Knight
 				};
 
-				m_threads[0].search.tbhits = 1;
-
 				const auto wdl = TB_GET_WDL(result);
 
 				const auto score = wdl == TB_WIN ? ScoreTbWin
@@ -932,15 +930,20 @@ namespace polaris::search
 
 		if (g_opts.syzygyEnabled)
 		{
-			usize tbhits = 0;
-
-			// technically a potential race but it doesn't matter
-			for (const auto &thread : m_threads)
+			if (tbRoot)
+				std::cout << " tbhits 1";
+			else
 			{
-				tbhits += thread.search.tbhits;
-			}
+				usize tbhits = 0;
 
-			std::cout << " tbhits " << tbhits;
+				// technically a potential race but it doesn't matter
+				for (const auto &thread: m_threads)
+				{
+					tbhits += thread.search.tbhits;
+				}
+
+				std::cout << " tbhits " << tbhits;
+			}
 		}
 
 		std::cout << " pv " << uci::moveToString(move);
