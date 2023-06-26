@@ -21,6 +21,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 #include "uci.h"
 #include "movegen.h"
@@ -319,8 +320,8 @@ namespace polaris::search
 
 				auto delta = initialAspWindow();
 
-				auto alpha = score - delta;
-				auto beta = score + delta;
+				auto alpha = std::max(score - delta, -ScoreMax);
+				auto beta  = std::min(score + delta,  ScoreMax);
 
 				while (!shouldStop(searchData, false))
 				{
@@ -347,17 +348,17 @@ namespace polaris::search
 					delta += delta / 2;
 
 					if (delta > maxAspWindow())
-						delta = ScoreMate;
+						delta = ScoreMax;
 
 					if (score >= beta)
 					{
-						beta += delta;
+						beta = std::min(beta + delta, ScoreMax);
 						--aspDepth;
 					}
 					else if (score <= alpha)
 					{
 						beta = (alpha + beta) / 2;
-						alpha = std::max(alpha - delta, -ScoreMate);
+						alpha = std::max(alpha - delta, -ScoreMax);
 						aspDepth = depth;
 					}
 					else
@@ -419,6 +420,11 @@ namespace polaris::search
 	auto Searcher::search(ThreadData &data, i32 depth,
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
+		assert(alpha >= -ScoreMax);
+		assert(beta  <=  ScoreMax);
+		assert(depth >= 0 && depth <= MaxDepth);
+		assert(ply   >= 0 && ply   <= MaxDepth);
+
 		if (depth > 1 && shouldStop(data.search, false))
 			return beta;
 
