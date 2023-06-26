@@ -187,6 +187,6 @@ namespace polaris::search
 		auto qsearch(ThreadData &data, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &data, i32 depth, Move move,
-			f64 time, Score score, Score alpha, Score beta, bool tb = false) -> void;
+			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }

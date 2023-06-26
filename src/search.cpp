@@ -866,35 +866,41 @@ namespace polaris::search
 	}
 
 	auto Searcher::report(const ThreadData &data, i32 depth,
-		Move move, f64 time, Score score, Score alpha, Score beta, bool tb) -> void
+		Move move, f64 time, Score score, Score alpha, Score beta, bool tbRoot) -> void
 	{
 		usize nodes = 0;
 
-		// technically a potential race but it doesn't matter
-		for (const auto &thread : m_threads)
+		// in tb positions at root we have searched 0 nodes
+		if (!tbRoot)
 		{
-			nodes += thread.search.nodes;
+			// technically a potential race but it doesn't matter
+			for (const auto &thread: m_threads)
+			{
+				nodes += thread.search.nodes;
+			}
 		}
 
-		const auto ms = time < 0.0 ? 0 : static_cast<usize>(time * 1000.0);
-		const auto nps = time < 0.0 ? 0 : static_cast<usize>(static_cast<f64>(nodes) / time);
+		const auto ms = tbRoot ? 0 : static_cast<usize>(time * 1000.0);
+		const auto nps = tbRoot ? 0 : static_cast<usize>(static_cast<f64>(nodes) / time);
 
 		std::cout << "info depth " << depth << " seldepth " << data.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
 
+		// mates
 		if (std::abs(score) > ScoreTbWin)
 		{
 			if (score > 0)
 				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
 			else std::cout << "mate " << (-(ScoreMate + score) / 2);
 		}
-		else if (tb)
+		// tablebase wins/losses, or zeroes that are pointless to normalise
+		else if (score == 0 || std::abs(score) > ScoreWin)
 			std::cout << "cp " << score;
 		else
 		{
-			// adjust score to 100cp == 50% probability
+			// adjust score to 100cp == 50% win probability
 			const auto normScore = score * uci::NormalizationK / 100;
 			std::cout << "cp " << normScore;
 		}
@@ -905,14 +911,13 @@ namespace polaris::search
 			std::cout << " lowerbound";
 
 		// wdl display
-		if (tb)
-		{
-			if (score > ScoreWin)
-				std::cout << " wdl 1000 0 0";
-			else if (score < -ScoreWin)
-				std::cout << " wdl 0 0 1000";
-			else std::cout << " wdl 0 1000 0";
-		}
+		if (score > ScoreWin)
+			std::cout << " wdl 1000 0 0";
+		else if (score < -ScoreWin)
+			std::cout << " wdl 0 0 1000";
+		// tablebase draws at the root
+		else if (tbRoot)
+			std::cout << " wdl 0 1000 0";
 		else
 		{
 			const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
