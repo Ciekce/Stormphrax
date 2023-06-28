@@ -8,7 +8,8 @@ SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/hash.cpp src/position
 SUFFIX :=
 
 CXX := clang++
-CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION=OpenBench
+# silence warning for fathom
+CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION=OpenBench -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
 
 LDFLAGS :=
 
@@ -24,7 +25,7 @@ ifeq ($(OS), Windows_NT)
         $(error GCC and MSVC unsupported on Windows)
     endif
 # for fathom
-    CXXFLAGS += -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING -D_CRT_SECURE_NO_WARNINGS
+    CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
     LDFLAGS += -fuse-ld=lld
 else
     DETECTED_OS := $(shell uname -s)
