@@ -248,12 +248,19 @@ namespace stormphrax
 
 	struct CastlingRooks
 	{
-		Square blackShort{Square::None};
-		Square blackLong {Square::None};
-		Square whiteShort{Square::None};
-		Square whiteLong {Square::None};
+		struct RookPair
+		{
+			Square black{Square::None};
+			Square white{Square::None};
 
-		[[nodiscard]] inline bool operator==(const CastlingRooks &other) const = default;
+			[[nodiscard]] inline bool operator==(const RookPair &) const = default;
+		};
+
+		// wish I could call these "short" and "long"
+		RookPair shortSquares{Square::None};
+		RookPair  longSquares{Square::None};
+
+		[[nodiscard]] inline bool operator==(const CastlingRooks &) const = default;
 	};
 
 	using Score = i32;

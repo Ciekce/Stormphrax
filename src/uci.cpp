@@ -225,10 +225,42 @@ namespace stormphrax
 
 					if (auto newPos = Position::fromFen(fen.str()))
 						m_pos = std::move(*newPos);
-					else
+					else return;
+				}
+				else if (position == "frc")
+				{
+					if (!g_opts.chess960)
 					{
-						std::cerr << "invalid fen" << std::endl;
+						std::cerr << "Chess960 not enabled" << std::endl;
 						return;
+					}
+
+					if (next < tokens.size())
+					{
+						if (const auto frcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (auto newPos = Position::fromFrcIndex(*frcIndex))
+								m_pos = std::move(*newPos);
+							else return;
+						}
+					}
+				}
+				else if (position == "dfrc")
+				{
+					if (!g_opts.chess960)
+					{
+						std::cerr << "Chess960 not enabled" << std::endl;
+						return;
+					}
+
+					if (next < tokens.size())
+					{
+						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (auto newPos = Position::fromDfrcIndex(*dfrcIndex))
+								m_pos = std::move(*newPos);
+							else return;
+						}
 					}
 				}
 				else return;

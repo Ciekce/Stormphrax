@@ -74,13 +74,13 @@ namespace stormphrax::hash
 
 		usize flags{};
 
-		if (castlingRooks.blackShort != Square::None)
+		if (castlingRooks.shortSquares.black != Square::None)
 			flags |= BlackShort;
-		if (castlingRooks.blackLong  != Square::None)
+		if (castlingRooks. longSquares.black != Square::None)
 			flags |= BlackLong;
-		if (castlingRooks.whiteShort != Square::None)
+		if (castlingRooks.shortSquares.white != Square::None)
 			flags |= WhiteShort;
-		if (castlingRooks.whiteLong  != Square::None)
+		if (castlingRooks. longSquares.white != Square::None)
 			flags |= WhiteLong;
 
 		return Hashes[offsets::Castling + flags];

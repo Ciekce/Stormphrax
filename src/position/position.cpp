@@ -47,6 +47,79 @@ namespace stormphrax
 
 		constexpr auto PhaseInc = std::array{0, 0, 1, 1, 1, 1, 2, 2, 4, 4, 0, 0, 0};
 		constexpr auto PhaseIncBase = std::array{0, 1, 1, 2, 4, 0, 0};
+
+		auto scharnaglToBackrank(u32 n)
+		{
+			// https://en.wikipedia.org/wiki/Fischer_random_chess_numbering_scheme#Direct_derivation
+
+			// these are stored with the second knight moved left by an empty square,
+			// because the first knight fills a square before the second knight is placed
+			static constexpr auto N5n = std::array{
+				std::pair{0, 0},
+				std::pair{0, 1},
+				std::pair{0, 2},
+				std::pair{0, 3},
+				std::pair{1, 1},
+				std::pair{1, 2},
+				std::pair{1, 3},
+				std::pair{2, 2},
+				std::pair{2, 3},
+				std::pair{3, 3}
+			};
+
+			std::array<BasePiece, 8> dst{};
+			// no need to fill with empty pieces, because pawns are impossible
+
+			const auto placeInNthFree = [&dst](u32 n, BasePiece piece)
+			{
+				for (i32 free = 0, i = 0; i < 8; ++i)
+				{
+					if (dst[i] == BasePiece::Pawn
+						&& free++ == n)
+					{
+						dst[i] = piece;
+						break;
+					}
+				}
+			};
+
+			const auto placeInFirstFree = [&dst](BasePiece piece)
+			{
+				for (i32 i = 0; i < 8; ++i)
+				{
+					if (dst[i] == BasePiece::Pawn)
+					{
+						dst[i] = piece;
+						break;
+					}
+				}
+			};
+
+			const auto n2 = n  / 4;
+			const auto b1 = n  % 4;
+
+			const auto n3 = n2 / 4;
+			const auto b2 = n2 % 4;
+
+			const auto n4 = n3 / 6;
+			const auto  q = n3 % 6;
+
+			dst[b1 * 2 + 1] = BasePiece::Bishop;
+			dst[b2 * 2    ] = BasePiece::Bishop;
+
+			placeInNthFree(q, BasePiece::Queen);
+
+			const auto [knight1, knight2] = N5n[n4];
+
+			placeInNthFree(knight1, BasePiece::Knight);
+			placeInNthFree(knight2, BasePiece::Knight);
+
+			placeInFirstFree(BasePiece::Rook);
+			placeInFirstFree(BasePiece::King);
+			placeInFirstFree(BasePiece::Rook);
+
+			return dst;
+		}
 	}
 
 	template auto Position::applyMoveUnchecked<false, false>(Move move, TTable *prefetchTt) -> bool;
@@ -187,22 +260,22 @@ namespace stormphrax
 
 		if (moving == Piece::BlackRook)
 		{
-			if (moveSrc == state.castlingRooks.blackShort)
-				newCastlingRooks.blackShort = Square::None;
-			if (moveSrc == state.castlingRooks.blackLong)
-				newCastlingRooks.blackLong = Square::None;
+			if (moveSrc == state.castlingRooks.shortSquares.black)
+				newCastlingRooks.shortSquares.black = Square::None;
+			if (moveSrc == state.castlingRooks.longSquares.black)
+				newCastlingRooks.longSquares.black = Square::None;
 		}
 		else if (moving == Piece::WhiteRook)
 		{
-			if (moveSrc == state.castlingRooks.whiteShort)
-				newCastlingRooks.whiteShort = Square::None;
-			if (moveSrc == state.castlingRooks.whiteLong)
-				newCastlingRooks.whiteLong = Square::None;
+			if (moveSrc == state.castlingRooks.shortSquares.white)
+				newCastlingRooks.shortSquares.white = Square::None;
+			if (moveSrc == state.castlingRooks.longSquares.white)
+				newCastlingRooks.longSquares.white = Square::None;
 		}
 		else if (moving == Piece::BlackKing)
-			newCastlingRooks.blackShort = newCastlingRooks.blackLong = Square::None;
+			newCastlingRooks.shortSquares.black = newCastlingRooks.longSquares.black = Square::None;
 		else if (moving == Piece::WhiteKing)
-			newCastlingRooks.whiteShort = newCastlingRooks.whiteLong = Square::None;
+			newCastlingRooks.shortSquares.white = newCastlingRooks.longSquares.white = Square::None;
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
 			state.enPassant = toSquare(5, move.srcFile());
@@ -221,23 +294,23 @@ namespace stormphrax
 
 		if (captured == Piece::BlackRook)
 		{
-			if (moveDst == state.castlingRooks.blackShort)
-				newCastlingRooks.blackShort = Square::None;
-			if (moveDst == state.castlingRooks.blackLong)
-				newCastlingRooks.blackLong = Square::None;
+			if (moveDst == state.castlingRooks.shortSquares.black)
+				newCastlingRooks.shortSquares.black = Square::None;
+			if (moveDst == state.castlingRooks.longSquares.black)
+				newCastlingRooks.longSquares.black = Square::None;
 		}
 		else if (captured == Piece::WhiteRook)
 		{
-			if (moveDst == state.castlingRooks.whiteShort)
-				newCastlingRooks.whiteShort = Square::None;
-			if (moveDst == state.castlingRooks.whiteLong)
-				newCastlingRooks.whiteLong = Square::None;
+			if (moveDst == state.castlingRooks.shortSquares.white)
+				newCastlingRooks.shortSquares.white = Square::None;
+			if (moveDst == state.castlingRooks.longSquares.white)
+				newCastlingRooks.longSquares.white = Square::None;
 		}
 		else if (moveType == MoveType::Castling)
 		{
 			if (pieceColor(moving) == Color::Black)
-				newCastlingRooks.blackShort = newCastlingRooks.blackLong = Square::None;
-			else newCastlingRooks.whiteShort = newCastlingRooks.whiteLong = Square::None;
+				newCastlingRooks.shortSquares.black = newCastlingRooks.longSquares.black = Square::None;
+			else newCastlingRooks.shortSquares.white = newCastlingRooks.longSquares.white = Square::None;
 		}
 
 		if (newCastlingRooks != state.castlingRooks)
@@ -344,7 +417,9 @@ namespace stormphrax
 			if (squareFile(src) < squareFile(dst))
 			{
 				// no castling rights
-				if (dst != (us == Color::Black ? state.castlingRooks.blackShort : state.castlingRooks.whiteShort))
+				if (dst != (us == Color::Black
+						? state.castlingRooks.shortSquares.black
+						: state.castlingRooks.shortSquares.white))
 					return false;
 
 				kingDst = toSquare(rank, 6);
@@ -353,7 +428,9 @@ namespace stormphrax
 			else
 			{
 				// no castling rights
-				if (dst != (us == Color::Black ? state.castlingRooks.blackLong : state.castlingRooks.whiteLong))
+				if (dst != (us == Color::Black
+						? state.castlingRooks.longSquares.black
+						: state.castlingRooks.longSquares.white))
 					return false;
 
 				kingDst = toSquare(rank, 2);
@@ -373,13 +450,13 @@ namespace stormphrax
 			}
 			else
 			{
-				if (dst == state.castlingRooks.blackShort)
+				if (dst == state.castlingRooks.shortSquares.black)
 					return (occ & U64(0x6000000000000000)).empty()
 						&& !isAttacked(Square::F8, Color::White);
-				else if (dst == state.castlingRooks.blackLong)
+				else if (dst == state.castlingRooks.longSquares.black)
 					return (occ & U64(0x0E00000000000000)).empty()
 						&& !isAttacked(Square::D8, Color::White);
-				else if (dst == state.castlingRooks.whiteShort)
+				else if (dst == state.castlingRooks.shortSquares.white)
 					return (occ & U64(0x0000000000000060)).empty()
 						&& !isAttacked(Square::F1, Color::Black);
 				else return (occ & U64(0x000000000000000E)).empty()
@@ -489,24 +566,24 @@ namespace stormphrax
 			constexpr auto BlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 			constexpr auto WhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 
-			if (state.castlingRooks.whiteShort != Square::None)
-				fen << WhiteFiles[squareFile(state.castlingRooks.whiteShort)];
-			if (state.castlingRooks.whiteLong != Square::None)
-				fen << WhiteFiles[squareFile(state.castlingRooks.whiteLong)];
-			if (state.castlingRooks.blackShort != Square::None)
-				fen << BlackFiles[squareFile(state.castlingRooks.blackShort)];
-			if (state.castlingRooks.blackLong != Square::None)
-				fen << BlackFiles[squareFile(state.castlingRooks.blackLong)];
+			if (state.castlingRooks.shortSquares.white != Square::None)
+				fen << WhiteFiles[squareFile(state.castlingRooks.shortSquares.white)];
+			if (state.castlingRooks.longSquares.white != Square::None)
+				fen << WhiteFiles[squareFile(state.castlingRooks.longSquares.white)];
+			if (state.castlingRooks.shortSquares.black != Square::None)
+				fen << BlackFiles[squareFile(state.castlingRooks.shortSquares.black)];
+			if (state.castlingRooks.longSquares.black != Square::None)
+				fen << BlackFiles[squareFile(state.castlingRooks.longSquares.black)];
 		}
 		else
 		{
-			if (state.castlingRooks.whiteShort != Square::None)
+			if (state.castlingRooks.shortSquares.white != Square::None)
 				fen << 'K';
-			if (state.castlingRooks.whiteLong  != Square::None)
+			if (state.castlingRooks.longSquares.white  != Square::None)
 				fen << 'Q';
-			if (state.castlingRooks.blackShort != Square::None)
+			if (state.castlingRooks.shortSquares.black != Square::None)
 				fen << 'k';
-			if (state.castlingRooks.blackLong  != Square::None)
+			if (state.castlingRooks.longSquares.black  != Square::None)
 				fen << 'q';
 		}
 
@@ -969,10 +1046,10 @@ namespace stormphrax
 		state.boards.forColor(Color::Black) = U64(0xFFFF000000000000);
 		state.boards.forColor(Color::White) = U64(0x000000000000FFFF);
 
-		state.castlingRooks.blackShort = Square::H8;
-		state.castlingRooks.blackLong  = Square::A8;
-		state.castlingRooks.whiteShort = Square::H1;
-		state.castlingRooks.whiteLong  = Square::A1;
+		state.castlingRooks.shortSquares.black = Square::H8;
+		state.castlingRooks.longSquares.black  = Square::A8;
+		state.castlingRooks.shortSquares.white = Square::H1;
+		state.castlingRooks.longSquares.white  = Square::A1;
 
 		position.regen();
 
@@ -1135,8 +1212,8 @@ namespace stormphrax
 						}
 
 						if (file < kingFile)
-							state.castlingRooks.blackLong = toSquare(7, file);
-						else state.castlingRooks.blackShort = toSquare(7, file);
+							state.castlingRooks.longSquares.black = toSquare(7, file);
+						else state.castlingRooks.shortSquares.black = toSquare(7, file);
 					}
 					else if (flag >= 'A' && flag <= 'H')
 					{
@@ -1150,8 +1227,8 @@ namespace stormphrax
 						}
 
 						if (file < kingFile)
-							state.castlingRooks.whiteLong = toSquare(0, file);
-						else state.castlingRooks.whiteShort = toSquare(0, file);
+							state.castlingRooks.longSquares.white = toSquare(0, file);
+						else state.castlingRooks.shortSquares.white = toSquare(0, file);
 					}
 					else if (flag == 'k')
 					{
@@ -1160,7 +1237,7 @@ namespace stormphrax
 							const auto square = toSquare(7, file);
 							if (state.boards.pieceAt(square) == Piece::BlackRook)
 							{
-								state.castlingRooks.blackShort = square;
+								state.castlingRooks.shortSquares.black = square;
 								break;
 							}
 						}
@@ -1172,7 +1249,7 @@ namespace stormphrax
 							const auto square = toSquare(0, file);
 							if (state.boards.pieceAt(square) == Piece::WhiteRook)
 							{
-								state.castlingRooks.whiteShort = square;
+								state.castlingRooks.shortSquares.white = square;
 								break;
 							}
 						}
@@ -1184,7 +1261,7 @@ namespace stormphrax
 							const auto square = toSquare(7, file);
 							if (state.boards.pieceAt(square) == Piece::BlackRook)
 							{
-								state.castlingRooks.blackLong = square;
+								state.castlingRooks.longSquares.black = square;
 								break;
 							}
 						}
@@ -1196,7 +1273,7 @@ namespace stormphrax
 							const auto square = toSquare(0, file);
 							if (state.boards.pieceAt(square) == Piece::WhiteRook)
 							{
-								state.castlingRooks.whiteLong = square;
+								state.castlingRooks.longSquares.white = square;
 								break;
 							}
 						}
@@ -1214,10 +1291,10 @@ namespace stormphrax
 				{
 					switch (flag)
 					{
-					case 'k': state.castlingRooks.blackShort = Square::H8; break;
-					case 'q': state.castlingRooks.blackLong  = Square::A8; break;
-					case 'K': state.castlingRooks.whiteShort = Square::H1; break;
-					case 'Q': state.castlingRooks.whiteLong  = Square::A1; break;
+					case 'k': state.castlingRooks.shortSquares.black = Square::H8; break;
+					case 'q': state.castlingRooks.longSquares.black  = Square::A8; break;
+					case 'K': state.castlingRooks.shortSquares.white = Square::H1; break;
+					case 'Q': state.castlingRooks.longSquares.white  = Square::A1; break;
 					default:
 						std::cerr << "invalid castling availability in fen " << fen << std::endl;
 						return {};
@@ -1255,6 +1332,112 @@ namespace stormphrax
 		{
 			std::cerr << "invalid fullmove number in fen " << fen << std::endl;
 			return {};
+		}
+
+		position.regen();
+
+		return position;
+	}
+
+	auto Position::fromFrcIndex(u32 n) -> std::optional<Position>
+	{
+		if (n >= 960)
+		{
+			std::cerr << "invalid frc position index " << n << std::endl;
+			return {};
+		}
+
+		Position position{};
+
+		auto &state = position.currState();
+
+		state.boards.forPiece(BasePiece::Pawn) = U64(0x00FF00000000FF00);
+
+		state.boards.forColor(Color::Black) = U64(0x00FF000000000000);
+		state.boards.forColor(Color::White) = U64(0x000000000000FF00);
+
+		const auto backrank = scharnaglToBackrank(n);
+
+		bool firstRook = true;
+
+		for (i32 i = 0; i < 8; ++i)
+		{
+			const auto blackSquare = toSquare(7, i);
+			const auto whiteSquare = toSquare(0, i);
+
+			state.boards.setPiece(blackSquare, colorPiece(backrank[i], Color::Black));
+			state.boards.setPiece(whiteSquare, colorPiece(backrank[i], Color::White));
+
+			if (backrank[i] == BasePiece::Rook)
+			{
+				auto &rookPair = firstRook
+					? state.castlingRooks. longSquares
+					: state.castlingRooks.shortSquares;
+
+				rookPair.black = blackSquare;
+				rookPair.white = whiteSquare;
+
+				firstRook = false;
+			}
+		}
+
+		position.regen();
+
+		return position;
+	}
+
+	auto Position::fromDfrcIndex(u32 n) -> std::optional<Position>
+	{
+		if (n >= 960 * 960)
+		{
+			std::cerr << "invalid dfrc position index " << n << std::endl;
+			return {};
+		}
+
+		Position position{};
+
+		auto &state = position.currState();
+
+		state.boards.forPiece(BasePiece::Pawn) = U64(0x00FF00000000FF00);
+
+		state.boards.forColor(Color::Black) = U64(0x00FF000000000000);
+		state.boards.forColor(Color::White) = U64(0x000000000000FF00);
+
+		const auto blackBackrank = scharnaglToBackrank(n / 960);
+		const auto whiteBackrank = scharnaglToBackrank(n % 960);
+
+		bool firstBlackRook = true;
+		bool firstWhiteRook = true;
+
+		for (i32 i = 0; i < 8; ++i)
+		{
+			const auto blackSquare = toSquare(7, i);
+			const auto whiteSquare = toSquare(0, i);
+
+			state.boards.setPiece(blackSquare, colorPiece(blackBackrank[i], Color::Black));
+			state.boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], Color::White));
+
+			if (blackBackrank[i] == BasePiece::Rook)
+			{
+				auto &rookPair = firstBlackRook
+					? state.castlingRooks. longSquares
+					: state.castlingRooks.shortSquares;
+
+				rookPair.black = blackSquare;
+
+				firstBlackRook = false;
+			}
+
+			if (whiteBackrank[i] == BasePiece::Rook)
+			{
+				auto &rookPair = firstWhiteRook
+					? state.castlingRooks. longSquares
+					: state.castlingRooks.shortSquares;
+
+				rookPair.white = whiteSquare;
+
+				firstWhiteRook = false;
+			}
 		}
 
 		position.regen();

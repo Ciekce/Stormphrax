@@ -445,6 +445,8 @@ namespace stormphrax
 
 		[[nodiscard]] static auto starting() -> Position;
 		[[nodiscard]] static auto fromFen(const std::string &fen) -> std::optional<Position>;
+		[[nodiscard]] static auto fromFrcIndex(u32 n) -> std::optional<Position>;
+		[[nodiscard]] static auto fromDfrcIndex(u32 n) -> std::optional<Position>;
 
 	private:
 		template <bool UpdateKeys = true, bool UpdateMaterial = true>

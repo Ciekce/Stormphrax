@@ -234,49 +234,49 @@ namespace stormphrax
 					{
 						if (pos.toMove() == Color::Black)
 						{
-							if (castlingRooks.blackShort != Square::None)
+							if (castlingRooks.shortSquares.black != Square::None)
 								generateFrcCastling(dst, pos, occupancy,
 									pos.blackKing(), Square::G8,
-									castlingRooks.blackShort, Square::F8);
-							if (castlingRooks.blackLong != Square::None)
+									castlingRooks.shortSquares.black, Square::F8);
+							if (castlingRooks.longSquares.black != Square::None)
 								generateFrcCastling(dst, pos, occupancy,
 									pos.blackKing(), Square::C8,
-									castlingRooks.blackLong, Square::D8);
+									castlingRooks.longSquares.black, Square::D8);
 						}
 						else
 						{
-							if (castlingRooks.whiteShort != Square::None)
+							if (castlingRooks.shortSquares.white != Square::None)
 								generateFrcCastling(dst, pos, occupancy,
 									pos.whiteKing(), Square::G1,
-									castlingRooks.whiteShort, Square::F1);
-							if (castlingRooks.whiteLong != Square::None)
+									castlingRooks.shortSquares.white, Square::F1);
+							if (castlingRooks.longSquares.white != Square::None)
 								generateFrcCastling(dst, pos, occupancy,
 									pos.whiteKing(), Square::C1,
-									castlingRooks.whiteLong, Square::D1);
+									castlingRooks.longSquares.white, Square::D1);
 						}
 					}
 					else
 					{
 						if (pos.toMove() == Color::Black)
 						{
-							if (castlingRooks.blackShort != Square::None
+							if (castlingRooks.shortSquares.black != Square::None
 								&& (occupancy & U64(0x6000000000000000)).empty()
 								&& !pos.isAttacked(Square::F8, Color::White))
 								pushCastling(dst, pos.blackKing(), Square::H8);
 
-							if (castlingRooks.blackLong != Square::None
+							if (castlingRooks.longSquares.black != Square::None
 								&& (occupancy & U64(0x0E00000000000000)).empty()
 								&& !pos.isAttacked(Square::D8, Color::White))
 								pushCastling(dst, pos.blackKing(), Square::A8);
 						}
 						else
 						{
-							if (castlingRooks.whiteShort != Square::None
+							if (castlingRooks.shortSquares.white != Square::None
 								&& (occupancy & U64(0x0000000000000060)).empty()
 								&& !pos.isAttacked(Square::F1, Color::Black))
 								pushCastling(dst, pos.whiteKing(), Square::H1);
 
-							if (castlingRooks.whiteLong != Square::None
+							if (castlingRooks.longSquares.white != Square::None
 								&& (occupancy & U64(0x000000000000000E)).empty()
 								&& !pos.isAttacked(Square::D1, Color::Black))
 								pushCastling(dst, pos.whiteKing(), Square::A1);
