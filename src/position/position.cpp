@@ -1,19 +1,19 @@
 /*
- * Polaris, a UCI chess engine
+ * Stormphrax, a UCI chess engine
  * Copyright (C) 2023 Ciekce
  *
- * Polaris is free software: you can redistribute it and/or modify
+ * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Polaris is distributed in the hope that it will be useful,
+ * Stormphrax is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
+ * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include "position.h"
@@ -37,7 +37,7 @@
 #include "../opts.h"
 #include "../rays.h"
 
-namespace polaris
+namespace stormphrax
 {
 	namespace
 	{
@@ -870,7 +870,7 @@ namespace polaris
 
 		bool failed = false;
 
-#define PS_CHECK(A, B, Str) \
+#define SP_CHECK(A, B, Str) \
 		if ((A) != (B)) \
 		{ \
 			out << "info string " Str " do not match"; \
@@ -881,11 +881,11 @@ namespace polaris
 		}
 
 		out << std::dec;
-		PS_CHECK(static_cast<u64>(currState().enPassant), static_cast<u64>(regened.currState().enPassant), "en passant squares")
+		SP_CHECK(static_cast<u64>(currState().enPassant), static_cast<u64>(regened.currState().enPassant), "en passant squares")
 		out << std::hex;
 
-		PS_CHECK(currState().key, regened.currState().key, "keys")
-		PS_CHECK(currState().pawnKey, regened.currState().pawnKey, "pawn keys")
+		SP_CHECK(currState().key, regened.currState().key, "keys")
+		SP_CHECK(currState().pawnKey, regened.currState().pawnKey, "pawn keys")
 
 		out << std::dec;
 
@@ -903,9 +903,9 @@ namespace polaris
 			}
 		}
 
-#undef PS_CHECK_PIECES
-#undef PS_CHECK_PIECE
-#undef PS_CHECK
+#undef SP_CHECK_PIECES
+#undef SP_CHECK_PIECE
+#undef SP_CHECK
 
 		if (failed)
 			std::cout << out.view() << std::flush;

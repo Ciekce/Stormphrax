@@ -1,28 +1,28 @@
 /*
- * Polaris, a UCI chess engine
+ * Stormphrax, a UCI chess engine
  * Copyright (C) 2023 Ciekce
  *
- * Polaris is free software: you can redistribute it and/or modify
+ * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Polaris is distributed in the hope that it will be useful,
+ * Stormphrax is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
+ * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "types.h"
 
-#define PS_TUNE_SEARCH 0
+#define SP_TUNE_SEARCH 0
 
-namespace polaris::tunable
+namespace stormphrax::tunable
 {
 	namespace defaults
 	{
@@ -102,49 +102,49 @@ namespace polaris::tunable
 		i32 minIirDepth{defaults::MinIirDepth};
 	};
 
-#if PS_TUNE_SEARCH
+#if SP_TUNE_SEARCH
 	extern const TunableData &g_tunable;
 
-#define PS_TUNABLE_PARAM(DefaultName, Name) inline auto Name() { return g_tunable.Name; }
+#define SP_TUNABLE_PARAM(DefaultName, Name) inline auto Name() { return g_tunable.Name; }
 #else
-#define PS_TUNABLE_PARAM(DefaultName, Name) constexpr auto Name() { return defaults::DefaultName; }
+#define SP_TUNABLE_PARAM(DefaultName, Name) constexpr auto Name() { return defaults::DefaultName; }
 #endif
 
-	PS_TUNABLE_PARAM(MinAspDepth, minAspDepth)
+	SP_TUNABLE_PARAM(MinAspDepth, minAspDepth)
 
-	PS_TUNABLE_PARAM(MaxAspReduction, maxAspReduction)
+	SP_TUNABLE_PARAM(MaxAspReduction, maxAspReduction)
 
-	PS_TUNABLE_PARAM(InitialAspWindow, initialAspWindow)
-	PS_TUNABLE_PARAM(MaxAspWindow, maxAspWindow)
+	SP_TUNABLE_PARAM(InitialAspWindow, initialAspWindow)
+	SP_TUNABLE_PARAM(MaxAspWindow, maxAspWindow)
 
-	PS_TUNABLE_PARAM(MinNmpDepth, minNmpDepth)
+	SP_TUNABLE_PARAM(MinNmpDepth, minNmpDepth)
 
-	PS_TUNABLE_PARAM(NmpReductionBase, nmpReductionBase)
-	PS_TUNABLE_PARAM(NmpReductionDepthScale, nmpReductionDepthScale)
-	PS_TUNABLE_PARAM(NmpReductionEvalScale, nmpReductionEvalScale)
-	PS_TUNABLE_PARAM(MaxNmpEvalReduction, maxNmpEvalReduction)
+	SP_TUNABLE_PARAM(NmpReductionBase, nmpReductionBase)
+	SP_TUNABLE_PARAM(NmpReductionDepthScale, nmpReductionDepthScale)
+	SP_TUNABLE_PARAM(NmpReductionEvalScale, nmpReductionEvalScale)
+	SP_TUNABLE_PARAM(MaxNmpEvalReduction, maxNmpEvalReduction)
 
-	PS_TUNABLE_PARAM(MinLmrDepth, minLmrDepth)
+	SP_TUNABLE_PARAM(MinLmrDepth, minLmrDepth)
 
-	PS_TUNABLE_PARAM(MaxRfpDepth, maxRfpDepth)
-	PS_TUNABLE_PARAM(RfpMargin, rfpMargin)
+	SP_TUNABLE_PARAM(MaxRfpDepth, maxRfpDepth)
+	SP_TUNABLE_PARAM(RfpMargin, rfpMargin)
 
-	PS_TUNABLE_PARAM(MaxSeePruningDepth, maxSeePruningDepth)
+	SP_TUNABLE_PARAM(MaxSeePruningDepth, maxSeePruningDepth)
 
-	PS_TUNABLE_PARAM(QuietSeeThreshold, quietSeeThreshold)
-	PS_TUNABLE_PARAM(NoisySeeThreshold, noisySeeThreshold)
+	SP_TUNABLE_PARAM(QuietSeeThreshold, quietSeeThreshold)
+	SP_TUNABLE_PARAM(NoisySeeThreshold, noisySeeThreshold)
 
-	PS_TUNABLE_PARAM(MinSingularityDepth, minSingularityDepth)
+	SP_TUNABLE_PARAM(MinSingularityDepth, minSingularityDepth)
 
-	PS_TUNABLE_PARAM(SingularityDepthMargin, singularityDepthMargin)
-	PS_TUNABLE_PARAM(SingularityDepthScale, singularityDepthScale)
+	SP_TUNABLE_PARAM(SingularityDepthMargin, singularityDepthMargin)
+	SP_TUNABLE_PARAM(SingularityDepthScale, singularityDepthScale)
 
-	PS_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
+	SP_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
 
-	PS_TUNABLE_PARAM(FpMargin, fpMargin)
-	PS_TUNABLE_PARAM(FpScale, fpScale)
+	SP_TUNABLE_PARAM(FpMargin, fpMargin)
+	SP_TUNABLE_PARAM(FpScale, fpScale)
 
-	PS_TUNABLE_PARAM(MinIirDepth, minIirDepth)
+	SP_TUNABLE_PARAM(MinIirDepth, minIirDepth)
 
-#undef PS_TUNABLE_PARAM
+#undef SP_TUNABLE_PARAM
 }

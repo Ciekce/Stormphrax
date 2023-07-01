@@ -40,14 +40,14 @@
  * implementation. To do this supply a macro or function definition
  * here:
  */
-#define TB_CUSTOM_POP_COUNT(x) (polaris::util::popcnt(x))
+#define TB_CUSTOM_POP_COUNT(x) (stormphrax::util::popcnt(x))
 
 /*
  * Define TB_CUSTOM_LSB to override the internal lsb
  * implementation. To do this supply a macro or function definition
  * here:
  */
-#define TB_CUSTOM_LSB(x) (polaris::util::ctz(x))
+#define TB_CUSTOM_LSB(x) (stormphrax::util::ctz(x))
 
 /*
  * Define TB_NO_STDINT if you do not want to use <stdint.h> or it is not
@@ -94,10 +94,10 @@
  * modification to adapt to an engine's own internal score values.
  */
 #define TB_VALUE_PAWN 100  /* value of pawn in endgame */
-#define TB_VALUE_MATE (polaris::ScoreMate)
-#define TB_VALUE_INFINITE (polaris::ScoreMax) /* value above all normal score values */
+#define TB_VALUE_MATE (stormphrax::ScoreMate)
+#define TB_VALUE_INFINITE (stormphrax::ScoreMax) /* value above all normal score values */
 #define TB_VALUE_DRAW 0
-#define TB_MAX_MATE_PLY (polaris::search::MaxDepth)
+#define TB_MAX_MATE_PLY (stormphrax::search::MaxDepth)
 
 /***************************************************************************/
 /* ENGINE INTEGRATION CONFIG                                               */
@@ -115,25 +115,25 @@
  * Define TB_KING_ATTACKS(square) to return the king attacks bitboard for a
  * king at `square'.
  */
-#define TB_KING_ATTACKS(square) (polaris::attacks::getKingAttacks(static_cast<polaris::Square>(square)))
+#define TB_KING_ATTACKS(square) (stormphrax::attacks::getKingAttacks(static_cast<stormphrax::Square>(square)))
 
 /*
  * Define TB_KNIGHT_ATTACKS(square) to return the knight attacks bitboard for
  * a knight at `square'.
  */
-#define TB_KNIGHT_ATTACKS(square) (polaris::attacks::getKnightAttacks(static_cast<polaris::Square>(square)))
+#define TB_KNIGHT_ATTACKS(square) (stormphrax::attacks::getKnightAttacks(static_cast<stormphrax::Square>(square)))
 
 /*
  * Define TB_ROOK_ATTACKS(square, occ) to return the rook attacks bitboard
  * for a rook at `square' assuming the given `occ' occupancy bitboard.
  */
-#define TB_ROOK_ATTACKS(square, occ) (polaris::attacks::getRookAttacks(static_cast<polaris::Square>(square), occ))
+#define TB_ROOK_ATTACKS(square, occ) (stormphrax::attacks::getRookAttacks(static_cast<stormphrax::Square>(square), occ))
 
 /*
  * Define TB_BISHOP_ATTACKS(square, occ) to return the bishop attacks bitboard
  * for a bishop at `square' assuming the given `occ' occupancy bitboard.
  */
-#define TB_BISHOP_ATTACKS(square, occ) (polaris::attacks::getBishopAttacks(static_cast<polaris::Square>(square), occ))
+#define TB_BISHOP_ATTACKS(square, occ) (stormphrax::attacks::getBishopAttacks(static_cast<stormphrax::Square>(square), occ))
 
 /*
  * Define TB_QUEEN_ATTACKS(square, occ) to return the queen attacks bitboard
@@ -141,7 +141,7 @@
  * NOTE: If no definition is provided then tbprobe will use:
  *       TB_ROOK_ATTACKS(square, occ) | TB_BISHOP_ATTACKS(square, occ)
  */
-#define TB_QUEEN_ATTACKS(square, occ) (polaris::attacks::getQueenAttacks(static_cast<polaris::Square>(square), occ))
+#define TB_QUEEN_ATTACKS(square, occ) (stormphrax::attacks::getQueenAttacks(static_cast<stormphrax::Square>(square), occ))
 
 /*
  * Define TB_PAWN_ATTACKS(square, color) to return the pawn attacks bitboard
@@ -151,6 +151,6 @@
  *       nothing.  Etc.
  * NOTE: This definition must not include en passant captures.
  */
-#define TB_PAWN_ATTACKS(square, color) (polaris::attacks::getPawnAttacks(static_cast<polaris::Square>(square), static_cast<polaris::Color>(color)))
+#define TB_PAWN_ATTACKS(square, color) (stormphrax::attacks::getPawnAttacks(static_cast<stormphrax::Square>(square), static_cast<stormphrax::Color>(color)))
 
 #endif

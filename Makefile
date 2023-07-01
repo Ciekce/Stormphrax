@@ -1,7 +1,7 @@
 # THIS MAKEFILE IS ONLY INTENDED FOR OPENBENCH
 # BUILD WITH CMAKE PER THE INSTRUCTIONS IN THE README
 
-EXE = polaris_default
+EXE = stormphrax_default
 
 SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/hash.cpp src/position/position.cpp src/eval/material.cpp src/movegen.cpp src/attacks/black_magic/attacks.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/eval.cpp src/perft.cpp src/bench.cpp src/3rdparty/fathom/tbprobe.cpp
 
@@ -9,12 +9,12 @@ SUFFIX :=
 
 CXX := clang++
 # silence warning for fathom
-CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DPS_NATIVE -DPS_VERSION=OpenBench -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
+CXXFLAGS := -std=c++20 -O3 -flto -march=native -DNDEBUG -DSP_NATIVE -DSP_VERSION=OpenBench -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
 
 LDFLAGS :=
 
-ifeq ($(EXE), polaris_default)
-    $(warning If you are compiling Polaris using this makefile, you probably did not read the build instructions.)
+ifeq ($(EXE), stormphrax_default)
+    $(warning If you are compiling Stormphrax using this makefile, you probably did not read the build instructions.)
 endif
 
 ifeq ($(OS), Windows_NT)
