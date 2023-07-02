@@ -213,7 +213,7 @@ namespace stormphrax
 				usize next = 2;
 
 				if (position == "startpos")
-					m_pos = Position::starting();
+					m_pos.resetToStarting();
 				else if (position == "fen")
 				{
 					std::ostringstream fen{};
@@ -223,9 +223,8 @@ namespace stormphrax
 						fen << tokens[next] << ' ';
 					}
 
-					if (auto newPos = Position::fromFen(fen.str()))
-						m_pos = std::move(*newPos);
-					else return;
+					if (!m_pos.resetFromFen(fen.str()))
+						return;
 				}
 				else if (position == "frc")
 				{
@@ -237,12 +236,9 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto frcIndex = util::tryParseU32(tokens[next++]))
-						{
-							if (auto newPos = Position::fromFrcIndex(*frcIndex))
-								m_pos = std::move(*newPos);
-							else return;
-						}
+						if (const auto frcIndex = util::tryParseU32(tokens[next++]);
+							frcIndex && !m_pos.resetFromFrcIndex(*frcIndex))
+							return;
 					}
 				}
 				else if (position == "dfrc")
@@ -255,12 +251,9 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]))
-						{
-							if (auto newPos = Position::fromDfrcIndex(*dfrcIndex))
-								m_pos = std::move(*newPos);
-							else return;
-						}
+						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]);
+							dfrcIndex && !m_pos.resetFromDfrcIndex(*dfrcIndex))
+							return;
 					}
 				}
 				else return;

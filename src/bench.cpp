@@ -82,9 +82,12 @@ namespace stormphrax::bench
 		usize nodes{};
 		f64 time{};
 
+		Position pos{};
+
 		for (const auto &fen : Fens)
 		{
-			const auto pos = *Position::fromFen(fen);
+			if (!pos.resetFromFen(fen))
+				return;
 
 			searcher.newGame();
 

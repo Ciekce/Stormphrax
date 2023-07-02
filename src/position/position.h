@@ -105,11 +105,16 @@ namespace stormphrax
 	class Position
 	{
 	public:
-		explicit Position(bool init = true);
+		Position();
 		~Position() = default;
 
 		Position(const Position &) = default;
 		Position(Position &&) = default;
+
+		auto resetToStarting() -> void;
+		auto resetFromFen(const std::string &fen) -> bool;
+		auto resetFromFrcIndex(u32 n) -> bool;
+		auto resetFromDfrcIndex(u32 n) -> bool;
 
 		template <bool UpdateMaterial = true, bool StateHistory = true>
 		auto applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr) -> bool;
