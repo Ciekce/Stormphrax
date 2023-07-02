@@ -33,7 +33,35 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768->64)x2->1
+	// current arch: (768->64)x2->1, ClippedReLU
+
+	namespace activation
+	{
+		template <Score Min, Score Max>
+		struct [[maybe_unused]] ClippedReLU
+		{
+			static constexpr auto activate(i16 x)
+			{
+				return std::clamp(static_cast<i32>(x), Min, Max);
+			}
+
+			static constexpr i32 NormalizationK = 1;
+		};
+
+		template <Score Min, Score Max>
+		struct [[maybe_unused]] SquaredClippedReLU
+		{
+			static constexpr auto activate(i16 x)
+			{
+				const auto clipped = std::clamp(static_cast<i32>(x), Min, Max);
+				return clipped * clipped;
+			}
+
+			static constexpr i32 NormalizationK = Max;
+		};
+	}
+
+	using Activation = activation::ClippedReLU<0, 255>;
 
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 64;
@@ -55,26 +83,18 @@ namespace stormphrax::eval
 	// Perspective network - separate accumulators for
 	// each side to allow the network to learn tempo
 	// (this is why there are two sets of output weights)
-	template <u32 HiddenSize>
+	template <u32 LayerSize>
 	struct alignas(64) Accumulator
 	{
-		std::array<i16, HiddenSize> black;
-		std::array<i16, HiddenSize> white;
+		std::array<i16, LayerSize> black;
+		std::array<i16, LayerSize> white;
 
-		inline auto init(std::span<const i16, HiddenSize> bias)
+		inline auto init(std::span<const i16, LayerSize> bias)
 		{
 			std::copy(bias.begin(), bias.end(), black.begin());
 			std::copy(bias.begin(), bias.end(), white.begin());
 		}
 	};
-
-	constexpr auto crelu(i16 x)
-	{
-		constexpr Score CReluMin = 0;
-		constexpr Score CReluMax = 255;
-
-		return std::clamp(static_cast<i32>(x), CReluMin, CReluMax);
-	}
 
 	class NnueState
 	{
@@ -159,8 +179,8 @@ namespace stormphrax::eval
 			assert(m_curr == &m_accumulatorStack.back());
 
 			const auto output = stm == Color::Black
-				? creluFlatten(m_curr->black, m_curr->white, m_net.outputWeights)
-				: creluFlatten(m_curr->white, m_curr->black, m_net.outputWeights);
+				? activateAndFlatten(m_curr->black, m_curr->white, m_net.outputWeights)
+				: activateAndFlatten(m_curr->white, m_curr->black, m_net.outputWeights);
 			return (output + m_net.outputBias) * Scale / Q;
 		}
 
@@ -214,7 +234,7 @@ namespace stormphrax::eval
 			return {blackIdx, whiteIdx};
 		}
 
-		static inline auto creluFlatten(
+		static inline auto activateAndFlatten(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
 			std::span<const i16, Layer1Size * 2> weights
@@ -224,11 +244,11 @@ namespace stormphrax::eval
 
 			for (u32 i = 0; i < Layer1Size; ++i)
 			{
-				sum += crelu(  us[i]) * weights[             i];
-				sum += crelu(them[i]) * weights[Layer1Size + i];
+				sum += Activation::activate(  us[i]) * weights[             i];
+				sum += Activation::activate(them[i]) * weights[Layer1Size + i];
 			}
 
-			return sum;
+			return sum / Activation::NormalizationK;
 		}
 	};
 }
