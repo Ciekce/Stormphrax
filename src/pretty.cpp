@@ -98,13 +98,4 @@ namespace stormphrax
 
 		out << d;
 	}
-
-	auto printScore(std::ostream &out, TaperedScore score) -> void
-	{
-		out << '[';
-		printScore(out, score.midgame());
-		out << ", ";
-		printScore(out, score.endgame());
-		out << ']';
-	}
 }

@@ -87,7 +87,7 @@ If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want t
 Disabling the CMake option `SP_FAST_PEXT` builds the non-BMI2 attack getters.
 
 ## Credit
-Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license.
+Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin](https://github.com/graphitemaster/incbin) for embedding neural network files, under the Unlicense.
 
 [license-badge]: https://img.shields.io/github/license/Ciekce/Stormphrax?style=for-the-badge
 [release-badge]: https://img.shields.io/github/v/release/Ciekce/Stormphrax?style=for-the-badge

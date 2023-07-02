@@ -33,5 +33,4 @@ namespace stormphrax
 	auto printBoard(std::ostream &out, const Position &position) -> void;
 
 	auto printScore(std::ostream &out, Score score) -> void;
-	auto printScore(std::ostream &out, TaperedScore score) -> void;
 }

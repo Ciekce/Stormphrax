@@ -263,10 +263,8 @@ namespace stormphrax
 					for (; next < tokens.size(); ++next)
 					{
 						if (const auto move = m_pos.moveFromUci(tokens[next]))
-							m_pos.applyMoveUnchecked<false, false>(move);
+							m_pos.applyMoveUnchecked<false, false>(move, nullptr);
 					}
-
-					m_pos.regenMaterial();
 				}
 			}
 		}
@@ -676,10 +674,6 @@ namespace stormphrax
 			key << std::hex << std::setw(16) << std::setfill('0') << m_pos.key();
 			std::cout << "Key: " << key.str() << std::endl;
 
-			std::ostringstream pawnKey{};
-			pawnKey << std::hex << std::setw(16) << std::setfill('0') << m_pos.pawnKey();
-			std::cout << "Pawn key: " << pawnKey.str() << std::endl;
-
 			std::cout << "Checkers:";
 
 			auto checkers = m_pos.checkers();
@@ -690,15 +684,21 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = eval::staticEvalAbs(m_pos);
+			eval::NnueState state{};
+			state.reset(m_pos.boards());
+			const auto staticEval = state.evaluate(m_pos.toMove());
+
 			std::cout << "Static eval: ";
-			printScore(std::cout, staticEval);
+			printScore(std::cout, m_pos.toMove() == Color::Black ? -staticEval : staticEval);
 			std::cout << std::endl;
 		}
 
 		auto UciHandler::handleEval() -> void
 		{
-			eval::printEval(m_pos);
+			eval::NnueState state{};
+			state.reset(m_pos.boards());
+			printScore(std::cout, state.evaluate(m_pos.toMove()));
+			std::cout << std::endl;
 		}
 
 		auto UciHandler::handleCheckers() -> void

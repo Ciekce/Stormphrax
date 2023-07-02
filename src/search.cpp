@@ -86,7 +86,6 @@ namespace stormphrax::search
 
 		for (auto &thread : m_threads)
 		{
-			thread.pawnCache.clear();
 			std::fill(thread.stack.begin(), thread.stack.end(), SearchStackEntry{});
 			thread.history.clear();
 		}
@@ -164,6 +163,8 @@ namespace stormphrax::search
 			thread.maxDepth = maxDepth;
 			thread.search = SearchData{};
 			thread.pos = pos;
+
+			thread.nnueState.reset(thread.pos.boards());
 		}
 
 		m_limiter = std::move(limiter);
@@ -201,6 +202,8 @@ namespace stormphrax::search
 
 		threadData->pos = pos;
 		threadData->maxDepth = depth;
+
+		threadData->nnueState.reset(threadData->pos.boards());
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -432,7 +435,7 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos);
+			return data.nnueState.evaluate(pos.toMove());
 
 		const bool inCheck = pos.isCheck();
 
@@ -563,10 +566,10 @@ namespace stormphrax::search
 		}
 
 		if (!root && !pos.lastMove())
-			stack.eval = eval::flipTempo(-data.stack[ply - 1].eval);
+			stack.eval = -data.stack[ply - 1].eval;
 		else if (stack.excluded)
 			stack.eval = data.stack[ply - 1].eval; // not prevStack
-		else stack.eval = inCheck ? 0 : eval::staticEval(pos, &data.pawnCache);
+		else stack.eval = inCheck ? 0 : data.nnueState.evaluate(pos.toMove());
 
 		stack.currMove = {};
 
@@ -591,7 +594,7 @@ namespace stormphrax::search
 						+ depth / nmpReductionDepthScale()
 						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
 
-				const auto guard = pos.applyMove(NullMove, &m_table);
+				const auto guard = pos.applyMove(NullMove, &data.nnueState, &m_table);
 				const auto score = -search(data, depth - R, ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
@@ -646,7 +649,7 @@ namespace stormphrax::search
 
 			const auto movingPiece = boards.pieceAt(move.src());
 
-			const auto guard = pos.applyMove(move, &m_table);
+			const auto guard = pos.applyMove(move, &data.nnueState, &m_table);
 
 			if (!guard)
 				continue;
@@ -800,7 +803,7 @@ namespace stormphrax::search
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate
-			: eval::staticEval(pos, &data.pawnCache);
+			: data.nnueState.evaluate(pos.toMove());
 
 		if (staticEval > alpha)
 		{
@@ -835,7 +838,7 @@ namespace stormphrax::search
 
 		while (const auto move = generator.next())
 		{
-			const auto guard = pos.applyMove(move, &m_table);
+			const auto guard = pos.applyMove(move, &data.nnueState, &m_table);
 
 			if (!guard)
 				continue;
@@ -955,7 +958,7 @@ namespace stormphrax::search
 		std::cout << " pv " << uci::moveToString(move);
 
 		Position pos{data.pos};
-		pos.applyMoveUnchecked<false, false>(move);
+		pos.applyMoveUnchecked<false, false>(move, nullptr);
 
 		StaticVector<u64, MaxDepth> positionsHit{};
 		positionsHit.push(pos.key());
@@ -966,7 +969,7 @@ namespace stormphrax::search
 
 			if (pvMove && pos.isPseudolegal(pvMove))
 			{
-				const bool legal = pos.applyMoveUnchecked<false, false>(pvMove);
+				const bool legal = pos.applyMoveUnchecked<false, false>(pvMove, nullptr);
 
 				if (legal && std::find(positionsHit.begin(), positionsHit.end(), pos.key()) == positionsHit.end())
 				{

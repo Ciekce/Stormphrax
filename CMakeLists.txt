@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 if(MSVC AND NOT SP_CLANG)
-	message(WARNING Stormphrax is untested on MSVC, and builds targeted to specific CPUs may not work as intended)
+	message(FATAL_ERROR Stormphrax does not support building with MSVC)
 endif()
 
 # for fathom
@@ -33,7 +33,7 @@ endif()
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 
-set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/eval/material.h src/eval/material.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/eval.h src/eval/eval.cpp src/util/range.h src/arch.h src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp)
+set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/eval.h src/eval/eval.cpp src/util/range.h src/arch.h src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp)
@@ -77,7 +77,7 @@ foreach(TARGET ${TARGETS})
 	string(REPLACE "-" "_" ARCH_NAME "${ARCH_NAME}")
 	string(TOUPPER ${ARCH_NAME} ARCH_NAME)
 
-	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION} SP_${ARCH_NAME})
+	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION} SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/src/eval/default.nnue")
 
 	string(REPLACE "-" "-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")

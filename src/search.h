@@ -136,7 +136,7 @@ namespace stormphrax::search
 			i32 maxDepth{};
 			SearchData search{};
 
-			eval::PawnCache pawnCache{};
+			eval::NnueState nnueState{};
 
 			std::vector<SearchStackEntry> stack{};
 			std::vector<MoveStackEntry> moveStack{};

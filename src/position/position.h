@@ -30,6 +30,7 @@
 #include "../move.h"
 #include "../attacks/attacks.h"
 #include "../ttable.h"
+#include "../eval/eval.h"
 
 namespace stormphrax
 {
@@ -38,12 +39,8 @@ namespace stormphrax
 		PositionBoards boards{};
 
 		u64 key{};
-		u64 pawnKey{};
 
 		Bitboard checkers{};
-
-		TaperedScore material{};
-		Score phase{};
 
 		CastlingRooks castlingRooks{};
 
@@ -76,7 +73,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 112);
+	static_assert(sizeof(BoardState) == 96);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -89,16 +86,21 @@ namespace stormphrax
 
 	class Position;
 
+	template <bool UpdateNnue>
 	class HistoryGuard
 	{
 	public:
-		explicit HistoryGuard(Position &pos, bool legal) : m_pos{pos}, m_legal{legal} {}
+		explicit HistoryGuard(Position &pos, eval::NnueState *nnueState, bool legal)
+			: m_pos{pos},
+			  m_nnueState{nnueState},
+			  m_legal{legal} {}
 		inline ~HistoryGuard();
 
 		[[nodiscard]] explicit operator bool() const { return m_legal; }
 
 	private:
 		Position &m_pos;
+		eval::NnueState *m_nnueState;
 		bool m_legal{};
 	};
 
@@ -116,16 +118,19 @@ namespace stormphrax
 		auto resetFromFrcIndex(u32 n) -> bool;
 		auto resetFromDfrcIndex(u32 n) -> bool;
 
-		template <bool UpdateMaterial = true, bool StateHistory = true>
-		auto applyMoveUnchecked(Move move, TTable *prefetchTt = nullptr) -> bool;
+		template <bool UpdateNnue = true, bool StateHistory = true>
+		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt = nullptr) -> bool;
 
-		template <bool UpdateMaterial = true>
-		[[nodiscard]] inline auto applyMove(Move move, TTable *prefetchTt = nullptr)
+		template <bool UpdateNnue = true>
+		[[nodiscard]] inline auto applyMove(Move move,
+			eval::NnueState *nnueState, TTable *prefetchTt = nullptr)
 		{
-			return HistoryGuard{*this, applyMoveUnchecked<UpdateMaterial>(move, prefetchTt)};
+			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr,
+				applyMoveUnchecked<UpdateNnue>(move, nnueState, prefetchTt)};
 		}
 
-		auto popMove() -> void;
+		template <bool UpdateNnue = true>
+		auto popMove(eval::NnueState *nnueState) -> void;
 
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
 
@@ -150,19 +155,10 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto enPassant() const { return currState().enPassant; }
 
-		[[nodiscard]] inline auto material() const { return currState().material; }
-
 		[[nodiscard]] inline auto halfmove() const { return currState().halfmove; }
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return currState().key; }
-		[[nodiscard]] inline auto pawnKey() const { return currState().pawnKey; }
-
-		[[nodiscard]] inline auto interpScore(TaperedScore score) const
-		{
-			const auto &state = currState();
-			return (score.midgame() * state.phase + score.endgame() * (24 - state.phase)) / 24;
-		}
 
 		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
@@ -336,34 +332,6 @@ namespace stormphrax
 			return false;
 		}
 
-		[[nodiscard]] inline auto isLikelyDrawn() const
-		{
-			const auto &boards = this->boards();
-
-			if (!boards.pawns().empty() || !boards.majors().empty())
-				return false;
-
-			// KNK or KNNK
-			if ((boards.blackNonPk().empty() && boards.whiteNonPk() == boards.whiteKnights() && boards.whiteKnights().popcount() < 3)
-				|| (boards.whiteNonPk().empty() && boards.blackNonPk() == boards.blackKnights() && boards.blackKnights().popcount() < 3))
-				return true;
-
-			if (!boards.nonPk().empty())
-			{
-				// KNKN or KNKB or KBKB (OCB handled in isDrawn())
-				if (!boards.whiteMinors().multiple() && !boards.blackMinors().multiple())
-					return true;
-
-				// KBBKB
-				if (boards.nonPk() == boards.bishops()
-					&& (boards.whiteBishops().popcount() < 3 && !boards.blackBishops().multiple()
-						|| boards.blackBishops().popcount() < 3 && !boards.whiteBishops().multiple()))
-					return true;
-			}
-
-			return false;
-		}
-
 		[[nodiscard]] inline auto lastMove() const
 		{
 			return m_states.empty() ? NullMove : currState().lastMove;
@@ -425,13 +393,8 @@ namespace stormphrax
 			return *this == other
 				&& currState().kings == other.m_states.back().kings
 				&& currState().checkers == other.m_states.back().checkers
-				&& currState().phase == other.m_states.back().phase
-				&& currState().material == other.m_states.back().material
-				&& currState().key == other.m_states.back().key
-				&& currState().pawnKey == other.m_states.back().pawnKey;
+				&& currState().key == other.m_states.back().key;
 		}
-
-		auto regenMaterial() -> void;
 
 		template <bool EnPassantFromMoves = false>
 		auto regen() -> void;
@@ -439,7 +402,7 @@ namespace stormphrax
 #ifndef NDEBUG
 		auto printHistory(Move last = NullMove) -> void;
 
-		template <bool CheckMaterial = true, bool HasHistory = true>
+		template <bool HasHistory = true>
 		auto verify() -> bool;
 #endif
 
@@ -454,22 +417,22 @@ namespace stormphrax
 		[[nodiscard]] static auto fromDfrcIndex(u32 n) -> std::optional<Position>;
 
 	private:
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto setPiece(Piece piece, Square square) -> void;
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto removePiece(Piece piece, Square square) -> void;
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto removePiece(Piece piece, Square square, eval::NnueState *nnueState) -> void;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto movePieceNoCap(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> void;
 
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst) -> Piece;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
 
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, BasePiece target) -> Piece;
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto castle(Piece king, Square kingSrc, Square rookSrc) -> void;
-		template <bool UpdateKeys = true, bool UpdateMaterial = true>
-		auto enPassant(Piece pawn, Square src, Square dst) -> Piece;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto promotePawn(Piece pawn, Square src, Square dst, BasePiece target, eval::NnueState *nnueState) -> Piece;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void;
+		template <bool UpdateKeys = true, bool UpdateNnue = true>
+		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
 
 		[[nodiscard]] inline auto calcCheckers() const
 		{
@@ -487,9 +450,10 @@ namespace stormphrax
 		std::vector<u64> m_hashes{};
 	};
 
-	HistoryGuard::~HistoryGuard()
+	template <bool UpdateNnue>
+	HistoryGuard<UpdateNnue>::~HistoryGuard()
 	{
-		m_pos.popMove();
+		m_pos.popMove<UpdateNnue>(m_nnueState);
 	}
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;

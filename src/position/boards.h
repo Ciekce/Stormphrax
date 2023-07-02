@@ -58,6 +58,11 @@ namespace stormphrax
 			return m_boards[static_cast<i32>(piece)] & forColor(c);
 		}
 
+		[[nodiscard]] inline Bitboard forPiece(Piece piece) const
+		{
+			return forPiece(basePiece(piece), pieceColor(piece));
+		}
+
 		[[nodiscard]] inline auto blackOccupancy() const { return m_colors[0]; }
 		[[nodiscard]] inline auto whiteOccupancy() const { return m_colors[1]; }
 

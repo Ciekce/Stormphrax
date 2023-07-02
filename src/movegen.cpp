@@ -23,7 +23,6 @@
 
 #include "attacks/attacks.h"
 #include "rays.h"
-#include "eval/material.h"
 #include "util/bitfield.h"
 #include "opts.h"
 

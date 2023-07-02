@@ -26,7 +26,6 @@
 #define TBCONFIG_H
 
 #include "../../core.h"
-#include "../../eval/material.h"
 #include "../../util/bits.h"
 #include "../../attacks/attacks.h"
 #include "../../search.h"

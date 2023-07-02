@@ -20,65 +20,215 @@
 
 #include "../types.h"
 
+#include <array>
 #include <vector>
+#include <utility>
+#include <span>
 #include <cstring>
+#include <algorithm>
+#include <cassert>
 
 #include "../core.h"
-#include "../position/position.h"
+#include "../position/boards.h"
 
 namespace stormphrax::eval
 {
-	constexpr Score Tempo = 16;
+	// current arch: (768->64)x2->1
 
-	constexpr usize PawnCacheEntries = 262144;
+	constexpr u32 InputSize = 768;
+	constexpr u32 Layer1Size = 64;
 
-	struct PawnCacheEntry
+	constexpr Score Scale = 400;
+
+	constexpr Score Q = 255 * 64;
+
+	struct alignas(64) Network
 	{
-		u64 key{};
-		TaperedScore eval{};
-		Bitboard passers{};
+		std::array<i16, InputSize * Layer1Size> featureWeights;
+		std::array<i16, Layer1Size> featureBias;
+		std::array<i16, Layer1Size * 2> outputWeights;
+		i16 outputBias;
 	};
 
-	static_assert(util::resetLsb(PawnCacheEntries) == 0); // power of 2
-	static_assert(sizeof(PawnCacheEntry) == 24);
+	extern const Network &g_net;
 
-	class PawnCache
+	// Perspective network - separate accumulators for
+	// each side to allow the network to learn tempo
+	// (this is why there are two sets of output weights)
+	template <u32 HiddenSize>
+	struct alignas(64) Accumulator
+	{
+		std::array<i16, HiddenSize> black;
+		std::array<i16, HiddenSize> white;
+
+		inline auto init(std::span<const i16, HiddenSize> bias)
+		{
+			std::copy(bias.begin(), bias.end(), black.begin());
+			std::copy(bias.begin(), bias.end(), white.begin());
+		}
+	};
+
+	constexpr auto crelu(i16 x)
+	{
+		constexpr Score CReluMin = 0;
+		constexpr Score CReluMax = 255;
+
+		return std::clamp(static_cast<i32>(x), CReluMin, CReluMax);
+	}
+
+	class NnueState
 	{
 	public:
-		PawnCache()
+		explicit NnueState(const Network &net = g_net)
+			: m_net{net}
 		{
-			m_cache.resize(PawnCacheEntries);
+			m_accumulatorStack.reserve(256);
 		}
 
-		~PawnCache() = default;
+		~NnueState() = default;
 
-		inline auto probe(u64 key) -> PawnCacheEntry &
+		inline auto push()
 		{
-			constexpr usize PawnCacheMask = PawnCacheEntries - 1;
-			return m_cache[key & PawnCacheMask];
+			assert(m_curr == &m_accumulatorStack.back());
+
+			m_accumulatorStack.push_back(*m_curr);
+			m_curr = &m_accumulatorStack.back();
 		}
 
-		inline auto clear()
+		inline auto pop()
 		{
-			std::memset(m_cache.data(), 0, m_cache.size() * sizeof(PawnCacheEntry));
+			m_accumulatorStack.pop_back();
+			m_curr = &m_accumulatorStack.back();
+		}
+
+		inline auto reset(const PositionBoards &boards)
+		{
+			m_accumulatorStack.clear();
+			m_curr = &m_accumulatorStack.emplace_back();
+
+			m_curr->init(m_net.featureBias);
+
+			// loop through each coloured piece, and activate the features
+			// corresponding to that piece on each of the squares it occurs on
+			for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx)
+			{
+				const auto piece = static_cast<Piece>(pieceIdx);
+
+				auto board = boards.forPiece(piece);
+				while (!board.empty())
+				{
+					const auto sq = board.popLowestSquare();
+					activateFeature(piece, sq);
+				}
+			}
+		}
+
+		inline auto moveFeature(Piece piece, Square src, Square dst)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
+			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
+
+			subtractAndAddToAll(m_curr->black, m_net.featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
+			subtractAndAddToAll(m_curr->white, m_net.featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
+		}
+
+		inline auto activateFeature(Piece piece, Square sq) -> void
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+
+			addToAll(m_curr->black, m_net.featureWeights, blackIdx * Layer1Size);
+			addToAll(m_curr->white, m_net.featureWeights, whiteIdx * Layer1Size);
+		}
+
+		inline auto deactivateFeature(Piece piece, Square sq) -> void
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+
+			subtractFromAll(m_curr->black, m_net.featureWeights, blackIdx * Layer1Size);
+			subtractFromAll(m_curr->white, m_net.featureWeights, whiteIdx * Layer1Size);
+		}
+
+		[[nodiscard]] inline auto evaluate(Color stm) const
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			const auto output = stm == Color::Black
+				? creluFlatten(m_curr->black, m_curr->white, m_net.outputWeights)
+				: creluFlatten(m_curr->white, m_curr->black, m_net.outputWeights);
+			return (output + m_net.outputBias) * Scale / Q;
 		}
 
 	private:
-		std::vector<PawnCacheEntry> m_cache{};
+		const Network &m_net;
+
+		std::vector<Accumulator<Layer1Size>> m_accumulatorStack{};
+		Accumulator<Layer1Size> *m_curr{};
+
+		template <usize Size>
+		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
+			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
+		{
+			for (u32 i = 0; i < Size; ++i)
+			{
+				input[i] += delta[addOffset + i] - delta[subOffset + i];
+			}
+		}
+
+		template <usize Size>
+		static inline auto addToAll(std::array<i16, Size> &input,
+			std::span<const i16> delta, u32 offset) -> void
+		{
+			for (u32 i = 0; i < Size; ++i)
+			{
+				input[i] += delta[offset + i];
+			}
+		}
+
+		template <usize Size>
+		static inline auto subtractFromAll(std::array<i16, Size> &input,
+			std::span<const i16> delta, u32 offset) -> void
+		{
+			for (u32 i = 0; i < Size; ++i)
+			{
+				input[i] -= delta[offset + i];
+			}
+		}
+
+		static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
+		{
+			constexpr u32 ColorStride = 64 * 6;
+			constexpr u32 PieceStride = 64;
+
+			const auto base = static_cast<u32>(basePiece(piece));
+			const u32 color = pieceColor(piece) == Color::White ? 0 : 1;
+
+			const auto blackIdx = !color * ColorStride + base * PieceStride + (static_cast<u32>(sq) ^ 0x38);
+			const auto whiteIdx =  color * ColorStride + base * PieceStride +  static_cast<u32>(sq)        ;
+
+			return {blackIdx, whiteIdx};
+		}
+
+		static inline auto creluFlatten(
+			std::span<const i16, Layer1Size> us,
+			std::span<const i16, Layer1Size> them,
+			std::span<const i16, Layer1Size * 2> weights
+		) -> Score
+		{
+			i32 sum = 0;
+
+			for (u32 i = 0; i < Layer1Size; ++i)
+			{
+				sum += crelu(  us[i]) * weights[             i];
+				sum += crelu(them[i]) * weights[Layer1Size + i];
+			}
+
+			return sum;
+		}
 	};
-
-	auto staticEval(const Position &pos, PawnCache *pawnCache = nullptr) -> Score;
-
-	inline auto staticEvalAbs(const Position &pos, PawnCache *pawnCache = nullptr)
-	{
-		const auto eval = staticEval(pos, pawnCache);
-		return pos.toMove() == Color::Black ? -eval : eval;
-	}
-
-	inline auto flipTempo(Score score)
-	{
-		return score + Tempo * 2;
-	}
-
-	auto printEval(const Position &pos, PawnCache *pawnCache = nullptr) -> void;
 }
