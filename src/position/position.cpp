@@ -180,6 +180,7 @@ namespace stormphrax
 	auto Position::resetToStarting() -> void
 	{
 		m_states.resize(1);
+		m_hashes.clear();
 
 		auto &state = currState();
 		state = BoardState{};
@@ -485,8 +486,8 @@ namespace stormphrax
 			return false;
 		}
 
-		if (m_states.size() > 1)
-			m_states.resize(1);
+		m_states.resize(1);
+		m_hashes.clear();
 
 		m_blackToMove = newBlackToMove;
 		m_fullmove = newFullmove;
@@ -509,6 +510,7 @@ namespace stormphrax
 		}
 
 		m_states.resize(1);
+		m_hashes.clear();
 
 		auto &state = currState();
 		state = BoardState{};
@@ -562,6 +564,7 @@ namespace stormphrax
 		}
 
 		m_states.resize(1);
+		m_hashes.clear();
 
 		auto &state = currState();
 		state = BoardState{};
