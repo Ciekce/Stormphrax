@@ -199,6 +199,9 @@ namespace stormphrax
 		state.castlingRooks.shortSquares.white = Square::H1;
 		state.castlingRooks.longSquares.white  = Square::A1;
 
+		m_blackToMove = false;
+		m_fullmove = 1;
+
 		regen();
 	}
 
@@ -540,6 +543,9 @@ namespace stormphrax
 			}
 		}
 
+		m_blackToMove = false;
+		m_fullmove = 1;
+
 		regen();
 
 		return true;
@@ -601,6 +607,9 @@ namespace stormphrax
 				firstWhiteRook = false;
 			}
 		}
+
+		m_blackToMove = false;
+		m_fullmove = 1;
 
 		regen();
 
