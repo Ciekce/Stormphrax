@@ -178,6 +178,9 @@ namespace stormphrax::datagen
 						}
 						else thread->pos.popMove<false>(nullptr);
 					}
+
+					if (!legalFound)
+						break;
 				}
 
 				if (!legalFound)

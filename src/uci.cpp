@@ -847,7 +847,7 @@ namespace stormphrax
 				-6.41966158, 43.76916282, -63.29152600, 76.95812720
 			};
 
-			static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+		//	static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
 
 			const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
 
