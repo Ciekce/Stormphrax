@@ -11,7 +11,7 @@
 
 </div>
 
-a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine, with NNUE evaluation trained from zero knowledge starting with a randomly initialised network
+a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine, with NNUE evaluation trained from zero knowledge starting with random weights
 
 this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
@@ -37,6 +37,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - reverse futility pruning
   - SEE move ordering and pruning
   - Syzygy tablebase support
+- NNUE
+  - (768->64)x2->1 architecture
+  - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
   - `pext` for bishops
