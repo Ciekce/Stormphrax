@@ -29,7 +29,7 @@
 
 namespace stormphrax::uci
 {
-	constexpr Score NormalizationK = 82;
+	constexpr Score NormalizationK = 100;
 
 	auto run() -> i32;
 
