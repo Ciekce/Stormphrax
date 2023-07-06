@@ -91,10 +91,9 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::startSearch(const Position &pos,
-		i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void
+	auto Searcher::startSearch(const Position &pos, i32 maxDepth) -> void
 	{
-		if (!limiter)
+		if (!m_limiter)
 		{
 			std::cerr << "missing limiter" << std::endl;
 			return;
@@ -167,8 +166,6 @@ namespace stormphrax::search
 			thread.nnueState.reset(thread.pos.boards());
 		}
 
-		m_limiter = std::move(limiter);
-
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
 
@@ -192,6 +189,19 @@ namespace stormphrax::search
 		}
 	}
 
+	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Move, Score>
+	{
+		m_stop.store(false, std::memory_order::seq_cst);
+
+		const auto result = searchRoot(thread, false);
+
+		thread.history.age();
+		m_table.age();
+
+		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
+		return {result.first, whitePovScore * uci::NormalizationK / 100};
+	}
+
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
@@ -209,7 +219,7 @@ namespace stormphrax::search
 
 		const auto start = util::g_timer.time();
 
-		searchRoot(*threadData, true);
+		searchRoot(*threadData, false);
 
 		const auto time = util::g_timer.time() - start;
 
@@ -273,17 +283,17 @@ namespace stormphrax::search
 			if (flag == QuitFlag)
 				return;
 
-			searchRoot(data, false);
+			searchRoot(data, true);
 		}
 	}
 
-	auto Searcher::searchRoot(ThreadData &data, bool bench) -> void
+	auto Searcher::searchRoot(ThreadData &data, bool mainSearchThread) -> std::pair<Move, Score>
 	{
 		auto &searchData = data.search;
 
-		const bool reportAndUpdate = !bench && data.id == 0;
+		const bool reportAndUpdate = mainSearchThread && data.id == 0;
 
-		Score score{};
+		auto score = -ScoreMax;
 		Move best{};
 
 		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
@@ -378,8 +388,11 @@ namespace stormphrax::search
 
 			if (reportThisIter && depth < data.maxDepth)
 			{
-				if (const auto move = best ?: searchData.move)
-					report(data, searchData.depth, move,
+				if (!best)
+					best = searchData.move;
+
+				if (best)
+					report(data, searchData.depth, best,
 						util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 				else
 				{
@@ -391,19 +404,19 @@ namespace stormphrax::search
 
 		if (reportAndUpdate)
 		{
-			if (!bench)
+			if (mainSearchThread)
 				m_searchMutex.lock();
 
-			if (const auto move = best ?: searchData.move)
+			if (best)
 			{
 				if (!hitSoftTimeout)
-					report(data, depthCompleted, move, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
-				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
+					report(data, depthCompleted, best, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+				std::cout << "bestmove " << uci::moveToString(best) << std::endl;
 			}
 			else std::cout << "info string no legal moves" << std::endl;
 		}
 
-		if (!bench)
+		if (mainSearchThread)
 		{
 			data.history.age();
 
@@ -418,6 +431,8 @@ namespace stormphrax::search
 				m_searchMutex.unlock();
 			}
 		}
+
+		return {best, score};
 	}
 
 	auto Searcher::search(ThreadData &data, i32 depth,

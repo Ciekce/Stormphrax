@@ -55,8 +55,6 @@ namespace stormphrax
 		constexpr auto Version = SP_STRINGIFY(SP_VERSION);
 		constexpr auto Author = "Ciekce";
 
-		GlobalOptions s_opts{};
-
 #if SP_TUNE_SEARCH
 		tunable::TunableData s_tunable{};
 #endif
@@ -163,7 +161,7 @@ namespace stormphrax
 
 		auto UciHandler::handleUci() -> void
 		{
-			static const GlobalOptions defaultOpts{};
+			static const opts::GlobalOptions defaultOpts{};
 
 			std::cout << "id name " << Name << ' ' << Version << '\n';
 			std::cout << "id author " << Author << '\n';
@@ -414,7 +412,8 @@ namespace stormphrax
 				else if (!limiter)
 					limiter = std::make_unique<limit::InfiniteLimiter>();
 
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
+				m_searcher.setLimiter(std::move(limiter));
+				m_searcher.startSearch(m_pos, static_cast<i32>(depth));
 			}
 		}
 
@@ -502,7 +501,7 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newChess960 = util::tryParseBool(valueStr))
-							s_opts.chess960 = *newChess960;
+							opts::mutableOpts().chess960 = *newChess960;
 					}
 				}
 				else if (nameStr == "move overhead")
@@ -522,12 +521,12 @@ namespace stormphrax
 
 					if (valueEmpty)
 					{
-						s_opts.syzygyEnabled = false;
+						opts::mutableOpts().syzygyEnabled = false;
 						tb_init("");
 					}
 					else
 					{
-						s_opts.syzygyEnabled = valueStr != "<empty>";
+						opts::mutableOpts().syzygyEnabled = valueStr != "<empty>";
 						if (!tb_init(valueStr.c_str()))
 							std::cerr << "failed to initialize Fathom" << std::endl;
 					}
@@ -537,7 +536,7 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr))
-							s_opts.syzygyProbeDepth = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
+							opts::mutableOpts().syzygyProbeDepth = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
 					}
 				}
 				else if (nameStr == "syzygyprobelimit")
@@ -545,7 +544,7 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr))
-							s_opts.syzygyProbeLimit = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
+							opts::mutableOpts().syzygyProbeLimit = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
 					}
 				}
 #if SP_TUNE_SEARCH
@@ -823,8 +822,6 @@ namespace stormphrax
 		}
 #endif
 	}
-
-	const GlobalOptions &g_opts = s_opts;
 
 #if SP_TUNE_SEARCH
 	namespace tunable

@@ -18,17 +18,50 @@
 
 #include "uci.h"
 #include "bench.h"
+#include "datagen.h"
+#include "util/parse.h"
 
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
 {
-	if (argc > 1 && std::string{argv[1]} == "bench")
+	if (argc > 1)
 	{
-		search::Searcher searcher{16};
-		bench::run(searcher);
+		const std::string mode{argv[1]};
 
-		return 0;
+		if (mode == "bench")
+		{
+			search::Searcher searcher{16};
+			bench::run(searcher);
+
+			return 0;
+		}
+		else if (mode == "datagen")
+		{
+			if (argc < 4)
+			{
+				std::cerr << "usage: " << argv[0] << " datagen <path> <games per thread> [threads]" << std::endl;
+				return 1;
+			}
+
+			u32 games{};
+			if (!util::tryParseU32(games, argv[3]))
+			{
+				std::cerr << "invalid number of games " << argv[3] << std::endl;
+				std::cerr << "usage: " << argv[0] << " datagen <path> <games per thread> [threads]" << std::endl;
+				return 1;
+			}
+
+			u32 threads = 1;
+			if (argc > 4 && !util::tryParseU32(threads, argv[4]))
+			{
+				std::cerr << "invalid number of threads " << argv[4] << std::endl;
+				std::cerr << "usage: " << argv[0] << " datagen <path> <games per thread> [threads]" << std::endl;
+				return 1;
+			}
+
+			return datagen::run(argv[2], static_cast<i32>(games), static_cast<i32>(threads));
+		}
 	}
 
 	return uci::run();

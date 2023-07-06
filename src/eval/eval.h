@@ -73,7 +73,7 @@ namespace stormphrax::eval
 	struct alignas(64) Network
 	{
 		std::array<i16, InputSize * Layer1Size> featureWeights;
-		std::array<i16, Layer1Size> featureBias;
+		std::array<i16, Layer1Size> featureBiases;
 		std::array<i16, Layer1Size * 2> outputWeights;
 		i16 outputBias;
 	};
@@ -126,7 +126,7 @@ namespace stormphrax::eval
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			m_curr->init(m_net.featureBias);
+			m_curr->init(m_net.featureBiases);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on

@@ -13,28 +13,16 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
+ * along with Polaris. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "types.h"
 
-namespace stormphrax
+#include <string>
+
+namespace stormphrax::datagen
 {
-	namespace opts
-	{
-		struct GlobalOptions
-		{
-			bool chess960{false};
-
-			bool syzygyEnabled{false};
-			i32 syzygyProbeDepth{1};
-			i32 syzygyProbeLimit{7};
-		};
-
-		auto mutableOpts() -> GlobalOptions &;
-	}
-
-	extern const opts::GlobalOptions &g_opts;
+	auto run(const std::string &output, i32 games, i32 threads) -> i32;
 }
