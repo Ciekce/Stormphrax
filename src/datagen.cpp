@@ -250,6 +250,12 @@ namespace stormphrax::datagen
 						lossPlies = 0;
 						++drawPlies;
 					}
+					else
+					{
+						winPlies = 0;
+						lossPlies = 0;
+						drawPlies = 0;
+					}
 
 					if (winPlies >= WinAdjMaxPlies)
 					{
