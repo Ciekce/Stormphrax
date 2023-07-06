@@ -11,7 +11,9 @@
 
 </div>
 
-a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine
+a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fischer_random_chess) engine, with NNUE evaluation trained from zero knowledge starting with a randomly initialised network
+
+this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
 ## Strength
 | Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) | [MCERL](https://www.chessengeria.com/mcerl) |
