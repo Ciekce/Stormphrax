@@ -125,7 +125,7 @@ namespace stormphrax::datagen
 			"0.0"
 		};
 
-		auto runThread(u32 id, i32 games, u64 seed, std::mutex &outputMutex, std::ofstream &out)
+		auto runThread(u32 id, u32 games, u64 seed, std::mutex &outputMutex, std::ofstream &out)
 		{
 			Jsf64Rng rng{seed};
 
@@ -136,6 +136,14 @@ namespace stormphrax::datagen
 			searcher.setLimiter(std::move(limiterPtr));
 
 			auto thread = std::make_unique<search::ThreadData>();
+
+			const auto resetSearch = [&searcher, &thread]()
+			{
+				searcher.newGame();
+				thread->search = search::SearchData{};
+				std::fill(thread->stack.begin(), thread->stack.end(), search::SearchStackEntry{});
+				thread->history.clear();
+			};
 
 			std::vector<std::pair<std::string, Score>> positions{};
 			positions.reserve(256);
@@ -148,10 +156,7 @@ namespace stormphrax::datagen
 			{
 				positions.clear();
 
-				searcher.newGame();
-				thread->search = search::SearchData{};
-				std::fill(thread->stack.begin(), thread->stack.end(), search::SearchStackEntry{});
-				thread->history.clear();
+				resetSearch();
 
 				const auto dfrcIndex = rng.nextU32(960 * 960);
 				thread->pos.resetFromDfrcIndex(dfrcIndex);
@@ -208,10 +213,7 @@ namespace stormphrax::datagen
 					continue;
 				}
 
-				searcher.newGame();
-				thread->search = search::SearchData{};
-				std::fill(thread->stack.begin(), thread->stack.end(), search::SearchStackEntry{});
-				thread->history.clear();
+				resetSearch();
 
 				u32 winPlies{};
 				u32 lossPlies{};
@@ -313,7 +315,7 @@ namespace stormphrax::datagen
 		}
 	}
 
-	auto run(const std::string &output, i32 games, i32 threads) -> i32
+	auto run(const std::string &output, i32 threads, u32 games) -> i32
 	{
 		opts::mutableOpts().chess960 = true;
 
@@ -334,7 +336,9 @@ namespace stormphrax::datagen
 		std::vector<std::thread> theThreads{};
 		theThreads.reserve(threads);
 
-		std::cout << "generating " << games << " games each on " << threads << " threads" << std::endl;
+		if (games == UnlimitedGames)
+			std::cout << "generating on " << threads << " threads" << std::endl;
+		else std::cout << "generating " << games << " games each on " << threads << " threads" << std::endl;
 
 		for (u32 i = 0; i < threads; ++i)
 		{

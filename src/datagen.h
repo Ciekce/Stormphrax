@@ -21,8 +21,11 @@
 #include "types.h"
 
 #include <string>
+#include <limits>
 
 namespace stormphrax::datagen
 {
-	auto run(const std::string &output, i32 games, i32 threads) -> i32;
+	constexpr auto UnlimitedGames = std::numeric_limits<u32>::max();
+
+	auto run(const std::string &output, i32 threads, u32 games = UnlimitedGames) -> i32;
 }
