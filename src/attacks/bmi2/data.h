@@ -85,7 +85,7 @@ namespace stormphrax::attacks::bmi2
 		{
 			const auto square = static_cast<Square>(i);
 
-			for (const auto dir: {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight})
+			for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight})
 			{
 				const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
 				dst.data[i].mask |= attacks & ~internal::edges(dir);

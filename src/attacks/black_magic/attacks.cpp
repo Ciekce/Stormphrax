@@ -44,7 +44,7 @@ namespace stormphrax::attacks
 					if (!dst[data.offset + idx].empty())
 						continue;
 
-					for (const auto dir: {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
+					for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
 					{
 						dst[data.offset + idx]
 							|= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);

@@ -896,7 +896,7 @@ namespace stormphrax::search
 		if (!tbRoot)
 		{
 			// technically a potential race but it doesn't matter
-			for (const auto &thread: m_threads)
+			for (const auto &thread : m_threads)
 			{
 				nodes += thread.search.nodes;
 			}
@@ -961,7 +961,7 @@ namespace stormphrax::search
 				usize tbhits = 0;
 
 				// technically a potential race but it doesn't matter
-				for (const auto &thread: m_threads)
+				for (const auto &thread : m_threads)
 				{
 					tbhits += thread.search.tbhits;
 				}

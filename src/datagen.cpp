@@ -292,7 +292,7 @@ namespace stormphrax::datagen
 				{
 					std::unique_lock lock{outputMutex};
 
-					for (const auto &[fen, score]: positions)
+					for (const auto &[fen, score] : positions)
 					{
 						out << fen << " | " << score << " | " << outcomeStr << "\n";
 					}

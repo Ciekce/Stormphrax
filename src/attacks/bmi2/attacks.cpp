@@ -40,7 +40,7 @@ namespace stormphrax::attacks
 
 					Bitboard attacks{};
 
-					for (const auto dir: {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
+					for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
 					{
 						attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
 					}
