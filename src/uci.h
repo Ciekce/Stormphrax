@@ -31,6 +31,11 @@ namespace stormphrax::uci
 {
 	constexpr Score NormalizationK = 100;
 
+	inline auto normalizeScore(Score score)
+	{
+		return score * 100 / NormalizationK;
+	}
+
 	auto run() -> i32;
 
 	[[nodiscard]] auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>;

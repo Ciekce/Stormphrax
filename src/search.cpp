@@ -199,7 +199,7 @@ namespace stormphrax::search
 		m_table.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
-		return {result.first, whitePovScore * uci::NormalizationK / 100};
+		return {result.first, uci::normalizeScore(whitePovScore)};
 	}
 
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
@@ -923,7 +923,7 @@ namespace stormphrax::search
 		else
 		{
 			// adjust score to 100cp == 50% win probability
-			const auto normScore = score * uci::NormalizationK / 100;
+			const auto normScore = uci::normalizeScore(score);
 			std::cout << "cp " << normScore;
 		}
 
