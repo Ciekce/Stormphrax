@@ -33,37 +33,37 @@ endif()
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 
-set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/eval.h src/eval/eval.cpp src/util/range.h src/arch.h src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp)
+set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/eval.h src/eval/eval.cpp src/util/range.h src/arch.h src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp)
 
 add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
+add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-modern ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
-add_executable(stormphrax-compat ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC -march=native)
 	target_compile_options(stormphrax-bmi2 PUBLIC -march=haswell)
+	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2) # excavator without amd-specific extensions and bmi2
 	target_compile_options(stormphrax-modern PUBLIC -march=bdver2 -mno-tbm -mno-sse4a) # piledriver without amd-specific extensions
 	target_compile_options(stormphrax-popcnt PUBLIC -march=nehalem)
-	target_compile_options(stormphrax-compat PUBLIC -march=core2)
 endif()
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
 	target_compile_options(stormphrax-bmi2 PUBLIC -mtune=haswell)
-	target_compile_options(stormphrax-modern PUBLIC -mtune=znver2) # zen 2
+	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
+	target_compile_options(stormphrax-modern PUBLIC -mtune=bdver3) # steamroller
 	target_compile_options(stormphrax-popcnt PUBLIC -mtune=sandybridge)
-	target_compile_options(stormphrax-compat PUBLIC -mtune=core2)
 elseif(MSVC AND SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
-	target_compile_options(stormphrax-bmi2 PUBLIC /tune:skylake)
-	target_compile_options(stormphrax-modern PUBLIC /tune:znver2) # zen 2
+	target_compile_options(stormphrax-bmi2 PUBLIC /tune:haswell)
+	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
+	target_compile_options(stormphrax-modern PUBLIC /tune:bdver3) # steamroller
 	target_compile_options(stormphrax-popcnt PUBLIC /tune:sandybridge)
-	target_compile_options(stormphrax-compat PUBLIC /tune:core2)
 endif()
 
 if(SP_FAST_PEXT)

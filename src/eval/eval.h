@@ -27,39 +27,26 @@
 #include <cstring>
 #include <algorithm>
 #include <cassert>
+#include <string>
+#include <string_view>
 
+#include "activation.h"
 #include "../core.h"
 #include "../position/boards.h"
+
+//TODO avx512?
+#if SP_HAS_AVX2 || SP_HAS_AVX
+#define SP_NETWORK_ALIGNMENT 32
+#else // sse*, neon
+#define SP_NETWORK_ALIGNMENT 16
+#endif
 
 namespace stormphrax::eval
 {
 	// current arch: (768->64)x2->1, ClippedReLU
 
-	namespace activation
-	{
-		template <Score Min, Score Max>
-		struct [[maybe_unused]] ClippedReLU
-		{
-			static constexpr auto activate(i16 x)
-			{
-				return std::clamp(static_cast<i32>(x), Min, Max);
-			}
-
-			static constexpr i32 NormalizationK = 1;
-		};
-
-		template <Score Min, Score Max>
-		struct [[maybe_unused]] SquaredClippedReLU
-		{
-			static constexpr auto activate(i16 x)
-			{
-				const auto clipped = std::clamp(static_cast<i32>(x), Min, Max);
-				return clipped * clipped;
-			}
-
-			static constexpr i32 NormalizationK = Max;
-		};
-	}
+	// perspective
+	const auto ArchId = 1;
 
 	using Activation = activation::ClippedReLU<0, 255>;
 
@@ -70,7 +57,7 @@ namespace stormphrax::eval
 
 	constexpr Score Q = 255 * 64;
 
-	struct alignas(64) Network
+	struct alignas(SP_NETWORK_ALIGNMENT) Network
 	{
 		std::array<i16, InputSize * Layer1Size> featureWeights;
 		std::array<i16, Layer1Size> featureBiases;
@@ -78,7 +65,7 @@ namespace stormphrax::eval
 		i16 outputBias;
 	};
 
-	extern const Network &g_net;
+	extern const Network *g_currNet;
 
 	// Perspective network - separate accumulators for
 	// each side to allow the network to learn tempo
@@ -99,8 +86,7 @@ namespace stormphrax::eval
 	class NnueState
 	{
 	public:
-		explicit NnueState(const Network &net = g_net)
-			: m_net{net}
+		NnueState()
 		{
 			m_accumulatorStack.reserve(256);
 		}
@@ -126,7 +112,7 @@ namespace stormphrax::eval
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			m_curr->init(m_net.featureBiases);
+			m_curr->init(g_currNet->featureBiases);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
@@ -150,8 +136,8 @@ namespace stormphrax::eval
 			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
 			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
 
-			subtractAndAddToAll(m_curr->black, m_net.featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
-			subtractAndAddToAll(m_curr->white, m_net.featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
+			subtractAndAddToAll(m_curr->black, g_currNet->featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
+			subtractAndAddToAll(m_curr->white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
 		}
 
 		inline auto activateFeature(Piece piece, Square sq) -> void
@@ -160,8 +146,8 @@ namespace stormphrax::eval
 
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
-			addToAll(m_curr->black, m_net.featureWeights, blackIdx * Layer1Size);
-			addToAll(m_curr->white, m_net.featureWeights, whiteIdx * Layer1Size);
+			addToAll(m_curr->black, g_currNet->featureWeights, blackIdx * Layer1Size);
+			addToAll(m_curr->white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
 		inline auto deactivateFeature(Piece piece, Square sq) -> void
@@ -170,8 +156,8 @@ namespace stormphrax::eval
 
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
-			subtractFromAll(m_curr->black, m_net.featureWeights, blackIdx * Layer1Size);
-			subtractFromAll(m_curr->white, m_net.featureWeights, whiteIdx * Layer1Size);
+			subtractFromAll(m_curr->black, g_currNet->featureWeights, blackIdx * Layer1Size);
+			subtractFromAll(m_curr->white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
 		[[nodiscard]] inline auto evaluate(Color stm) const
@@ -179,14 +165,12 @@ namespace stormphrax::eval
 			assert(m_curr == &m_accumulatorStack.back());
 
 			const auto output = stm == Color::Black
-				? activateAndFlatten(m_curr->black, m_curr->white, m_net.outputWeights)
-				: activateAndFlatten(m_curr->white, m_curr->black, m_net.outputWeights);
-			return (output + m_net.outputBias) * Scale / Q;
+				? activateAndFlatten(m_curr->black, m_curr->white, g_currNet->outputWeights)
+				: activateAndFlatten(m_curr->white, m_curr->black, g_currNet->outputWeights);
+			return (output + g_currNet->outputBias) * Scale / Q;
 		}
 
 	private:
-		const Network &m_net;
-
 		std::vector<Accumulator<Layer1Size>> m_accumulatorStack{};
 		Accumulator<Layer1Size> *m_curr{};
 
@@ -251,4 +235,9 @@ namespace stormphrax::eval
 			return sum / Activation::NormalizationK;
 		}
 	};
+
+	auto loadDefaultNetwork() -> void;
+	auto loadNetwork(const std::string &name) -> void;
+
+	[[nodiscard]] auto defaultNetworkName() -> std::string_view;
 }

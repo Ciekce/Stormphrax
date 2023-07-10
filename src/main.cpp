@@ -20,11 +20,14 @@
 #include "bench.h"
 #include "datagen.h"
 #include "util/parse.h"
+#include "eval/eval.h"
 
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
 {
+	eval::loadDefaultNetwork();
+
 	if (argc > 1)
 	{
 		const std::string mode{argv[1]};

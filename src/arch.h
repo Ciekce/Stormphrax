@@ -20,34 +20,46 @@
 
 #include "types.h"
 
-#if defined(SP_NATIVE) || defined(SP_BMI2)
-	#if __BMI2__ && (defined(SP_BMI2) || defined(SP_FAST_PEXT))
+#if defined(SP_NATIVE)
+	// cannot expand a macro to defined()
+	#if __BMI2__ && defined(SP_FAST_PEXT)
 		#define SP_HAS_BMI2 1
 	#else
 		#define SP_HAS_BMI2 0
 	#endif
-	#if __BMI__
-		#define SP_HAS_BMI1 1
-	#else
-		#define SP_HAS_BMI1 0
-	#endif
-	#if __POPCNT__
-		#define SP_HAS_POPCNT 1
-	#else
-		#define SP_HAS_POPCNT 0
-	#endif
+	#define SP_HAS_AVX2 __AVX2__
+	#define SP_HAS_AVX __AVX__
+	#define SP_HAS_NEON __neon__
+	#define SP_HAS_BMI1 __BMI__
+	#define SP_HAS_POPCNT __POPCNT__
+#elif defined(SP_BMI2)
+	#define SP_HAS_BMI2 1
+	#define SP_HAS_AVX2 1
+	#define SP_HAS_AVX 1
+	#define SP_HAS_NEON 0
+	#define SP_HAS_BMI1 1
+	#define SP_HAS_POPCNT 1
+#elif defined(SP_AVX2)
+	#define SP_HAS_BMI2 0
+	#define SP_HAS_AVX2 1
+	#define SP_HAS_AVX 1
+	#define SP_HAS_NEON 0
+	#define SP_HAS_BMI1 1
+	#define SP_HAS_POPCNT 1
 #elif defined(SP_MODERN)
 	#define SP_HAS_BMI2 0
+	#define SP_HAS_AVX2 0
+	#define SP_HAS_AVX 1
+	#define SP_HAS_NEON 0
 	#define SP_HAS_BMI1 1
 	#define SP_HAS_POPCNT 1
 #elif defined(SP_POPCNT)
 	#define SP_HAS_BMI2 0
+	#define SP_HAS_AVX2 0
+	#define SP_HAS_AVX 0
+	#define SP_HAS_NEON 0
 	#define SP_HAS_BMI1 0
 	#define SP_HAS_POPCNT 1
-#elif defined(SP_COMPAT)
-	#define SP_HAS_BMI2 0
-	#define SP_HAS_BMI1 0
-	#define SP_HAS_POPCNT 0
 #else
 #error no arch specified
 #endif

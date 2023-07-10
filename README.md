@@ -51,28 +51,29 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 - make it stronger uwu
 
 ## UCI options
-| Name             |  Type   | Default value |  Valid values   | Description                                                                                                 |
-|:-----------------|:-------:|:-------------:|:---------------:|:------------------------------------------------------------------------------------------------------------|
-| Hash             | integer |      64       |   [1, 131072]   | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2. |
-| Clear Hash       | button  |      N/A      |       N/A       | Clears the transposition table.                                                                             |
-| Threads          | integer |       1       |    [1, 2048]    | Number of threads used to search.                                                                           |
-| UCI_Chess960     |  check  |    `false`    | `false`, `true` | Whether Stormphrax plays Chess960 instead of standard chess.                                                |
-| Move Overhead    | integer |      10       |   [0, 50000]    | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                        |
-| SyzygyPath       | string  |   \<empty\>   |    any path     | Location of Syzygy tablebases to probe during search.                                                       |
-| SyzygyProbeDepth |  spin   |       1       |    [1, 255]     | Minimum depth to probe Syzygy tablebases at.                                                                |
-| SyzygyProbeLimit |  spin   |       7       |     [0, 7]      | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
+| Name             |  Type   | Default value |       Valid values        | Description                                                                                                 |
+|:-----------------|:-------:|:-------------:|:-------------------------:|:------------------------------------------------------------------------------------------------------------|
+| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2. |
+| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                             |
+| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                           |
+| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                |
+| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                        |
+| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                       |
+| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                |
+| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
+| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                            |
 
 ## Builds
-`bmi2`: requires BMI2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
-`modern`: requires BMI (`blsi`, `blsr`, `tzcnt`) - primarily useful for pre-Zen 3 AMD CPUs back to Piledriver  
-`popcnt`: just needs `popcnt`  
-`compat`: should run on anything back to an original Core 2
+`bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
+`avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
+`modern`: requires BMI (`blsi`, `blsr`, `tzcnt`) - primarily useful for pre-Excavator AMD CPUs back to Piledriver  
+`popcnt`: just needs `popcnt`
 
 Alternatively, build the CMake target `stormphrax-native` for a binary tuned for your specific CPU (see below)  
 (note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)
 
 ### Note:  
-- If you have an AMD Zen 1 (Ryzen x 1xxx) or 2 (Ryzen x 2xxx) CPU, use the `modern` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
+- If you have an AMD Zen 1 (Ryzen x 1xxx) or 2 (Ryzen x 2xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
 - Builds other than `bmi2` are untested and might crash on CPUs lacking newer instructions; I don't have older hardware to test them on.
 
 ## Building
