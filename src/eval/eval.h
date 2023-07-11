@@ -43,7 +43,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768->64)x2->1, ClippedReLU
+	// current arch: (768->384)x2->1, ClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
