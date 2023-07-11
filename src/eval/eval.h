@@ -43,7 +43,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768->64)x2->1, ClippedReLU
+	// current arch: (768->384)x2->1, ClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
@@ -51,7 +51,7 @@ namespace stormphrax::eval
 	using Activation = activation::ClippedReLU<0, 255>;
 
 	constexpr u32 InputSize = 768;
-	constexpr u32 Layer1Size = 64;
+	constexpr u32 Layer1Size = 384;
 
 	constexpr Score Scale = 400;
 

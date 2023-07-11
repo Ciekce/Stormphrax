@@ -38,7 +38,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - SEE move ordering and pruning
   - Syzygy tablebase support
 - NNUE
-  - (768->64)x2->1 architecture
+  - (768->384)x2->1 architecture
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
