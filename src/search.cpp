@@ -606,7 +606,7 @@ namespace stormphrax::search
 						+ depth / nmpReductionDepthScale()
 						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
 
-				const auto guard = pos.applyMove<false>(NullMove, &data.nnueState, &m_table);
+				const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
 				const auto score = -search(data, depth - R, ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
