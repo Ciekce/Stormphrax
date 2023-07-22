@@ -195,7 +195,6 @@ namespace stormphrax::search
 
 		const auto result = searchRoot(thread, false);
 
-		thread.history.age();
 		m_table.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
@@ -418,8 +417,6 @@ namespace stormphrax::search
 
 		if (mainSearchThread)
 		{
-			data.history.age();
-
 			--m_runningThreads;
 			m_stopSignal.notify_all();
 
