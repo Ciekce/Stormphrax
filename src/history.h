@@ -123,17 +123,6 @@ namespace stormphrax
 			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		inline auto age()
-		{
-			for (auto &pieceTable : m_table)
-			{
-				for (auto &dstSquare : pieceTable)
-				{
-					dstSquare.score /= 2;
-				}
-			}
-		}
-
 		inline auto clear()
 		{
 			std::memset(m_table.data(), 0, sizeof(HistoryEntry) * 64 * 12);
