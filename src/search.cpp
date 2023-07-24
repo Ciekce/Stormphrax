@@ -933,21 +933,24 @@ namespace stormphrax::search
 			std::cout << " lowerbound";
 
 		// wdl display
-		if (score > ScoreWin)
-			std::cout << " wdl 1000 0 0";
-		else if (score < -ScoreWin)
-			std::cout << " wdl 0 0 1000";
-		// tablebase draws at the root
-		else if (tbRoot)
-			std::cout << " wdl 0 1000 0";
-		else
+		if (g_opts.showWdl)
 		{
-			const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
+			if (score > ScoreWin)
+				std::cout << " wdl 1000 0 0";
+			else if (score < -ScoreWin)
+				std::cout << " wdl 0 0 1000";
+				// tablebase draws at the root
+			else if (tbRoot)
+				std::cout << " wdl 0 1000 0";
+			else
+			{
+				const auto plyFromStartpos = data.pos.fullmove() * 2 - (data.pos.toMove() == Color::White ? 1 : 0) - 1;
 
-			const auto [wdlWin, wdlLoss]  = uci::winRateModel(score, plyFromStartpos);
-			const auto wdlDraw = 1000 - wdlWin - wdlLoss;
+				const auto [wdlWin, wdlLoss] = uci::winRateModel(score, plyFromStartpos);
+				const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
-			std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
+				std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
+			}
 		}
 
 		std::cout << " hashfull " << m_table.full();
