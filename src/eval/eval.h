@@ -121,13 +121,13 @@ namespace stormphrax::eval
 			moveFeature(*m_curr, piece, src, dst);
 		}
 
-		inline auto activateFeature(Piece piece, Square sq) -> void
+		inline auto activateFeature(Piece piece, Square sq)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
 			activateFeature(*m_curr, piece, sq);
 		}
 
-		inline auto deactivateFeature(Piece piece, Square sq) -> void
+		inline auto deactivateFeature(Piece piece, Square sq)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
 			deactivateFeature(*m_curr, piece, sq);
@@ -195,7 +195,7 @@ namespace stormphrax::eval
 			subtractFromAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		static inline auto evaluate(const Accumulator<Layer1Size> &accumulator, Color stm) -> i32
+		[[nodiscard]] static inline auto evaluate(const Accumulator<Layer1Size> &accumulator, Color stm) -> i32
 		{
 			const auto output = stm == Color::Black
 				? activateAndFlatten(accumulator.black, accumulator.white, g_currNet->outputWeights)
@@ -233,7 +233,7 @@ namespace stormphrax::eval
 			}
 		}
 
-		static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
+		[[nodiscard]] static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
 		{
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
@@ -247,7 +247,7 @@ namespace stormphrax::eval
 			return {blackIdx, whiteIdx};
 		}
 
-		static inline auto activateAndFlatten(
+		[[nodiscard]] static inline auto activateAndFlatten(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
 			std::span<const i16, Layer1Size * 2> weights
