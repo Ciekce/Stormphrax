@@ -112,7 +112,48 @@ namespace stormphrax::eval
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			m_curr->init(g_currNet->featureBiases);
+			initAccumulator(*m_curr, boards);
+		}
+
+		inline auto moveFeature(Piece piece, Square src, Square dst)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+			moveFeature(*m_curr, piece, src, dst);
+		}
+
+		inline auto activateFeature(Piece piece, Square sq) -> void
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+			activateFeature(*m_curr, piece, sq);
+		}
+
+		inline auto deactivateFeature(Piece piece, Square sq) -> void
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+			deactivateFeature(*m_curr, piece, sq);
+		}
+
+		[[nodiscard]] inline auto evaluate(Color stm) const
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+			return evaluate(*m_curr, stm);
+		}
+
+		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards, Color stm)
+		{
+			Accumulator<Layer1Size> accumulator{};
+			initAccumulator(accumulator, boards);
+
+			return evaluate(accumulator, stm);
+		}
+
+	private:
+		std::vector<Accumulator<Layer1Size>> m_accumulatorStack{};
+		Accumulator<Layer1Size> *m_curr{};
+
+		static inline auto initAccumulator(Accumulator<Layer1Size> &accumulator, const PositionBoards &boards) -> void
+		{
+			accumulator.init(g_currNet->featureBiases);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
@@ -124,55 +165,43 @@ namespace stormphrax::eval
 				while (!board.empty())
 				{
 					const auto sq = board.popLowestSquare();
-					activateFeature(piece, sq);
+					activateFeature(accumulator, piece, sq);
 				}
 			}
 		}
 
-		inline auto moveFeature(Piece piece, Square src, Square dst)
+		static inline auto moveFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square src, Square dst) -> void
 		{
-			assert(m_curr == &m_accumulatorStack.back());
-
 			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
 			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
 
-			subtractAndAddToAll(m_curr->black, g_currNet->featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
-			subtractAndAddToAll(m_curr->white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
+			subtractAndAddToAll(accumulator.black, g_currNet->featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
+			subtractAndAddToAll(accumulator.white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
 		}
 
-		inline auto activateFeature(Piece piece, Square sq) -> void
+		static inline auto activateFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square sq) -> void
 		{
-			assert(m_curr == &m_accumulatorStack.back());
-
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
-			addToAll(m_curr->black, g_currNet->featureWeights, blackIdx * Layer1Size);
-			addToAll(m_curr->white, g_currNet->featureWeights, whiteIdx * Layer1Size);
+			addToAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
+			addToAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		inline auto deactivateFeature(Piece piece, Square sq) -> void
+		static inline auto deactivateFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square sq) -> void
 		{
-			assert(m_curr == &m_accumulatorStack.back());
-
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
-			subtractFromAll(m_curr->black, g_currNet->featureWeights, blackIdx * Layer1Size);
-			subtractFromAll(m_curr->white, g_currNet->featureWeights, whiteIdx * Layer1Size);
+			subtractFromAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
+			subtractFromAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		[[nodiscard]] inline auto evaluate(Color stm) const
+		static inline auto evaluate(const Accumulator<Layer1Size> &accumulator, Color stm) -> i32
 		{
-			assert(m_curr == &m_accumulatorStack.back());
-
 			const auto output = stm == Color::Black
-				? activateAndFlatten(m_curr->black, m_curr->white, g_currNet->outputWeights)
-				: activateAndFlatten(m_curr->white, m_curr->black, g_currNet->outputWeights);
+				? activateAndFlatten(accumulator.black, accumulator.white, g_currNet->outputWeights)
+				: activateAndFlatten(accumulator.white, accumulator.black, g_currNet->outputWeights);
 			return (output + g_currNet->outputBias) * Scale / Q;
 		}
-
-	private:
-		std::vector<Accumulator<Layer1Size>> m_accumulatorStack{};
-		Accumulator<Layer1Size> *m_curr{};
 
 		template <usize Size>
 		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
