@@ -29,7 +29,7 @@
 
 namespace stormphrax::uci
 {
-	constexpr Score NormalizationK = 100;
+	constexpr Score NormalizationK = 271;
 
 	inline auto normalizeScore(Score score)
 	{

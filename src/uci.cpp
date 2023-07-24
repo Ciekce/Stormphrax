@@ -858,13 +858,13 @@ namespace stormphrax
 		auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>
 		{
 			constexpr auto As = std::array {
-				-9.50613608, 80.39483574, -91.01771303, 103.05370743
+				7.18898158, -41.53274687, 123.88236544, 182.20533084
 			};
 			constexpr auto Bs = std::array {
-				-6.41966158, 43.76916282, -63.29152600, 76.95812720
+				1.17032511, 4.16373765, -41.01938757, 132.41029355
 			};
 
-		//	static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+			static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
 
 			const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
 
