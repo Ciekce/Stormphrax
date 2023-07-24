@@ -849,7 +849,7 @@ namespace stormphrax
 
 	namespace uci
 	{
-		i32 run()
+		auto run() -> i32
 		{
 			UciHandler handler{};
 			return handler.run();
