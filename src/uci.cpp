@@ -710,7 +710,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = eval::NnueState::evaluateOnce(m_pos.boards(), m_pos.toMove());
+			const auto staticEval = normalizeScore(eval::NnueState::evaluateOnce(m_pos.boards(), m_pos.toMove()));
 
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -staticEval : staticEval);
@@ -719,7 +719,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto score = eval::NnueState::evaluateOnce(m_pos.boards(), m_pos.toMove());
+			const auto score = normalizeScore(eval::NnueState::evaluateOnce(m_pos.boards(), m_pos.toMove()));
 			printScore(std::cout, score);
 			std::cout << std::endl;
 		}
