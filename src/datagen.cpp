@@ -69,7 +69,7 @@ namespace stormphrax::datagen
 			explicit DatagenNodeLimiter(u32 threadId) : m_threadId{threadId} {}
 			~DatagenNodeLimiter() final = default;
 
-			[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final
+			[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
 			{
 				if (data.nodes >= m_hardNodeLimit)
 				{
@@ -79,6 +79,12 @@ namespace stormphrax::datagen
 				}
 
 				return allowSoftTimeout && data.nodes >= m_softNodeLimit;
+			}
+
+			[[nodiscard]] auto stopped() const -> bool final
+			{
+				// doesn't matter
+				return false;
 			}
 
 			inline auto setSoftNodeLimit(usize nodes)

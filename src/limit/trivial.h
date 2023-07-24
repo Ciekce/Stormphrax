@@ -20,6 +20,8 @@
 
 #include "../types.h"
 
+#include <atomic>
+
 #include "limit.h"
 
 namespace stormphrax::limit
@@ -30,7 +32,12 @@ namespace stormphrax::limit
 		InfiniteLimiter() = default;
 		~InfiniteLimiter() final = default;
 
-		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final
+		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
+		{
+			return false;
+		}
+
+		[[nodiscard]] inline auto stopped() const -> bool final
 		{
 			return false;
 		}
@@ -43,12 +50,24 @@ namespace stormphrax::limit
 
 		~NodeLimiter() final = default;
 
-		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final
+		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
 		{
-			return data.nodes >= m_maxNodes;
+			if (data.nodes >= m_maxNodes)
+			{
+				m_stopped.store(true, std::memory_order_release);
+				return true;
+			}
+
+			return false;
+		}
+
+		[[nodiscard]] inline auto stopped() const -> bool final
+		{
+			return m_stopped.load(std::memory_order_acquire);
 		}
 
 	private:
 		usize m_maxNodes;
+		std::atomic_bool m_stopped{false};
 	};
 }

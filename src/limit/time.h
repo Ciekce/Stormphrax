@@ -21,6 +21,7 @@
 #include "../types.h"
 
 #include <array>
+#include <atomic>
 
 #include "limit.h"
 #include "../util/timer.h"
@@ -37,10 +38,13 @@ namespace stormphrax::limit
 		explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
 		~MoveTimeLimiter() final = default;
 
-		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final;
+		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+
+		[[nodiscard]] auto stopped() const -> bool final;
 
 	private:
 		f64 m_maxTime;
+		std::atomic_bool m_stopped{false};
 	};
 
 	class TimeManager final : public ISearchLimiter
@@ -52,7 +56,9 @@ namespace stormphrax::limit
 		auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final;
 		auto updateMoveNodes(Move move, usize nodes) -> void final;
 
-		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool final;
+		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+
+		[[nodiscard]] auto stopped() const -> bool final;
 
 	private:
 		f64 m_startTime;
@@ -63,5 +69,7 @@ namespace stormphrax::limit
 		f64 m_scale{1.0};
 
 		std::array<std::array<usize, 64>, 64> m_moveNodeCounts{};
+
+		std::atomic_bool m_stopped{false};
 	};
 }

@@ -408,7 +408,7 @@ namespace stormphrax::search
 
 			if (best)
 			{
-				if (!hitSoftTimeout)
+				if (!hitSoftTimeout || !m_limiter->stopped())
 					report(data, depthCompleted, best, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
 				std::cout << "bestmove " << uci::moveToString(best) << std::endl;
 			}

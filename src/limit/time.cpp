@@ -25,12 +25,23 @@ namespace stormphrax::limit
 	MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead)
 		: m_maxTime{util::g_timer.time() + static_cast<f64>(std::max(I64(1), time - overhead)) / 1000.0} {}
 
-	auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool
+	auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
 	{
-		return data.depth > 2
+		if (data.depth > 2
 			&& data.nodes > 0
 			&& (data.nodes % 1024) == 0
-			&& util::g_timer.time() >= m_maxTime;
+			&& util::g_timer.time() >= m_maxTime)
+		{
+			m_stopped.store(true, std::memory_order_release);
+			return true;
+		}
+
+		return false;
+	}
+
+	auto MoveTimeLimiter::stopped() const -> bool
+	{
+		return m_stopped.load(std::memory_order_acquire);
 	}
 
 	TimeManager::TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
@@ -61,7 +72,7 @@ namespace stormphrax::limit
 		m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
 	}
 
-	auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) const -> bool
+	auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
 	{
 		if (data.depth < 5
 			|| data.nodes == 0
@@ -69,6 +80,18 @@ namespace stormphrax::limit
 			return false;
 
 		const auto elapsed = util::g_timer.time() - m_startTime;
-		return elapsed > m_maxTime || (allowSoftTimeout && elapsed > m_softTime * m_scale);
+
+		if (elapsed > m_maxTime || (allowSoftTimeout && elapsed > m_softTime * m_scale))
+		{
+			m_stopped.store(true, std::memory_order_release);
+			return true;
+		}
+
+		return false;
+	}
+
+	auto TimeManager::stopped() const -> bool
+	{
+		return m_stopped.load(std::memory_order_acquire);
 	}
 }
