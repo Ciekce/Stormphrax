@@ -44,7 +44,7 @@ namespace stormphrax::eval
 		inline auto archName(u8 arch)
 		{
 			static constexpr auto NetworkArchNames = std::array {
-				"\"basic\"", "\"perspective\""
+				"basic", "perspective"
 			};
 
 			if (arch < NetworkArchNames.size())
@@ -56,7 +56,7 @@ namespace stormphrax::eval
 		inline auto activationFuncName(u8 func)
 		{
 			static constexpr auto ActivationFunctionNames = std::array {
-				"\"clipped ReLU\"", "\"squared clipped ReLU\""
+				"crelu", "screlu"
 			};
 
 			if (func < ActivationFunctionNames.size())
@@ -111,29 +111,29 @@ namespace stormphrax::eval
 
 			if (header.activation != Activation::Id)
 			{
-				std::cerr << "wrong network activation function " << activationFuncName(header.activation)
-					<< " (expected: " << activationFuncName(Activation::Id) << ")" << std::endl;
+				std::cerr << "wrong network activation function (" << activationFuncName(header.activation)
+					<< ", expected: " << activationFuncName(Activation::Id) << ")" << std::endl;
 				return false;
 			}
 
 			if (header.hiddenSize != Layer1Size)
 			{
-				std::cerr << "wrong number of hidden neurons " << header.hiddenSize
-					<< " (expected: " << Layer1Size << ")" << std::endl;
+				std::cerr << "wrong number of hidden neurons (" << header.hiddenSize
+					<< ", expected: " << Layer1Size << ")" << std::endl;
 				return false;
 			}
 
 			if (header.inputBuckets != 1)
 			{
-				std::cerr << "wrong number of input buckets " << header.inputBuckets
-					<< " (expected: 1)" << std::endl;
+				std::cerr << "wrong number of input buckets (" << header.inputBuckets
+					<< ", expected: 1)" << std::endl;
 				return false;
 			}
 
 			if (header.outputBuckets != 1)
 			{
-				std::cerr << "wrong number of output buckets " << header.outputBuckets
-					<< " (expected: 1)" << std::endl;
+				std::cerr << "wrong number of output buckets (" << header.outputBuckets
+					<< ", expected: 1)" << std::endl;
 				return false;
 			}
 
