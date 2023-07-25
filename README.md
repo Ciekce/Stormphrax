@@ -64,10 +64,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 | EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                            |
 
 ## Builds
-`bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
+`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
-`modern`: requires BMI (`blsi`, `blsr`, `tzcnt`) - primarily useful for pre-Excavator AMD CPUs back to Piledriver  
-`popcnt`: just needs `popcnt`
+`popcnt`: just needs `popcnt` - for older x64 CPUs
 
 Alternatively, build the CMake target `stormphrax-native` for a binary tuned for your specific CPU (see below)  
 (note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)

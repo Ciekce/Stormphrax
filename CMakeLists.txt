@@ -41,30 +41,27 @@ set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/a
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp)
 
 add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC} ${STORMPHRAX_NON_BMI2_SRC})
-add_executable(stormphrax-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
+add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-modern ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC -march=native)
-	target_compile_options(stormphrax-bmi2 PUBLIC -march=haswell)
+	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2) # excavator without amd-specific extensions and bmi2
-	target_compile_options(stormphrax-modern PUBLIC -march=bdver2 -mno-tbm -mno-sse4a) # piledriver without amd-specific extensions
 	target_compile_options(stormphrax-popcnt PUBLIC -march=nehalem)
 endif()
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
-	target_compile_options(stormphrax-bmi2 PUBLIC -mtune=haswell)
+	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
-	target_compile_options(stormphrax-modern PUBLIC -mtune=bdver3) # steamroller
 	target_compile_options(stormphrax-popcnt PUBLIC -mtune=sandybridge)
 elseif(MSVC AND SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
-	target_compile_options(stormphrax-bmi2 PUBLIC /tune:haswell)
+	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
-	target_compile_options(stormphrax-modern PUBLIC /tune:bdver3) # steamroller
 	target_compile_options(stormphrax-popcnt PUBLIC /tune:sandybridge)
 endif()
 
@@ -81,7 +78,7 @@ foreach(TARGET ${TARGETS})
 
 	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION} SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/src/eval/${SP_DEFAULT_NET_NAME}.nnue")
 
-	string(REPLACE "-" "-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
+	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")
 
 	target_link_libraries(${TARGET} Threads::Threads)

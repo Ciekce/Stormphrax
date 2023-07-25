@@ -32,7 +32,7 @@
 	#define SP_HAS_NEON __neon__
 	#define SP_HAS_BMI1 __BMI__
 	#define SP_HAS_POPCNT __POPCNT__
-#elif defined(SP_BMI2)
+#elif defined(SP_AVX2_BMI2)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_AVX 1
