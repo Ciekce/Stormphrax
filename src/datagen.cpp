@@ -207,13 +207,13 @@ namespace stormphrax::datagen
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
 				limiter.setHardNodeLimit(VerificationHardNodeLimit);
 
-				const auto [firstMove, firstScore] = searcher.runDatagenSearch(*thread);
+				const auto [firstMove, firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
 				thread->maxDepth = search::MaxDepth;
 				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
 				limiter.setHardNodeLimit(DatagenHardNodeLimit);
 
-				if (std::abs(firstScore) > VerificationScoreLimit)
+				if (std::abs(normFirstScore) > VerificationScoreLimit)
 				{
 					--game;
 					continue;
@@ -229,7 +229,7 @@ namespace stormphrax::datagen
 
 				while (true)
 				{
-					const auto [move, score] = searcher.runDatagenSearch(*thread);
+					const auto [move, score, normScore] = searcher.runDatagenSearch(*thread);
 					thread->search = search::SearchData{};
 
 					if (!move)
@@ -240,19 +240,19 @@ namespace stormphrax::datagen
 						break;
 					}
 
-					if (score > WinAdjMinScore)
+					if (normScore > WinAdjMinScore)
 					{
 						++winPlies;
 						lossPlies = 0;
 						drawPlies = 0;
 					}
-					else if (score < -WinAdjMinScore)
+					else if (normScore < -WinAdjMinScore)
 					{
 						winPlies = 0;
 						++lossPlies;
 						drawPlies = 0;
 					}
-					else if (std::abs(score) < DrawAdjMaxScore)
+					else if (std::abs(normScore) < DrawAdjMaxScore)
 					{
 						winPlies = 0;
 						lossPlies = 0;
@@ -287,10 +287,8 @@ namespace stormphrax::datagen
 
 					if (!noisy
 						&& !thread->pos.isCheck()
-						&& std::abs(score) < ScoreWin)
-					{
+						&& std::abs(normScore) < ScoreWin)
 						positions.emplace_back(thread->pos.toFen(), score);
-					}
 				}
 
 				const auto &outcomeStr = OutcomeStrings[static_cast<i32>(outcome)];

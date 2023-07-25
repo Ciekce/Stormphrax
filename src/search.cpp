@@ -189,7 +189,7 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Move, Score>
+	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::tuple<Move, Score, Score>
 	{
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -198,7 +198,7 @@ namespace stormphrax::search
 		m_table.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
-		return {result.first, uci::normalizeScore(whitePovScore)};
+		return {result.first, whitePovScore, uci::normalizeScore(whitePovScore)};
 	}
 
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
