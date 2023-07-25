@@ -57,6 +57,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 | Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                             |
 | Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                           |
 | UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                |
+| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                            |
 | Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                        |
 | SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                       |
 | SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                |
