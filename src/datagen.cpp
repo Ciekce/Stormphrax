@@ -28,7 +28,7 @@
 #define NOMINMAX
 #include <Windows.h>
 #else
-//TODO
+#include <signal.h>
 #endif
 
 #include "limit/limit.h"
@@ -60,7 +60,15 @@ namespace stormphrax::datagen
 				}, TRUE))
 				std::cerr << "failed to set ctrl+c handler" << std::endl;
 #else
-			//TODO
+			const struct sigaction action {
+				.sa_handler = [](int signal)
+				{
+					s_stop.store(true, std::memory_order::seq_cst);
+				},
+				.sa_flags = SA_RESTART
+			};
+			if (sigaction(SIGINT, &action, nullptr))
+				std::cerr << "failed to set ctrl+c handler" << std::endl;
 #endif
 		}
 
