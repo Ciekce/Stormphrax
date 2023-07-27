@@ -33,7 +33,9 @@ namespace stormphrax::uci
 
 	inline auto normalizeScore(Score score)
 	{
-		return score * 100 / NormalizationK;
+		// don't normalise wins/losses, or zeroes that are pointless to normalise
+		return score == 0 || std::abs(score) > ScoreWin
+			? score : score * 100 / NormalizationK;
 	}
 
 	auto run() -> i32;

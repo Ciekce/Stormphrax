@@ -917,9 +917,6 @@ namespace stormphrax::search
 				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
 			else std::cout << "mate " << (-(ScoreMate + score) / 2);
 		}
-		// tablebase wins/losses, or zeroes that are pointless to normalise
-		else if (score == 0 || std::abs(score) > ScoreWin)
-			std::cout << "cp " << score;
 		else
 		{
 			// adjust score to 100cp == 50% win probability

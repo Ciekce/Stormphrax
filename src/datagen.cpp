@@ -37,6 +37,7 @@
 #include "util/rng.h"
 #include "opts.h"
 #include "util/timer.h"
+#include "util/u4array.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
@@ -118,17 +119,69 @@ namespace stormphrax::datagen
 
 		constexpr i32 ReportInterval = 1024;
 
-		enum class Outcome
+		enum class Outcome : u8
 		{
-			WhiteWin = 0,
+			WhiteLoss = 0,
 			Draw,
-			WhiteLoss
+			WhiteWin
 		};
 
-		constexpr auto OutcomeStrings = std::array {
-			"1.0",
-			"0.5",
-			"0.0"
+		// https://github.com/jnlt3/marlinflow/blob/main/marlinformat/src/lib.rs
+		struct __attribute__((packed)) PackedBoard
+		{
+			u64 occupancy;
+			util::U4Array<32> pieces;
+			u8 stmEpSquare;
+			u8 halfmoveClock;
+			u16 fullmoveNumber;
+			i16 eval;
+			Outcome wdl;
+			[[maybe_unused]] u8 extra;
+
+			[[nodiscard]] static auto pack(const Position &pos, i16 score)
+			{
+				static constexpr u8 UnmovedRook = 6;
+
+				PackedBoard board{};
+
+				const auto castlingRooks = pos.castlingRooks();
+				const auto &boards = pos.boards();
+
+				auto occupancy = boards.occupancy();
+				board.occupancy = occupancy;
+
+				usize i = 0;
+				while (occupancy)
+				{
+					const auto square = occupancy.popLowestSquare();
+					const auto piece = boards.pieceAt(square);
+
+					auto pieceId = static_cast<u8>(basePiece(piece));
+
+					if (basePiece(piece) == BasePiece::Rook
+						&& (square == castlingRooks.shortSquares.black
+							|| square == castlingRooks.shortSquares.white
+							|| square == castlingRooks.longSquares.black
+							|| square == castlingRooks.longSquares.white))
+						pieceId = UnmovedRook;
+
+					const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
+
+					board.pieces[i++] = pieceId | colorId;
+				}
+
+				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
+
+				const Square relativeEpSquare = pos.enPassant() == Square::None ? Square::None
+					: toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
+
+				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
+				board.halfmoveClock = pos.halfmove();
+				board.fullmoveNumber = pos.fullmove();
+				board.eval = score;
+
+				return board;
+			}
 		};
 
 		auto runThread(u32 id, u32 games, u64 seed, std::mutex &outputMutex, std::ofstream &out)
@@ -151,7 +204,7 @@ namespace stormphrax::datagen
 				thread->history.clear();
 			};
 
-			std::vector<std::pair<std::string, Score>> positions{};
+			std::vector<PackedBoard> positions{};
 			positions.reserve(256);
 
 			const auto startTime = util::g_timer.time();
@@ -288,19 +341,19 @@ namespace stormphrax::datagen
 					if (!noisy
 						&& !thread->pos.isCheck()
 						&& std::abs(normScore) < ScoreWin)
-						positions.emplace_back(thread->pos.toFen(), score);
+						positions.emplace_back(PackedBoard::pack(thread->pos, static_cast<i16>(score)));
 				}
 
-				const auto &outcomeStr = OutcomeStrings[static_cast<i32>(outcome)];
+				for (auto &board : positions)
+				{
+					board.wdl = outcome;
+				}
 
 				{
 					std::unique_lock lock{outputMutex};
 
-					for (const auto &[fen, score] : positions)
-					{
-						out << fen << " | " << score << " | " << outcomeStr << "\n";
-					}
-
+					out.write(reinterpret_cast<const char *>(positions.data()),
+						static_cast<std::streamsize>(positions.size() * sizeof(PackedBoard)));
 					out.flush();
 				}
 
