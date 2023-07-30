@@ -379,6 +379,8 @@ namespace stormphrax::datagen
 		const auto baseSeed = static_cast<u64>(std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
+		std::cout << "base seed: " << baseSeed << std::endl;
+
 		std::mutex outputMutex{};
 		std::ofstream out{output, std::ios::binary | std::ios::app};
 
