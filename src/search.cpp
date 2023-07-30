@@ -700,8 +700,8 @@ namespace stormphrax::search
 						if (pos.isCheck()) // this move gives check
 							--lmr;
 
-						if (!improving)
-							++lmr;
+						if (improving)
+							--lmr;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
