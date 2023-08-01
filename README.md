@@ -16,9 +16,9 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
 ## Strength
-| Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) |
-|:-------:|:---------------------------------------------------------:|:--------------------------------------------------------:|:--------------------------------------------------------------:|
-|  1.0.0  |                             -                             |                            -                             |                               -                                |
+| Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) | [SPCC](https://www.sp-cc.de/) |
+|:-------:|:---------------------------------------------------------:|:--------------------------------------------------------:|:--------------------------------------------------------------:|:-----------------------------:|
+|  1.0.0  |                             -                             |                 ~3360 (testing ongoing)                  |                               -                                |             3350              |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
