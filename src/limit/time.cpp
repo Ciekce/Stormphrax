@@ -50,7 +50,7 @@ namespace stormphrax::limit
 		const auto limit = std::max(0.001, remaining - overhead);
 
 		if (toGo == 0)
-			toGo = 25;
+			toGo = 20;
 
 		const auto baseTime = limit / static_cast<f64>(toGo) + increment * 0.75;
 
