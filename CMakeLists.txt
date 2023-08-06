@@ -4,7 +4,7 @@ project(stormphrax VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(SP_DEFAULT_NET_NAME deepwoods)
+set(SP_DEFAULT_NET_NAME net006)
 
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
