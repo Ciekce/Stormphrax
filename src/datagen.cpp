@@ -338,6 +338,12 @@ namespace stormphrax::datagen
 
 					thread->pos.applyMoveUnchecked(move, &thread->nnueState);
 
+					if (thread->pos.isDrawn(false))
+					{
+						outcome = Outcome::Draw;
+						break;
+					}
+
 					if (!noisy
 						&& !thread->pos.isCheck()
 						&& std::abs(normScore) < ScoreWin)
