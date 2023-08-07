@@ -674,7 +674,9 @@ namespace stormphrax::search
 			i32 extension{};
 
 			// singular extension
-			if (depth >= minSingularityDepth()
+			if (!root
+				&& depth >= minSingularityDepth()
+				&& ply < data.maxDepth * 2
 				&& move == ttMove
 				&& !stack.excluded
 				&& entry.depth >= depth - singularityDepthMargin()
