@@ -24,7 +24,7 @@
 
 namespace stormphrax::bench
 {
-	constexpr i32 DefaultBenchDepth = 17;
+	constexpr i32 DefaultBenchDepth = 15;
 
 	auto run(search::Searcher &searcher, i32 depth = DefaultBenchDepth) -> void;
 }
