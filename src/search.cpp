@@ -656,7 +656,7 @@ namespace stormphrax::search
 					if (!pv
 						&& depth <= maxLmpDepth()
 						&& quietOrLosing
-						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth)
+						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 2 : 1))
 						break;
 
 					// futility pruning
