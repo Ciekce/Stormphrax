@@ -648,12 +648,23 @@ namespace stormphrax::search
 
 			if (!root && quietOrLosing && bestScore > -ScoreWin)
 			{
-				// futility pruning
-				if (!inCheck
-					&& depth <= maxFpDepth()
-					&& alpha < ScoreWin
-					&& stack.eval + fpMargin() + std::max(0, depth - baseLmr) * fpScale() <= alpha)
-					break;
+				if (!inCheck)
+				{
+					const auto lmrDepth = std::max(0, depth - baseLmr);
+
+					// late move pruning
+					if (!pv
+						&& depth <= maxLmpDepth()
+						&& quietOrLosing
+						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth)
+						break;
+
+					// futility pruning
+					if (depth <= maxFpDepth()
+						&& alpha < ScoreWin
+						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
+						break;
+				}
 
 				// see pruning
 				if (depth <= maxSeePruningDepth()
