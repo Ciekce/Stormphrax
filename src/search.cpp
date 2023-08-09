@@ -629,6 +629,8 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
+		bool skipQuiets = false;
+
 		MoveGenerator generator{pos, stack.killer, moveStack.moves,
 			ttMove, prevMove, prevPrevMove, &data.history};
 
@@ -643,6 +645,9 @@ namespace stormphrax::search
 
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
 			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
+
+			if (!noisy && skipQuiets)
+				continue;
 
 			const auto baseLmr = LmrTable[depth][legalMoves + 1];
 
@@ -662,8 +667,12 @@ namespace stormphrax::search
 					// futility pruning
 					if (depth <= maxFpDepth()
 						&& alpha < ScoreWin
+						&& !noisy
 						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
-						break;
+					{
+						skipQuiets = true;
+						continue;
+					}
 				}
 
 				// see pruning
