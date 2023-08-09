@@ -706,6 +706,8 @@ namespace stormphrax::search
 
 				if (score < sBeta)
 					extension = 1;
+				else if (sBeta >= beta) // multicut
+					return sBeta;
 			}
 
 			stack.currMove = {movingPiece, moveActualDst(move)};
