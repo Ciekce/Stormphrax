@@ -61,6 +61,9 @@ namespace stormphrax::tunable
 		constexpr Score FpScale = 60;
 
 		constexpr i32 MinIirDepth = 4;
+
+		constexpr i32 MaxLmpDepth = 8;
+		constexpr i32 LmpMinMovesBase = 3;
 	}
 
 	struct TunableData
@@ -100,6 +103,9 @@ namespace stormphrax::tunable
 		Score fpScale{defaults::FpScale};
 
 		i32 minIirDepth{defaults::MinIirDepth};
+
+		i32 maxLmpDepth{defaults::MaxLmpDepth};
+		i32 lmpMinMovesBase{defaults::LmpMinMovesBase};
 	};
 
 #if SP_TUNE_SEARCH
@@ -145,6 +151,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(FpScale, fpScale)
 
 	SP_TUNABLE_PARAM(MinIirDepth, minIirDepth)
+
+	SP_TUNABLE_PARAM(MaxLmpDepth, maxLmpDepth)
+	SP_TUNABLE_PARAM(LmpMinMovesBase, lmpMinMovesBase)
 
 #undef SP_TUNABLE_PARAM
 }

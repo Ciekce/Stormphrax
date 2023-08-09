@@ -685,6 +685,16 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.minIirDepth, valueStr);
 				}
+				else if (nameStr == "maxlmpdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxLmpDepth, valueStr);
+				}
+				else if (nameStr == "lmpminmovesbase")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.lmpMinMovesBase, valueStr);
+				}
 #endif
 			}
 		}
