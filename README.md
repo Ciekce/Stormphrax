@@ -27,16 +27,18 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - countermoves
   - futility pruning
   - history
+    - capture history
     - countermove history (1-ply continuation history)
     - follow-up history (2-ply continuation history)
-    - capture history
   - internal iterative reduction
   - killers (1 per ply)
   - late move reductions
   - mate distance pruning
+  - multicut
   - nullmove pruning
   - reverse futility pruning
   - SEE move ordering and pruning
+  - singular extensions
   - Syzygy tablebase support
 - NNUE
   - (768->384)x2->1 architecture
