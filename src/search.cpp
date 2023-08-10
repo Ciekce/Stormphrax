@@ -648,13 +648,12 @@ namespace stormphrax::search
 
 			if (!root && quietOrLosing && bestScore > -ScoreWin)
 			{
-				if (!inCheck)
+				if (!pv && !inCheck)
 				{
 					const auto lmrDepth = std::max(0, depth - baseLmr);
 
 					// late move pruning
-					if (!pv
-						&& depth <= maxLmpDepth()
+					if (depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth)
 						break;
 
