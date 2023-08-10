@@ -655,7 +655,6 @@ namespace stormphrax::search
 					// late move pruning
 					if (!pv
 						&& depth <= maxLmpDepth()
-						&& quietOrLosing
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth)
 						break;
 
