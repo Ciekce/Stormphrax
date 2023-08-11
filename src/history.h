@@ -32,7 +32,7 @@ namespace stormphrax
 {
 	inline auto updateHistoryScore(i32 &score, i32 adjustment)
 	{
-		score -= (score * std::abs(adjustment)) / 324;
+		score -= (score * std::abs(adjustment)) / 256;
 		score += adjustment * 32;
 	}
 
