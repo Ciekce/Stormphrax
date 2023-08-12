@@ -596,6 +596,15 @@ namespace stormphrax::search
 				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
 				return stack.eval;
 
+			// razoring
+			if (depth <= maxRazoringDepth()
+				&& stack.eval <= alpha - razoringScale() * depth)
+			{
+				const auto score = qsearch(data, ply, moveStackIdx + 1, alpha, alpha + 1);
+				if (score <= alpha)
+					return score;
+			}
+
 			// nullmove pruning
 			if (depth >= minNmpDepth()
 				&& stack.eval >= beta

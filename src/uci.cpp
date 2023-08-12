@@ -705,6 +705,16 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
 				}
+				else if (nameStr == "maxrazoringdepth")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxRazoringDepth, valueStr);
+				}
+				else if (nameStr == "razoringscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.razoringScale, valueStr);
+				}
 #endif
 			}
 		}

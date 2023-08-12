@@ -67,6 +67,9 @@ namespace stormphrax::tunable
 
 		constexpr i32 MaxLmpDepth = 8;
 		constexpr i32 LmpMinMovesBase = 3;
+
+		constexpr i32 MaxRazoringDepth = 2;
+		constexpr i32 RazoringScale = 175;
 	}
 
 	struct TunableData
@@ -112,6 +115,9 @@ namespace stormphrax::tunable
 
 		i32 maxLmpDepth{defaults::MaxLmpDepth};
 		i32 lmpMinMovesBase{defaults::LmpMinMovesBase};
+
+		i32 maxRazoringDepth{defaults::MaxRazoringDepth};
+		i32 razoringScale{defaults::RazoringScale};
 	};
 
 #if SP_TUNE_SEARCH
@@ -163,6 +169,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(MaxLmpDepth, maxLmpDepth)
 	SP_TUNABLE_PARAM(LmpMinMovesBase, lmpMinMovesBase)
+
+	SP_TUNABLE_PARAM(MaxRazoringDepth, maxRazoringDepth)
+	SP_TUNABLE_PARAM(RazoringScale, razoringScale)
 
 #undef SP_TUNABLE_PARAM
 }
