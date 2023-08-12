@@ -55,6 +55,9 @@ namespace stormphrax::tunable
 		constexpr i32 SingularityDepthMargin = 3;
 		constexpr i32 SingularityDepthScale = 2;
 
+		constexpr Score DoubleExtensionMargin = 22;
+		constexpr i32 DoubleExtensionLimit = 5;
+
 		constexpr i32 MaxFpDepth = 8;
 
 		constexpr Score FpMargin = 250;
@@ -96,6 +99,9 @@ namespace stormphrax::tunable
 
 		i32 singularityDepthMargin{defaults::SingularityDepthMargin};
 		i32 singularityDepthScale{defaults::SingularityDepthScale};
+
+		i32 doubleExtensionMargin{defaults::DoubleExtensionMargin};
+		i32 doubleExtensionLimit{defaults::DoubleExtensionLimit};
 
 		i32 maxFpDepth{defaults::MaxFpDepth};
 
@@ -144,6 +150,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(SingularityDepthMargin, singularityDepthMargin)
 	SP_TUNABLE_PARAM(SingularityDepthScale, singularityDepthScale)
+
+	SP_TUNABLE_PARAM(DoubleExtensionMargin, doubleExtensionMargin)
+	SP_TUNABLE_PARAM(DoubleExtensionLimit, doubleExtensionLimit)
 
 	SP_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
 

@@ -619,6 +619,9 @@ namespace stormphrax::search
 		moveStack.quietsTried.clear();
 		moveStack.noisiesTried.clear();
 
+		if (ply > 0)
+			stack.doubleExtensions = data.stack[ply - 1].doubleExtensions;
+
 		const i32 minLmrMoves = pv ? 3 : 2;
 
 		const auto prevMove = ply > 0 ? data.stack[ply - 1].currMove : HistoryMove{};
@@ -704,7 +707,16 @@ namespace stormphrax::search
 				pos.applyMoveUnchecked(move, &data.nnueState, &m_table);
 
 				if (score < sBeta)
-					extension = 1;
+				{
+					if (!pv
+						&& score < sBeta - doubleExtensionMargin()
+						&& stack.doubleExtensions <= doubleExtensionLimit())
+					{
+						extension = 2;
+						++stack.doubleExtensions;
+					}
+					else extension = 1;
+				}
 				else if (sBeta >= beta) // multicut
 					return sBeta;
 			}

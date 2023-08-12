@@ -695,6 +695,16 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.lmpMinMovesBase, valueStr);
 				}
+				else if (nameStr == "doubleextensionmargin")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.doubleExtensionMargin, valueStr);
+				}
+				else if (nameStr == "doubleextensionlimit")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
+				}
 #endif
 			}
 		}

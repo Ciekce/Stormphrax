@@ -63,6 +63,8 @@ namespace stormphrax::search
 		Score eval{};
 		HistoryMove currMove{};
 		Move excluded{};
+
+		i32 doubleExtensions{0};
 	};
 
 	struct MoveStackEntry
