@@ -622,7 +622,7 @@ namespace stormphrax::search
 		if (ply > 0)
 			stack.doubleExtensions = data.stack[ply - 1].doubleExtensions;
 
-		const i32 minLmrMoves = pv ? 3 : 2;
+		const i32 minLmrMoves = pv ? 2 : 1;
 
 		const auto prevMove = ply > 0 ? data.stack[ply - 1].currMove : HistoryMove{};
 		const auto prevPrevMove = ply > 1 ? data.stack[ply - 2].currMove : HistoryMove{};
