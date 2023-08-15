@@ -63,3 +63,6 @@
 #else
 #error no arch specified
 #endif
+
+// should be good on all(tm) architectures
+#define SP_CACHE_LINE_SIZE (64)

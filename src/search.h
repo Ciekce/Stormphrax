@@ -74,7 +74,7 @@ namespace stormphrax::search
 		StaticVector<std::pair<HistoryMove, Piece>, 64> noisiesTried{};
 	};
 
-	struct ThreadData
+	struct alignas(SP_CACHE_LINE_SIZE) ThreadData
 	{
 		ThreadData()
 		{
