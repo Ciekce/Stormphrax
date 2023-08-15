@@ -16,9 +16,9 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
 ## Strength
-| Version | [CCRL 40/15](https://www.computerchess.org.uk/ccrl/4040/) | [CCRL Blitz](https://www.computerchess.org.uk/ccrl/404/) | [CCRL 40/2 FRC](https://www.computerchess.org.uk/ccrl/404FRC/) | [SPCC](https://www.sp-cc.de/) |
-|:-------:|:---------------------------------------------------------:|:--------------------------------------------------------:|:--------------------------------------------------------------:|:-----------------------------:|
-|  1.0.0  |                  ~3286 (testing ongoing)                  |                           3361                           |                              3511                              |             3349              |
+| Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
+|:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
+|  1.0.0  |          3268           |           3361           |             3513              |     3343     |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -108,3 +108,9 @@ Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing
 
 [lgbtqp-badge]: https://pride-badges.pony.workers.dev/static/v1?label=lgbtq%2B%20friendly&stripeWidth=6&stripeColors=E40303,FF8C00,FFED00,008026,24408E,732982
 [trans-rights-badge]: https://pride-badges.pony.workers.dev/static/v1?label=trans%20rights&stripeWidth=6&stripeColors=5BCEFA,F5A9B8,FFFFFF,F5A9B8,5BCEFA
+
+[ccrl-4015]: https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
+[ccrl-blitz]: https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
+[ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
+[spcc]: https://www.sp-cc.de/
+[mcerl]: https://www.chessengeria.eu/mcerl
