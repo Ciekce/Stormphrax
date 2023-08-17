@@ -30,7 +30,7 @@ namespace stormphrax::hash
 		{
 			std::array<u64, sizes::Total> hashes{};
 
-			Jsf64Rng rng{Seed};
+			util::rng::Jsf64Rng rng{Seed};
 
 			for (auto &hash : hashes)
 			{

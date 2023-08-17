@@ -90,6 +90,8 @@ namespace stormphrax::search
 		i32 maxDepth{};
 		SearchData search{};
 
+		bool datagen{false};
+
 		eval::NnueState nnueState{};
 
 		std::vector<SearchStackEntry> stack{};

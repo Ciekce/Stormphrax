@@ -649,7 +649,11 @@ namespace stormphrax::search
 
 			const auto baseLmr = LmrTable[depth][legalMoves + 1];
 
-			if (!root && quietOrLosing && bestScore > -ScoreWin)
+			if (!root
+				&& quietOrLosing
+				&& bestScore > -ScoreWin
+				// skip moveloop pruning in PV nodes during datagen
+				&& (!pv || !data.datagen))
 			{
 				if (!inCheck)
 				{

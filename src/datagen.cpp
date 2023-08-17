@@ -22,6 +22,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <random>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -186,7 +187,7 @@ namespace stormphrax::datagen
 
 		auto runThread(u32 id, u32 games, u64 seed, std::mutex &outputMutex, std::ofstream &out)
 		{
-			Jsf64Rng rng{seed};
+			util::rng::Jsf64Rng rng{seed};
 
 			auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
 			auto &limiter = *limiterPtr;
@@ -195,6 +196,7 @@ namespace stormphrax::datagen
 			searcher.setLimiter(std::move(limiterPtr));
 
 			auto thread = std::make_unique<search::ThreadData>();
+			thread->datagen = true;
 
 			const auto resetSearch = [&searcher, &thread]()
 			{
@@ -293,6 +295,12 @@ namespace stormphrax::datagen
 						break;
 					}
 
+					if (std::abs(score) > ScoreWin)
+					{
+						outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
+						break;
+					}
+
 					if (normScore > WinAdjMinScore)
 					{
 						++winPlies;
@@ -344,9 +352,8 @@ namespace stormphrax::datagen
 						break;
 					}
 
-					if (!noisy
-						&& !thread->pos.isCheck()
-						&& std::abs(normScore) < ScoreWin)
+					// positions with win scores are filtered earlier
+					if (!noisy && !thread->pos.isCheck())
 						positions.emplace_back(PackedBoard::pack(thread->pos, static_cast<i16>(score)));
 				}
 
@@ -382,9 +389,7 @@ namespace stormphrax::datagen
 	{
 		opts::mutableOpts().chess960 = true;
 
-		const auto baseSeed = static_cast<u64>(std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::high_resolution_clock::now().time_since_epoch()).count());
-
+		const auto baseSeed = util::rng::generateSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
 
 		std::mutex outputMutex{};

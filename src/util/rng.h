@@ -22,8 +22,9 @@
 
 #include <limits>
 #include <bit>
+#include <random>
 
-namespace stormphrax
+namespace stormphrax::util::rng
 {
 	class Jsf64Rng
 	{
@@ -99,4 +100,10 @@ namespace stormphrax
 		u64 m_c;
 		u64 m_d;
 	};
+
+	inline auto generateSeed()
+	{
+		std::random_device generator{};
+		return static_cast<u64>(generator()) << 32 | generator();
+	}
 }
