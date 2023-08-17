@@ -35,8 +35,6 @@ namespace stormphrax
 
 			--depth;
 
-			const auto opp = pos.opponent();
-
 			ScoredMoveList moves{};
 			generateAll(moves, pos);
 
@@ -64,8 +62,6 @@ namespace stormphrax
 	auto splitPerft(Position &pos, i32 depth) -> void
 	{
 		--depth;
-
-		const auto opp = pos.opponent();
 
 		const auto start = util::g_timer.time();
 

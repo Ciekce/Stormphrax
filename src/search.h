@@ -182,7 +182,7 @@ namespace stormphrax::search
 
 		auto stopThreads() -> void;
 
-		auto run(ThreadData &data) -> void;
+		auto run(ThreadData &thread) -> void;
 
 		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout)
 		{
@@ -193,13 +193,13 @@ namespace stormphrax::search
 			return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
 		}
 
-		auto searchRoot(ThreadData &data, bool mainSearchThread) -> std::pair<Move, Score>;
+		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;
 
-		auto search(ThreadData &data, i32 depth, i32 ply,
+		auto search(ThreadData &thread, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
-		auto qsearch(ThreadData &data, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
+		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &data, i32 depth, Move move,
+		auto report(const ThreadData &mainThread, i32 depth, Move move,
 			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }
