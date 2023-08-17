@@ -100,6 +100,11 @@ namespace stormphrax::search
 		HistoryTable history{};
 
 		Position pos{};
+
+		[[nodiscard]] inline auto isMainThread() const
+		{
+			return id == 0;
+		}
 	};
 
 	class Searcher

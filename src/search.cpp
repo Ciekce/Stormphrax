@@ -290,7 +290,7 @@ namespace stormphrax::search
 	{
 		auto &searchData = thread.search;
 
-		const bool reportAndUpdate = mainSearchThread && thread.id == 0;
+		const bool reportAndUpdate = mainSearchThread && thread.isMainThread();
 
 		auto score = -ScoreMax;
 		Move best{};
@@ -767,7 +767,7 @@ namespace stormphrax::search
 				}
 			}
 
-			if (root && thread.id == 0)
+			if (root && thread.isMainThread())
 				m_limiter->updateMoveNodes(move, thread.search.nodes - prevNodes);
 
 			if (score > bestScore)
