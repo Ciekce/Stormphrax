@@ -98,6 +98,8 @@ Disabling the CMake option `SP_FAST_PEXT` builds the non-BMI2 attack getters.
 ## Credit
 Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin](https://github.com/graphitemaster/incbin) for embedding neural network files, under the Unlicense.
 
+The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chronicles] :)
+
 [license-badge]: https://img.shields.io/github/license/Ciekce/Stormphrax?style=for-the-badge
 [release-badge]: https://img.shields.io/github/v/release/Ciekce/Stormphrax?style=for-the-badge
 [commits-badge]: https://img.shields.io/github/commits-since/Ciekce/Stormphrax/latest?style=for-the-badge
@@ -114,3 +116,5 @@ Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing
 [ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [spcc]: https://www.sp-cc.de/
 [mcerl]: https://www.chessengeria.eu/mcerl
+
+[edge-chronicles]: https://en.wikipedia.org/wiki/The_Edge_Chronicles
