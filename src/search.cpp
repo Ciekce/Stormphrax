@@ -451,10 +451,13 @@ namespace stormphrax::search
 
 		const bool inCheck = pos.isCheck();
 
-		// check extension
+		// Check extension
+		// If in check, extend. This helps resolve
+		// perpetuals and other long checking sequences.
 		if (inCheck)
 			++depth;
 
+		// Drop into quiescence search in leaf nodes
 		if (depth <= 0)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
 
@@ -470,7 +473,12 @@ namespace stormphrax::search
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
-		// mate distance pruning
+		// Mate distance pruning
+		// If we've found a mate score already, and this
+		// node has no chance of improving it, don't search it.
+		// This gains a fractional amount of elo, but massively
+		// (and soundly) reduces the size of the search tree when
+		// a forced mate is found
 		if (!pv)
 		{
 			const auto mdAlpha = std::max(alpha, -ScoreMate + ply);
@@ -490,7 +498,11 @@ namespace stormphrax::search
 			else if (entry.move && pos.isPseudolegal(entry.move))
 				ttMove = entry.move;
 
-			// internal iterative reduction
+			// Internal iterative reduction
+			// If we do not have a TT move in this position, then
+			//   a) searching this node is likely to take a long time, and
+			//   b) there's a good chance that this node sucks anyway.
+			// Just reduce the depth and come back later
 			if (!inCheck
 				&& depth >= minIirDepth()
 				&& !stack.excluded
@@ -508,7 +520,8 @@ namespace stormphrax::search
 
 		const auto syzygyPieceLimit = std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST));
 
-		// probe syzygy tb
+		// Probe the Syzygy tablebases for a WDL result
+		// if there are few enough pieces left on the board
 		if (!root
 			&& !stack.excluded
 			&& g_opts.syzygyEnabled
@@ -555,10 +568,12 @@ namespace stormphrax::search
 					tbEntryType = EntryType::Exact;
 				}
 
+				// Cut off with the same conditions as TT cutoffs
 				if (tbEntryType == EntryType::Exact
 					|| tbEntryType == EntryType::Alpha && tbScore <= alpha
 					|| tbEntryType == EntryType::Beta && tbScore >= beta)
 				{
+					// Throw the TB score into the TT
 					m_table.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
 					return tbScore;
 				}
@@ -591,12 +606,21 @@ namespace stormphrax::search
 
 		if (!pv && !inCheck && !stack.excluded)
 		{
-			// reverse futility pruning
+			// Reverse futility pruning
+			// If static eval is above beta by some depth-dependent
+			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
 				return stack.eval;
 
-			// nullmove pruning
+			// Nullmove pruning
+			// If static eval is above beta, and zugzwang is unlikely
+			// (i.e. the side to move has material other than pawns),
+			// give the opponent a free move and do a reduced-depth search.
+			// If our score is *still* above beta even after the opponent
+			// gets two turns in a row, assume that this is a cutnode and prune.
+			// Don't bother trying if the TT suggests that NMP will fail - the TT
+			// entry, if it exists, must not be a fail-low entry with a score below beta
 			if (depth >= minNmpDepth()
 				&& stack.eval >= beta
 				&& !(ttHit && entry.type == EntryType::Alpha && entry.score < beta)
@@ -659,20 +683,24 @@ namespace stormphrax::search
 				{
 					const auto lmrDepth = std::max(0, depth - baseLmr);
 
-					// late move pruning
+					// Late move pruning
+					// At low enough depths, only search a certain depth-dependent number of moves
 					if (!pv
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
 						break;
 
-					// futility pruning
+					// Futility pruning
+					// At this point, alpha is so far above static eval that it is
+					// unlikely that we can improve it with this move, so just give up
 					if (depth <= maxFpDepth()
 						&& alpha < ScoreWin
 						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
 						break;
 				}
 
-				// see pruning
+				// SEE pruning
+				// If this move loses a depth-dependent amount of material, just don't bother searching it
 				if (depth <= maxSeePruningDepth()
 					&& !see::see(pos, move, depth * (noisy ? noisySeeThreshold() : quietSeeThreshold())))
 					continue;
@@ -690,7 +718,11 @@ namespace stormphrax::search
 
 			i32 extension{};
 
-			// singular extension
+			// Singular extensions
+			// If the TT entry meets certain requirements (adequate depth, and not a fail-low entry),
+			// then do a reduced depth search with the TT move excluded from being searched.
+			// If the result of that search plus some depth-dependent margin does not beat the TT
+			// score, assume that the TT move is "singular" (the only good move) and extend it
 			if (!root
 				&& depth >= minSingularityDepth()
 				&& ply < thread.maxDepth * 2
@@ -716,12 +748,19 @@ namespace stormphrax::search
 						&& score < sBeta - doubleExtensionMargin()
 						&& stack.doubleExtensions <= doubleExtensionLimit())
 					{
+						// The returned score is *far* below the TT score - the TT move is
+						// probably much better than the other moves, extend it by 2 plies instead.
+						// Limit the amount this can happen in a particular branch to avoid explosions
 						extension = 2;
 						++stack.doubleExtensions;
 					}
 					else extension = 1;
 				}
-				else if (sBeta >= beta) // multicut
+				// Multicut
+				// The TT move is not singular, and in fact the reduced-depth search also returned
+				// a score that was at least beta - there are probably multiple moves in this position
+				// that will beat beta, so just save the time searching and do a cutoff now
+				else if (sBeta >= beta)
 					return sBeta;
 			}
 
@@ -741,18 +780,20 @@ namespace stormphrax::search
 				{
 					i32 reduction{};
 
-					// lmr
+					// Late move reductions (LMR)
+					// Moves ordered later in the movelist are more likely to be bad,
+					// so search them to lower depth according to various heuristics
 					if (depth >= minLmrDepth()
 						&& legalMoves >= minLmrMoves
 						&& generator.stage() >= MovegenStage::Quiet)
 					{
 						auto lmr = baseLmr;
 
-						if (!pv)
-							++lmr;
+						// reduce more in non-PV nodes
+						lmr += !pv;
 
-						if (pos.isCheck()) // this move gives check
-							--lmr;
+						// reduce less if this move gives check
+						lmr -= pos.isCheck();
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
