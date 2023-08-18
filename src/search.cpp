@@ -498,7 +498,7 @@ namespace stormphrax::search
 			else if (entry.move && pos.isPseudolegal(entry.move))
 				ttMove = entry.move;
 
-			// Internal iterative reduction
+			// Internal iterative reduction (IIR)
 			// If we do not have a TT move in this position, then
 			//   a) searching this node is likely to take a long time, and
 			//   b) there's a good chance that this node sucks anyway.
@@ -606,14 +606,14 @@ namespace stormphrax::search
 
 		if (!pv && !inCheck && !stack.excluded)
 		{
-			// Reverse futility pruning
+			// Reverse futility pruning (RFP)
 			// If static eval is above beta by some depth-dependent
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
 				return stack.eval;
 
-			// Nullmove pruning
+			// Nullmove pruning (NMP)
 			// If static eval is above beta, and zugzwang is unlikely
 			// (i.e. the side to move has material other than pawns),
 			// give the opponent a free move and do a reduced-depth search.
@@ -683,14 +683,14 @@ namespace stormphrax::search
 				{
 					const auto lmrDepth = std::max(0, depth - baseLmr);
 
-					// Late move pruning
+					// Late move pruning (LMP)
 					// At low enough depths, only search a certain depth-dependent number of moves
 					if (!pv
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
 						break;
 
-					// Futility pruning
+					// Futility pruning (FP)
 					// At this point, alpha is so far above static eval that it is
 					// unlikely that we can improve it with this move, so just give up
 					if (depth <= maxFpDepth()
@@ -718,7 +718,7 @@ namespace stormphrax::search
 
 			i32 extension{};
 
-			// Singular extensions
+			// Singular extensions (SE)
 			// If the TT entry meets certain requirements (adequate depth, and not a fail-low entry),
 			// then do a reduced depth search with the TT move excluded from being searched.
 			// If the result of that search plus some depth-dependent margin does not beat the TT
@@ -820,6 +820,7 @@ namespace stormphrax::search
 				{
 					if (score >= beta)
 					{
+						// Update history on fail-highs
 						const auto adjustment = depth * depth + depth - 1;
 
 						auto *prevContEntry = (quietOrLosing && prevMove)
@@ -827,6 +828,9 @@ namespace stormphrax::search
 						auto *prevPrevContEntry = (!noisy && prevPrevMove)
 							? &thread.history.contEntry(prevPrevMove) : nullptr;
 
+						// If the fail-high move is a quiet move or losing
+						// capture, set it as the killer for this ply and the
+						// countermove for the opponent's previous move
 						if (quietOrLosing)
 						{
 							stack.killer = move;
@@ -848,6 +852,7 @@ namespace stormphrax::search
 							if (prevPrevContEntry)
 								updateHistoryScore(prevPrevContEntry->score(stack.currMove), adjustment);
 
+							// Penalise quiet moves that did not fail high if the fail-high move is quiet
 							for (const auto prevQuiet : moveStack.quietsTried)
 							{
 								updateHistoryScore(thread.history.entry(prevQuiet).score, -adjustment);
@@ -859,6 +864,7 @@ namespace stormphrax::search
 							}
 						}
 
+						// Always penalise noisy moves that did not fail high
 						for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
 						{
 							updateHistoryScore(
