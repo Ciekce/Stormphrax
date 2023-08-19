@@ -22,6 +22,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <filesystem>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -184,8 +185,17 @@ namespace stormphrax::datagen
 			}
 		};
 
-		auto runThread(u32 id, u32 games, u64 seed, std::mutex &outputMutex, std::ofstream &out)
+		auto runThread(u32 id, u32 games, u64 seed, const std::filesystem::path &outDir)
 		{
+			const auto outFile = outDir / (std::to_string(id) + ".bin");
+			std::ofstream out{outFile, std::ios::binary | std::ios::app};
+
+			if (!out)
+			{
+				std::cerr << "failed to open output file " << outFile << std::endl;
+				return;
+			}
+
 			util::rng::Jsf64Rng rng{seed};
 
 			auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
@@ -361,13 +371,8 @@ namespace stormphrax::datagen
 					board.wdl = outcome;
 				}
 
-				{
-					std::unique_lock lock{outputMutex};
-
-					out.write(reinterpret_cast<const char *>(positions.data()),
-						static_cast<std::streamsize>(positions.size() * sizeof(PackedBoard)));
-					out.flush();
-				}
+				out.write(reinterpret_cast<const char *>(positions.data()),
+					static_cast<std::streamsize>(positions.size() * sizeof(PackedBoard)));
 
 				totalPositions += positions.size();
 
@@ -391,14 +396,7 @@ namespace stormphrax::datagen
 		const auto baseSeed = util::rng::generateSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
 
-		std::mutex outputMutex{};
-		std::ofstream out{output, std::ios::binary | std::ios::app};
-
-		if (!out)
-		{
-			std::cerr << "failed to open output file " << output << std::endl;
-			return 1;
-		}
+		const std::filesystem::path outDir{output};
 
 		initCtrlCHandler();
 
@@ -411,9 +409,9 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([games, baseSeed, i, &outputMutex, &out]()
+			theThreads.emplace_back([games, baseSeed, i, &outDir]()
 			{
-				runThread(i, games, baseSeed + i, outputMutex, out);
+				runThread(i, games, baseSeed + i, outDir);
 			});
 		}
 
