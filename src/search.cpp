@@ -821,7 +821,7 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						// Update history on fail-highs
-						const auto adjustment = depth * depth + depth - 1;
+						const auto adjustment = historyAdjustment(depth);
 
 						auto *prevContEntry = (quietOrLosing && prevMove)
 							? &thread.history.contEntry(prevMove) : nullptr;
