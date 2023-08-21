@@ -18,29 +18,35 @@ ifeq ($(EXE), stormphrax_default)
     $(warning If you are compiling Stormphrax using this makefile, you probably did not read the build instructions.)
 endif
 
+COMPILER_VERSION := $(shell $(CXX) --version)
+
+ifeq (, $(findstring clang,$(COMPILER_VERSION)))
+    ifeq (, $(findstring gcc,$(COMPILER_VERSION)))
+        ifeq (, $(findstring g++,$(COMPILER_VERSION)))
+            $(error Only Clang and GCC supported)
+        endif
+    endif
+endif
+
 ifeq ($(OS), Windows_NT)
     DETECTED_OS := Windows
     SUFFIX := .exe
-# don't support gcc on windows, too much of a pain for now
-    ifeq (,$(findstring clang,$(shell $(CXX) --version)))
-        $(error GCC and MSVC unsupported on Windows)
-    endif
-# for fathom
+    # for fathom
     CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
-    LDFLAGS += -fuse-ld=lld
 else
     DETECTED_OS := $(shell uname -s)
     SUFFIX :=
-    ifneq (,$(findstring clang,$(shell $(CXX) --version)))
-        ifneq ($(DETECTED_OS),Darwin)
-            LDFLAGS += -fuse-ld=lld
-        endif
-    endif
     LDFLAGS += -pthread
-# don't ask
-ifdef IS_COSMO
-    CXXFLAGS += -stdlib=libc++
+    # don't ask
+    ifdef IS_COSMO
+        CXXFLAGS += -stdlib=libc++
+    endif
 endif
+
+ifneq (, $(findstring clang,$(COMPILER_VERSION)))
+    ifneq ($(DETECTED_OS),Darwin)
+        LDFLAGS += -fuse-ld=lld
+    endif
 endif
 
 OUT := $(EXE)$(SUFFIX)
