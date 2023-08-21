@@ -705,6 +705,26 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
 				}
+				else if (nameStr == "maxhistory")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxHistory, valueStr);
+				}
+				else if (nameStr == "maxhistoryadjustment")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.maxHistoryAdjustment, valueStr);
+				}
+				else if (nameStr == "historydepthscale")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.historyDepthScale, valueStr);
+				}
+				else if (nameStr == "historyoffset")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.historyOffset, valueStr);
+				}
 #endif
 			}
 		}

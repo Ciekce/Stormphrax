@@ -27,13 +27,19 @@
 #include "core.h"
 #include "move.h"
 #include "position/position.h"
+#include "tunable.h"
 
 namespace stormphrax
 {
+	inline auto historyAdjustment(i32 depth)
+	{
+		return std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
+			tunable::maxHistoryAdjustment());
+	}
+
 	inline auto updateHistoryScore(i32 &score, i32 adjustment)
 	{
-		score -= (score * std::abs(adjustment)) / 324;
-		score += adjustment * 32;
+		score += adjustment - score * std::abs(adjustment) / tunable::maxHistory();
 	}
 
 	struct HistoryMove
