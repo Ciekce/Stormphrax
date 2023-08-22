@@ -131,17 +131,17 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto nonPk() const
 		{
-			return minors() | majors();
+			return occupancy() ^ pawns() ^ kings();
 		}
 
 		[[nodiscard]] inline auto blackNonPk() const
 		{
-			return nonPk() & blackOccupancy();
+			return blackOccupancy() ^ (pawns() | kings()) & blackOccupancy();
 		}
 
 		[[nodiscard]] inline auto whiteNonPk() const
 		{
-			return nonPk() & whiteOccupancy();
+			return whiteOccupancy() ^ (pawns() | kings()) & whiteOccupancy();
 		}
 
 		template <Color C>
