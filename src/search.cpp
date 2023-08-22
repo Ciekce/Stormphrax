@@ -798,7 +798,7 @@ namespace stormphrax::search
 						lmr -= pos.isCheck();
 
 						// reduce moves with good history scores less and vice versa
-						lmr -= history / 8192;
+						lmr -= history * 2 / tunable::maxHistory();
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
