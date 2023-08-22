@@ -683,7 +683,8 @@ namespace stormphrax::search
 			{
 				if (!inCheck)
 				{
-					const auto lmrDepth = std::max(0, depth - baseLmr);
+					const auto lmrHistory = history * 2 / tunable::maxHistory();
+					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Late move pruning (LMP)
 					// At low enough depths, only search a certain depth-dependent number of moves
