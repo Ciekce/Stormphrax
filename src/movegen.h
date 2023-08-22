@@ -35,6 +35,12 @@ namespace stormphrax
 
 	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
+	struct MovegenData
+	{
+		ScoredMoveList moves;
+		StaticVector<i32, DefaultMoveListCapacity> histories;
+	};
+
 	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void;
 	auto generateQuiet(ScoredMoveList &quiet, const Position &pos) -> void;
 
@@ -52,31 +58,45 @@ namespace stormphrax
 		static constexpr i32 End = BadNoisy + 1;
 	};
 
+	struct MoveWithHistory
+	{
+		Move move{NullMove};
+		i32 history{0};
+
+		[[nodiscard]] inline explicit operator bool() const
+		{
+			return !move.isNull();
+		}
+	};
+
 	template <bool Quiescence = false>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, Move killer, ScoredMoveList &moves, Move ttMove,
+		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove,
 			HistoryMove prevMove = {}, HistoryMove prevPrevMove = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
-			  m_moves{moves},
+			  m_data{data},
 			  m_ttMove{ttMove},
 			  m_prevMove{prevMove},
 			  m_prevPrevMove{prevPrevMove},
 			  m_killer{killer},
 			  m_history{history}
 		{
-			m_moves.clear();
-			m_moves.fill({NullMove, 0});
+			m_data.moves.clear();
+			m_data.moves.fill({NullMove, 0});
 		}
 
 		~MoveGenerator() = default;
 
+		// Note that this does *not* return history scores for TT
+		// or refutation moves (killers, countermoves), as they are
+		// not needed and returning them increases complexity a lot
 		[[nodiscard]] inline auto next()
 		{
 			while (true)
 			{
-				while (m_idx == m_moves.size() || m_idx == m_goodNoisyEnd)
+				while (m_idx == m_data.moves.size() || m_idx == m_goodNoisyEnd)
 				{
 					++m_stage;
 
@@ -84,7 +104,7 @@ namespace stormphrax
 					{
 					case MovegenStage::TtMove:
 						if (m_ttMove)
-							return m_ttMove;
+							return MoveWithHistory{m_ttMove};
 						break;
 
 					case MovegenStage::GoodNoisy:
@@ -97,7 +117,7 @@ namespace stormphrax
 						if (m_killer
 							&& m_killer != m_ttMove
 							&& m_pos.isPseudolegal(m_killer))
-							return m_killer;
+							return MoveWithHistory{m_killer};
 						break;
 
 					case MovegenStage::Countermove:
@@ -108,7 +128,7 @@ namespace stormphrax
 								&& m_countermove != m_ttMove
 								&& m_countermove != m_killer
 								&& m_pos.isPseudolegal(m_countermove))
-								return m_countermove;
+								return MoveWithHistory{m_countermove};
 						}
 						break;
 
@@ -120,19 +140,21 @@ namespace stormphrax
 						break;
 
 					default:
-						return NullMove;
+						return MoveWithHistory{};
 					}
 				}
 
-				if (m_idx == m_moves.size())
-					return NullMove;
+				if (m_idx == m_data.moves.size())
+					return MoveWithHistory{};
 
-				const auto move = findNext();
+				const auto idx = findNext();
+
+				const auto move = m_data.moves[idx].move;
 
 				if (move != m_ttMove
 					&& move != m_killer
 					&& move != m_countermove)
-					return move;
+					return MoveWithHistory{move, m_data.histories[idx]};
 			}
 		}
 
@@ -156,34 +178,38 @@ namespace stormphrax
 
 		inline auto findNext()
 		{
+			// good noisies are already sorted
 			if (m_stage == MovegenStage::GoodNoisy)
-				return m_moves[m_idx++].move;
+				return m_idx++;
 
 			auto best = m_idx;
-			auto bestScore = m_moves[m_idx].score;
+			auto bestScore = m_data.moves[m_idx].score;
 
-			for (auto i = m_idx + 1; i < m_moves.size(); ++i)
+			for (auto i = m_idx + 1; i < m_data.moves.size(); ++i)
 			{
-				if (m_moves[i].score > bestScore)
+				if (m_data.moves[i].score > bestScore)
 				{
 					best = i;
-					bestScore = m_moves[i].score;
+					bestScore = m_data.moves[i].score;
 				}
 			}
 
 			if (best != m_idx)
-				std::swap(m_moves[m_idx], m_moves[best]);
+			{
+				std::swap(m_data.moves[m_idx], m_data.moves[best]);
+				std::swap(m_data.histories[m_idx], m_data.histories[best]);
+			}
 
-			return m_moves[m_idx++].move;
+			return m_idx++;
 		}
 
 		inline auto scoreNoisy()
 		{
 			const auto &boards = m_pos.boards();
 
-			for (i32 i = m_idx; i < m_moves.size(); ++i)
+			for (i32 i = m_idx; i < m_data.moves.size(); ++i)
 			{
-				auto &move = m_moves[i];
+				auto &move = m_data.moves[i];
 
 				const auto captured = move.move.type() == MoveType::EnPassant
 					? colorPiece(BasePiece::Pawn, m_pos.opponent())
@@ -192,7 +218,7 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					move.score = m_history->captureScore(historyMove, captured);
+					m_data.histories[i] = move.score = m_history->captureScore(historyMove, captured);
 				}
 
 				if (captured != Piece::None)
@@ -210,20 +236,24 @@ namespace stormphrax
 		{
 			const auto &boards = m_pos.boards();
 
-			for (i32 i = m_noisyEnd; i < m_moves.size(); ++i)
+			for (i32 i = m_noisyEnd; i < m_data.moves.size(); ++i)
 			{
-				auto &move = m_moves[i];
+				auto &move = m_data.moves[i];
 
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
 
-					move.score = m_history->entry(historyMove).score;
+					auto &history = m_data.histories[i];
+
+					history = m_history->entry(historyMove).score;
 
 					if (m_prevMove)
-						move.score += m_history->contEntry(m_prevMove).score(historyMove);
+						history += m_history->contEntry(m_prevMove).score(historyMove);
 					if (m_prevPrevMove)
-						move.score += m_history->contEntry(m_prevPrevMove).score(historyMove);
+						history += m_history->contEntry(m_prevPrevMove).score(historyMove);
+
+					move.score = history;
 				}
 
 				// knight promos first, rook then bishop promos last
@@ -235,25 +265,25 @@ namespace stormphrax
 
 		inline auto genNoisy()
 		{
-			generateNoisy(m_moves, m_pos);
+			generateNoisy(m_data.moves, m_pos);
 			scoreNoisy();
 
-			std::stable_sort(m_moves.begin() + m_idx, m_moves.end(), [](const auto &a, const auto &b)
+			std::stable_sort(m_data.moves.begin() + m_idx, m_data.moves.end(), [](const auto &a, const auto &b)
 			{
 				return a.score > b.score;
 			});
 
-			m_noisyEnd = m_moves.size();
+			m_noisyEnd = m_data.moves.size();
 
-			m_goodNoisyEnd = std::find_if(m_moves.begin() + m_idx, m_moves.end(), [](const auto &v)
+			m_goodNoisyEnd = std::find_if(m_data.moves.begin() + m_idx, m_data.moves.end(), [](const auto &v)
 			{
 				return v.score < 4 * 2000 * 2000;
-			}) - m_moves.begin();
+			}) - m_data.moves.begin();
 		}
 
 		inline auto genQuiet()
 		{
-			generateQuiet(m_moves, m_pos);
+			generateQuiet(m_data.moves, m_pos);
 			scoreQuiet();
 
 			m_goodNoisyEnd = 9999;
@@ -263,7 +293,7 @@ namespace stormphrax
 
 		i32 m_stage{MovegenStage::Start};
 
-		ScoredMoveList &m_moves;
+		MovegenData &m_data;
 
 		Move m_ttMove;
 

@@ -656,13 +656,15 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.killer, moveStack.moves,
+		MoveGenerator generator{pos, stack.killer, moveStack.movegenData,
 			ttMove, prevMove, prevPrevMove, &thread.history};
 
 		u32 legalMoves = 0;
 
-		while (const auto move = generator.next())
+		while (const auto moveAndHistory = generator.next())
 		{
+			const auto [move, history] = moveAndHistory;
+
 			if (move == stack.excluded)
 				continue;
 
@@ -947,11 +949,11 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		QMoveGenerator generator{pos, NullMove, thread.moveStack[moveStackIdx].moves, ttMove};
+		QMoveGenerator generator{pos, NullMove, thread.moveStack[moveStackIdx].movegenData, ttMove};
 
 		while (const auto move = generator.next())
 		{
-			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
+			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
 
 			if (!guard)
 				continue;
