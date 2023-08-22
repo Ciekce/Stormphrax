@@ -69,7 +69,7 @@ namespace stormphrax::search
 
 	struct MoveStackEntry
 	{
-		ScoredMoveList moves{};
+		MovegenData movegenData{};
 		StaticVector<HistoryMove, 256> quietsTried{};
 		StaticVector<std::pair<HistoryMove, Piece>, 64> noisiesTried{};
 	};
