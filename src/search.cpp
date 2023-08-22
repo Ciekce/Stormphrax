@@ -797,6 +797,9 @@ namespace stormphrax::search
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
 
+						// reduce moves with good history scores less and vice versa
+						lmr -= history / 8192;
+
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
 
