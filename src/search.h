@@ -189,13 +189,18 @@ namespace stormphrax::search
 
 		auto run(ThreadData &thread) -> void;
 
-		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout)
+		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout) -> bool
 		{
 			if (m_stop.load(std::memory_order::relaxed))
 				return true;
 
-			bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
-			return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
+			if (m_limiter->stop(data, allowSoftTimeout))
+			{
+				m_stop.store(true, std::memory_order::relaxed);
+				return true;
+			}
+
+			return m_stop.load(std::memory_order::relaxed);
 		}
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;
