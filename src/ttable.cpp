@@ -159,8 +159,8 @@ namespace stormphrax
 
 		exchangeEntry(key, entry);
 
-		if (entry.type == EntryType::None)
-			++m_entries;
+	//	if (entry.type == EntryType::None)
+	//		++m_entries;
 	}
 
 	auto TTable::clear() -> void
