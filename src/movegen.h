@@ -38,7 +38,7 @@ namespace stormphrax
 	struct MovegenData
 	{
 		ScoredMoveList moves;
-		StaticVector<i32, DefaultMoveListCapacity> histories;
+		std::array<i32, DefaultMoveListCapacity> histories;
 	};
 
 	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void;
