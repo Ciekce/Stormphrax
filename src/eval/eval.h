@@ -34,8 +34,9 @@
 #include "../core.h"
 #include "../position/boards.h"
 
-//TODO avx512?
-#if SP_HAS_AVX2 || SP_HAS_AVX
+#if SP_HAS_AVX512
+#define SP_NETWORK_ALIGNMENT 64
+#elif SP_HAS_AVX2 || SP_HAS_AVX
 #define SP_NETWORK_ALIGNMENT 32
 #else // sse*, neon
 #define SP_NETWORK_ALIGNMENT 16
@@ -71,7 +72,7 @@ namespace stormphrax::eval
 	// each side to allow the network to learn tempo
 	// (this is why there are two sets of output weights)
 	template <u32 LayerSize>
-	struct alignas(64) Accumulator
+	struct alignas(SP_NETWORK_ALIGNMENT) Accumulator
 	{
 		std::array<i16, LayerSize> black;
 		std::array<i16, LayerSize> white;
