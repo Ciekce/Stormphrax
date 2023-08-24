@@ -74,6 +74,8 @@ namespace stormphrax::tunable
 		constexpr i32 HistoryOffset = 384;
 
 		constexpr i32 HistoryLmrDivisor = 8192;
+
+		constexpr i32 CapthistDemotionThreshold = -1536;
 	}
 
 	struct TunableData
@@ -126,6 +128,8 @@ namespace stormphrax::tunable
 		i32 historyOffset{defaults::HistoryOffset};
 
 		i32 historyLmrDivisor{defaults::HistoryLmrDivisor};
+
+		i32 capthistDemotionThreshold{defaults::CapthistDemotionThreshold};
 	};
 
 #if SP_TUNE_SEARCH
@@ -184,6 +188,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(HistoryOffset, historyOffset)
 
 	SP_TUNABLE_PARAM(HistoryLmrDivisor, historyLmrDivisor)
+
+	SP_TUNABLE_PARAM(CapthistDemotionThreshold, capthistDemotionThreshold)
 
 #undef SP_TUNABLE_PARAM
 }

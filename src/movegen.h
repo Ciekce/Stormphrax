@@ -24,6 +24,7 @@
 #include "position/position.h"
 #include "see.h"
 #include "history.h"
+#include "tunable.h"
 
 namespace stormphrax
 {
@@ -215,16 +216,24 @@ namespace stormphrax
 					? colorPiece(BasePiece::Pawn, m_pos.opponent())
 					: boards.pieceAt(move.move.dst());
 
+				bool demoted = false;
+
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					m_data.histories[i] = move.score = m_history->captureScore(historyMove, captured);
+
+					const auto history = m_history->captureScore(historyMove, captured);
+					m_data.histories[i] = move.score = history;
+
+					if (history <= tunable::capthistDemotionThreshold())
+						demoted = true;
 				}
 
 				if (captured != Piece::None)
 					move.score += Mvv[static_cast<i32>(basePiece(captured))];
 
-				if ((captured != Piece::None || move.move.target() == BasePiece::Queen)
+				if (!demoted
+					&& (captured != Piece::None || move.move.target() == BasePiece::Queen)
 					&& see::see(m_pos, move.move))
 					move.score += 8 * 2000 * 2000;
 				else if (move.move.type() == MoveType::Promotion)

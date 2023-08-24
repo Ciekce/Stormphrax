@@ -730,6 +730,11 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.historyLmrDivisor, valueStr);
 				}
+				else if (nameStr == "capthistdemotionthreshold")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.capthistDemotionThreshold, valueStr);
+				}
 #endif
 			}
 		}
