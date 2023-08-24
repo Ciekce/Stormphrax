@@ -665,6 +665,16 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.singularityDepthScale, valueStr);
 				}
+				else if (nameStr == "doubleextensionmargin")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.doubleExtensionMargin, valueStr);
+				}
+				else if (nameStr == "doubleextensionlimit")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
+				}
 				else if (nameStr == "maxfpdepth")
 				{
 					if (!valueEmpty)
@@ -695,16 +705,6 @@ namespace stormphrax
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.lmpMinMovesBase, valueStr);
 				}
-				else if (nameStr == "doubleextensionmargin")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.doubleExtensionMargin, valueStr);
-				}
-				else if (nameStr == "doubleextensionlimit")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
-				}
 				else if (nameStr == "maxhistory")
 				{
 					if (!valueEmpty)
@@ -724,6 +724,11 @@ namespace stormphrax
 				{
 					if (!valueEmpty)
 						util::tryParseI32(s_tunable.historyOffset, valueStr);
+				}
+				else if (nameStr == "historylmrdivisor")
+				{
+					if (!valueEmpty)
+						util::tryParseI32(s_tunable.historyLmrDivisor, valueStr);
 				}
 #endif
 			}

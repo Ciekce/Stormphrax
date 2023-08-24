@@ -20,7 +20,7 @@
 
 #include "types.h"
 
-#define SP_TUNE_SEARCH 1
+#define SP_TUNE_SEARCH 0
 
 namespace stormphrax::tunable
 {
@@ -68,10 +68,12 @@ namespace stormphrax::tunable
 		constexpr i32 MaxLmpDepth = 8;
 		constexpr i32 LmpMinMovesBase = 3;
 
-		const i32 MaxHistory = 16384;
-		const i32 MaxHistoryAdjustment = 1536;
-		const i32 HistoryDepthScale = 384;
-		const i32 HistoryOffset = 384;
+		constexpr i32 MaxHistory = 16384;
+		constexpr i32 MaxHistoryAdjustment = 1536;
+		constexpr i32 HistoryDepthScale = 384;
+		constexpr i32 HistoryOffset = 384;
+
+		constexpr i32 HistoryLmrDivisor = 8192;
 	}
 
 	struct TunableData
@@ -122,6 +124,8 @@ namespace stormphrax::tunable
 		i32 maxHistoryAdjustment{defaults::MaxHistoryAdjustment};
 		i32 historyDepthScale{defaults::HistoryDepthScale};
 		i32 historyOffset{defaults::HistoryOffset};
+
+		i32 historyLmrDivisor{defaults::HistoryLmrDivisor};
 	};
 
 #if SP_TUNE_SEARCH
@@ -178,6 +182,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(MaxHistoryAdjustment, maxHistoryAdjustment)
 	SP_TUNABLE_PARAM(HistoryDepthScale, historyDepthScale)
 	SP_TUNABLE_PARAM(HistoryOffset, historyOffset)
+
+	SP_TUNABLE_PARAM(HistoryLmrDivisor, historyLmrDivisor)
 
 #undef SP_TUNABLE_PARAM
 }

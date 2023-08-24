@@ -683,7 +683,7 @@ namespace stormphrax::search
 			{
 				if (!inCheck)
 				{
-					const auto lmrHistory = history * 2 / tunable::maxHistory();
+					const auto lmrHistory = history / tunable::historyLmrDivisor();
 					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Late move pruning (LMP)
@@ -799,7 +799,7 @@ namespace stormphrax::search
 						lmr -= pos.isCheck();
 
 						// reduce moves with good history scores less and vice versa
-						lmr -= history * 2 / tunable::maxHistory();
+						lmr -= history / tunable::historyLmrDivisor();
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
