@@ -763,7 +763,7 @@ namespace stormphrax
 		{
 			auto lowerName = name;
 			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
-			[](auto c) { return std::tolower(c); });
+				[](auto c) { return std::tolower(c); });
 			return tunableParams().try_emplace(std::move(lowerName),
 				TunableParam{name, value, value, {min, max}, step}).first->second;
 		}
