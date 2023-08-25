@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <atomic>
 #include <numeric>
+#include <unordered_map>
 
 #include "util/split.h"
 #include "util/parse.h"
@@ -56,7 +57,11 @@ namespace stormphrax
 		constexpr auto Author = "Ciekce";
 
 #if SP_TUNE_SEARCH
-		tunable::TunableData s_tunable{};
+		auto tunableParams() -> auto &
+		{
+			static std::unordered_map<std::string, tunable::TunableParam> params{};
+			return params;
+		}
 #endif
 
 		class UciHandler
@@ -187,6 +192,14 @@ namespace stormphrax
 				<< " min " << search::SyzygyProbeLimitRange.min()
 				<< " max " << search::SyzygyProbeLimitRange.max() << '\n';
 			std::cout << "option name EvalFile type string default <internal>" << std::endl;
+
+#if SP_TUNE_SEARCH
+			for (const auto &[_lowerName, param] : tunableParams())
+			{
+				std::cout << "option name " << param.name << " type spin default " << param.defaultValue
+					<< " min " << param.range.min() << " max " << param.range.max() << std::endl;
+			}
+#endif
 
 			std::cout << "uciok" << std::endl;
 		}
@@ -575,160 +588,11 @@ namespace stormphrax
 					}
 				}
 #if SP_TUNE_SEARCH
-				else if (nameStr == "minaspdepth")
+				else if (auto itr = tunableParams().find(nameStr);
+					itr != tunableParams().end())
 				{
 					if (!valueEmpty)
-						util::tryParseI32(s_tunable.minAspDepth, valueStr);
-				}
-				else if (nameStr == "maxaspreduction")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxAspReduction, valueStr);
-				}
-				else if (nameStr == "initialaspwindow")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.initialAspWindow, valueStr);
-				}
-				else if (nameStr == "maxaspwindow")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxAspWindow, valueStr);
-				}
-				else if (nameStr == "minnmpdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.minNmpDepth, valueStr);
-				}
-				else if (nameStr == "nmpreductionbase")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.nmpReductionBase, valueStr);
-				}
-				else if (nameStr == "nmpreductiondepthscale")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.nmpReductionDepthScale, valueStr);
-				}
-				else if (nameStr == "nmpreductionevalscale")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.nmpReductionEvalScale, valueStr);
-				}
-				else if (nameStr == "maxnmpevalreduction")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxNmpEvalReduction, valueStr);
-				}
-				else if (nameStr == "minlmrdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.minLmrDepth, valueStr);
-				}
-				else if (nameStr == "maxrfpdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxRfpDepth, valueStr);
-				}
-				else if (nameStr == "rfpmargin")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.rfpMargin, valueStr);
-				}
-				else if (nameStr == "maxseepruningdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxSeePruningDepth, valueStr);
-				}
-				else if (nameStr == "quietseethreshold")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.quietSeeThreshold, valueStr);
-				}
-				else if (nameStr == "noisyseethreshold")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.noisySeeThreshold, valueStr);
-				}
-				else if (nameStr == "minsingularitydepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.minSingularityDepth, valueStr);
-				}
-				else if (nameStr == "singularitydepthmargin")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.singularityDepthMargin, valueStr);
-				}
-				else if (nameStr == "singularitydepthscale")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.singularityDepthScale, valueStr);
-				}
-				else if (nameStr == "doubleextensionmargin")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.doubleExtensionMargin, valueStr);
-				}
-				else if (nameStr == "doubleextensionlimit")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.doubleExtensionLimit, valueStr);
-				}
-				else if (nameStr == "maxfpdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxFpDepth, valueStr);
-				}
-				else if (nameStr == "fpmargin")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.fpMargin, valueStr);
-				}
-				else if (nameStr == "fpscale")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.fpScale, valueStr);
-				}
-				else if (nameStr == "miniirdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.minIirDepth, valueStr);
-				}
-				else if (nameStr == "maxlmpdepth")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxLmpDepth, valueStr);
-				}
-				else if (nameStr == "lmpminmovesbase")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.lmpMinMovesBase, valueStr);
-				}
-				else if (nameStr == "maxhistory")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxHistory, valueStr);
-				}
-				else if (nameStr == "maxhistoryadjustment")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.maxHistoryAdjustment, valueStr);
-				}
-				else if (nameStr == "historydepthscale")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.historyDepthScale, valueStr);
-				}
-				else if (nameStr == "historyoffset")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.historyOffset, valueStr);
-				}
-				else if (nameStr == "historylmrdivisor")
-				{
-					if (!valueEmpty)
-						util::tryParseI32(s_tunable.historyLmrDivisor, valueStr);
+						util::tryParseI32(itr->second.value, valueStr);
 				}
 #endif
 			}
@@ -895,7 +759,14 @@ namespace stormphrax
 #if SP_TUNE_SEARCH
 	namespace tunable
 	{
-		const tunable::TunableData &g_tunable = s_tunable;
+		TunableParam &addTunableParam(const std::string &name, i32 value, i32 min, i32 max, i32 step)
+		{
+			auto lowerName = name;
+			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+			[](auto c) { return std::tolower(c); });
+			return tunableParams().try_emplace(std::move(lowerName),
+				TunableParam{name, value, value, {min, max}, step}).first->second;
+		}
 	}
 #endif
 
