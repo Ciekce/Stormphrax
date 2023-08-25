@@ -35,7 +35,10 @@
 #undef SP_MSVC
 #endif
 
-INCBIN(defaultNet, SP_NETWORK_FILE);
+namespace
+{
+	INCBIN(defaultNet, SP_NETWORK_FILE);
+}
 
 namespace stormphrax::eval
 {
