@@ -447,7 +447,7 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
-			return thread.nnueState.evaluate(pos.toMove());
+			return eval::staticEval(pos, thread.nnueState);
 
 		const bool inCheck = pos.isCheck();
 
@@ -597,7 +597,7 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : thread.nnueState.evaluate(pos.toMove());
+			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState);
 		}
 
 		stack.currMove = {};
@@ -922,7 +922,7 @@ namespace stormphrax::search
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate
-			: thread.nnueState.evaluate(pos.toMove());
+			: eval::staticEval(pos, thread.nnueState);
 
 		if (staticEval > alpha)
 		{

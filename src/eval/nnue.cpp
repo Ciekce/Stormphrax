@@ -16,7 +16,7 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "eval.h"
+#include "nnue.h"
 
 #include <memory>
 #include <fstream>

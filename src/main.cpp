@@ -20,7 +20,7 @@
 #include "bench.h"
 #include "datagen.h"
 #include "util/parse.h"
-#include "eval/eval.h"
+#include "eval/nnue.h"
 
 using namespace stormphrax;
 

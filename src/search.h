@@ -37,7 +37,7 @@
 #include "limit/limit.h"
 #include "util/timer.h"
 #include "ttable.h"
-#include "eval/eval.h"
+#include "eval/nnue.h"
 #include "movegen.h"
 
 namespace stormphrax::search
