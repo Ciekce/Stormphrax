@@ -916,7 +916,7 @@ namespace stormphrax
 
 		if (base == BasePiece::Pawn)
 		{
-			if (type == MoveType::EnPassant && state.enPassant == Square::None)
+			if (type == MoveType::EnPassant && dst != state.enPassant)
 				return false;
 
 			const auto srcRank = move.srcRank();
@@ -937,8 +937,7 @@ namespace stormphrax
 			if (move.srcFile() != move.dstFile())
 			{
 				// not valid attack
-				if (!(attacks::getPawnAttacks(src, us)
-					& (state.boards.forColor(them) | squareBitChecked(state.enPassant)))[dst])
+				if (!(attacks::getPawnAttacks(src, us) & state.boards.forColor(them))[dst])
 					return false;
 			}
 			// forward move onto a piece
