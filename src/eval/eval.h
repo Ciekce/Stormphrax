@@ -25,13 +25,20 @@
 
 namespace stormphrax::eval
 {
+	inline auto scaleEval(const Position &pos, i32 eval)
+	{
+		return eval * (200 - pos.halfmove()) / 200;
+	}
+
 	inline auto staticEval(const Position &pos, NnueState &nnueState)
 	{
-		return nnueState.evaluate(pos.toMove());
+		const auto nnueEval = nnueState.evaluate(pos.toMove());
+		return scaleEval(pos, nnueEval);
 	}
 
 	inline auto staticEvalOnce(const Position &pos)
 	{
-		return NnueState::evaluateOnce(pos.boards(), pos.toMove());
+		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
+		return scaleEval(pos, nnueEval);
 	}
 }
