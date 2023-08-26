@@ -178,7 +178,6 @@ namespace stormphrax::search
 		m_stop.store(true, std::memory_order::relaxed);
 		m_flag.store(IdleFlag, std::memory_order::seq_cst);
 
-		// safe, always runs from uci thread
 		if (m_runningThreads.load() > 0)
 		{
 			std::unique_lock lock{m_stopMutex};
@@ -424,7 +423,7 @@ namespace stormphrax::search
 			{
 				m_table.age();
 
-				m_flag.store(IdleFlag, std::memory_order::relaxed);
+				stop();
 				m_searchMutex.unlock();
 			}
 		}
