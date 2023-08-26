@@ -55,27 +55,19 @@ namespace stormphrax
 
 	auto TTable::resize(usize size) -> void
 	{
-		clear();
-
 		size *= 1024 * 1024;
 
-		const usize capacity = std::bit_floor(size / sizeof(TTableEntry));
+		const auto capacity = size / sizeof(TTableEntry);
 
 		//TODO handle oom
 		m_table.resize(capacity);
 		m_table.shrink_to_fit();
 
-		if (capacity > 0)
-			std::memset(m_table.data(), 0, capacity * sizeof(TTableEntry));
-
-		m_mask = capacity - 1;
+		clear();
 	}
 
 	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool
 	{
-		if (m_table.empty())
-			return false;
-
 		const auto entry = loadEntry(key);
 
 		if (entry.type != EntryType::None
@@ -111,9 +103,6 @@ namespace stormphrax
 
 	auto TTable::probePvMove(u64 key) const -> Move
 	{
-		if (m_table.empty())
-			return NullMove;
-
 		const auto entry = loadEntry(key);
 
 		if (entry.type == EntryType::Exact
@@ -125,9 +114,6 @@ namespace stormphrax
 
 	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
-		if (m_table.empty())
-			return;
-
 		auto entry = loadEntry(key);
 
 		const auto entryKey = static_cast<u16>(key >> 48);
@@ -168,8 +154,7 @@ namespace stormphrax
 		m_entries = 0;
 		m_currentAge = 0;
 
-		if (!m_table.empty())
-			std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
+		std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
 	}
 
 	auto TTable::full() const -> u32
