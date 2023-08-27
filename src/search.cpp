@@ -69,7 +69,8 @@ namespace stormphrax::search
 	}
 
 	Searcher::Searcher(std::optional<usize> hashSize)
-		: m_table{hashSize ? *hashSize : DefaultHashSize}
+		: m_table{hashSize ? *hashSize : DefaultHashSize},
+		  m_searchEndBarrier{std::make_unique<std::barrier<NoCompletionFunc>>(1)}
 	{
 		auto &thread = m_threads.emplace_back();
 
@@ -239,6 +240,8 @@ namespace stormphrax::search
 			m_threads.reserve(threads);
 
 			m_nextThreadId = 0;
+
+			m_searchEndBarrier = std::make_unique<std::barrier<NoCompletionFunc>>(threads);
 
 			for (i32 i = 0; i < threads; ++i)
 			{
@@ -425,8 +428,11 @@ namespace stormphrax::search
 				m_table.age();
 
 				m_flag.store(IdleFlag, std::memory_order::relaxed);
+				m_searchEndBarrier->arrive_and_wait();
+
 				m_searchMutex.unlock();
 			}
+			else m_searchEndBarrier->arrive_and_wait();
 		}
 
 		return {best, score};
