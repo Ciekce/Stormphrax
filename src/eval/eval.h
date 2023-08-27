@@ -22,12 +22,25 @@
 
 #include "nnue.h"
 #include "../position/position.h"
+#include "../see.h"
 
 namespace stormphrax::eval
 {
+	inline auto materialScale(const Position &pos)
+	{
+		const auto &boards = pos.boards();
+		return 22400
+				+ boards.knights().popcount() * see::values::Knight
+				+ boards.bishops().popcount() * see::values::Bishop
+				+ boards.  rooks().popcount() * see::values::Rook
+				+ boards. queens().popcount() * see::values::Queen;
+	}
+
 	inline auto scaleEval(const Position &pos, i32 eval)
 	{
-		return eval * (200 - pos.halfmove()) / 200;
+		eval = eval * materialScale(pos) / 32768;
+		eval = eval * (200 - pos.halfmove()) / 200;
+		return eval;
 	}
 
 	inline auto staticEval(const Position &pos, NnueState &nnueState)
