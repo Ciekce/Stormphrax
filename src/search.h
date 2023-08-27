@@ -39,6 +39,7 @@
 #include "ttable.h"
 #include "eval/nnue.h"
 #include "movegen.h"
+#include "util/barrier.h"
 
 namespace stormphrax::search
 {
@@ -176,6 +177,8 @@ namespace stormphrax::search
 		std::mutex m_startMutex{};
 		std::condition_variable m_startSignal{};
 		std::atomic_int m_flag{};
+
+		util::Barrier m_searchEndBarrier{1};
 
 		std::atomic_int m_stop{};
 

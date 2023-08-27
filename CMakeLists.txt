@@ -35,10 +35,20 @@ endif()
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 
-set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h src/util/u4array.h src/eval/eval.h)
+set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h
+	src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h
+	src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp
+	src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp
+	src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h
+	src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h
+	src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
+	src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
+	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
+	src/util/u4array.h src/eval/eval.h src/util/barrier.h)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
-set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp)
+set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
+	src/attacks/black_magic/attacks.cpp)
 
 add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-avx512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
@@ -51,7 +61,8 @@ if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC -march=native)
     target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
-	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2) # excavator without amd-specific extensions and bmi2
+	# excavator without amd-specific extensions and bmi2
+	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
 	target_compile_options(stormphrax-popcnt PUBLIC -march=nehalem)
 endif()
 
@@ -80,7 +91,8 @@ foreach(TARGET ${TARGETS})
 	string(REPLACE "-" "_" ARCH_NAME "${ARCH_NAME}")
 	string(TOUPPER ${ARCH_NAME} ARCH_NAME)
 
-	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION} SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/src/eval/${SP_DEFAULT_NET_NAME}.nnue")
+	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION}
+		SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/src/eval/${SP_DEFAULT_NET_NAME}.nnue")
 
 	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")

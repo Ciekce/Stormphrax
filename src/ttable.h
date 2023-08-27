@@ -83,7 +83,7 @@ namespace stormphrax
 			if (m_table.empty())
 				return;
 
-			__builtin_prefetch(&m_table[key & m_mask]);
+			__builtin_prefetch(&m_table[index(key)]);
 		}
 
 		inline auto age()
@@ -92,9 +92,15 @@ namespace stormphrax
 		}
 
 	private:
+		[[nodiscard]] inline auto index(u64 key) const -> u64
+		{
+			// this emits a single mul on both x64 and arm64
+			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_table.size())) >> 64);
+		}
+
 		[[nodiscard]] inline auto loadEntry(u64 key) const
 		{
-			const auto *ptr = static_cast<volatile const i64 *>(&m_table[key & m_mask]);
+			const auto *ptr = static_cast<volatile const i64 *>(&m_table[index(key)]);
 			const auto v = *ptr;
 
 			TTableEntry entry{};
@@ -108,13 +114,12 @@ namespace stormphrax
 			i64 v{};
 			std::memcpy(&v, &entry, sizeof(TTableEntry));
 
-			auto *ptr = static_cast<volatile i64 *>(&m_table[key & m_mask]);
+			auto *ptr = static_cast<volatile i64 *>(&m_table[index(key)]);
 			__atomic_exchange(ptr, &v, &v, __ATOMIC_ACQUIRE);
 
 			std::memcpy(&entry, &v, sizeof(TTableEntry));
 		}
 
-		u64 m_mask{};
 		std::vector<i64> m_table{};
 
 		std::atomic_size_t m_entries{};
