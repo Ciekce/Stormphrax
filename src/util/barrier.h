@@ -51,7 +51,7 @@ namespace stormphrax::util
 			m_current.store(value);
 		}
 
-		auto arriveAndWait()
+		inline auto arriveAndWait()
 		{
 			const auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
 
