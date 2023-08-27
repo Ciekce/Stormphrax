@@ -31,6 +31,7 @@
 #include <condition_variable>
 #include <vector>
 #include <tuple>
+#include <barrier>
 
 #include "search_fwd.h"
 #include "position/position.h"
@@ -176,6 +177,14 @@ namespace stormphrax::search
 		std::mutex m_startMutex{};
 		std::condition_variable m_startSignal{};
 		std::atomic_int m_flag{};
+
+		// annoying c++ limitation
+		struct NoCompletionFunc
+		{
+			auto operator()() noexcept {}
+		};
+
+		std::unique_ptr<std::barrier<NoCompletionFunc>> m_searchEndBarrier{};
 
 		std::atomic_int m_stop{};
 
