@@ -22,12 +22,15 @@
 
 #include <limits>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 #include <cassert>
 
 namespace stormphrax::util
 {
 	// This is a stripped-down reimplementation of MSVC's <barrier>,
-	// because SP has to build on machines that do not yet have the header
+	// because SP has to build on machines that do not yet have the header.
+	// It also uses a condition variable, as those machines lack atomic waits
 	class Barrier
 	{
 	public:
@@ -50,7 +53,7 @@ namespace stormphrax::util
 
 		auto arriveAndWait()
 		{
-			auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
+			const auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
 
 			if ((current & ValueMask) == 0)
 			{
@@ -58,21 +61,19 @@ namespace stormphrax::util
 				const auto newPhaseCount = remCount | ((current + 1) & ArrivalTokenMask);
 
 				m_current.store(newPhaseCount, std::memory_order::release);
-				m_current.notify_all();
+				m_waitSignal.notify_all();
 
 				return;
 			}
 
 			const auto arrival = current & ArrivalTokenMask;
 
-			while (true)
+			std::unique_lock lock{m_waitMutex};
+			m_waitSignal.wait(lock, [this, arrival]()
 			{
-				m_current.wait(current, std::memory_order::relaxed);
-				current = m_current.load(std::memory_order::acquire);
-
-				if ((current & ArrivalTokenMask) != arrival)
-					return;
-			}
+				const auto current = m_current.load(std::memory_order::acquire);
+				return (current & ArrivalTokenMask) != arrival;
+			});
 		}
 
 	private:
@@ -84,5 +85,8 @@ namespace stormphrax::util
 
 		std::atomic<i64> m_total{};
 		std::atomic<i64> m_current{};
+
+		std::mutex m_waitMutex{};
+		std::condition_variable m_waitSignal{};
 	};
 }
