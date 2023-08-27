@@ -46,6 +46,11 @@ namespace stormphrax
 				return score + ply;
 			return score;
 		}
+
+		inline u16 packEntryKey(u64 key)
+		{
+			return static_cast<u16>(key);
+		}
 	}
 
 	TTable::TTable(usize size)
@@ -71,7 +76,7 @@ namespace stormphrax
 		const auto entry = loadEntry(key);
 
 		if (entry.type != EntryType::None
-			&& static_cast<u16>(key >> 48) == entry.key)
+			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
 			dst.depth = entry.depth;
@@ -106,7 +111,7 @@ namespace stormphrax
 		const auto entry = loadEntry(key);
 
 		if (entry.type == EntryType::Exact
-		    && static_cast<u16>(key >> 48) == entry.key)
+		    && packEntryKey(key) == entry.key)
 			return entry.move;
 
 		return NullMove;
@@ -116,7 +121,7 @@ namespace stormphrax
 	{
 		auto entry = loadEntry(key);
 
-		const auto entryKey = static_cast<u16>(key >> 48);
+		const auto entryKey = packEntryKey(key);
 
 		// always replace empty entries
 		const bool replace = entry.key == 0
