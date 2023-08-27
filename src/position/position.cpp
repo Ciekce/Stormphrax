@@ -916,8 +916,8 @@ namespace stormphrax
 
 		if (base == BasePiece::Pawn)
 		{
-			if (type == MoveType::EnPassant && dst != state.enPassant)
-				return false;
+			if (type == MoveType::EnPassant)
+				return dst == state.enPassant && attacks::getPawnAttacks(state.enPassant, them)[src];
 
 			const auto srcRank = move.srcRank();
 			const auto dstRank = move.dstRank();
