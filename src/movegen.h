@@ -20,6 +20,8 @@
 
 #include "types.h"
 
+#include <utility>
+
 #include "move.h"
 #include "position/position.h"
 #include "see.h"
@@ -35,10 +37,13 @@ namespace stormphrax
 
 	using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
+	// [all history, just conthist]
+	using Histories = std::pair<i32, i32>;
+
 	struct MovegenData
 	{
 		ScoredMoveList moves;
-		std::array<i32, DefaultMoveListCapacity> histories;
+		std::array<Histories, DefaultMoveListCapacity> histories;
 	};
 
 	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void;
@@ -61,7 +66,7 @@ namespace stormphrax
 	struct MoveWithHistory
 	{
 		Move move{NullMove};
-		i32 history{0};
+		Histories histories{};
 
 		[[nodiscard]] inline explicit operator bool() const
 		{
@@ -218,7 +223,8 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					m_data.histories[i] = move.score = m_history->captureScore(historyMove, captured);
+					move.score = m_history->captureScore(historyMove, captured);
+					m_data.histories[i] = {move.score, 0};
 				}
 
 				if (captured != Piece::None)
@@ -244,16 +250,18 @@ namespace stormphrax
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
 
-					auto &history = m_data.histories[i];
-
-					history = m_history->entry(historyMove).score;
+					auto history = m_history->entry(historyMove).score;
+					i32 conthist{};
 
 					if (m_prevMove)
-						history += m_history->contEntry(m_prevMove).score(historyMove);
+						conthist += m_history->contEntry(m_prevMove).score(historyMove);
 					if (m_prevPrevMove)
-						history += m_history->contEntry(m_prevPrevMove).score(historyMove);
+						conthist += m_history->contEntry(m_prevPrevMove).score(historyMove);
+
+					history += conthist;
 
 					move.score = history;
+					m_data.histories[i] = {history, conthist};
 				}
 
 				// knight promos first, rook then bishop promos last

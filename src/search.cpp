@@ -668,7 +668,8 @@ namespace stormphrax::search
 
 		while (const auto moveAndHistory = generator.next())
 		{
-			const auto [move, history] = moveAndHistory;
+			const auto [move, histories] = moveAndHistory;
+			const auto [history, conthist] = histories;
 
 			if (move == stack.excluded)
 				continue;
@@ -705,6 +706,11 @@ namespace stormphrax::search
 						&& alpha < ScoreWin
 						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
 						break;
+
+					if (depth <= tunable::maxConthistPruningDepth()
+						&& quietOrLosing
+						&& conthist < tunable::conthistPruningScale() * lmrDepth)
+						continue;
 				}
 
 				// SEE pruning
