@@ -280,6 +280,8 @@ namespace stormphrax
 							m_pos.applyMoveUnchecked<false, false>(move, nullptr);
 					}
 				}
+
+				m_searcher.newGame();
 			}
 		}
 
@@ -428,8 +430,7 @@ namespace stormphrax
 				else if (!limiter)
 					limiter = std::make_unique<limit::InfiniteLimiter>();
 
-				m_searcher.setLimiter(std::move(limiter));
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth));
+				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
 			}
 		}
 

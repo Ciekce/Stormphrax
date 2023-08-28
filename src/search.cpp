@@ -91,9 +91,9 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::startSearch(const Position &pos, i32 maxDepth) -> void
+	auto Searcher::startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void
 	{
-		if (!m_limiter)
+		if (!m_limiter && !limiter)
 		{
 			std::cerr << "missing limiter" << std::endl;
 			return;
@@ -157,6 +157,11 @@ namespace stormphrax::search
 			}
 		}
 
+		m_resetBarrier.arriveAndWait();
+
+		if (limiter)
+			m_limiter = std::move(limiter);
+
 		for (auto &thread : m_threads)
 		{
 			thread.maxDepth = maxDepth;
@@ -169,14 +174,14 @@ namespace stormphrax::search
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
 
-		m_flag.store(SearchFlag, std::memory_order::seq_cst);
-		m_startSignal.notify_all();
+		m_searching.store(true, std::memory_order::relaxed);
+
+		m_idleBarrier.arriveAndWait();
 	}
 
 	auto Searcher::stop() -> void
 	{
 		m_stop.store(true, std::memory_order::relaxed);
-		m_flag.store(IdleFlag, std::memory_order::seq_cst);
 
 		// safe, always runs from uci thread
 		if (m_runningThreads.load() > 0)
@@ -232,13 +237,16 @@ namespace stormphrax::search
 		{
 			stopThreads();
 
-			m_flag.store(IdleFlag, std::memory_order::seq_cst);
+			m_quit.store(false, std::memory_order::seq_cst);
 
 			m_threads.clear();
 			m_threads.shrink_to_fit();
 			m_threads.reserve(threads);
 
 			m_nextThreadId = 0;
+
+			m_resetBarrier.reset(threads + 1);
+			m_idleBarrier.reset(threads + 1);
 
 			m_searchEndBarrier.reset(threads);
 
@@ -257,8 +265,9 @@ namespace stormphrax::search
 
 	auto Searcher::stopThreads() -> void
 	{
-		m_flag.store(QuitFlag, std::memory_order::seq_cst);
-		m_startSignal.notify_all();
+		m_quit.store(true, std::memory_order::release);
+		m_resetBarrier.arriveAndWait();
+		m_idleBarrier.arriveAndWait();
 
 		for (auto &thread : m_threads)
 		{
@@ -270,18 +279,10 @@ namespace stormphrax::search
 	{
 		while (true)
 		{
-			i32 flag{};
+			m_resetBarrier.arriveAndWait();
+			m_idleBarrier.arriveAndWait();
 
-			{
-				std::unique_lock lock{m_startMutex};
-				m_startSignal.wait(lock, [this, &flag]
-				{
-					flag = m_flag.load(std::memory_order::seq_cst);
-					return flag != IdleFlag;
-				});
-			}
-
-			if (flag == QuitFlag)
+			if (m_quit.load(std::memory_order::acquire))
 				return;
 
 			searchRoot(thread, true);
@@ -424,10 +425,12 @@ namespace stormphrax::search
 
 			if (reportAndUpdate)
 			{
-				m_table.age();
-
-				m_flag.store(IdleFlag, std::memory_order::relaxed);
+				m_stop.store(true, std::memory_order::seq_cst);
 				m_searchEndBarrier.arriveAndWait();
+
+				m_searching.store(false, std::memory_order::relaxed);
+
+				m_table.age();
 
 				m_searchMutex.unlock();
 			}
