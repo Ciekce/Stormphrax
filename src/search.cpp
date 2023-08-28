@@ -685,7 +685,8 @@ namespace stormphrax::search
 				// reduced search held at or above probcut beta, store to tt and prune
 				if (score >= probcutBeta)
 				{
-					m_table.put(pos.key(), score, move, probcutDepth + 1, ply, EntryType::Beta);
+					if (!ttHit || entry.depth < probcutDepth + 1)
+						m_table.put(pos.key(), score, move, probcutDepth + 1, ply, EntryType::Beta);
 					return score;
 				}
 			}
