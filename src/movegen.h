@@ -313,4 +313,5 @@ namespace stormphrax
 	};
 
 	using QMoveGenerator = MoveGenerator<true>;
+	using PcMoveGenerator = MoveGenerator<true>; // probcut
 }

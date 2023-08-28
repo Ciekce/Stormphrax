@@ -645,6 +645,49 @@ namespace stormphrax::search
 			}
 		}
 
+		const bool ttMoveNoisy = !ttMove.isNull() && pos.isNoisy(ttMove);
+
+		// Probcut
+		// Do a quiescence search on each winning capture. If the result beats
+		// beta plus some margin, do a reduced-depth search. If that result beats
+		// beta plus the same margin, assume that this is a cutnode and prune.
+		const auto probcutBeta = std::min(beta + tunable::probcutMargin(), ScoreMaxNonWin);
+		if (!pv
+			&& !inCheck
+			&& !stack.excluded
+			&& depth >= tunable::minProbcutDepth()
+			&& std::abs(beta) < ScoreWin
+			&& (!ttHit || entry.depth < depth - tunable::probcutReduction() - 1 || entry.score >= probcutBeta))
+		{
+			// don't drop back into qsearch
+			const auto probcutDepth = std::max(1, depth - tunable::probcutReduction());
+
+			PcMoveGenerator generator{pos, NullMove, moveStack.movegenData, ttMoveNoisy ? ttMove : NullMove};
+			while (const auto moveAndHistory = generator.next())
+			{
+				const auto [move, _history] = moveAndHistory;
+
+				const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
+
+				if (!guard)
+					continue;
+
+				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
+
+				// qsearch met probcut beta, do a reduced re-search to verify
+				if (score >= probcutBeta)
+					score = -search(thread, probcutDepth, ply + 1,
+						moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
+
+				// reduced search held at or above probcut beta, store to tt and prune
+				if (score >= probcutBeta)
+				{
+					m_table.put(pos.key(), score, move, probcutDepth + 1, ply, EntryType::Beta);
+					return score;
+				}
+			}
+		}
+
 		moveStack.quietsTried.clear();
 		moveStack.noisiesTried.clear();
 
