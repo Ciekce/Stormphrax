@@ -20,164 +20,81 @@
 
 #include "types.h"
 
-#define SP_TUNE_SEARCH 1
+#include <string>
+
+#include "util/range.h"
+
+#define SP_TUNE_SEARCH 0
 
 namespace stormphrax::tunable
 {
-	namespace defaults
+#if SP_TUNE_SEARCH
+	struct TunableParam
 	{
-		constexpr i32 MinAspDepth = 6;
-
-		constexpr i32 MaxAspReduction = 3;
-
-		constexpr Score InitialAspWindow = 16;
-		constexpr Score MaxAspWindow = 500;
-
-		constexpr i32 MinNmpDepth = 3;
-
-		constexpr Score NmpReductionBase = 3;
-		constexpr Score NmpReductionDepthScale = 3;
-		constexpr Score NmpReductionEvalScale = 200;
-		constexpr Score MaxNmpEvalReduction = 3;
-
-		constexpr i32 MinLmrDepth = 3;
-
-		constexpr i32 MaxRfpDepth = 8;
-		constexpr Score RfpMargin = 75;
-
-		constexpr i32 MaxSeePruningDepth = 9;
-
-		constexpr Score QuietSeeThreshold = -50;
-		constexpr Score NoisySeeThreshold = -90;
-
-		constexpr i32 MinSingularityDepth = 8;
-
-		constexpr i32 SingularityDepthMargin = 3;
-		constexpr i32 SingularityDepthScale = 2;
-
-		constexpr Score DoubleExtensionMargin = 22;
-		constexpr i32 DoubleExtensionLimit = 5;
-
-		constexpr i32 MaxFpDepth = 8;
-
-		constexpr Score FpMargin = 250;
-		constexpr Score FpScale = 60;
-
-		constexpr i32 MinIirDepth = 4;
-
-		constexpr i32 MaxLmpDepth = 8;
-		constexpr i32 LmpMinMovesBase = 3;
-
-		const i32 MaxHistory = 16384;
-		const i32 MaxHistoryAdjustment = 1536;
-		const i32 HistoryDepthScale = 384;
-		const i32 HistoryOffset = 384;
-	}
-
-	struct TunableData
-	{
-		i32 minAspDepth{defaults::MinAspDepth};
-
-		i32 maxAspReduction{defaults::MaxAspReduction};
-
-		Score initialAspWindow{defaults::InitialAspWindow};
-		Score maxAspWindow{defaults::MaxAspWindow};
-
-		i32 minNmpDepth{defaults::MinNmpDepth};
-
-		Score nmpReductionBase{defaults::NmpReductionBase};
-		Score nmpReductionDepthScale{defaults::NmpReductionDepthScale};
-		Score nmpReductionEvalScale{defaults::NmpReductionEvalScale};
-		Score maxNmpEvalReduction{defaults::MaxNmpEvalReduction};
-
-		i32 minLmrDepth{defaults::MinLmrDepth};
-
-		i32 maxRfpDepth{defaults::MaxRfpDepth};
-		Score rfpMargin{defaults::RfpMargin};
-
-		i32 maxSeePruningDepth{defaults::MaxSeePruningDepth};
-
-		Score quietSeeThreshold{defaults::QuietSeeThreshold};
-		Score noisySeeThreshold{defaults::NoisySeeThreshold};
-
-		i32 minSingularityDepth{defaults::MinSingularityDepth};
-
-		i32 singularityDepthMargin{defaults::SingularityDepthMargin};
-		i32 singularityDepthScale{defaults::SingularityDepthScale};
-
-		i32 doubleExtensionMargin{defaults::DoubleExtensionMargin};
-		i32 doubleExtensionLimit{defaults::DoubleExtensionLimit};
-
-		i32 maxFpDepth{defaults::MaxFpDepth};
-
-		Score fpMargin{defaults::FpMargin};
-		Score fpScale{defaults::FpScale};
-
-		i32 minIirDepth{defaults::MinIirDepth};
-
-		i32 maxLmpDepth{defaults::MaxLmpDepth};
-		i32 lmpMinMovesBase{defaults::LmpMinMovesBase};
-
-		i32 maxHistory{defaults::MaxHistory};
-		i32 maxHistoryAdjustment{defaults::MaxHistoryAdjustment};
-		i32 historyDepthScale{defaults::HistoryDepthScale};
-		i32 historyOffset{defaults::HistoryOffset};
+		std::string name;
+		i32 defaultValue;
+		i32 value;
+		util::Range<i32> range;
+		i32 step;
 	};
 
-#if SP_TUNE_SEARCH
-	extern const TunableData &g_tunable;
+	TunableParam &addTunableParam(const std::string &name, i32 value, i32 min, i32 max, i32 step);
 
-#define SP_TUNABLE_PARAM(DefaultName, Name) inline auto Name() { return g_tunable.Name; }
+#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
+inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step); \
+inline auto Name() { return param_##Name.value; }
 #else
-#define SP_TUNABLE_PARAM(DefaultName, Name) constexpr auto Name() { return defaults::DefaultName; }
+#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) constexpr auto Name() -> i32 { return Default; }
 #endif
 
-	SP_TUNABLE_PARAM(MinAspDepth, minAspDepth)
+	SP_TUNABLE_PARAM(minAspDepth, 6, 1, 10, 1)
 
-	SP_TUNABLE_PARAM(MaxAspReduction, maxAspReduction)
+	SP_TUNABLE_PARAM(maxAspReduction, 3, 0, 5, 1)
 
-	SP_TUNABLE_PARAM(InitialAspWindow, initialAspWindow)
-	SP_TUNABLE_PARAM(MaxAspWindow, maxAspWindow)
+	SP_TUNABLE_PARAM(initialAspWindow, 16, 8, 50, 4)
+	SP_TUNABLE_PARAM(maxAspWindow, 500, 100, 1000, 100)
 
-	SP_TUNABLE_PARAM(MinNmpDepth, minNmpDepth)
+	SP_TUNABLE_PARAM(minNmpDepth, 3, 3, 8, 1)
 
-	SP_TUNABLE_PARAM(NmpReductionBase, nmpReductionBase)
-	SP_TUNABLE_PARAM(NmpReductionDepthScale, nmpReductionDepthScale)
-	SP_TUNABLE_PARAM(NmpReductionEvalScale, nmpReductionEvalScale)
-	SP_TUNABLE_PARAM(MaxNmpEvalReduction, maxNmpEvalReduction)
+	SP_TUNABLE_PARAM(nmpReductionBase, 3, 2, 5, 1)
+	SP_TUNABLE_PARAM(nmpReductionDepthScale, 3, 1, 8, 1)
+	SP_TUNABLE_PARAM(nmpReductionEvalScale, 200, 50, 300, 25)
+	SP_TUNABLE_PARAM(maxNmpEvalReduction, 3, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(MinLmrDepth, minLmrDepth)
+	SP_TUNABLE_PARAM(minLmrDepth, 3, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(MaxRfpDepth, maxRfpDepth)
-	SP_TUNABLE_PARAM(RfpMargin, rfpMargin)
+	SP_TUNABLE_PARAM(maxRfpDepth, 8, 4, 12, 1)
+	SP_TUNABLE_PARAM(rfpMargin, 75, 25, 150, 5)
 
-	SP_TUNABLE_PARAM(MaxSeePruningDepth, maxSeePruningDepth)
+	SP_TUNABLE_PARAM(maxSeePruningDepth, 9, 4, 15, 1)
 
-	SP_TUNABLE_PARAM(QuietSeeThreshold, quietSeeThreshold)
-	SP_TUNABLE_PARAM(NoisySeeThreshold, noisySeeThreshold)
+	SP_TUNABLE_PARAM(quietSeeThreshold, -50, -120, -20, 10)
+	SP_TUNABLE_PARAM(noisySeeThreshold, -90, -120, -20, 10)
 
-	SP_TUNABLE_PARAM(MinSingularityDepth, minSingularityDepth)
+	SP_TUNABLE_PARAM(minSingularityDepth, 8, 4, 12, 1)
 
-	SP_TUNABLE_PARAM(SingularityDepthMargin, singularityDepthMargin)
-	SP_TUNABLE_PARAM(SingularityDepthScale, singularityDepthScale)
+	SP_TUNABLE_PARAM(singularityDepthMargin, 3, 1, 4, 1)
+	SP_TUNABLE_PARAM(singularityDepthScale, 2, 1, 4, 1)
 
-	SP_TUNABLE_PARAM(DoubleExtensionMargin, doubleExtensionMargin)
-	SP_TUNABLE_PARAM(DoubleExtensionLimit, doubleExtensionLimit)
+	SP_TUNABLE_PARAM(doubleExtensionMargin, 22, 14, 30, 2)
+	SP_TUNABLE_PARAM(doubleExtensionLimit, 5, 3, 8, 1)
 
-	SP_TUNABLE_PARAM(MaxFpDepth, maxFpDepth)
+	SP_TUNABLE_PARAM(maxFpDepth, 8, 4, 12, 1)
 
-	SP_TUNABLE_PARAM(FpMargin, fpMargin)
-	SP_TUNABLE_PARAM(FpScale, fpScale)
+	SP_TUNABLE_PARAM(fpMargin, 250, 120, 350, 15)
+	SP_TUNABLE_PARAM(fpScale, 60, 40, 80, 5)
 
-	SP_TUNABLE_PARAM(MinIirDepth, minIirDepth)
+	SP_TUNABLE_PARAM(minIirDepth, 4, 3, 6, 1)
 
-	SP_TUNABLE_PARAM(MaxLmpDepth, maxLmpDepth)
-	SP_TUNABLE_PARAM(LmpMinMovesBase, lmpMinMovesBase)
+	SP_TUNABLE_PARAM(maxLmpDepth, 8, 4, 12, 1)
+	SP_TUNABLE_PARAM(lmpMinMovesBase, 3, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(MaxHistory, maxHistory)
-	SP_TUNABLE_PARAM(MaxHistoryAdjustment, maxHistoryAdjustment)
-	SP_TUNABLE_PARAM(HistoryDepthScale, historyDepthScale)
-	SP_TUNABLE_PARAM(HistoryOffset, historyOffset)
+	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
+	SP_TUNABLE_PARAM(maxHistoryAdjustment, 1536, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyDepthScale, 384, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyOffset, 384, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(historyLmrDivisor, 8192, 4096, 16384, 512)
 
 #undef SP_TUNABLE_PARAM
 }

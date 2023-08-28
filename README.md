@@ -68,6 +68,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 | EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                            |
 
 ## Builds
+`avx512`: requires AVX-512 (Zen 4, Skylake-X)
 `avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `popcnt`: just needs `popcnt` - for older x64 CPUs

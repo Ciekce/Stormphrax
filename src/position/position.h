@@ -30,7 +30,7 @@
 #include "../move.h"
 #include "../attacks/attacks.h"
 #include "../ttable.h"
-#include "../eval/eval.h"
+#include "../eval/nnue.h"
 
 namespace stormphrax
 {

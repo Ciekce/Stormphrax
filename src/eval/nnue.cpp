@@ -16,7 +16,7 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "eval.h"
+#include "nnue.h"
 
 #include <memory>
 #include <fstream>
@@ -35,7 +35,10 @@
 #undef SP_MSVC
 #endif
 
-INCBIN(defaultNet, SP_NETWORK_FILE);
+namespace
+{
+	INCBIN(defaultNet, SP_NETWORK_FILE);
+}
 
 namespace stormphrax::eval
 {
