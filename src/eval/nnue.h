@@ -71,13 +71,12 @@ namespace stormphrax::eval
 	// Perspective network - separate accumulators for
 	// each side to allow the network to learn tempo
 	// (this is why there are two sets of output weights)
-	template <u32 LayerSize>
 	struct alignas(SP_NETWORK_ALIGNMENT) Accumulator
 	{
-		std::array<i16, LayerSize> black;
-		std::array<i16, LayerSize> white;
+		std::array<i16, Layer1Size> black;
+		std::array<i16, Layer1Size> white;
 
-		inline auto init(std::span<const i16, LayerSize> bias)
+		inline auto init(std::span<const i16, Layer1Size> bias)
 		{
 			std::copy(bias.begin(), bias.end(), black.begin());
 			std::copy(bias.begin(), bias.end(), white.begin());
@@ -142,17 +141,17 @@ namespace stormphrax::eval
 
 		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards, Color stm)
 		{
-			Accumulator<Layer1Size> accumulator{};
+			Accumulator accumulator{};
 			initAccumulator(accumulator, boards);
 
 			return evaluate(accumulator, stm);
 		}
 
 	private:
-		std::vector<Accumulator<Layer1Size>> m_accumulatorStack{};
-		Accumulator<Layer1Size> *m_curr{};
+		std::vector<Accumulator> m_accumulatorStack{};
+		Accumulator *m_curr{};
 
-		static inline auto initAccumulator(Accumulator<Layer1Size> &accumulator, const PositionBoards &boards) -> void
+		static inline auto initAccumulator(Accumulator &accumulator, const PositionBoards &boards) -> void
 		{
 			accumulator.init(g_currNet->featureBiases);
 
@@ -171,7 +170,7 @@ namespace stormphrax::eval
 			}
 		}
 
-		static inline auto moveFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square src, Square dst) -> void
+		static inline auto moveFeature(Accumulator &accumulator, Piece piece, Square src, Square dst) -> void
 		{
 			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
 			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
@@ -180,7 +179,7 @@ namespace stormphrax::eval
 			subtractAndAddToAll(accumulator.white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
 		}
 
-		static inline auto activateFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square sq) -> void
+		static inline auto activateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
 		{
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
@@ -188,7 +187,7 @@ namespace stormphrax::eval
 			addToAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		static inline auto deactivateFeature(Accumulator<Layer1Size> &accumulator, Piece piece, Square sq) -> void
+		static inline auto deactivateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
 		{
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
 
@@ -196,7 +195,7 @@ namespace stormphrax::eval
 			subtractFromAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		[[nodiscard]] static inline auto evaluate(const Accumulator<Layer1Size> &accumulator, Color stm) -> i32
+		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator, Color stm) -> i32
 		{
 			const auto output = stm == Color::Black
 				? activateAndFlatten(accumulator.black, accumulator.white, g_currNet->outputWeights)
