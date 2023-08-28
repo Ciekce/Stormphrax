@@ -44,7 +44,7 @@ namespace stormphrax::tunable
 inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step); \
 inline auto Name() { return param_##Name.value; }
 #else
-#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) constexpr auto Name() { return Default; }
+#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) constexpr auto Name() -> i32 { return Default; }
 #endif
 
 	SP_TUNABLE_PARAM(minAspDepth, 6, 1, 10, 1)
