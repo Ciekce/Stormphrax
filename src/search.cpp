@@ -657,7 +657,7 @@ namespace stormphrax::search
 			&& !stack.excluded
 			&& depth >= tunable::minProbcutDepth()
 			&& std::abs(beta) < ScoreWin
-			&& (!ttHit || entry.depth < depth - tunable::probcutReduction() - 1 || entry.score >= probcutBeta))
+			&& (!ttHit || entry.depth < depth - tunable::probcutReduction() + 1 || entry.score >= probcutBeta))
 		{
 			// don't drop back into qsearch
 			const auto probcutDepth = std::max(1, depth - tunable::probcutReduction());
@@ -671,6 +671,9 @@ namespace stormphrax::search
 
 				if (!guard)
 					continue;
+
+				++thread.search.nodes;
+				stack.currMove = {pos.boards().pieceAt(move.src()), moveActualDst(move)};
 
 				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
