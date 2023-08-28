@@ -84,46 +84,16 @@ namespace stormphrax::see
 	[[nodiscard]] inline auto popLeastValuable(const PositionBoards &boards,
 		Bitboard &occ, Bitboard attackers, Color color)
 	{
-		auto board = attackers & boards.pawns(color);
-		if (!board.empty())
+		for (i32 i = 0; i < 6; ++i)
 		{
-			occ ^= board.lowestBit();
-			return BasePiece::Pawn;
-		}
+			const auto piece = static_cast<BasePiece>(i);
+			auto board = attackers & boards.forPiece(piece, color);
 
-		board = attackers & boards.knights(color);
-		if (!board.empty())
-		{
-			occ ^= board.lowestBit();
-			return BasePiece::Knight;
-		}
-
-		board = attackers & boards.bishops(color);
-		if (!board.empty())
-		{
-			occ ^= board.lowestBit();
-			return BasePiece::Bishop;
-		}
-
-		board = attackers & boards.rooks(color);
-		if (!board.empty())
-		{
-			occ ^= board.lowestBit();
-			return BasePiece::Rook;
-		}
-
-		board = attackers & boards.queens(color);
-		if (!board.empty())
-		{
-			occ ^= board.lowestBit();
-			return BasePiece::Queen;
-		}
-
-		board = attackers & boards.kings(color);
-		if (!board.empty())
-		{
-			occ ^= board.lowestBit();
-			return BasePiece::King;
+			if (!board.empty())
+			{
+				occ ^= board.lowestBit();
+				return piece;
+			}
 		}
 
 		return BasePiece::None;
