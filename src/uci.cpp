@@ -280,8 +280,6 @@ namespace stormphrax
 							m_pos.applyMoveUnchecked<false, false>(move, nullptr);
 					}
 				}
-
-				m_searcher.newGame();
 			}
 		}
 
