@@ -695,7 +695,9 @@ namespace stormphrax::search
 					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Late move pruning (LMP)
-					// At low enough depths, only search a certain depth-dependent number of moves
+					// At low enough depths, only search a certain depth-dependent
+					// number of moves. Sane implementations just use depth here
+					// instead of LMR depth, but SP is weird and loses elo when I try
 					if (!pv
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
