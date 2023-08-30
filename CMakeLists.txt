@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 1.0.0)
+project(stormphrax VERSION 1.0.44)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -10,6 +10,21 @@ set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 if(MSVC AND NOT SP_CLANG)
 	message(FATAL_ERROR Stormphrax does not support building with MSVC)
+endif()
+
+option(SP_EMBED_COMMIT_HASH "whether to include the current git commit in the UCI version string" ON)
+
+if(SP_EMBED_COMMIT_HASH)
+	set(SP_COMMIT_HASH "unknown")
+	find_package(Git QUIET)
+	if(GIT_FOUND)
+		execute_process(
+			COMMAND git log -1 --pretty=format:%h
+			OUTPUT_VARIABLE SP_COMMIT_HASH
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_QUIET
+		)
+	endif()
 endif()
 
 # for fathom
@@ -96,6 +111,10 @@ foreach(TARGET ${TARGETS})
 
 	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")
+
+	if(SP_EMBED_COMMIT_HASH)
+		target_compile_definitions(${TARGET} PUBLIC SP_COMMIT_HASH=${SP_COMMIT_HASH})
+	endif()
 
 	target_link_libraries(${TARGET} Threads::Threads)
 endforeach()

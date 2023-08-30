@@ -168,7 +168,11 @@ namespace stormphrax
 		{
 			static const opts::GlobalOptions defaultOpts{};
 
+#ifdef SP_COMMIT_HASH
+			std::cout << "id name " << Name << ' ' << Version << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+#else
 			std::cout << "id name " << Name << ' ' << Version << '\n';
+#endif
 			std::cout << "id author " << Author << '\n';
 
 			std::cout << "option name Hash type spin default " << DefaultHashSize
