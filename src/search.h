@@ -126,7 +126,7 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
-		auto startSearch(const Position &pos, i32 maxDepth) -> void;
+		auto startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
@@ -137,7 +137,7 @@ namespace stormphrax::search
 		[[nodiscard]] inline auto searching() const
 		{
 			std::unique_lock lock{m_searchMutex};
-			return m_flag.load(std::memory_order::relaxed) == SearchFlag;
+			return m_searching.load(std::memory_order::relaxed);
 		}
 
 		auto setThreads(u32 threads) -> void;
@@ -154,19 +154,13 @@ namespace stormphrax::search
 
 		inline auto quit() -> void
 		{
-			m_quit = true;
+			m_quit.store(true, std::memory_order::release);
 
 			stop();
 			stopThreads();
 		}
 
 	private:
-		static constexpr i32 IdleFlag = 0;
-		static constexpr i32 SearchFlag = 1;
-		static constexpr i32 QuitFlag = 2;
-
-		bool m_quit{false};
-
 		TTable m_table{};
 
 		u32 m_nextThreadId{};
@@ -174,9 +168,11 @@ namespace stormphrax::search
 
 		mutable std::mutex m_searchMutex{};
 
-		std::mutex m_startMutex{};
-		std::condition_variable m_startSignal{};
-		std::atomic_int m_flag{};
+		std::atomic_bool m_quit{};
+		std::atomic_bool m_searching{};
+
+		util::Barrier m_resetBarrier{2};
+		util::Barrier m_idleBarrier{2};
 
 		util::Barrier m_searchEndBarrier{1};
 
@@ -192,13 +188,18 @@ namespace stormphrax::search
 
 		auto run(ThreadData &thread) -> void;
 
-		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout)
+		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout) -> bool
 		{
 			if (m_stop.load(std::memory_order::relaxed))
 				return true;
 
-			bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
-			return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
+			if (m_limiter->stop(data, allowSoftTimeout))
+			{
+				m_stop.store(true, std::memory_order::relaxed);
+				return true;
+			}
+
+			return m_stop.load(std::memory_order::relaxed);
 		}
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;

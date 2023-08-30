@@ -53,27 +53,35 @@ namespace stormphrax::util
 
 		inline auto arriveAndWait()
 		{
-			const auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
+			auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
+
+			assert(current >= 0);
 
 			if ((current & ValueMask) == 0)
 			{
 				const auto remCount = m_total.load();
 				const auto newPhaseCount = remCount | ((current + 1) & ArrivalTokenMask);
 
+				assert(remCount >= 0);
+
 				m_current.store(newPhaseCount, std::memory_order::release);
-				m_waitSignal.notify_all();
+				m_current.notify_all();
 
 				return;
 			}
 
 			const auto arrival = current & ArrivalTokenMask;
 
-			std::unique_lock lock{m_waitMutex};
-			m_waitSignal.wait(lock, [this, arrival]()
+			while (true)
 			{
-				const auto current = m_current.load(std::memory_order::acquire);
-				return (current & ArrivalTokenMask) != arrival;
-			});
+				m_current.wait(current, std::memory_order::relaxed);
+				current = m_current.load(std::memory_order::acquire);
+
+				assert(current >= 0);
+
+				if ((current & ArrivalTokenMask) != arrival)
+					break;
+			}
 		}
 
 	private:
