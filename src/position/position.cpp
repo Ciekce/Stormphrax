@@ -305,6 +305,18 @@ namespace stormphrax
 			++rankIdx;
 		}
 
+		if (newState.boards.forPiece(Piece::BlackKing).popcount() != 1)
+		{
+			std::cerr << "black must have exactly 1 king" << std::endl;
+			return false;
+		}
+
+		if (newState.boards.forPiece(Piece::WhiteKing).popcount() != 1)
+		{
+			std::cerr << "white must have exactly 1 king" << std::endl;
+			return false;
+		}
+
 		const auto &color = tokens[1];
 
 		if (color.length() != 1)
@@ -321,6 +333,15 @@ namespace stormphrax
 		case 'w': break;
 		default:
 			std::cerr << "invalid next move color in fen " << fen << std::endl;
+			return false;
+		}
+
+		if (const auto stm = newBlackToMove ? Color::Black : Color::White;
+			isAttacked(newState.boards,
+				newState.boards.forPiece(BasePiece::King, oppColor(stm)).lowestSquare(),
+				stm))
+		{
+			std::cerr << "opponent must not be in check" << std::endl;
 			return false;
 		}
 

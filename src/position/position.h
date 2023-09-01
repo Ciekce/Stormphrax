@@ -214,7 +214,7 @@ namespace stormphrax
 			return attackers;
 		}
 
-		[[nodiscard]] inline auto isAttacked(const PositionBoards &boards, Square square, Color attacker) const
+		[[nodiscard]] static inline auto isAttacked(const PositionBoards &boards, Square square, Color attacker)
 		{
 			const auto occ = boards.occupancy();
 
