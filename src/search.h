@@ -57,6 +57,12 @@ namespace stormphrax::search
 	constexpr auto SyzygyProbeDepthRange = util::Range<i32>{1, MaxDepth};
 	constexpr auto SyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
+	struct PvList
+	{
+		std::array<Move, MaxDepth> moves{};
+		u32 length{};
+	};
+
 	struct SearchStackEntry
 	{
 		Move killer{NullMove};
@@ -66,6 +72,8 @@ namespace stormphrax::search
 		Move excluded{};
 
 		i32 doubleExtensions{0};
+
+		PvList pv{};
 	};
 
 	struct MoveStackEntry
@@ -92,6 +100,8 @@ namespace stormphrax::search
 		SearchData search{};
 
 		bool datagen{false};
+
+		PvList rootPv{};
 
 		eval::NnueState nnueState{};
 
@@ -204,11 +214,11 @@ namespace stormphrax::search
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;
 
-		auto search(ThreadData &thread, i32 depth, i32 ply,
+		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, i32 depth, Move move,
-			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
+		auto report(const ThreadData &mainThread, i32 depth, f64 time,
+			Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }

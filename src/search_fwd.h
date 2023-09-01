@@ -30,6 +30,5 @@ namespace stormphrax::search
 		i32 seldepth{};
 		usize nodes{};
 		usize tbhits{};
-		Move move{};
 	};
 }
