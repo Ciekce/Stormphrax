@@ -456,6 +456,8 @@ namespace stormphrax::search
 		auto &pos = thread.pos;
 		const auto &boards = pos.boards();
 
+		pv.length = 0;
+
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState);
 
@@ -662,6 +664,7 @@ namespace stormphrax::search
 		const auto prevMove = ply > 0 ? thread.stack[ply - 1].currMove : HistoryMove{};
 		const auto prevPrevMove = ply > 1 ? thread.stack[ply - 2].currMove : HistoryMove{};
 
+		auto bestMove = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
@@ -833,12 +836,18 @@ namespace stormphrax::search
 
 			if (score > bestScore)
 			{
+				bestMove = move;
 				bestScore = score;
 
-				pv.moves[0] = move;
+				if (pvNode)
+				{
+					pv.moves[0] = move;
 
-				std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
-				pv.length = stack.pv.length + 1;
+					std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
+					pv.length = stack.pv.length + 1;
+
+					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
+				}
 
 				if (score > alpha)
 				{
@@ -915,8 +924,6 @@ namespace stormphrax::search
 		{
 			if (stack.excluded)
 				return alpha;
-
-			pv.length = 0;
 			return inCheck ? (-ScoreMate + ply) : 0;
 		}
 
@@ -925,7 +932,7 @@ namespace stormphrax::search
 		// increase depth for tt if in check
 		// https://chess.swehosting.se/test/1456/
 		if (!stack.excluded)
-			m_table.put(pos.key(), bestScore, pv.moves[0], inCheck ? depth + 1 : depth, ply, entryType);
+			m_table.put(pos.key(), bestScore, bestMove, inCheck ? depth + 1 : depth, ply, entryType);
 
 		return bestScore;
 	}
