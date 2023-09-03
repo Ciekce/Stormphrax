@@ -456,8 +456,6 @@ namespace stormphrax::search
 		auto &pos = thread.pos;
 		const auto &boards = pos.boards();
 
-		pv.length = 0;
-
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState);
 
@@ -730,6 +728,9 @@ namespace stormphrax::search
 
 			if (!guard)
 				continue;
+
+			if (pvNode)
+				stack.pv.length = 0;
 
 			++thread.search.nodes;
 			++legalMoves;
