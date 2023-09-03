@@ -52,4 +52,16 @@ namespace stormphrax::eval::activation
 
 		static constexpr i32 NormalizationK = Max;
 	};
+
+	struct [[maybe_unused]] ReLU
+	{
+		static constexpr u8 Id = 2;
+
+		static constexpr auto activate(i16 x)
+		{
+			return std::max(static_cast<i32>(x), 0);
+		}
+
+		static constexpr i32 NormalizationK = 1;
+	};
 }

@@ -49,7 +49,7 @@ namespace stormphrax::eval
 	// perspective
 	const auto ArchId = 1;
 
-	using Activation = activation::ClippedReLU<255>;
+	using Activation = activation::ReLU;
 
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 384;
