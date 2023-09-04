@@ -130,7 +130,7 @@ namespace stormphrax
 			// always replace entries from previous searches
 			|| entry.age != m_currentAge
 			// otherwise, replace if the depth is greater
-			// only replace entries from the same position if the depth is significantly greater
+			// only keep entries from the same position if their depth is significantly greater
 			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
 
 		if (!replace)
