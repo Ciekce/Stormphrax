@@ -22,7 +22,7 @@
 
 #include "../arch.h"
 
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_AVX || SP_HAS_SSE2
+#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE2
 #include <immintrin.h>
 #else
 #include <algorithm>
@@ -39,47 +39,47 @@ namespace stormphrax::util
 		using Register = __m512i;
 		static constexpr auto RegisterSize = sizeof(Register);
 
-		static inline Register zero()
+		static inline auto zero()
 		{
 			return _mm512_setzero_si512();
 		}
 
-		static inline Register set1(i16 v)
+		static inline auto set1(i16 v)
 		{
 			return _mm512_set1_epi16(v);
 		}
 
-		static inline Register load(const void *ptr)
+		static inline auto load(const void *ptr)
 		{
 			return _mm512_load_si512(ptr);
 		}
 
-		static inline Register max16(Register a, Register b)
+		static inline auto max16(Register a, Register b)
 		{
 			return _mm512_max_epi16(a, b);
 		}
 
-		static inline Register clamp16(Register v, Register min, Register max)
+		static inline auto clamp16(Register v, Register min, Register max)
 		{
 			return _mm512_max_epi16(_mm512_min_epi16(v, max), min);
 		}
 
-		static inline Register mul16(Register a, Register b)
+		static inline auto mul16(Register a, Register b)
 		{
 			return _mm512_mullo_epi16(a, b);
 		}
 
-		static inline Register mulAddAdj16(Register a, Register b)
+		static inline auto mulAddAdj16(Register a, Register b)
 		{
 			return _mm512_madd_epi16(a, b);
 		}
 
-		static inline Register add32(Register a, Register b)
+		static inline auto add32(Register a, Register b)
 		{
 			return _mm512_add_epi32(a, b);
 		}
 
-		static inline i32 sum32(Register v)
+		static inline auto sum32(Register v)
 		{
 			return _mm512_reduce_add_epi32(v);
 		}
@@ -93,47 +93,47 @@ namespace stormphrax::util
 		using Register = __m256i;
 		static constexpr auto RegisterSize = sizeof(Register);
 
-		static inline Register zero()
+		static inline auto zero()
 		{
 			return _mm256_setzero_si256();
 		}
 
-		static inline Register set1(i16 v)
+		static inline auto set1(i16 v)
 		{
 			return _mm256_set1_epi16(v);
 		}
 
-		static inline Register load(const void *ptr)
+		static inline auto load(const void *ptr)
 		{
 			return _mm256_load_si256(static_cast<const __m256i *>(ptr));
 		}
 
-		static inline Register max16(Register a, Register b)
+		static inline auto max16(Register a, Register b)
 		{
 			return _mm256_max_epi16(a, b);
 		}
 
-		static inline Register clamp16(Register v, Register min, Register max)
+		static inline auto clamp16(Register v, Register min, Register max)
 		{
 			return _mm256_max_epi16(_mm256_min_epi16(v, max), min);
 		}
 
-		static inline Register mul16(Register a, Register b)
+		static inline auto mul16(Register a, Register b)
 		{
 			return _mm256_mullo_epi16(a, b);
 		}
 
-		static inline Register mulAddAdj16(Register a, Register b)
+		static inline auto mulAddAdj16(Register a, Register b)
 		{
 			return _mm256_madd_epi16(a, b);
 		}
 
-		static inline Register add32(Register a, Register b)
+		static inline auto add32(Register a, Register b)
 		{
 			return _mm256_add_epi32(a, b);
 		}
 
-		static inline i32 sum32(Register v)
+		static inline auto sum32(Register v)
 		{
 			const auto high = _mm256_extracti128_si256(v, 1);
 			const auto low = _mm256_castsi256_si128(v);
@@ -158,47 +158,47 @@ namespace stormphrax::util
 		using Register = __m128i;
 		static constexpr auto RegisterSize = sizeof(Register);
 
-		static inline Register zero()
+		static inline auto zero()
 		{
 			return _mm_setzero_si128();
 		}
 
-		static inline Register set1(i16 v)
+		static inline auto set1(i16 v)
 		{
 			return _mm_set1_epi16(v);
 		}
 
-		static inline Register load(const void *ptr)
+		static inline auto load(const void *ptr)
 		{
 			return _mm_load_si128(static_cast<const __m128i *>(ptr));
 		}
 
-		static inline Register max16(Register a, Register b)
+		static inline auto max16(Register a, Register b)
 		{
 			return _mm_max_epi16(a, b);
 		}
 
-		static inline Register clamp16(Register v, Register min, Register max)
+		static inline auto clamp16(Register v, Register min, Register max)
 		{
 			return _mm_max_epi16(_mm_min_epi16(v, max), min);
 		}
 
-		static inline Register mul16(Register a, Register b)
+		static inline auto mul16(Register a, Register b)
 		{
 			return _mm_mullo_epi16(a, b);
 		}
 
-		static inline Register mulAddAdj16(Register a, Register b)
+		static inline auto mulAddAdj16(Register a, Register b)
 		{
 			return _mm_madd_epi16(a, b);
 		}
 
-		static inline Register add32(Register a, Register b)
+		static inline auto add32(Register a, Register b)
 		{
 			return _mm_add_epi32(a, b);
 		}
 
-		static inline i32 sum32(Register v)
+		static inline auto sum32(Register v)
 		{
 			const auto high64 = _mm_unpackhi_epi64(v, v);
 			const auto sum64 = _mm_add_epi32(v, high64);
@@ -220,47 +220,47 @@ namespace stormphrax::util
 		using Register = i32;
 		static constexpr auto RegisterSize = sizeof(i16);
 
-		static inline Register zero()
+		static inline auto zero()
 		{
 			return 0;
 		}
 
-		static inline Register set1(i16 v)
+		static inline auto set1(i16 v)
 		{
 			return static_cast<i32>(v);
 		}
 
-		static inline Register load(const i16 *ptr)
+		static inline auto load(const i16 *ptr)
 		{
 			return static_cast<i32>(*static_cast<const i16 *>(ptr));
 		}
 
-		static inline Register max16(Register a, Register b)
+		static inline auto max16(Register a, Register b)
 		{
 			return std::max(a, b);
 		}
 
-		static inline Register clamp16(Register v, Register min, Register max)
+		static inline auto clamp16(Register v, Register min, Register max)
 		{
 			return std::clamp(v, min, max);
 		}
 
-		static inline Register mul16(Register a, Register b)
+		static inline auto mul16(Register a, Register b)
 		{
 			return a * b;
 		}
 
-		static inline Register mulAddAdj16(Register a, Register b)
+		static inline auto mulAddAdj16(Register a, Register b)
 		{
 			return a * b;
 		}
 
-		static inline Register add32(Register a, Register b)
+		static inline auto add32(Register a, Register b)
 		{
 			return a + b;
 		}
 
-		static inline i32 sum32(Register v)
+		static inline auto sum32(Register v)
 		{
 			return v;
 		}
