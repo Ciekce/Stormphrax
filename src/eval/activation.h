@@ -57,4 +57,17 @@ namespace stormphrax::eval::activation
 
 		static constexpr i32 NormalizationK = Max;
 	};
+
+	template <Score Max>
+	struct [[maybe_unused]] ReLU
+	{
+		static constexpr u8 Id = 2;
+
+		static inline auto activate(util::Simd::Register x)
+		{
+			return util::Simd::max16(x, util::Simd::zero());
+		}
+
+		static constexpr i32 NormalizationK = 1;
+	};
 }
