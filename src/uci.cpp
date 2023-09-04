@@ -169,7 +169,7 @@ namespace stormphrax
 			static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
-			std::cout << "id name " << Name << ' ' << Version << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+			std::cout << "id name " << Name << ' ' << Version << "-ccc " << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
 #else
 			std::cout << "id name " << Name << ' ' << Version << '\n';
 #endif
