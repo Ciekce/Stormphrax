@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 1.0.48)
+project(stormphrax VERSION 1.0.50)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -59,7 +59,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
 	src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
 	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
-	src/util/u4array.h src/eval/eval.h src/util/barrier.h)
+	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h

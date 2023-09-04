@@ -23,6 +23,7 @@
 #include <algorithm>
 
 #include "../core.h"
+#include "../util/simd.h"
 
 namespace stormphrax::eval::activation
 {
@@ -31,9 +32,11 @@ namespace stormphrax::eval::activation
 	{
 		static constexpr u8 Id = 0;
 
-		static constexpr auto activate(i16 x)
+		static inline auto activate(util::Simd::Register x)
 		{
-			return std::clamp(static_cast<i32>(x), 0, Max);
+			static const auto max = util::Simd::set1(Max);
+
+			return util::Simd::clamp16(x, util::Simd::zero(), max);
 		}
 
 		static constexpr i32 NormalizationK = 1;
@@ -44,10 +47,12 @@ namespace stormphrax::eval::activation
 	{
 		static constexpr u8 Id = 1;
 
-		static constexpr auto activate(i16 x)
+		static inline auto activate(util::Simd::Register x)
 		{
-			const auto clipped = std::clamp(static_cast<i32>(x), 0, Max);
-			return clipped * clipped;
+			static const auto max = util::Simd::set1(Max);
+
+			const auto clipped = util::Simd::clamp16(x, util::Simd::zero(), max);
+			return util::Simd::mul16(clipped, clipped);
 		}
 
 		static constexpr i32 NormalizationK = Max;
