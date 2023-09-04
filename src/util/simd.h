@@ -31,7 +31,8 @@
 namespace stormphrax::util
 {
 #if SP_HAS_AVX512
-	#define SP_SIMD_ALIGN alignas(64)
+	#define SP_SIMD_ALIGNMENT 64
+	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -84,7 +85,8 @@ namespace stormphrax::util
 		}
 	};
 #elif SP_HAS_AVX2
-	#define SP_SIMD_ALIGN alignas(32)
+	#define SP_SIMD_ALIGNMENT 32
+	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -148,7 +150,8 @@ namespace stormphrax::util
 		}
 	};
 #elif SP_HAS_SSE2
-	#define SP_SIMD_ALIGN alignas(16)
+	#define SP_SIMD_ALIGNMENT 16
+	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -209,6 +212,7 @@ namespace stormphrax::util
 #else //TODO neon
 	#warning No supported SIMD architecture detected. Things are going to be slow
 
+	#define SP_SIMD_ALIGNMENT 1
 	#define SP_SIMD_ALIGN
 
 	struct Simd
