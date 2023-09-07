@@ -165,6 +165,10 @@ namespace stormphrax::search
 		if (limiter)
 			m_limiter = std::move(limiter);
 
+		const auto contempt = g_opts.contempt;
+		m_contempt[static_cast<i32>(pos.toMove())] = contempt;
+		m_contempt[static_cast<i32>(pos.opponent())] = 0;
+
 		for (auto &thread : m_threads)
 		{
 			thread.maxDepth = maxDepth;
@@ -206,12 +210,13 @@ namespace stormphrax::search
 		m_table.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
-		return {result.first, whitePovScore, uci::normalizeScore(whitePovScore)};
+		return {result.first, whitePovScore, wdl::normalizeScore(whitePovScore)};
 	}
 
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
+		m_contempt = {};
 
 		// this struct is a small boulder the size of a large boulder
 		// and overflows the stack if not on the heap
@@ -457,7 +462,7 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState);
+			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		const bool inCheck = pos.isCheck();
 
@@ -607,7 +612,7 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState);
+			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
 		stack.currMove = {};
@@ -950,7 +955,7 @@ namespace stormphrax::search
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate
-			: eval::staticEval(pos, thread.nnueState);
+			: eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (staticEval > alpha)
 		{
@@ -1055,7 +1060,7 @@ namespace stormphrax::search
 		else
 		{
 			// adjust score to 100cp == 50% win probability
-			const auto normScore = uci::normalizeScore(score);
+			const auto normScore = wdl::normalizeScore(score);
 			std::cout << "cp " << normScore;
 		}
 
@@ -1079,7 +1084,7 @@ namespace stormphrax::search
 				const auto plyFromStartpos = mainThread.pos.fullmove() * 2
 					- (mainThread.pos.toMove() == Color::White ? 1 : 0) - 1;
 
-				const auto [wdlWin, wdlLoss] = uci::winRateModel(score, plyFromStartpos);
+				const auto [wdlWin, wdlLoss] = wdl::winRateModel(score, plyFromStartpos);
 				const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
 				std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;

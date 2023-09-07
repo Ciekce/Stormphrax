@@ -21,7 +21,6 @@
 #include "types.h"
 
 #include <string>
-#include <utility>
 
 #include "core.h"
 #include "move.h"
@@ -29,18 +28,9 @@
 
 namespace stormphrax::uci
 {
-	constexpr Score NormalizationK = 271;
-
-	inline auto normalizeScore(Score score)
-	{
-		// don't normalise wins/losses, or zeroes that are pointless to normalise
-		return score == 0 || std::abs(score) > ScoreWin
-			? score : score * 100 / NormalizationK;
-	}
+	constexpr auto ContemptRange = util::Range<i32>{-1000, 1000};
 
 	auto run() -> i32;
-
-	[[nodiscard]] auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>;
 
 	[[nodiscard]] auto moveToString(Move move) -> std::string;
 
