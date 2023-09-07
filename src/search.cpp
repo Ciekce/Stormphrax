@@ -723,6 +723,7 @@ namespace stormphrax::search
 			}
 
 			const auto movingPiece = boards.pieceAt(move.src());
+			assert(movingPiece != Piece::None);
 
 			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
 
@@ -843,6 +844,8 @@ namespace stormphrax::search
 				if (pvNode)
 				{
 					pv.moves[0] = move;
+
+					assert(stack.pv.length + 1 <= MaxDepth);
 
 					std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
 					pv.length = stack.pv.length + 1;
