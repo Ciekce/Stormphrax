@@ -37,7 +37,7 @@
 #include "limit/limit.h"
 #include "util/timer.h"
 #include "ttable.h"
-#include "eval/nnue.h"
+#include "eval/eval.h"
 #include "movegen.h"
 #include "util/barrier.h"
 
@@ -193,6 +193,8 @@ namespace stormphrax::search
 		std::atomic_int m_runningThreads{};
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+
+		eval::Contempt m_contempt{};
 
 		auto stopThreads() -> void;
 

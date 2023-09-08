@@ -20,12 +20,17 @@
 
 #include "../types.h"
 
+#include <array>
+
 #include "nnue.h"
 #include "../position/position.h"
 #include "../see.h"
 
 namespace stormphrax::eval
 {
+	// black, white
+	using Contempt = std::array<Score, 2>;
+
 	inline auto materialScale(const Position &pos)
 	{
 		const auto &boards = pos.boards();
@@ -43,15 +48,15 @@ namespace stormphrax::eval
 		return eval;
 	}
 
-	inline auto staticEval(const Position &pos, NnueState &nnueState)
+	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
 		const auto nnueEval = nnueState.evaluate(pos.toMove());
-		return scaleEval(pos, nnueEval);
+		return scaleEval(pos, nnueEval) + contempt[static_cast<i32>(pos.toMove())];
 	}
 
-	inline auto staticEvalOnce(const Position &pos)
+	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
-		return scaleEval(pos, nnueEval);
+		return scaleEval(pos, nnueEval) + contempt[static_cast<i32>(pos.toMove())];
 	}
 }

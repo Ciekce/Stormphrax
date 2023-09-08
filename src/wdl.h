@@ -20,28 +20,27 @@
 
 #include "types.h"
 
-#include "wdl.h"
+#include <cmath>
+#include <utility>
 
-namespace stormphrax
+#include "core.h"
+
+namespace stormphrax::wdl
 {
-	namespace opts
+	constexpr Score NormalizationK = 271;
+
+	inline auto normalizeScore(Score score)
 	{
-		constexpr i32 DefaultNormalizedContempt = 0;
-
-		struct GlobalOptions
-		{
-			bool chess960{false};
-			bool showWdl{true};
-
-			bool syzygyEnabled{false};
-			i32 syzygyProbeDepth{1};
-			i32 syzygyProbeLimit{7};
-
-			i32 contempt{wdl::unnormalizeScore(DefaultNormalizedContempt)};
-		};
-
-		auto mutableOpts() -> GlobalOptions &;
+		// don't normalise wins/losses, or zeroes that are pointless to normalise
+		return score == 0 || std::abs(score) > ScoreWin
+			? score : score * 100 / NormalizationK;
 	}
 
-	extern const opts::GlobalOptions &g_opts;
+	inline auto unnormalizeScore(Score score)
+	{
+		return score == 0 || std::abs(score) > ScoreWin
+			? score : score * NormalizationK / 100;
+	}
+
+	[[nodiscard]] auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>;
 }
