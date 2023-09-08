@@ -22,7 +22,7 @@
 
 #include "../arch.h"
 
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE2
+#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
 #include <immintrin.h>
 #else
 #include <algorithm>
@@ -32,7 +32,7 @@ namespace stormphrax::util
 {
 #if SP_HAS_AVX512
 	#define SP_SIMD_ALIGNMENT 64
-	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
+	#define SP_SIMD_ALIGNAS alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -86,7 +86,7 @@ namespace stormphrax::util
 	};
 #elif SP_HAS_AVX2
 	#define SP_SIMD_ALIGNMENT 32
-	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
+	#define SP_SIMD_ALIGNAS alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -149,9 +149,9 @@ namespace stormphrax::util
 			return _mm_cvtsi128_si32(sum32);
 		}
 	};
-#elif SP_HAS_SSE2
+#elif SP_HAS_SSE41
 	#define SP_SIMD_ALIGNMENT 16
-	#define SP_SIMD_ALIGN alignas(SP_SIMD_ALIGNMENT)
+	#define SP_SIMD_ALIGNAS alignas(SP_SIMD_ALIGNMENT)
 
 	struct Simd
 	{
@@ -213,7 +213,7 @@ namespace stormphrax::util
 	#warning No supported SIMD architecture detected. Things are going to be slow
 
 	#define SP_SIMD_ALIGNMENT 1
-	#define SP_SIMD_ALIGN
+	#define SP_SIMD_ALIGNAS
 
 	struct Simd
 	{
