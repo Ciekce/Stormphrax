@@ -354,7 +354,7 @@ namespace stormphrax
 
 			return type != MoveType::Castling
 				&& (type == MoveType::EnPassant
-					|| move.target() == BasePiece::Knight
+					|| (type == MoveType::Promotion && move.target() == BasePiece::Knight)
 					|| boards().pieceAt(move.dst()) != Piece::None);
 		}
 
@@ -369,7 +369,8 @@ namespace stormphrax
 			else
 			{
 				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.target() == BasePiece::Knight, captured};
+				return {captured != Piece::None
+					|| (type == MoveType::Promotion && move.target() == BasePiece::Knight), captured};
 			}
 		}
 
