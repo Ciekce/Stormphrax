@@ -26,7 +26,7 @@ namespace stormphrax
 {
 	namespace opts
 	{
-		constexpr i32 DefaultNormalizedContempt = 8;
+		constexpr i32 DefaultNormalizedContempt = 0;
 
 		struct GlobalOptions
 		{

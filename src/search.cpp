@@ -166,8 +166,9 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 
 		const auto contempt = g_opts.contempt;
-		m_contempt[static_cast<i32>(pos.toMove())] = contempt;
-		m_contempt[static_cast<i32>(pos.opponent())] = 0;
+
+		m_contempt[static_cast<i32>(pos.  toMove())] =  contempt;
+		m_contempt[static_cast<i32>(pos.opponent())] = -contempt;
 
 		for (auto &thread : m_threads)
 		{
