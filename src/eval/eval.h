@@ -45,8 +45,7 @@ namespace stormphrax::eval
 	{
 		eval += see::values::Knight
 			* (pos.boards().knights(pos.toMove()).popcount()
-				- pos.boards().knights(pos.opponent()).popcount())
-			/ 2;
+				- pos.boards().knights(pos.opponent()).popcount());
 		eval = eval * materialScale(pos) / 32768;
 		eval = eval * (200 - pos.halfmove()) / 200;
 		return eval;
