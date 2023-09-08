@@ -126,9 +126,9 @@ namespace stormphrax::search
 			{
 				static constexpr auto PromoPieces = std::array {
 					BasePiece::None,
-					BasePiece::Queen,
-					BasePiece::Rook,
-					BasePiece::Bishop,
+					BasePiece::Knight,
+					BasePiece::Knight,
+					BasePiece::Knight,
 					BasePiece::Knight
 				};
 

@@ -52,7 +52,7 @@ namespace stormphrax
 
 	namespace
 	{
-		constexpr auto Name = "Stormphrax";
+		constexpr auto Name = "Tendoknightis II";
 		constexpr auto Version = SP_STRINGIFY(SP_VERSION);
 		constexpr auto Author = "Ciekce";
 
@@ -169,9 +169,9 @@ namespace stormphrax
 			static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
-			std::cout << "id name " << Name << ' ' << Version << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+			std::cout << "id name " << Name << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
 #else
-			std::cout << "id name " << Name << ' ' << Version << '\n';
+			std::cout << "id name " << Name << '\n';
 #endif
 			std::cout << "id author " << Author << '\n';
 

@@ -43,6 +43,10 @@ namespace stormphrax::eval
 
 	inline auto scaleEval(const Position &pos, i32 eval)
 	{
+		eval += see::values::Knight
+			* (pos.boards().knights(pos.toMove()).popcount()
+				- pos.boards().knights(pos.opponent()).popcount())
+			/ 2;
 		eval = eval * materialScale(pos) / 32768;
 		eval = eval * (200 - pos.halfmove()) / 200;
 		return eval;

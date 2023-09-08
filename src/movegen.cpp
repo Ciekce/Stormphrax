@@ -50,27 +50,14 @@ namespace stormphrax
 			}
 		}
 
-		inline auto pushQueenPromotions(ScoredMoveList &noisy, i32 offset, Bitboard board)
+		inline auto pushKnightPromotions(ScoredMoveList &noisy, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-				noisy.push({Move::promotion(srcSquare, dstSquare, BasePiece::Queen), 0});
-			}
-		}
-
-		inline auto pushUnderpromotions(ScoredMoveList &quiet, i32 offset, Bitboard board)
-		{
-			while (!board.empty())
-			{
-				const auto dstSquare = board.popLowestSquare();
-				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
-
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Knight), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Rook), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Bishop), 0});
+				noisy.push({Move::promotion(srcSquare, dstSquare, BasePiece::Knight), 0});
 			}
 		}
 
@@ -112,11 +99,11 @@ namespace stormphrax
 			const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
 			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
 
-			pushQueenPromotions(noisy, LeftOffset,   leftAttacks & theirs & PromotionRank);
-			pushQueenPromotions(noisy, RightOffset, rightAttacks & theirs & PromotionRank);
+			pushKnightPromotions(noisy, LeftOffset, leftAttacks & theirs & PromotionRank);
+			pushKnightPromotions(noisy, RightOffset, rightAttacks & theirs & PromotionRank);
 
 			const auto forwards = pawns.template shiftUpRelative<Us>() & forwardDstMask;
-			pushQueenPromotions(noisy, ForwardOffset, forwards);
+			pushKnightPromotions(noisy, ForwardOffset, forwards);
 
 			pushStandards(noisy,  LeftOffset,  leftAttacks & theirs & ~PromotionRank);
 			pushStandards(noisy, RightOffset, rightAttacks & theirs & ~PromotionRank);
@@ -148,26 +135,15 @@ namespace stormphrax
 			const auto ForwardOffset = offsets::up<Us>();
 			const auto DoubleOffset = ForwardOffset * 2;
 
-			constexpr auto  LeftOffset = offsets::upLeft <Us>();
-			constexpr auto RightOffset = offsets::upRight<Us>();
-
 			const auto theirs = boards.occupancy<Them>();
 
 			const auto forwardDstMask = dstMask & ~theirs;
 
 			const auto pawns = boards.pawns<Us>();
 
-			const auto  leftAttacks = pawns.template shiftUpLeftRelative <Us>() & dstMask;
-			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
-
-			pushUnderpromotions(quiet,  LeftOffset,  leftAttacks & theirs & PromotionRank);
-			pushUnderpromotions(quiet, RightOffset, rightAttacks & theirs & PromotionRank);
-
 			auto forwards = pawns.template shiftUpRelative<Us>() & ~occ;
 
-			auto singles = forwards & forwardDstMask;
-			pushUnderpromotions(quiet, ForwardOffset, singles & PromotionRank);
-			singles &= ~PromotionRank;
+			auto singles = forwards & forwardDstMask & ~PromotionRank;
 
 			forwards &= ThirdRank;
 			const auto doubles = forwards.template shiftUpRelative<Us>() & forwardDstMask;
@@ -383,8 +359,6 @@ namespace stormphrax
 		const auto kingDstMask = ~(ours | theirs);
 
 		auto dstMask = kingDstMask;
-		// for underpromotions
-		auto pawnDstMask = kingDstMask;
 
 		if (pos.isCheck())
 		{
@@ -394,14 +368,11 @@ namespace stormphrax
 				return;
 			}
 
-			pawnDstMask = dstMask = rayBetween(pos.king(us), pos.checkers().lowestSquare());
-
-			pawnDstMask |= pos.checkers() & boards::promotionRank(us);
+			dstMask = rayBetween(pos.king(us), pos.checkers().lowestSquare());
 		}
-		else pawnDstMask |= boards::promotionRank(us);
 
 		generateSliders(quiet, pos, dstMask);
-		generatePawnsQuiet(quiet, pos, pawnDstMask, ours | theirs);
+		generatePawnsQuiet(quiet, pos, dstMask, ours | theirs);
 		generateKnights(quiet, pos, dstMask);
 		generateKings<true>(quiet, pos, kingDstMask);
 	}

@@ -169,13 +169,6 @@ namespace stormphrax
 			110 // queen
 		};
 
-		static constexpr auto PromoScores = std::array {
-			-1, // knight
-			-3, // bishop
-			-2, // rook
-			 0  // queen
-		};
-
 		inline auto findNext()
 		{
 			// good noisies are already sorted
@@ -224,11 +217,9 @@ namespace stormphrax
 				if (captured != Piece::None)
 					move.score += Mvv[static_cast<i32>(basePiece(captured))];
 
-				if ((captured != Piece::None || move.move.target() == BasePiece::Queen)
+				if ((captured != Piece::None || move.move.target() == BasePiece::Knight)
 					&& see::see(m_pos, move.move))
 					move.score += 8 * 2000 * 2000;
-				else if (move.move.type() == MoveType::Promotion)
-					move.score += PromoScores[move.move.targetIdx()] * 2000;
 			}
 		}
 
@@ -255,11 +246,6 @@ namespace stormphrax
 
 					move.score = history;
 				}
-
-				// knight promos first, rook then bishop promos last
-				//TODO capture promos first
-				if (move.move.type() == MoveType::Promotion)
-					move.score += PromoScores[move.move.targetIdx()] * 2000;
 			}
 		}
 
