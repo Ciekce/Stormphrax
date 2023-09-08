@@ -53,9 +53,9 @@ namespace stormphrax::eval
 
 	struct Network
 	{
-		SP_SIMD_ALIGN std::array<i16, InputSize * Layer1Size> featureWeights;
-		SP_SIMD_ALIGN std::array<i16, Layer1Size> featureBiases;
-		SP_SIMD_ALIGN std::array<i16, Layer1Size * 2> outputWeights;
+		SP_SIMD_ALIGNAS std::array<i16, InputSize * Layer1Size> featureWeights;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> featureBiases;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size * 2> outputWeights;
 		i16 outputBias;
 	};
 
@@ -66,8 +66,8 @@ namespace stormphrax::eval
 	// (this is why there are two sets of output weights)
 	struct Accumulator
 	{
-		SP_SIMD_ALIGN std::array<i16, Layer1Size> black;
-		SP_SIMD_ALIGN std::array<i16, Layer1Size> white;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> black;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> white;
 
 		inline auto init(std::span<const i16, Layer1Size> bias)
 		{

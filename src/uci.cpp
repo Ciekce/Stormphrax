@@ -181,7 +181,7 @@ namespace stormphrax
 			std::cout << "option name Threads type spin default " << search::DefaultThreadCount
 				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
 			std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt
-			          << " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
+				<< " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
 			std::cout << "option name UCI_Chess960 type check default "
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name UCI_ShowWDL type check default "

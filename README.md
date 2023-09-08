@@ -71,7 +71,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
 `avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
-`popcnt`: just needs `popcnt` - for older x64 CPUs
+`sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
 
 Alternatively, build the CMake target `stormphrax-native` for a binary tuned for your specific CPU (see below)  
 (note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)
@@ -87,7 +87,7 @@ Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Wi
 > cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
 ```
-(replace `<TARGET>` with your preferred target - `native`/`bmi2`/`modern`/`popcnt`/`compat`)
+(replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`)
 
 If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want to build the `native` target, use these commands instead (the second is unchanged):
 ```bash
