@@ -25,7 +25,6 @@
 
 #include "uci.h"
 #include "movegen.h"
-#include "eval/eval.h"
 #include "limit/trivial.h"
 #include "opts.h"
 #include "3rdparty/fathom/tbprobe.h"
@@ -701,7 +700,7 @@ namespace stormphrax::search
 			{
 				if (!inCheck)
 				{
-					const auto lmrHistory = history / tunable::historyLmrDivisor();
+					const auto lmrHistory = history / historyLmrDivisor();
 					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Late move pruning (LMP)
@@ -823,7 +822,7 @@ namespace stormphrax::search
 						lmr -= pos.isCheck();
 
 						// reduce moves with good history scores less and vice versa
-						lmr -= history / tunable::historyLmrDivisor();
+						lmr -= history / historyLmrDivisor();
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
