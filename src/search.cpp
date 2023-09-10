@@ -453,6 +453,7 @@ namespace stormphrax::search
 	{
 		assert(alpha >= -ScoreMax);
 		assert(beta  <=  ScoreMax);
+		assert(alpha <   beta);
 		assert(depth >= 0 && depth <= MaxDepth);
 		assert(ply   >= 0 && ply   <= MaxDepth);
 

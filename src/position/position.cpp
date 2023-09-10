@@ -63,6 +63,8 @@ namespace stormphrax
 				std::pair{3, 3}
 			};
 
+			assert(n < 960);
+
 			std::array<BasePiece, 8> dst{};
 			// no need to fill with empty pieces, because pawns are impossible
 
@@ -651,7 +653,10 @@ namespace stormphrax
 		prevState.lastMove = move;
 
 		if constexpr (StateHistory)
+		{
+			assert(m_states.size() < m_states.capacity());
 			m_states.push_back(prevState);
+		}
 
 		m_hashes.push_back(prevState.key);
 
