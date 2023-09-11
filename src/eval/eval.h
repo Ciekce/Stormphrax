@@ -25,6 +25,7 @@
 #include "nnue.h"
 #include "../position/position.h"
 #include "../see.h"
+#include "../core.h"
 
 namespace stormphrax::eval
 {
@@ -48,15 +49,21 @@ namespace stormphrax::eval
 		return eval;
 	}
 
+	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+	{
+		eval = scaleEval(pos, eval) + contempt[static_cast<i32>(pos.toMove())];
+		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+	}
+
 	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
 		const auto nnueEval = nnueState.evaluate(pos.toMove());
-		return scaleEval(pos, nnueEval) + contempt[static_cast<i32>(pos.toMove())];
+		return adjustEval(pos, contempt, nnueEval);
 	}
 
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
-		return scaleEval(pos, nnueEval) + contempt[static_cast<i32>(pos.toMove())];
+		return adjustEval(pos, contempt, nnueEval);
 	}
 }
