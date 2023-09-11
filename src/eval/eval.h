@@ -36,10 +36,10 @@ namespace stormphrax::eval
 	{
 		const auto &boards = pos.boards();
 		return 22400
-				+ boards.knights().popcount() * see::values::Knight
-				+ boards.bishops().popcount() * see::values::Bishop
-				+ boards.  rooks().popcount() * see::values::Rook
-				+ boards. queens().popcount() * see::values::Queen;
+			+ boards.knights().popcount() * see::values::Knight
+			+ boards.bishops().popcount() * see::values::Bishop
+			+ boards.  rooks().popcount() * see::values::Rook
+			+ boards. queens().popcount() * see::values::Queen;
 	}
 
 	inline auto scaleEval(const Position &pos, i32 eval)
@@ -55,7 +55,7 @@ namespace stormphrax::eval
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
+	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
 	{
 		const auto nnueEval = nnueState.evaluate(pos.toMove());
 		return adjustEval(pos, contempt, nnueEval);
