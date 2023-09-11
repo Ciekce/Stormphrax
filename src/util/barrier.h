@@ -20,7 +20,6 @@
 
 #include "../types.h"
 
-#include <limits>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -28,9 +27,6 @@
 
 namespace stormphrax::util
 {
-	// This is a stripped-down reimplementation of MSVC's <barrier>,
-	// because SP has to build on machines that do not yet have the header.
-	// It also uses a condition variable, as those machines lack atomic waits
 	class Barrier
 	{
 	public:
@@ -39,60 +35,44 @@ namespace stormphrax::util
 			reset(expected);
 		}
 
-		~Barrier() = default;
-
-		inline auto reset(i64 expected) -> void
+		auto reset(i64 expected) -> void
 		{
-			assert(expected <= Max);
+			assert(expected > 0);
+			assert(m_current.load() == m_total.load());
 
-			const auto value = expected << ValueShift;
-
-			m_total.store(value);
-			m_current.store(value);
+			m_total.store(expected, std::memory_order::seq_cst);
+			m_current.store(expected, std::memory_order::seq_cst);
 		}
 
-		inline auto arriveAndWait()
+		auto arriveAndWait()
 		{
-			auto current = m_current.fetch_sub(ValueStep, std::memory_order::acq_rel) - ValueStep;
+			std::unique_lock lock{m_waitMutex};
 
-			assert(current >= 0);
+			const auto current = --m_current;
 
-			if ((current & ValueMask) == 0)
+			if (current > 0)
 			{
-				const auto remCount = m_total.load();
-				const auto newPhaseCount = remCount | ((current + 1) & ArrivalTokenMask);
-
-				assert(remCount >= 0);
-
-				m_current.store(newPhaseCount, std::memory_order::release);
-				m_current.notify_all();
-
-				return;
+				const auto phase = m_phase.load(std::memory_order::relaxed);
+				m_waitSignal.wait(lock, [this, phase]
+				{
+					return (phase - m_phase.load(std::memory_order::acquire)) < 0;
+				});
 			}
-
-			const auto arrival = current & ArrivalTokenMask;
-
-			while (true)
+			else
 			{
-				m_current.wait(current, std::memory_order::relaxed);
-				current = m_current.load(std::memory_order::acquire);
+				const auto total = m_total.load(std::memory_order::acquire);
+				m_current.store(total, std::memory_order::release);
 
-				assert(current >= 0);
+				++m_phase;
 
-				if ((current & ArrivalTokenMask) != arrival)
-					break;
+				m_waitSignal.notify_all();
 			}
 		}
 
 	private:
-		static inline constexpr i64 ArrivalTokenMask = 1;
-		static inline constexpr i64 ValueMask = ~ArrivalTokenMask;
-		static inline constexpr i64 ValueShift = 1;
-		static inline constexpr i64 ValueStep = U64(1) << ValueShift;
-		static inline constexpr i64 Max = std::numeric_limits<i64>::max() >> ValueShift;
-
 		std::atomic<i64> m_total{};
 		std::atomic<i64> m_current{};
+		std::atomic<i64> m_phase{};
 
 		std::mutex m_waitMutex{};
 		std::condition_variable m_waitSignal{};
