@@ -18,7 +18,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  1.0.0  |          3268           |           3361           |             3513              |     3343     |      3342      |
+|  1.0.0  |          3254           |           3360           |             3513              |     3343     |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -47,10 +47,10 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - `pext`/`pdep` for rooks
   - `pext` for bishops
 - lazy SMP
+- static contempt
 
 ## To-do
 - tune search constants
-- contempt
 - make it stronger uwu
 
 ## UCI options
