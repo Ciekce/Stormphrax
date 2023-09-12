@@ -844,23 +844,24 @@ namespace stormphrax::search
 
 			if (score > bestScore)
 			{
-				bestMove = move;
 				bestScore = score;
-
-				if (pvNode)
-				{
-					pv.moves[0] = move;
-
-					assert(stack.pv.length + 1 <= MaxDepth);
-
-					std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
-					pv.length = stack.pv.length + 1;
-
-					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
-				}
 
 				if (score > alpha)
 				{
+					bestMove = move;
+
+					if (pvNode)
+					{
+						pv.moves[0] = move;
+
+						assert(stack.pv.length + 1 <= MaxDepth);
+
+						std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
+						pv.length = stack.pv.length + 1;
+
+						assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
+					}
+
 					if (score >= beta)
 					{
 						// Update history on fail-highs

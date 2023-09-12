@@ -122,6 +122,7 @@ namespace stormphrax
 		auto entry = loadEntry(index(key));
 
 		const auto entryKey = packEntryKey(key);
+		const bool samePosition = entryKey == entry.key;
 
 		// always replace empty entries
 		const bool replace = entry.key == 0
@@ -131,7 +132,7 @@ namespace stormphrax
 			|| entry.age != m_currentAge
 			// otherwise, replace if the depth is greater
 			// only keep entries from the same position if their depth is significantly greater
-			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
+			|| entry.depth < depth + (samePosition ? 3 : 0);
 
 		if (!replace)
 			return;
@@ -141,9 +142,13 @@ namespace stormphrax
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
 #endif
 
+		// preserve the existing best move if the entry was for the
+		// same position if we failed low and don't have a new one
+		if (!samePosition || !move.isNull())
+			entry.move = move;
+
 		entry.key = entryKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
-		entry.move = move;
 		entry.depth = depth;
 		entry.age = m_currentAge;
 		entry.type = type;
