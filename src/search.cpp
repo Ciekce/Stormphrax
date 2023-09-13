@@ -866,7 +866,7 @@ namespace stormphrax::search
 						// Update history on fail-highs
 						const auto adjustment = historyAdjustment(depth);
 
-						auto *prevContEntry = (quietOrLosing && prevMove)
+						auto *prevContEntry = (!noisy && prevMove)
 							? &thread.history.contEntry(prevMove) : nullptr;
 						auto *prevPrevContEntry = (!noisy && prevPrevMove)
 							? &thread.history.contEntry(prevPrevMove) : nullptr;
