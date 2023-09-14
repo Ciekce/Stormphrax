@@ -1023,6 +1023,9 @@ namespace stormphrax::search
 			}
 		}
 
+		// prevent returning mate scores and putting oob scores into the tt
+		bestScore = std::clamp(bestScore, -ScoreWin, ScoreWin);
+
 		m_table.put(pos.key(), bestScore, best, 0, ply, entryType);
 
 		return bestScore;
