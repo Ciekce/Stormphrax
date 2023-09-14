@@ -265,13 +265,14 @@ namespace stormphrax::datagen
 					continue;
 				}
 
+				thread->pos.clearStateHistory();
 				thread->nnueState.reset(thread->pos.boards());
 
 				thread->maxDepth = 10;
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
 				limiter.setHardNodeLimit(VerificationHardNodeLimit);
 
-				const auto [firstMove, firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
+				const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
 				thread->maxDepth = search::MaxDepth;
 				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
@@ -293,8 +294,10 @@ namespace stormphrax::datagen
 
 				while (true)
 				{
-					const auto [move, score, normScore] = searcher.runDatagenSearch(*thread);
+					const auto [score, normScore] = searcher.runDatagenSearch(*thread);
 					thread->search = search::SearchData{};
+
+					const auto move = thread->rootPv.moves[0];
 
 					if (!move)
 					{
@@ -303,6 +306,8 @@ namespace stormphrax::datagen
 							: Outcome::Draw; // stalemate
 						break;
 					}
+
+					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
 
 					if (std::abs(score) > ScoreWin)
 					{
@@ -353,7 +358,7 @@ namespace stormphrax::datagen
 
 					const bool noisy = thread->pos.isNoisy(move);
 
-					thread->pos.applyMoveUnchecked(move, &thread->nnueState);
+					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 
 					if (thread->pos.isDrawn(false))
 					{

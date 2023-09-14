@@ -30,7 +30,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
-#include <tuple>
 
 #include "search_fwd.h"
 #include "position/position.h"
@@ -140,7 +139,7 @@ namespace stormphrax::search
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
-		auto runDatagenSearch(ThreadData &thread) -> std::tuple<Move, Score, Score>;
+		auto runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>;
 
 		auto runBench(BenchData &data, const Position &pos, i32 depth) -> void;
 
@@ -214,7 +213,7 @@ namespace stormphrax::search
 			return m_stop.load(std::memory_order::relaxed);
 		}
 
-		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;
+		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
 		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;

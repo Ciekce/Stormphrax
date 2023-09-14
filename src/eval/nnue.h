@@ -200,6 +200,9 @@ namespace stormphrax::eval
 		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
 		{
+			assert(subOffset + Size <= delta.size());
+			assert(addOffset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] += delta[addOffset + i] - delta[subOffset + i];
@@ -210,6 +213,8 @@ namespace stormphrax::eval
 		static inline auto addToAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
+			assert(offset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] += delta[offset + i];
@@ -220,6 +225,8 @@ namespace stormphrax::eval
 		static inline auto subtractFromAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
+			assert(offset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] -= delta[offset + i];
@@ -228,6 +235,9 @@ namespace stormphrax::eval
 
 		[[nodiscard]] static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
 		{
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
 

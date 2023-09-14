@@ -132,6 +132,8 @@ namespace stormphrax
 		template <bool UpdateNnue = true>
 		auto popMove(eval::NnueState *nnueState) -> void;
 
+		auto clearStateHistory() -> void;
+
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
 
 	private:

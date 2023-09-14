@@ -645,7 +645,7 @@ namespace stormphrax
 	template <bool UpdateNnue, bool StateHistory>
 	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> bool
 	{
-		if constexpr (UpdateNnue)
+		if constexpr (UpdateNnue && StateHistory)
 			nnueState->push();
 
 		auto &prevState = currState();
@@ -832,6 +832,13 @@ namespace stormphrax
 
 		if (toMove() == Color::Black)
 			--m_fullmove;
+	}
+
+	auto Position::clearStateHistory() -> void
+	{
+		const auto state = currState();
+		m_states.resize(1);
+		currState() = state;
 	}
 
 	auto Position::isPseudolegal(Move move) const -> bool

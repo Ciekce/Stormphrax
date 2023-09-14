@@ -201,16 +201,16 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::tuple<Move, Score, Score>
+	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
 		m_stop.store(false, std::memory_order::seq_cst);
 
-		const auto result = searchRoot(thread, false);
+		const auto score = searchRoot(thread, false);
 
 		m_table.age();
 
-		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -result.second : result.second;
-		return {result.first, whitePovScore, wdl::normalizeScore(whitePovScore)};
+		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -score : score;
+		return {whitePovScore, wdl::normalizeScore(whitePovScore)};
 	}
 
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
@@ -297,11 +297,14 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>
+	auto Searcher::searchRoot(ThreadData &thread, bool mainSearchThread) -> Score
 	{
 		auto &searchData = thread.search;
 
 		const bool reportAndUpdate = mainSearchThread && thread.isMainThread();
+
+		thread.rootPv.moves[0] = NullMove;
+		thread.rootPv.length = 0;
 
 		auto score = -ScoreMax;
 		Move best{};
@@ -444,7 +447,7 @@ namespace stormphrax::search
 			else m_searchEndBarrier.arriveAndWait();
 		}
 
-		return {best, score};
+		return score;
 	}
 
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
@@ -470,7 +473,7 @@ namespace stormphrax::search
 		// Check extension
 		// If in check, extend. This helps resolve
 		// perpetuals and other long checking sequences.
-		if (inCheck)
+		if (inCheck && depth < MaxDepth)
 			++depth;
 
 		// Drop into quiescence search in leaf nodes
