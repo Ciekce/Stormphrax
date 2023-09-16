@@ -1051,9 +1051,6 @@ namespace stormphrax::search
 
 		score = std::clamp(score, alpha, beta);
 
-		if (std::abs(score) <= 2)
-			score = 0;
-
 		// mates
 		if (std::abs(score) > ScoreTbWin)
 		{
