@@ -754,7 +754,6 @@ namespace stormphrax::search
 			// score, assume that the TT move is "singular" (the only good move) and extend it
 			if (!root
 				&& depth >= minSingularityDepth()
-				&& ply < thread.maxDepth * 2
 				&& move == ttMove
 				&& !stack.excluded
 				&& entry.depth >= depth - singularityDepthMargin()
