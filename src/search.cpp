@@ -619,7 +619,7 @@ namespace stormphrax::search
 			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
-		stack.currMove = {};
+		thread.prevMoves[ply] = {};
 
 		const bool improving = !inCheck && ply > 1 && stack.eval > thread.stack[ply - 2].eval;
 
@@ -668,16 +668,13 @@ namespace stormphrax::search
 
 		const i32 minLmrMoves = pvNode ? 3 : 2;
 
-		const auto prevMove = ply > 0 ? thread.stack[ply - 1].currMove : HistoryMove{};
-		const auto prevPrevMove = ply > 1 ? thread.stack[ply - 2].currMove : HistoryMove{};
-
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreMax;
 
 		auto entryType = EntryType::Alpha;
 
 		MoveGenerator generator{pos, stack.killer, moveStack.movegenData,
-			ttMove, prevMove, prevPrevMove, &thread.history};
+			ttMove, ply, thread.prevMoves, &thread.history};
 
 		u32 legalMoves = 0;
 
@@ -792,7 +789,7 @@ namespace stormphrax::search
 					return sBeta;
 			}
 
-			stack.currMove = {movingPiece, moveActualDst(move)};
+			thread.prevMoves[ply] = {movingPiece, moveActualDst(move)};
 
 			Score score{};
 
@@ -866,12 +863,10 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						// Update history on fail-highs
-						const auto adjustment = historyAdjustment(depth);
+						const auto bonus = historyAdjustment(depth);
+						const auto penalty = -bonus;
 
-						auto *prevContEntry = (!noisy && prevMove)
-							? &thread.history.contEntry(prevMove) : nullptr;
-						auto *prevPrevContEntry = (!noisy && prevPrevMove)
-							? &thread.history.contEntry(prevPrevMove) : nullptr;
+						const auto currMove = thread.prevMoves[ply];
 
 						// If the fail-high move is a quiet move or losing
 						// capture, set it as the killer for this ply and the
@@ -879,43 +874,26 @@ namespace stormphrax::search
 						if (quietOrLosing)
 						{
 							stack.killer = move;
-							if (prevMove)
-								thread.history.entry(prevMove).countermove = move;
+							thread.history.updateCountermove(ply, thread.prevMoves, move);
 						}
 
 						if (noisy)
-							updateHistoryScore(
-								thread.history.captureScore(stack.currMove, captured),
-								adjustment
-							);
+							thread.history.updateNoisyScore(currMove, captured, bonus);
 						else
 						{
-							updateHistoryScore(thread.history.entry(stack.currMove).score, adjustment);
-
-							if (prevContEntry)
-								updateHistoryScore(prevContEntry->score(stack.currMove), adjustment);
-							if (prevPrevContEntry)
-								updateHistoryScore(prevPrevContEntry->score(stack.currMove), adjustment);
+							thread.history.updateQuietScore(currMove, ply, thread.prevMoves, bonus);
 
 							// Penalise quiet moves that did not fail high if the fail-high move is quiet
 							for (const auto prevQuiet : moveStack.quietsTried)
 							{
-								updateHistoryScore(thread.history.entry(prevQuiet).score, -adjustment);
-
-								if (prevContEntry)
-									updateHistoryScore(prevContEntry->score(prevQuiet), -adjustment);
-								if (prevPrevContEntry)
-									updateHistoryScore(prevPrevContEntry->score(prevQuiet), -adjustment);
+								thread.history.updateQuietScore(prevQuiet, ply, thread.prevMoves, penalty);
 							}
 						}
 
 						// Always penalise noisy moves that did not fail high
 						for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
 						{
-							updateHistoryScore(
-								thread.history.captureScore(prevNoisy, prevCaptured),
-								-adjustment
-							);
+							thread.history.updateNoisyScore(prevNoisy, prevCaptured, penalty);
 						}
 
 						entryType = EntryType::Beta;
@@ -928,8 +906,8 @@ namespace stormphrax::search
 			}
 
 			if (noisy)
-				moveStack.noisiesTried.push({stack.currMove, captured});
-			else moveStack.quietsTried.push(stack.currMove);
+				moveStack.noisiesTried.push({thread.prevMoves[ply], captured});
+			else moveStack.quietsTried.push(thread.prevMoves[ply]);
 		}
 
 		if (legalMoves == 0)

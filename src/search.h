@@ -42,8 +42,6 @@
 
 namespace stormphrax::search
 {
-	constexpr i32 MaxDepth = 255;
-
 	struct BenchData
 	{
 		SearchData search{};
@@ -67,7 +65,6 @@ namespace stormphrax::search
 		Move killer{NullMove};
 
 		Score eval{};
-		HistoryMove currMove{};
 		Move excluded{};
 
 		i32 doubleExtensions{0};
@@ -107,6 +104,7 @@ namespace stormphrax::search
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 
+		PrevMoveTable prevMoves{};
 		HistoryTable history{};
 
 		Position pos{};

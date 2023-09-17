@@ -63,6 +63,8 @@ namespace stormphrax
 		}
 	};
 
+	using PrevMoveTable = std::array<HistoryMove, MaxDepth>;
+
 	struct HistoryEntry
 	{
 		i32 score{};
@@ -97,36 +99,45 @@ namespace stormphrax
 		HistoryTable() = default;
 		~HistoryTable() = default;
 
-		[[nodiscard]] inline auto entry(HistoryMove move) -> auto &
+		inline auto updateCountermove(i32 ply, std::span<const HistoryMove> prevMoves, Move countermove)
 		{
-			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			if (ply > 0 && prevMoves[ply - 1])
+				entry(prevMoves[ply - 1]).countermove = countermove;
 		}
 
-		[[nodiscard]] inline auto entry(HistoryMove move) const -> const auto &
+		[[nodiscard]] inline auto countermove(i32 ply, std::span<const HistoryMove> prevMoves) const
 		{
-			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			if (ply > 0 && prevMoves[ply - 1])
+				return entry(prevMoves[ply - 1]).countermove;
+			else return NullMove;
 		}
 
-		[[nodiscard]] inline auto captureScore(HistoryMove move, Piece captured) -> auto &
+		inline auto updateQuietScore(HistoryMove move, i32 ply, std::span<const HistoryMove> prevMoves, i32 adjustment)
 		{
-			return m_captureTable[static_cast<i32>(captured)]
-				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			updateMainScore(move, adjustment);
+
+			updateContinuationScore(move, ply, prevMoves, 1, adjustment);
+			updateContinuationScore(move, ply, prevMoves, 2, adjustment);
 		}
 
-		[[nodiscard]] inline auto captureScore(HistoryMove move, Piece captured) const -> const auto &
+		[[nodiscard]] inline auto quietScore(HistoryMove move, i32 ply, std::span<const HistoryMove> prevMoves) const
 		{
-			return m_captureTable[static_cast<i32>(captured)]
-				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			auto history = mainScore(move);
+
+			history += continuationScore(move, ply, prevMoves, 1);
+			history += continuationScore(move, ply, prevMoves, 2);
+
+			return history;
 		}
 
-		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
+		inline auto updateNoisyScore(HistoryMove move, Piece captured, i32 adjustment)
 		{
-			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			updateHistoryScore(noisyEntry(move, captured), adjustment);
 		}
 
-		[[nodiscard]] inline auto contEntry(HistoryMove move) const -> const auto &
+		[[nodiscard]] inline auto noisyScore(HistoryMove move, Piece captured) const
 		{
-			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+			return noisyEntry(move, captured);
 		}
 
 		inline auto clear()
@@ -141,6 +152,63 @@ namespace stormphrax
 		// 13 to account for non-capture queen promos
 		using CaptureTable = std::array<std::array<std::array<i32, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
+
+		[[nodiscard]] inline auto entry(HistoryMove move) -> HistoryEntry &
+		{
+			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto entry(HistoryMove move) const -> const HistoryEntry &
+		{
+			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) -> i32 &
+		{
+			return m_captureTable[static_cast<i32>(captured)]
+			[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) const -> const i32 &
+		{
+			return m_captureTable[static_cast<i32>(captured)]
+			[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
+		{
+			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto contEntry(HistoryMove move) const -> const auto &
+		{
+			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto mainScore(HistoryMove move) const -> i32
+		{
+			return entry(move).score;
+		}
+
+		inline auto updateMainScore(HistoryMove move, i32 adjustment) -> void
+		{
+			updateHistoryScore(entry(move).score, adjustment);
+		}
+
+		[[nodiscard]] inline auto continuationScore(HistoryMove move,
+			i32 ply, std::span<const HistoryMove> prevMoves, i32 pliesAgo) const -> i32
+		{
+			if (ply >= pliesAgo && prevMoves[ply - pliesAgo])
+				return contEntry(prevMoves[ply - pliesAgo]).score(move);
+			else return 0;
+		}
+
+		inline auto updateContinuationScore(HistoryMove move,
+			i32 ply, std::span<const HistoryMove> prevMoves, i32 pliesAgo, i32 adjustment) -> void
+		{
+			if (ply >= pliesAgo && prevMoves[ply - pliesAgo])
+				updateHistoryScore(contEntry(prevMoves[ply - pliesAgo]).score(move), adjustment);
+		}
 
 		Table m_table{};
 		CaptureTable m_captureTable{};

@@ -274,7 +274,7 @@ namespace stormphrax::datagen
 
 				const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
-				thread->maxDepth = search::MaxDepth;
+				thread->maxDepth = MaxDepth;
 				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
 				limiter.setHardNodeLimit(DatagenHardNodeLimit);
 

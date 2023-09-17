@@ -293,7 +293,7 @@ namespace stormphrax
 				std::cerr << "already searching" << std::endl;
 			else
 			{
-				u32 depth = search::MaxDepth;
+				u32 depth = MaxDepth;
 				std::unique_ptr<limit::ISearchLimiter> limiter{};
 
 				bool tournamentTime = false;
@@ -421,8 +421,8 @@ namespace stormphrax
 
 				if (depth == 0)
 					return;
-				else if (depth > search::MaxDepth)
-					depth = search::MaxDepth;
+				else if (depth > MaxDepth)
+					depth = MaxDepth;
 
 				if (tournamentTime && timeRemaining > 0)
 					limiter = std::make_unique<limit::TimeManager>(startTime,
