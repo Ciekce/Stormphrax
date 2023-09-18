@@ -307,7 +307,7 @@ namespace stormphrax
 
 			i32 repetitionsLeft = threefold ? 2 : 1;
 
-			for (auto i = static_cast<i32>(m_hashes.size() - 4); i >= limit; i -= 2)
+			for (auto i = static_cast<i32>(m_hashes.size()) - 4; i >= limit; i -= 2)
 			{
 				if (m_hashes[i] == currKey
 					&& --repetitionsLeft == 0)
