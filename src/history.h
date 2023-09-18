@@ -166,13 +166,13 @@ namespace stormphrax
 		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) -> i32 &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
-			[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
 		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) const -> const i32 &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
-			[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
 		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
