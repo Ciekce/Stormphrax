@@ -296,15 +296,18 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto isDrawn(bool threefold) const
 		{
+			const auto halfmove = currState().halfmove;
+
 			// TODO handle mate
-			if (m_states.back().halfmove >= 100)
+			if (halfmove >= 100)
 				return true;
 
 			const auto currKey = currState().key;
+			const auto limit = std::max(0, static_cast<i32>(m_hashes.size()) - halfmove - 2);
 
 			i32 repetitionsLeft = threefold ? 2 : 1;
 
-			for (i32 i = static_cast<i32>(m_hashes.size() - 1); i >= 0; --i)
+			for (auto i = static_cast<i32>(m_hashes.size() - 4); i >= limit; i -= 2)
 			{
 				if (m_hashes[i] == currKey
 					&& --repetitionsLeft == 0)
