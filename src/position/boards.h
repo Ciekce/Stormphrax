@@ -290,7 +290,7 @@ namespace stormphrax
 				<< " occupancy bitboard but no piece found" << std::endl;
 
 			assert(false);
-			__builtin_unreachable();
+			std::terminate();
 		}
 
 		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const { return pieceAt(toSquare(rank, file)); }

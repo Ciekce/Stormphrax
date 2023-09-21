@@ -20,20 +20,26 @@
 
 #include "../types.h"
 
+#include <array>
+
 #include "nnue.h"
 #include "../position/position.h"
 #include "../see.h"
+#include "../core.h"
 
 namespace stormphrax::eval
 {
+	// black, white
+	using Contempt = std::array<Score, 2>;
+
 	inline auto materialScale(const Position &pos)
 	{
 		const auto &boards = pos.boards();
 		return 22400
-				+ boards.knights().popcount() * see::values::Knight
-				+ boards.bishops().popcount() * see::values::Bishop
-				+ boards.  rooks().popcount() * see::values::Rook
-				+ boards. queens().popcount() * see::values::Queen;
+			+ boards.knights().popcount() * see::values::Knight
+			+ boards.bishops().popcount() * see::values::Bishop
+			+ boards.  rooks().popcount() * see::values::Rook
+			+ boards. queens().popcount() * see::values::Queen;
 	}
 
 	inline auto scaleEval(const Position &pos, i32 eval)
@@ -43,15 +49,21 @@ namespace stormphrax::eval
 		return eval;
 	}
 
-	inline auto staticEval(const Position &pos, NnueState &nnueState)
+	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
 	{
-		const auto nnueEval = nnueState.evaluate(pos.toMove());
-		return scaleEval(pos, nnueEval);
+		eval = scaleEval(pos, eval) + contempt[static_cast<i32>(pos.toMove())];
+		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	inline auto staticEvalOnce(const Position &pos)
+	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
+	{
+		const auto nnueEval = nnueState.evaluate(pos.toMove());
+		return adjustEval(pos, contempt, nnueEval);
+	}
+
+	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
-		return scaleEval(pos, nnueEval);
+		return adjustEval(pos, contempt, nnueEval);
 	}
 }

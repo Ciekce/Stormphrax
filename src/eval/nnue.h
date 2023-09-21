@@ -32,15 +32,8 @@
 
 #include "activation.h"
 #include "../core.h"
+#include "../util/simd.h"
 #include "../position/boards.h"
-
-#if SP_HAS_AVX512
-#define SP_NETWORK_ALIGNMENT 64
-#elif SP_HAS_AVX2 || SP_HAS_AVX
-#define SP_NETWORK_ALIGNMENT 32
-#else // sse*, neon
-#define SP_NETWORK_ALIGNMENT 16
-#endif
 
 namespace stormphrax::eval
 {
@@ -58,11 +51,11 @@ namespace stormphrax::eval
 
 	constexpr Score Q = 255 * 64;
 
-	struct alignas(SP_NETWORK_ALIGNMENT) Network
+	struct Network
 	{
-		std::array<i16, InputSize * Layer1Size> featureWeights;
-		std::array<i16, Layer1Size> featureBiases;
-		std::array<i16, Layer1Size * 2> outputWeights;
+		SP_SIMD_ALIGNAS std::array<i16, InputSize * Layer1Size> featureWeights;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> featureBiases;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size * 2> outputWeights;
 		i16 outputBias;
 	};
 
@@ -71,10 +64,10 @@ namespace stormphrax::eval
 	// Perspective network - separate accumulators for
 	// each side to allow the network to learn tempo
 	// (this is why there are two sets of output weights)
-	struct alignas(SP_NETWORK_ALIGNMENT) Accumulator
+	struct Accumulator
 	{
-		std::array<i16, Layer1Size> black;
-		std::array<i16, Layer1Size> white;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> black;
+		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> white;
 
 		inline auto init(std::span<const i16, Layer1Size> bias)
 		{
@@ -198,8 +191,8 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator, Color stm) -> i32
 		{
 			const auto output = stm == Color::Black
-				? activateAndFlatten(accumulator.black, accumulator.white, g_currNet->outputWeights)
-				: activateAndFlatten(accumulator.white, accumulator.black, g_currNet->outputWeights);
+				? forward(accumulator.black, accumulator.white, g_currNet->outputWeights)
+				: forward(accumulator.white, accumulator.black, g_currNet->outputWeights);
 			return (output + g_currNet->outputBias) * Scale / Q;
 		}
 
@@ -207,6 +200,9 @@ namespace stormphrax::eval
 		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
 		{
+			assert(subOffset + Size <= delta.size());
+			assert(addOffset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] += delta[addOffset + i] - delta[subOffset + i];
@@ -217,6 +213,8 @@ namespace stormphrax::eval
 		static inline auto addToAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
+			assert(offset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] += delta[offset + i];
@@ -227,6 +225,8 @@ namespace stormphrax::eval
 		static inline auto subtractFromAll(std::array<i16, Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
+			assert(offset + Size <= delta.size());
+
 			for (u32 i = 0; i < Size; ++i)
 			{
 				input[i] -= delta[offset + i];
@@ -235,6 +235,9 @@ namespace stormphrax::eval
 
 		[[nodiscard]] static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
 		{
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
 
@@ -247,21 +250,49 @@ namespace stormphrax::eval
 			return {blackIdx, whiteIdx};
 		}
 
-		[[nodiscard]] static inline auto activateAndFlatten(
+		[[nodiscard]] static inline auto forward(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
 			std::span<const i16, Layer1Size * 2> weights
 		) -> Score
 		{
-			i32 sum = 0;
+			constexpr auto Step = util::Simd::RegisterSize / sizeof(i16);
 
-			for (u32 i = 0; i < Layer1Size; ++i)
+			auto sum = util::Simd::zero();
+
+			// stm's accumulator
+			for (usize i = 0; i < Layer1Size; i += Step)
 			{
-				sum += Activation::activate(  us[i]) * weights[             i];
-				sum += Activation::activate(them[i]) * weights[Layer1Size + i];
+				// load the input of these hidden neurons
+				auto v = util::Simd::load(&us[i]);
+				// apply the activation function
+				v = Activation::activate(v);
+
+				// load the weights for these neurons
+				const auto weight = util::Simd::load(&weights[i]);
+				// multiply the inputs by the weights and sum each adjacent
+				// pair of 16 bit integers into half as many 32 bit integers
+				v = util::Simd::mulAddAdj16(v, weight);
+
+				// add the sums to the totals
+				sum = util::Simd::add32(sum, v);
 			}
 
-			return sum / Activation::NormalizationK;
+			// opponent's accumulator
+			// same as above, but for the other accumulator
+			for (usize i = 0; i < Layer1Size; i += Step)
+			{
+				auto v = util::Simd::load(&them[i]);
+				v = Activation::activate(v);
+
+				const auto weight = util::Simd::load(&weights[Layer1Size + i]);
+				v = util::Simd::mulAddAdj16(v, weight);
+
+				sum = util::Simd::add32(sum, v);
+			}
+
+			// sum all the values in the total and renormalise if screlu
+			return util::Simd::sum32(sum) / Activation::NormalizationK;
 		}
 	};
 

@@ -63,6 +63,8 @@ namespace stormphrax
 				std::pair{3, 3}
 			};
 
+			assert(n < 960);
+
 			std::array<BasePiece, 8> dst{};
 			// no need to fill with empty pieces, because pawns are impossible
 
@@ -305,6 +307,18 @@ namespace stormphrax
 			++rankIdx;
 		}
 
+		if (newState.boards.forPiece(Piece::BlackKing).popcount() != 1)
+		{
+			std::cerr << "black must have exactly 1 king" << std::endl;
+			return false;
+		}
+
+		if (newState.boards.forPiece(Piece::WhiteKing).popcount() != 1)
+		{
+			std::cerr << "white must have exactly 1 king" << std::endl;
+			return false;
+		}
+
 		const auto &color = tokens[1];
 
 		if (color.length() != 1)
@@ -321,6 +335,15 @@ namespace stormphrax
 		case 'w': break;
 		default:
 			std::cerr << "invalid next move color in fen " << fen << std::endl;
+			return false;
+		}
+
+		if (const auto stm = newBlackToMove ? Color::Black : Color::White;
+			isAttacked(newState.boards,
+				newState.boards.forPiece(BasePiece::King, oppColor(stm)).lowestSquare(),
+				stm))
+		{
+			std::cerr << "opponent must not be in check" << std::endl;
 			return false;
 		}
 
@@ -622,7 +645,7 @@ namespace stormphrax
 	template <bool UpdateNnue, bool StateHistory>
 	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> bool
 	{
-		if constexpr (UpdateNnue)
+		if constexpr (UpdateNnue && StateHistory)
 			nnueState->push();
 
 		auto &prevState = currState();
@@ -630,7 +653,10 @@ namespace stormphrax
 		prevState.lastMove = move;
 
 		if constexpr (StateHistory)
+		{
+			assert(m_states.size() < m_states.capacity());
 			m_states.push_back(prevState);
+		}
 
 		m_hashes.push_back(prevState.key);
 
@@ -806,6 +832,13 @@ namespace stormphrax
 
 		if (toMove() == Color::Black)
 			--m_fullmove;
+	}
+
+	auto Position::clearStateHistory() -> void
+	{
+		const auto state = currState();
+		m_states.resize(1);
+		currState() = state;
 	}
 
 	auto Position::isPseudolegal(Move move) const -> bool

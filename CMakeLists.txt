@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 1.0.0)
+project(stormphrax VERSION 1.0.58)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -10,6 +10,21 @@ set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 if(MSVC AND NOT SP_CLANG)
 	message(FATAL_ERROR Stormphrax does not support building with MSVC)
+endif()
+
+option(SP_EMBED_COMMIT_HASH "whether to include the current git commit in the UCI version string" ON)
+
+if(SP_EMBED_COMMIT_HASH)
+	set(SP_COMMIT_HASH "unknown")
+	find_package(Git QUIET)
+	if(GIT_FOUND)
+		execute_process(
+			COMMAND git log -1 --pretty=format:%h
+			OUTPUT_VARIABLE SP_COMMIT_HASH
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_QUIET
+		)
+	endif()
 endif()
 
 # for fathom
@@ -44,7 +59,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
 	src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
 	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
-	src/util/u4array.h src/eval/eval.h src/util/barrier.h)
+	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
@@ -54,8 +69,7 @@ add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC}
 add_executable(stormphrax-avx512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
-add_executable(stormphrax-modern ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
-add_executable(stormphrax-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
+add_executable(stormphrax-sse41-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC -march=native)
@@ -63,7 +77,7 @@ if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 	# excavator without amd-specific extensions and bmi2
 	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
-	target_compile_options(stormphrax-popcnt PUBLIC -march=nehalem)
+	target_compile_options(stormphrax-sse41-popcnt PUBLIC -march=nehalem)
 endif()
 
 if(NOT MSVC)
@@ -71,13 +85,13 @@ if(NOT MSVC)
 	target_compile_options(stormphrax-avx512 PUBLIC -mtune=znver4)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
-	target_compile_options(stormphrax-popcnt PUBLIC -mtune=sandybridge)
+	target_compile_options(stormphrax-sse41-popcnt PUBLIC -mtune=sandybridge)
 elseif(MSVC AND SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
 	target_compile_options(stormphrax-avx512 PUBLIC /tune:znver4)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
-	target_compile_options(stormphrax-popcnt PUBLIC /tune:sandybridge)
+	target_compile_options(stormphrax-sse41-popcnt PUBLIC /tune:sandybridge)
 endif()
 
 if(SP_FAST_PEXT)
@@ -96,6 +110,10 @@ foreach(TARGET ${TARGETS})
 
 	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")
+
+	if(SP_EMBED_COMMIT_HASH)
+		target_compile_definitions(${TARGET} PUBLIC SP_COMMIT_HASH=${SP_COMMIT_HASH})
+	endif()
 
 	target_link_libraries(${TARGET} Threads::Threads)
 endforeach()

@@ -59,7 +59,7 @@ namespace stormphrax::eval
 		inline auto activationFuncName(u8 func)
 		{
 			static constexpr auto ActivationFunctionNames = std::array {
-				"crelu", "screlu"
+				"crelu", "screlu", "relu"
 			};
 
 			if (func < ActivationFunctionNames.size())
@@ -187,7 +187,7 @@ namespace stormphrax::eval
 			auto newNet = std::make_unique<Network>();
 
 			// paranoia
-			assert((reinterpret_cast<std::uintptr_t>(newNet.get()) % SP_NETWORK_ALIGNMENT) == 0);
+			assert((reinterpret_cast<std::uintptr_t>(newNet.get()) % SP_SIMD_ALIGNMENT) == 0);
 
 			stream.read(reinterpret_cast<char *>(newNet.get()), NetworkSize);
 

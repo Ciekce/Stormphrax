@@ -20,10 +20,14 @@
 
 #include "types.h"
 
+#include "wdl.h"
+
 namespace stormphrax
 {
 	namespace opts
 	{
+		constexpr i32 DefaultNormalizedContempt = 0;
+
 		struct GlobalOptions
 		{
 			bool chess960{false};
@@ -32,6 +36,8 @@ namespace stormphrax
 			bool syzygyEnabled{false};
 			i32 syzygyProbeDepth{1};
 			i32 syzygyProbeLimit{7};
+
+			i32 contempt{wdl::unnormalizeScore(DefaultNormalizedContempt)};
 		};
 
 		auto mutableOpts() -> GlobalOptions &;
