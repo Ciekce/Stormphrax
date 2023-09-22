@@ -47,9 +47,9 @@ namespace stormphrax::eval
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 384;
 
-	constexpr Score Scale = 400;
+	constexpr i32 Scale = 400;
 
-	constexpr Score Q = 255 * 64;
+	constexpr i32 Q = 255 * 64;
 
 	struct Network
 	{
@@ -254,45 +254,23 @@ namespace stormphrax::eval
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
 			std::span<const i16, Layer1Size * 2> weights
-		) -> Score
+		) -> i32
 		{
-			constexpr auto Step = util::Simd::RegisterSize / sizeof(i16);
+			i32 sum = 0;
 
-			auto sum = util::Simd::zero();
-
-			// stm's accumulator
-			for (usize i = 0; i < Layer1Size; i += Step)
+			for (usize i = 0; i < Layer1Size; ++i)
 			{
-				// load the input of these hidden neurons
-				auto v = util::Simd::load(&us[i]);
-				// apply the activation function
-				v = Activation::activate(v);
-
-				// load the weights for these neurons
-				const auto weight = util::Simd::load(&weights[i]);
-				// multiply the inputs by the weights and sum each adjacent
-				// pair of 16 bit integers into half as many 32 bit integers
-				v = util::Simd::mulAddAdj16(v, weight);
-
-				// add the sums to the totals
-				sum = util::Simd::add32(sum, v);
+				const auto activated = Activation::activate(us[i]);
+				sum += activated * weights[i];
 			}
 
-			// opponent's accumulator
-			// same as above, but for the other accumulator
-			for (usize i = 0; i < Layer1Size; i += Step)
+			for (usize i = 0; i < Layer1Size; ++i)
 			{
-				auto v = util::Simd::load(&them[i]);
-				v = Activation::activate(v);
-
-				const auto weight = util::Simd::load(&weights[Layer1Size + i]);
-				v = util::Simd::mulAddAdj16(v, weight);
-
-				sum = util::Simd::add32(sum, v);
+				const auto activated = Activation::activate(them[i]);
+				sum += activated * weights[Layer1Size + i];
 			}
 
-			// sum all the values in the total and renormalise if screlu
-			return util::Simd::sum32(sum) / Activation::NormalizationK;
+			return sum / Activation::NormalizationK;
 		}
 	};
 
