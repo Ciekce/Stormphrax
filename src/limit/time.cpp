@@ -50,19 +50,19 @@ namespace stormphrax::limit
 		const auto limit = std::max(0.001, remaining - overhead);
 
 		if (toGo == 0)
-			toGo = 20;
+			toGo = 18;
 
 		const auto baseTime = limit / static_cast<f64>(toGo) + increment * 0.75;
 
 		m_maxTime  = limit / 2.0;
-		m_softTime = std::min(baseTime * 0.6, m_maxTime);
+		m_softTime = std::min(baseTime * 0.7, m_maxTime);
 	}
 
 	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
 	{
 		const auto bestMoveFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = (1.5 - bestMoveFraction) * 1.35;
+		const auto moveNodeScale = 1.6 - std::min(1.3 * bestMoveFraction, 1.2);
 
 		m_scale = moveNodeScale;
 	}
