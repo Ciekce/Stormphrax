@@ -27,7 +27,7 @@
 
 namespace stormphrax::wdl
 {
-	constexpr Score NormalizationK = 271;
+	constexpr Score NormalizationK = 223;
 
 	inline auto normalizeScore(Score score)
 	{

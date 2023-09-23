@@ -26,10 +26,10 @@ namespace stormphrax::wdl
 	auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>
 	{
 		constexpr auto As = std::array {
-			7.18898158, -41.53274687, 123.88236544, 182.20533084
+			4.64264993, -21.12065376, 56.21802732, 184.04136881
 		};
 		constexpr auto Bs = std::array {
-			1.17032511, 4.16373765, -41.01938757, 132.41029355
+			-1.53902952, 17.05344734, -51.89919098, 99.96350373
 		};
 
 		static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
