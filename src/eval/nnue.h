@@ -45,7 +45,7 @@ namespace stormphrax::eval
 	using Activation = activation::ClippedReLU<255>;
 
 	constexpr u32 InputSize = 768;
-	constexpr u32 Layer1Size = 384;
+	constexpr u32 Layer1Size = 768;
 
 	constexpr i32 Scale = 400;
 
