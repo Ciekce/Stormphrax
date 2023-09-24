@@ -18,7 +18,8 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  1.0.0  |          3254           |           3360           |             3513              |     3343     |      3342      |
+|  2.0.0  |            -            |            -             |               -               |      -       |       -        |
+|  1.0.0  |          3254           |           3364           |             3513              |     3344     |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -54,18 +55,18 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 - make it stronger uwu
 
 ## UCI options
-| Name             |  Type   | Default value |       Valid values        | Description                                                                                                 |
-|:-----------------|:-------:|:-------------:|:-------------------------:|:------------------------------------------------------------------------------------------------------------|
-| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2. |
-| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                             |
-| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                           |
-| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                |
-| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                            |
-| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                        |
-| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                       |
-| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                |
-| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
-| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                            |
+| Name             |  Type   | Default value |       Valid values        | Description                                                                          |
+|:-----------------|:-------:|:-------------:|:-------------------------:|:-------------------------------------------------------------------------------------|
+| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                 |
+| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                      |
+| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                    |
+| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                         |
+| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.     |
+| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms). |
+| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                |
+| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                         |
+| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.               |
+| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                     |
 
 ## Builds
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
@@ -78,11 +79,10 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 
 ### Note:  
 - If you have an AMD Zen 1 (Ryzen x 1xxx) or 2 (Ryzen x 2xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
-- Builds other than `bmi2` are untested and might crash on CPUs lacking newer instructions; I don't have older hardware to test them on.
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Windows, GCC 11 and Clang 15 and 16 on Linux, and Apple Clang 14 on macOS on Apple Silicon)
+Requires CMake and a competent C++20 compiler. Currently, GCC is known to vectorise Stormphrax's NNUE code very poorly compared to Clang.
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
