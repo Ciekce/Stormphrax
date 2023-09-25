@@ -668,6 +668,8 @@ namespace stormphrax::search
 
 		const i32 minLmrMoves = pvNode ? 3 : 2;
 
+		const auto threats = pos.threats();
+
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreMax;
 
@@ -867,7 +869,6 @@ namespace stormphrax::search
 						const auto penalty = -bonus;
 
 						const auto currMove = thread.prevMoves[ply];
-						const auto threats = pos.threats();
 
 						// If the fail-high move is a quiet move or losing
 						// capture, set it as the killer for this ply and the
