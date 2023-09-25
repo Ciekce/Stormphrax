@@ -243,7 +243,8 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					m_data.histories[i] = move.score = m_history->quietScore(historyMove, m_ply, m_prevMoves);
+					const auto historyScore = m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+					m_data.histories[i] = move.score = historyScore;
 				}
 
 				// knight promos first, rook then bishop promos last

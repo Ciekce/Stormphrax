@@ -789,7 +789,7 @@ namespace stormphrax::search
 					return sBeta;
 			}
 
-			thread.prevMoves[ply] = {movingPiece, moveActualDst(move)};
+			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
 
 			Score score{};
 
@@ -867,6 +867,7 @@ namespace stormphrax::search
 						const auto penalty = -bonus;
 
 						const auto currMove = thread.prevMoves[ply];
+						const auto threats = pos.threats();
 
 						// If the fail-high move is a quiet move or losing
 						// capture, set it as the killer for this ply and the
@@ -881,12 +882,12 @@ namespace stormphrax::search
 							thread.history.updateNoisyScore(currMove, captured, bonus);
 						else
 						{
-							thread.history.updateQuietScore(currMove, ply, thread.prevMoves, bonus);
+							thread.history.updateQuietScore(currMove, threats, ply, thread.prevMoves, bonus);
 
 							// Penalise quiet moves that did not fail high if the fail-high move is quiet
 							for (const auto prevQuiet : moveStack.quietsTried)
 							{
-								thread.history.updateQuietScore(prevQuiet, ply, thread.prevMoves, penalty);
+								thread.history.updateQuietScore(prevQuiet, threats, ply, thread.prevMoves, penalty);
 							}
 						}
 

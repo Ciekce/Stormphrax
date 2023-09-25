@@ -339,7 +339,7 @@ namespace stormphrax
 		}
 
 		if (const auto stm = newBlackToMove ? Color::Black : Color::White;
-			isAttacked(newState.boards,
+			isAttacked<false>(newState, stm,
 				newState.boards.forPiece(BasePiece::King, oppColor(stm)).lowestSquare(),
 				stm))
 		{
@@ -685,6 +685,8 @@ namespace stormphrax
 			}
 #endif
 
+			state.threats = calcThreats();
+
 			return true;
 		}
 
@@ -729,7 +731,7 @@ namespace stormphrax
 			break;
 		}
 
-		if (isAttacked(state.boards, state.king(currColor), toMove()))
+		if (isAttacked<false>(state, toMove(), state.king(currColor), toMove()))
 			return false;
 
 		if (moving == Piece::BlackRook)
@@ -799,6 +801,7 @@ namespace stormphrax
 			prefetchTt->prefetch(state.key);
 
 		state.checkers = calcCheckers();
+		state.threats = calcThreats();
 
 #ifndef NDEBUG
 		if constexpr (VerifyAll)
@@ -1344,6 +1347,7 @@ namespace stormphrax
 		state.key ^= hash::enPassant(state.enPassant);
 
 		state.checkers = calcCheckers();
+		state.threats = calcThreats();
 	}
 
 #ifndef NDEBUG
