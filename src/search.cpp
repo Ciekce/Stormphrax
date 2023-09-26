@@ -668,6 +668,8 @@ namespace stormphrax::search
 
 		const i32 minLmrMoves = pvNode ? 3 : 2;
 
+		const auto threats = pos.threats();
+
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreMax;
 
@@ -789,7 +791,7 @@ namespace stormphrax::search
 					return sBeta;
 			}
 
-			thread.prevMoves[ply] = {movingPiece, moveActualDst(move)};
+			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
 
 			Score score{};
 
@@ -881,12 +883,12 @@ namespace stormphrax::search
 							thread.history.updateNoisyScore(currMove, captured, bonus);
 						else
 						{
-							thread.history.updateQuietScore(currMove, ply, thread.prevMoves, bonus);
+							thread.history.updateQuietScore(currMove, threats, ply, thread.prevMoves, bonus);
 
 							// Penalise quiet moves that did not fail high if the fail-high move is quiet
 							for (const auto prevQuiet : moveStack.quietsTried)
 							{
-								thread.history.updateQuietScore(prevQuiet, ply, thread.prevMoves, penalty);
+								thread.history.updateQuietScore(prevQuiet, threats, ply, thread.prevMoves, penalty);
 							}
 						}
 
