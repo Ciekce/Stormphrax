@@ -218,7 +218,8 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					m_data.histories[i] = move.score = m_history->noisyScore(historyMove, captured);
+					const auto historyScore = m_history->noisyScore(historyMove, m_pos.threats(), captured);
+					m_data.histories[i] = move.score = historyScore;
 				}
 
 				if (captured != Piece::None)

@@ -880,7 +880,7 @@ namespace stormphrax::search
 						}
 
 						if (noisy)
-							thread.history.updateNoisyScore(currMove, captured, bonus);
+							thread.history.updateNoisyScore(currMove, threats, captured, bonus);
 						else
 						{
 							thread.history.updateQuietScore(currMove, threats, ply, thread.prevMoves, bonus);
@@ -895,7 +895,7 @@ namespace stormphrax::search
 						// Always penalise noisy moves that did not fail high
 						for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
 						{
-							thread.history.updateNoisyScore(prevNoisy, prevCaptured, penalty);
+							thread.history.updateNoisyScore(prevNoisy, threats, prevCaptured, penalty);
 						}
 
 						entryType = EntryType::Beta;

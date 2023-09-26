@@ -127,14 +127,14 @@ namespace stormphrax
 			return history;
 		}
 
-		inline auto updateNoisyScore(HistoryMove move, Piece captured, i32 adjustment)
+		inline auto updateNoisyScore(HistoryMove move, Bitboard threats, Piece captured, i32 adjustment)
 		{
-			updateHistoryScore(noisyEntry(move, captured), adjustment);
+			updateHistoryScore(noisyEntry(move, captured, threats[move.dst]), adjustment);
 		}
 
-		[[nodiscard]] inline auto noisyScore(HistoryMove move, Piece captured) const
+		[[nodiscard]] inline auto noisyScore(HistoryMove move, Bitboard threats, Piece captured) const
 		{
-			return noisyEntry(move, captured);
+			return noisyEntry(move, captured, threats[move.dst]);
 		}
 
 		inline auto clear()
@@ -149,7 +149,7 @@ namespace stormphrax
 		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 12>;
 		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
 		// 13 to account for non-capture queen promos
-		using CaptureTable = std::array<std::array<std::array<i32, 64>, 12>, 13>;
+		using CaptureTable = std::array<std::array<std::array<std::array<i32, 2>, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
 
 		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) -> i32 &
@@ -172,16 +172,16 @@ namespace stormphrax
 			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) -> i32 &
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured, bool defended) -> i32 &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
-				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][defended];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured) const -> const i32 &
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured, bool defended) const -> const i32 &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
-				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][defended];
 		}
 
 		[[nodiscard]] inline auto contEntry(HistoryMove move) -> auto &
