@@ -702,17 +702,15 @@ namespace stormphrax::search
 			{
 				if (!inCheck)
 				{
-					const auto lmrHistory = history / historyLmrDivisor();
-					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
-
 					// Late move pruning (LMP)
-					// At low enough depths, only search a certain depth-dependent
-					// number of moves. Sane implementations just use depth here
-					// instead of LMR depth, but SP is weird and loses elo when I try
+					// At low enough depths, only search a certain depth-dependent number of moves.
 					if (!pvNode
 						&& depth <= maxLmpDepth()
-						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
+						&& legalMoves >= (lmpMinMovesBase() + depth * depth) / (improving ? 1 : 2))
 						break;
+
+					const auto lmrHistory = history / historyLmrDivisor();
+					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Futility pruning (FP)
 					// At this point, alpha is so far above static eval that it is
