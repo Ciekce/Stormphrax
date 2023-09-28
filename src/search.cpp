@@ -789,6 +789,8 @@ namespace stormphrax::search
 				// that will beat beta, so just save the time searching and do a cutoff now
 				else if (sBeta >= beta)
 					return sBeta;
+				else if (entry.score >= beta)
+					extension = -2;
 			}
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
