@@ -59,7 +59,7 @@ namespace stormphrax::see
 		return Values[static_cast<i32>(piece)];
 	}
 
-	constexpr auto value(BasePiece piece)
+	constexpr auto value(PieceType piece)
 	{
 		return Values[static_cast<i32>(piece) * 2];
 	}
@@ -86,7 +86,7 @@ namespace stormphrax::see
 	{
 		for (i32 i = 0; i < 6; ++i)
 		{
-			const auto piece = static_cast<BasePiece>(i);
+			const auto piece = static_cast<PieceType>(i);
 			auto board = attackers & boards.forPiece(piece, color);
 
 			if (!board.empty())
@@ -96,7 +96,7 @@ namespace stormphrax::see
 			}
 		}
 
-		return BasePiece::None;
+		return PieceType::None;
 	}
 
 	// basically ported from ethereal and weiss (their implementation is the same)
@@ -113,7 +113,7 @@ namespace stormphrax::see
 
 		auto next = move.type() == MoveType::Promotion
 			? move.target()
-			: basePiece(boards.pieceAt(move.src()));
+			: pieceType(boards.pieceAt(move.src()));
 
 		score -= value(next);
 
@@ -144,13 +144,13 @@ namespace stormphrax::see
 
 			next = popLeastValuable(boards, occupancy, ourAttackers, us);
 
-			if (next == BasePiece::Pawn
-				|| next == BasePiece::Bishop
-				|| next == BasePiece::Queen)
+			if (next == PieceType::Pawn
+				|| next == PieceType::Bishop
+				|| next == PieceType::Queen)
 				attackers |= attacks::getBishopAttacks(square, occupancy) & bishops;
 
-			if (next == BasePiece::Rook
-				|| next == BasePiece::Queen)
+			if (next == PieceType::Rook
+				|| next == PieceType::Queen)
 				attackers |= attacks::getRookAttacks(square, occupancy) & rooks;
 
 			attackers &= occupancy;
@@ -161,7 +161,7 @@ namespace stormphrax::see
 			if (score >= 0)
 			{
 				// our only attacker is our king, but the opponent still has defenders
-				if (next == BasePiece::King
+				if (next == PieceType::King
 					&& !(attackers & boards.forColor(us)).empty())
 					us = oppColor(us);
 				break;

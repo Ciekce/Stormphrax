@@ -157,9 +157,9 @@ namespace stormphrax::datagen
 					const auto square = occupancy.popLowestSquare();
 					const auto piece = boards.pieceAt(square);
 
-					auto pieceId = static_cast<u8>(basePiece(piece));
+					auto pieceId = static_cast<u8>(pieceType(piece));
 
-					if (basePiece(piece) == BasePiece::Rook
+					if (pieceType(piece) == PieceType::Rook
 						&& (square == castlingRooks.shortSquares.black
 							|| square == castlingRooks.shortSquares.white
 							|| square == castlingRooks.longSquares.black

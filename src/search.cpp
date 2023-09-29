@@ -124,11 +124,11 @@ namespace stormphrax::search
 			if (result != TB_RESULT_FAILED)
 			{
 				static constexpr auto PromoPieces = std::array {
-					BasePiece::None,
-					BasePiece::Queen,
-					BasePiece::Rook,
-					BasePiece::Bishop,
-					BasePiece::Knight
+					PieceType::None,
+					PieceType::Queen,
+					PieceType::Rook,
+					PieceType::Bishop,
+					PieceType::Knight
 				};
 
 				const auto wdl = TB_GET_WDL(result);
@@ -144,7 +144,7 @@ namespace stormphrax::search
 				const bool ep = TB_GET_EP(result);
 
 				const auto move = ep ? Move::enPassant(src, dst)
-					: promo != BasePiece::None ? Move::promotion(src, dst, promo)
+					: promo != PieceType::None ? Move::promotion(src, dst, promo)
 					: Move::standard(src, dst);
 
 				auto &thread = m_threads[0];
@@ -507,15 +507,15 @@ namespace stormphrax::search
 				return mdAlpha;
 		}
 
-		ProbedTTableEntry entry{};
+		ProbedTTableEntry ttEntry{};
 		auto ttMove = NullMove;
 
 		if (!stack.excluded)
 		{
-			if (m_table.probe(entry, pos.key(), depth, ply, alpha, beta) && !pvNode)
-				return entry.score;
-			else if (entry.move && pos.isPseudolegal(entry.move))
-				ttMove = entry.move;
+			if (m_table.probe(ttEntry, pos.key(), depth, ply, alpha, beta) && !pvNode)
+				return ttEntry.score;
+			else if (ttEntry.move && pos.isPseudolegal(ttEntry.move))
+				ttMove = ttEntry.move;
 
 			// Internal iterative reduction (IIR)
 			// If we do not have a TT move in this position, then
@@ -530,7 +530,7 @@ namespace stormphrax::search
 				--depth;
 		}
 
-		const bool ttHit = entry.type != EntryType::None;
+		const bool ttHit = ttEntry.type != EntryType::None;
 
 		const auto pieceCount = boards.occupancy().popcount();
 
@@ -642,7 +642,7 @@ namespace stormphrax::search
 			// entry, if it exists, must not be a fail-low entry with a score below beta
 			if (depth >= minNmpDepth()
 				&& stack.eval >= beta
-				&& !(ttHit && entry.type == EntryType::Alpha && entry.score < beta)
+				&& !(ttHit && ttEntry.type == EntryType::Alpha && ttEntry.score < beta)
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
@@ -755,10 +755,10 @@ namespace stormphrax::search
 				&& depth >= minSingularityDepth()
 				&& move == ttMove
 				&& !stack.excluded
-				&& entry.depth >= depth - singularityDepthMargin()
-				&& entry.type != EntryType::Alpha)
+				&& ttEntry.depth >= depth - singularityDepthMargin()
+				&& ttEntry.type != EntryType::Alpha)
 			{
-				const auto sBeta = std::max(-ScoreMate, entry.score - singularityDepthScale() * depth);
+				const auto sBeta = std::max(-ScoreMate, ttEntry.score - singularityDepthScale() * depth);
 				const auto sDepth = (depth - 1) / 2;
 
 				stack.excluded = move;
@@ -789,7 +789,7 @@ namespace stormphrax::search
 				// that will beat beta, so just save the time searching and do a cutoff now
 				else if (sBeta >= beta)
 					return sBeta;
-				else if (entry.score >= beta)
+				else if (ttEntry.score >= beta)
 					extension = -2;
 			}
 

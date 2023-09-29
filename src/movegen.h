@@ -212,7 +212,7 @@ namespace stormphrax
 				auto &move = m_data.moves[i];
 
 				const auto captured = move.move.type() == MoveType::EnPassant
-					? colorPiece(BasePiece::Pawn, m_pos.opponent())
+					? colorPiece(PieceType::Pawn, m_pos.opponent())
 					: boards.pieceAt(move.move.dst());
 
 				if (m_history)
@@ -222,9 +222,9 @@ namespace stormphrax
 				}
 
 				if (captured != Piece::None)
-					move.score += Mvv[static_cast<i32>(basePiece(captured))];
+					move.score += Mvv[static_cast<i32>(pieceType(captured))];
 
-				if ((captured != Piece::None || move.move.target() == BasePiece::Queen)
+				if ((captured != Piece::None || move.move.target() == PieceType::Queen)
 					&& see::see(m_pos, move.move))
 					move.score += 8 * 2000 * 2000;
 				else if (move.move.type() == MoveType::Promotion)
