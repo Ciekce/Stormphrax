@@ -789,6 +789,8 @@ namespace stormphrax::search
 				// that will beat beta, so just save the time searching and do a cutoff now
 				else if (sBeta >= beta)
 					return sBeta;
+				else if (ttEntry.score <= alpha)
+					extension = -1;
 				else if (ttEntry.score >= beta)
 					extension = -2;
 			}
