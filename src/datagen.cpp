@@ -185,7 +185,7 @@ namespace stormphrax::datagen
 			}
 		};
 
-		auto runThread(u32 id, u32 games, u64 seed, const std::filesystem::path &outDir)
+		auto runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir)
 		{
 			const auto outFile = outDir / (std::to_string(id) + ".bin");
 			std::ofstream out{outFile, std::ios::binary | std::ios::app};
@@ -228,8 +228,12 @@ namespace stormphrax::datagen
 
 				resetSearch();
 
-				const auto dfrcIndex = rng.nextU32(960 * 960);
-				thread->pos.resetFromDfrcIndex(dfrcIndex);
+				if (dfrc)
+				{
+					const auto dfrcIndex = rng.nextU32(960 * 960);
+					thread->pos.resetFromDfrcIndex(dfrcIndex);
+				}
+				else thread->pos.resetToStarting();
 
 				const auto moveCount = 8 + (rng.nextU32() >> 31);
 
@@ -394,9 +398,9 @@ namespace stormphrax::datagen
 		}
 	}
 
-	auto run(const std::string &output, i32 threads, u32 games) -> i32
+	auto run(bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
 	{
-		opts::mutableOpts().chess960 = true;
+		opts::mutableOpts().chess960 = dfrc;
 
 		const auto baseSeed = util::rng::generateSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
@@ -414,9 +418,9 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([games, baseSeed, i, &outDir]()
+			theThreads.emplace_back([dfrc, games, baseSeed, i, &outDir]()
 			{
-				runThread(i, games, baseSeed + i, outDir);
+				runThread(i, dfrc, games, baseSeed + i, outDir);
 			});
 		}
 
