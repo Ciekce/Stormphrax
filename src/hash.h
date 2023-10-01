@@ -23,6 +23,7 @@
 #include <array>
 
 #include "core.h"
+#include "util/rng.h"
 
 namespace stormphrax::hash
 {
@@ -44,7 +45,21 @@ namespace stormphrax::hash
 		constexpr auto EnPassant = Castling + sizes::Castling;
 	}
 
-	extern const std::array<u64, sizes::Total> Hashes;
+	constexpr auto Hashes = []
+	{
+		constexpr auto Seed = U64(0xD06C659954EC904A);
+
+		std::array<u64, sizes::Total> hashes{};
+
+		util::rng::Jsf64Rng rng{Seed};
+
+		for (auto &hash : hashes)
+		{
+			hash = rng.nextU64();
+		}
+
+		return hashes;
+	}();
 
 	inline auto pieceSquare(Piece piece, Square square) -> u64
 	{

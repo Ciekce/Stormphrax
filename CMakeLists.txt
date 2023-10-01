@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 2.0.5)
+project(stormphrax VERSION 2.0.6)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -52,11 +52,11 @@ option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture,
 
 set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h
 	src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h
-	src/move.h src/hash.h src/hash.cpp src/position/position.h src/position/position.cpp src/search.h src/search.cpp
-	src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp
-	src/pretty.h src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h
-	src/limit/time.h src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h
-	src/perft.h src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
+	src/move.h src/hash.h src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h
+	src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h
+	src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h
+	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
+	src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
 	src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
 	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
 	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp)

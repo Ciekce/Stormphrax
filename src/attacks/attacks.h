@@ -35,7 +35,7 @@
 
 namespace stormphrax::attacks
 {
-	constexpr auto generateKnightAttacks()
+	constexpr auto KnightAttacks = []
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -56,9 +56,9 @@ namespace stormphrax::attacks
 		}
 
 		return dst;
-	}
+	}();
 
-	constexpr auto generateKingAttacks()
+	constexpr auto KingAttacks = []
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -79,10 +79,10 @@ namespace stormphrax::attacks
 		}
 
 		return dst;
-	}
+	}();
 
 	template <Color Us>
-	constexpr auto generatePawnAttacks()
+	consteval auto generatePawnAttacks()
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -96,9 +96,6 @@ namespace stormphrax::attacks
 
 		return dst;
 	}
-
-	constexpr auto KnightAttacks = generateKnightAttacks();
-	constexpr auto   KingAttacks = generateKingAttacks();
 
 	constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
 	constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
