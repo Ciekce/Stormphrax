@@ -91,8 +91,8 @@ namespace stormphrax::util::rng
 
 		constexpr auto operator()() { return nextU64(); }
 
-		constexpr static auto min() { return std::numeric_limits<u64>::min(); }
-		constexpr static auto max() { return std::numeric_limits<u64>::max(); }
+		static constexpr auto min() { return std::numeric_limits<u64>::min(); }
+		static constexpr auto max() { return std::numeric_limits<u64>::max(); }
 
 	private:
 		u64 m_a{0xF1EA5EED};
