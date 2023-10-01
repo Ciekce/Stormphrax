@@ -141,14 +141,14 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(m_table.data(), 0, sizeof(i32) * 2 * 2 * 64 * 12);
+			std::memset(m_table.data(), 0, sizeof(i32) * 2 * 2 * 64 * 64);
 			std::memset(m_countermoveTable.data(), 0, sizeof(Move) * 64 * 12);
 			std::memset(m_captureTable.data(), 0, sizeof(i32) * 64 * 12 * 13);
 			std::memset(m_continuationTable.data(), 0, sizeof(i32) * 64 * 12 * 64 * 12);
 		}
 
 	private:
-		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 12>;
+		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 64>;
 		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
 		// 13 to account for non-capture queen promos
 		using CaptureTable = std::array<std::array<std::array<i32, 64>, 12>, 13>;
@@ -156,12 +156,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) -> i32 &
 		{
-			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
+			return m_table[static_cast<i32>(move.src)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
 		}
 
 		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) const -> const i32 &
 		{
-			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
+			return m_table[static_cast<i32>(move.src)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
 		}
 
 		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) -> Move &
