@@ -27,5 +27,5 @@ namespace stormphrax::datagen
 {
 	constexpr auto UnlimitedGames = std::numeric_limits<u32>::max();
 
-	auto run(const std::string &output, i32 threads, u32 games = UnlimitedGames) -> i32;
+	auto run(bool dfrc, const std::string &output, i32 threads, u32 games = UnlimitedGames) -> i32;
 }

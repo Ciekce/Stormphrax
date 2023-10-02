@@ -18,7 +18,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  2.0.0  |            -            |            -             |               -               |      -       |       -        |
+|  2.0.0  |            -            |            -             |             3639              |      -       |       -        |
 |  1.0.0  |          3254           |           3364           |             3513              |     3344     |      3342      |
 
 ## Features

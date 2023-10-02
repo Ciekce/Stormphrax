@@ -241,11 +241,11 @@ namespace stormphrax::eval
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
 
-			const auto base = static_cast<u32>(basePiece(piece));
+			const auto type = static_cast<u32>(pieceType(piece));
 			const u32 color = pieceColor(piece) == Color::White ? 0 : 1;
 
-			const auto blackIdx = !color * ColorStride + base * PieceStride + (static_cast<u32>(sq) ^ 0x38);
-			const auto whiteIdx =  color * ColorStride + base * PieceStride +  static_cast<u32>(sq)        ;
+			const auto blackIdx = !color * ColorStride + type * PieceStride + (static_cast<u32>(sq) ^ 0x38);
+			const auto whiteIdx =  color * ColorStride + type * PieceStride +  static_cast<u32>(sq)        ;
 
 			return {blackIdx, whiteIdx};
 		}
