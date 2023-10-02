@@ -73,7 +73,7 @@ add_executable(stormphrax-sse41-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON
 
 if(NOT MSVC OR SP_CLANG)
 	target_compile_options(stormphrax-native PUBLIC -march=native)
-    target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
+	target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 	# excavator without amd-specific extensions and bmi2
 	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
