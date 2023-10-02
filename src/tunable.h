@@ -96,5 +96,8 @@ inline auto Name() { return param_##Name.value; }
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 8192, 4096, 16384, 512)
 
+	SP_TUNABLE_PARAM(probcutInCheckMargin, 400, 200, 600, 25)
+	SP_TUNABLE_PARAM(probcutInCheckDepthMargin, 4, 2, 5, 1)
+
 #undef SP_TUNABLE_PARAM
 }

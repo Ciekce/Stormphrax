@@ -660,6 +660,20 @@ namespace stormphrax::search
 			}
 		}
 
+		// SF's probcut in check thing
+		// If the TT indicates a likely fail-high, then cut off
+		if (const auto probcutBeta = beta + probcutInCheckMargin();
+			!inCheck
+			&& !pvNode
+			&& ttMove
+			&& pos.isNoisy(ttMove)
+			&& ttEntry.type == EntryType::Beta
+			&& ttEntry.depth >= depth - probcutInCheckDepthMargin()
+			&& ttEntry.score >= probcutBeta
+			&& std::abs(ttEntry.score) < ScoreWin
+			&& std::abs(beta) < ScoreWin)
+			return probcutBeta;
+
 		moveStack.quietsTried.clear();
 		moveStack.noisiesTried.clear();
 
