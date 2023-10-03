@@ -94,17 +94,6 @@ namespace stormphrax
 		return false;
 	}
 
-	auto TTable::probePvMove(u64 key) const -> Move
-	{
-		const auto entry = loadEntry(index(key));
-
-		if (entry.type == EntryType::Exact
-		    && packEntryKey(key) == entry.key)
-			return entry.move;
-
-		return NullMove;
-	}
-
 	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
 		auto entry = loadEntry(index(key));
