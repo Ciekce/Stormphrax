@@ -73,11 +73,12 @@ namespace stormphrax
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove,
+		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove, i32 seeThreshold = 0,
 			i32 ply = -1, std::span<const HistoryMove> prevMoves = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
+			  m_seeThreshold{seeThreshold},
 			  m_ply{ply},
 			  m_prevMoves{prevMoves},
 			  m_killer{killer},
@@ -226,7 +227,7 @@ namespace stormphrax
 					move.score += Mvv[static_cast<i32>(pieceType(captured))];
 
 				if ((captured != Piece::None || move.move.target() == PieceType::Queen)
-					&& see::see(m_pos, move.move))
+					&& see::see(m_pos, move.move, m_seeThreshold))
 					move.score += 8 * 2000 * 2000;
 				else if (move.move.type() == MoveType::Promotion)
 					move.score += PromoScores[move.move.targetIdx()] * 2000;
@@ -288,6 +289,8 @@ namespace stormphrax
 		MovegenData &m_data;
 
 		Move m_ttMove;
+
+		i32 m_seeThreshold;
 
 		i32 m_ply;
 		std::span<const HistoryMove> m_prevMoves;

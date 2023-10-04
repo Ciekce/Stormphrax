@@ -677,7 +677,8 @@ namespace stormphrax::search
 			// don't drop back into qsearch
 			const auto probcutDepth = std::max(1, depth - probcutReduction());
 
-			PcMoveGenerator generator{pos, NullMove, moveStack.movegenData, ttMoveNoisy ? ttMove : NullMove};
+			PcMoveGenerator generator{pos, NullMove, moveStack.movegenData,
+				ttMoveNoisy ? ttMove : NullMove, (probcutBeta - stack.eval) / 2};
 			while (const auto moveAndHistory = generator.next())
 			{
 				const auto [move, _history] = moveAndHistory;
@@ -725,7 +726,7 @@ namespace stormphrax::search
 		auto entryType = EntryType::Alpha;
 
 		MoveGenerator generator{pos, stack.killer, moveStack.movegenData,
-			ttMove, ply, thread.prevMoves, &thread.history};
+			ttMove, 0, ply, thread.prevMoves, &thread.history};
 
 		u32 legalMoves = 0;
 
