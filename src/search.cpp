@@ -682,13 +682,15 @@ namespace stormphrax::search
 			{
 				const auto [move, _history] = moveAndHistory;
 
+				const auto movingPiece = pos.boards().pieceAt(move.src());
+
 				const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
 
 				if (!guard)
 					continue;
 
 				++thread.search.nodes;
-				thread.prevMoves[ply] = {pos.boards().pieceAt(move.src()), move.src(), moveActualDst(move)};
+				thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
 
 				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
