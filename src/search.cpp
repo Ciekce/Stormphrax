@@ -666,16 +666,16 @@ namespace stormphrax::search
 		// Do a quiescence search on each winning capture. If the result beats
 		// beta plus some margin, do a reduced-depth search. If that result beats
 		// beta plus the same margin, assume that this is a cutnode and prune.
-		const auto probcutBeta = std::min(beta + tunable::probcutMargin(), ScoreMaxNonWin);
+		const auto probcutBeta = std::min(beta + probcutMargin(), ScoreMaxNonWin);
 		if (!pvNode
 			&& !inCheck
 			&& !stack.excluded
-			&& depth >= tunable::minProbcutDepth()
+			&& depth >= minProbcutDepth()
 			&& std::abs(beta) < ScoreWin
-			&& (!ttHit || ttEntry.depth < depth - tunable::probcutReduction() + 1 || ttEntry.score >= probcutBeta))
+			&& (!ttHit || ttEntry.depth < depth - probcutReduction() + 1 || ttEntry.score >= probcutBeta))
 		{
 			// don't drop back into qsearch
-			const auto probcutDepth = std::max(1, depth - tunable::probcutReduction());
+			const auto probcutDepth = std::max(1, depth - probcutReduction());
 
 			PcMoveGenerator generator{pos, NullMove, moveStack.movegenData, ttMoveNoisy ? ttMove : NullMove};
 			while (const auto moveAndHistory = generator.next())
@@ -688,13 +688,13 @@ namespace stormphrax::search
 					continue;
 
 				++thread.search.nodes;
-				thread.prevMoves[ply] = {pos.boards().pieceAt(move.src()), moveActualDst(move), move.dst()};
+				thread.prevMoves[ply] = {pos.boards().pieceAt(move.src()), move.src(), moveActualDst(move)};
 
 				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
 				// qsearch met probcut beta, do a reduced re-search to verify
 				if (score >= probcutBeta)
-					score = -search(thread, pv, probcutDepth, ply + 1,
+					score = -search(thread, stack.pv, probcutDepth, ply + 1,
 						moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
 
 				// reduced search held at or above probcut beta, store to tt and prune
