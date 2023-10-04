@@ -678,7 +678,7 @@ namespace stormphrax::search
 			const auto probcutDepth = std::max(1, depth - probcutReduction());
 
 			PcMoveGenerator generator{pos, NullMove, moveStack.movegenData,
-				ttMoveNoisy ? ttMove : NullMove, (probcutBeta - stack.eval) / 2};
+				ttMoveNoisy ? ttMove : NullMove, std::max(0, (probcutBeta - stack.eval) / 2)};
 			while (const auto moveAndHistory = generator.next())
 			{
 				const auto [move, _history] = moveAndHistory;
