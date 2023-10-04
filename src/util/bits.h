@@ -151,7 +151,7 @@ namespace stormphrax::util
 #endif
 	}
 
-	[[nodiscard]] constexpr auto pext(u64 v, u64 mask)
+	[[nodiscard]] constexpr auto pext(u64 v, u64 mask) -> u64
 	{
 #if SP_HAS_BMI2
 		if (std::is_constant_evaluated())
@@ -163,7 +163,7 @@ namespace stormphrax::util
 #endif
 	}
 
-	[[nodiscard]] constexpr auto pdep(u64 v, u64 mask)
+	[[nodiscard]] constexpr auto pdep(u64 v, u64 mask) -> u64
 	{
 #if SP_HAS_BMI2
 		if (std::is_constant_evaluated())

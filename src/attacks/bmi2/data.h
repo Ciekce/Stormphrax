@@ -54,7 +54,7 @@ namespace stormphrax::attacks::bmi2
 		u32 tableSize;
 	};
 
-	consteval auto generateRookData()
+	constexpr auto RookData = []
 	{
 		RookData_ dst{};
 
@@ -62,7 +62,12 @@ namespace stormphrax::attacks::bmi2
 		{
 			const auto square = static_cast<Square>(i);
 
-			for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
+			for (const auto dir : {
+				offsets::Up,
+				offsets::Down,
+				offsets::Left,
+				offsets::Right
+			})
 			{
 				const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
 
@@ -75,9 +80,9 @@ namespace stormphrax::attacks::bmi2
 		}
 
 		return dst;
-	}
+	}();
 
-	consteval auto generateBishopData()
+	constexpr auto BishopData = []
 	{
 		BishopData_ dst{};
 
@@ -85,7 +90,12 @@ namespace stormphrax::attacks::bmi2
 		{
 			const auto square = static_cast<Square>(i);
 
-			for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight})
+			for (const auto dir : {
+				offsets::UpLeft,
+				offsets::UpRight,
+				offsets::DownLeft,
+				offsets::DownRight
+			})
 			{
 				const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
 				dst.data[i].mask |= attacks & ~internal::edges(dir);
@@ -96,8 +106,5 @@ namespace stormphrax::attacks::bmi2
 		}
 
 		return dst;
-	}
-
-	constexpr auto   RookData = generateRookData();
-	constexpr auto BishopData = generateBishopData();
+	}();
 }

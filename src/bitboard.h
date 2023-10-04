@@ -107,7 +107,7 @@ namespace stormphrax
 	class BitboardSlot
 	{
 	public:
-		[[nodiscard]] explicit constexpr operator bool() const { return (m_board & m_mask) != 0; }
+		[[nodiscard]] constexpr operator bool() const { return (m_board & m_mask) != 0; }
 
 		constexpr auto operator=(bool rhs) -> auto &
 		{

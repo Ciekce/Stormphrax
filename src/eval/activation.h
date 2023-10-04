@@ -26,12 +26,12 @@
 
 namespace stormphrax::eval::activation
 {
-	template <Score Max>
+	template <i32 Max>
 	struct [[maybe_unused]] ClippedReLU
 	{
 		static constexpr u8 Id = 0;
 
-		static constexpr auto activate(i16 x)
+		static inline auto activate(i16 x) -> i32
 		{
 			return std::clamp(static_cast<i32>(x), 0, Max);
 		}
@@ -39,17 +39,30 @@ namespace stormphrax::eval::activation
 		static constexpr i32 NormalizationK = 1;
 	};
 
-	template <Score Max>
+	template <i32 Max>
 	struct [[maybe_unused]] SquaredClippedReLU
 	{
 		static constexpr u8 Id = 1;
 
-		static constexpr auto activate(i16 x)
+		static inline auto activate(i16 x) -> i32
 		{
 			const auto clipped = std::clamp(static_cast<i32>(x), 0, Max);
 			return clipped * clipped;
 		}
 
 		static constexpr i32 NormalizationK = Max;
+	};
+
+	template <i32 Max>
+	struct [[maybe_unused]] ReLU
+	{
+		static constexpr u8 Id = 2;
+
+		static inline auto activate(i16 x) -> i32
+		{
+			return std::max(static_cast<i32>(x), 0);
+		}
+
+		static constexpr i32 NormalizationK = 1;
 	};
 }

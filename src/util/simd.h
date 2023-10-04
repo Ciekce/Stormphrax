@@ -18,17 +18,16 @@
 
 #pragma once
 
-#include "types.h"
+#include "../types.h"
 
-#include "move.h"
+#include "../arch.h"
 
-namespace stormphrax::search
-{
-	struct SearchData
-	{
-		i32 depth{};
-		i32 seldepth{};
-		usize nodes{};
-		usize tbhits{};
-	};
-}
+#if SP_HAS_AVX512
+	#define SP_SIMD_ALIGNMENT 64
+#elif SP_HAS_AVX2
+	#define SP_SIMD_ALIGNMENT 32
+#else // sse 4.1, neon
+	#define SP_SIMD_ALIGNMENT 16
+#endif
+
+#define SP_SIMD_ALIGNAS alignas(SP_SIMD_ALIGNMENT)

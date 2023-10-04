@@ -57,7 +57,7 @@ namespace stormphrax
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-				noisy.push({Move::promotion(srcSquare, dstSquare, BasePiece::Queen), 0});
+				noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::Queen), 0});
 			}
 		}
 
@@ -68,9 +68,9 @@ namespace stormphrax
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Knight), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Rook), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, BasePiece::Bishop), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Knight), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Rook), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Bishop), 0});
 			}
 		}
 
@@ -183,7 +183,7 @@ namespace stormphrax
 			else generatePawnsQuiet_<Color::White>(quiet, pos.boards(), dstMask, occ);
 		}
 
-		template <BasePiece Piece, const std::array<Bitboard, 64> &Attacks>
+		template <PieceType Piece, const std::array<Bitboard, 64> &Attacks>
 		inline auto precalculated(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			const auto us = pos.toMove();
@@ -200,7 +200,7 @@ namespace stormphrax
 
 		auto generateKnights(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			precalculated<BasePiece::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
+			precalculated<PieceType::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
 		}
 
 		inline auto generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
@@ -219,7 +219,7 @@ namespace stormphrax
 		template <bool Castling>
 		auto generateKings(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			precalculated<BasePiece::King, attacks::KingAttacks>(dst, pos, dstMask);
+			precalculated<PieceType::King, attacks::KingAttacks>(dst, pos, dstMask);
 
 			if constexpr (Castling)
 			{

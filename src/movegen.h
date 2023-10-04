@@ -74,12 +74,12 @@ namespace stormphrax
 	{
 	public:
 		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove,
-			HistoryMove prevMove = {}, HistoryMove prevPrevMove = {}, const HistoryTable *history = nullptr)
+			i32 ply = -1, std::span<const HistoryMove> prevMoves = {}, const HistoryTable *history = nullptr)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
-			  m_prevMove{prevMove},
-			  m_prevPrevMove{prevPrevMove},
+			  m_ply{ply},
+			  m_prevMoves{prevMoves},
 			  m_killer{killer},
 			  m_history{history}
 		{
@@ -121,9 +121,9 @@ namespace stormphrax
 						break;
 
 					case MovegenStage::Countermove:
-						if (m_history && m_prevMove)
+						if (m_history && m_ply > 0)
 						{
-							m_countermove = m_history->entry(m_prevMove).countermove;
+							m_countermove = m_history->countermove(m_ply, m_prevMoves);
 							if (m_countermove
 								&& m_countermove != m_ttMove
 								&& m_countermove != m_killer
@@ -212,19 +212,20 @@ namespace stormphrax
 				auto &move = m_data.moves[i];
 
 				const auto captured = move.move.type() == MoveType::EnPassant
-					? colorPiece(BasePiece::Pawn, m_pos.opponent())
+					? colorPiece(PieceType::Pawn, m_pos.opponent())
 					: boards.pieceAt(move.move.dst());
 
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					m_data.histories[i] = move.score = m_history->captureScore(historyMove, captured);
+					const auto historyScore = m_history->noisyScore(historyMove, m_pos.threats(), captured);
+					m_data.histories[i] = move.score = historyScore;
 				}
 
 				if (captured != Piece::None)
-					move.score += Mvv[static_cast<i32>(basePiece(captured))];
+					move.score += Mvv[static_cast<i32>(pieceType(captured))];
 
-				if ((captured != Piece::None || move.move.target() == BasePiece::Queen)
+				if ((captured != Piece::None || move.move.target() == PieceType::Queen)
 					&& see::see(m_pos, move.move))
 					move.score += 8 * 2000 * 2000;
 				else if (move.move.type() == MoveType::Promotion)
@@ -243,17 +244,8 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-
-					auto &history = m_data.histories[i];
-
-					history = m_history->entry(historyMove).score;
-
-					if (m_prevMove)
-						history += m_history->contEntry(m_prevMove).score(historyMove);
-					if (m_prevPrevMove)
-						history += m_history->contEntry(m_prevPrevMove).score(historyMove);
-
-					move.score = history;
+					const auto historyScore = m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+					m_data.histories[i] = move.score = historyScore;
 				}
 
 				// knight promos first, rook then bishop promos last
@@ -297,8 +289,8 @@ namespace stormphrax
 
 		Move m_ttMove;
 
-		HistoryMove m_prevMove;
-		HistoryMove m_prevPrevMove;
+		i32 m_ply;
+		std::span<const HistoryMove> m_prevMoves;
 
 		Move m_killer;
 

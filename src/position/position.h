@@ -41,6 +41,7 @@ namespace stormphrax
 		u64 key{};
 
 		Bitboard checkers{};
+		Bitboard threats{};
 
 		CastlingRooks castlingRooks{};
 
@@ -67,13 +68,13 @@ namespace stormphrax
 			return kings[static_cast<i32>(c)];
 		}
 
-		[[nodiscard]] inline auto &king(Color c)
+		[[nodiscard]] inline auto king(Color c) -> auto &
 		{
 			return kings[static_cast<i32>(c)];
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 96);
+	static_assert(sizeof(BoardState) == 104);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -131,6 +132,8 @@ namespace stormphrax
 
 		template <bool UpdateNnue = true>
 		auto popMove(eval::NnueState *nnueState) -> void;
+
+		auto clearStateHistory() -> void;
 
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
 
@@ -214,42 +217,54 @@ namespace stormphrax
 			return attackers;
 		}
 
-		[[nodiscard]] inline auto isAttacked(const PositionBoards &boards, Square square, Color attacker) const
+		template <bool ThreatShortcut = true>
+		[[nodiscard]] static inline auto isAttacked(const BoardState &state,
+			Color toMove, Square square, Color attacker)
 		{
-			const auto occ = boards.occupancy();
+			if constexpr (ThreatShortcut)
+			{
+				if (attacker != toMove)
+					return state.threats[square];
+			}
 
-			if (const auto knights = boards.knights(attacker);
+			const auto occ = state.boards.occupancy();
+
+			if (const auto knights = state.boards.knights(attacker);
 				!(knights & attacks::getKnightAttacks(square)).empty())
 				return true;
 
-			if (const auto pawns = boards.pawns(attacker);
+			if (const auto pawns = state.boards.pawns(attacker);
 				!(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
 				return true;
 
-			if (const auto kings = boards.kings(attacker);
+			if (const auto kings = state.boards.kings(attacker);
 				!(kings & attacks::getKingAttacks(square)).empty())
 				return true;
 
-			const auto queens = boards.queens(attacker);
+			const auto queens = state.boards.queens(attacker);
 
-			if (const auto bishops = queens | boards.bishops(attacker);
+			if (const auto bishops = queens | state.boards.bishops(attacker);
 				!(bishops & attacks::getBishopAttacks(square, occ)).empty())
 				return true;
 
-			if (const auto rooks = queens | boards.rooks(attacker);
+			if (const auto rooks = queens | state.boards.rooks(attacker);
 				!(rooks & attacks::getRookAttacks(square, occ)).empty())
 				return true;
 
 			return false;
 		}
 
+		template <bool ThreatShortcut = true>
 		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
-			return isAttacked(boards(), square, attacker);
+			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);
 		}
 
 		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
 		{
+			if (attacker == opponent())
+				return !(squares & currState().threats).empty();
+
 			while (squares)
 			{
 				const auto square = squares.popLowestSquare();
@@ -291,18 +306,22 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
+		[[nodiscard]] inline auto threats() const { return currState().threats; }
 
 		[[nodiscard]] inline auto isDrawn(bool threefold) const
 		{
+			const auto halfmove = currState().halfmove;
+
 			// TODO handle mate
-			if (m_states.back().halfmove >= 100)
+			if (halfmove >= 100)
 				return true;
 
 			const auto currKey = currState().key;
+			const auto limit = std::max(0, static_cast<i32>(m_hashes.size()) - halfmove - 2);
 
 			i32 repetitionsLeft = threefold ? 2 : 1;
 
-			for (i32 i = static_cast<i32>(m_hashes.size() - 1); i >= 0; --i)
+			for (auto i = static_cast<i32>(m_hashes.size()) - 4; i >= limit; i -= 2)
 			{
 				if (m_hashes[i] == currKey
 					&& --repetitionsLeft == 0)
@@ -354,7 +373,7 @@ namespace stormphrax
 
 			return type != MoveType::Castling
 				&& (type == MoveType::EnPassant
-					|| move.target() == BasePiece::Queen
+					|| move.target() == PieceType::Queen
 					|| boards().pieceAt(move.dst()) != Piece::None);
 		}
 
@@ -365,11 +384,11 @@ namespace stormphrax
 			if (type == MoveType::Castling)
 				return {false, Piece::None};
 			else if (type == MoveType::EnPassant)
-				return {true, colorPiece(BasePiece::Pawn, toMove())};
+				return {true, colorPiece(PieceType::Pawn, toMove())};
 			else
 			{
 				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.target() == BasePiece::Queen, captured};
+				return {captured != Piece::None || move.target() == PieceType::Queen, captured};
 			}
 		}
 
@@ -428,7 +447,7 @@ namespace stormphrax
 		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, BasePiece target, eval::NnueState *nnueState) -> Piece;
+		auto promotePawn(Piece pawn, Square src, Square dst, PieceType target, eval::NnueState *nnueState) -> Piece;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
 		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
@@ -440,6 +459,48 @@ namespace stormphrax
 			const auto &state = currState();
 
 			return attackersTo(state.king(color), oppColor(color));
+		}
+
+		[[nodiscard]] inline auto calcThreats() const
+		{
+			const auto color = opponent();
+			const auto &state = currState();
+
+			Bitboard threats{};
+
+			const auto occ = state.boards.occupancy();
+
+			const auto queens = state.boards.queens(color);
+
+			auto rooks = queens | state.boards.rooks(color);
+			while (rooks)
+			{
+				const auto rook = rooks.popLowestSquare();
+				threats |= attacks::getRookAttacks(rook, occ);
+			}
+
+			auto bishops = queens | state.boards.bishops(color);
+			while (bishops)
+			{
+				const auto bishop = bishops.popLowestSquare();
+				threats |= attacks::getBishopAttacks(bishop, occ);
+			}
+
+			auto knights = state.boards.knights(color);
+			while (knights)
+			{
+				const auto knight = knights.popLowestSquare();
+				threats |= attacks::getKnightAttacks(knight);
+			}
+
+			const auto pawns = state.boards.pawns(color);
+			if (color == Color::Black)
+				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
+			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
+
+			threats |= attacks::getKingAttacks(state.king(color));
+
+			return threats;
 		}
 
 		bool m_blackToMove{};

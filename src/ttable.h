@@ -70,7 +70,6 @@ namespace stormphrax
 		auto resize(usize size) -> void;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool;
-		[[nodiscard]] auto probePvMove(u64 key) const -> Move;
 
 		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
 
@@ -98,9 +97,9 @@ namespace stormphrax
 			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_table.size())) >> 64);
 		}
 
-		[[nodiscard]] inline auto loadEntry(u64 key) const
+		[[nodiscard]] inline auto loadEntry(usize index) const
 		{
-			const auto *ptr = static_cast<volatile const i64 *>(&m_table[index(key)]);
+			const auto *ptr = static_cast<volatile const i64 *>(&m_table[index]);
 			const auto v = *ptr;
 
 			TTableEntry entry{};
@@ -109,20 +108,17 @@ namespace stormphrax
 			return entry;
 		}
 
-		inline auto exchangeEntry(u64 key, TTableEntry &entry)
+		inline auto storeEntry(usize index, TTableEntry entry)
 		{
+			auto *ptr = static_cast<volatile i64 *>(&m_table[index]);
+
 			i64 v{};
 			std::memcpy(&v, &entry, sizeof(TTableEntry));
 
-			auto *ptr = static_cast<volatile i64 *>(&m_table[index(key)]);
-			__atomic_exchange(ptr, &v, &v, __ATOMIC_ACQUIRE);
-
-			std::memcpy(&entry, &v, sizeof(TTableEntry));
+			*ptr = v;
 		}
 
 		std::vector<i64> m_table{};
-
-		std::atomic_size_t m_entries{};
 
 		u8 m_currentAge{};
 	};

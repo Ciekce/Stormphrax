@@ -157,9 +157,9 @@ namespace stormphrax::datagen
 					const auto square = occupancy.popLowestSquare();
 					const auto piece = boards.pieceAt(square);
 
-					auto pieceId = static_cast<u8>(basePiece(piece));
+					auto pieceId = static_cast<u8>(pieceType(piece));
 
-					if (basePiece(piece) == BasePiece::Rook
+					if (pieceType(piece) == PieceType::Rook
 						&& (square == castlingRooks.shortSquares.black
 							|| square == castlingRooks.shortSquares.white
 							|| square == castlingRooks.longSquares.black
@@ -185,7 +185,7 @@ namespace stormphrax::datagen
 			}
 		};
 
-		auto runThread(u32 id, u32 games, u64 seed, const std::filesystem::path &outDir)
+		auto runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir)
 		{
 			const auto outFile = outDir / (std::to_string(id) + ".bin");
 			std::ofstream out{outFile, std::ios::binary | std::ios::app};
@@ -228,8 +228,12 @@ namespace stormphrax::datagen
 
 				resetSearch();
 
-				const auto dfrcIndex = rng.nextU32(960 * 960);
-				thread->pos.resetFromDfrcIndex(dfrcIndex);
+				if (dfrc)
+				{
+					const auto dfrcIndex = rng.nextU32(960 * 960);
+					thread->pos.resetFromDfrcIndex(dfrcIndex);
+				}
+				else thread->pos.resetToStarting();
 
 				const auto moveCount = 8 + (rng.nextU32() >> 31);
 
@@ -265,15 +269,16 @@ namespace stormphrax::datagen
 					continue;
 				}
 
+				thread->pos.clearStateHistory();
 				thread->nnueState.reset(thread->pos.boards());
 
 				thread->maxDepth = 10;
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
 				limiter.setHardNodeLimit(VerificationHardNodeLimit);
 
-				const auto [firstMove, firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
+				const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
-				thread->maxDepth = search::MaxDepth;
+				thread->maxDepth = MaxDepth;
 				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
 				limiter.setHardNodeLimit(DatagenHardNodeLimit);
 
@@ -293,8 +298,10 @@ namespace stormphrax::datagen
 
 				while (true)
 				{
-					const auto [move, score, normScore] = searcher.runDatagenSearch(*thread);
+					const auto [score, normScore] = searcher.runDatagenSearch(*thread);
 					thread->search = search::SearchData{};
+
+					const auto move = thread->rootPv.moves[0];
 
 					if (!move)
 					{
@@ -303,6 +310,8 @@ namespace stormphrax::datagen
 							: Outcome::Draw; // stalemate
 						break;
 					}
+
+					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
 
 					if (std::abs(score) > ScoreWin)
 					{
@@ -353,7 +362,7 @@ namespace stormphrax::datagen
 
 					const bool noisy = thread->pos.isNoisy(move);
 
-					thread->pos.applyMoveUnchecked(move, &thread->nnueState);
+					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 
 					if (thread->pos.isDrawn(false))
 					{
@@ -389,9 +398,9 @@ namespace stormphrax::datagen
 		}
 	}
 
-	auto run(const std::string &output, i32 threads, u32 games) -> i32
+	auto run(bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
 	{
-		opts::mutableOpts().chess960 = true;
+		opts::mutableOpts().chess960 = dfrc;
 
 		const auto baseSeed = util::rng::generateSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
@@ -409,9 +418,9 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([games, baseSeed, i, &outDir]()
+			theThreads.emplace_back([dfrc, games, baseSeed, i, &outDir]()
 			{
-				runThread(i, games, baseSeed + i, outDir);
+				runThread(i, dfrc, games, baseSeed + i, outDir);
 			});
 		}
 

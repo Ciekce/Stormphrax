@@ -41,29 +41,44 @@ auto main(i32 argc, const char *argv[]) -> i32
 		}
 		else if (mode == "datagen")
 		{
-			if (argc < 3)
+			if (argc < 4)
 			{
-				std::cerr << "usage: " << argv[0] << " datagen <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "usage: " << argv[0]
+					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
+				return 1;
+			}
+
+			bool dfrc = false;
+
+			if (std::string{argv[2]} == "dfrc")
+				dfrc = true;
+			else if (std::string{argv[2]} != "standard")
+			{
+				std::cerr << "invalid variant " << argv[1] << std::endl;
+				std::cerr << "usage: " << argv[0]
+					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
 				return 1;
 			}
 
 			u32 threads = 1;
-			if (argc > 3 && !util::tryParseU32(threads, argv[3]))
+			if (argc > 4 && !util::tryParseU32(threads, argv[4]))
 			{
-				std::cerr << "invalid number of threads " << argv[3] << std::endl;
-				std::cerr << "usage: " << argv[0] << " datagen <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "invalid number of threads " << argv[4] << std::endl;
+				std::cerr << "usage: " << argv[0]
+					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
 				return 1;
 			}
 
 			auto games = datagen::UnlimitedGames;
-			if (argc > 4 && !util::tryParseU32(games, argv[4]))
+			if (argc > 5 && !util::tryParseU32(games, argv[5]))
 			{
-				std::cerr << "invalid number of games " << argv[4] << std::endl;
-				std::cerr << "usage: " << argv[0] << " datagen <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "invalid number of games " << argv[5] << std::endl;
+				std::cerr << "usage: " << argv[0]
+					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
 				return 1;
 			}
 
-			return datagen::run(argv[2], static_cast<i32>(threads), games);
+			return datagen::run(dfrc, argv[3], static_cast<i32>(threads), games);
 		}
 	}
 

@@ -16,30 +16,31 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "hash.h"
+#pragma once
 
-#include "util/rng.h"
+#include "types.h"
 
-namespace stormphrax::hash
+#include <cmath>
+#include <utility>
+
+#include "core.h"
+
+namespace stormphrax::wdl
 {
-	namespace
+	constexpr Score NormalizationK = 223;
+
+	inline auto normalizeScore(Score score)
 	{
-		constexpr u64 Seed = U64(0xD06C659954EC904A);
-
-		auto generateHashes()
-		{
-			std::array<u64, sizes::Total> hashes{};
-
-			util::rng::Jsf64Rng rng{Seed};
-
-			for (auto &hash : hashes)
-			{
-				hash = rng.nextU64();
-			}
-
-			return hashes;
-		}
+		// don't normalise wins/losses, or zeroes that are pointless to normalise
+		return score == 0 || std::abs(score) > ScoreWin
+			? score : score * 100 / NormalizationK;
 	}
 
-	const std::array<u64, sizes::Total> Hashes = generateHashes();
+	inline auto unnormalizeScore(Score score)
+	{
+		return score == 0 || std::abs(score) > ScoreWin
+			? score : score * NormalizationK / 100;
+	}
+
+	[[nodiscard]] auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>;
 }

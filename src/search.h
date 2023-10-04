@@ -30,21 +30,18 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
-#include <tuple>
 
 #include "search_fwd.h"
 #include "position/position.h"
 #include "limit/limit.h"
 #include "util/timer.h"
 #include "ttable.h"
-#include "eval/nnue.h"
+#include "eval/eval.h"
 #include "movegen.h"
 #include "util/barrier.h"
 
 namespace stormphrax::search
 {
-	constexpr i32 MaxDepth = 255;
-
 	struct BenchData
 	{
 		SearchData search{};
@@ -57,15 +54,22 @@ namespace stormphrax::search
 	constexpr auto SyzygyProbeDepthRange = util::Range<i32>{1, MaxDepth};
 	constexpr auto SyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
+	struct PvList
+	{
+		std::array<Move, MaxDepth> moves{};
+		u32 length{};
+	};
+
 	struct SearchStackEntry
 	{
 		Move killer{NullMove};
 
 		Score eval{};
-		HistoryMove currMove{};
 		Move excluded{};
 
 		i32 doubleExtensions{0};
+
+		PvList pv{};
 	};
 
 	struct MoveStackEntry
@@ -93,11 +97,14 @@ namespace stormphrax::search
 
 		bool datagen{false};
 
+		PvList rootPv{};
+
 		eval::NnueState nnueState{};
 
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 
+		PrevMoveTable prevMoves{};
 		HistoryTable history{};
 
 		Position pos{};
@@ -126,18 +133,18 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
-		auto startSearch(const Position &pos, i32 maxDepth) -> void;
+		auto startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
-		auto runDatagenSearch(ThreadData &thread) -> std::tuple<Move, Score, Score>;
+		auto runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>;
 
 		auto runBench(BenchData &data, const Position &pos, i32 depth) -> void;
 
 		[[nodiscard]] inline auto searching() const
 		{
 			std::unique_lock lock{m_searchMutex};
-			return m_flag.load(std::memory_order::relaxed) == SearchFlag;
+			return m_searching.load(std::memory_order::relaxed);
 		}
 
 		auto setThreads(u32 threads) -> void;
@@ -154,19 +161,13 @@ namespace stormphrax::search
 
 		inline auto quit() -> void
 		{
-			m_quit = true;
+			m_quit.store(true, std::memory_order::release);
 
 			stop();
 			stopThreads();
 		}
 
 	private:
-		static constexpr i32 IdleFlag = 0;
-		static constexpr i32 SearchFlag = 1;
-		static constexpr i32 QuitFlag = 2;
-
-		bool m_quit{false};
-
 		TTable m_table{};
 
 		u32 m_nextThreadId{};
@@ -174,9 +175,11 @@ namespace stormphrax::search
 
 		mutable std::mutex m_searchMutex{};
 
-		std::mutex m_startMutex{};
-		std::condition_variable m_startSignal{};
-		std::atomic_int m_flag{};
+		std::atomic_bool m_quit{};
+		std::atomic_bool m_searching{};
+
+		util::Barrier m_resetBarrier{2};
+		util::Barrier m_idleBarrier{2};
 
 		util::Barrier m_searchEndBarrier{1};
 
@@ -188,26 +191,33 @@ namespace stormphrax::search
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
 
+		eval::Contempt m_contempt{};
+
 		auto stopThreads() -> void;
 
 		auto run(ThreadData &thread) -> void;
 
-		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout)
+		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout) -> bool
 		{
 			if (m_stop.load(std::memory_order::relaxed))
 				return true;
 
-			bool shouldStop = m_limiter->stop(data, allowSoftTimeout);
-			return m_stop.fetch_or(shouldStop, std::memory_order::relaxed) || shouldStop;
+			if (m_limiter->stop(data, allowSoftTimeout))
+			{
+				m_stop.store(true, std::memory_order::relaxed);
+				return true;
+			}
+
+			return m_stop.load(std::memory_order::relaxed);
 		}
 
-		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> std::pair<Move, Score>;
+		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
-		auto search(ThreadData &thread, i32 depth, i32 ply,
+		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, i32 depth, Move move,
-			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
+		auto report(const ThreadData &mainThread, i32 depth, f64 time,
+			Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }

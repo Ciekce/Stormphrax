@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <iomanip>
 #include <atomic>
-#include <numeric>
 #include <unordered_map>
 
 #include "util/split.h"
@@ -45,6 +44,7 @@
 #include "opts.h"
 #include "tunable.h"
 #include "3rdparty/fathom/tbprobe.h"
+#include "wdl.h"
 
 namespace stormphrax
 {
@@ -168,7 +168,11 @@ namespace stormphrax
 		{
 			static const opts::GlobalOptions defaultOpts{};
 
+#ifdef SP_COMMIT_HASH
+			std::cout << "id name " << Name << ' ' << Version << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+#else
 			std::cout << "id name " << Name << ' ' << Version << '\n';
+#endif
 			std::cout << "id author " << Author << '\n';
 
 			std::cout << "option name Hash type spin default " << DefaultHashSize
@@ -176,8 +180,8 @@ namespace stormphrax
 			std::cout << "option name Clear Hash type button\n";
 			std::cout << "option name Threads type spin default " << search::DefaultThreadCount
 				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
-			//TODO
-		//	std::cout << "option name Contempt type spin default 0 min -10000 max 10000\n";
+			std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt
+				<< " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
 			std::cout << "option name UCI_Chess960 type check default "
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name UCI_ShowWDL type check default "
@@ -289,7 +293,7 @@ namespace stormphrax
 				std::cerr << "already searching" << std::endl;
 			else
 			{
-				u32 depth = search::MaxDepth;
+				u32 depth = MaxDepth;
 				std::unique_ptr<limit::ISearchLimiter> limiter{};
 
 				bool tournamentTime = false;
@@ -417,8 +421,8 @@ namespace stormphrax
 
 				if (depth == 0)
 					return;
-				else if (depth > search::MaxDepth)
-					depth = search::MaxDepth;
+				else if (depth > MaxDepth)
+					depth = MaxDepth;
 
 				if (tournamentTime && timeRemaining > 0)
 					limiter = std::make_unique<limit::TimeManager>(startTime,
@@ -428,8 +432,7 @@ namespace stormphrax
 				else if (!limiter)
 					limiter = std::make_unique<limit::InfiniteLimiter>();
 
-				m_searcher.setLimiter(std::move(limiter));
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth));
+				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
 			}
 		}
 
@@ -510,6 +513,14 @@ namespace stormphrax
 					{
 						if (const auto newThreads = util::tryParseU32(valueStr))
 							m_searcher.setThreads(search::ThreadCountRange.clamp(*newThreads));
+					}
+				}
+				else if (nameStr == "contempt")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newContempt = util::tryParseI32(valueStr))
+							opts::mutableOpts().contempt = wdl::unnormalizeScore(ContemptRange.clamp(*newContempt));
 					}
 				}
 				else if (nameStr == "uci_chess960")
@@ -619,7 +630,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = normalizeScore(eval::staticEvalOnce(m_pos));
+			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
 
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -staticEval : staticEval);
@@ -628,7 +639,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto score = normalizeScore(eval::staticEvalOnce(m_pos));
+			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
 			printScore(std::cout, score);
 			std::cout << std::endl;
 		}
@@ -778,30 +789,6 @@ namespace stormphrax
 			return handler.run();
 		}
 
-		auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>
-		{
-			constexpr auto As = std::array {
-				7.18898158, -41.53274687, 123.88236544, 182.20533084
-			};
-			constexpr auto Bs = std::array {
-				1.17032511, 4.16373765, -41.01938757, 132.41029355
-			};
-
-			static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
-
-			const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
-
-			const auto a = (((As[0] * m + As[1]) * m + As[2]) * m) + As[3];
-			const auto b = (((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3];
-
-			const auto x = std::clamp(static_cast<f64>(povScore), -4000.0, 4000.0);
-
-			return {
-				static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a - x) / b)))),
-				static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a + x) / b))))
-			};
-		}
-
 		auto moveToString(Move move) -> std::string
 		{
 			if (!move)
@@ -817,7 +804,7 @@ namespace stormphrax
 			{
 				str << squareToString(move.dst());
 				if (type == MoveType::Promotion)
-					str << basePieceToChar(move.target());
+					str << pieceTypeToChar(move.target());
 			}
 			else
 			{

@@ -48,7 +48,7 @@ namespace stormphrax
 		None
 	};
 
-	enum class BasePiece
+	enum class PieceType
 	{
 		Pawn = 0,
 		Knight,
@@ -71,23 +71,23 @@ namespace stormphrax
 		return static_cast<Color>(!static_cast<i32>(color));
 	}
 
-	[[nodiscard]] constexpr auto colorPiece(BasePiece piece, Color color)
+	[[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color)
 	{
-		assert(piece != BasePiece::None);
+		assert(piece != PieceType::None);
 		assert(color != Color::None);
 
 		return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
 	}
 
-	[[nodiscard]] constexpr auto basePiece(Piece piece)
+	[[nodiscard]] constexpr auto pieceType(Piece piece)
 	{
 		assert(piece != Piece::None);
-		return static_cast<BasePiece>(static_cast<i32>(piece) >> 1);
+		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
 	}
 
-	[[nodiscard]] constexpr auto basePieceUnchecked(Piece piece)
+	[[nodiscard]] constexpr auto pieceTypeUnchecked(Piece piece)
 	{
-		return static_cast<BasePiece>(static_cast<i32>(piece) >> 1);
+		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
 	}
 
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
@@ -102,10 +102,10 @@ namespace stormphrax
 		return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
 	}
 
-	[[nodiscard]] constexpr auto copyPieceColor(Piece piece, BasePiece target)
+	[[nodiscard]] constexpr auto copyPieceColor(Piece piece, PieceType target)
 	{
 		assert(piece != Piece::None);
-		assert(target != BasePiece::None);
+		assert(target != PieceType::None);
 
 		return colorPiece(target, pieceColor(piece));
 	}
@@ -151,31 +151,31 @@ namespace stormphrax
 		}
 	}
 
-	[[nodiscard]] constexpr auto basePieceFromChar(char c)
+	[[nodiscard]] constexpr auto pieceTypeFromChar(char c)
 	{
 		switch (c)
 		{
-		case 'p': return BasePiece::  Pawn;
-		case 'n': return BasePiece::Knight;
-		case 'b': return BasePiece::Bishop;
-		case 'r': return BasePiece::  Rook;
-		case 'q': return BasePiece:: Queen;
-		case 'k': return BasePiece::  King;
-		default : return BasePiece::  None;
+		case 'p': return PieceType::  Pawn;
+		case 'n': return PieceType::Knight;
+		case 'b': return PieceType::Bishop;
+		case 'r': return PieceType::  Rook;
+		case 'q': return PieceType:: Queen;
+		case 'k': return PieceType::  King;
+		default : return PieceType::  None;
 		}
 	}
 
-	[[nodiscard]] constexpr auto basePieceToChar(BasePiece piece)
+	[[nodiscard]] constexpr auto pieceTypeToChar(PieceType piece)
 	{
 		switch (piece)
 		{
-		case BasePiece::  None: return ' ';
-		case BasePiece::  Pawn: return 'p';
-		case BasePiece::Knight: return 'n';
-		case BasePiece::Bishop: return 'b';
-		case BasePiece::  Rook: return 'r';
-		case BasePiece:: Queen: return 'q';
-		case BasePiece::  King: return 'k';
+		case PieceType::  None: return ' ';
+		case PieceType::  Pawn: return 'p';
+		case PieceType::Knight: return 'n';
+		case PieceType::Bishop: return 'b';
+		case PieceType::  Rook: return 'r';
+		case PieceType:: Queen: return 'q';
+		case PieceType::  King: return 'k';
 		default: return ' ';
 		}
 	}
@@ -270,4 +270,6 @@ namespace stormphrax
 	constexpr auto ScoreTbWin = 30000;
 	constexpr auto ScoreWin = 25000;
 	constexpr auto ScoreMaxNonWin = ScoreWin - 1;
+
+	constexpr i32 MaxDepth = 255;
 }
