@@ -144,7 +144,7 @@ namespace stormphrax
 			std::memset(m_table.data(), 0, sizeof(Table));
 			std::memset(m_countermoveTable.data(), 0, sizeof(CountermoveTable));
 			std::memset(m_captureTable.data(), 0, sizeof(CaptureTable));
-			std::memset(m_continuationTable.data(), 0, sizeof(ContinuationTable);
+			std::memset(m_continuationTable.data(), 0, sizeof(ContinuationTable));
 		}
 
 	private:
