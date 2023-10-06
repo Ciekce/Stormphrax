@@ -141,10 +141,10 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(m_table.data(), 0, sizeof(i32) * 2 * 2 * 64 * 12);
-			std::memset(m_countermoveTable.data(), 0, sizeof(Move) * 64 * 12);
-			std::memset(m_captureTable.data(), 0, sizeof(i32) * 64 * 12 * 13);
-			std::memset(m_continuationTable.data(), 0, sizeof(i32) * 64 * 12 * 64 * 12);
+			std::memset(m_table.data(), 0, sizeof(Table));
+			std::memset(m_countermoveTable.data(), 0, sizeof(CountermoveTable));
+			std::memset(m_captureTable.data(), 0, sizeof(CaptureTable));
+			std::memset(m_continuationTable.data(), 0, sizeof(ContinuationTable);
 		}
 
 	private:
