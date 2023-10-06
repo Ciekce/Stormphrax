@@ -89,7 +89,6 @@ inline auto Name() { return param_##Name.value; }
 	SP_TUNABLE_PARAM(maxLmpDepth, 8, 4, 12, 1)
 	SP_TUNABLE_PARAM(lmpMinMovesBase, 3, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 	SP_TUNABLE_PARAM(maxHistoryAdjustment, 1536, 1024, 3072, 256)
 	SP_TUNABLE_PARAM(historyDepthScale, 384, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyOffset, 384, 128, 768, 64)

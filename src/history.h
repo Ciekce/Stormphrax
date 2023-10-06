@@ -28,18 +28,25 @@
 #include "move.h"
 #include "position/position.h"
 #include "tunable.h"
+#include "util/bits.h"
 
 namespace stormphrax
 {
+	constexpr i32 MaxMainHistory = 8192;
+	constexpr i32 MaxContinuationHistory = 16384;
+	constexpr i32 MaxCaptureHistory = 16384;
+
 	inline auto historyAdjustment(i32 depth)
 	{
 		return std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
 			tunable::maxHistoryAdjustment());
 	}
 
+	template <i32 Max>
 	inline auto updateHistoryScore(i32 &score, i32 adjustment)
 	{
-		score += adjustment - score * std::abs(adjustment) / tunable::maxHistory();
+		static_assert(Max > 0 && util::resetLsb(Max) == 0);
+		score += adjustment - score * std::abs(adjustment) / Max;
 	}
 
 	struct HistoryMove
@@ -131,7 +138,7 @@ namespace stormphrax
 
 		inline auto updateNoisyScore(HistoryMove move, Bitboard threats, Piece captured, i32 adjustment)
 		{
-			updateHistoryScore(noisyEntry(move, captured, threats[move.dst]), adjustment);
+			updateHistoryScore<MaxCaptureHistory>(noisyEntry(move, captured, threats[move.dst]), adjustment);
 		}
 
 		[[nodiscard]] inline auto noisyScore(HistoryMove move, Bitboard threats, Piece captured) const
@@ -203,7 +210,7 @@ namespace stormphrax
 
 		inline auto updateMainScore(HistoryMove move, bool srcThreat, bool dstThreat, i32 adjustment) -> void
 		{
-			updateHistoryScore(entry(move, srcThreat, dstThreat), adjustment);
+			updateHistoryScore<MaxMainHistory>(entry(move, srcThreat, dstThreat), adjustment);
 		}
 
 		[[nodiscard]] inline auto continuationScore(HistoryMove move,
@@ -218,7 +225,8 @@ namespace stormphrax
 			i32 ply, std::span<const HistoryMove> prevMoves, i32 pliesAgo, i32 adjustment) -> void
 		{
 			if (ply >= pliesAgo && prevMoves[ply - pliesAgo])
-				updateHistoryScore(contEntry(prevMoves[ply - pliesAgo]).score(move), adjustment);
+				updateHistoryScore<MaxContinuationHistory>(contEntry(prevMoves[ply - pliesAgo]).score(move),
+					adjustment);
 		}
 
 		Table m_table{};
