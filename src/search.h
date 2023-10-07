@@ -98,6 +98,7 @@ namespace stormphrax::search
 		bool datagen{false};
 
 		PvList rootPv{};
+		eval::Optimism optimism{};
 
 		eval::NnueState nnueState{};
 

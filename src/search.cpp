@@ -306,7 +306,7 @@ namespace stormphrax::search
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
 
-		auto score = -ScoreMax;
+		auto score = 0;
 		Move best{};
 
 		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
@@ -327,6 +327,11 @@ namespace stormphrax::search
 			const auto prevBest = best;
 
 			bool reportThisIter = reportAndUpdate;
+
+			const auto optimism = 100 * score / (std::abs(score) + 128);
+
+			thread.optimism[static_cast<i32>(thread.pos.  toMove())] =  optimism;
+			thread.optimism[static_cast<i32>(thread.pos.opponent())] = -optimism;
 
 			if (depth < minAspDepth())
 			{
@@ -466,7 +471,7 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
+			return eval::staticEval(pos, thread.nnueState, thread.optimism, m_contempt);
 
 		const bool inCheck = pos.isCheck();
 
@@ -616,7 +621,7 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
+			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, thread.optimism, m_contempt);
 		}
 
 		thread.prevMoves[ply] = {};
@@ -940,7 +945,7 @@ namespace stormphrax::search
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate
-			: eval::staticEval(pos, thread.nnueState, m_contempt);
+			: eval::staticEval(pos, thread.nnueState, thread.optimism, m_contempt);
 
 		if (staticEval > alpha)
 		{

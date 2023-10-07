@@ -30,40 +30,48 @@
 namespace stormphrax::eval
 {
 	// black, white
+	using Optimism = std::array<Score, 2>;
 	using Contempt = std::array<Score, 2>;
 
-	inline auto materialScale(const Position &pos)
+	inline auto boardMaterial(const Position &pos)
 	{
 		const auto &boards = pos.boards();
-		return 22400
-			+ boards.knights().popcount() * see::values::Knight
-			+ boards.bishops().popcount() * see::values::Bishop
-			+ boards.  rooks().popcount() * see::values::Rook
-			+ boards. queens().popcount() * see::values::Queen;
+		return boards.knights().popcount() * see::values::Knight
+			 + boards.bishops().popcount() * see::values::Bishop
+			 + boards.  rooks().popcount() * see::values::Rook
+			 + boards. queens().popcount() * see::values::Queen;
 	}
 
-	inline auto scaleEval(const Position &pos, i32 eval)
+	inline auto scaleEval(const Position &pos, const Optimism &optimism, i32 eval)
 	{
-		eval = eval * materialScale(pos) / 32768;
+		const auto material = boardMaterial(pos);
+
+		const auto materialScale = (22400 + material) / 32;
+		const auto scaledOptimism = optimism[static_cast<i32>(pos.toMove())] * (128 + material / 64);
+
+		eval = (eval * materialScale + scaledOptimism) / 1024;
+
 		eval = eval * (200 - pos.halfmove()) / 200;
+
 		return eval;
 	}
 
-	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+	inline auto adjustEval(const Position &pos, const Optimism &optimism, const Contempt &contempt, i32 eval)
 	{
-		eval = scaleEval(pos, eval) + contempt[static_cast<i32>(pos.toMove())];
+		eval = scaleEval(pos, optimism, eval) + contempt[static_cast<i32>(pos.toMove())];
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
+	inline auto staticEval(const Position &pos, const NnueState &nnueState,
+		const Optimism &optimism = {}, const Contempt &contempt = {})
 	{
 		const auto nnueEval = nnueState.evaluate(pos.toMove());
-		return adjustEval(pos, contempt, nnueEval);
+		return adjustEval(pos, optimism, contempt, nnueEval);
 	}
 
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
-		return adjustEval(pos, contempt, nnueEval);
+		return adjustEval(pos, {}, contempt, nnueEval);
 	}
 }
