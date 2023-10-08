@@ -623,13 +623,18 @@ namespace stormphrax::search
 
 		const bool improving = !inCheck && ply > 1 && stack.eval > thread.stack[ply - 2].eval;
 
+		const auto threats = pos.threats();
+		const auto threatenedPieces = threats & pos.boards().occupancy(pos.toMove());
+
 		if (!pvNode && !inCheck && !stack.excluded)
 		{
 			// Reverse futility pruning (RFP)
 			// If static eval is above beta by some depth-dependent
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
-				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
+				&& stack.eval >= beta + rfpMargin()
+					* (depth + (threatenedPieces.empty() ? 0 : 1))
+					/ (improving ? 2 : 1))
 				return stack.eval;
 
 			// Nullmove pruning (NMP)
@@ -667,8 +672,6 @@ namespace stormphrax::search
 			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
 
 		const i32 minLmrMoves = pvNode ? 3 : 2;
-
-		const auto threats = pos.threats();
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreMax;
