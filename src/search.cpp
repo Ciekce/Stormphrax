@@ -624,7 +624,7 @@ namespace stormphrax::search
 		const bool improving = !inCheck && ply > 1 && stack.eval > thread.stack[ply - 2].eval;
 
 		const auto threats = pos.threats();
-		const auto threatenedPieces = threats & pos.boards().occupancy(pos.toMove());
+		const auto threatenedPieces = threats & pos.boards().nonPk(pos.toMove());
 
 		if (!pvNode && !inCheck && !stack.excluded)
 		{
