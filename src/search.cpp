@@ -527,7 +527,7 @@ namespace stormphrax::search
 				&& !stack.excluded
 				&& !ttMove
 				&& (pvNode || cutnode))
-				--depth;
+				depth -= cutnode ? 2 : 1;
 		}
 
 		const bool ttHit = ttEntry.type != EntryType::None;
