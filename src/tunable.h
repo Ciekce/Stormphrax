@@ -65,6 +65,7 @@ inline auto Name() { return param_##Name.value; }
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 8, 4, 12, 1)
 	SP_TUNABLE_PARAM(rfpMargin, 75, 25, 150, 5)
+	SP_TUNABLE_PARAM(rfpHistoryMargin, 256, 64, 1024, 64)
 
 	SP_TUNABLE_PARAM(maxSeePruningDepth, 9, 4, 15, 1)
 

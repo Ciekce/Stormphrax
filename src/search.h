@@ -67,6 +67,8 @@ namespace stormphrax::search
 		Score eval{};
 		Move excluded{};
 
+		i32 history{};
+
 		i32 doubleExtensions{0};
 
 		PvList pv{};
