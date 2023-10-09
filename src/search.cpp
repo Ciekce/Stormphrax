@@ -629,7 +629,9 @@ namespace stormphrax::search
 			// If static eval is above beta by some depth-dependent
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
-				&& stack.eval >= beta + rfpMargin() * depth / (improving ? 2 : 1))
+				&& stack.eval >= beta
+					+ rfpMargin() * depth / (improving ? 2 : 1)
+					+ thread.stack[ply - 1].history / 256)
 				return stack.eval;
 
 			// Nullmove pruning (NMP)
@@ -686,6 +688,8 @@ namespace stormphrax::search
 
 			if (move == stack.excluded)
 				continue;
+
+			stack.history = history;
 
 			const auto prevNodes = thread.search.nodes;
 

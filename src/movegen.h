@@ -89,9 +89,6 @@ namespace stormphrax
 
 		~MoveGenerator() = default;
 
-		// Note that this does *not* return history scores for TT
-		// or refutation moves (killers, countermoves), as they are
-		// not needed and returning them increases complexity a lot
 		[[nodiscard]] inline auto next()
 		{
 			while (true)
@@ -104,7 +101,7 @@ namespace stormphrax
 					{
 					case MovegenStage::TtMove:
 						if (m_ttMove)
-							return MoveWithHistory{m_ttMove};
+							return MoveWithHistory{m_ttMove, moveHistory(m_ttMove)};
 						break;
 
 					case MovegenStage::GoodNoisy:
@@ -117,7 +114,7 @@ namespace stormphrax
 						if (m_killer
 							&& m_killer != m_ttMove
 							&& m_pos.isPseudolegal(m_killer))
-							return MoveWithHistory{m_killer};
+							return MoveWithHistory{m_killer, moveHistory(m_killer)};
 						break;
 
 					case MovegenStage::Countermove:
@@ -128,7 +125,7 @@ namespace stormphrax
 								&& m_countermove != m_ttMove
 								&& m_countermove != m_killer
 								&& m_pos.isPseudolegal(m_countermove))
-								return MoveWithHistory{m_countermove};
+								return MoveWithHistory{m_countermove, moveHistory(m_countermove)};
 						}
 						break;
 
@@ -175,6 +172,24 @@ namespace stormphrax
 			-2, // rook
 			 0  // queen
 		};
+
+		inline auto moveHistory(Move move) -> i32
+		{
+			if constexpr (!Quiescence)
+			{
+				if (m_history)
+				{
+					const auto [noisy, captured] = m_pos.noisyCapturedPiece(move);
+					const auto historyMove = HistoryMove::from(m_pos.boards(), move);
+
+					return noisy
+						? m_history->noisyScore(historyMove, m_pos.threats(), captured)
+						: m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+				}
+			}
+
+			return 0;
+		}
 
 		inline auto findNext()
 		{
