@@ -631,7 +631,7 @@ namespace stormphrax::search
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta
 					+ rfpMargin() * depth / (improving ? 2 : 1)
-					+ thread.stack[ply - 1].history / 256)
+					+ thread.stack[ply - 1].history / rfpHistoryMargin())
 				return stack.eval;
 
 			// Nullmove pruning (NMP)
