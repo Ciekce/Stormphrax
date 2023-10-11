@@ -818,7 +818,7 @@ namespace stormphrax::search
 					// so search them to lower depth according to various heuristics
 					if (depth >= minLmrDepth()
 						&& legalMoves >= minLmrMoves
-						&& generator.stage() >= MovegenStage::Quiet)
+						&& generator.stage() >= MovegenStage::Killer)
 					{
 						auto lmr = baseLmr;
 
@@ -830,6 +830,9 @@ namespace stormphrax::search
 
 						// reduce moves with good history scores less and vice versa
 						lmr -= history / historyLmrDivisor();
+
+						// reduce refutation moves (killers and countermoves) less
+						lmr -= (generator.stage() < MovegenStage::Quiet) * 2;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
