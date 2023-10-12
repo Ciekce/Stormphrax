@@ -115,6 +115,7 @@ namespace stormphrax
 			updateContinuationScore(move, ply, prevMoves, 1, adjustment);
 			updateContinuationScore(move, ply, prevMoves, 2, adjustment);
 			updateContinuationScore(move, ply, prevMoves, 4, adjustment);
+			updateContinuationScore(move, ply, prevMoves, 6, adjustment);
 		}
 
 		[[nodiscard]] inline auto quietScore(HistoryMove move, Bitboard threats,
@@ -125,6 +126,7 @@ namespace stormphrax
 			history += continuationScore(move, ply, prevMoves, 1);
 			history += continuationScore(move, ply, prevMoves, 2);
 			history += continuationScore(move, ply, prevMoves, 4);
+			history += continuationScore(move, ply, prevMoves, 6) / 2;
 
 			return history;
 		}
