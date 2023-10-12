@@ -97,5 +97,8 @@ inline auto Name() { return param_##Name.value; }
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 8192, 4096, 16384, 512)
 
+	SP_TUNABLE_PARAM(maxHistoryPruningDepth, 5, 3, 8, 1)
+	SP_TUNABLE_PARAM(historyPruningScale, -1536, -5120, 0, 256)
+
 #undef SP_TUNABLE_PARAM
 }
