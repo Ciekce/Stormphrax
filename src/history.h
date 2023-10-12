@@ -88,23 +88,38 @@ namespace stormphrax
 		Table m_table{};
 	};
 
+	struct CountermoveEntry
+	{
+		Move countermove{};
+		Move followupMove{};
+	};
+
 	class HistoryTable
 	{
 	public:
 		HistoryTable() = default;
 		~HistoryTable() = default;
 
-		inline auto updateCountermove(i32 ply, std::span<const HistoryMove> prevMoves, Move countermove)
+		inline auto updateCountermoves(i32 ply, std::span<const HistoryMove> prevMoves, Move move)
 		{
 			if (ply > 0 && prevMoves[ply - 1])
-				countermoveEntry(prevMoves[ply - 1]) = countermove;
+				countermoveEntry(prevMoves[ply - 1]).countermove = move;
+			if (ply > 1 && prevMoves[ply - 2])
+				countermoveEntry(prevMoves[ply - 2]).followupMove = move;
 		}
 
 		[[nodiscard]] inline auto countermove(i32 ply, std::span<const HistoryMove> prevMoves) const
 		{
-			if (ply > 0 && prevMoves[ply - 1])
-				return countermoveEntry(prevMoves[ply - 1]);
-			else return NullMove;
+			return ply > 0 && prevMoves[ply - 1]
+				? countermoveEntry(prevMoves[ply - 1]).countermove
+				: NullMove;
+		}
+
+		[[nodiscard]] inline auto followupMove(i32 ply, std::span<const HistoryMove> prevMoves) const
+		{
+			return ply > 1 && prevMoves[ply - 2]
+				? countermoveEntry(prevMoves[ply - 2]).followupMove
+				: NullMove;
 		}
 
 		inline auto updateQuietScore(HistoryMove move, Bitboard threats,
@@ -149,7 +164,7 @@ namespace stormphrax
 
 	private:
 		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 12>;
-		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
+		using CountermoveTable = std::array<std::array<CountermoveEntry, 64>, 12>;
 		// 13 to account for non-capture queen promos
 		using CaptureTable = std::array<std::array<std::array<std::array<i32, 2>, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
@@ -164,12 +179,12 @@ namespace stormphrax
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
 		}
 
-		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) -> Move &
+		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) -> CountermoveEntry &
 		{
 			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) const -> Move
+		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) const -> const CountermoveEntry &
 		{
 			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}

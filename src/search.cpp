@@ -882,7 +882,7 @@ namespace stormphrax::search
 						if (quietOrLosing)
 						{
 							stack.killer = move;
-							thread.history.updateCountermove(ply, thread.prevMoves, move);
+							thread.history.updateCountermoves(ply, thread.prevMoves, move);
 						}
 
 						if (noisy)

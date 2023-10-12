@@ -53,7 +53,8 @@ namespace stormphrax
 		static constexpr i32 GoodNoisy = TtMove + 1;
 		static constexpr i32 Killer = GoodNoisy + 1;
 		static constexpr i32 Countermove = Killer + 1;
-		static constexpr i32 Quiet = Countermove + 1;
+		static constexpr i32 FollowupMove = Countermove + 1;
+		static constexpr i32 Quiet = FollowupMove + 1;
 		static constexpr i32 BadNoisy = Quiet + 1;
 		static constexpr i32 End = BadNoisy + 1;
 	};
@@ -118,7 +119,7 @@ namespace stormphrax
 						break;
 
 					case MovegenStage::Countermove:
-						if (m_history && m_ply > 0)
+						if (m_history)
 						{
 							m_countermove = m_history->countermove(m_ply, m_prevMoves);
 							if (m_countermove
@@ -126,6 +127,19 @@ namespace stormphrax
 								&& m_countermove != m_killer
 								&& m_pos.isPseudolegal(m_countermove))
 								return MoveWithHistory{m_countermove, moveHistory(m_countermove)};
+						}
+						break;
+
+					case MovegenStage::FollowupMove:
+						if (m_history)
+						{
+							m_followupMove = m_history->followupMove(m_ply, m_prevMoves);
+							if (m_followupMove
+								&& m_followupMove != m_ttMove
+								&& m_followupMove != m_killer
+								&& m_followupMove != m_countermove
+								&& m_pos.isPseudolegal(m_followupMove))
+								return MoveWithHistory{m_followupMove, moveHistory(m_followupMove)};
 						}
 						break;
 
@@ -150,7 +164,8 @@ namespace stormphrax
 
 				if (move != m_ttMove
 					&& move != m_killer
-					&& move != m_countermove)
+					&& move != m_countermove
+					&& move != m_followupMove)
 					return MoveWithHistory{move, m_data.histories[idx]};
 			}
 		}
@@ -310,6 +325,7 @@ namespace stormphrax
 		Move m_killer;
 
 		Move m_countermove{NullMove};
+		Move m_followupMove{NullMove};
 
 		const HistoryTable *m_history;
 
