@@ -794,7 +794,7 @@ namespace stormphrax::search
 				else if (sBeta >= beta)
 					return sBeta;
 				else if (ttEntry.score >= beta)
-					extension = pvNode ? -3 : -2;
+					extension = pvNode ? -2 : -3;
 			}
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
