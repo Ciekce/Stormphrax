@@ -37,7 +37,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768->768)x2->1, ClippedReLU
+	// current arch: (768x4->512)x2->1, ClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
@@ -45,15 +45,36 @@ namespace stormphrax::eval
 	using Activation = activation::ClippedReLU<255>;
 
 	constexpr u32 InputSize = 768;
-	constexpr u32 Layer1Size = 768;
+	constexpr u32 Layer1Size = 512;
 
 	constexpr i32 Scale = 400;
 
 	constexpr i32 Q = 255 * 64;
 
+	// visually flipped upside down, a1 = 0
+	constexpr auto InputBuckets = std::array {
+		0, 0, 0, 0, 1, 1, 1, 1,
+		0, 0, 0, 0, 1, 1, 1, 1,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3
+	};
+
+	constexpr auto InputBucketCount = *std::max_element(InputBuckets.begin(), InputBuckets.end()) + 1;
+
+	inline auto refreshRequired(Square prevKingSq, Square kingSq)
+	{
+		if constexpr (InputBucketCount > 1)
+			return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
+		else return false;
+	}
+
 	struct Network
 	{
-		SP_SIMD_ALIGNAS std::array<i16, InputSize * Layer1Size> featureWeights;
+		SP_SIMD_ALIGNAS std::array<i16, InputSize * InputBucketCount * Layer1Size> featureWeights;
 		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> featureBiases;
 		SP_SIMD_ALIGNAS std::array<i16, Layer1Size * 2> outputWeights;
 		i16 outputBias;
@@ -100,30 +121,36 @@ namespace stormphrax::eval
 			m_curr = &m_accumulatorStack.back();
 		}
 
-		inline auto reset(const PositionBoards &boards)
+		inline auto reset(const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			initAccumulator(*m_curr, boards);
+			refreshAccumulator(*m_curr, boards, blackKing, whiteKing);
 		}
 
-		inline auto moveFeature(Piece piece, Square src, Square dst)
+		inline auto refresh(const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			moveFeature(*m_curr, piece, src, dst);
+			refreshAccumulator(*m_curr, boards, blackKing, whiteKing);
 		}
 
-		inline auto activateFeature(Piece piece, Square sq)
+		inline auto moveFeature(Piece piece, Square src, Square dst, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			activateFeature(*m_curr, piece, sq);
+			moveFeature(*m_curr, piece, src, dst, blackKing, whiteKing);
 		}
 
-		inline auto deactivateFeature(Piece piece, Square sq)
+		inline auto activateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			deactivateFeature(*m_curr, piece, sq);
+			activateFeature(*m_curr, piece, sq, blackKing, whiteKing);
+		}
+
+		inline auto deactivateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+			deactivateFeature(*m_curr, piece, sq, blackKing, whiteKing);
 		}
 
 		[[nodiscard]] inline auto evaluate(Color stm) const
@@ -132,10 +159,11 @@ namespace stormphrax::eval
 			return evaluate(*m_curr, stm);
 		}
 
-		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards, Color stm)
+		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards,
+			Square blackKing, Square whiteKing, Color stm)
 		{
 			Accumulator accumulator{};
-			initAccumulator(accumulator, boards);
+			refreshAccumulator(accumulator, boards, blackKing, whiteKing);
 
 			return evaluate(accumulator, stm);
 		}
@@ -144,7 +172,8 @@ namespace stormphrax::eval
 		std::vector<Accumulator> m_accumulatorStack{};
 		Accumulator *m_curr{};
 
-		static inline auto initAccumulator(Accumulator &accumulator, const PositionBoards &boards) -> void
+		static inline auto refreshAccumulator(Accumulator &accumulator,
+			const PositionBoards &boards, Square blackKing, Square whiteKing) -> void
 		{
 			accumulator.init(g_currNet->featureBiases);
 
@@ -158,31 +187,34 @@ namespace stormphrax::eval
 				while (!board.empty())
 				{
 					const auto sq = board.popLowestSquare();
-					activateFeature(accumulator, piece, sq);
+					activateFeature(accumulator, piece, sq, blackKing, whiteKing);
 				}
 			}
 		}
 
-		static inline auto moveFeature(Accumulator &accumulator, Piece piece, Square src, Square dst) -> void
+		static inline auto moveFeature(Accumulator &accumulator, Piece piece,
+			Square src, Square dst, Square blackKing, Square whiteKing) -> void
 		{
-			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
-			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
+			const auto [blackSrc, whiteSrc] = featureIndices(piece, src, blackKing, whiteKing);
+			const auto [blackDst, whiteDst] = featureIndices(piece, dst, blackKing, whiteKing);
 
 			subtractAndAddToAll(accumulator.black, g_currNet->featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
 			subtractAndAddToAll(accumulator.white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
 		}
 
-		static inline auto activateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
+		static inline auto activateFeature(Accumulator &accumulator,
+			Piece piece, Square sq, Square blackKing, Square whiteKing) -> void
 		{
-			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq, blackKing, whiteKing);
 
 			addToAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
 			addToAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
 		}
 
-		static inline auto deactivateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
+		static inline auto deactivateFeature(Accumulator &accumulator,
+			Piece piece, Square sq, Square blackKing, Square whiteKing) -> void
 		{
-			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq, blackKing, whiteKing);
 
 			subtractFromAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
 			subtractFromAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
@@ -233,7 +265,8 @@ namespace stormphrax::eval
 			}
 		}
 
-		[[nodiscard]] static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
+		[[nodiscard]] static inline auto featureIndices(Piece piece,
+			Square sq, Square blackKing, Square whiteKing) -> std::pair<u32, u32>
 		{
 			assert(piece != Piece::None);
 			assert(sq != Square::None);
@@ -244,8 +277,11 @@ namespace stormphrax::eval
 			const auto type = static_cast<u32>(pieceType(piece));
 			const u32 color = pieceColor(piece) == Color::White ? 0 : 1;
 
-			const auto blackIdx = !color * ColorStride + type * PieceStride + (static_cast<u32>(sq) ^ 0x38);
-			const auto whiteIdx =  color * ColorStride + type * PieceStride +  static_cast<u32>(sq)        ;
+			const auto blackBucketOffset = InputBuckets[static_cast<i32>(blackKing)] * InputSize;
+			const auto whiteBucketOffset = InputBuckets[static_cast<i32>(whiteKing)] * InputSize;
+
+			const auto blackIdx = blackBucketOffset + !color * ColorStride + type * PieceStride + (static_cast<u32>(sq) ^ 0x38);
+			const auto whiteIdx = whiteBucketOffset +  color * ColorStride + type * PieceStride +  static_cast<u32>(sq)        ;
 
 			return {blackIdx, whiteIdx};
 		}
