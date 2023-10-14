@@ -277,8 +277,8 @@ namespace stormphrax::eval
 			const auto type = static_cast<u32>(pieceType(piece));
 			const u32 color = pieceColor(piece) == Color::White ? 0 : 1;
 
-			const auto blackBucketOffset = InputBuckets[static_cast<i32>(blackKing)] * InputSize;
-			const auto whiteBucketOffset = InputBuckets[static_cast<i32>(whiteKing)] * InputSize;
+			const auto blackBucketOffset = InputBuckets[static_cast<i32>(blackKing) ^ 0x38] * InputSize;
+			const auto whiteBucketOffset = InputBuckets[static_cast<i32>(whiteKing)       ] * InputSize;
 
 			const auto blackIdx = blackBucketOffset + !color * ColorStride + type * PieceStride + (static_cast<u32>(sq) ^ 0x38);
 			const auto whiteIdx = whiteBucketOffset +  color * ColorStride + type * PieceStride +  static_cast<u32>(sq)        ;
