@@ -67,6 +67,10 @@ namespace stormphrax::eval
 
 	inline auto refreshRequired(Square prevKingSq, Square kingSq)
 	{
+		assert(prevKingSq != Square::None);
+		assert(kingSq != Square::None);
+		assert(prevKingSq != kingSq);
+
 		if constexpr (InputBucketCount > 1)
 			return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
 		else return false;
@@ -123,6 +127,10 @@ namespace stormphrax::eval
 
 		inline auto reset(const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
@@ -132,36 +140,62 @@ namespace stormphrax::eval
 		inline auto refresh(const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			refreshAccumulator(*m_curr, boards, blackKing, whiteKing);
 		}
 
 		inline auto moveFeature(Piece piece, Square src, Square dst, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			moveFeature(*m_curr, piece, src, dst, blackKing, whiteKing);
 		}
 
 		inline auto activateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			activateFeature(*m_curr, piece, sq, blackKing, whiteKing);
 		}
 
 		inline auto deactivateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			deactivateFeature(*m_curr, piece, sq, blackKing, whiteKing);
 		}
 
 		[[nodiscard]] inline auto evaluate(Color stm) const
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+			assert(stm != Color::None);
+
 			return evaluate(*m_curr, stm);
 		}
 
 		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards,
 			Square blackKing, Square whiteKing, Color stm)
 		{
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			Accumulator accumulator{};
 			refreshAccumulator(accumulator, boards, blackKing, whiteKing);
 
@@ -175,6 +209,10 @@ namespace stormphrax::eval
 		static inline auto refreshAccumulator(Accumulator &accumulator,
 			const PositionBoards &boards, Square blackKing, Square whiteKing) -> void
 		{
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			accumulator.init(g_currNet->featureBiases);
 
 			// loop through each coloured piece, and activate the features
@@ -195,6 +233,15 @@ namespace stormphrax::eval
 		static inline auto moveFeature(Accumulator &accumulator, Piece piece,
 			Square src, Square dst, Square blackKing, Square whiteKing) -> void
 		{
+			assert(piece != Piece::None);
+
+			assert(src != Square::None);
+			assert(dst != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			const auto [blackSrc, whiteSrc] = featureIndices(piece, src, blackKing, whiteKing);
 			const auto [blackDst, whiteDst] = featureIndices(piece, dst, blackKing, whiteKing);
 
@@ -205,6 +252,13 @@ namespace stormphrax::eval
 		static inline auto activateFeature(Accumulator &accumulator,
 			Piece piece, Square sq, Square blackKing, Square whiteKing) -> void
 		{
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq, blackKing, whiteKing);
 
 			addToAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
@@ -214,6 +268,13 @@ namespace stormphrax::eval
 		static inline auto deactivateFeature(Accumulator &accumulator,
 			Piece piece, Square sq, Square blackKing, Square whiteKing) -> void
 		{
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq, blackKing, whiteKing);
 
 			subtractFromAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
@@ -222,6 +283,8 @@ namespace stormphrax::eval
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator, Color stm) -> i32
 		{
+			assert(stm != Color::None);
+
 			const auto output = stm == Color::Black
 				? forward(accumulator.black, accumulator.white, g_currNet->outputWeights)
 				: forward(accumulator.white, accumulator.black, g_currNet->outputWeights);
@@ -270,6 +333,10 @@ namespace stormphrax::eval
 		{
 			assert(piece != Piece::None);
 			assert(sq != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
 
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
