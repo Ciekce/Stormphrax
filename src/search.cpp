@@ -822,8 +822,8 @@ namespace stormphrax::search
 					{
 						auto lmr = baseLmr;
 
-						// reduce more in non-PV nodes
-						lmr += !pvNode;
+						// reduce less in PV nodes
+						lmr -= pvNode;
 
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
@@ -832,7 +832,7 @@ namespace stormphrax::search
 						lmr -= history / historyLmrDivisor();
 
 						// reduce more aggressively in expected cutnodes
-						lmr += cutnode;
+						lmr += cutnode * 2;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
