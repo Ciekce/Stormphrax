@@ -805,7 +805,7 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				const auto newDepth = depth - 1 + extension;
+				auto newDepth = depth - 1 + extension;
 
 				if (pvNode && legalMoves == 1)
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
@@ -830,6 +830,10 @@ namespace stormphrax::search
 
 						// reduce moves with good history scores less and vice versa
 						lmr -= history / historyLmrDivisor();
+
+						// allow LMR to extend if the move seems promising enough
+						if (lmr <= lmrExtensionThreshold())
+							++newDepth;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}

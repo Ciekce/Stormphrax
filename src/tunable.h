@@ -97,5 +97,7 @@ inline auto Name() { return param_##Name.value; }
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 8192, 4096, 16384, 512)
 
+	SP_TUNABLE_PARAM(lmrExtensionThreshold, -2, -4, -1, 1);
+
 #undef SP_TUNABLE_PARAM
 }
