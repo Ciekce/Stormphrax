@@ -55,17 +55,17 @@ namespace stormphrax::eval
 	constexpr auto InputBuckets = std::array {
 		0, 0, 0, 0, 1, 1, 1, 1,
 		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3,
+		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
 	constexpr auto InputBucketCount = *std::max_element(InputBuckets.begin(), InputBuckets.end()) + 1;
 
-	inline auto refreshRequired(Square prevKingSq, Square kingSq)
+	constexpr auto refreshRequired(Square prevKingSq, Square kingSq)
 	{
 		assert(prevKingSq != Square::None);
 		assert(kingSq != Square::None);
