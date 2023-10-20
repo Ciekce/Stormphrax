@@ -71,15 +71,18 @@ namespace stormphrax::eval
 		assert(kingSq != Square::None);
 		assert(prevKingSq != kingSq);
 
+		if constexpr (InputBucketCount == 1)
+			return false;
+		else if constexpr (InputBucketCount == 64)
+			return true;
+
 		if (c == Color::Black)
 		{
 			prevKingSq = flipSquare(prevKingSq);
 			kingSq = flipSquare(kingSq);
 		}
 
-		if constexpr (InputBucketCount > 1)
-			return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
-		else return false;
+		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
 	}
 
 	struct Network
