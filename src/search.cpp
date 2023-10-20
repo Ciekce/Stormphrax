@@ -927,10 +927,8 @@ namespace stormphrax::search
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
-		// increase depth for tt if in check
-		// https://chess.swehosting.se/test/1456/
 		if (!stack.excluded)
-			m_table.put(pos.key(), bestScore, bestMove, inCheck ? depth + 1 : depth, ply, entryType);
+			m_table.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
 
 		return bestScore;
 	}
