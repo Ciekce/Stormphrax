@@ -937,6 +937,11 @@ namespace stormphrax::search
 
 	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
+		assert(alpha >= -ScoreMax);
+		assert(beta  <=  ScoreMax);
+		assert(alpha <   beta);
+		assert(ply   >= 0 && ply   <= MaxDepth);
+
 		if (shouldStop(thread.search, false))
 			return beta;
 

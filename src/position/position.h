@@ -126,6 +126,9 @@ namespace stormphrax
 		[[nodiscard]] inline auto applyMove(Move move,
 			eval::NnueState *nnueState, TTable *prefetchTt = nullptr)
 		{
+			if constexpr (UpdateNnue)
+				assert(nnueState != nullptr);
+
 			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr,
 				applyMoveUnchecked<UpdateNnue>(move, nnueState, prefetchTt)};
 		}
@@ -165,6 +168,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
+			assert(square != Square::None);
+
 			const auto &boards = this->boards();
 
 			Bitboard attackers{};
@@ -191,6 +196,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto attackersTo(Square square, Color attacker) const
 		{
+			assert(square != Square::None);
+
 			const auto &boards = this->boards();
 
 			Bitboard attackers{};
@@ -221,6 +228,10 @@ namespace stormphrax
 		[[nodiscard]] static inline auto isAttacked(const BoardState &state,
 			Color toMove, Square square, Color attacker)
 		{
+			assert(toMove != Color::None);
+			assert(square != Square::None);
+			assert(attacker != Color::None);
+
 			if constexpr (ThreatShortcut)
 			{
 				if (attacker != toMove)
@@ -257,11 +268,16 @@ namespace stormphrax
 		template <bool ThreatShortcut = true>
 		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
+			assert(square != Square::None);
+			assert(attacker != Color::None);
+
 			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);
 		}
 
 		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
 		{
+			assert(attacker != Color::None);
+
 			if (attacker == opponent())
 				return !(squares & currState().threats).empty();
 
@@ -286,6 +302,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
+			assert(c != Color::None);
 			return currState().king(c);
 		}
 
@@ -297,6 +314,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
+			assert(c != Color::None);
 			return currState().king(oppColor(c));
 		}
 
@@ -358,6 +376,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
+			assert(move != NullMove);
+
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)
@@ -369,6 +389,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto isNoisy(Move move) const
 		{
+			assert(move != NullMove);
+
 			const auto type = move.type();
 
 			return type != MoveType::Castling
@@ -379,6 +401,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece>
 		{
+			assert(move != NullMove);
+
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)

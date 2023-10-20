@@ -68,6 +68,7 @@ namespace stormphrax
 
 	[[nodiscard]] constexpr auto oppColor(Color color)
 	{
+		assert(color != Color::None);
 		return static_cast<Color>(!static_cast<i32>(color));
 	}
 
@@ -82,11 +83,6 @@ namespace stormphrax
 	[[nodiscard]] constexpr auto pieceType(Piece piece)
 	{
 		assert(piece != Piece::None);
-		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
-	}
-
-	[[nodiscard]] constexpr auto pieceTypeUnchecked(Piece piece)
-	{
 		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
 	}
 
@@ -196,26 +192,33 @@ namespace stormphrax
 
 	[[nodiscard]] constexpr auto toSquare(u32 rank, u32 file)
 	{
+		assert(rank < 8);
+		assert(file < 8);
+
 		return static_cast<Square>((rank << 3) | file);
 	}
 
 	[[nodiscard]] constexpr auto squareRank(Square square)
 	{
+		assert(square != Square::None);
 		return static_cast<i32>(square) >> 3;
 	}
 
 	[[nodiscard]] constexpr auto squareFile(Square square)
 	{
+		assert(square != Square::None);
 		return static_cast<i32>(square) & 0x7;
 	}
 
 	[[nodiscard]] constexpr auto flipSquare(Square square)
 	{
+		assert(square != Square::None);
 		return static_cast<Square>(static_cast<i32>(square) ^ 0x38);
 	}
 
 	[[nodiscard]] constexpr auto squareBit(Square square)
 	{
+		assert(square != Square::None);
 		return U64(1) << static_cast<i32>(square);
 	}
 
@@ -241,6 +244,8 @@ namespace stormphrax
 	template <Color C>
 	constexpr auto relativeRank(i32 rank)
 	{
+		assert(rank >= 0 && rank < 8);
+
 		if constexpr (C == Color::Black)
 			return 7 - rank;
 		else return rank;
@@ -248,6 +253,7 @@ namespace stormphrax
 
 	constexpr auto relativeRank(Color c, i32 rank)
 	{
+		assert(rank >= 0 && rank < 8);
 		return c == Color::Black ? 7 - rank : rank;
 	}
 

@@ -47,6 +47,8 @@ namespace stormphrax::limit
 	TimeManager::TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
 		: m_startTime{start}
 	{
+		assert(toGo >= 0);
+
 		const auto limit = std::max(0.001, remaining - overhead);
 
 		if (toGo == 0)
@@ -60,6 +62,9 @@ namespace stormphrax::limit
 
 	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
 	{
+		assert(bestMove != NullMove);
+		assert(totalNodes > 0);
+
 		const auto bestMoveFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
 		const auto moveNodeScale = (1.5 - bestMoveFraction) * 1.35;
@@ -69,6 +74,7 @@ namespace stormphrax::limit
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
 	{
+		assert(move != NullMove);
 		m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
 	}
 

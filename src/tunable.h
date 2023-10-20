@@ -41,10 +41,19 @@ namespace stormphrax::tunable
 	TunableParam &addTunableParam(const std::string &name, i32 value, i32 min, i32 max, i32 step);
 
 #define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
+static_assert(Default >= Min); \
+static_assert(Default <= Max); \
+static_assert(Min < Max); \
+static_assert(Min + Step <= Max); \
 inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step); \
 inline auto Name() { return param_##Name.value; }
 #else
-#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) constexpr auto Name() -> i32 { return Default; }
+#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
+static_assert(Default >= Min); \
+static_assert(Default <= Max); \
+static_assert(Min < Max); \
+static_assert(Min + Step <= Max); \
+constexpr auto Name() -> i32 { return Default; }
 #endif
 
 	SP_TUNABLE_PARAM(minAspDepth, 6, 1, 10, 1)

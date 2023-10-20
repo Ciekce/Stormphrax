@@ -297,6 +297,11 @@ namespace stormphrax
 
 		inline auto setPiece(Square square, Piece piece)
 		{
+			assert(square != Square::None);
+			assert(piece != Piece::None);
+
+			assert(pieceAt(square) == Piece::None);
+
 			const auto mask = Bitboard::fromSquare(square);
 
 			forPiece(pieceType(piece)) ^= mask;
@@ -305,6 +310,12 @@ namespace stormphrax
 
 		inline auto movePiece(Square src, Square dst, Piece piece)
 		{
+			assert(src != Square::None);
+			assert(dst != Square::None);
+			assert(src != dst);
+
+			assert(pieceAt(src) == piece);
+
 			const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
 
 			forPiece(pieceType(piece)) ^= mask;
@@ -313,6 +324,15 @@ namespace stormphrax
 
 		inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType target)
 		{
+			assert(src != Square::None);
+			assert(dst != Square::None);
+			assert(src != dst);
+
+			assert(moving != Piece::None);
+			assert(target != PieceType::None);
+
+			assert(pieceAt(src) == moving);
+
 			forPiece(pieceType(moving))[src] = false;
 			forPiece(target)[dst] = true;
 
@@ -322,6 +342,11 @@ namespace stormphrax
 
 		inline auto removePiece(Square square, Piece piece)
 		{
+			assert(square != Square::None);
+			assert(piece != Piece::None);
+
+			assert(pieceAt(square) == piece);
+
 			forPiece(pieceType(piece))[square] = false;
 			forColor(pieceColor(piece))[square] = false;
 		}

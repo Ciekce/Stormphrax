@@ -645,6 +645,9 @@ namespace stormphrax
 	template <bool UpdateNnue, bool StateHistory>
 	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> bool
 	{
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		if constexpr (UpdateNnue && StateHistory)
 			nnueState->push();
 
@@ -823,6 +826,9 @@ namespace stormphrax
 		assert(m_states.size() > 1 && "popMove() with no previous move?");
 
 		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
+		if constexpr (UpdateNnue)
 			nnueState->pop();
 
 		m_states.pop_back();
@@ -846,6 +852,8 @@ namespace stormphrax
 
 	auto Position::isPseudolegal(Move move) const -> bool
 	{
+		assert(move != NullMove);
+
 		const auto &state = currState();
 
 		const auto us = toMove();
@@ -1085,7 +1093,13 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
 	{
+		assert(piece != Piece::None);
+		assert(square != Square::None);
+
 		assert(pieceType(piece) != PieceType::King);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
 
 		auto &state = currState();
 
@@ -1104,7 +1118,13 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::removePiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
 	{
+		assert(piece != Piece::None);
+		assert(square != Square::None);
+
 		assert(pieceType(piece) != PieceType::King);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
 
 		auto &state = currState();
 
@@ -1123,6 +1143,15 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::movePieceNoCap(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> void
 	{
+		assert(piece != Piece::None);
+
+		assert(src != Square::None);
+		assert(dst != Square::None);
+		assert(src != dst);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		auto &state = currState();
 
 		state.boards.movePiece(src, dst, piece);
@@ -1164,6 +1193,15 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece
 	{
+		assert(piece != Piece::None);
+
+		assert(src != Square::None);
+		assert(dst != Square::None);
+		assert(src != dst);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		auto &state = currState();
 
 		const auto captured = state.boards.pieceAt(dst);
@@ -1235,6 +1273,21 @@ namespace stormphrax
 	auto Position::promotePawn(Piece pawn, Square src, Square dst,
 		PieceType target, eval::NnueState *nnueState) -> Piece
 	{
+		assert(pawn != Piece::None);
+		assert(pieceType(pawn) == PieceType::Pawn);
+
+		assert(src != Square::None);
+		assert(dst != Square::None);
+		assert(src != dst);
+
+		assert(squareRank(dst) == relativeRank(pieceColor(pawn), 7));
+		assert(squareRank(src) == relativeRank(pieceColor(pawn), 6));
+
+		assert(target != PieceType::None);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		auto &state = currState();
 
 		const auto captured = state.boards.pieceAt(dst);
@@ -1274,6 +1327,16 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void
 	{
+		assert(king != Piece::None);
+		assert(pieceType(king) == PieceType::King);
+
+		assert(kingSrc != Square::None);
+		assert(rookSrc != Square::None);
+		assert(kingSrc != rookSrc);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		const auto rank = squareRank(kingSrc);
 
 		Square kingDst, rookDst;
@@ -1335,6 +1398,16 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueState *nnueState) -> Piece
 	{
+		assert(pawn != Piece::None);
+		assert(pieceType(pawn) == PieceType::Pawn);
+
+		assert(src != Square::None);
+		assert(dst != Square::None);
+		assert(src != dst);
+
+		if constexpr (UpdateNnue)
+			assert(nnueState != nullptr);
+
 		auto &state = currState();
 
 		const auto color = pieceColor(pawn);
