@@ -126,10 +126,10 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.inputBuckets != 1)
+			if (header.inputBuckets != InputBucketCount)
 			{
 				std::cerr << "wrong number of input buckets (" << header.inputBuckets
-					<< ", expected: 1)" << std::endl;
+					<< ", expected: " << InputBucketCount << ")" << std::endl;
 				return false;
 			}
 

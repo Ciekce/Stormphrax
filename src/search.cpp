@@ -175,7 +175,7 @@ namespace stormphrax::search
 			thread.search = SearchData{};
 			thread.pos = pos;
 
-			thread.nnueState.reset(thread.pos.boards());
+			thread.nnueState.reset(thread.pos.boards(), thread.pos.blackKing(), thread.pos.whiteKing());
 		}
 
 		m_stop.store(false, std::memory_order::seq_cst);
@@ -225,7 +225,7 @@ namespace stormphrax::search
 		thread->pos = pos;
 		thread->maxDepth = depth;
 
-		thread->nnueState.reset(thread->pos.boards());
+		thread->nnueState.reset(thread->pos.boards(), thread->pos.blackKing(), thread->pos.whiteKing());
 
 		m_stop.store(false, std::memory_order::seq_cst);
 

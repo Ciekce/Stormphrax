@@ -1085,15 +1085,14 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
 	{
+		assert(pieceType(piece) != PieceType::King);
+
 		auto &state = currState();
 
 		state.boards.setPiece(square, piece);
 
-		if (pieceType(piece) == PieceType::King)
-			state.king(pieceColor(piece)) = square;
-
 		if constexpr (UpdateNnue)
-			nnueState->activateFeature(piece, square);
+			nnueState->activateFeature(piece, square, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
@@ -1105,12 +1104,14 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::removePiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
 	{
+		assert(pieceType(piece) != PieceType::King);
+
 		auto &state = currState();
 
 		state.boards.removePiece(square, piece);
 
 		if constexpr (UpdateNnue)
-			nnueState->deactivateFeature(piece, square);
+			nnueState->deactivateFeature(piece, square, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
@@ -1127,10 +1128,31 @@ namespace stormphrax
 		state.boards.movePiece(src, dst, piece);
 
 		if (pieceType(piece) == PieceType::King)
-			state.king(pieceColor(piece)) = dst;
+		{
+			const auto color = pieceColor(piece);
 
-		if constexpr (UpdateNnue)
-			nnueState->moveFeature(piece, src, dst);
+			if constexpr (UpdateNnue)
+			{
+				const auto prevKingSquare = state.king(color);
+
+				state.king(color) = dst;
+
+				if (eval::refreshRequired(color, prevKingSquare, dst))
+				{
+					const auto opponent = oppColor(color);
+
+					nnueState->refresh(color, state.boards, state.king(color));
+					nnueState->moveFeatureSingle(opponent, piece, src, dst, state.king(opponent));
+				}
+				else nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			}
+			else state.king(color) = dst;
+		}
+		else
+		{
+			if constexpr (UpdateNnue)
+				nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+		}
 
 		if constexpr (UpdateKey)
 		{
@@ -1148,10 +1170,11 @@ namespace stormphrax
 
 		if (captured != Piece::None)
 		{
+			assert(pieceType(captured) != PieceType::King);
+
 			state.boards.removePiece(dst, captured);
 
-			if constexpr (UpdateNnue)
-				nnueState->deactivateFeature(captured, dst);
+			// NNUE update done below
 
 			if constexpr (UpdateKey)
 			{
@@ -1163,10 +1186,41 @@ namespace stormphrax
 		state.boards.movePiece(src, dst, piece);
 
 		if (pieceType(piece) == PieceType::King)
-			state.king(pieceColor(piece)) = dst;
+		{
+			const auto color = pieceColor(piece);
 
-		if constexpr (UpdateNnue)
-			nnueState->moveFeature(piece, src, dst);
+			if constexpr (UpdateNnue)
+			{
+				const auto prevKingSquare = state.king(color);
+
+				state.king(color) = dst;
+
+				if (eval::refreshRequired(color, prevKingSquare, dst))
+				{
+					const auto opponent = oppColor(color);
+					const auto oppKing = state.king(opponent);
+
+					nnueState->refresh(color, state.boards, state.king(color));
+
+					nnueState->moveFeatureSingle(opponent, piece, src, dst, oppKing);
+					if (captured != Piece::None)
+						nnueState->deactivateFeatureSingle(opponent, captured, dst, oppKing);
+				}
+				else
+				{
+					nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+					if (captured != Piece::None)
+						nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+				}
+			}
+			else state.king(color) = dst;
+		}
+		else if constexpr (UpdateNnue)
+		{
+			nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			if (captured != Piece::None)
+				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+		}
 
 		if constexpr (UpdateKey)
 		{
@@ -1187,10 +1241,12 @@ namespace stormphrax
 
 		if (captured != Piece::None)
 		{
+			assert(pieceType(captured) != PieceType::King);
+
 			state.boards.removePiece(dst, captured);
 
 			if constexpr (UpdateNnue)
-				nnueState->deactivateFeature(captured, dst);
+				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
 
 			if constexpr (UpdateKey)
 				state.key ^= hash::pieceSquare(captured, dst);
@@ -1204,14 +1260,12 @@ namespace stormphrax
 
 			if constexpr (UpdateNnue)
 			{
-				nnueState->deactivateFeature(pawn, src);
-				nnueState->activateFeature(coloredTarget, dst);
+				nnueState->deactivateFeature(pawn, src, state.blackKing(), state.whiteKing());
+				nnueState->activateFeature(coloredTarget, dst, state.blackKing(), state.whiteKing());
 			}
 
 			if constexpr (UpdateKey)
-			{
 				state.key ^= hash::pieceSquare(pawn, src) ^ hash::pieceSquare(coloredTarget, dst);
-			}
 		}
 
 		return captured;
@@ -1241,17 +1295,40 @@ namespace stormphrax
 
 		if (g_opts.chess960)
 		{
-			removePiece<UpdateKey, UpdateNnue>(rook, rookSrc, nnueState);
+			removePiece<UpdateKey, false>(rook, rookSrc, nnueState);
 
 			if (kingSrc != kingDst)
-				movePieceNoCap<UpdateKey, UpdateNnue>(king, kingSrc, kingDst, nnueState);
+				movePieceNoCap<UpdateKey, false>(king, kingSrc, kingDst, nnueState);
 
-			setPiece<UpdateKey, UpdateNnue>(rook, rookDst, nnueState);
+			setPiece<UpdateKey, false>(rook, rookDst, nnueState);
 		}
 		else
 		{
-			movePieceNoCap<UpdateKey, UpdateNnue>(king, kingSrc, kingDst, nnueState);
-			movePieceNoCap<UpdateKey, UpdateNnue>(rook, rookSrc, rookDst, nnueState);
+			movePieceNoCap<UpdateKey, false>(king, kingSrc, kingDst, nnueState);
+			movePieceNoCap<UpdateKey, false>(rook, rookSrc, rookDst, nnueState);
+		}
+
+		if constexpr (UpdateNnue)
+		{
+			const auto &state = currState();
+
+			const auto color = pieceColor(king);
+			const auto opponent = oppColor(color);
+
+			if (eval::refreshRequired(color, kingSrc, kingDst))
+			{
+				nnueState->refresh(color, state.boards, kingDst);
+
+				const auto oppKing = state.king(opponent);
+
+				nnueState->moveFeatureSingle(oppColor(color), king, kingSrc, kingDst, oppKing);
+				nnueState->moveFeatureSingle(oppColor(color), rook, rookSrc, rookDst, oppKing);
+			}
+			else
+			{
+				nnueState->moveFeature(king, kingSrc, kingDst, state.blackKing(), state.whiteKing());
+				nnueState->moveFeature(rook, rookSrc, rookDst, state.blackKing(), state.whiteKing());
+			}
 		}
 	}
 
@@ -1265,7 +1342,7 @@ namespace stormphrax
 		state.boards.movePiece(src, dst, pawn);
 
 		if constexpr (UpdateNnue)
-			nnueState->moveFeature(pawn, src, dst);
+			nnueState->moveFeature(pawn, src, dst, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
@@ -1284,7 +1361,7 @@ namespace stormphrax
 		state.boards.removePiece(captureSquare, enemyPawn);
 
 		if constexpr (UpdateNnue)
-			nnueState->deactivateFeature(enemyPawn, captureSquare);
+			nnueState->deactivateFeature(enemyPawn, captureSquare, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
