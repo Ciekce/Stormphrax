@@ -209,6 +209,11 @@ namespace stormphrax
 		return static_cast<i32>(square) & 0x7;
 	}
 
+	[[nodiscard]] constexpr auto flipSquare(Square square)
+	{
+		return static_cast<Square>(static_cast<i32>(square) ^ 0x38);
+	}
+
 	[[nodiscard]] constexpr auto squareBit(Square square)
 	{
 		return U64(1) << static_cast<i32>(square);

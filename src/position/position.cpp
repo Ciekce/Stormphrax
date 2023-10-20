@@ -1085,32 +1085,14 @@ namespace stormphrax
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
 	{
+		assert(pieceType(piece) != PieceType::King);
+
 		auto &state = currState();
 
 		state.boards.setPiece(square, piece);
 
-		if (pieceType(piece) == PieceType::King)
-		{
-			const auto color = pieceColor(piece);
-
-			if constexpr (UpdateNnue)
-			{
-				const auto prevKingSquare = state.king(color);
-				assert(prevKingSquare != Square::None);
-
-				state.king(color) = square;
-
-				if (eval::refreshRequired(prevKingSquare, square))
-					nnueState->refresh(state.boards, state.blackKing(), state.whiteKing());
-				else nnueState->activateFeature(piece, square, state.blackKing(), state.whiteKing());
-			}
-			else state.king(color) = square;
-		}
-		else
-		{
-			if constexpr (UpdateNnue)
-				nnueState->activateFeature(piece, square, state.blackKing(), state.whiteKing());
-		}
+		if constexpr (UpdateNnue)
+			nnueState->activateFeature(piece, square, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
@@ -1155,8 +1137,13 @@ namespace stormphrax
 
 				state.king(color) = dst;
 
-				if (eval::refreshRequired(prevKingSquare, dst))
-					nnueState->refresh(state.boards, state.blackKing(), state.whiteKing());
+				if (eval::refreshRequired(color, prevKingSquare, dst))
+				{
+					const auto opponent = oppColor(color);
+
+					nnueState->refresh(color, state.boards, state.king(color));
+					nnueState->moveFeatureSingle(opponent, piece, src, dst, state.king(opponent));
+				}
 				else nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
 			}
 			else state.king(color) = dst;
@@ -1183,10 +1170,11 @@ namespace stormphrax
 
 		if (captured != Piece::None)
 		{
+			assert(pieceType(captured) != PieceType::King);
+
 			state.boards.removePiece(dst, captured);
 
-			if constexpr (UpdateNnue)
-				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+			// NNUE update done below
 
 			if constexpr (UpdateKey)
 			{
@@ -1207,16 +1195,31 @@ namespace stormphrax
 
 				state.king(color) = dst;
 
-				if (eval::refreshRequired(prevKingSquare, dst))
-					nnueState->refresh(state.boards, state.blackKing(), state.whiteKing());
-				else nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+				if (eval::refreshRequired(color, prevKingSquare, dst))
+				{
+					const auto opponent = oppColor(color);
+					const auto oppKing = state.king(opponent);
+
+					nnueState->refresh(color, state.boards, state.king(color));
+
+					nnueState->moveFeatureSingle(opponent, piece, src, dst, oppKing);
+					if (captured != Piece::None)
+						nnueState->deactivateFeatureSingle(opponent, captured, dst, oppKing);
+				}
+				else
+				{
+					nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+					if (captured != Piece::None)
+						nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+				}
 			}
 			else state.king(color) = dst;
 		}
-		else
+		else if constexpr (UpdateNnue)
 		{
-			if constexpr (UpdateNnue)
-				nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			if (captured != Piece::None)
+				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
 		}
 
 		if constexpr (UpdateKey)
@@ -1238,6 +1241,8 @@ namespace stormphrax
 
 		if (captured != Piece::None)
 		{
+			assert(pieceType(captured) != PieceType::King);
+
 			state.boards.removePiece(dst, captured);
 
 			if constexpr (UpdateNnue)
@@ -1307,8 +1312,18 @@ namespace stormphrax
 		{
 			const auto &state = currState();
 
-			if (eval::refreshRequired(kingSrc, kingDst))
-				nnueState->refresh(state.boards, state.blackKing(), state.whiteKing());
+			const auto color = pieceColor(king);
+			const auto opponent = oppColor(color);
+
+			if (eval::refreshRequired(color, kingSrc, kingDst))
+			{
+				nnueState->refresh(color, state.boards, kingDst);
+
+				const auto oppKing = state.king(opponent);
+
+				nnueState->moveFeatureSingle(oppColor(color), king, kingSrc, kingDst, oppKing);
+				nnueState->moveFeatureSingle(oppColor(color), rook, rookSrc, rookDst, oppKing);
+			}
 			else
 			{
 				nnueState->moveFeature(king, kingSrc, kingDst, state.blackKing(), state.whiteKing());

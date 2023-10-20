@@ -466,7 +466,7 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 
 		if (ply >= MaxDepth)
-			return eval::staticEvalOnce(pos, m_contempt);
+			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		const bool inCheck = pos.isCheck();
 
@@ -616,7 +616,7 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : eval::staticEvalOnce(pos, m_contempt);
+			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
 		thread.prevMoves[ply] = {};
@@ -737,7 +737,7 @@ namespace stormphrax::search
 			const auto movingPiece = boards.pieceAt(move.src());
 			assert(movingPiece != Piece::None);
 
-			const auto guard = pos.applyMove<false>(move, &thread.nnueState, &m_table);
+			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
 
 			if (!guard)
 				continue;
@@ -766,12 +766,12 @@ namespace stormphrax::search
 				const auto sDepth = (depth - 1) / 2;
 
 				stack.excluded = move;
-				pos.popMove<false>(&thread.nnueState);
+				pos.popMove(&thread.nnueState);
 
 				const auto score = search(thread, stack.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
 
 				stack.excluded = NullMove;
-				pos.applyMoveUnchecked<false>(move, &thread.nnueState, &m_table);
+				pos.applyMoveUnchecked(move, &thread.nnueState, &m_table);
 
 				if (score < sBeta)
 				{
@@ -944,7 +944,7 @@ namespace stormphrax::search
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate
-			: eval::staticEvalOnce(pos, m_contempt);
+			: eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (staticEval > alpha)
 		{
@@ -979,7 +979,7 @@ namespace stormphrax::search
 
 		while (const auto move = generator.next())
 		{
-			const auto guard = pos.applyMove<false>(move.move, &thread.nnueState, &m_table);
+			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
 
 			if (!guard)
 				continue;
