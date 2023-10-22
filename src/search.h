@@ -111,6 +111,8 @@ namespace stormphrax::search
 
 		Position pos{};
 
+		Color lastNullMover{Color::None};
+
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;

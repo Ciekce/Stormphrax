@@ -306,6 +306,8 @@ namespace stormphrax::search
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
 
+		thread.lastNullMover = Color::None;
+
 		auto score = -ScoreMax;
 		Move best{};
 
@@ -653,9 +655,14 @@ namespace stormphrax::search
 						+ depth / nmpReductionDepthScale()
 						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
 
+				const auto prevNullMover = thread.lastNullMover;
+				thread.lastNullMover = us;
+
 				const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
 				const auto score = -search(thread, stack.pv, depth - R,
 					ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
+
+				thread.lastNullMover = prevNullMover;
 
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
@@ -830,6 +837,11 @@ namespace stormphrax::search
 
 						// reduce moves with good history scores less and vice versa
 						lmr -= history / historyLmrDivisor();
+
+						// reduce more if the side to move is the last side that nullmoved
+						// we are trying to prove that this side is significantly better, but
+						// earlier moves have failed to cause a cutoff - spend less effort
+						lmr += us == thread.lastNullMover;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
