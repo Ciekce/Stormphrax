@@ -825,6 +825,9 @@ namespace stormphrax::search
 						// reduce more in non-PV nodes
 						lmr += !pvNode;
 
+						// reduce noisy moves less in PV nodes
+						lmr -= pvNode && noisy;
+
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
 
