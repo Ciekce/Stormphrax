@@ -831,6 +831,9 @@ namespace stormphrax::search
 						// reduce moves with good history scores less and vice versa
 						lmr -= history / historyLmrDivisor();
 
+						// reduce less if improving
+						lmr -= improving;
+
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
 
