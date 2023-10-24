@@ -822,8 +822,8 @@ namespace stormphrax::search
 					{
 						auto lmr = baseLmr;
 
-						// reduce less in PV nodes
-						lmr -= pvNode;
+						// reduce more in non-PV nodes
+						lmr += !pvNode;
 
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
@@ -831,8 +831,8 @@ namespace stormphrax::search
 						// reduce moves with good history scores less and vice versa
 						lmr -= history / historyLmrDivisor();
 
-						// reduce more if not improving
-						lmr += !improving;
+						// reduce less if improving
+						lmr -= improving;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
