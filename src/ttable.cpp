@@ -29,21 +29,23 @@ namespace stormphrax
 {
 	namespace
 	{
+		// for a long time, these were backwards
+		// cheers toanth
 		inline auto scoreToTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
-				return score + ply;
-			else if (score > ScoreWin)
 				return score - ply;
+			else if (score > ScoreWin)
+				return score + ply;
 			return score;
 		}
 
 		inline auto scoreFromTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
-				return score - ply;
-			else if (score > ScoreWin)
 				return score + ply;
+			else if (score > ScoreWin)
+				return score - ply;
 			return score;
 		}
 
