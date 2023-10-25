@@ -748,6 +748,8 @@ namespace stormphrax::search
 			++thread.search.nodes;
 			++legalMoves;
 
+			Score score{};
+
 			i32 extension{};
 
 			// Singular extensions (SE)
@@ -768,7 +770,7 @@ namespace stormphrax::search
 				stack.excluded = move;
 				pos.popMove(&thread.nnueState);
 
-				const auto score = search(thread, stack.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
+				score = search(thread, stack.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
 
 				stack.excluded = NullMove;
 				pos.applyMoveUnchecked(move, &thread.nnueState, &m_table);
@@ -794,12 +796,16 @@ namespace stormphrax::search
 				else if (sBeta >= beta)
 					return sBeta;
 				else if (ttEntry.score >= beta)
+				{
+					score = search(thread, stack.pv, depth / 2 + 3, ply, moveStackIdx + 1, beta - 1, beta, cutnode);
+					if (score >= beta)
+						return score;
+
 					extension = -2;
+				}
 			}
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
-
-			Score score{};
 
 			if (pos.isDrawn(pvNode))
 				score = drawScore(thread.search.nodes);
