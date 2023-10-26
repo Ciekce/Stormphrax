@@ -795,6 +795,8 @@ namespace stormphrax::search
 					return sBeta;
 				else if (ttEntry.score >= beta)
 					extension = -2;
+				else if (cutnode)
+					extension = -1;
 			}
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
