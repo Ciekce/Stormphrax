@@ -524,7 +524,6 @@ namespace stormphrax::search
 			// Just reduce the depth and come back later
 			if (!inCheck
 				&& depth >= minIirDepth()
-				&& !stack.excluded
 				&& !ttMove
 				&& (pvNode || cutnode))
 				--depth;

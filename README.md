@@ -70,7 +70,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 
 ## Builds
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
-`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
+`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1, Zen+ or Zen 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
 
@@ -78,7 +78,7 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 (note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)
 
 ### Note:  
-- If you have an AMD Zen 1 (Ryzen x 1xxx) or 2 (Ryzen x 2xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
+- If you have an AMD Zen 1 (Ryzen x 1xxx), Zen+ (Ryzen x 2xxx) or Zen 2 (Ryzen x 3xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
