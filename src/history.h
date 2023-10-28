@@ -31,8 +31,9 @@
 
 namespace stormphrax
 {
-	inline auto historyAdjustment(i32 depth)
+	inline auto historyAdjustment(i32 depth, Score alpha, Score staticEval)
 	{
+		depth += staticEval <= alpha;
 		return std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
 			tunable::maxHistoryAdjustment());
 	}
