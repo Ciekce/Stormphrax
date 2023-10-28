@@ -618,6 +618,8 @@ namespace stormphrax::search
 			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
+		thread.stack[ply + 2].killer = NullMove;
+
 		thread.prevMoves[ply] = {};
 
 		const bool improving = !inCheck && ply > 1 && stack.eval > thread.stack[ply - 2].eval;

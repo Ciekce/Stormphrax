@@ -85,7 +85,7 @@ namespace stormphrax::search
 	{
 		ThreadData()
 		{
-			stack.resize(MaxDepth + 2);
+			stack.resize(MaxDepth + 4);
 			moveStack.resize(MaxDepth * 2);
 		}
 
