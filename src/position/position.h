@@ -451,6 +451,11 @@ namespace stormphrax
 
 		[[nodiscard]] auto moveFromUci(const std::string &move) const -> Move;
 
+		[[nodiscard]] inline auto plyFromStartpos() const -> u32
+		{
+			return m_fullmove * 2 - (m_blackToMove ? 0 : 1) - 1;
+		}
+
 		auto operator=(const Position &) -> Position & = default;
 		auto operator=(Position &&) -> Position & = default;
 
