@@ -837,6 +837,9 @@ namespace stormphrax::search
 						// reduce less if improving
 						lmr -= improving;
 
+						// reduce quiet moves more in expected cutnodes
+						lmr += !noisy && cutnode;
+
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
 
