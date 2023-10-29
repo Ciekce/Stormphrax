@@ -520,7 +520,8 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newContempt = util::tryParseI32(valueStr))
-							opts::mutableOpts().contempt = wdl::unnormalizeScore(ContemptRange.clamp(*newContempt));
+							opts::mutableOpts().contempt = wdl::unnormalizeScoreMove32(
+								ContemptRange.clamp(*newContempt));
 					}
 				}
 				else if (nameStr == "uci_chess960")
@@ -630,7 +631,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
+			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
 
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -staticEval : staticEval);
@@ -639,7 +640,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
+			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
 			printScore(std::cout, score);
 			std::cout << std::endl;
 		}
