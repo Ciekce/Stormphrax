@@ -877,7 +877,7 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						// Update history on fail-highs
-						const auto bonus = historyAdjustment(depth);
+						const auto bonus = historyAdjustment(depth, alpha, stack.eval);
 						const auto penalty = -bonus;
 
 						const auto currMove = thread.prevMoves[ply];
