@@ -615,7 +615,7 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
+			else stack.eval = inCheck ? -ScoreInf : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
 		thread.stack[ply + 2].killer = NullMove;
