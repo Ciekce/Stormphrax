@@ -276,7 +276,7 @@ namespace stormphrax
 
 	using Score = i32;
 
-	constexpr auto ScoreMax = 32767;
+	constexpr auto ScoreInf = 32767;
 	constexpr auto ScoreMate = 32766;
 	constexpr auto ScoreTbWin = 30000;
 	constexpr auto ScoreWin = 25000;

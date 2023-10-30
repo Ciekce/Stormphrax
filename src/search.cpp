@@ -152,7 +152,7 @@ namespace stormphrax::search
 				thread.rootPv.moves[0] = move;
 				thread.rootPv.length = 1;
 
-				report(thread, 1, 0.0, score, -ScoreMax, ScoreMax, true);
+				report(thread, 1, 0.0, score, -ScoreInf, ScoreInf, true);
 				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 
 				return;
@@ -306,7 +306,7 @@ namespace stormphrax::search
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
 
-		auto score = -ScoreMax;
+		auto score = -ScoreInf;
 		Move best{};
 
 		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
@@ -330,7 +330,7 @@ namespace stormphrax::search
 
 			if (depth < minAspDepth())
 			{
-				const auto newScore = search(thread, thread.rootPv, depth, 0, 0, -ScoreMax, ScoreMax, false);
+				const auto newScore = search(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf, false);
 
 				depthCompleted = depth;
 
@@ -346,8 +346,8 @@ namespace stormphrax::search
 
 				auto delta = initialAspWindow();
 
-				auto alpha = std::max(score - delta, -ScoreMax);
-				auto beta  = std::min(score + delta,  ScoreMax);
+				auto alpha = std::max(score - delta, -ScoreInf);
+				auto beta  = std::min(score + delta,  ScoreInf);
 
 				while (!shouldStop(searchData, false))
 				{
@@ -374,17 +374,17 @@ namespace stormphrax::search
 					delta += delta / 2;
 
 					if (delta > maxAspWindow())
-						delta = ScoreMax;
+						delta = ScoreInf;
 
 					if (score >= beta)
 					{
-						beta = std::min(beta + delta, ScoreMax);
+						beta = std::min(beta + delta, ScoreInf);
 						--aspDepth;
 					}
 					else if (score <= alpha)
 					{
 						beta = (alpha + beta) / 2;
-						alpha = std::max(alpha - delta, -ScoreMax);
+						alpha = std::max(alpha - delta, -ScoreInf);
 						aspDepth = depth;
 					}
 					else
@@ -405,7 +405,7 @@ namespace stormphrax::search
 					best = thread.rootPv.moves[0];
 
 				if (best)
-					report(thread, searchData.depth, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					report(thread, searchData.depth, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
 				else
 				{
 					std::cout << "info string no legal moves" << std::endl;
@@ -422,7 +422,7 @@ namespace stormphrax::search
 			if (best)
 			{
 				if (!hitSoftTimeout || !m_limiter->stopped())
-					report(thread, depthCompleted, util::g_timer.time() - startTime, score, -ScoreMax, ScoreMax);
+					report(thread, depthCompleted, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
 				std::cout << "bestmove " << uci::moveToString(best) << std::endl;
 			}
 			else std::cout << "info string no legal moves" << std::endl;
@@ -453,8 +453,8 @@ namespace stormphrax::search
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
-		assert(alpha >= -ScoreMax);
-		assert(beta  <=  ScoreMax);
+		assert(alpha >= -ScoreInf);
+		assert(beta  <=  ScoreInf);
 		assert(alpha <   beta);
 		assert(depth >= 0 && depth <= MaxDepth);
 		assert(ply   >= 0 && ply   <= MaxDepth);
@@ -674,7 +674,7 @@ namespace stormphrax::search
 		const auto threats = pos.threats();
 
 		auto bestMove = NullMove;
-		auto bestScore = -ScoreMax;
+		auto bestScore = -ScoreInf;
 
 		auto entryType = EntryType::Alpha;
 
@@ -941,8 +941,8 @@ namespace stormphrax::search
 
 	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
-		assert(alpha >= -ScoreMax);
-		assert(beta  <=  ScoreMax);
+		assert(alpha >= -ScoreInf);
+		assert(beta  <=  ScoreInf);
 		assert(alpha <   beta);
 		assert(ply   >= 0 && ply   <= MaxDepth);
 
