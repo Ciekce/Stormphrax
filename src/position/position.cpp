@@ -668,6 +668,7 @@ namespace stormphrax
 		m_blackToMove = !m_blackToMove;
 
 		state.key ^= hash::color();
+		state.pawnKey ^= hash::color();
 
 		if (state.enPassant != Square::None)
 		{
@@ -1112,6 +1113,8 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(piece, square);
 			state.key ^= hash;
+			if (pieceType(piece) == PieceType::Pawn)
+				state.pawnKey ^= hash;
 		}
 	}
 
@@ -1137,6 +1140,8 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(piece, square);
 			state.key ^= hash;
+			if (pieceType(piece) == PieceType::Pawn)
+				state.pawnKey ^= hash;
 		}
 	}
 
@@ -1187,6 +1192,8 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
 			state.key ^= hash;
+			if (pieceType(piece) == PieceType::Pawn)
+				state.pawnKey ^= hash;
 		}
 	}
 
@@ -1218,6 +1225,8 @@ namespace stormphrax
 			{
 				const auto hash = hash::pieceSquare(captured, dst);
 				state.key ^= hash;
+				if (pieceType(captured) == PieceType::Pawn)
+					state.pawnKey ^= hash;
 			}
 		}
 
@@ -1264,6 +1273,8 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
 			state.key ^= hash;
+			if (pieceType(piece) == PieceType::Pawn)
+				state.pawnKey ^= hash;
 		}
 
 		return captured;
@@ -1318,7 +1329,11 @@ namespace stormphrax
 			}
 
 			if constexpr (UpdateKey)
-				state.key ^= hash::pieceSquare(pawn, src) ^ hash::pieceSquare(coloredTarget, dst);
+			{
+				const auto pawnHash = hash::pieceSquare(pawn, src);
+				state.key ^= pawnHash ^ hash::pieceSquare(coloredTarget, dst);
+				state.pawnKey ^= pawnHash;
+			}
 		}
 
 		return captured;
@@ -1421,6 +1436,7 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(pawn, src) ^ hash::pieceSquare(pawn, dst);
 			state.key ^= hash;
+			state.pawnKey ^= hash;
 		}
 
 		auto rank = squareRank(dst);
@@ -1440,6 +1456,7 @@ namespace stormphrax
 		{
 			const auto hash = hash::pieceSquare(enemyPawn, captureSquare);
 			state.key ^= hash;
+			state.pawnKey ^= hash;
 		}
 
 		return enemyPawn;
@@ -1451,6 +1468,7 @@ namespace stormphrax
 		auto &state = currState();
 
 		state.key = 0;
+		state.pawnKey = 0;
 
 		for (u32 rank = 0; rank < 8; ++rank)
 		{
@@ -1464,6 +1482,8 @@ namespace stormphrax
 
 					const auto hash = hash::pieceSquare(piece, toSquare(rank, file));
 					state.key ^= hash;
+					if (pieceType(piece) == PieceType::Pawn)
+						state.pawnKey ^= hash;
 				}
 			}
 		}
@@ -1492,6 +1512,7 @@ namespace stormphrax
 
 		const auto colorHash = hash::color(toMove());
 		state.key ^= colorHash;
+		state.pawnKey ^= colorHash;
 
 		state.key ^= hash::castling(state.castlingRooks);
 		state.key ^= hash::enPassant(state.enPassant);
@@ -1546,6 +1567,7 @@ namespace stormphrax
 		out << std::hex;
 
 		SP_CHECK(currState().key, regened.currState().key, "keys")
+		SP_CHECK(currState().pawnKey, regened.currState().pawnKey, "pawn keys")
 
 		out << std::dec;
 

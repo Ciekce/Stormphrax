@@ -109,23 +109,27 @@ namespace stormphrax
 		}
 
 		inline auto updateQuietScore(HistoryMove move, Bitboard threats,
-			i32 ply, std::span<const HistoryMove> prevMoves, i32 adjustment)
+			i32 ply, std::span<const HistoryMove> prevMoves, u64 pawnKey, i32 adjustment)
 		{
 			updateMainScore(move, threats[move.src], threats[move.dst], adjustment);
 
 			updateContinuationScore(move, ply, prevMoves, 1, adjustment);
 			updateContinuationScore(move, ply, prevMoves, 2, adjustment);
 			updateContinuationScore(move, ply, prevMoves, 4, adjustment);
+
+			updatePawnStructureScore(move, pawnKey, adjustment);
 		}
 
 		[[nodiscard]] inline auto quietScore(HistoryMove move, Bitboard threats,
-			i32 ply, std::span<const HistoryMove> prevMoves) const
+			i32 ply, std::span<const HistoryMove> prevMoves, u64 pawnKey) const
 		{
 			auto history = mainScore(move, threats[move.src], threats[move.dst]);
 
 			history += continuationScore(move, ply, prevMoves, 1);
 			history += continuationScore(move, ply, prevMoves, 2);
 			history += continuationScore(move, ply, prevMoves, 4);
+
+			history += pawnStructureScore(move, pawnKey);
 
 			return history;
 		}
@@ -146,14 +150,19 @@ namespace stormphrax
 			std::memset(m_countermoveTable.data(), 0, sizeof(CountermoveTable));
 			std::memset(m_captureTable.data(), 0, sizeof(CaptureTable));
 			std::memset(m_continuationTable.data(), 0, sizeof(ContinuationTable));
+			std::memset(m_pawnStructureTable.data(), 0, sizeof(PawnStructureTable));
 		}
 
 	private:
+		static constexpr i32 PawnHistoryBits = 9;
+		static constexpr u64 PawnHistoryMask = (1 << PawnHistoryBits) - 1;
+
 		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 12>;
 		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
 		// 13 to account for non-capture queen promos
 		using CaptureTable = std::array<std::array<std::array<std::array<i32, 2>, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
+		using PawnStructureTable = std::array<std::array<std::array<i32, 64>, 12>, 1 << PawnHistoryBits>;
 
 		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) -> i32 &
 		{
@@ -197,6 +206,18 @@ namespace stormphrax
 			return m_continuationTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
+		[[nodiscard]] inline auto pawnStructureEntry(HistoryMove move, u64 pawnKey) -> i32 &
+		{
+			return m_pawnStructureTable[pawnKey & PawnHistoryMask]
+			[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
+		[[nodiscard]] inline auto pawnStructureEntry(HistoryMove move, u64 pawnKey) const -> const i32 &
+		{
+			return m_pawnStructureTable[pawnKey & PawnHistoryMask]
+				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
+		}
+
 		[[nodiscard]] inline auto mainScore(HistoryMove move, bool srcThreat, bool dstThreat) const -> i32
 		{
 			return entry(move, srcThreat, dstThreat);
@@ -222,9 +243,20 @@ namespace stormphrax
 				updateHistoryScore(contEntry(prevMoves[ply - pliesAgo]).score(move), adjustment);
 		}
 
+		[[nodiscard]] inline auto pawnStructureScore(HistoryMove move, u64 pawnKey) const -> i32
+		{
+			return pawnStructureEntry(move, pawnKey);
+		}
+
+		inline auto updatePawnStructureScore(HistoryMove move, u64 pawnKey, i32 adjustment) -> void
+		{
+			updateHistoryScore(pawnStructureEntry(move, pawnKey), adjustment);
+		}
+
 		Table m_table{};
 		CountermoveTable m_countermoveTable{};
 		CaptureTable m_captureTable{};
 		ContinuationTable m_continuationTable{};
+		PawnStructureTable m_pawnStructureTable{};
 	};
 }

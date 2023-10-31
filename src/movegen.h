@@ -184,7 +184,7 @@ namespace stormphrax
 
 					return noisy
 						? m_history->noisyScore(historyMove, m_pos.threats(), captured)
-						: m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+						: m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves, m_pos.pawnKey());
 				}
 			}
 
@@ -259,7 +259,8 @@ namespace stormphrax
 				if (m_history)
 				{
 					const auto historyMove = HistoryMove::from(boards, move.move);
-					const auto historyScore = m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+					const auto historyScore = m_history->quietScore(historyMove,
+						m_pos.threats(), m_ply, m_prevMoves, m_pos.pawnKey());
 					m_data.histories[i] = move.score = historyScore;
 				}
 

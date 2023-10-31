@@ -39,6 +39,7 @@ namespace stormphrax
 		PositionBoards boards{};
 
 		u64 key{};
+		u64 pawnKey{};
 
 		Bitboard checkers{};
 		Bitboard threats{};
@@ -74,7 +75,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 104);
+	static_assert(sizeof(BoardState) == 112);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -165,6 +166,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return currState().key; }
+		[[nodiscard]] inline auto pawnKey() const { return currState().pawnKey; }
 
 		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
@@ -436,7 +438,8 @@ namespace stormphrax
 			return *this == other
 				&& currState().kings == other.m_states.back().kings
 				&& currState().checkers == other.m_states.back().checkers
-				&& currState().key == other.m_states.back().key;
+				&& currState().key == other.m_states.back().key
+				&& currState().pawnKey == other.m_states.back().pawnKey;
 		}
 
 		template <bool EnPassantFromMoves = false>
