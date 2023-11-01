@@ -30,6 +30,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <algorithm>
 
 #include "search_fwd.h"
 #include "position/position.h"
@@ -58,6 +59,12 @@ namespace stormphrax::search
 	{
 		std::array<Move, MaxDepth> moves{};
 		u32 length{};
+
+		inline auto copyFrom(const PvList &other)
+		{
+			std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
+			length = other.length;
+		}
 	};
 
 	struct SearchStackEntry
@@ -219,7 +226,7 @@ namespace stormphrax::search
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, i32 depth, f64 time,
-			Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
+			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }
