@@ -527,6 +527,7 @@ namespace stormphrax::search
 		}
 
 		const bool ttHit = ttEntry.type != EntryType::None;
+		const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
 		const auto pieceCount = boards.occupancy().popcount();
 
@@ -842,6 +843,9 @@ namespace stormphrax::search
 
 						// reduce less if improving
 						lmr -= improving;
+
+						// reduce more if the TT move is noisy
+						lmr += ttMoveNoisy;
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
