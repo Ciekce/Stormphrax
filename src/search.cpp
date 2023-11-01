@@ -612,14 +612,23 @@ namespace stormphrax::search
 		{
 			if (!root && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
+			else stack.eval = inCheck ? -ScoreInf : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
 
 		thread.stack[ply + 2].killer = NullMove;
 
 		thread.prevMoves[ply] = {};
 
-		const bool improving = !inCheck && ply > 1 && stack.eval > thread.stack[ply - 2].eval;
+		const bool improving = [&]
+		{
+			if (inCheck)
+				return false;
+			if (ply > 1 && thread.stack[ply - 2].eval != -ScoreInf)
+				return stack.eval > thread.stack[ply - 2].eval;
+			if (ply > 3 && thread.stack[ply - 4].eval != -ScoreInf)
+				return stack.eval > thread.stack[ply - 4].eval;
+			return true;
+		}();
 
 		if (!pvNode && !inCheck && !stack.excluded)
 		{
