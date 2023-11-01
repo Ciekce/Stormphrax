@@ -19,7 +19,6 @@
 #include "search.h"
 
 #include <iostream>
-#include <algorithm>
 #include <cmath>
 #include <cassert>
 
@@ -152,7 +151,7 @@ namespace stormphrax::search
 				thread.rootPv.moves[0] = move;
 				thread.rootPv.length = 1;
 
-				report(thread, 1, 0.0, score, -ScoreInf, ScoreInf, true);
+				report(thread, thread.rootPv, 0.0, score, -ScoreInf, ScoreInf, true);
 				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 
 				return;
@@ -307,7 +306,7 @@ namespace stormphrax::search
 		thread.rootPv.length = 0;
 
 		auto score = -ScoreInf;
-		Move best{};
+		PvList pv{};
 
 		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
 		const auto startDepth = 1 + static_cast<i32>(thread.id) % 16;
@@ -324,8 +323,6 @@ namespace stormphrax::search
 			searchData.depth = depth;
 			searchData.seldepth = 0;
 
-			const auto prevBest = best;
-
 			bool reportThisIter = reportAndUpdate;
 
 			if (depth < minAspDepth())
@@ -338,7 +335,7 @@ namespace stormphrax::search
 					break;
 
 				score = newScore;
-				best = thread.rootPv.moves[0];
+				pv.copyFrom(thread.rootPv);
 			}
 			else
 			{
@@ -368,7 +365,7 @@ namespace stormphrax::search
 					{
 						const auto time = util::g_timer.time() - startTime;
 						if (time > MinReportDelay)
-							report(thread, thread.search.depth, time, score, alpha, beta);
+							report(thread, thread.rootPv, thread.search.depth, time, score, alpha, beta);
 					}
 
 					delta += delta / 2;
@@ -389,7 +386,7 @@ namespace stormphrax::search
 					}
 					else
 					{
-						best = thread.rootPv.moves[0];
+						pv.copyFrom(thread.rootPv);
 						depthCompleted = depth;
 						break;
 					}
@@ -397,15 +394,15 @@ namespace stormphrax::search
 			}
 
 			if (reportAndUpdate)
-				m_limiter->update(thread.search, best, thread.search.nodes);
+				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
 
 			if (reportThisIter && depth < thread.maxDepth)
 			{
-				if (!best)
-					best = thread.rootPv.moves[0];
+				if (pv.length == 0)
+					pv.copyFrom(thread.rootPv);
 
-				if (best)
-					report(thread, searchData.depth, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
+				if (pv.length > 0)
+					report(thread, pv, searchData.depth, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
 				else
 				{
 					std::cout << "info string no legal moves" << std::endl;
@@ -419,11 +416,11 @@ namespace stormphrax::search
 			if (mainSearchThread)
 				m_searchMutex.lock();
 
-			if (best)
+			if (pv.length > 0)
 			{
 				if (!hitSoftTimeout || !m_limiter->stopped())
-					report(thread, depthCompleted, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
-				std::cout << "bestmove " << uci::moveToString(best) << std::endl;
+					report(thread, pv, depthCompleted, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
+				std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
 			}
 			else std::cout << "info string no legal moves" << std::endl;
 		}
@@ -1022,8 +1019,8 @@ namespace stormphrax::search
 		return bestScore;
 	}
 
-	auto Searcher::report(const ThreadData &mainThread, i32 depth,
-		f64 time, Score score, Score alpha, Score beta, bool tbRoot) -> void
+	auto Searcher::report(const ThreadData &mainThread, const PvList &pv,
+		i32 depth, f64 time, Score score, Score alpha, Score beta, bool tbRoot) -> void
 	{
 		usize nodes = 0;
 
@@ -1107,9 +1104,9 @@ namespace stormphrax::search
 
 		std::cout << " pv";
 
-		for (u32 i = 0; i < mainThread.rootPv.length; ++i)
+		for (u32 i = 0; i < pv.length; ++i)
 		{
-			std::cout << ' ' << uci::moveToString(mainThread.rootPv.moves[i]);
+			std::cout << ' ' << uci::moveToString(pv.moves[i]);
 		}
 
 		std::cout << std::endl;
