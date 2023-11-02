@@ -4,7 +4,7 @@
 EXE = stormphrax_default
 EVALFILE = src/eval/riverrise.nnue
 
-SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/position/position.cpp src/movegen.cpp src/attacks/black_magic/attacks.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/opts.cpp src/3rdparty/fathom/tbprobe.cpp src/datagen.cpp src/wdl.cpp
+SOURCES := src/main.cpp src/uci.cpp src/util/split.cpp src/position/position.cpp src/movegen.cpp src/attacks/black_magic/attacks.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/fathom/tbprobe.cpp src/datagen.cpp src/wdl.cpp
 
 SUFFIX :=
 
