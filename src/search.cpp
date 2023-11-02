@@ -293,7 +293,7 @@ namespace stormphrax::search
 
 		for (i32 depth = startDepth;
 			depth <= thread.maxDepth
-				&& !(hitSoftTimeout = shouldStop(searchData, true));
+				&& !(hitSoftTimeout = shouldStop(searchData, thread.isMainThread(), true));
 			++depth)
 		{
 			searchData.depth = depth;
@@ -322,7 +322,7 @@ namespace stormphrax::search
 				auto alpha = std::max(score - delta, -ScoreInf);
 				auto beta  = std::min(score + delta,  ScoreInf);
 
-				while (!shouldStop(searchData, false))
+				while (!shouldStop(searchData, thread.isMainThread(), false))
 				{
 					aspDepth = std::max(aspDepth, depth - maxAspReduction());
 
@@ -432,7 +432,7 @@ namespace stormphrax::search
 		assert(depth >= 0 && depth <= MaxDepth);
 		assert(ply   >= 0 && ply   <= MaxDepth);
 
-		if (depth > 1 && shouldStop(thread.search, false))
+		if (depth > 1 && shouldStop(thread.search, thread.isMainThread(), false))
 			return beta;
 
 		auto &pos = thread.pos;
@@ -930,7 +930,7 @@ namespace stormphrax::search
 		assert(alpha <   beta);
 		assert(ply   >= 0 && ply   <= MaxDepth);
 
-		if (shouldStop(thread.search, false))
+		if (shouldStop(thread.search, thread.isMainThread(), false))
 			return beta;
 
 		auto &pos = thread.pos;
