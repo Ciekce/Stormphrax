@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 2.0.21)
+project(stormphrax VERSION 2.0.22)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(SP_DEFAULT_NET_NAME net013)
+set(SP_DEFAULT_NET_NAME net014_e28)
 
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
