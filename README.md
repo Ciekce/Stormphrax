@@ -18,8 +18,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  2.0.0  |            -            |            -             |             3639              |      -       |       -        |
-|  1.0.0  |          3254           |           3364           |             3513              |     3344     |      3342      |
+|  3.0.0  |            -            |            -             |               -               |      -       |       -        |
+|  2.0.0  |          3318           |           3463           |             3640              |      -       |       -        |
+|  1.0.0  |          3255           |           3361           |             3513              |     3344     |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -29,8 +30,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - futility pruning
   - history
     - capture history
-    - countermove history (1-ply continuation history)
-    - follow-up history (2-ply continuation history)
+    - 1-ply continuation history (countermove history)
+    - 2-ply continuation history (follow-up history)
+    - 4-ply continuation history
   - internal iterative reduction
   - killers (1 per ply)
   - late move reductions
@@ -40,9 +42,11 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - reverse futility pruning
   - SEE move ordering and pruning
   - singular extensions
+    - double extension
+    - negative extension
   - Syzygy tablebase support
 - NNUE
-  - (768->384)x2->1 architecture
+  - (768x4->768)x2->1 architecture
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
