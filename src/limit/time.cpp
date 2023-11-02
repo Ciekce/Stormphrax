@@ -20,8 +20,12 @@
 
 #include <algorithm>
 
+#include "../tunable.h"
+
 namespace stormphrax::limit
 {
+	using namespace stormphrax::tunable;
+
 	MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead)
 		: m_maxTime{util::g_timer.time() + static_cast<f64>(std::max(I64(1), time - overhead)) / 1000.0} {}
 
@@ -49,15 +53,20 @@ namespace stormphrax::limit
 	{
 		assert(toGo >= 0);
 
+		const auto incScale = static_cast<f64>(incrementScale()) / 100.0;
+
+		const auto softScale = static_cast<f64>(softTimeScale()) / 100.0;
+		const auto hardScale = static_cast<f64>(hardTimeScale()) / 100.0;
+
 		const auto limit = std::max(0.001, remaining - overhead);
 
 		if (toGo == 0)
-			toGo = 20;
+			toGo = defaultMovesToGo();
 
-		const auto baseTime = limit / static_cast<f64>(toGo) + increment * 0.75;
+		const auto baseTime = limit / static_cast<f64>(toGo) + increment * incScale;
 
-		m_maxTime  = limit / 2.0;
-		m_softTime = std::min(baseTime * 0.6, m_maxTime);
+		m_maxTime  = limit * hardScale;
+		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
 	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
@@ -65,9 +74,12 @@ namespace stormphrax::limit
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
+		const auto base = static_cast<f64>(nodeTimeBase()) / 100.0;
+		const auto scale = static_cast<f64>(nodeTimeScale()) / 100.0;
+
 		const auto bestMoveFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = (1.5 - bestMoveFraction) * 1.35;
+		const auto moveNodeScale = (base - bestMoveFraction) * scale;
 
 		m_scale = moveNodeScale;
 	}

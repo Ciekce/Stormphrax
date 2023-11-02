@@ -1,0 +1,45 @@
+/*
+ * Stormphrax, a UCI chess engine
+ * Copyright (C) 2023 Ciekce
+ *
+ * Stormphrax is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Stormphrax is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "tunable.h"
+
+namespace stormphrax::tunable
+{
+	std::array<std::array<i32, 256>, 256> g_lmrTable{};
+
+	auto updateLmrTable() -> void
+	{
+		const auto base = static_cast<f64>(lmrBase()) / 100.0;
+		const auto divisor = static_cast<f64>(lmrDivisor()) / 100.0;
+
+		for (i32 depth = 1; depth < 256; ++depth)
+		{
+			for (i32 moves = 1; moves < 256; ++moves)
+			{
+				g_lmrTable[depth][moves] = static_cast<i32>(
+					base + std::log(static_cast<f64>(depth)) * std::log(static_cast<f64>(moves)) / divisor
+				);
+			}
+		}
+	}
+
+	auto init() -> void
+	{
+		updateLmrTable();
+	}
+}

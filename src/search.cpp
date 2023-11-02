@@ -36,30 +36,6 @@ namespace stormphrax::search
 	{
 		constexpr f64 MinReportDelay = 1.0;
 
-		// values from viridithas
-		//TODO tune for stormphrax
-		constexpr f64 LmrBase = 0.77;
-		constexpr f64 LmrDivisor = 2.36;
-
-		[[nodiscard]] auto generateLmrTable()
-		{
-			std::array<std::array<i32, 256>, 256> dst{};
-
-			// neither can be 0
-			for (i32 depth = 1; depth < 256; ++depth)
-			{
-				for (i32 moves = 1; moves < 256; ++moves)
-				{
-					dst[depth][moves] = static_cast<i32>(LmrBase
-						+ std::log(static_cast<f64>(depth)) * std::log(static_cast<f64>(moves)) / LmrDivisor);
-				}
-			}
-
-			return dst;
-		}
-
-		const auto LmrTable = generateLmrTable();
-
 		inline auto drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -368,7 +344,7 @@ namespace stormphrax::search
 							report(thread, thread.rootPv, thread.search.depth, time, score, alpha, beta);
 					}
 
-					delta += delta / 2;
+					delta += delta * aspWideningFactor() / 16;
 
 					if (delta > maxAspWindow())
 						delta = ScoreInf;
@@ -675,7 +651,9 @@ namespace stormphrax::search
 		if (ply > 0)
 			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
 
-		const i32 minLmrMoves = pvNode ? 3 : 2;
+		const i32 minLmrMoves = pvNode
+			? lmrMinMovesPv()
+			: lmrMinMovesNonPv();
 
 		const auto threats = pos.threats();
 
@@ -703,7 +681,7 @@ namespace stormphrax::search
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
 			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
 
-			const auto baseLmr = LmrTable[depth][legalMoves + 1];
+			const auto baseLmr = g_lmrTable[depth][legalMoves + 1];
 
 			if (!root
 				&& quietOrLosing

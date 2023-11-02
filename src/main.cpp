@@ -21,11 +21,13 @@
 #include "datagen.h"
 #include "util/parse.h"
 #include "eval/nnue.h"
+#include "tunable.h"
 
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
 {
+	tunable::init();
 	eval::loadDefaultNetwork();
 
 	if (argc > 1)

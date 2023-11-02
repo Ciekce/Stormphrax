@@ -56,7 +56,7 @@ namespace stormphrax
 		constexpr auto Version = SP_STRINGIFY(SP_VERSION);
 		constexpr auto Author = "Ciekce";
 
-#if SP_TUNE_SEARCH
+#if SP_EXTERNAL_TUNE
 		auto tunableParams() -> auto &
 		{
 			static std::unordered_map<std::string, tunable::TunableParam> params{};
@@ -197,7 +197,7 @@ namespace stormphrax
 				<< " max " << search::SyzygyProbeLimitRange.max() << '\n';
 			std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
-#if SP_TUNE_SEARCH
+#if SP_EXTERNAL_TUNE
 			for (const auto &[_lowerName, param] : tunableParams())
 			{
 				std::cout << "option name " << param.name << " type spin default " << param.defaultValue
@@ -599,12 +599,14 @@ namespace stormphrax
 						else eval::loadNetwork(valueStr);
 					}
 				}
-#if SP_TUNE_SEARCH
+#if SP_EXTERNAL_TUNE
 				else if (auto itr = tunableParams().find(nameStr);
 					itr != tunableParams().end())
 				{
-					if (!valueEmpty)
-						util::tryParseI32(itr->second.value, valueStr);
+					if (!valueEmpty
+						&& util::tryParseI32(itr->second.value, valueStr)
+						&& itr->second.callback)
+						itr->second.callback();
 				}
 #endif
 			}
@@ -768,16 +770,19 @@ namespace stormphrax
 #endif
 	}
 
-#if SP_TUNE_SEARCH
+#if SP_EXTERNAL_TUNE
 	namespace tunable
 	{
-		TunableParam &addTunableParam(const std::string &name, i32 value, i32 min, i32 max, i32 step)
+		TunableParam &addTunableParam(const std::string &name, i32 value,
+			i32 min, i32 max, i32 step, std::function<void()> callback)
 		{
 			auto lowerName = name;
 			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
 				[](auto c) { return std::tolower(c); });
-			return tunableParams().try_emplace(std::move(lowerName),
-				TunableParam{name, value, value, {min, max}, step}).first->second;
+			return tunableParams().try_emplace(
+					std::move(lowerName),
+					TunableParam{name, value, value, {min, max}, step, std::move(callback)}
+				).first->second;
 		}
 	}
 #endif

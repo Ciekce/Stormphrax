@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 3.0.0)
+project(stormphrax VERSION 3.0.1)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -56,8 +56,8 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h
 	src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h
 	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
-	src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/opts.h src/opts.cpp
-	src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
+	src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
+	src/opts.cpp src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
 	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
 	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp)
 
