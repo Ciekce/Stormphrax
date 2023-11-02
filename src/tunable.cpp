@@ -18,6 +18,8 @@
 
 #include "tunable.h"
 
+#include <cmath>
+
 namespace stormphrax::tunable
 {
 	std::array<std::array<i32, 256>, 256> g_lmrTable{};
