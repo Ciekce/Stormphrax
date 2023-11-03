@@ -634,8 +634,9 @@ namespace stormphrax::search
 				const auto R = std::min(depth,
 					nmpReductionBase()
 						+ depth / nmpReductionDepthScale()
-						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()))
-						+ cutnode;
+						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction())
+						+ cutnode
+				);
 
 				const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
 				const auto score = -search(thread, stack.pv, depth - R,
