@@ -702,14 +702,6 @@ namespace stormphrax::search
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
 						break;
-
-					// Futility pruning (FP)
-					// At this point, alpha is so far above static eval that it is
-					// unlikely that we can improve it with this move, so just give up
-					if (depth <= maxFpDepth()
-						&& alpha < ScoreWin
-						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
-						break;
 				}
 
 				// SEE pruning
