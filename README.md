@@ -86,22 +86,36 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler. Currently, GCC is known to vectorise Stormphrax's NNUE code very poorly compared to Clang.
+Requires CMake and a competent C++20 compiler. Locally, Clang produces slightly faster binaries than GCC.
 ```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
+> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
 ```
-(replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`)
+- replace `<COMPILER>` with your preferred compiler - for example, `clang++` or `g++`
+- replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`
 
 If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want to build the `native` target, use these commands instead (the second is unchanged):
 ```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -DSP_FAST_PEXT=OFF -S . -B build/
+> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -DSP_FAST_PEXT=OFF -S . -B build/
 > cmake --build build/ --target stormphrax-native
 ```
 Disabling the CMake option `SP_FAST_PEXT` builds the non-BMI2 attack getters.
 
 ## Credit
 Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin](https://github.com/graphitemaster/incbin) for embedding neural network files, under the Unlicense.
+
+Stormphrax is tested on [this OpenBench instance][ob] - thanks to all the people there, SP would be much weaker without your support :3
+
+In no particular order, these engines have been notable sources of ideas or inspiration:
+- [Viridithas][viri]
+- [Svart][svart]
+- [Stockfish][sf]
+- [Ethereal][ethy]
+- [Berserk][berky]
+- [Weiss][weiss]
+- [Koivisto][koi]
+
+Stormphrax's current networks are trained with [bullet][bullet]. Previous networks were trained with [Marlinflow][marlinflow].
 
 The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chronicles] :)
 
@@ -121,5 +135,18 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 [ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [spcc]: https://www.sp-cc.de/
 [mcerl]: https://www.chessengeria.eu/mcerl
+
+[ob]: https://chess.swehosting.se/index/
+
+[viri]: https://github.com/cosmobobak/viridithas
+[svart]: https://github.com/crippa1337/svart
+[sf]: https://github.com/official-stockfish/Stockfish
+[ethy]: https://github.com/AndyGrant/Ethereal
+[berky]: https://github.com/jhonnold/Berserk
+[weiss]: https://github.com/TerjeKir/weiss
+[koi]: https://github.com/Luecx/Koivisto
+
+[bullet]: https://github.com/jw1912/bullet
+[marlinflow]: https://github.com/jnlt3/marlinflow
 
 [edge-chronicles]: https://en.wikipedia.org/wiki/The_Edge_Chronicles
