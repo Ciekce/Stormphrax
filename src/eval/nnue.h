@@ -47,6 +47,11 @@ namespace stormphrax::eval
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 768;
 
+	// for larger hidden layers, operations are done in blocks of
+	// 256 values - this allows GCC to unroll loops without dying
+	// cheers @jhonnold for the tip
+	static_assert(Layer1Size < 512 || (Layer1Size % 256) == 0);
+
 	constexpr i32 Scale = 400;
 
 	constexpr i32 Q = 255 * 64;
@@ -384,16 +389,29 @@ namespace stormphrax::eval
 			return (output + g_currNet->outputBias) * Scale / Q;
 		}
 
-		template <usize Size>
-		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
+		static inline auto subtractAndAddToAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
 		{
 			assert(subOffset + Size <= delta.size());
 			assert(addOffset + Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] += delta[addOffset + i] - delta[subOffset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] += delta[addOffset + idx] - delta[subOffset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] += delta[addOffset + i] - delta[subOffset + i];
+				}
 			}
 		}
 
@@ -403,9 +421,23 @@ namespace stormphrax::eval
 		{
 			assert(offset + Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] += delta[offset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] += delta[offset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] += delta[offset + i];
+				}
 			}
 		}
 
@@ -415,9 +447,23 @@ namespace stormphrax::eval
 		{
 			assert(offset + Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] -= delta[offset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] -= delta[offset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] -= delta[offset + i];
+				}
 			}
 		}
 
@@ -456,16 +502,43 @@ namespace stormphrax::eval
 
 			i32 sum = 0;
 
-			for (usize i = 0; i < Layer1Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				const auto activated = Activation::activate(us[i]);
-				sum += activated * weights[i];
-			}
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (usize j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
 
-			for (usize i = 0; i < Layer1Size; ++i)
+						const auto activated = Activation::activate(us[idx]);
+						sum += activated * weights[idx];
+					}
+				}
+
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (usize j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+
+						const auto activated = Activation::activate(them[idx]);
+						sum += activated * weights[Layer1Size + idx];
+					}
+				}
+			}
+			else
 			{
-				const auto activated = Activation::activate(them[i]);
-				sum += activated * weights[Layer1Size + i];
+				for (usize i = 0; i < Layer1Size; ++i)
+				{
+					const auto activated = Activation::activate(us[i]);
+					sum += activated * weights[i];
+				}
+
+				for (usize i = 0; i < Layer1Size; ++i)
+				{
+					const auto activated = Activation::activate(them[i]);
+					sum += activated * weights[Layer1Size + i];
+				}
 			}
 
 			return sum / Activation::NormalizationK;
