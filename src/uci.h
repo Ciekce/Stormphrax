@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <string>
+#include <span>
 
 #include "core.h"
 #include "move.h"
@@ -33,6 +34,12 @@ namespace stormphrax::uci
 	auto run() -> i32;
 
 	[[nodiscard]] auto moveToString(Move move) -> std::string;
+
+#if SP_EXTERNAL_TUNE
+	auto printWfTuningParams(std::span<const std::string> params) -> void;
+	auto printCttTuningParams(std::span<const std::string> params) -> void;
+	auto printObTuningParams(std::span<const std::string> params) -> void;
+#endif
 
 #ifndef NDEBUG
 	[[nodiscard]] auto moveAndTypeToString(Move move) -> std::string;

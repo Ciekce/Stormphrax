@@ -62,6 +62,14 @@ namespace stormphrax
 			static std::unordered_map<std::string, tunable::TunableParam> params{};
 			return params;
 		}
+
+		inline auto lookupTunableParam(const std::string &param) -> tunable::TunableParam *
+		{
+			auto &params = tunableParams();
+			if (auto itr = params.find(param); itr != params.end())
+				return &itr->second;
+			return nullptr;
+		}
 #endif
 
 		class UciHandler
@@ -600,13 +608,12 @@ namespace stormphrax
 					}
 				}
 #if SP_EXTERNAL_TUNE
-				else if (auto itr = tunableParams().find(nameStr);
-					itr != tunableParams().end())
+				else if (auto *param = lookupTunableParam(nameStr))
 				{
 					if (!valueEmpty
-						&& util::tryParseI32(itr->second.value, valueStr)
-						&& itr->second.callback)
-						itr->second.callback();
+						&& util::tryParseI32(param->value, valueStr)
+						&& param->callback)
+						param->callback();
 				}
 #endif
 			}
@@ -773,8 +780,8 @@ namespace stormphrax
 #if SP_EXTERNAL_TUNE
 	namespace tunable
 	{
-		TunableParam &addTunableParam(const std::string &name, i32 value,
-			i32 min, i32 max, i32 step, std::function<void()> callback)
+		auto addTunableParam(const std::string &name, i32 value,
+			i32 min, i32 max, i32 step, std::function<void()> callback) -> TunableParam &
 		{
 			auto lowerName = name;
 			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
@@ -822,6 +829,100 @@ namespace stormphrax
 
 			return str.str();
 		}
+
+#if SP_EXTERNAL_TUNE
+		auto printWfTuningParams(std::span<const std::string> params) -> void
+		{
+			std::cout << "{\n";
+
+			bool first = true;
+
+			for (auto paramName : params)
+			{
+				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
+					[](auto c) { return std::tolower(c); });
+
+				if (const auto *param = lookupTunableParam(paramName))
+				{
+					if (!first)
+						std::cout << ",\n";
+
+					std::cout << "  \"" << param->name << "\": {\n";
+					std::cout << "    \"value\": " << param->value << ",\n";
+					std::cout << "    \"min_value\": " << param->range.min() << ",\n";
+					std::cout << "    \"max_value\": " << param->range.max() << ",\n";
+					std::cout << "    \"step\": " << param->step << "\n";
+					std::cout << "  }";
+
+					first = false;
+				}
+				else
+				{
+					std::cerr << "unknown parameter " << paramName << std::endl;
+					return;
+				}
+			}
+
+			std::cout << "\n}" << std::endl;
+		}
+
+		auto printCttTuningParams(std::span<const std::string> params) -> void
+		{
+			bool first = true;
+
+			for (auto paramName : params)
+			{
+				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
+					[](auto c) { return std::tolower(c); });
+
+				if (const auto *param = lookupTunableParam(paramName))
+				{
+					if (!first)
+						std::cout << ",\n";
+
+					std::cout << "\""
+						<< param->name << "\": \"Integer("
+						<< param->range.min() << ", "
+						<< param->range.max() << ")\"";
+
+					first = false;
+				}
+				else
+				{
+					std::cerr << "unknown parameter " << paramName << std::endl;
+					return;
+				}
+
+				first = false;
+			}
+
+			std::cout << std::endl;
+		}
+
+		auto printObTuningParams(std::span<const std::string> params) -> void
+		{
+			for (auto paramName : params)
+			{
+				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
+					[](auto c) { return std::tolower(c); });
+
+				if (const auto *param = lookupTunableParam(paramName))
+				{
+					std::cout << param->name << ", int, "
+						<< param->value << ".0, "
+						<< param->range.min() << ".0, "
+						<< param->range.max() << ".0, "
+						<< param->step << ".0, 0.002"
+						<< std::endl;
+				}
+				else
+				{
+					std::cerr << "unknown parameter " << paramName << std::endl;
+					return;
+				}
+			}
+		}
+#endif // SP_EXTERNAL_TUNE
 
 #ifndef NDEBUG
 		auto moveAndTypeToString(Move move) -> std::string

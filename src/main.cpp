@@ -23,6 +23,10 @@
 #include "eval/nnue.h"
 #include "tunable.h"
 
+#if SP_EXTERNAL_TUNE
+#include "util/split.h"
+#endif
+
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
@@ -82,6 +86,26 @@ auto main(i32 argc, const char *argv[]) -> i32
 
 			return datagen::run(dfrc, argv[3], static_cast<i32>(threads), games);
 		}
+#if SP_EXTERNAL_TUNE
+		else if (mode == "printwf"
+			|| mode == "printctt"
+			|| mode == "printob")
+		{
+			if (argc == 2)
+				return 0;
+
+			const auto params = split::split(argv[2], ',');
+
+			if (mode == "printwf")
+				uci::printWfTuningParams(params);
+			else if (mode == "printctt")
+				uci::printCttTuningParams(params);
+			else if (mode == "printob")
+				uci::printObTuningParams(params);
+
+			return 0;
+		}
+#endif
 	}
 
 	return uci::run();

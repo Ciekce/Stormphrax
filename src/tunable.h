@@ -26,7 +26,9 @@
 
 #include "util/range.h"
 
-#define SP_EXTERNAL_TUNE 0
+#ifndef SP_EXTERNAL_TUNE
+	#define SP_EXTERNAL_TUNE 0
+#endif
 
 namespace stormphrax::tunable
 {
@@ -52,8 +54,8 @@ namespace stormphrax::tunable
 		std::function<void()> callback;
 	};
 
-	TunableParam &addTunableParam(const std::string &name, i32 value,
-		i32 min, i32 max, i32 step, std::function<void()> callback);
+	auto addTunableParam(const std::string &name, i32 value,
+		i32 min, i32 max, i32 step, std::function<void()> callback) -> TunableParam &;
 
 	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
 	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
