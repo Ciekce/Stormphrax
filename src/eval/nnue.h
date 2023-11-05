@@ -392,8 +392,8 @@ namespace stormphrax::eval
 		static inline auto subtractAndAddToAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
 		{
-			assert(subOffset + Size <= delta.size());
-			assert(addOffset + Size <= delta.size());
+			assert(subOffset + Layer1Size <= delta.size());
+			assert(addOffset + Layer1Size <= delta.size());
 
 			if constexpr(Layer1Size >= 512)
 			{
@@ -415,11 +415,10 @@ namespace stormphrax::eval
 			}
 		}
 
-		template <usize Size>
-		static inline auto addToAll(std::array<i16, Size> &input,
+		static inline auto addToAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
-			assert(offset + Size <= delta.size());
+			assert(offset + Layer1Size <= delta.size());
 
 			if constexpr(Layer1Size >= 512)
 			{
@@ -441,11 +440,10 @@ namespace stormphrax::eval
 			}
 		}
 
-		template <usize Size>
-		static inline auto subtractFromAll(std::array<i16, Size> &input,
+		static inline auto subtractFromAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
-			assert(offset + Size <= delta.size());
+			assert(offset + Layer1Size <= delta.size());
 
 			if constexpr(Layer1Size >= 512)
 			{
