@@ -31,14 +31,16 @@
 
 namespace stormphrax
 {
-	inline auto historyAdjustment(i32 depth, Score alpha, Score staticEval)
+	using HistoryScore = i16;
+
+	inline auto historyAdjustment(i32 depth, Score alpha, Score staticEval) -> HistoryScore
 	{
 		depth += staticEval <= alpha;
-		return std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
-			tunable::maxHistoryAdjustment());
+		return static_cast<HistoryScore>(std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
+			tunable::maxHistoryAdjustment()));
 	}
 
-	inline auto updateHistoryScore(i32 &score, i32 adjustment)
+	inline auto updateHistoryScore(HistoryScore &score, HistoryScore adjustment)
 	{
 		score += adjustment - score * std::abs(adjustment) / tunable::maxHistory();
 	}
@@ -84,7 +86,7 @@ namespace stormphrax
 		}
 
 	private:
-		using Table = std::array<std::array<i32, 64>, 12>;
+		using Table = std::array<std::array<HistoryScore, 64>, 12>;
 
 		Table m_table{};
 	};
@@ -109,7 +111,7 @@ namespace stormphrax
 		}
 
 		inline auto updateQuietScore(HistoryMove move, Bitboard threats,
-			i32 ply, std::span<const HistoryMove> prevMoves, i32 adjustment)
+			i32 ply, std::span<const HistoryMove> prevMoves, HistoryScore adjustment)
 		{
 			updateMainScore(move, threats[move.src], threats[move.dst], adjustment);
 
@@ -130,7 +132,7 @@ namespace stormphrax
 			return history;
 		}
 
-		inline auto updateNoisyScore(HistoryMove move, Bitboard threats, Piece captured, i32 adjustment)
+		inline auto updateNoisyScore(HistoryMove move, Bitboard threats, Piece captured, HistoryScore adjustment)
 		{
 			updateHistoryScore(noisyEntry(move, captured, threats[move.dst]), adjustment);
 		}
@@ -149,18 +151,18 @@ namespace stormphrax
 		}
 
 	private:
-		using Table = std::array<std::array<std::array<std::array<i32, 2>, 2>, 64>, 12>;
+		using Table = std::array<std::array<std::array<std::array<HistoryScore, 2>, 2>, 64>, 12>;
 		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
 		// 13 to account for non-capture queen promos
-		using CaptureTable = std::array<std::array<std::array<std::array<i32, 2>, 64>, 12>, 13>;
+		using CaptureTable = std::array<std::array<std::array<std::array<HistoryScore, 2>, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
 
-		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) -> i32 &
+		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) -> auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
 		}
 
-		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) const -> const i32 &
+		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) const -> const auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
 		}
@@ -175,13 +177,15 @@ namespace stormphrax
 			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured, bool defended) -> i32 &
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move,
+			Piece captured, bool defended) -> HistoryScore &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
 				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][defended];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(HistoryMove move, Piece captured, bool defended) const -> const i32 &
+		[[nodiscard]] inline auto noisyEntry(HistoryMove move,
+			Piece captured, bool defended) const -> const HistoryScore &
 		{
 			return m_captureTable[static_cast<i32>(captured)]
 				[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][defended];
@@ -202,7 +206,7 @@ namespace stormphrax
 			return entry(move, srcThreat, dstThreat);
 		}
 
-		inline auto updateMainScore(HistoryMove move, bool srcThreat, bool dstThreat, i32 adjustment) -> void
+		inline auto updateMainScore(HistoryMove move, bool srcThreat, bool dstThreat, HistoryScore adjustment) -> void
 		{
 			updateHistoryScore(entry(move, srcThreat, dstThreat), adjustment);
 		}
@@ -216,7 +220,7 @@ namespace stormphrax
 		}
 
 		inline auto updateContinuationScore(HistoryMove move,
-			i32 ply, std::span<const HistoryMove> prevMoves, i32 pliesAgo, i32 adjustment) -> void
+			i32 ply, std::span<const HistoryMove> prevMoves, i32 pliesAgo, HistoryScore adjustment) -> void
 		{
 			if (ply >= pliesAgo && prevMoves[ply - pliesAgo])
 				updateHistoryScore(contEntry(prevMoves[ply - pliesAgo]).score(move), adjustment);
