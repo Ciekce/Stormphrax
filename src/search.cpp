@@ -127,7 +127,7 @@ namespace stormphrax::search
 				thread.rootPv.moves[0] = move;
 				thread.rootPv.length = 1;
 
-				report(thread, thread.rootPv, 0.0, score, -ScoreInf, ScoreInf, true);
+				report(thread, thread.rootPv, 1, 0.0, score, -ScoreInf, ScoreInf, true);
 				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
 
 				return;
