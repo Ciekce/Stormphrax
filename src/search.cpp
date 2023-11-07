@@ -862,7 +862,7 @@ namespace stormphrax::search
 					{
 						// Update history on fail-highs
 						const auto bonus = historyAdjustment(depth, alpha, stack.eval);
-						const auto penalty = -bonus;
+						const auto penalty = static_cast<HistoryScore>(-bonus);
 
 						const auto currMove = thread.prevMoves[ply];
 
