@@ -626,6 +626,7 @@ namespace stormphrax::search
 			// Don't bother trying if the TT suggests that NMP will fail - the TT
 			// entry, if it exists, must not be a fail-low entry with a score below beta
 			if (depth >= minNmpDepth()
+				&& ply >= thread.minNmpPly
 				&& stack.eval >= beta
 				&& !(ttHit && ttEntry.type == EntryType::Alpha && ttEntry.score < beta)
 				&& pos.lastMove()
@@ -636,12 +637,32 @@ namespace stormphrax::search
 						+ depth / nmpReductionDepthScale()
 						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
 
-				const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
-				const auto score = -search(thread, stack.pv, depth - R,
-					ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
+				// wrap in a scope so the nullmove gets unmade in case of verification search
+				const auto score = [&]
+				{
+					const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
+					return -search(thread, stack.pv, depth - R,
+						ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
+				}();
 
 				if (score >= beta)
-					return score > ScoreWin ? beta : score;
+				{
+					if (depth < minNmpVerifDepth() || thread.minNmpPly > 0)
+						return score > ScoreWin ? beta : score;
+
+					// At higher depths, disable NMP for a certain number of plies
+					// and do a reduced-depth verification search. This is not for
+					// elo purposes, but mainly exists to improve puzzle performance
+					thread.minNmpPly = ply + (depth - R) * nmpVerifDepthFactor() / 16;
+
+					const auto verifScore = search(thread, stack.pv,
+						depth - R, ply, moveStackIdx + 1, beta - 1, beta, false);
+
+					thread.minNmpPly = 0;
+
+					if (verifScore >= beta)
+						return verifScore;
+				}
 			}
 		}
 
