@@ -63,7 +63,7 @@ namespace stormphrax::eval
 
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
-		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.toMove());
+		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.blackKing(), pos.whiteKing(), pos.toMove());
 		return adjustEval(pos, contempt, nnueEval);
 	}
 }

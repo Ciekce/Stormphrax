@@ -101,7 +101,7 @@ namespace stormphrax::attacks::black_magic
 		u32 tableSize;
 	};
 
-	consteval auto generateRookData()
+	constexpr auto RookData = []
 	{
 		Data dst{};
 
@@ -122,9 +122,9 @@ namespace stormphrax::attacks::black_magic
 		}
 
 		return dst;
-	}
+	}();
 
-	consteval auto generateBishopData()
+	constexpr auto BishopData = []
 	{
 		Data dst{};
 
@@ -145,8 +145,5 @@ namespace stormphrax::attacks::black_magic
 		}
 
 		return dst;
-	}
-
-	constexpr auto   RookData = generateRookData();
-	constexpr auto BishopData = generateBishopData();
+	}();
 }

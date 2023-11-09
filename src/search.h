@@ -30,6 +30,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <algorithm>
 
 #include "search_fwd.h"
 #include "position/position.h"
@@ -58,6 +59,12 @@ namespace stormphrax::search
 	{
 		std::array<Move, MaxDepth> moves{};
 		u32 length{};
+
+		inline auto copyFrom(const PvList &other)
+		{
+			std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
+			length = other.length;
+		}
 	};
 
 	struct SearchStackEntry
@@ -66,6 +73,8 @@ namespace stormphrax::search
 
 		Score eval{};
 		Move excluded{};
+
+		i32 history{};
 
 		i32 doubleExtensions{0};
 
@@ -83,7 +92,7 @@ namespace stormphrax::search
 	{
 		ThreadData()
 		{
-			stack.resize(MaxDepth + 2);
+			stack.resize(MaxDepth + 4);
 			moveStack.resize(MaxDepth * 2);
 		}
 
@@ -108,6 +117,8 @@ namespace stormphrax::search
 		HistoryTable history{};
 
 		Position pos{};
+
+		i32 minNmpPly{0};
 
 		[[nodiscard]] inline auto isMainThread() const
 		{
@@ -197,15 +208,18 @@ namespace stormphrax::search
 
 		auto run(ThreadData &thread) -> void;
 
-		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool allowSoftTimeout) -> bool
+		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool checkLimiter, bool allowSoftTimeout) -> bool
 		{
-			if (m_stop.load(std::memory_order::relaxed))
-				return true;
-
-			if (m_limiter->stop(data, allowSoftTimeout))
+			if (checkLimiter)
 			{
-				m_stop.store(true, std::memory_order::relaxed);
-				return true;
+				if (m_stop.load(std::memory_order::relaxed))
+					return true;
+
+				if (m_limiter->stop(data, allowSoftTimeout))
+				{
+					m_stop.store(true, std::memory_order::relaxed);
+					return true;
+				}
 			}
 
 			return m_stop.load(std::memory_order::relaxed);
@@ -217,7 +231,7 @@ namespace stormphrax::search
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, i32 depth, f64 time,
-			Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
+			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
 	};
 }

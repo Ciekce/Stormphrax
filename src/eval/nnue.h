@@ -37,7 +37,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768->384)x2->1, ClippedReLU
+	// current arch: (768x4->768)x2->1, ClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
@@ -47,13 +47,54 @@ namespace stormphrax::eval
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 768;
 
-	constexpr Score Scale = 400;
+	// for larger hidden layers, operations are done in blocks of
+	// 256 values - this allows GCC to unroll loops without dying
+	// cheers @jhonnold for the tip
+	static_assert(Layer1Size < 512 || (Layer1Size % 256) == 0);
 
-	constexpr Score Q = 255 * 64;
+	constexpr i32 Scale = 400;
+
+	constexpr i32 Q = 255 * 64;
+
+	// visually flipped upside down, a1 = 0
+	constexpr auto InputBuckets = std::array {
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	constexpr auto InputBucketCount = *std::max_element(InputBuckets.begin(), InputBuckets.end()) + 1;
+
+	constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
+	{
+		assert(c != Color::None);
+
+		assert(prevKingSq != Square::None);
+		assert(kingSq != Square::None);
+		assert(prevKingSq != kingSq);
+
+		if constexpr (InputBucketCount == 1)
+			return false;
+		else if constexpr (InputBucketCount == 64)
+			return true;
+
+		if (c == Color::Black)
+		{
+			prevKingSq = flipSquare(prevKingSq);
+			kingSq = flipSquare(kingSq);
+		}
+
+		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
+	}
 
 	struct Network
 	{
-		SP_SIMD_ALIGNAS std::array<i16, InputSize * Layer1Size> featureWeights;
+		SP_SIMD_ALIGNAS std::array<i16, InputSize * InputBucketCount * Layer1Size> featureWeights;
 		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> featureBiases;
 		SP_SIMD_ALIGNAS std::array<i16, Layer1Size * 2> outputWeights;
 		i16 outputBias;
@@ -66,13 +107,30 @@ namespace stormphrax::eval
 	// (this is why there are two sets of output weights)
 	struct Accumulator
 	{
-		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> black;
-		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> white;
+		SP_SIMD_ALIGNAS std::array<std::array<i16, Layer1Size>, 2> accumulators;
 
-		inline auto init(std::span<const i16, Layer1Size> bias)
+		[[nodiscard]] inline auto forColor(Color c) -> auto &
 		{
-			std::copy(bias.begin(), bias.end(), black.begin());
-			std::copy(bias.begin(), bias.end(), white.begin());
+			assert(c != Color::None);
+			return accumulators[static_cast<i32>(c)];
+		}
+
+		[[nodiscard]] inline auto black() const -> const auto & { return accumulators[0]; }
+		[[nodiscard]] inline auto white() const -> const auto & { return accumulators[1]; }
+
+		[[nodiscard]] inline auto black() -> auto & { return accumulators[0]; }
+		[[nodiscard]] inline auto white() -> auto & { return accumulators[1]; }
+
+		inline auto init(Color c, std::span<const i16, Layer1Size> biases)
+		{
+			assert(c != Color::None);
+			std::copy(biases.begin(), biases.end(), forColor(c).begin());
+		}
+
+		inline auto initBoth(std::span<const i16, Layer1Size> biases)
+		{
+			std::copy(biases.begin(), biases.end(), black().begin());
+			std::copy(biases.begin(), biases.end(), white().begin());
 		}
 	};
 
@@ -100,42 +158,148 @@ namespace stormphrax::eval
 			m_curr = &m_accumulatorStack.back();
 		}
 
-		inline auto reset(const PositionBoards &boards)
+		inline auto reset(const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			initAccumulator(*m_curr, boards);
+			refreshAccumulator(*m_curr, Color::Black, boards, blackKing);
+			refreshAccumulator(*m_curr, Color::White, boards, whiteKing);
 		}
 
-		inline auto moveFeature(Piece piece, Square src, Square dst)
+		inline auto refresh(Color c, const PositionBoards &boards, Square king)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			moveFeature(*m_curr, piece, src, dst);
+
+			assert(c != Color::None);
+			assert(king != Square::None);
+
+			refreshAccumulator(*m_curr, c, boards, king);
 		}
 
-		inline auto activateFeature(Piece piece, Square sq)
+		inline auto moveFeatureSingle(Color c, Piece piece, Square src, Square dst, Square king)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			activateFeature(*m_curr, piece, sq);
+
+			assert(c != Color::None);
+
+			assert(piece != Piece::None);
+
+			assert(src != Square::None);
+			assert(dst != Square::None);
+			assert(src != dst);
+
+			assert(src != king);
+
+			assert(king != Square::None);
+
+			moveFeatureSingle(*m_curr, c, piece, src, dst, king);
 		}
 
-		inline auto deactivateFeature(Piece piece, Square sq)
+		inline auto activateFeatureSingle(Color c, Piece piece, Square sq, Square king)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
-			deactivateFeature(*m_curr, piece, sq);
+
+			assert(c != Color::None);
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+			assert(king != Square::None);
+
+			assert(sq != king);
+
+			activateFeatureSingle(*m_curr, c, piece, sq, king);
+		}
+
+		inline auto deactivateFeatureSingle(Color c, Piece piece, Square sq, Square king)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(c != Color::None);
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+			assert(king != Square::None);
+
+			assert(sq != king);
+
+			deactivateFeatureSingle(*m_curr, c, piece, sq, king);
+		}
+
+		inline auto moveFeature(Piece piece, Square src, Square dst, Square blackKing, Square whiteKing)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(piece != Piece::None);
+
+			assert(src != Square::None);
+			assert(dst != Square::None);
+			assert(src != dst);
+
+			assert(src != blackKing);
+			assert(src != whiteKing);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
+			moveFeatureSingle(*m_curr, Color::Black, piece, src, dst, blackKing);
+			moveFeatureSingle(*m_curr, Color::White, piece, src, dst, whiteKing);
+		}
+
+		inline auto activateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
+			activateFeatureSingle(*m_curr, Color::Black, piece, sq, blackKing);
+			activateFeatureSingle(*m_curr, Color::White, piece, sq, whiteKing);
+		}
+
+		inline auto deactivateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
+		{
+			assert(m_curr == &m_accumulatorStack.back());
+
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
+			deactivateFeatureSingle(*m_curr, Color::Black, piece, sq, blackKing);
+			deactivateFeatureSingle(*m_curr, Color::White, piece, sq, whiteKing);
 		}
 
 		[[nodiscard]] inline auto evaluate(Color stm) const
 		{
 			assert(m_curr == &m_accumulatorStack.back());
+			assert(stm != Color::None);
+
 			return evaluate(*m_curr, stm);
 		}
 
-		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards, Color stm)
+		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards,
+			Square blackKing, Square whiteKing, Color stm)
 		{
+			assert(blackKing != Square::None);
+			assert(whiteKing != Square::None);
+			assert(blackKing != whiteKing);
+
+			assert(stm != Color::None);
+
 			Accumulator accumulator{};
-			initAccumulator(accumulator, boards);
+
+			refreshAccumulator(accumulator, Color::Black, boards, blackKing);
+			refreshAccumulator(accumulator, Color::White, boards, whiteKing);
 
 			return evaluate(accumulator, stm);
 		}
@@ -144,9 +308,13 @@ namespace stormphrax::eval
 		std::vector<Accumulator> m_accumulatorStack{};
 		Accumulator *m_curr{};
 
-		static inline auto initAccumulator(Accumulator &accumulator, const PositionBoards &boards) -> void
+		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
+			const PositionBoards &boards, Square king) -> void
 		{
-			accumulator.init(g_currNet->featureBiases);
+			assert(c != Color::None);
+			assert(king != Square::None);
+
+			accumulator.init(c, g_currNet->featureBiases);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
@@ -158,141 +326,220 @@ namespace stormphrax::eval
 				while (!board.empty())
 				{
 					const auto sq = board.popLowestSquare();
-					activateFeature(accumulator, piece, sq);
+					activateFeatureSingle(accumulator, c, piece, sq, king);
 				}
 			}
 		}
 
-		static inline auto moveFeature(Accumulator &accumulator, Piece piece, Square src, Square dst) -> void
+		static inline auto moveFeatureSingle(Accumulator &accumulator, Color c,
+			Piece piece, Square src, Square dst, Square king) -> void
 		{
-			const auto [blackSrc, whiteSrc] = featureIndices(piece, src);
-			const auto [blackDst, whiteDst] = featureIndices(piece, dst);
+			assert(c != Color::None);
 
-			subtractAndAddToAll(accumulator.black, g_currNet->featureWeights, blackSrc * Layer1Size, blackDst * Layer1Size);
-			subtractAndAddToAll(accumulator.white, g_currNet->featureWeights, whiteSrc * Layer1Size, whiteDst * Layer1Size);
+			assert(piece != Piece::None);
+
+			assert(src != Square::None);
+			assert(dst != Square::None);
+			assert(src != dst);
+
+			assert(src != king);
+
+			assert(king != Square::None);
+
+			const auto srcIdx = featureIndex(c, piece, src, king);
+			const auto dstIdx = featureIndex(c, piece, dst, king);
+
+			subtractAndAddToAll(accumulator.forColor(c),
+				g_currNet->featureWeights, srcIdx * Layer1Size, dstIdx * Layer1Size);
 		}
 
-		static inline auto activateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
+		static inline auto activateFeatureSingle(Accumulator &accumulator,
+			Color c, Piece piece, Square sq, Square king) -> void
 		{
-			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+			assert(c != Color::None);
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+			assert(king != Square::None);
 
-			addToAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
-			addToAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
+			const auto idx = featureIndex(c, piece, sq, king);
+
+			addToAll(accumulator.forColor(c), g_currNet->featureWeights, idx * Layer1Size);
 		}
 
-		static inline auto deactivateFeature(Accumulator &accumulator, Piece piece, Square sq) -> void
+		static inline auto deactivateFeatureSingle(Accumulator &accumulator,
+			Color c, Piece piece, Square sq, Square king) -> void
 		{
-			const auto [blackIdx, whiteIdx] = featureIndices(piece, sq);
+			assert(c != Color::None);
+			assert(piece != Piece::None);
+			assert(sq != Square::None);
+			assert(king != Square::None);
 
-			subtractFromAll(accumulator.black, g_currNet->featureWeights, blackIdx * Layer1Size);
-			subtractFromAll(accumulator.white, g_currNet->featureWeights, whiteIdx * Layer1Size);
+			const auto idx = featureIndex(c, piece, sq, king);
+
+			subtractFromAll(accumulator.forColor(c), g_currNet->featureWeights, idx * Layer1Size);
 		}
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator, Color stm) -> i32
 		{
+			assert(stm != Color::None);
+
 			const auto output = stm == Color::Black
-				? forward(accumulator.black, accumulator.white, g_currNet->outputWeights)
-				: forward(accumulator.white, accumulator.black, g_currNet->outputWeights);
+				? forward(accumulator.black(), accumulator.white(), g_currNet->outputWeights)
+				: forward(accumulator.white(), accumulator.black(), g_currNet->outputWeights);
 			return (output + g_currNet->outputBias) * Scale / Q;
 		}
 
-		template <usize Size>
-		static inline auto subtractAndAddToAll(std::array<i16, Size> &input,
+		static inline auto subtractAndAddToAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 subOffset, u32 addOffset) -> void
 		{
-			assert(subOffset + Size <= delta.size());
-			assert(addOffset + Size <= delta.size());
+			assert(subOffset + Layer1Size <= delta.size());
+			assert(addOffset + Layer1Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] += delta[addOffset + i] - delta[subOffset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] += delta[addOffset + idx] - delta[subOffset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] += delta[addOffset + i] - delta[subOffset + i];
+				}
 			}
 		}
 
-		template <usize Size>
-		static inline auto addToAll(std::array<i16, Size> &input,
+		static inline auto addToAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
-			assert(offset + Size <= delta.size());
+			assert(offset + Layer1Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] += delta[offset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] += delta[offset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] += delta[offset + i];
+				}
 			}
 		}
 
-		template <usize Size>
-		static inline auto subtractFromAll(std::array<i16, Size> &input,
+		static inline auto subtractFromAll(std::array<i16, Layer1Size> &input,
 			std::span<const i16> delta, u32 offset) -> void
 		{
-			assert(offset + Size <= delta.size());
+			assert(offset + Layer1Size <= delta.size());
 
-			for (u32 i = 0; i < Size; ++i)
+			if constexpr(Layer1Size >= 512)
 			{
-				input[i] -= delta[offset + i];
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						input[idx] -= delta[offset + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < Layer1Size; ++i)
+				{
+					input[i] -= delta[offset + i];
+				}
 			}
 		}
 
-		[[nodiscard]] static inline auto featureIndices(Piece piece, Square sq) -> std::pair<u32, u32>
+		[[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32
 		{
+			assert(c != Color::None);
 			assert(piece != Piece::None);
 			assert(sq != Square::None);
+			assert(king != Square::None);
 
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
 
-			const auto base = static_cast<u32>(basePiece(piece));
-			const u32 color = pieceColor(piece) == Color::White ? 0 : 1;
+			const auto type = static_cast<u32>(pieceType(piece));
 
-			const auto blackIdx = !color * ColorStride + base * PieceStride + (static_cast<u32>(sq) ^ 0x38);
-			const auto whiteIdx =  color * ColorStride + base * PieceStride +  static_cast<u32>(sq)        ;
+			u32 color = pieceColor(piece) == Color::White ? 0 : 1;
 
-			return {blackIdx, whiteIdx};
+			if (c == Color::Black)
+			{
+				sq = flipSquare(sq);
+				king = flipSquare(king);
+				color ^= 1;
+			}
+
+			const auto bucketOffset = InputBuckets[static_cast<i32>(king)] * InputSize;
+			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
 		}
 
 		[[nodiscard]] static inline auto forward(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
 			std::span<const i16, Layer1Size * 2> weights
-		) -> Score
+		) -> i32
 		{
-			constexpr auto Step = util::Simd::RegisterSize / sizeof(i16);
+			assert(us.data() != them.data());
 
-			auto sum = util::Simd::zero();
+			i32 sum = 0;
 
-			// stm's accumulator
-			for (usize i = 0; i < Layer1Size; i += Step)
+			if constexpr(Layer1Size >= 512)
 			{
-				// load the input of these hidden neurons
-				auto v = util::Simd::load(&us[i]);
-				// apply the activation function
-				v = Activation::activate(v);
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (usize j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
 
-				// load the weights for these neurons
-				const auto weight = util::Simd::load(&weights[i]);
-				// multiply the inputs by the weights and sum each adjacent
-				// pair of 16 bit integers into half as many 32 bit integers
-				v = util::Simd::mulAddAdj16(v, weight);
+						const auto activated = Activation::activate(us[idx]);
+						sum += activated * weights[idx];
+					}
+				}
 
-				// add the sums to the totals
-				sum = util::Simd::add32(sum, v);
+				for (usize i = 0; i < Layer1Size; i += 256)
+				{
+					for (usize j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+
+						const auto activated = Activation::activate(them[idx]);
+						sum += activated * weights[Layer1Size + idx];
+					}
+				}
+			}
+			else
+			{
+				for (usize i = 0; i < Layer1Size; ++i)
+				{
+					const auto activated = Activation::activate(us[i]);
+					sum += activated * weights[i];
+				}
+
+				for (usize i = 0; i < Layer1Size; ++i)
+				{
+					const auto activated = Activation::activate(them[i]);
+					sum += activated * weights[Layer1Size + i];
+				}
 			}
 
-			// opponent's accumulator
-			// same as above, but for the other accumulator
-			for (usize i = 0; i < Layer1Size; i += Step)
-			{
-				auto v = util::Simd::load(&them[i]);
-				v = Activation::activate(v);
-
-				const auto weight = util::Simd::load(&weights[Layer1Size + i]);
-				v = util::Simd::mulAddAdj16(v, weight);
-
-				sum = util::Simd::add32(sum, v);
-			}
-
-			// sum all the values in the total and renormalise if screlu
-			return util::Simd::sum32(sum) / Activation::NormalizationK;
+			return sum / Activation::NormalizationK;
 		}
 	};
 

@@ -23,21 +23,28 @@
 
 namespace stormphrax::wdl
 {
-	auto winRateModel(Score povScore, u32 ply) -> std::pair<i32, i32>
+	auto wdlParams(u32 ply) -> std::pair<f64, f64>
 	{
 		constexpr auto As = std::array {
-			7.18898158, -41.53274687, 123.88236544, 182.20533084
+			-1.87978906, 6.03741240, 22.20917826, 179.35100901
 		};
 		constexpr auto Bs = std::array {
-			1.17032511, 4.16373765, -41.01938757, 132.41029355
+			-5.02430129, 35.51352585, -75.78468909, 104.90507531
 		};
 
-		static_assert(NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+		static_assert(Move32NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
 
 		const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
 
-		const auto a = (((As[0] * m + As[1]) * m + As[2]) * m) + As[3];
-		const auto b = (((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3];
+		return {
+			(((As[0] * m + As[1]) * m + As[2]) * m) + As[3],
+			(((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3]
+		};
+	}
+
+	auto wdlModel(Score povScore, u32 ply) -> std::pair<i32, i32>
+	{
+		const auto [a, b] = wdlParams(ply);
 
 		const auto x = std::clamp(static_cast<f64>(povScore), -4000.0, 4000.0);
 

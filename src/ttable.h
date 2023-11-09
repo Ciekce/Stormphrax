@@ -70,7 +70,6 @@ namespace stormphrax
 		auto resize(usize size) -> void;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool;
-		[[nodiscard]] auto probePvMove(u64 key) const -> Move;
 
 		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
 

@@ -23,49 +23,44 @@
 #include <algorithm>
 
 #include "../core.h"
-#include "../util/simd.h"
 
 namespace stormphrax::eval::activation
 {
-	template <Score Max>
+	template <i32 Max>
 	struct [[maybe_unused]] ClippedReLU
 	{
 		static constexpr u8 Id = 0;
 
-		static inline auto activate(util::Simd::Register x)
+		static inline auto activate(i16 x) -> i32
 		{
-			static const auto max = util::Simd::set1(Max);
-
-			return util::Simd::clamp16(x, util::Simd::zero(), max);
+			return std::clamp(static_cast<i32>(x), 0, Max);
 		}
 
 		static constexpr i32 NormalizationK = 1;
 	};
 
-	template <Score Max>
+	template <i32 Max>
 	struct [[maybe_unused]] SquaredClippedReLU
 	{
 		static constexpr u8 Id = 1;
 
-		static inline auto activate(util::Simd::Register x)
+		static inline auto activate(i16 x) -> i32
 		{
-			static const auto max = util::Simd::set1(Max);
-
-			const auto clipped = util::Simd::clamp16(x, util::Simd::zero(), max);
-			return util::Simd::mul16(clipped, clipped);
+			const auto clipped = std::clamp(static_cast<i32>(x), 0, Max);
+			return clipped * clipped;
 		}
 
 		static constexpr i32 NormalizationK = Max;
 	};
 
-	template <Score Max>
+	template <i32 Max>
 	struct [[maybe_unused]] ReLU
 	{
 		static constexpr u8 Id = 2;
 
-		static inline auto activate(util::Simd::Register x)
+		static inline auto activate(i16 x) -> i32
 		{
-			return util::Simd::max16(x, util::Simd::zero());
+			return std::max(static_cast<i32>(x), 0);
 		}
 
 		static constexpr i32 NormalizationK = 1;

@@ -94,7 +94,7 @@
  */
 #define TB_VALUE_PAWN 100  /* value of pawn in endgame */
 #define TB_VALUE_MATE (stormphrax::ScoreMate)
-#define TB_VALUE_INFINITE (stormphrax::ScoreMax) /* value above all normal score values */
+#define TB_VALUE_INFINITE (stormphrax::ScoreInf) /* value above all normal score values */
 #define TB_VALUE_DRAW 0
 #define TB_MAX_MATE_PLY (stormphrax::MaxDepth)
 

@@ -29,21 +29,23 @@ namespace stormphrax
 {
 	namespace
 	{
+		// for a long time, these were backwards
+		// cheers toanth
 		inline auto scoreToTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
-				return score + ply;
-			else if (score > ScoreWin)
 				return score - ply;
+			else if (score > ScoreWin)
+				return score + ply;
 			return score;
 		}
 
 		inline auto scoreFromTt(Score score, i32 ply)
 		{
 			if (score < -ScoreWin)
-				return score - ply;
-			else if (score > ScoreWin)
 				return score + ply;
+			else if (score > ScoreWin)
+				return score - ply;
 			return score;
 		}
 
@@ -83,38 +85,15 @@ namespace stormphrax
 			dst.move = entry.move;
 			dst.type = entry.type;
 
-			if (entry.depth >= depth)
-			{
-				if (entry.type == EntryType::Alpha)
-				{
-					if (entry.score <= alpha)
-						dst.score = alpha;
-					else return false;
-				}
-				else if (entry.type == EntryType::Beta)
-				{
-					if (entry.score >= beta)
-						dst.score = beta;
-					else return false;
-				}
-
+			if (entry.depth >= depth
+				&& (entry.type == EntryType::Exact
+					|| entry.type == EntryType::Alpha && entry.score <= alpha
+					|| entry.type == EntryType::Beta  && entry.score >= beta))
 				return true;
-			}
 		}
 		else dst.type = EntryType::None;
 
 		return false;
-	}
-
-	auto TTable::probePvMove(u64 key) const -> Move
-	{
-		const auto entry = loadEntry(index(key));
-
-		if (entry.type == EntryType::Exact
-		    && packEntryKey(key) == entry.key)
-			return entry.move;
-
-		return NullMove;
 	}
 
 	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void

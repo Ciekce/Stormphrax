@@ -18,7 +18,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  1.0.0  |          3254           |           3360           |             3513              |     3343     |      3342      |
+|  3.0.0  |            -            |            -             |               -               |      -       |       -        |
+|  2.0.0  |          3318           |           3463           |             3640              |      -       |       -        |
+|  1.0.0  |          3255           |           3361           |             3513              |     3344     |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -28,8 +30,9 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - futility pruning
   - history
     - capture history
-    - countermove history (1-ply continuation history)
-    - follow-up history (2-ply continuation history)
+    - 1-ply continuation history (countermove history)
+    - 2-ply continuation history (follow-up history)
+    - 4-ply continuation history
   - internal iterative reduction
   - killers (1 per ply)
   - late move reductions
@@ -39,9 +42,11 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - reverse futility pruning
   - SEE move ordering and pruning
   - singular extensions
+    - double extension
+    - negative extension
   - Syzygy tablebase support
 - NNUE
-  - (768->384)x2->1 architecture
+  - (768x4->768)x2->1 architecture
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
@@ -54,22 +59,22 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 - make it stronger uwu
 
 ## UCI options
-| Name             |  Type   | Default value |       Valid values        | Description                                                                                                 |
-|:-----------------|:-------:|:-------------:|:-------------------------:|:------------------------------------------------------------------------------------------------------------|
-| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB). Rounded down internally to the next-lowest power of 2. |
-| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                             |
-| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                           |
-| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                |
-| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                            |
-| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                        |
-| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                       |
-| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                |
-| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                      |
-| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                            |
+| Name             |  Type   | Default value |       Valid values        | Description                                                                          |
+|:-----------------|:-------:|:-------------:|:-------------------------:|:-------------------------------------------------------------------------------------|
+| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                 |
+| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                      |
+| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                    |
+| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                         |
+| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.     |
+| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms). |
+| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                |
+| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                         |
+| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.               |
+| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                     |
 
 ## Builds
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
-`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1 and 2)  
+`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1, Zen+ or Zen 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
 
@@ -77,27 +82,40 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 (note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)
 
 ### Note:  
-- If you have an AMD Zen 1 (Ryzen x 1xxx) or 2 (Ryzen x 2xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
-- Builds other than `bmi2` are untested and might crash on CPUs lacking newer instructions; I don't have older hardware to test them on.
+- If you have an AMD Zen 1 (Ryzen x 1xxx), Zen+ (Ryzen x 2xxx) or Zen 2 (Ryzen x 3xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler (tested with Clang 15 and 16 on Windows, GCC 11 and Clang 15 and 16 on Linux, and Apple Clang 14 on macOS on Apple Silicon)
+Requires CMake and a competent C++20 compiler. Locally, Clang produces slightly faster binaries than GCC.
 ```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
+> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
 ```
-(replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`)
+- replace `<COMPILER>` with your preferred compiler - for example, `clang++` or `g++`
+- replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`
 
 If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want to build the `native` target, use these commands instead (the second is unchanged):
 ```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -DSP_FAST_PEXT=OFF -S . -B build/
+> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -DSP_FAST_PEXT=OFF -S . -B build/
 > cmake --build build/ --target stormphrax-native
 ```
 Disabling the CMake option `SP_FAST_PEXT` builds the non-BMI2 attack getters.
 
 ## Credit
 Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin](https://github.com/graphitemaster/incbin) for embedding neural network files, under the Unlicense.
+
+Stormphrax is tested on [this OpenBench instance][ob] - thanks to all the people there, SP would be much weaker without your support :3
+
+In no particular order, these engines have been notable sources of ideas or inspiration:
+- [Viridithas][viri]
+- [Svart][svart]
+- [Stockfish][sf]
+- [Ethereal][ethy]
+- [Berserk][berky]
+- [Weiss][weiss]
+- [Koivisto][koi]
+
+Stormphrax's current networks are trained with [bullet][bullet]. Previous networks were trained with [Marlinflow][marlinflow].
 
 The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chronicles] :)
 
@@ -117,5 +135,18 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 [ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [spcc]: https://www.sp-cc.de/
 [mcerl]: https://www.chessengeria.eu/mcerl
+
+[ob]: https://chess.swehosting.se/index/
+
+[viri]: https://github.com/cosmobobak/viridithas
+[svart]: https://github.com/crippa1337/svart
+[sf]: https://github.com/official-stockfish/Stockfish
+[ethy]: https://github.com/AndyGrant/Ethereal
+[berky]: https://github.com/jhonnold/Berserk
+[weiss]: https://github.com/TerjeKir/weiss
+[koi]: https://github.com/Luecx/Koivisto
+
+[bullet]: https://github.com/jw1912/bullet
+[marlinflow]: https://github.com/jnlt3/marlinflow
 
 [edge-chronicles]: https://en.wikipedia.org/wiki/The_Edge_Chronicles
