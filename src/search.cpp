@@ -1053,7 +1053,7 @@ namespace stormphrax::search
 		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
 
 		// mates
-		if (std::abs(score) > ScoreTbWin)
+		if (std::abs(score) >= ScoreMaxMate)
 		{
 			if (score > 0)
 				std::cout << "mate " << ((ScoreMate - score + 1) / 2);
