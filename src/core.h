@@ -282,4 +282,6 @@ namespace stormphrax
 	constexpr auto ScoreWin = 25000;
 
 	constexpr i32 MaxDepth = 255;
+
+	constexpr auto ScoreMaxMate = ScoreMate - MaxDepth;
 }
