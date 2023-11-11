@@ -128,6 +128,9 @@ namespace stormphrax
 		{
 			if constexpr (Root)
 			{
+				if (m_idx == m_data.moves.size())
+					return MoveWithHistory{};
+
 				const auto idx = findNext();
 				return MoveWithHistory{m_data.moves[idx].move, m_data.histories[idx]};
 			}
