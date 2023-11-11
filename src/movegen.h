@@ -84,10 +84,31 @@ namespace stormphrax
 			  m_history{history}
 		{
 			if constexpr (Root)
-				std::ranges::stable_sort(data.moves, [](const auto &a, const auto &b)
+			{
+				static constexpr auto TtMoveScore = std::numeric_limits<i32>::max() - MovegenStage::TtMove;
+				static constexpr auto KillerScore = GoodNoisyThreshold - MovegenStage::Killer;
+				static constexpr auto CountermoveScore = GoodNoisyThreshold - MovegenStage::Killer;
+
+				for (i32 i = 0; i < data.moves.size(); ++i)
 				{
-					return a.score < b.score;
+					auto &move = data.moves[i];
+
+					if (move.move == m_ttMove)
+						move.score = TtMoveScore;
+					else if (move.move == m_killer)
+						move.score = KillerScore;
+					else if (move.move == m_countermove)
+						move.score = CountermoveScore;
+					else if (m_pos.isNoisy(move.move))
+						scoreNoisy(i);
+					else scoreQuiet(i);
+				}
+
+				std::ranges::stable_sort(data.moves, [this](const auto &a, const auto &b)
+				{
+					return a.score > b.score;
 				});
+			}
 			else
 			{
 				m_data.moves.clear();
@@ -101,8 +122,9 @@ namespace stormphrax
 		{
 			if constexpr (Root)
 			{
-				const auto move = m_data.moves[m_idx++].move;
-				return MoveWithHistory{move, moveHistory(move)};
+				const auto idx = m_idx++;
+				const auto move = m_data.moves[idx].move;
+				return MoveWithHistory{move, m_data.histories[idx]};
 			}
 
 			while (true)
@@ -187,6 +209,10 @@ namespace stormphrax
 			 0  // queen
 		};
 
+		static constexpr i32 GoodNoisyBonus = 8 * 2000 * 2000;
+		static constexpr i32 GoodNoisyThreshold = GoodNoisyBonus / 2;
+		static constexpr i32 PromoMultiplier = 2000;
+
 		inline auto moveHistory(Move move) -> i32
 		{
 			if constexpr (!GoodNoisiesOnly)
@@ -250,7 +276,7 @@ namespace stormphrax
 
 			m_goodNoisyEnd = std::find_if(m_data.moves.begin() + m_idx, m_data.moves.end(), [](const auto &v)
 			{
-				return v.score < 4 * 2000 * 2000;
+				return v.score < GoodNoisyThreshold;
 			}) - m_data.moves.begin();
 		}
 
@@ -282,7 +308,7 @@ namespace stormphrax
 			// knight promos first, rook then bishop promos last
 			//TODO capture promos first
 			if (move.move.type() == MoveType::Promotion)
-				move.score += PromoScores[move.move.targetIdx()] * 2000;
+				move.score += PromoScores[move.move.targetIdx()] * PromoMultiplier;
 		}
 
 		inline auto scoreNoisy(i32 idx)
@@ -307,9 +333,9 @@ namespace stormphrax
 
 			if ((captured != Piece::None || move.move.target() == PieceType::Queen)
 				&& see::see(m_pos, move.move))
-				move.score += 8 * 2000 * 2000;
+				move.score += GoodNoisyBonus;
 			else if (move.move.type() == MoveType::Promotion)
-				move.score += PromoScores[move.move.targetIdx()] * 2000;
+				move.score += PromoScores[move.move.targetIdx()] * PromoMultiplier;
 		}
 
 		const Position &m_pos;
