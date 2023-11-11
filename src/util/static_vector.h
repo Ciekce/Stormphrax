@@ -34,6 +34,11 @@ namespace stormphrax
 		StaticVector() = default;
 		~StaticVector() = default;
 
+		StaticVector(const StaticVector<T, Capacity> &other)
+		{
+			*this = other;
+		}
+
 		inline auto push(const T &elem)
 		{
 			assert(m_size < Capacity);
@@ -72,10 +77,17 @@ namespace stormphrax
 		[[nodiscard]] inline auto begin() const { return m_data.begin(); }
 		[[nodiscard]] inline auto end() const { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
 
-		inline void resize(usize size)
+		inline auto resize(usize size)
 		{
 			assert(size <= Capacity);
 			m_size = size;
+		}
+
+		inline auto operator=(const StaticVector<T, Capacity> &other) -> auto &
+		{
+			std::copy(other.begin(), other.end(), begin());
+			m_size = other.m_size;
+			return *this;
 		}
 
 	private:

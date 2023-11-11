@@ -69,7 +69,7 @@ namespace stormphrax
 		}
 	};
 
-	template <bool Quiescence = false>
+	template <bool Root, bool GoodNoisiesOnly = false>
 	class MoveGenerator
 	{
 	public:
@@ -83,14 +83,28 @@ namespace stormphrax
 			  m_killer{killer},
 			  m_history{history}
 		{
-			m_data.moves.clear();
-			m_data.moves.fill({NullMove, 0});
+			if constexpr (Root)
+				std::ranges::stable_sort(data.moves, [](const auto &a, const auto &b)
+				{
+					return a.score < b.score;
+				});
+			else
+			{
+				m_data.moves.clear();
+				m_data.moves.fill({NullMove, 0});
+			}
 		}
 
 		~MoveGenerator() = default;
 
 		[[nodiscard]] inline auto next()
 		{
+			if constexpr (Root)
+			{
+				const auto move = m_data.moves[m_idx++].move;
+				return MoveWithHistory{move, moveHistory(move)};
+			}
+
 			while (true)
 			{
 				while (m_idx == m_data.moves.size() || m_idx == m_goodNoisyEnd)
@@ -106,7 +120,7 @@ namespace stormphrax
 
 					case MovegenStage::GoodNoisy:
 						genNoisy();
-						if constexpr (Quiescence)
+						if constexpr (GoodNoisiesOnly)
 							m_stage = MovegenStage::End;
 						break;
 
@@ -175,7 +189,7 @@ namespace stormphrax
 
 		inline auto moveHistory(Move move) -> i32
 		{
-			if constexpr (!Quiescence)
+			if constexpr (!GoodNoisiesOnly)
 			{
 				if (m_history)
 				{
@@ -218,62 +232,14 @@ namespace stormphrax
 			return m_idx++;
 		}
 
-		inline auto scoreNoisy()
-		{
-			const auto &boards = m_pos.boards();
-
-			for (i32 i = m_idx; i < m_data.moves.size(); ++i)
-			{
-				auto &move = m_data.moves[i];
-
-				const auto captured = move.move.type() == MoveType::EnPassant
-					? colorPiece(PieceType::Pawn, m_pos.opponent())
-					: boards.pieceAt(move.move.dst());
-
-				if (m_history)
-				{
-					const auto historyMove = HistoryMove::from(boards, move.move);
-					const auto historyScore = m_history->noisyScore(historyMove, m_pos.threats(), captured);
-					m_data.histories[i] = move.score = historyScore;
-				}
-
-				if (captured != Piece::None)
-					move.score += Mvv[static_cast<i32>(pieceType(captured))];
-
-				if ((captured != Piece::None || move.move.target() == PieceType::Queen)
-					&& see::see(m_pos, move.move))
-					move.score += 8 * 2000 * 2000;
-				else if (move.move.type() == MoveType::Promotion)
-					move.score += PromoScores[move.move.targetIdx()] * 2000;
-			}
-		}
-
-		inline auto scoreQuiet()
-		{
-			const auto &boards = m_pos.boards();
-
-			for (i32 i = m_noisyEnd; i < m_data.moves.size(); ++i)
-			{
-				auto &move = m_data.moves[i];
-
-				if (m_history)
-				{
-					const auto historyMove = HistoryMove::from(boards, move.move);
-					const auto historyScore = m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
-					m_data.histories[i] = move.score = historyScore;
-				}
-
-				// knight promos first, rook then bishop promos last
-				//TODO capture promos first
-				if (move.move.type() == MoveType::Promotion)
-					move.score += PromoScores[move.move.targetIdx()] * 2000;
-			}
-		}
-
 		inline auto genNoisy()
 		{
 			generateNoisy(m_data.moves, m_pos);
-			scoreNoisy();
+
+			for (i32 i = m_idx; i < m_data.moves.size(); ++i)
+			{
+				scoreNoisy(i);
+			}
 
 			std::stable_sort(m_data.moves.begin() + m_idx, m_data.moves.end(), [](const auto &a, const auto &b)
 			{
@@ -291,9 +257,59 @@ namespace stormphrax
 		inline auto genQuiet()
 		{
 			generateQuiet(m_data.moves, m_pos);
-			scoreQuiet();
+
+			for (i32 i = m_noisyEnd; i < m_data.moves.size(); ++i)
+			{
+				scoreQuiet(i);
+			}
 
 			m_goodNoisyEnd = 9999;
+		}
+
+		inline auto scoreQuiet(i32 idx)
+		{
+			const auto &boards = m_pos.boards();
+
+			auto &move = m_data.moves[idx];
+
+			if (m_history)
+			{
+				const auto historyMove = HistoryMove::from(boards, move.move);
+				const auto historyScore = m_history->quietScore(historyMove, m_pos.threats(), m_ply, m_prevMoves);
+				m_data.histories[idx] = move.score = historyScore;
+			}
+
+			// knight promos first, rook then bishop promos last
+			//TODO capture promos first
+			if (move.move.type() == MoveType::Promotion)
+				move.score += PromoScores[move.move.targetIdx()] * 2000;
+		}
+
+		inline auto scoreNoisy(i32 idx)
+		{
+			const auto &boards = m_pos.boards();
+
+			auto &move = m_data.moves[idx];
+
+			const auto captured = move.move.type() == MoveType::EnPassant
+				? colorPiece(PieceType::Pawn, m_pos.opponent())
+				: boards.pieceAt(move.move.dst());
+
+			if (m_history)
+			{
+				const auto historyMove = HistoryMove::from(boards, move.move);
+				const auto historyScore = m_history->noisyScore(historyMove, m_pos.threats(), captured);
+				m_data.histories[idx] = move.score = historyScore;
+			}
+
+			if (captured != Piece::None)
+				move.score += Mvv[static_cast<i32>(pieceType(captured))];
+
+			if ((captured != Piece::None || move.move.target() == PieceType::Queen)
+				&& see::see(m_pos, move.move))
+				move.score += 8 * 2000 * 2000;
+			else if (move.move.type() == MoveType::Promotion)
+				move.score += PromoScores[move.move.targetIdx()] * 2000;
 		}
 
 		const Position &m_pos;
@@ -319,5 +335,5 @@ namespace stormphrax
 		u32 m_goodNoisyEnd{};
 	};
 
-	using QMoveGenerator = MoveGenerator<true>;
+	using QMoveGenerator = MoveGenerator<false, true>;
 }

@@ -281,6 +281,10 @@ namespace stormphrax::search
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
 
+		auto &rootMoves = thread.moveStack[0].movegenData.moves;
+		rootMoves.clear();
+		generateAll(rootMoves, thread.pos);
+
 		auto score = -ScoreInf;
 		PvList pv{};
 
@@ -683,7 +687,7 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.killer, moveStack.movegenData,
+		MoveGenerator<RootNode> generator{pos, stack.killer, moveStack.movegenData,
 			ttMove, ply, thread.prevMoves, &thread.history};
 
 		u32 legalMoves = 0;
