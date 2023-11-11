@@ -94,20 +94,26 @@ namespace stormphrax
 					auto &move = data.moves[i];
 
 					if (move.move == m_ttMove)
+					{
 						move.score = TtMoveScore;
+						data.histories[i] = moveHistory(move.move);
+					}
 					else if (move.move == m_killer)
+					{
 						move.score = KillerScore;
+						data.histories[i] = moveHistory(move.move);
+					}
 					else if (move.move == m_countermove)
+					{
 						move.score = CountermoveScore;
+						data.histories[i] = moveHistory(move.move);
+					}
 					else if (m_pos.isNoisy(move.move))
 						scoreNoisy(i);
 					else scoreQuiet(i);
 				}
 
-				std::ranges::stable_sort(data.moves, [this](const auto &a, const auto &b)
-				{
-					return a.score > b.score;
-				});
+				m_stage = MovegenStage::End;
 			}
 			else
 			{
@@ -122,9 +128,8 @@ namespace stormphrax
 		{
 			if constexpr (Root)
 			{
-				const auto idx = m_idx++;
-				const auto move = m_data.moves[idx].move;
-				return MoveWithHistory{move, m_data.histories[idx]};
+				const auto idx = findNext();
+				return MoveWithHistory{m_data.moves[idx].move, m_data.histories[idx]};
 			}
 
 			while (true)
