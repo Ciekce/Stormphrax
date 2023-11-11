@@ -87,8 +87,8 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxAspReduction, 3, 0, 5, 1)
 
-	SP_TUNABLE_PARAM(initialAspWindow, 16, 8, 50, 4)
-	SP_TUNABLE_PARAM(maxAspWindow, 500, 100, 1000, 100)
+	SP_TUNABLE_PARAM(initialAspWindow, 10, 8, 50, 4)
+	SP_TUNABLE_PARAM(maxAspWindow, 371, 100, 1000, 100)
 	SP_TUNABLE_PARAM(aspWideningFactor, 8, 1, 24, 1)
 
 	SP_TUNABLE_PARAM(minNmpDepth, 3, 3, 8, 1)
