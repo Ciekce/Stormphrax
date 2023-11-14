@@ -281,6 +281,10 @@ namespace stormphrax::search
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
 
+		auto &rootMoves = thread.moveStack[0].movegenData.moves;
+		rootMoves.clear();
+		generateAll(rootMoves, thread.pos);
+
 		auto score = -ScoreInf;
 		PvList pv{};
 
@@ -303,7 +307,7 @@ namespace stormphrax::search
 
 			if (depth < minAspDepth())
 			{
-				const auto newScore = search(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf, false);
+				const auto newScore = search<true>(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf, false);
 
 				depthCompleted = depth;
 
@@ -326,7 +330,7 @@ namespace stormphrax::search
 				{
 					aspDepth = std::max(aspDepth, depth - maxAspReduction());
 
-					const auto newScore = search(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
+					const auto newScore = search<true>(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
 
 					const bool stop = m_stop.load(std::memory_order::relaxed);
 					if (stop || thread.rootPv.length == 0)
@@ -423,6 +427,7 @@ namespace stormphrax::search
 		return score;
 	}
 
+	template <bool RootNode>
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
@@ -456,8 +461,7 @@ namespace stormphrax::search
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		const bool root = ply == 0;
-		const bool pvNode = root || beta - alpha > 1;
+		const bool pvNode = RootNode || beta - alpha > 1;
 
 		auto &stack = thread.stack[ply];
 		auto &moveStack = thread.moveStack[moveStackIdx];
@@ -513,7 +517,7 @@ namespace stormphrax::search
 
 		// Probe the Syzygy tablebases for a WDL result
 		// if there are few enough pieces left on the board
-		if (!root
+		if (!RootNode
 			&& !stack.excluded
 			&& g_opts.syzygyEnabled
 			&& pieceCount <= syzygyPieceLimit
@@ -586,7 +590,7 @@ namespace stormphrax::search
 		// we already have the static eval in a singularity search
 		if (!stack.excluded)
 		{
-			if (!root && !pos.lastMove())
+			if (!RootNode && !pos.lastMove())
 				stack.eval = -thread.stack[ply - 1].eval;
 			else stack.eval = inCheck ? -ScoreInf : eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
@@ -683,7 +687,7 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator generator{pos, stack.killer, moveStack.movegenData,
+		MoveGenerator<RootNode> generator{pos, stack.killer, moveStack.movegenData,
 			ttMove, ply, thread.prevMoves, &thread.history};
 
 		u32 legalMoves = 0;
@@ -704,7 +708,7 @@ namespace stormphrax::search
 
 			const auto baseLmr = g_lmrTable[depth][legalMoves + 1];
 
-			if (!root
+			if (!RootNode
 				&& quietOrLosing
 				&& bestScore > -ScoreWin
 				// skip moveloop pruning in PV nodes during datagen
@@ -761,7 +765,7 @@ namespace stormphrax::search
 			// then do a reduced depth search with the TT move excluded from being searched.
 			// If the result of that search plus some depth-dependent margin does not beat the TT
 			// score, assume that the TT move is "singular" (the only good move) and extend it
-			if (!root
+			if (!RootNode
 				&& depth >= minSingularityDepth()
 				&& move == ttMove
 				&& !stack.excluded
@@ -857,8 +861,11 @@ namespace stormphrax::search
 				}
 			}
 
-			if (root && thread.isMainThread())
-				m_limiter->updateMoveNodes(move, thread.search.nodes - prevNodes);
+			if constexpr (RootNode)
+			{
+				if (thread.isMainThread())
+					m_limiter->updateMoveNodes(move, thread.search.nodes - prevNodes);
+			}
 
 			if (score > bestScore)
 			{
