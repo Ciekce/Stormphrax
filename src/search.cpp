@@ -857,9 +857,12 @@ namespace stormphrax::search
 						score = -search(thread, stack.pv, newDepth,
 							ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 
-						const auto bonus = historyAdjustment(depth + 1);
-						thread.history.updateConthist(thread.prevMoves[ply],
-							ply, thread.prevMoves, score > alpha ? bonus : -bonus); //NOLINT
+						if (!noisy)
+						{
+							const auto bonus = historyAdjustment(depth + 1);
+							thread.history.updateConthist(thread.prevMoves[ply],
+								ply, thread.prevMoves, score > alpha ? bonus : -bonus); //NOLINT
+						}
 					}
 
 					if (score > alpha && score < beta)
