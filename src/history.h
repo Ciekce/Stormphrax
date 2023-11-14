@@ -33,9 +33,8 @@ namespace stormphrax
 {
 	using HistoryScore = i16;
 
-	inline auto historyAdjustment(i32 depth, Score alpha, Score staticEval) -> HistoryScore
+	inline auto historyAdjustment(i32 depth) -> HistoryScore
 	{
-		depth += staticEval <= alpha;
 		return static_cast<HistoryScore>(std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
 			tunable::maxHistoryAdjustment()));
 	}
@@ -110,14 +109,19 @@ namespace stormphrax
 			else return NullMove;
 		}
 
+		inline auto updateConthist(HistoryMove move, i32 ply,
+			std::span<const HistoryMove> prevMoves, HistoryScore adjustment)
+		{
+			updateContinuationScore(move, ply, prevMoves, 1, adjustment);
+			updateContinuationScore(move, ply, prevMoves, 2, adjustment);
+			updateContinuationScore(move, ply, prevMoves, 4, adjustment);
+		}
+
 		inline auto updateQuietScore(HistoryMove move, Bitboard threats,
 			i32 ply, std::span<const HistoryMove> prevMoves, HistoryScore adjustment)
 		{
 			updateMainScore(move, threats[move.src], threats[move.dst], adjustment);
-
-			updateContinuationScore(move, ply, prevMoves, 1, adjustment);
-			updateContinuationScore(move, ply, prevMoves, 2, adjustment);
-			updateContinuationScore(move, ply, prevMoves, 4, adjustment);
+			updateConthist(move, ply, prevMoves, adjustment);
 		}
 
 		[[nodiscard]] inline auto quietScore(HistoryMove move, Bitboard threats,
