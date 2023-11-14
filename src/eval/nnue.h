@@ -37,12 +37,12 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768x4->768)x2->1, ClippedReLU
+	// current arch: (768x4->768)x2->1, SquaredClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
 
-	using Activation = activation::ClippedReLU<255>;
+	using Activation = activation::SquaredClippedReLU<255>;
 
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 768;
