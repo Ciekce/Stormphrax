@@ -227,6 +227,7 @@ namespace stormphrax::search
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
+		template <bool Root = false>
 		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
