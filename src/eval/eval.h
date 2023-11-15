@@ -49,21 +49,26 @@ namespace stormphrax::eval
 		return eval;
 	}
 
+	template <bool Scale = true>
 	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
 	{
-		eval = scaleEval(pos, eval) + contempt[static_cast<i32>(pos.toMove())];
+		if constexpr (Scale)
+			eval = scaleEval(pos, eval);
+		eval += contempt[static_cast<i32>(pos.toMove())];
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
+	template <bool Scale = true>
 	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
 	{
-		const auto nnueEval = nnueState.evaluate(pos.toMove());
-		return adjustEval(pos, contempt, nnueEval);
+		const auto nnueEval = nnueState.evaluate(pos.boards(), pos.toMove());
+		return adjustEval<Scale>(pos, contempt, nnueEval);
 	}
 
+	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.blackKing(), pos.whiteKing(), pos.toMove());
-		return adjustEval(pos, contempt, nnueEval);
+		return adjustEval<Scale>(pos, contempt, nnueEval);
 	}
 }
