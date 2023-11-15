@@ -515,7 +515,6 @@ namespace stormphrax::search
 		assert(alpha >= -ScoreInf);
 		assert(beta  <=  ScoreInf);
 		assert(alpha <   beta);
-		assert(depth >= 0);
 		assert(ply   >= 0 && ply   <= MaxDepth);
 
 		if (depth > 1 && shouldStop(thread.search, thread.isMainThread(), false))
