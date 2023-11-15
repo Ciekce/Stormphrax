@@ -1137,6 +1137,9 @@ namespace stormphrax::search
 		const bool upperbound = score == alpha;
 		const bool lowerbound = score == beta;
 
+		if (std::abs(score) <= 2) // draw score
+			score = 0;
+
 		score = std::clamp(score, m_minRootScore, m_maxRootScore);
 
 		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
