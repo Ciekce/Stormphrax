@@ -1025,7 +1025,7 @@ namespace stormphrax::search
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
-		if (!stack.excluded)
+		if (!stack.excluded && !shouldStop(thread.search, false, false))
 			m_table.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
 
 		return bestScore;
@@ -1109,7 +1109,8 @@ namespace stormphrax::search
 			}
 		}
 
-		m_table.put(pos.key(), bestScore, best, 0, ply, entryType);
+		if (!shouldStop(thread.search, false, false))
+			m_table.put(pos.key(), bestScore, best, 0, ply, entryType);
 
 		return bestScore;
 	}
