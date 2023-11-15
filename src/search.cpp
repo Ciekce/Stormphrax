@@ -68,7 +68,7 @@ namespace stormphrax::search
 				if (target != PieceType::None)
 					return Move::promotion(src, dst, target);
 				else if (dst == pos.enPassant()
-					&& pos.boards().pieceAt(src) == Piece::BlackPawn)
+					&& pos.boards().pieceTypeAt(src) == PieceType::Pawn)
 					return Move::enPassant(src, dst);
 					// Syzygy TBs do not encode positions with castling rights
 				else return Move::standard(src, dst);
