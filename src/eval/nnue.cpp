@@ -128,15 +128,15 @@ namespace stormphrax::eval
 
 			if (header.inputBuckets != InputBucketCount)
 			{
-				std::cerr << "wrong number of input buckets (" << header.inputBuckets
+				std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
 					<< ", expected: " << InputBucketCount << ")" << std::endl;
 				return false;
 			}
 
-			if (header.outputBuckets != 1)
+			if (header.outputBuckets != OutputBucketCount)
 			{
-				std::cerr << "wrong number of output buckets (" << header.outputBuckets
-					<< ", expected: 1)" << std::endl;
+				std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
+					<< ", expected: " << OutputBucketCount << ")" << std::endl;
 				return false;
 			}
 
@@ -145,10 +145,10 @@ namespace stormphrax::eval
 
 		// *** this is NOT equal to sizeof(Network) due to padding at the end ***
 		constexpr auto NetworkSize
-			= sizeof(Network::featureWeights)
-			+ sizeof(Network::featureBiases)
-			+ sizeof(Network::outputWeights)
-			+ sizeof(Network::outputBias);
+			= sizeof(Network::featureTransformer.weights)
+			+ sizeof(Network::featureTransformer.biases)
+			+ sizeof(Network::l1.weights)
+			+ sizeof(Network::l1.biases);
 	}
 
 	const Network *g_currNet;

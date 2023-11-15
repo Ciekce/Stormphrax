@@ -92,6 +92,7 @@ namespace stormphrax
 			auto handleD() -> void;
 			auto handleCheckers() -> void;
 			auto handleEval() -> void;
+			auto handleRawEval() -> void;
 			auto handleRegen() -> void;
 			auto handleMoves() -> void;
 			auto handlePerft(const std::vector<std::string> &tokens) -> void;
@@ -151,6 +152,8 @@ namespace stormphrax
 					handleD();
 				else if (command == "eval")
 					handleEval();
+				else if (command == "raweval")
+					handleRawEval();
 				else if (command == "checkers")
 					handleCheckers();
 				else if (command == "regen")
@@ -652,6 +655,12 @@ namespace stormphrax
 			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
 			printScore(std::cout, score);
 			std::cout << std::endl;
+		}
+
+		auto UciHandler::handleRawEval() -> void
+		{
+			const auto score = eval::staticEvalOnce<false>(m_pos);
+			std::cout << score << std::endl;
 		}
 
 		auto UciHandler::handleCheckers() -> void

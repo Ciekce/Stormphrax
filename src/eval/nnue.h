@@ -42,19 +42,15 @@ namespace stormphrax::eval
 	// perspective
 	const auto ArchId = 1;
 
-	using Activation = activation::SquaredClippedReLU<255>;
+	constexpr i32 L1Q = 255;
+	constexpr i32 OutputQ = 64;
+
+	using Activation = activation::SquaredClippedReLU<L1Q>;
 
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 768;
 
-	// for larger hidden layers, operations are done in blocks of
-	// 256 values - this allows GCC to unroll loops without dying
-	// cheers @jhonnold for the tip
-	static_assert(Layer1Size < 512 || (Layer1Size % 256) == 0);
-
 	constexpr i32 Scale = 400;
-
-	constexpr i32 Q = 255 * 64;
 
 	// visually flipped upside down, a1 = 0
 	constexpr auto InputBuckets = std::array {
@@ -68,7 +64,23 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
-	constexpr auto InputBucketCount = *std::max_element(InputBuckets.begin(), InputBuckets.end()) + 1;
+	constexpr auto OutputBucketCount = 1;
+
+	// ===========================================
+
+	constexpr i32 Q = L1Q * OutputQ;
+	constexpr auto InputBucketCount = *std::ranges::max_element(InputBuckets) + 1;
+
+	// for larger hidden layers, operations are done in blocks of
+	// 256 values - this allows GCC to unroll loops without dying
+	// cheers @jhonnold for the tip
+	static_assert(Layer1Size < 512 || (Layer1Size % 256) == 0);
+
+	static_assert(sizeof(i16) * Layer1Size >= SP_SIMD_ALIGNMENT
+		&& (sizeof(i16) * Layer1Size) % SP_SIMD_ALIGNMENT == 0);
+
+	static_assert(OutputBucketCount > 0 && util::resetLsb(OutputBucketCount) == 0);
+	static_assert(OutputBucketCount <= 32);
 
 	constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
 	{
@@ -92,12 +104,17 @@ namespace stormphrax::eval
 		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
 	}
 
+	template <typename T, usize Inputs, usize Outputs>
+	struct Layer
+	{
+		SP_SIMD_ALIGNAS std::array<T, Inputs * Outputs> weights;
+		SP_SIMD_ALIGNAS std::array<T, Outputs> biases;
+	};
+
 	struct Network
 	{
-		SP_SIMD_ALIGNAS std::array<i16, InputSize * InputBucketCount * Layer1Size> featureWeights;
-		SP_SIMD_ALIGNAS std::array<i16, Layer1Size> featureBiases;
-		SP_SIMD_ALIGNAS std::array<i16, Layer1Size * 2> outputWeights;
-		i16 outputBias;
+		Layer<i16, InputBucketCount * InputSize, Layer1Size> featureTransformer;
+		Layer<i16, Layer1Size * 2, OutputBucketCount> l1;
 	};
 
 	extern const Network *g_currNet;
@@ -279,12 +296,12 @@ namespace stormphrax::eval
 			deactivateFeatureSingle(*m_curr, Color::White, piece, sq, whiteKing);
 		}
 
-		[[nodiscard]] inline auto evaluate(Color stm) const
+		[[nodiscard]] inline auto evaluate(const PositionBoards &boards, Color stm) const
 		{
 			assert(m_curr == &m_accumulatorStack.back());
 			assert(stm != Color::None);
 
-			return evaluate(*m_curr, stm);
+			return evaluate(*m_curr, boards, stm);
 		}
 
 		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards,
@@ -301,7 +318,7 @@ namespace stormphrax::eval
 			refreshAccumulator(accumulator, Color::Black, boards, blackKing);
 			refreshAccumulator(accumulator, Color::White, boards, whiteKing);
 
-			return evaluate(accumulator, stm);
+			return evaluate(accumulator, boards, stm);
 		}
 
 	private:
@@ -314,7 +331,7 @@ namespace stormphrax::eval
 			assert(c != Color::None);
 			assert(king != Square::None);
 
-			accumulator.init(c, g_currNet->featureBiases);
+			accumulator.init(c, g_currNet->featureTransformer.biases);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
@@ -350,7 +367,8 @@ namespace stormphrax::eval
 			const auto dstIdx = featureIndex(c, piece, dst, king);
 
 			subtractAndAddToAll(accumulator.forColor(c),
-				g_currNet->featureWeights, srcIdx * Layer1Size, dstIdx * Layer1Size);
+				g_currNet->featureTransformer.weights,
+				srcIdx * Layer1Size, dstIdx * Layer1Size);
 		}
 
 		static inline auto activateFeatureSingle(Accumulator &accumulator,
@@ -363,7 +381,7 @@ namespace stormphrax::eval
 
 			const auto idx = featureIndex(c, piece, sq, king);
 
-			addToAll(accumulator.forColor(c), g_currNet->featureWeights, idx * Layer1Size);
+			addToAll(accumulator.forColor(c), g_currNet->featureTransformer.weights, idx * Layer1Size);
 		}
 
 		static inline auto deactivateFeatureSingle(Accumulator &accumulator,
@@ -376,17 +394,27 @@ namespace stormphrax::eval
 
 			const auto idx = featureIndex(c, piece, sq, king);
 
-			subtractFromAll(accumulator.forColor(c), g_currNet->featureWeights, idx * Layer1Size);
+			subtractFromAll(accumulator.forColor(c), g_currNet->featureTransformer.weights, idx * Layer1Size);
 		}
 
-		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator, Color stm) -> i32
+		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
+			const PositionBoards &boards, Color stm) -> i32
 		{
 			assert(stm != Color::None);
 
+			const auto outputBucket = [&]() -> u32
+			{
+				constexpr auto OutputBucketDiv = 32 / OutputBucketCount;
+
+				if constexpr (OutputBucketCount == 1)
+					return 0;
+				else return (boards.occupancy().popcount() - 2) / OutputBucketDiv;
+			}();
+
 			const auto output = stm == Color::Black
-				? forward(accumulator.black(), accumulator.white(), g_currNet->outputWeights)
-				: forward(accumulator.white(), accumulator.black(), g_currNet->outputWeights);
-			return (output + g_currNet->outputBias) * Scale / Q;
+				? forward(accumulator.black(), accumulator.white(), g_currNet->l1, outputBucket)
+				: forward(accumulator.white(), accumulator.black(), g_currNet->l1, outputBucket);
+			return output * Scale / Q;
 		}
 
 		static inline auto subtractAndAddToAll(std::array<i16, Layer1Size> &input,
@@ -493,10 +521,14 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto forward(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
-			std::span<const i16, Layer1Size * 2> weights
+			const Layer<i16, Layer1Size * 2, OutputBucketCount> &l1,
+			u32 bucket
 		) -> i32
 		{
 			assert(us.data() != them.data());
+			assert(bucket < OutputBucketCount);
+
+			const auto bucketOffset = bucket * Layer1Size * 2;
 
 			i32 sum = 0;
 
@@ -509,7 +541,7 @@ namespace stormphrax::eval
 						const auto idx = i + j;
 
 						const auto activated = Activation::activate(us[idx]);
-						sum += activated * weights[idx];
+						sum += activated * l1.weights[bucketOffset + idx];
 					}
 				}
 
@@ -520,7 +552,7 @@ namespace stormphrax::eval
 						const auto idx = i + j;
 
 						const auto activated = Activation::activate(them[idx]);
-						sum += activated * weights[Layer1Size + idx];
+						sum += activated * l1.weights[bucketOffset + Layer1Size + idx];
 					}
 				}
 			}
@@ -529,17 +561,17 @@ namespace stormphrax::eval
 				for (usize i = 0; i < Layer1Size; ++i)
 				{
 					const auto activated = Activation::activate(us[i]);
-					sum += activated * weights[i];
+					sum += activated * l1.weights[bucketOffset + i];
 				}
 
 				for (usize i = 0; i < Layer1Size; ++i)
 				{
 					const auto activated = Activation::activate(them[i]);
-					sum += activated * weights[Layer1Size + i];
+					sum += activated * l1.weights[bucketOffset + Layer1Size + i];
 				}
 			}
 
-			return sum / Activation::NormalizationK;
+			return l1.biases[bucket] + (sum / Activation::NormalizationK);
 		}
 	};
 
