@@ -261,6 +261,26 @@ namespace stormphrax
 			return color == Color::Black ? blackNonPk() : whiteNonPk();
 		}
 
+		[[nodiscard]] inline auto pieceTypeAt(Square square) const
+		{
+			const auto bit = Bitboard::fromSquare(square);
+
+			for (const auto piece : {
+				PieceType::Pawn,
+				PieceType::Knight,
+				PieceType::Bishop,
+				PieceType::Rook,
+				PieceType::Queen,
+				PieceType::King
+			})
+			{
+				if (!(forPiece(piece) & bit).empty())
+					return piece;
+			}
+
+			return PieceType::None;
+		}
+
 		[[nodiscard]] inline auto pieceAt(Square square) const
 		{
 			const auto bit = Bitboard::fromSquare(square);

@@ -40,6 +40,108 @@ namespace stormphrax::search
 		{
 			return 2 - static_cast<Score>(nodes % 4);
 		}
+
+		enum class RootProbeResult
+		{
+			Failed,
+			Win,
+			Draw,
+			Loss
+		};
+
+		auto probeRootTb(ScoredMoveList &rootMoves, const Position &pos)
+		{
+			const auto moveFromTb = [&pos](auto tbMove)
+			{
+				static constexpr auto PromoPieces = std::array {
+					PieceType::None,
+					PieceType::Queen,
+					PieceType::Rook,
+					PieceType::Bishop,
+					PieceType::Knight
+				};
+
+				const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
+				const auto dst = static_cast<Square>(TB_MOVE_TO  (tbMove));
+				const auto target = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
+
+				if (target != PieceType::None)
+					return Move::promotion(src, dst, target);
+				else if (dst == pos.enPassant()
+					&& pos.boards().pieceAt(src) == Piece::BlackPawn)
+					return Move::enPassant(src, dst);
+					// Syzygy TBs do not encode positions with castling rights
+				else return Move::standard(src, dst);
+			};
+
+			const auto &boards = pos.boards();
+
+			TbRootMoves tbRootMoves{};
+
+			const auto epSq = pos.enPassant();
+			auto result = tb_probe_root_dtz(
+				boards.whiteOccupancy(),
+				boards.blackOccupancy(),
+				boards.kings(),
+				boards.queens(),
+				boards.rooks(),
+				boards.bishops(),
+				boards.knights(),
+				boards.pawns(),
+				pos.halfmove(), 0,
+				epSq == Square::None ? 0 : static_cast<i32>(epSq),
+				pos.toMove() == Color::White,
+				false /*TODO*/, true, &tbRootMoves
+			);
+
+			if (!result) // DTZ tables unavailable, fall back to WDL
+				result = tb_probe_root_wdl(
+					boards.whiteOccupancy(),
+					boards.blackOccupancy(),
+					boards.kings(),
+					boards.queens(),
+					boards.rooks(),
+					boards.bishops(),
+					boards.knights(),
+					boards.pawns(),
+					pos.halfmove(), 0,
+					epSq == Square::None ? 0 : static_cast<i32>(epSq),
+					pos.toMove() == Color::White,
+					true, &tbRootMoves
+				);
+
+			if (!result
+				|| tbRootMoves.size == 0) // mate or stalemate at root, handled by search
+				return RootProbeResult::Failed;
+
+			std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](auto a, auto b)
+			{
+				return a.tbRank > b.tbRank;
+			});
+
+			const auto [wdl, minRank] = [&]() -> std::pair<RootProbeResult, i32>
+			{
+				const auto best = tbRootMoves.moves[0];
+
+				if (best.tbRank >= 900)
+					return {RootProbeResult::Win, 900};
+				else if (best.tbRank >= -899) // includes cursed wins and blessed losses
+					return {RootProbeResult::Draw, -899};
+				else return {RootProbeResult::Loss, -1000};
+			}();
+
+			for (u32 i = 0; i < tbRootMoves.size; ++i)
+			{
+				const auto move = tbRootMoves.moves[i];
+
+				if (move.tbRank < minRank)
+					break;
+
+				rootMoves.push({moveFromTb(move.move), 0});
+			}
+
+			return wdl;
+		}
 	}
 
 	Searcher::Searcher(std::optional<usize> hashSize)
@@ -74,65 +176,37 @@ namespace stormphrax::search
 			return;
 		}
 
-		const auto &boards = pos.boards();
+		m_minRootScore = -ScoreInf;
+		m_maxRootScore =  ScoreInf;
 
-		// probe syzygy tb for a move
+		bool tbRoot = false;
+		ScoredMoveList rootMoves{};
+
 		if (g_opts.syzygyEnabled
-			&& boards.occupancy().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+			&& pos.boards().occupancy().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
 		{
-			const auto epSq = pos.enPassant();
-			const auto result = tb_probe_root(
-				boards.whiteOccupancy(),
-				boards.blackOccupancy(),
-				boards.kings(),
-				boards.queens(),
-				boards.rooks(),
-				boards.bishops(),
-				boards.knights(),
-				boards.pawns(),
-				pos.halfmove(), 0,
-				epSq == Square::None ? 0 : static_cast<i32>(epSq),
-				pos.toMove() == Color::White,
-				nullptr
-			);
+			tbRoot = true;
+			const auto wdl = probeRootTb(rootMoves, pos);
 
-			if (result != TB_RESULT_FAILED)
+			switch (wdl)
 			{
-				static constexpr auto PromoPieces = std::array {
-					PieceType::None,
-					PieceType::Queen,
-					PieceType::Rook,
-					PieceType::Bishop,
-					PieceType::Knight
-				};
-
-				const auto wdl = TB_GET_WDL(result);
-
-				const auto score = wdl == TB_WIN ? ScoreTbWin
-					: wdl == TB_LOSS ? -ScoreTbWin
-					: 0; // draw
-
-				const auto src = static_cast<Square>(TB_GET_FROM(result));
-				const auto dst = static_cast<Square>(TB_GET_TO  (result));
-
-				const auto promo = PromoPieces[TB_GET_PROMOTES(result)];
-				const bool ep = TB_GET_EP(result);
-
-				const auto move = ep ? Move::enPassant(src, dst)
-					: promo != PieceType::None ? Move::promotion(src, dst, promo)
-					: Move::standard(src, dst);
-
-				auto &thread = m_threads[0];
-
-				thread.rootPv.moves[0] = move;
-				thread.rootPv.length = 1;
-
-				report(thread, thread.rootPv, 1, 0.0, score, -ScoreInf, ScoreInf, true);
-				std::cout << "bestmove " << uci::moveToString(move) << std::endl;
-
-				return;
+			case RootProbeResult::Win:
+				m_minRootScore = ScoreTbWin;
+				break;
+			case RootProbeResult::Draw:
+				m_minRootScore = m_maxRootScore = 0;
+				break;
+			case RootProbeResult::Loss:
+				m_maxRootScore = -ScoreTbWin;
+				break;
+			default:
+				tbRoot = false;
+				break;
 			}
 		}
+
+		if (rootMoves.empty())
+			generateAll(rootMoves, pos);
 
 		m_resetBarrier.arriveAndWait();
 
@@ -150,8 +224,13 @@ namespace stormphrax::search
 			thread.search = SearchData{};
 			thread.pos = pos;
 
+			thread.rootMoves() = rootMoves;
+
 			thread.nnueState.reset(thread.pos.boards(), thread.pos.blackKing(), thread.pos.whiteKing());
 		}
+
+		if (tbRoot)
+			m_threads[0].search.tbhits = 1;
 
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
@@ -178,6 +257,9 @@ namespace stormphrax::search
 
 	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
+		thread.rootMoves().clear();
+		generateAll(thread.rootMoves(), thread.pos);
+
 		m_stop.store(false, std::memory_order::seq_cst);
 
 		const auto score = searchRoot(thread, false);
@@ -201,6 +283,9 @@ namespace stormphrax::search
 		thread->maxDepth = depth;
 
 		thread->nnueState.reset(thread->pos.boards(), thread->pos.blackKing(), thread->pos.whiteKing());
+
+		thread->rootMoves().clear();
+		generateAll(thread->rootMoves(), thread->pos);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -280,10 +365,6 @@ namespace stormphrax::search
 
 		thread.rootPv.moves[0] = NullMove;
 		thread.rootPv.length = 0;
-
-		auto &rootMoves = thread.moveStack[0].movegenData.moves;
-		rootMoves.clear();
-		generateAll(rootMoves, thread.pos);
 
 		auto score = -ScoreInf;
 		PvList pv{};
@@ -1035,27 +1116,28 @@ namespace stormphrax::search
 	}
 
 	auto Searcher::report(const ThreadData &mainThread, const PvList &pv,
-		i32 depth, f64 time, Score score, Score alpha, Score beta, bool tbRoot) -> void
+		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
 	{
 		usize nodes = 0;
 
-		// in tb positions at root we have searched 0 nodes
-		if (!tbRoot)
+		// technically a potential race but it doesn't matter
+		for (const auto &thread : m_threads)
 		{
-			// technically a potential race but it doesn't matter
-			for (const auto &thread : m_threads)
-			{
-				nodes += thread.search.nodes;
-			}
+			nodes += thread.search.nodes;
 		}
 
-		const auto ms = tbRoot ? 0 : static_cast<usize>(time * 1000.0);
-		const auto nps = tbRoot ? 0 : static_cast<usize>(static_cast<f64>(nodes) / time);
+		const auto ms  = static_cast<usize>(time * 1000.0);
+		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
 		std::cout << "info depth " << depth << " seldepth " << mainThread.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
+
+		const bool upperbound = score == alpha;
+		const bool lowerbound = score == beta;
+
+		score = std::clamp(score, m_minRootScore, m_maxRootScore);
 
 		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
 
@@ -1073,9 +1155,9 @@ namespace stormphrax::search
 			std::cout << "cp " << normScore;
 		}
 
-		if (score == alpha)
+		if (upperbound)
 			std::cout << " upperbound";
-		else if (score == beta)
+		else if (lowerbound)
 			std::cout << " lowerbound";
 
 		// wdl display
@@ -1085,9 +1167,6 @@ namespace stormphrax::search
 				std::cout << " wdl 1000 0 0";
 			else if (score < -ScoreWin)
 				std::cout << " wdl 0 0 1000";
-				// tablebase draws at the root
-			else if (tbRoot)
-				std::cout << " wdl 0 1000 0";
 			else
 			{
 				const auto [wdlWin, wdlLoss] = wdl::wdlModel(score, plyFromStartpos);
@@ -1101,20 +1180,15 @@ namespace stormphrax::search
 
 		if (g_opts.syzygyEnabled)
 		{
-			if (tbRoot)
-				std::cout << " tbhits 1";
-			else
+			usize tbhits = 0;
+
+			// technically a potential race but it doesn't matter
+			for (const auto &thread : m_threads)
 			{
-				usize tbhits = 0;
-
-				// technically a potential race but it doesn't matter
-				for (const auto &thread : m_threads)
-				{
-					tbhits += thread.search.tbhits;
-				}
-
-				std::cout << " tbhits " << tbhits;
+				tbhits += thread.search.tbhits;
 			}
+
+			std::cout << " tbhits " << tbhits;
 		}
 
 		std::cout << " pv";

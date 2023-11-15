@@ -120,6 +120,11 @@ namespace stormphrax::search
 
 		i32 minNmpPly{0};
 
+		[[nodiscard]] inline auto rootMoves() -> auto &
+		{
+			return moveStack[0].movegenData.moves;
+		}
+
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;
@@ -202,6 +207,9 @@ namespace stormphrax::search
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
 
+		Score m_minRootScore{};
+		Score m_maxRootScore{};
+
 		eval::Contempt m_contempt{};
 
 		auto stopThreads() -> void;
@@ -232,7 +240,7 @@ namespace stormphrax::search
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
-			f64 time, Score score, Score alpha, Score beta, bool tbRoot = false) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv,
+			i32 depth, f64 time, Score score, Score alpha, Score beta) -> void;
 	};
 }
