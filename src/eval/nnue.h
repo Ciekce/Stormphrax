@@ -64,7 +64,7 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
-	constexpr auto OutputBucketCount = 1;
+	constexpr auto OutputBucketCount = 8;
 
 	// ===========================================
 
@@ -405,7 +405,6 @@ namespace stormphrax::eval
 			const auto outputBucket = [&]() -> u32
 			{
 				constexpr auto OutputBucketDiv = 32 / OutputBucketCount;
-
 				if constexpr (OutputBucketCount == 1)
 					return 0;
 				else return (boards.occupancy().popcount() - 2) / OutputBucketDiv;
