@@ -30,47 +30,13 @@
 #include <string>
 #include <string_view>
 
-#include "activation.h"
+#include "arch.h"
 #include "../core.h"
 #include "../util/simd.h"
 #include "../position/boards.h"
 
 namespace stormphrax::eval
 {
-	// current arch: (768x4->768)x2->1, SquaredClippedReLU
-
-	// perspective
-	const auto ArchId = 1;
-
-	constexpr i32 L1Q = 255;
-	constexpr i32 OutputQ = 64;
-
-	using Activation = activation::SquaredClippedReLU<L1Q>;
-
-	constexpr u32 InputSize = 768;
-	constexpr u32 Layer1Size = 768;
-
-	constexpr i32 Scale = 400;
-
-	// visually flipped upside down, a1 = 0
-	constexpr auto InputBuckets = std::array {
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3
-	};
-
-	constexpr auto OutputBucketCount = 8;
-
-	// ===========================================
-
-	constexpr i32 Q = L1Q * OutputQ;
-	constexpr auto InputBucketCount = *std::ranges::max_element(InputBuckets) + 1;
-
 	// for larger hidden layers, operations are done in blocks of
 	// 256 values - this allows GCC to unroll loops without dying
 	// cheers @jhonnold for the tip
@@ -82,27 +48,8 @@ namespace stormphrax::eval
 	static_assert(OutputBucketCount > 0 && util::resetLsb(OutputBucketCount) == 0);
 	static_assert(OutputBucketCount <= 32);
 
-	constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
-	{
-		assert(c != Color::None);
-
-		assert(prevKingSq != Square::None);
-		assert(kingSq != Square::None);
-		assert(prevKingSq != kingSq);
-
-		if constexpr (InputBucketCount == 1)
-			return false;
-		else if constexpr (InputBucketCount == 64)
-			return true;
-
-		if (c == Color::Black)
-		{
-			prevKingSq = flipSquare(prevKingSq);
-			kingSq = flipSquare(kingSq);
-		}
-
-		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
-	}
+	constexpr i32 Q = L1Q * OutputQ;
+	constexpr auto InputBucketCount = *std::ranges::max_element(InputBuckets) + 1;
 
 	template <typename T, usize Inputs, usize Outputs>
 	struct Layer
@@ -573,6 +520,28 @@ namespace stormphrax::eval
 			return l1.biases[bucket] + (sum / Activation::NormalizationK);
 		}
 	};
+
+	constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
+	{
+		assert(c != Color::None);
+
+		assert(prevKingSq != Square::None);
+		assert(kingSq != Square::None);
+		assert(prevKingSq != kingSq);
+
+		if constexpr (InputBucketCount == 1)
+			return false;
+		else if constexpr (InputBucketCount == 64)
+			return true;
+
+		if (c == Color::Black)
+		{
+			prevKingSq = flipSquare(prevKingSq);
+			kingSq = flipSquare(kingSq);
+		}
+
+		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
+	}
 
 	auto loadDefaultNetwork() -> void;
 	auto loadNetwork(const std::string &name) -> void;

@@ -307,15 +307,23 @@ namespace stormphrax
 			++rankIdx;
 		}
 
-		if (newState.boards.forPiece(Piece::BlackKing).popcount() != 1)
+		if (const auto blackKingCount = newState.boards.forPiece(Piece::BlackKing).popcount();
+			blackKingCount != 1)
 		{
-			std::cerr << "black must have exactly 1 king" << std::endl;
+			std::cerr << "black must have exactly 1 king, " << blackKingCount << " in fen " << fen << std::endl;
 			return false;
 		}
 
-		if (newState.boards.forPiece(Piece::WhiteKing).popcount() != 1)
+		if (const auto whiteKingCount = newState.boards.forPiece(Piece::WhiteKing).popcount();
+			whiteKingCount != 1)
 		{
-			std::cerr << "white must have exactly 1 king" << std::endl;
+			std::cerr << "white must have exactly 1 king, " << whiteKingCount << " in fen " << fen << std::endl;
+			return false;
+		}
+
+		if (newState.boards.occupancy().popcount() > 32)
+		{
+			std::cerr << "too many pieces in fen " << fen << std::endl;
 			return false;
 		}
 
