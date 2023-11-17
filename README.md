@@ -16,11 +16,11 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
 ## Strength
-| Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [SPCC][spcc] | [MCERL][mcerl] |
-|:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:------------:|:--------------:|
-|  3.0.0  |            -            |            -             |               -               |      -       |       -        |
-|  2.0.0  |          3318           |           3463           |             3640              |      -       |       -        |
-|  1.0.0  |          3255           |           3361           |             3513              |     3344     |      3342      |
+| Version |    [CCRL 40/15][ccrl-4015]    | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt] | [MCERL][mcerl] |
+|:-------:|:-----------------------------:|:------------------------:|:-----------------------------:|:-----------------:|:--------------:|
+|  3.0.0  | ~3355 (very few games played) |            -             |             3659              |         -         |       -        |
+|  2.0.0  |             3318              |           3461           |             3639              |       3339        |      3483      |
+|  1.0.0  |             3255              |           3360           |             3513              |       3235        |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -133,7 +133,7 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 [ccrl-4015]: https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [ccrl-blitz]: https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
-[spcc]: https://www.sp-cc.de/
+[cegt]: http://www.cegt.net/40_4_Ratinglist/40_4_single/rangliste.html
 [mcerl]: https://www.chessengeria.eu/mcerl
 
 [ob]: https://chess.swehosting.se/index/
