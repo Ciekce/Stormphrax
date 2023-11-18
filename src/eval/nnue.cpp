@@ -133,10 +133,10 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.outputBuckets != OutputBucketCount)
+			if (header.outputBuckets != OutputBucketing::BucketCount)
 			{
 				std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
-					<< ", expected: " << OutputBucketCount << ")" << std::endl;
+					<< ", expected: " << OutputBucketing::BucketCount << ")" << std::endl;
 				return false;
 			}
 

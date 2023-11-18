@@ -45,9 +45,6 @@ namespace stormphrax::eval
 	static_assert(sizeof(i16) * Layer1Size >= SP_SIMD_ALIGNMENT
 		&& (sizeof(i16) * Layer1Size) % SP_SIMD_ALIGNMENT == 0);
 
-	static_assert(OutputBucketCount > 0 && util::resetLsb(OutputBucketCount) == 0);
-	static_assert(OutputBucketCount <= 32);
-
 	constexpr i32 Q = L1Q * OutputQ;
 	constexpr auto InputBucketCount = *std::ranges::max_element(InputBuckets) + 1;
 
@@ -61,7 +58,7 @@ namespace stormphrax::eval
 	struct Network
 	{
 		Layer<i16, InputBucketCount * InputSize, Layer1Size> featureTransformer;
-		Layer<i16, Layer1Size * 2, OutputBucketCount> l1;
+		Layer<i16, Layer1Size * 2, OutputBucketing::BucketCount> l1;
 	};
 
 	extern const Network *g_currNet;
@@ -349,13 +346,7 @@ namespace stormphrax::eval
 		{
 			assert(stm != Color::None);
 
-			const auto outputBucket = [&]() -> u32
-			{
-				constexpr auto OutputBucketDiv = 32 / OutputBucketCount;
-				if constexpr (OutputBucketCount == 1)
-					return 0;
-				else return (boards.occupancy().popcount() - 2) / OutputBucketDiv;
-			}();
+			const auto outputBucket = OutputBucketing::getBucket(boards);
 
 			const auto output = stm == Color::Black
 				? forward(accumulator.black(), accumulator.white(), g_currNet->l1, outputBucket)
@@ -467,7 +458,7 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto forward(
 			std::span<const i16, Layer1Size> us,
 			std::span<const i16, Layer1Size> them,
-			const Layer<i16, Layer1Size * 2, OutputBucketCount> &l1,
+			const Layer<i16, Layer1Size * 2, OutputBucketing::BucketCount> &l1,
 			u32 bucket
 		) -> i32
 		{

@@ -23,6 +23,7 @@
 #include <array>
 
 #include "activation.h"
+#include "outputs.h"
 
 namespace stormphrax::eval
 {
@@ -53,5 +54,5 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
-	constexpr auto OutputBucketCount = 8;
+	using OutputBucketing = outputs::MaterialCount<8>;
 }
