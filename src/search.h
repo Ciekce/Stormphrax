@@ -71,7 +71,9 @@ namespace stormphrax::search
 	{
 		Move killer{NullMove};
 
+		Score staticEval{};
 		Score eval{};
+
 		Move excluded{};
 
 		i32 history{};

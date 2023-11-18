@@ -670,9 +670,17 @@ namespace stormphrax::search
 		// we already have the static eval in a singularity search
 		if (!stack.excluded)
 		{
-			if (!RootNode && !pos.lastMove())
-				stack.eval = -thread.stack[ply - 1].eval;
-			else stack.eval = inCheck ? -ScoreInf : eval::staticEval(pos, thread.nnueState, m_contempt);
+			if (inCheck)
+				stack.eval = stack.staticEval = -ScoreInf;
+			else
+			{
+				stack.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				stack.eval = (ttEntry.type == EntryType::Exact
+						|| ttEntry.type == EntryType::Alpha && ttEntry.score < stack.staticEval
+						|| ttEntry.type == EntryType::Beta  && ttEntry.score > stack.staticEval)
+					? ttEntry.score
+					: stack.staticEval;
+			}
 		}
 
 		thread.stack[ply + 2].killer = NullMove;
@@ -683,10 +691,10 @@ namespace stormphrax::search
 		{
 			if (inCheck)
 				return false;
-			if (ply > 1 && thread.stack[ply - 2].eval != -ScoreInf)
-				return stack.eval > thread.stack[ply - 2].eval;
-			if (ply > 3 && thread.stack[ply - 4].eval != -ScoreInf)
-				return stack.eval > thread.stack[ply - 4].eval;
+			if (ply > 1 && thread.stack[ply - 2].staticEval != -ScoreInf)
+				return stack.staticEval > thread.stack[ply - 2].staticEval;
+			if (ply > 3 && thread.stack[ply - 4].staticEval != -ScoreInf)
+				return stack.staticEval > thread.stack[ply - 4].staticEval;
 			return true;
 		}();
 
@@ -969,7 +977,7 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						// Update history on fail-highs
-						const auto bonus = historyAdjustment(depth, alpha, stack.eval);
+						const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
 						const auto penalty = static_cast<HistoryScore>(-bonus);
 
 						const auto currMove = thread.prevMoves[ply];
