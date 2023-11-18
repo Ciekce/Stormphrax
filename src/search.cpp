@@ -727,7 +727,9 @@ namespace stormphrax::search
 				const auto R = std::min(depth,
 					nmpReductionBase()
 						+ depth / nmpReductionDepthScale()
-						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction()));
+						+ std::min((stack.eval - beta) / nmpReductionEvalScale(), maxNmpEvalReduction())
+						+ improving
+				);
 
 				// wrap in a scope so the nullmove gets unmade in case of verification search
 				const auto score = [&]
