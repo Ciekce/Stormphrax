@@ -24,7 +24,6 @@
 
 #include "nnue.h"
 #include "../position/position.h"
-#include "../see.h"
 #include "../core.h"
 
 namespace stormphrax::eval
@@ -32,19 +31,8 @@ namespace stormphrax::eval
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
-	inline auto materialScale(const Position &pos)
-	{
-		const auto &boards = pos.boards();
-		return 22400
-			+ boards.knights().popcount() * see::values::Knight
-			+ boards.bishops().popcount() * see::values::Bishop
-			+ boards.  rooks().popcount() * see::values::Rook
-			+ boards. queens().popcount() * see::values::Queen;
-	}
-
 	inline auto scaleEval(const Position &pos, i32 eval)
 	{
-		eval = eval * materialScale(pos) / 32768;
 		eval = eval * (200 - pos.halfmove()) / 200;
 		return eval;
 	}

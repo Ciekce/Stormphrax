@@ -53,5 +53,5 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
-	constexpr auto OutputBucketCount = 1;
+	constexpr auto OutputBucketCount = 8;
 }
