@@ -26,7 +26,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768x4->768)x2->1, SquaredClippedReLU
+	// current arch: (768x4->768)x2->1x8, SquaredClippedReLU
 
 	// perspective
 	const auto ArchId = 1;
