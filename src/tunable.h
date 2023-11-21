@@ -143,6 +143,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 236, 100, 300, 10, updateLmrTable)
 
+	SP_TUNABLE_PARAM(probcutMargin, 256, 150, 500, 32)
+	SP_TUNABLE_PARAM(probcutReduction, 3, 2, 4, 1)
+
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
 #undef SP_TUNABLE_ASSERTS

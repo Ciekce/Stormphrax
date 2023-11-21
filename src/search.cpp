@@ -758,6 +758,46 @@ namespace stormphrax::search
 			}
 		}
 
+		// Probcut
+		//TODO write this
+		if (const auto probcutBeta = beta + probcutMargin();
+			!pvNode
+			&& !inCheck
+			&& depth >= probcutReduction() + 1
+			&& std::abs(beta) < ScoreWin
+			&& !(ttEntry.depth >= depth - probcutReduction()
+				&& ttEntry.score != -ScoreInf
+				&& ttEntry.score < probcutBeta))
+		{
+			QMoveGenerator generator{pos, NullMove, moveStack.movegenData,
+				pos.isNoisy(ttMove) ? ttMove : NullMove, ply};
+
+			while (const auto moveWithHistory = generator.next())
+			{
+				const auto [move, _history] = moveWithHistory;
+
+				const auto movingPiece = boards.pieceAt(move.src());
+				assert(movingPiece != Piece::None);
+
+				const auto key = pos.key();
+				const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
+
+				thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
+
+				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
+
+				if (score >= probcutBeta)
+					score = -search(thread, stack.pv, depth - probcutReduction() - 1,
+						ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
+
+				if (score >= probcutBeta)
+				{
+					m_table.put(key, score, move, depth - probcutReduction(), ply, EntryType::Beta);
+					return score;
+				}
+			}
+		}
+
 		moveStack.quietsTried.clear();
 		moveStack.noisiesTried.clear();
 
