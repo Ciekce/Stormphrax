@@ -329,6 +329,8 @@ namespace stormphrax
 				? colorPiece(PieceType::Pawn, m_pos.opponent())
 				: boards.pieceAt(move.move.dst());
 
+			assert(captured == Piece::None || pieceType(captured) != PieceType::King);
+
 			if (m_history)
 			{
 				const auto historyMove = HistoryMove::from(boards, move.move);

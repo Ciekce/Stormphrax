@@ -770,7 +770,7 @@ namespace stormphrax::search
 				&& ttEntry.score < probcutBeta))
 		{
 			QMoveGenerator generator{pos, NullMove, moveStack.movegenData,
-				pos.isNoisy(ttMove) ? ttMove : NullMove, ply};
+				(ttMove && pos.isNoisy(ttMove)) ? ttMove : NullMove, ply};
 
 			while (const auto moveWithHistory = generator.next())
 			{
@@ -781,6 +781,9 @@ namespace stormphrax::search
 
 				const auto key = pos.key();
 				const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
+
+				if (!guard)
+					continue;
 
 				thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
 
