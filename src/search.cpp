@@ -769,8 +769,8 @@ namespace stormphrax::search
 				&& ttEntry.score != -ScoreInf
 				&& ttEntry.score < probcutBeta))
 		{
-			QMoveGenerator generator{pos, NullMove, moveStack.movegenData,
-				(ttMove && pos.isNoisy(ttMove)) ? ttMove : NullMove, ply};
+			auto generator = goodNoisyMoveGenerator(pos, moveStack.movegenData,
+				(ttMove && pos.isNoisy(ttMove)) ? ttMove : NullMove, probcutBeta - stack.staticEval);
 
 			while (const auto moveWithHistory = generator.next())
 			{
@@ -785,6 +785,7 @@ namespace stormphrax::search
 				if (!guard)
 					continue;
 
+				++thread.search.nodes;
 				thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
 
 				auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
@@ -818,8 +819,8 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		MoveGenerator<RootNode> generator{pos, stack.killer, moveStack.movegenData,
-			ttMove, ply, thread.prevMoves, &thread.history};
+		auto generator = mainMoveGenerator<RootNode>(pos, stack.killer,
+			moveStack.movegenData, ttMove, ply, thread.prevMoves, &thread.history);
 
 		u32 legalMoves = 0;
 
@@ -1127,7 +1128,7 @@ namespace stormphrax::search
 
 		auto entryType = EntryType::Alpha;
 
-		QMoveGenerator generator{pos, NullMove, thread.moveStack[moveStackIdx].movegenData, ttMove};
+		auto generator = goodNoisyMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData, ttMove, 0);
 
 		while (const auto move = generator.next())
 		{

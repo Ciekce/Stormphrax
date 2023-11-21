@@ -69,18 +69,19 @@ namespace stormphrax
 		}
 	};
 
-	template <bool Root, bool GoodNoisiesOnly = false>
+	template <bool Root = false, bool GoodNoisiesOnly = false>
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove,
-			i32 ply = -1, std::span<const HistoryMove> prevMoves = {}, const HistoryTable *history = nullptr)
+		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove, i32 ply,
+			const HistoryTable *history, i32 seeThreshold, std::span<const HistoryMove> prevMoves = {})
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
 			  m_ply{ply},
 			  m_prevMoves{prevMoves},
 			  m_killer{killer},
+			  m_seeThreshold{seeThreshold},
 			  m_history{history}
 		{
 			if constexpr (Root)
@@ -342,7 +343,7 @@ namespace stormphrax
 				move.score += Mvv[static_cast<i32>(pieceType(captured))];
 
 			if ((captured != Piece::None || move.move.target() == PieceType::Queen)
-				&& see::see(m_pos, move.move))
+				&& see::see(m_pos, move.move, m_seeThreshold))
 				move.score += GoodNoisyBonus;
 			else if (move.move.type() == MoveType::Promotion)
 				move.score += PromoScores[move.move.targetIdx()] * PromoMultiplier;
@@ -360,8 +361,9 @@ namespace stormphrax
 		std::span<const HistoryMove> m_prevMoves;
 
 		Move m_killer;
-
 		Move m_countermove{NullMove};
+
+		i32 m_seeThreshold;
 
 		const HistoryTable *m_history;
 
@@ -371,5 +373,16 @@ namespace stormphrax
 		u32 m_goodNoisyEnd{};
 	};
 
-	using QMoveGenerator = MoveGenerator<false, true>;
+	template <bool RootNode>
+	[[nodiscard]] inline auto mainMoveGenerator(const Position &pos, Move killer, MovegenData &data,
+		Move ttMove, i32 ply, std::span<const HistoryMove> prevMoves, const HistoryTable *history)
+	{
+		return MoveGenerator<RootNode, false>{pos, killer, data, ttMove, ply, history, 0, prevMoves};
+	}
+
+	[[nodiscard]] inline auto goodNoisyMoveGenerator(const Position &pos,
+		MovegenData &data, Move ttMove, i32 seeThreshold) -> MoveGenerator<false, true>
+	{
+		return MoveGenerator<false, true>{pos, NullMove, data, ttMove, -1, nullptr, seeThreshold};
+	}
 }
