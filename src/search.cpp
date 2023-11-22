@@ -436,13 +436,13 @@ namespace stormphrax::search
 
 					if (score >= beta)
 					{
-						beta = std::min(beta + delta, ScoreInf);
+						beta = std::min(score + delta, ScoreInf);
 						--aspDepth;
 					}
 					else if (score <= alpha)
 					{
 						beta = (alpha + beta) / 2;
-						alpha = std::max(alpha - delta, -ScoreInf);
+						alpha = std::max(score - delta, -ScoreInf);
 						aspDepth = depth;
 					}
 					else
