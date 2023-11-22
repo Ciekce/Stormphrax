@@ -763,7 +763,7 @@ namespace stormphrax::search
 		if (const auto probcutBeta = beta + probcutMargin();
 			!pvNode
 			&& !inCheck
-			&& depth >= probcutReduction() + 1
+			&& depth >= probcutReduction() + 2
 			&& std::abs(beta) < ScoreWin
 			&& !(ttEntry.depth >= depth - probcutReduction()
 				&& ttEntry.score != -ScoreInf
