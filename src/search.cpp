@@ -860,7 +860,7 @@ namespace stormphrax::search
 				&& ttEntry.depth >= depth - singularityDepthMargin()
 				&& ttEntry.type != EntryType::Alpha)
 			{
-				const auto sBeta = std::max(-ScoreMate, ttEntry.score - singularityDepthScale() * depth);
+				const auto sBeta = std::max(-ScoreMate, ttEntry.score - depth * singularityDepthScale() / 16);
 				const auto sDepth = (depth - 1) / 2;
 
 				stack.excluded = move;

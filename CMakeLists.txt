@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(stormphrax VERSION 3.0.21)
+project(stormphrax VERSION 3.0.22)
 
 set(CMAKE_CXX_STANDARD 20)
 
