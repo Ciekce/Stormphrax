@@ -19,12 +19,21 @@
 #include "time.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "../tunable.h"
 
 namespace stormphrax::limit
 {
 	using namespace stormphrax::tunable;
+
+	namespace
+	{
+		inline auto sinc(f64 x)
+		{
+			return std::sin(x) / x;
+		}
+	}
 
 	MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead)
 		: m_maxTime{util::g_timer.time() + static_cast<f64>(std::max(I64(1), time - overhead)) / 1000.0} {}
@@ -74,14 +83,27 @@ namespace stormphrax::limit
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
-		const auto base = static_cast<f64>(nodeTimeBase()) / 100.0;
-		const auto scale = static_cast<f64>(nodeTimeScale()) / 100.0;
+		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
+		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
 
 		const auto bestMoveFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = (base - bestMoveFraction) * scale;
+		const auto moveNodeScale = (nodeBase - bestMoveFraction) * nodeScale;
 
-		m_scale = moveNodeScale;
+		if (bestMove != m_prevBestMove)
+		{
+			m_prevBestMove = bestMove;
+			m_stability = 0;
+		}
+		else ++m_stability;
+
+		const auto stability = static_cast<f64>(std::min<u32>(m_stability, 4));
+
+		const auto sa = sinc(0.9 * stability - 0.04);
+		const auto sb = std::cos(4.3 * stability - 0.18);
+		const auto stabilityScale = 0.75 + 1.8 * (sa * sa + sb * sb);
+
+		m_scale = moveNodeScale * stabilityScale;
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
