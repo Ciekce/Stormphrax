@@ -39,14 +39,8 @@ endif()
 
 find_package(Threads REQUIRED)
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT LTO_SUPPORTED)
-
-if(LTO_SUPPORTED)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO OFF)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
-endif()
+# cmake forces thin lto on clang for CMAKE_INTERPROCEDURAL_OPTIMIZATION, thanks cmake
+add_compile_options($<$<CONFIG:Release>:-flto>)
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 
@@ -71,14 +65,12 @@ add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_S
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-sse41-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
-if(NOT MSVC OR SP_CLANG)
-	target_compile_options(stormphrax-native PUBLIC -march=native)
-	target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
-	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
-	# excavator without amd-specific extensions and bmi2
-	target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
-	target_compile_options(stormphrax-sse41-popcnt PUBLIC -march=nehalem)
-endif()
+target_compile_options(stormphrax-native PUBLIC -march=native)
+target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
+target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
+# excavator without amd-specific extensions and bmi2
+target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
+target_compile_options(stormphrax-sse41-popcnt PUBLIC -march=nehalem)
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
@@ -86,7 +78,7 @@ if(NOT MSVC)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
 	target_compile_options(stormphrax-sse41-popcnt PUBLIC -mtune=sandybridge)
-elseif(MSVC AND SP_CLANG)
+else() # clang
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
 	target_compile_options(stormphrax-avx512 PUBLIC /tune:znver4)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
