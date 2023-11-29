@@ -86,7 +86,7 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler. Locally, Clang produces slightly faster binaries than GCC.
+Requires CMake and a competent C++20 compiler that supports LTO. Locally, Clang produces slightly faster binaries than GCC.
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
