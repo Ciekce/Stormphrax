@@ -82,6 +82,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(nodeTimeBase, 162, 100, 250, 10)
 	SP_TUNABLE_PARAM(nodeTimeScale, 148, 100, 250, 10)
+	SP_TUNABLE_PARAM(nodeTimeScaleMin, 1, 1, 1000, 100)
+
+	SP_TUNABLE_PARAM(timeScaleMin, 1, 1, 1000, 100)
 
 	SP_TUNABLE_PARAM(minAspDepth, 6, 1, 10, 1)
 
