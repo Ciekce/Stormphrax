@@ -326,6 +326,8 @@ namespace stormphrax
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
 		[[nodiscard]] inline auto threats() const { return currState().threats; }
 
+		[[nodiscard]] auto hasCycle(i32 ply) const -> bool;
+
 		[[nodiscard]] inline auto isDrawn(bool threefold) const
 		{
 			const auto halfmove = currState().halfmove;

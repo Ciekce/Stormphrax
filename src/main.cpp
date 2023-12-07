@@ -22,6 +22,7 @@
 #include "util/parse.h"
 #include "eval/nnue.h"
 #include "tunable.h"
+#include "cuckoo.h"
 
 #if SP_EXTERNAL_TUNE
 #include "util/split.h"
@@ -32,6 +33,8 @@ using namespace stormphrax;
 auto main(i32 argc, const char *argv[]) -> i32
 {
 	tunable::init();
+	cuckoo::init();
+
 	eval::loadDefaultNetwork();
 
 	if (argc > 1)

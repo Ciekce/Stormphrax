@@ -35,6 +35,7 @@
 #include "../movegen.h"
 #include "../opts.h"
 #include "../rays.h"
+#include "../cuckoo.h"
 
 namespace stormphrax
 {
@@ -1032,6 +1033,65 @@ namespace stormphrax
 		}
 
 		return true;
+	}
+
+	// see comment in cuckoo.cpp
+	auto Position::hasCycle(i32 ply) const -> bool
+	{
+		const auto &state = currState();
+
+		const auto end = std::min<i32>(state.halfmove, static_cast<i32>(m_hashes.size()));
+
+		if (end < 3)
+			return false;
+
+		const auto S = [this](i32 d)
+		{
+			return m_hashes[m_hashes.size() - d];
+		};
+
+		const auto occ = state.boards.occupancy();
+		const auto originalKey = state.key;
+
+		auto other = ~(originalKey ^ S(1));
+
+		for (i32 d = 3; d <= end; d += 2)
+		{
+			const auto currKey = S(d);
+
+			other ^= ~(currKey ^ S(d - 1));
+			if (other != 0)
+				continue;
+
+			const auto diff = originalKey ^ currKey;
+
+			u32 slot = cuckoo::h1(diff);
+
+			if (diff != cuckoo::keys[slot])
+				slot = cuckoo::h2(diff);
+
+			if (diff != cuckoo::keys[slot])
+				continue;
+
+			const auto move = cuckoo::moves[slot];
+
+			if ((occ & rayBetween(move.src(), move.dst())).empty())
+			{
+				// repetition is after root, done
+				if (ply > d)
+					return true;
+
+				auto piece = state.boards.pieceAt(move.src());
+				if (piece == Piece::None)
+					piece = state.boards.pieceAt(move.dst());
+
+				assert(piece != Piece::None);
+
+				return pieceColor(piece) == toMove();
+			}
+		}
+
+		return false;
 	}
 
 	auto Position::toFen() const -> std::string
