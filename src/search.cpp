@@ -526,6 +526,13 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
+		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
+		{
+			alpha = drawScore(thread.search.nodes);
+			if (alpha >= beta)
+				return alpha;
+		}
+
 		const bool inCheck = pos.isCheck();
 
 		// Check extension
@@ -1050,6 +1057,13 @@ namespace stormphrax::search
 			return beta;
 
 		auto &pos = thread.pos;
+
+		if (alpha < 0 && pos.hasCycle(ply))
+		{
+			alpha = drawScore(thread.search.nodes);
+			if (alpha >= beta)
+				return alpha;
+		}
 
 		const auto staticEval = pos.isCheck()
 			? -ScoreMate

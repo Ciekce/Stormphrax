@@ -21,6 +21,7 @@
 #include "../types.h"
 
 #include <array>
+#include <cassert>
 
 #include "../core.h"
 #include "../bitboard.h"
@@ -120,5 +121,21 @@ namespace stormphrax::attacks
 	{
 		return getRookAttacks(src, occupancy)
 			| getBishopAttacks(src, occupancy);
+	}
+
+	inline auto getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{})
+	{
+		assert(piece != PieceType::None);
+		assert(piece != PieceType::Pawn);
+
+		switch (piece)
+		{
+		case PieceType::Knight: return getKnightAttacks(src);
+		case PieceType::Bishop: return getBishopAttacks(src, occupancy);
+		case PieceType::Rook: return getRookAttacks(src, occupancy);
+		case PieceType::Queen: return getQueenAttacks(src, occupancy);
+		case PieceType::King: return getKingAttacks(src);
+		default: __builtin_unreachable();
+		}
 	}
 }
