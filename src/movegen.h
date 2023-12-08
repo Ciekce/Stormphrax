@@ -69,9 +69,12 @@ namespace stormphrax
 		}
 	};
 
-	template <bool Root, bool GoodNoisiesOnly = false>
+	template <bool Root, bool GoodNoisiesOnly = false, bool GenerateEvasions = false>
 	class MoveGenerator
 	{
+		static_assert(!Root || !GoodNoisiesOnly);
+		static_assert(!GenerateEvasions || (GoodNoisiesOnly && GenerateEvasions));
+
 	public:
 		MoveGenerator(const Position &pos, Move killer, MovegenData &data, Move ttMove,
 			i32 ply = -1, std::span<const HistoryMove> prevMoves = {}, const HistoryTable *history = nullptr)
@@ -151,7 +154,12 @@ namespace stormphrax
 					case MovegenStage::GoodNoisy:
 						genNoisy();
 						if constexpr (GoodNoisiesOnly)
-							m_stage = MovegenStage::End;
+						{
+							if constexpr (GenerateEvasions)
+								// subtract 1 because 1 is added before the switch
+								m_stage = m_pos.isCheck() ? MovegenStage::Quiet - 1 : MovegenStage::End;
+							else m_stage = MovegenStage::End;
+						}
 						break;
 
 					case MovegenStage::Killer:
@@ -369,5 +377,5 @@ namespace stormphrax
 		u32 m_goodNoisyEnd{};
 	};
 
-	using QMoveGenerator = MoveGenerator<false, true>;
+	using QMoveGenerator = MoveGenerator<false, true, true>;
 }
