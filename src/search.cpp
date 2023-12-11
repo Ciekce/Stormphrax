@@ -983,10 +983,6 @@ namespace stormphrax::search
 				{
 					if (score >= beta)
 					{
-						// Update history on fail-highs
-						const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
-						const auto penalty = static_cast<HistoryScore>(-bonus);
-
 						const auto currMove = thread.prevMoves[ply];
 
 						// If the fail-high move is a quiet move or losing
@@ -998,23 +994,30 @@ namespace stormphrax::search
 							thread.history.updateCountermove(ply, thread.prevMoves, move);
 						}
 
-						if (noisy)
-							thread.history.updateNoisyScore(currMove, threats, captured, bonus);
-						else
+						if (depth > 1)
 						{
-							thread.history.updateQuietScore(currMove, threats, ply, thread.prevMoves, bonus);
+							// Update history on fail-highs
+							const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
+							const auto penalty = static_cast<HistoryScore>(-bonus);
 
-							// Penalise quiet moves that did not fail high if the fail-high move is quiet
-							for (const auto prevQuiet : moveStack.quietsTried)
+							if (noisy)
+								thread.history.updateNoisyScore(currMove, threats, captured, bonus);
+							else
 							{
-								thread.history.updateQuietScore(prevQuiet, threats, ply, thread.prevMoves, penalty);
-							}
-						}
+								thread.history.updateQuietScore(currMove, threats, ply, thread.prevMoves, bonus);
 
-						// Always penalise noisy moves that did not fail high
-						for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
-						{
-							thread.history.updateNoisyScore(prevNoisy, threats, prevCaptured, penalty);
+								// Penalise quiet moves that did not fail high if the fail-high move is quiet
+								for (const auto prevQuiet : moveStack.quietsTried)
+								{
+									thread.history.updateQuietScore(prevQuiet, threats, ply, thread.prevMoves, penalty);
+								}
+							}
+
+							// Always penalise noisy moves that did not fail high
+							for (const auto [prevNoisy, prevCaptured] : moveStack.noisiesTried)
+							{
+								thread.history.updateNoisyScore(prevNoisy, threats, prevCaptured, penalty);
+							}
 						}
 
 						entryType = EntryType::Beta;
