@@ -994,10 +994,12 @@ namespace stormphrax::search
 							thread.history.updateCountermove(ply, thread.prevMoves, move);
 						}
 
-						if (depth > 1)
+						const auto historyDepth = depth + (stack.staticEval <= alpha);
+
+						if (historyDepth > 1)
 						{
 							// Update history on fail-highs
-							const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
+							const auto bonus = historyAdjustment(historyDepth);
 							const auto penalty = static_cast<HistoryScore>(-bonus);
 
 							if (noisy)
