@@ -40,7 +40,7 @@ namespace stormphrax::eval
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	constexpr auto InputBuckets = std::array {
+	constexpr auto KingInputBuckets = std::array {
 		0, 0, 0, 0, 1, 1, 1, 1,
 		0, 0, 0, 0, 1, 1, 1, 1,
 		2, 2, 2, 2, 3, 3, 3, 3,

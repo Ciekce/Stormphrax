@@ -66,7 +66,7 @@ namespace stormphrax::eval::nnue
 		{
 			OutputStorage storage{};
 
-			std::get<0>(m_layers).forward(boards, stmInputs, nstmInputs, std::get<0>(storage).array());
+			std::get<0>(m_layers).forward(boards, stmInputs, nstmInputs, std::get<0>(storage));
 			propagate(storage, boards, std::make_index_sequence<sizeof...(Layers)>());
 
 			return std::get<sizeof...(Layers) - 1>(storage)[0];
@@ -98,7 +98,7 @@ namespace stormphrax::eval::nnue
 					== std::tuple_element_t<I, LayerStack>::InputCount);
 
 				auto &layer = std::get<I>(m_layers);
-				layer.forward(boards, std::get<I - 1>(storage).array(), std::get<I>(storage).array());
+				layer.forward(boards, std::get<I - 1>(storage), std::get<I>(storage));
 			}
 		}
 

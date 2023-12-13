@@ -31,8 +31,8 @@
 namespace stormphrax::eval
 {
 	using FeatureTransformer = nnue::FeatureTransformer<
-		i16, 768, Layer1Size,
-		*std::ranges::max_element(InputBuckets) + 1
+		i16, InputSize, Layer1Size,
+		*std::ranges::max_element(KingInputBuckets) + 1
 	>;
 
 	using Network = nnue::PerspectiveNetwork<
@@ -288,7 +288,7 @@ namespace stormphrax::eval
 				color ^= 1;
 			}
 
-			const auto bucketOffset = InputBuckets[static_cast<i32>(king)] * InputSize;
+			const auto bucketOffset = KingInputBuckets[static_cast<i32>(king)] * InputSize;
 			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
 		}
 	};
@@ -312,6 +312,6 @@ namespace stormphrax::eval
 			kingSq = flipSquare(kingSq);
 		}
 
-		return InputBuckets[static_cast<i32>(prevKingSq)] != InputBuckets[static_cast<i32>(kingSq)];
+		return KingInputBuckets[static_cast<i32>(prevKingSq)] != KingInputBuckets[static_cast<i32>(kingSq)];
 	}
 }

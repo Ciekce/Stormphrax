@@ -21,6 +21,7 @@
 #include "../types.h"
 
 #include <array>
+#include <span>
 
 namespace stormphrax::util
 {
@@ -179,6 +180,16 @@ namespace stormphrax::util
 		}
 
 		constexpr operator const std::array<T, Count> &() const
+		{
+			return m_array;
+		}
+
+		constexpr operator std::span<T, Count>()
+		{
+			return m_array;
+		}
+
+		constexpr operator std::span<const T, Count>() const
 		{
 			return m_array;
 		}
