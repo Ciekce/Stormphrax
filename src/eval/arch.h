@@ -22,19 +22,17 @@
 
 #include <array>
 
-#include "activation.h"
+#include "nnue/activation.h"
+#include "nnue/output.h"
 
 namespace stormphrax::eval
 {
 	// current arch: (768x4->768)x2->1x8, SquaredClippedReLU
 
-	// perspective
-	const auto ArchId = 1;
-
 	constexpr i32 L1Q = 255;
 	constexpr i32 OutputQ = 64;
 
-	using Activation = activation::SquaredClippedReLU<L1Q>;
+	using L1Activation = nnue::activation::SquaredClippedReLU<i32, L1Q>;
 
 	constexpr u32 InputSize = 768;
 	constexpr u32 Layer1Size = 768;
@@ -53,5 +51,5 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3
 	};
 
-	constexpr auto OutputBucketCount = 8;
+	using OutputBucketing = nnue::output::MaterialCount<8>;
 }

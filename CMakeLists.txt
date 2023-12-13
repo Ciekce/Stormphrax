@@ -52,9 +52,11 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
 	src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
 	src/opts.cpp src/position/boards.h src/history.h src/3rdparty/fathom/stdendian.h src/3rdparty/fathom/tbconfig.h
-	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/eval/activation.h
-	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h
-	src/cuckoo.h src/cuckoo.cpp)
+	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/util/u4array.h
+	src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h src/cuckoo.h src/cuckoo.cpp
+	src/eval/nnue/network.h src/eval/nnue/layers.h src/eval/nnue/activation.h src/eval/nnue/output.h
+	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h
+)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
