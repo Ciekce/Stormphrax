@@ -75,11 +75,9 @@ namespace stormphrax::eval::nnue::output
 	};
 
 	template <OutputBucketing L, OutputBucketing R>
+		requires (!std::is_same_v<L, Single> && !std::is_same_v<R, Single>)
 	struct [[maybe_unused]] Combo
 	{
-		static_assert(!std::is_same_v<L, Single>);
-		static_assert(!std::is_same_v<R, Single>);
-
 		static constexpr u32 BucketCount = L::BucketCount * R::BucketCount;
 
 		static inline auto getBucket(const PositionBoards &boards) -> u32

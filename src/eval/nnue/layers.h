@@ -28,15 +28,16 @@
 #include "activation.h"
 #include "output.h"
 #include "../../util/simd.h"
+#include "io.h"
 
 namespace stormphrax::eval::nnue
 {
-	template <typename Input, typename Weight, activation::Activation Activation,
+	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	struct BaseAffineLayer
 	{
 		using  InputType = Input;
-		using WeightType = Weight;
+		using  ParamType = Param;
 		using OutputType = Activation::Type;
 
 		static constexpr auto  InputCount =  Inputs;
@@ -53,52 +54,52 @@ namespace stormphrax::eval::nnue
 		static_assert(sizeof(InputType) * InputCount >= util::SimdAlignment
 			&& (sizeof(InputType) * InputCount) % util::SimdAlignment == 0);
 
-		static_assert(sizeof(WeightType) * WeightCount >= util::SimdAlignment
-			&& (sizeof(WeightType) * WeightCount) % util::SimdAlignment == 0);
+		static_assert(sizeof(ParamType) * WeightCount >= util::SimdAlignment
+			&& (sizeof(ParamType) * WeightCount) % util::SimdAlignment == 0);
 
-		SP_SIMD_ALIGNAS std::array<WeightType, OutputBucketCount * WeightCount> weights;
-		SP_SIMD_ALIGNAS std::array<OutputType, OutputBucketCount *   BiasCount> biases;
+		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount * WeightCount> weights;
+		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount *   BiasCount> biases;
 
 		inline auto readFrom(std::istream &stream) -> std::istream &
 		{
-			stream.read(reinterpret_cast<char *>(weights.data()), weights.size() * sizeof(WeightType));
-			stream.read(reinterpret_cast<char *>( biases.data()),  biases.size() * sizeof(OutputType));
+			readPadded(stream, weights);
+			readPadded(stream,  biases);
 
 			return stream;
 		}
 
 		inline auto writeTo(std::ostream &stream) const -> std::ostream &
 		{
-			stream.write(reinterpret_cast<char *>(weights.data()), weights.size() * sizeof(WeightType));
-			stream.write(reinterpret_cast<char *>( biases.data()),  biases.size() * sizeof(OutputType));
+			writePadded(stream, weights);
+			writePadded(stream,  biases);
 
 			return stream;
 		}
 	};
 
-	template <typename Input, activation::Activation Activation, typename Weight,
+	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	inline auto operator>>(std::istream &stream,
-		BaseAffineLayer<Input, Activation, Weight, Inputs, Outputs, OutputBucketing> &layer)
+		BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
 	-> std::istream &
 	{
 		return layer.readFrom(stream);
 	}
 
-	template <typename Input, activation::Activation Activation, typename Weight,
+	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	inline auto operator<<(std::ostream &stream,
-		const BaseAffineLayer<Input, Activation, Weight, Inputs, Outputs, OutputBucketing> &layer)
+		const BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
 	-> std::ostream &
 	{
 		return layer.writeTo(stream);
 	}
 
-	template <typename Input, typename Weight, activation::Activation Activation,
+	template <typename Input, typename Param, activation::Activation Activation,
 	    u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DenseAffineLayer : BaseAffineLayer<Input, Weight, Activation, Inputs, Outputs, OutputBucketing>
+	struct DenseAffineLayer : BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffineLayer<Input, Weight, Activation, Inputs, Outputs, OutputBucketing>;
+		using Base = BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
 
 		// for larger layers, operations are done in blocks of 256
 		// values - this allows GCC to unroll loops without dying
@@ -153,17 +154,18 @@ namespace stormphrax::eval::nnue
 					}
 				}
 
-				outputs[outputIdx] = Base::biases[bucketBiasOffset + outputIdx] + Activation::output(sum);
+				const auto bias = static_cast<Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
+				outputs[outputIdx] = bias + Activation::output(sum);
 			}
 		}
 	};
 
-	template <typename Input, typename Weight, activation::Activation Activation,
+	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
 	struct DensePerspectiveAffineLayer
-		: BaseAffineLayer<Input, Weight, Activation, Inputs * 2, Outputs, OutputBucketing>
+		: BaseAffineLayer<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffineLayer<Input, Weight, Activation, Inputs * 2, Outputs, OutputBucketing>;
+		using Base = BaseAffineLayer<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>;
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 		static_assert(PerspectiveInputCount < 512 || (PerspectiveInputCount % 256) == 0);
@@ -251,7 +253,8 @@ namespace stormphrax::eval::nnue
 					}
 				}
 
-				outputs[outputIdx] = Base::biases[bucketBiasOffset + outputIdx] + Activation::output(sum);
+				const auto bias = static_cast<Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
+				outputs[outputIdx] = bias + Activation::output(sum);
 			}
 		}
 	};

@@ -54,6 +54,12 @@ namespace stormphrax::eval::nnue
 			return m_featureTransformer;
 		}
 
+		template <usize I>
+		[[nodiscard]] inline auto layer() const -> const auto &
+		{
+			return std::get<I>(m_layers);
+		}
+
 		inline auto propagate(const PositionBoards &boards,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount>  stmInputs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs) const

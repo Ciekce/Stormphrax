@@ -152,9 +152,6 @@ namespace stormphrax::eval
 		const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
 		const auto *end = g_defaultNetData + g_defaultNetSize;
 
-		std::cout << reinterpret_cast<std::uintptr_t>(begin) << std::endl;
-		std::cout << reinterpret_cast<std::uintptr_t>(end) << std::endl;
-
 		util::MemoryIstream stream{{begin, end}};
 		s_network.readFrom(stream);
 	}

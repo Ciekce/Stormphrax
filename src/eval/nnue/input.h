@@ -28,6 +28,7 @@
 
 #include "../../core.h"
 #include "../../util/simd.h"
+#include "io.h"
 
 namespace stormphrax::eval::nnue
 {
@@ -55,16 +56,16 @@ namespace stormphrax::eval::nnue
 
 		inline auto readFrom(std::istream &stream) -> std::istream &
 		{
-			stream.read(reinterpret_cast<char *>(weights.data()), weights.size() * sizeof(WeightType));
-			stream.read(reinterpret_cast<char *>( biases.data()),  biases.size() * sizeof(OutputType));
+			readPadded(stream, weights);
+			readPadded(stream,  biases);
 
 			return stream;
 		}
 
 		inline auto writeTo(std::ostream &stream) const -> std::ostream &
 		{
-			stream.write(reinterpret_cast<char *>(weights.data()), weights.size() * sizeof(WeightType));
-			stream.write(reinterpret_cast<char *>( biases.data()),  biases.size() * sizeof(OutputType));
+			writePadded(stream, weights);
+			writePadded(stream,  biases);
 
 			return stream;
 		}
