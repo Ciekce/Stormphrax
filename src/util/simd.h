@@ -22,12 +22,21 @@
 
 #include "../arch.h"
 
+namespace stormphrax::util
+{
 #if SP_HAS_AVX512
-	#define SP_SIMD_ALIGNMENT (64)
+	constexpr std::uintptr_t SimdAlignment = 64;
 #elif SP_HAS_AVX2
-	#define SP_SIMD_ALIGNMENT (32)
+	constexpr std::uintptr_t SimdAlignment = 32;
 #else // sse 4.1, neon
-	#define SP_SIMD_ALIGNMENT (16)
+	constexpr std::uintptr_t SimdAlignment = 16;
 #endif
 
-#define SP_SIMD_ALIGNAS alignas(SP_SIMD_ALIGNMENT)
+#define SP_SIMD_ALIGNAS alignas(stormphrax::util::SimdAlignment)
+
+	template <std::uintptr_t Alignment = SimdAlignment, typename T = void>
+	auto isAligned(const T *ptr)
+	{
+		return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
+	}
+}

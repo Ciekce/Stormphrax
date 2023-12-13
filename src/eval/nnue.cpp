@@ -18,8 +18,9 @@
 
 #include "nnue.h"
 
-#include <memory>
 #include <fstream>
+
+#include "../util/memstream.h"
 
 #ifdef _MSC_VER
 #define SP_MSVC
@@ -37,13 +38,32 @@
 
 namespace
 {
-	INCBIN(defaultNet, SP_NETWORK_FILE);
+	INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
 }
 
 namespace stormphrax::eval
 {
 	namespace
 	{
+		constexpr u16 ExpectedHeaderVersion = 1;
+
+		struct __attribute__((packed)) NetworkHeader
+		{
+			std::array<char, 4> magic{};
+			u16 version{};
+			[[maybe_unused]] u16 flags{};
+			[[maybe_unused]] u8 padding{};
+			u8 arch{};
+			u8 activation{};
+			u16 hiddenSize{};
+			u8 inputBuckets{};
+			u8 outputBuckets{};
+			u8 nameLen{};
+			std::array<char, 48> name{};
+		};
+
+		static_assert(sizeof(NetworkHeader) == 64);
+
 		inline auto archName(u8 arch)
 		{
 			static constexpr auto NetworkArchNames = std::array {
@@ -68,27 +88,6 @@ namespace stormphrax::eval
 			return "<unknown>";
 		}
 
-		constexpr u16 ExpectedHeaderVersion = 1;
-
-		struct __attribute__((packed)) NetworkHeader
-		{
-			std::array<char, 4> magic{};
-			u16 version{};
-			[[maybe_unused]] u16 flags{};
-			[[maybe_unused]] u8 padding{};
-			u8 arch{};
-			u8 activation{};
-			u16 hiddenSize{};
-			u8 inputBuckets{};
-			u8 outputBuckets{};
-			u8 nameLen{};
-			std::array<char, 48> name{};
-		};
-
-		static_assert(sizeof(NetworkHeader) == 64);
-
-		std::unique_ptr<Network> s_externalNetwork{};
-
 		//TODO better error messages
 		auto validate(const NetworkHeader &header)
 		{
@@ -105,17 +104,17 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.arch != ArchId)
+			if (header.arch != 1 /* perspective */)
 			{
 				std::cerr << "wrong network architecture " << archName(header.arch)
-					<< " (expected: " << archName(ArchId) << ")" << std::endl;
+					<< " (expected: " << archName(1) << ")" << std::endl;
 				return false;
 			}
 
-			if (header.activation != Activation::Id)
+			if (header.activation != L1Activation::Id)
 			{
-				std::cerr << "wrong network activation function (" << activationFuncName(header.activation)
-					<< ", expected: " << activationFuncName(Activation::Id) << ")" << std::endl;
+				std::cerr << "wrong network l1 activation function (" << activationFuncName(header.activation)
+					<< ", expected: " << activationFuncName(L1Activation::Id) << ")" << std::endl;
 				return false;
 			}
 
@@ -126,39 +125,35 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.inputBuckets != InputBucketCount)
+			if (header.inputBuckets != FeatureTransformer::InputBucketCount)
 			{
 				std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
-					<< ", expected: " << InputBucketCount << ")" << std::endl;
+					<< ", expected: " << FeatureTransformer::InputBucketCount << ")" << std::endl;
 				return false;
 			}
 
-			if (header.outputBuckets != OutputBucketCount)
+			if (header.outputBuckets != OutputBucketing::BucketCount)
 			{
 				std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
-					<< ", expected: " << OutputBucketCount << ")" << std::endl;
+					<< ", expected: " << OutputBucketing::BucketCount << ")" << std::endl;
 				return false;
 			}
 
 			return true;
 		}
 
-		// *** this is NOT equal to sizeof(Network) due to padding at the end ***
-		constexpr auto NetworkSize
-			= sizeof(Network::featureTransformer.weights)
-			+ sizeof(Network::featureTransformer.biases)
-			+ sizeof(Network::l1.weights)
-			+ sizeof(Network::l1.biases);
+		Network s_network{};
 	}
 
-	const Network *g_currNet;
+	const Network &g_network = s_network;
 
 	auto loadDefaultNetwork() -> void
 	{
-		assert(validate(*reinterpret_cast<const NetworkHeader *>(g_defaultNetData)));
+		const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
+		const auto *end = g_defaultNetData + g_defaultNetSize;
 
-		s_externalNetwork.reset();
-		g_currNet = reinterpret_cast<const Network *>(g_defaultNetData + sizeof(NetworkHeader));
+		util::MemoryIstream stream{{begin, end}};
+		s_network.readFrom(stream);
 	}
 
 	auto loadNetwork(const std::string &name) -> void
@@ -183,24 +178,11 @@ namespace stormphrax::eval
 		if (!validate(header))
 			return;
 
+		if (!s_network.readFrom(stream))
 		{
-			auto newNet = std::make_unique<Network>();
-
-			// paranoia
-			assert((reinterpret_cast<std::uintptr_t>(newNet.get()) % SP_SIMD_ALIGNMENT) == 0);
-
-			stream.read(reinterpret_cast<char *>(newNet.get()), NetworkSize);
-
-			if (!stream)
-			{
-				std::cerr << "failed to read network parameters" << std::endl;
-				return;
-			}
-
-			std::swap(s_externalNetwork, newNet);
+			std::cerr << "failed to read network parameters" << std::endl;
+			return;
 		}
-
-		g_currNet = s_externalNetwork.get();
 
 		const std::string_view netName{header.name.data(), header.nameLen};
 		std::cout << "info string loaded network " << netName << std::endl;
