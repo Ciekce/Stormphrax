@@ -714,7 +714,7 @@ namespace stormphrax::search
 				&& stack.eval >= beta
 					+ rfpMargin() * depth / (improving ? 2 : 1)
 					+ thread.stack[ply - 1].history / rfpHistoryMargin())
-				return stack.eval;
+				return (stack.eval + beta) / 2;
 
 			// Nullmove pruning (NMP)
 			// If static eval is above beta, and zugzwang is unlikely
