@@ -135,7 +135,7 @@ namespace stormphrax::eval::nnue
 		}
 
 	private:
-		using Type = Ft::OutputType;
+		using Type = typename Ft::OutputType;
 
 		static constexpr auto  InputCount = Ft:: InputCount;
 		static constexpr auto WeightCount = Ft::WeightCount;

@@ -38,7 +38,7 @@ namespace stormphrax::eval::nnue
 	{
 		using  InputType = Input;
 		using  ParamType = Param;
-		using OutputType = Activation::Type;
+		using OutputType = typename Activation::Type;
 
 		static constexpr auto  InputCount =  Inputs;
 		static constexpr auto OutputCount = Outputs;
@@ -132,10 +132,12 @@ namespace stormphrax::eval::nnue
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<Base::OutputType>(inputs[inputIdx]);
+							const auto input = static_cast<typename Base::OutputType>(inputs[inputIdx]);
 							const auto activated = Activation::activate(input);
 
-							const auto weight = static_cast<Base::OutputType>(Base::weights[weightOffset + inputIdx]);
+							const auto weight = static_cast<typename Base::OutputType>(
+								Base::weights[weightOffset + inputIdx]
+							);
 
 							sum += weight * activated;
 						}
@@ -145,16 +147,18 @@ namespace stormphrax::eval::nnue
 				{
 					for (u32 inputIdx = 0; inputIdx < Base::InputCount; ++inputIdx)
 					{
-						const auto input = static_cast<Base::OutputType>(inputs[inputIdx]);
+						const auto input = static_cast<typename Base::OutputType>(inputs[inputIdx]);
 						const auto activated = Activation::activate(input);
 
-						const auto weight = static_cast<Base::OutputType>(Base::weights[weightOffset + inputIdx]);
+						const auto weight = static_cast<typename Base::OutputType>(
+							Base::weights[weightOffset + inputIdx]
+						);
 
 						sum += weight * activated;
 					}
 				}
 
-				const auto bias = static_cast<Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
+				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
 				outputs[outputIdx] = bias + Activation::output(sum);
 			}
 		}
@@ -199,10 +203,12 @@ namespace stormphrax::eval::nnue
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<Base::OutputType>(stmInputs[inputIdx]);
+							const auto input = static_cast<typename Base::OutputType>(stmInputs[inputIdx]);
 							const auto activated = Activation::activate(input);
 
-							const auto weight = static_cast<Base::OutputType>(Base::weights[weightOffset + inputIdx]);
+							const auto weight = static_cast<typename Base::OutputType>(
+								Base::weights[weightOffset + inputIdx]
+							);
 
 							sum += weight * activated;
 						}
@@ -215,10 +221,10 @@ namespace stormphrax::eval::nnue
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<Base::OutputType>(nstmInputs[inputIdx]);
+							const auto input = static_cast<typename Base::OutputType>(nstmInputs[inputIdx]);
 							const auto activated = Activation::activate(input);
 
-							const auto weight = static_cast<Base::OutputType>(
+							const auto weight = static_cast<typename Base::OutputType>(
 								Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
 							);
 
@@ -231,10 +237,12 @@ namespace stormphrax::eval::nnue
 					// stm perspective
 					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; ++inputIdx)
 					{
-						const auto input = static_cast<Base::OutputType>(stmInputs[inputIdx]);
+						const auto input = static_cast<typename Base::OutputType>(stmInputs[inputIdx]);
 						const auto activated = Activation::activate(input);
 
-						const auto weight = static_cast<Base::OutputType>(Base::weights[weightOffset + inputIdx]);
+						const auto weight = static_cast<typename Base::OutputType>(
+							Base::weights[weightOffset + inputIdx]
+						);
 
 						sum += weight * activated;
 					}
@@ -242,10 +250,10 @@ namespace stormphrax::eval::nnue
 					// nstm perspective
 					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; ++inputIdx)
 					{
-						const auto input = static_cast<Base::OutputType>(nstmInputs[inputIdx]);
+						const auto input = static_cast<typename Base::OutputType>(nstmInputs[inputIdx]);
 						const auto activated = Activation::activate(input);
 
-						const auto weight = static_cast<Base::OutputType>(
+						const auto weight = static_cast<typename Base::OutputType>(
 							Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
 						);
 
@@ -253,7 +261,7 @@ namespace stormphrax::eval::nnue
 					}
 				}
 
-				const auto bias = static_cast<Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
+				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
 				outputs[outputIdx] = bias + Activation::output(sum);
 			}
 		}
