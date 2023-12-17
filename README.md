@@ -46,7 +46,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
     - negative extension
   - Syzygy tablebase support
 - NNUE
-  - (768x4->768)x2->1 architecture
+  - (768x4->768)x2->1x8 architecture
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
@@ -67,6 +67,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 | UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                         |
 | UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.     |
 | Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms). |
+| LowerMoveAverage |  check  |    `false`    |      `false`, `true`      | Does nothing.                                                                        |
 | SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                |
 | SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                         |
 | SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.               |
