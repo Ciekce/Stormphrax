@@ -16,11 +16,12 @@ a work-in-progress UCI chess and [chess960](https://en.wikipedia.org/wiki/Fische
 this project is a continuation of my HCE engine [Polaris](https://github.com/Ciekce/Polaris)
 
 ## Strength
-| Version |    [CCRL 40/15][ccrl-4015]    | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt] | [MCERL][mcerl] |
-|:-------:|:-----------------------------:|:------------------------:|:-----------------------------:|:-----------------:|:--------------:|
-|  3.0.0  | ~3355 (very few games played) |            -             |             3659              |         -         |       -        |
-|  2.0.0  |             3318              |           3461           |             3639              |       3339        |      3483      |
-|  1.0.0  |             3255              |           3360           |             3513              |       3235        |      3342      |
+| Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt] | [MCERL][mcerl] |
+|:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:-----------------:|:--------------:|
+|  4.0.0  |            -            |            -             |               -               |         -         |       -        |
+|  3.0.0  |          3326           |           3471           |             3657              |         -         |       -        |
+|  2.0.0  |          3320           |           3460           |             3639              |       3339        |      3483      |
+|  1.0.0  |          3252           |           3361           |             3512              |       3235        |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -36,6 +37,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
   - internal iterative reduction
   - killers (1 per ply)
   - late move reductions
+  - late move pruning
   - mate distance pruning
   - multicut
   - nullmove pruning
@@ -87,7 +89,7 @@ Alternatively, build the CMake target `stormphrax-native` for a binary tuned for
 
 ## Building
 **The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler that supports LTO. Locally, Clang produces slightly faster binaries than GCC.
+Requires CMake and a competent C++20 compiler that supports LTO. Currently, GCC produces *much* slower binaries than Clang.
 ```bash
 > cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -S . -B build/
 > cmake --build build/ --target stormphrax-<TARGET>
