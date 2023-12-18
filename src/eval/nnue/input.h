@@ -29,18 +29,19 @@
 #include "../../core.h"
 #include "../../util/simd.h"
 #include "io.h"
+#include "features.h"
 
 namespace stormphrax::eval::nnue
 {
-	template <typename Type, u32 Inputs, u32 Outputs, u32 Buckets = 1>
+	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
 	struct FeatureTransformer
 	{
 		using WeightType = Type;
 		using OutputType = Type;
 
-		static constexpr auto InputBucketCount = Buckets;
+		using InputFeatureSet = FeatureSet;
 
-		static constexpr auto  InputCount = InputBucketCount * Inputs;
+		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
 		static constexpr auto OutputCount = Outputs;
 
 		static constexpr auto WeightCount =  InputCount * OutputCount;

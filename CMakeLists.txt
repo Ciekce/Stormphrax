@@ -57,6 +57,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h src/cuckoo.h src/cuckoo.cpp
 	src/eval/nnue/network.h src/eval/nnue/layers.h src/eval/nnue/activation.h src/eval/nnue/output.h
 	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h
+	src/eval/nnue/features.h
 )
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)

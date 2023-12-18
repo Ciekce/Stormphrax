@@ -24,6 +24,7 @@
 
 #include "nnue/activation.h"
 #include "nnue/output.h"
+#include "nnue/features.h"
 
 namespace stormphrax::eval
 {
@@ -40,7 +41,7 @@ namespace stormphrax::eval
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	constexpr auto KingInputBuckets = std::array {
+	using InputFeatureSet = nnue::features::KingBuckets<
 		0, 0, 0, 0, 1, 1, 1, 1,
 		0, 0, 0, 0, 1, 1, 1, 1,
 		2, 2, 2, 2, 3, 3, 3, 3,
@@ -49,7 +50,7 @@ namespace stormphrax::eval
 		2, 2, 2, 2, 3, 3, 3, 3,
 		2, 2, 2, 2, 3, 3, 3, 3,
 		2, 2, 2, 2, 3, 3, 3, 3
-	};
+	>;
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 }
