@@ -77,32 +77,27 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 
 ## Builds
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
-`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Zen 1, Zen+ or Zen 2)  
+`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Bulldozer, Piledriver, Steamroller, Excavator, Zen 1, Zen+ or Zen 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
 
-Alternatively, build the CMake target `stormphrax-native` for a binary tuned for your specific CPU (see below)  
-(note that this does *not* automatically disable `pext` and `pdep` for pre-Zen 3 AMD CPUs that implement them in microcode)
+Alternatively, build the makefile target `native` for a binary tuned for your specific CPU (see below)  
 
 ### Note:  
 - If you have an AMD Zen 1 (Ryzen x 1xxx), Zen+ (Ryzen x 2xxx) or Zen 2 (Ryzen x 3xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
 
 ## Building
-**The makefile is not intended for building by users. It exists purely for OpenBench compliance.**  
-Requires CMake and a competent C++20 compiler that supports LTO. Currently, GCC produces *much* slower binaries than Clang.
+Requires Make and a competent C++20 compiler that supports LTO. Currently, GCC produces *much* slower binaries than Clang.
 ```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -S . -B build/
-> cmake --build build/ --target stormphrax-<TARGET>
+> make <BUILD> CXX=<COMPILER>
 ```
 - replace `<COMPILER>` with your preferred compiler - for example, `clang++` or `g++`
-- replace `<TARGET>` with your preferred target - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`
+  - if not specified, the compiler defaults to `clang++`
+- replace `<BUILD>` with the binary you wish to build - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`
+  - if not specified, the default build is `native`
+- if you wish, you can have Stormphrax include the current git commit hash in its UCI version string - pass `COMMIT_HASH=on`
 
-If you have a pre-Zen 3 AMD Ryzen CPU (see the notes in Builds above) and want to build the `native` target, use these commands instead (the second is unchanged):
-```bash
-> cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=<COMPILER> -DSP_FAST_PEXT=OFF -S . -B build/
-> cmake --build build/ --target stormphrax-native
-```
-Disabling the CMake option `SP_FAST_PEXT` builds the non-BMI2 attack getters.
+By default, the makefile builds binaries with profile-guided optimisation (PGO). To disable this, pass `PGO=off`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
 
 ## Credit
 Stormphrax uses [Fathom](https://github.com/jdart1/Fathom) for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin](https://github.com/graphitemaster/incbin) for embedding neural network files, under the Unlicense.
