@@ -1065,36 +1065,46 @@ namespace stormphrax::search
 				return alpha;
 		}
 
-		const auto staticEval = pos.isCheck()
-			? -ScoreMate
-			: eval::staticEval(pos, thread.nnueState, m_contempt);
-
-		if (staticEval > alpha)
-		{
-			if (staticEval >= beta)
-				return staticEval;
-
-			alpha = staticEval;
-		}
-
-		if (ply >= MaxDepth)
-			return staticEval;
-
-		const auto us = pos.toMove();
-
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
-		ProbedTTableEntry entry{};
-		auto ttMove = NullMove;
+		ProbedTTableEntry ttEntry{};
 
-		if (m_table.probe(entry, pos.key(), 0, ply, alpha, beta))
-			return entry.score;
-		else if (entry.move && pos.isPseudolegal(entry.move))
-			ttMove = entry.move;
+		if (m_table.probe(ttEntry, pos.key(), 0, ply, alpha, beta))
+			return ttEntry.score;
+
+		const auto eval = [&]
+		{
+			if (pos.isCheck())
+				return -ScoreMate;
+			else
+			{
+				const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				return (ttEntry.type == EntryType::Exact
+					|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
+					|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
+					? ttEntry.score
+					: staticEval;
+			}
+		}();
+
+		if (eval > alpha)
+		{
+			if (eval >= beta)
+				return eval;
+
+			alpha = eval;
+		}
+
+		if (ply >= MaxDepth)
+			return eval;
+
+		const auto us = pos.toMove();
+
+		auto ttMove = ttEntry.move && pos.isPseudolegal(ttEntry.move) ? ttEntry.move : NullMove;
 
 		auto best = NullMove;
-		auto bestScore = staticEval;
+		auto bestScore = eval;
 
 		auto entryType = EntryType::Alpha;
 
