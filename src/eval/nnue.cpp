@@ -125,10 +125,10 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.inputBuckets != FeatureTransformer::InputBucketCount)
+			if (header.inputBuckets != InputFeatureSet::BucketCount)
 			{
 				std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
-					<< ", expected: " << FeatureTransformer::InputBucketCount << ")" << std::endl;
+					<< ", expected: " << InputFeatureSet::BucketCount << ")" << std::endl;
 				return false;
 			}
 

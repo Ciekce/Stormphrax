@@ -31,8 +31,7 @@
 namespace stormphrax::eval
 {
 	using FeatureTransformer = nnue::FeatureTransformer<
-		i16, InputSize, Layer1Size,
-		*std::ranges::max_element(KingInputBuckets) + 1
+		i16, InputSize, Layer1Size, InputFeatureSet
 	>;
 
 	using Network = nnue::PerspectiveNetwork<
@@ -279,39 +278,13 @@ namespace stormphrax::eval
 
 			const auto type = static_cast<u32>(pieceType(piece));
 
-			u32 color = pieceColor(piece) == Color::White ? 0 : 1;
+			const u32 color = pieceColor(piece) == c ? 0 : 1;
 
 			if (c == Color::Black)
-			{
 				sq = flipSquare(sq);
-				king = flipSquare(king);
-				color ^= 1;
-			}
 
-			const auto bucketOffset = KingInputBuckets[static_cast<i32>(king)] * InputSize;
+			const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputSize;
 			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
 		}
 	};
-
-	constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
-	{
-		assert(c != Color::None);
-
-		assert(prevKingSq != Square::None);
-		assert(kingSq != Square::None);
-		assert(prevKingSq != kingSq);
-
-		if constexpr (FeatureTransformer::InputBucketCount == 1)
-			return false;
-		else if constexpr (FeatureTransformer::InputBucketCount == 64)
-			return true;
-
-		if (c == Color::Black)
-		{
-			prevKingSq = flipSquare(prevKingSq);
-			kingSq = flipSquare(kingSq);
-		}
-
-		return KingInputBuckets[static_cast<i32>(prevKingSq)] != KingInputBuckets[static_cast<i32>(kingSq)];
-	}
 }

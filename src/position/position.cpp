@@ -1234,7 +1234,7 @@ namespace stormphrax
 
 				state.king(color) = dst;
 
-				if (eval::refreshRequired(color, prevKingSquare, dst))
+				if (eval::InputFeatureSet::refreshRequired(color, prevKingSquare, dst))
 				{
 					const auto opponent = oppColor(color);
 
@@ -1301,7 +1301,7 @@ namespace stormphrax
 
 				state.king(color) = dst;
 
-				if (eval::refreshRequired(color, prevKingSquare, dst))
+				if (eval::InputFeatureSet::refreshRequired(color, prevKingSquare, dst))
 				{
 					const auto opponent = oppColor(color);
 					const auto oppKing = state.king(opponent);
@@ -1446,7 +1446,7 @@ namespace stormphrax
 			const auto color = pieceColor(king);
 			const auto opponent = oppColor(color);
 
-			if (eval::refreshRequired(color, kingSrc, kingDst))
+			if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst))
 			{
 				nnueState->refresh(color, state.boards, kingDst);
 
