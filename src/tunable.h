@@ -109,6 +109,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmrMinMovesPv, 3, 0, 5, 1)
 	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 2, 0, 5, 1)
 
+	SP_TUNABLE_PARAM(lmrChildCutoffThreshold, 4, 1, 6, 1)
+
 	SP_TUNABLE_PARAM(maxRfpDepth, 7, 4, 12, 1)
 	SP_TUNABLE_PARAM(rfpMargin, 78, 25, 150, 5)
 	SP_TUNABLE_PARAM(rfpHistoryMargin, 267, 64, 1024, 64)
