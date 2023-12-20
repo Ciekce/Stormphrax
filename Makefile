@@ -60,6 +60,17 @@ ifneq (, $(findstring clang,$(COMPILER_VERSION)))
     ifneq ($(DETECTED_OS),Darwin)
         LDFLAGS += -fuse-ld=lld
     endif
+    ifeq ($(DETECTED_OS),Windows)
+        ifeq (,$(shell where llvm-profdata))
+            $(warning llvm-profdata not found, disabling PGO)
+            override PGO := off
+        endif
+    else
+        ifeq (,$(shell which llvm-profdata))
+            $(warning llvm-profdata not found, disabling PGO)
+            override PGO := off
+        endif
+    endif
     PGO_GENERATE := -DSP_PGO_PROFILE -fprofile-instr-generate
     PGO_MERGE := llvm-profdata merge -output=sp.profdata *.profraw
     PGO_USE := -fprofile-instr-use=sp.profdata
