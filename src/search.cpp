@@ -942,8 +942,8 @@ namespace stormphrax::search
 						// reduce less if improving
 						lmr -= improving;
 
-						// reduce more if a lot of beta cutoffs are happening on the next ply
-						lmr += thread.stack[ply + 1].cutoffs > lmrChildCutoffThreshold();
+						// reduce less if few beta cutoffs are happening on the next ply
+						lmr -= thread.stack[ply + 1].cutoffs < lmrChildCutoffThreshold();
 
 						reduction = std::clamp(lmr, 0, depth - 2);
 					}
@@ -988,7 +988,7 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						if (ply > 1)
-							++stack.cutoffs;
+							stack.cutoffs += ttMove.isNull() ? 2 : 1;
 
 						// Update history on fail-highs
 						const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
