@@ -31,8 +31,24 @@ namespace stormphrax::eval
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
+	inline auto materialScale(const Position &pos)
+	{
+		constexpr Score Knight = 300;
+		constexpr Score Bishop = 300;
+		constexpr Score Rook   = 450;
+		constexpr Score Queen  = 900;
+
+		const auto &boards = pos.boards();
+		return 700
+			+ (boards.knights().popcount() * Knight
+			+  boards.bishops().popcount() * Bishop
+			+  boards.  rooks().popcount() * Rook
+			+  boards. queens().popcount() * Queen) / 32;
+	}
+
 	inline auto scaleEval(const Position &pos, i32 eval)
 	{
+		eval = eval * materialScale(pos) / 1024;
 		eval = eval * (200 - pos.halfmove()) / 200;
 		return eval;
 	}
