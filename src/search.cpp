@@ -726,7 +726,8 @@ namespace stormphrax::search
 			// entry, if it exists, must not be a fail-low entry with a score below beta
 			if (depth >= minNmpDepth()
 				&& ply >= thread.minNmpPly
-				&& stack.eval >= beta
+				&& stack.staticEval >= beta
+				&& stack.eval >= stack.staticEval
 				&& !(ttHit && ttEntry.type == EntryType::Alpha && ttEntry.score < beta)
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
