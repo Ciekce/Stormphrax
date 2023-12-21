@@ -914,7 +914,7 @@ namespace stormphrax::search
 			{
 				const auto newDepth = depth - 1 + extension;
 
-				if (pvNode && legalMoves == 1)
+				if (legalMoves == 1)
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
