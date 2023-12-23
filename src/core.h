@@ -230,17 +230,6 @@ namespace stormphrax
 		return U64(1) << static_cast<i32>(square);
 	}
 
-	[[nodiscard]] constexpr auto chebyshev(Square s1, Square s2)
-	{
-		const auto x1 = squareFile(s1);
-		const auto x2 = squareFile(s2);
-
-		const auto y1 = squareRank(s1);
-		const auto y2 = squareRank(s2);
-
-		return std::max(util::abs(x2 - x1), util::abs(y2 - y1));
-	}
-
 	template <Color C>
 	constexpr auto relativeRank(i32 rank)
 	{
@@ -264,14 +253,14 @@ namespace stormphrax
 			Square black{Square::None};
 			Square white{Square::None};
 
-			[[nodiscard]] inline bool operator==(const RookPair &) const = default;
+			[[nodiscard]] inline auto operator==(const RookPair &) const -> bool = default;
 		};
 
 		// wish I could call these "short" and "long"
 		RookPair shortSquares{Square::None};
 		RookPair  longSquares{Square::None};
 
-		[[nodiscard]] inline bool operator==(const CastlingRooks &) const = default;
+		[[nodiscard]] inline auto operator==(const CastlingRooks &) const -> bool = default;
 	};
 
 	using Score = i32;

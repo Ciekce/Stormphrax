@@ -653,7 +653,7 @@ namespace stormphrax::search
 				// Cut off with the same conditions as TT cutoffs
 				if (tbEntryType == EntryType::Exact
 					|| tbEntryType == EntryType::Alpha && tbScore <= alpha
-					|| tbEntryType == EntryType::Beta && tbScore >= beta)
+					|| tbEntryType == EntryType::Beta  && tbScore >= beta)
 				{
 					// Throw the TB score into the TT
 					m_table.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
@@ -771,7 +771,7 @@ namespace stormphrax::search
 		if (ply > 0)
 			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
 
-		const i32 minLmrMoves = pvNode
+		const auto minLmrMoves = pvNode
 			? lmrMinMovesPv()
 			: lmrMinMovesNonPv();
 
@@ -904,7 +904,7 @@ namespace stormphrax::search
 					extension = -1;
 			}
 
-			thread.prevMoves[ply] = {movingPiece, move.src(), moveActualDst(move)};
+			thread.prevMoves[ply] = {movingPiece, move.src(), move.historyDst()};
 
 			Score score{};
 

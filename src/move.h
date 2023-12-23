@@ -64,6 +64,17 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr auto data() const { return m_move; }
 
+		// returns the king's actual destination square for
+		// castling moves, otherwise just the move's destination
+		// used to avoid inflating the history of the generally
+		// bad moves of putting the king in a corner when castling
+		[[nodiscard]] constexpr auto historyDst() const
+		{
+			if (type() == MoveType::Castling && !g_opts.chess960)
+				return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
+			else return dst();
+		}
+
 		[[nodiscard]] explicit constexpr operator bool() const { return !isNull(); }
 
 		constexpr auto operator==(Move other) const { return m_move == other.m_move; }
@@ -112,17 +123,6 @@ namespace stormphrax
 	};
 
 	constexpr Move NullMove{};
-
-	// returns the king's actual destination square for
-	// castling moves, otherwise just the move's destination
-	// used to avoid inflating the history of the generally
-	// bad moves of putting the king in a corner when castling
-	constexpr auto moveActualDst(Move move)
-	{
-		if (move.type() == MoveType::Castling && !g_opts.chess960)
-			return toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
-		else return move.dst();
-	}
 
 	// assumed upper bound for number of possible moves is 218
 	constexpr usize DefaultMoveListCapacity = 256;

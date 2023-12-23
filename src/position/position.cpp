@@ -1667,7 +1667,7 @@ namespace stormphrax
 		}
 	}
 
-	Position Position::starting()
+	auto Position::starting() -> Position
 	{
 		Position position{};
 		position.resetToStarting();
@@ -1721,8 +1721,8 @@ namespace stormphrax
 		if (str.length() != 2)
 			return Square::None;
 
-		char file = str[0];
-		char rank = str[1];
+		const auto file = str[0];
+		const auto rank = str[1];
 
 		if (file < 'a' || file > 'h'
 			|| rank < '1' || rank > '8')
