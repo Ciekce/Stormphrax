@@ -526,13 +526,6 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
-		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
-		{
-			alpha = drawScore(thread.search.nodes);
-			if (alpha >= beta)
-				return alpha;
-		}
-
 		const bool inCheck = pos.isCheck();
 
 		// Check extension
@@ -544,6 +537,13 @@ namespace stormphrax::search
 		// Drop into quiescence search in leaf nodes
 		if (depth <= 0)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+
+		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
+		{
+			alpha = drawScore(thread.search.nodes);
+			if (alpha >= beta)
+				return alpha;
+		}
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
