@@ -49,7 +49,7 @@ namespace stormphrax
 			return score;
 		}
 
-		inline u16 packEntryKey(u64 key)
+		inline auto packEntryKey(u64 key)
 		{
 			return static_cast<u16>(key);
 		}

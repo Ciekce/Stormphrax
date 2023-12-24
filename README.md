@@ -18,10 +18,10 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt] | [MCERL][mcerl] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:-----------------:|:--------------:|
-|  4.0.0  |            -            |            -             |               -               |         -         |       -        |
-|  3.0.0  |          3326           |           3471           |             3657              |         -         |       -        |
-|  2.0.0  |          3320           |           3460           |             3639              |       3339        |      3483      |
-|  1.0.0  |          3252           |           3361           |             3512              |       3235        |      3342      |
+|  4.0.0  | ~3402 (testing ongoing) |           3543           |             3745              |         -         |       -        |
+|  3.0.0  |          3325           |           3470           |             3659              |         -         |       -        |
+|  2.0.0  |          3320           |           3459           |             3640              |       3339        |      3483      |
+|  1.0.0  |          3252           |           3360           |             3512              |       3235        |      3342      |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening

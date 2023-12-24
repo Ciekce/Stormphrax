@@ -33,7 +33,7 @@ namespace stormphrax
 		PositionBoards() = default;
 		~PositionBoards() = default;
 
-		[[nodiscard]] inline auto &forColor(Color color)
+		[[nodiscard]] inline auto forColor(Color color) -> auto &
 		{
 			return m_colors[static_cast<i32>(color)];
 		}
@@ -58,7 +58,7 @@ namespace stormphrax
 			return m_boards[static_cast<i32>(piece)] & forColor(c);
 		}
 
-		[[nodiscard]] inline Bitboard forPiece(Piece piece) const
+		[[nodiscard]] inline auto forPiece(Piece piece) const
 		{
 			return forPiece(pieceType(piece), pieceColor(piece));
 		}

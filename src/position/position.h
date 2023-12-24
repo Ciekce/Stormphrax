@@ -318,9 +318,9 @@ namespace stormphrax
 			return currState().king(oppColor(c));
 		}
 
-		[[nodiscard]] inline bool isCheck() const
+		[[nodiscard]] inline auto isCheck() const
 		{
-			return !m_states.back().checkers.empty();
+			return !currState().checkers.empty();
 		}
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
