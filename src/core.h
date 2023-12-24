@@ -48,7 +48,7 @@ namespace stormphrax
 		None
 	};
 
-	enum class PieceType
+	enum class PieceType : u8
 	{
 		Pawn = 0,
 		Knight,
@@ -214,6 +214,14 @@ namespace stormphrax
 	{
 		assert(square != Square::None);
 		return static_cast<Square>(static_cast<i32>(square) ^ 0x38);
+	}
+
+	[[nodiscard]] constexpr auto relativeSquare(Color c, Square square)
+	{
+		assert(c != Color::None);
+		assert(square != Square::None);
+
+		return c == Color::Black ? flipSquare(square) : square;
 	}
 
 	[[nodiscard]] constexpr auto squareBit(Square square)

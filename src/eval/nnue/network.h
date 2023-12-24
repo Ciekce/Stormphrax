@@ -26,9 +26,50 @@
 
 #include "../../position/boards.h"
 #include "../../util/aligned_array.h"
+#include "io.h"
+#include "features.h"
 
 namespace stormphrax::eval::nnue
 {
+	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
+	struct FeatureTransformer
+	{
+		using WeightType = Type;
+		using OutputType = Type;
+
+		using InputFeatureSet = FeatureSet;
+
+		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
+		static constexpr auto OutputCount = Outputs;
+
+		static constexpr auto WeightCount =  InputCount * OutputCount;
+		static constexpr auto   BiasCount = OutputCount;
+
+		static_assert( InputCount > 0);
+		static_assert(OutputCount > 0);
+
+		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
+
+		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
+		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;
+
+		inline auto readFrom(std::istream &stream) -> std::istream &
+		{
+			readPadded(stream, weights);
+			readPadded(stream,  biases);
+
+			return stream;
+		}
+
+		inline auto writeTo(std::ostream &stream) const -> std::ostream &
+		{
+			writePadded(stream, weights);
+			writePadded(stream,  biases);
+
+			return stream;
+		}
+	};
+
 	template <typename Ft, typename... Layers>
 	class PerspectiveNetwork
 	{

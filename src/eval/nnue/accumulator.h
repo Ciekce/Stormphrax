@@ -28,50 +28,12 @@
 
 #include "../../core.h"
 #include "../../util/simd.h"
-#include "io.h"
-#include "features.h"
+#include "../../util/aligned_array.h"
+#include "network.h"
+#include "../../move.h"
 
 namespace stormphrax::eval::nnue
 {
-	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
-	struct FeatureTransformer
-	{
-		using WeightType = Type;
-		using OutputType = Type;
-
-		using InputFeatureSet = FeatureSet;
-
-		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
-		static constexpr auto OutputCount = Outputs;
-
-		static constexpr auto WeightCount =  InputCount * OutputCount;
-		static constexpr auto   BiasCount = OutputCount;
-
-		static_assert( InputCount > 0);
-		static_assert(OutputCount > 0);
-
-		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
-
-		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
-		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;
-
-		inline auto readFrom(std::istream &stream) -> std::istream &
-		{
-			readPadded(stream, weights);
-			readPadded(stream,  biases);
-
-			return stream;
-		}
-
-		inline auto writeTo(std::ostream &stream) const -> std::ostream &
-		{
-			writePadded(stream, weights);
-			writePadded(stream,  biases);
-
-			return stream;
-		}
-	};
-
 	template <typename Ft>
 	class Accumulator
 	{
@@ -92,6 +54,17 @@ namespace stormphrax::eval::nnue
 			return m_outputs[static_cast<i32>(c)];
 		}
 
+		[[nodiscard]] inline auto move() const
+		{
+			return m_move;
+		}
+
+		[[nodiscard]] inline auto dirty(Color c) const
+		{
+			assert(c != Color::None);
+			return m_dirty[static_cast<i32>(c)];
+		}
+
 		[[nodiscard]] inline auto black() -> auto &
 		{
 			return m_outputs[0];
@@ -108,9 +81,32 @@ namespace stormphrax::eval::nnue
 			return m_outputs[static_cast<i32>(c)];
 		}
 
-		inline void init(const Ft &featureTransformer, Color c)
+		[[nodiscard]] inline auto move() -> auto &
 		{
-			std::ranges::copy(featureTransformer.biases, forColor(c).begin());
+			return m_move;
+		}
+
+		[[nodiscard]] inline auto dirty(Color c) -> auto &
+		{
+			assert(c != Color::None);
+			return m_dirty[static_cast<i32>(c)];
+		}
+
+		inline auto setDirty()
+		{
+			m_dirty[0] = true;
+			m_dirty[1] = true;
+		}
+
+		inline auto init(Color c, const Ft &featureTransformer)
+		{
+			std::ranges::copy(featureTransformer.biases, m_outputs[static_cast<i32>(c)].begin());
+		}
+
+		inline auto copyFrom(const Accumulator<Ft> &other)
+		{
+			std::ranges::copy(other.m_outputs[0], m_outputs[0].begin());
+			std::ranges::copy(other.m_outputs[1], m_outputs[1].begin());
 		}
 
 		inline auto moveFeature(const Ft &featureTransformer, Color c, u32 srcFeature, u32 dstFeature)
@@ -144,7 +140,12 @@ namespace stormphrax::eval::nnue
 
 		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
 
-		SP_SIMD_ALIGNAS std::array<std::array<Type, OutputCount>, 2> m_outputs;
+		using OutputArray = util::AlignedArray<util::SimdAlignment, Type, OutputCount>;
+
+		std::array<OutputArray, 2> m_outputs;
+
+		ExtendedMove m_move{};
+		std::array<bool, 2> m_dirty{};
 
 		static inline auto subAdd(std::span<Type, OutputCount> accumulator,
 			std::span<const Type, WeightCount> delta, u32 subOffset, u32 addOffset) -> void

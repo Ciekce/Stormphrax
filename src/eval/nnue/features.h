@@ -35,8 +35,8 @@ namespace stormphrax::eval::nnue::features
 			return 0;
 		}
 
-		static constexpr auto refreshRequired([[maybe_unused]] Color c,
-			[[maybe_unused]] Square prevKingSq, [[maybe_unused]] Square kingSq)
+		static constexpr auto refreshRequired([[maybe_unused]] Color c, [[maybe_unused]] PieceType piece,
+			[[maybe_unused]] Square prevSq, [[maybe_unused]] Square sq)
 		{
 			return false;
 		}
@@ -62,13 +62,16 @@ namespace stormphrax::eval::nnue::features
 			return Buckets[static_cast<i32>(kingSq)];
 		}
 
-		static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
+		static constexpr auto refreshRequired(Color c, PieceType piece, Square prevKingSq, Square kingSq)
 		{
 			assert(c != Color::None);
 
 			assert(prevKingSq != Square::None);
 			assert(kingSq != Square::None);
 			assert(prevKingSq != kingSq);
+
+			if (piece != PieceType::King)
+				return false;
 
 			if (c == Color::Black)
 			{

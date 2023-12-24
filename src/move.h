@@ -26,10 +26,11 @@
 #include "core.h"
 #include "util/static_vector.h"
 #include "opts.h"
+#include "position/boards.h"
 
 namespace stormphrax
 {
-	enum class MoveType
+	enum class MoveType : u8
 	{
 		Standard = 0,
 		Promotion,
@@ -123,6 +124,71 @@ namespace stormphrax
 	};
 
 	constexpr Move NullMove{};
+
+	struct ExtendedMove
+	{
+		Piece moving{Piece::None};
+		Square src{Square::None};
+		Square dst{Square::None};
+		Square kingDst{Square::None};
+		MoveType type{MoveType::Standard};
+		Piece captured{Piece::None};
+		PieceType promo{PieceType::None};
+		[[maybe_unused]] u8 padding{};
+
+		[[nodiscard]] inline auto valid() const
+		{
+			return moving != Piece::None
+				&& src != Square::None
+				&& dst != Square::None
+				&& src != dst
+				&& (captured == Piece::None ||
+					(pieceType(captured) != PieceType::King
+						&& pieceColor(moving) != pieceColor(captured)))
+				&& (type != MoveType::EnPassant || pieceType(captured) == PieceType::Pawn)
+				&& (type == MoveType::Castling || dst == kingDst)
+				&& (type != MoveType::Castling || captured == Piece::None) //TODO consider king dst
+				&& ((type == MoveType::Promotion
+					&& (promo == PieceType::Knight
+						|| promo == PieceType::Bishop
+						|| promo == PieceType::Rook
+						|| promo == PieceType::Queen))
+					|| (type != MoveType::Promotion && promo == PieceType::Knight /* default */));
+		}
+
+		[[nodiscard]] static inline auto fromMove(const PositionBoards &boards, Move move)
+		{
+			if (move == NullMove)
+				return ExtendedMove{};
+
+			const auto moving = boards.pieceAt(move.src());
+
+			const auto kingDst = move.type() == MoveType::Castling
+				? toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2)
+				: move.dst();
+
+			const auto captured = [&]
+			{
+				if (move.type() == MoveType::Castling)
+					return Piece::None;
+				else if (move.type() == MoveType::EnPassant)
+					return colorPiece(PieceType::Pawn, oppColor(pieceColor(moving)));
+				else return boards.pieceAt(move.dst());
+			}();
+
+			return ExtendedMove {
+				.moving = moving,
+				.src = move.src(),
+				.dst = move.dst(),
+				.kingDst = kingDst,
+				.type = move.type(),
+				.captured = captured,
+				.promo = move.target()
+			};
+		}
+	};
+
+	static_assert(sizeof(ExtendedMove) == 8);
 
 	// assumed upper bound for number of possible moves is 218
 	constexpr usize DefaultMoveListCapacity = 256;

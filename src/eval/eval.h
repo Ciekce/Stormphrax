@@ -47,9 +47,9 @@ namespace stormphrax::eval
 	}
 
 	template <bool Scale = true>
-	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
+	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
-		const auto nnueEval = nnueState.evaluate(pos.boards(), pos.toMove());
+		const auto nnueEval = nnueState.evaluate(pos.boards(), pos.blackKing(), pos.whiteKing(), pos.toMove());
 		return adjustEval<Scale>(pos, contempt, nnueEval);
 	}
 
