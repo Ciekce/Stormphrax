@@ -921,7 +921,7 @@ namespace stormphrax::search
 					// Late move reductions (LMR)
 					// Moves ordered later in the movelist are more likely to be bad,
 					// so search them to lower depth according to various heuristics
-					const auto reduction = [&, history = history /* workaround for old clang on ob workers */]
+					const auto reduction = [&, history /* workaround for old clang on ob workers */]
 					{
 						if (depth < minLmrDepth()
 							|| legalMoves < minLmrMoves
