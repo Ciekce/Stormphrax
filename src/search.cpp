@@ -918,10 +918,13 @@ namespace stormphrax::search
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
+					// workaround for old clang on ob workers
+					const auto h = history;
+
 					// Late move reductions (LMR)
 					// Moves ordered later in the movelist are more likely to be bad,
 					// so search them to lower depth according to various heuristics
-					const auto reduction = [&, history /* workaround for old clang on ob workers */]
+					const auto reduction = [&]
 					{
 						if (depth < minLmrDepth()
 							|| legalMoves < minLmrMoves
@@ -937,7 +940,7 @@ namespace stormphrax::search
 						lmr -= pos.isCheck();
 
 						// reduce moves with good history scores less and vice versa
-						lmr -= history / historyLmrDivisor();
+						lmr -= h / historyLmrDivisor();
 
 						// reduce less if improving
 						lmr -= improving;
