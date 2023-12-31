@@ -777,6 +777,8 @@ namespace stormphrax::search
 
 		const auto threats = pos.threats();
 
+		bool skipQuiets = false;
+
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
@@ -801,6 +803,9 @@ namespace stormphrax::search
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
 			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
 
+			if (skipQuiets && !noisy)
+				continue;
+
 			const auto baseLmr = g_lmrTable[depth][legalMoves + 1];
 
 			if (!RootNode
@@ -815,13 +820,16 @@ namespace stormphrax::search
 					const auto lmrDepth = std::clamp(depth - baseLmr + lmrHistory, 0, depth);
 
 					// Late move pruning (LMP)
-					// At low enough depths, only search a certain depth-dependent
-					// number of moves. Sane implementations just use depth here
-					// instead of LMR depth, but SP is weird and loses elo when I try
+					// At low enough depths, only search a certain depth-dependent number of
+					// moves, then yeet all the remaining quiets. Sane implementations just use
+					// depth here instead of LMR depth, but SP is weird and loses elo when I try
 					if (!pvNode
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
-						break;
+					{
+						skipQuiets = true;
+						continue;
+					}
 
 					// Futility pruning (FP)
 					// At this point, alpha is so far above static eval that it is
@@ -829,7 +837,10 @@ namespace stormphrax::search
 					if (depth <= maxFpDepth()
 						&& alpha < ScoreWin
 						&& stack.eval + fpMargin() + lmrDepth * fpScale() <= alpha)
-						break;
+					{
+						skipQuiets = true;
+						continue;
+					}
 				}
 
 				// SEE pruning
