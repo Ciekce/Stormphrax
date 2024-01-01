@@ -42,10 +42,10 @@ namespace stormphrax
 
 			for (const auto [move, score] : moves)
 			{
-				const auto guard = pos.applyMove<false>(move, nullptr);
-
-				if (!guard)
+				if (!pos.isLegal(move))
 					continue;
+
+				const auto guard = pos.applyMove<false>(move, nullptr);
 
 				total += depth == 0 ? 1 : doPerft(pos, depth);
 			}
@@ -72,10 +72,10 @@ namespace stormphrax
 
 		for (const auto [move, score] : moves)
 		{
-			const auto guard = pos.applyMove<false>(move, nullptr);
-
-			if (!guard)
+			if (!pos.isLegal(move))
 				continue;
+
+			const auto guard = pos.applyMove<false>(move, nullptr);
 
 			const auto value = doPerft(pos, depth);
 

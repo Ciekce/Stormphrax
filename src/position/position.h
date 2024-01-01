@@ -31,6 +31,7 @@
 #include "../attacks/attacks.h"
 #include "../ttable.h"
 #include "../eval/nnue.h"
+#include "../rays.h"
 
 namespace stormphrax
 {
@@ -41,7 +42,9 @@ namespace stormphrax
 		u64 key{};
 
 		Bitboard checkers{};
+		Bitboard pinned{};
 		Bitboard threats{};
+		Bitboard kingMoveThreats{};
 
 		CastlingRooks castlingRooks{};
 
@@ -74,7 +77,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 104);
+	static_assert(sizeof(BoardState) == 120);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -91,18 +94,14 @@ namespace stormphrax
 	class HistoryGuard
 	{
 	public:
-		explicit HistoryGuard(Position &pos, eval::NnueState *nnueState, bool legal)
+		explicit HistoryGuard(Position &pos, eval::NnueState *nnueState)
 			: m_pos{pos},
-			  m_nnueState{nnueState},
-			  m_legal{legal} {}
+			  m_nnueState{nnueState} {}
 		inline ~HistoryGuard();
-
-		[[nodiscard]] explicit operator bool() const { return m_legal; }
 
 	private:
 		Position &m_pos;
 		eval::NnueState *m_nnueState;
-		bool m_legal{};
 	};
 
 	class Position
@@ -119,9 +118,11 @@ namespace stormphrax
 		auto resetFromFrcIndex(u32 n) -> bool;
 		auto resetFromDfrcIndex(u32 n) -> bool;
 
+		// Moves are assumed to be legal
 		template <bool UpdateNnue = true, bool StateHistory = true>
-		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt = nullptr) -> bool;
+		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt = nullptr) -> void;
 
+		// Moves are assumed to be legal
 		template <bool UpdateNnue = true>
 		[[nodiscard]] inline auto applyMove(Move move,
 			eval::NnueState *nnueState, TTable *prefetchTt = nullptr)
@@ -129,8 +130,9 @@ namespace stormphrax
 			if constexpr (UpdateNnue)
 				assert(nnueState != nullptr);
 
-			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr,
-				applyMoveUnchecked<UpdateNnue>(move, nnueState, prefetchTt)};
+			applyMoveUnchecked<UpdateNnue>(move, nnueState, prefetchTt);
+
+			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr};
 		}
 
 		template <bool UpdateNnue = true>
@@ -139,6 +141,7 @@ namespace stormphrax
 		auto clearStateHistory() -> void;
 
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
+		[[nodiscard]] auto isLegal(Move move) const -> bool;
 
 	private:
 		[[nodiscard]] inline auto currState() -> auto & { return m_states.back(); }
@@ -324,6 +327,7 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
+		[[nodiscard]] inline auto pinned() const { return currState().pinned; }
 		[[nodiscard]] inline auto threats() const { return currState().threats; }
 
 		[[nodiscard]] auto hasCycle(i32 ply) const -> bool;
@@ -438,6 +442,8 @@ namespace stormphrax
 			return *this == other
 				&& currState().kings == other.m_states.back().kings
 				&& currState().checkers == other.m_states.back().checkers
+				&& currState().pinned == other.m_states.back().pinned
+				&& currState().threats == other.m_states.back().threats
 				&& currState().key == other.m_states.back().key;
 		}
 
@@ -492,46 +498,84 @@ namespace stormphrax
 			return attackersTo(state.king(color), oppColor(color));
 		}
 
-		[[nodiscard]] inline auto calcThreats() const
+		[[nodiscard]] inline auto calcPinned() const
 		{
-			const auto color = opponent();
+			const auto color = toMove();
+			const auto &state = currState();
+
+			Bitboard pinned{};
+
+			const auto king = state.king(color);
+			const auto opponent = oppColor(color);
+
+			const auto ourOcc = state.boards.occupancy(color);
+			const auto oppOcc = state.boards.occupancy(opponent);
+
+			const auto oppQueens = state.boards.queens(opponent);
+
+			auto potentialAttackers
+				= attacks::getBishopAttacks(king, oppOcc) & (oppQueens | state.boards.bishops(opponent))
+				| attacks::  getRookAttacks(king, oppOcc) & (oppQueens | state.boards.  rooks(opponent));
+
+			while (potentialAttackers)
+			{
+				const auto potentialAttacker = potentialAttackers.popLowestSquare();
+				const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
+
+				if (maybePinned.one())
+					pinned |= maybePinned;
+			}
+
+			return pinned;
+		}
+
+		[[nodiscard]] inline auto calcThreats() const -> std::pair<Bitboard, Bitboard>
+		{
+			const auto us = toMove();
+			const auto them = oppColor(us);
+
 			const auto &state = currState();
 
 			Bitboard threats{};
+			Bitboard kingMoveThreats{};
 
 			const auto occ = state.boards.occupancy();
+			const auto kinglessOcc = occ ^ state.boards.kings(us);
 
-			const auto queens = state.boards.queens(color);
+			const auto queens = state.boards.queens(them);
 
-			auto rooks = queens | state.boards.rooks(color);
+			auto rooks = queens | state.boards.rooks(them);
 			while (rooks)
 			{
 				const auto rook = rooks.popLowestSquare();
 				threats |= attacks::getRookAttacks(rook, occ);
+				kingMoveThreats |= attacks::getRookAttacks(rook, kinglessOcc);
 			}
 
-			auto bishops = queens | state.boards.bishops(color);
+			auto bishops = queens | state.boards.bishops(them);
 			while (bishops)
 			{
 				const auto bishop = bishops.popLowestSquare();
 				threats |= attacks::getBishopAttacks(bishop, occ);
+				kingMoveThreats |= attacks::getBishopAttacks(bishop, kinglessOcc);
 			}
 
-			auto knights = state.boards.knights(color);
+			auto knights = state.boards.knights(them);
 			while (knights)
 			{
 				const auto knight = knights.popLowestSquare();
 				threats |= attacks::getKnightAttacks(knight);
 			}
 
-			const auto pawns = state.boards.pawns(color);
-			if (color == Color::Black)
+			const auto pawns = state.boards.pawns(them);
+			if (them == Color::Black)
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 
-			threats |= attacks::getKingAttacks(state.king(color));
+			threats |= attacks::getKingAttacks(state.king(them));
+			kingMoveThreats |= threats;
 
-			return threats;
+			return {threats, kingMoveThreats};
 		}
 
 		bool m_blackToMove{};

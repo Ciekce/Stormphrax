@@ -839,13 +839,13 @@ namespace stormphrax::search
 					continue;
 			}
 
+			if (!pos.isLegal(move))
+				continue;
+
 			const auto movingPiece = boards.pieceAt(move.src());
 			assert(movingPiece != Piece::None);
 
 			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
-
-			if (!guard)
-				continue;
 
 			if (pvNode)
 				stack.pv.length = 0;
@@ -1112,10 +1112,10 @@ namespace stormphrax::search
 
 		while (const auto move = generator.next())
 		{
-			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
-
-			if (!guard)
+			if (!pos.isLegal(move.move))
 				continue;
+
+			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
 
 			++thread.search.nodes;
 

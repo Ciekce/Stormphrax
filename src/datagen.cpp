@@ -250,12 +250,12 @@ namespace stormphrax::datagen
 
 					for (const auto [move, score] : moves)
 					{
-						if (thread->pos.applyMoveUnchecked<false>(move, nullptr))
+						if (thread->pos.isLegal(move))
 						{
+							thread->pos.applyMoveUnchecked<false>(move, nullptr);
 							legalFound = true;
 							break;
 						}
-						else thread->pos.popMove<false>(nullptr);
 					}
 
 					if (!legalFound)
