@@ -1056,7 +1056,7 @@ namespace stormphrax
 		if (move.type() == MoveType::Castling)
 		{
 			const auto kingDst = toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
-			return !state.threats[kingDst] && (!g_opts.chess960 || state.pinned[src]);
+			return !state.threats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
 		}
 		else if (move.type() == MoveType::EnPassant)
 		{
