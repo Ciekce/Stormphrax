@@ -72,6 +72,11 @@ namespace stormphrax
 			return m_colors[static_cast<i32>(C)];
 		}
 
+		[[nodiscard]] inline auto occupancy(Color c) const
+		{
+			return m_colors[static_cast<i32>(c)];
+		}
+
 		[[nodiscard]] inline auto occupancy() const { return m_colors[0] | m_colors[1]; }
 
 		[[nodiscard]] inline auto pawns() const { return forPiece(PieceType::Pawn); }

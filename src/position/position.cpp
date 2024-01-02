@@ -121,10 +121,10 @@ namespace stormphrax
 		}
 	}
 
-	template auto Position::applyMoveUnchecked<false, false>(Move, eval::NnueState *, TTable *) -> bool;
-	template auto Position::applyMoveUnchecked<true, false>(Move, eval::NnueState *, TTable *) -> bool;
-	template auto Position::applyMoveUnchecked<false, true>(Move, eval::NnueState *, TTable *) -> bool;
-	template auto Position::applyMoveUnchecked<true, true>(Move, eval::NnueState *, TTable *) -> bool;
+	template auto Position::applyMoveUnchecked<false, false>(Move, eval::NnueState *, TTable *) -> void;
+	template auto Position::applyMoveUnchecked<true, false>(Move, eval::NnueState *, TTable *) -> void;
+	template auto Position::applyMoveUnchecked<false, true>(Move, eval::NnueState *, TTable *) -> void;
+	template auto Position::applyMoveUnchecked<true, true>(Move, eval::NnueState *, TTable *) -> void;
 
 	template auto Position::popMove<false>(eval::NnueState *) -> void;
 	template auto Position::popMove<true>(eval::NnueState *) -> void;
@@ -652,7 +652,7 @@ namespace stormphrax
 	}
 
 	template <bool UpdateNnue, bool StateHistory>
-	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> bool
+	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> void
 	{
 		if constexpr (UpdateNnue)
 			assert(nnueState != nullptr);
@@ -697,9 +697,10 @@ namespace stormphrax
 			}
 #endif
 
+			state.pinned = calcPinned();
 			state.threats = calcThreats();
 
-			return true;
+			return;
 		}
 
 		const auto moveType = move.type();
@@ -742,9 +743,6 @@ namespace stormphrax
 			captured = enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
 			break;
 		}
-
-		if (isAttacked<false>(state, toMove(), state.king(currColor), toMove()))
-			return false;
 
 		if (moving == Piece::BlackRook)
 		{
@@ -813,6 +811,7 @@ namespace stormphrax
 			prefetchTt->prefetch(state.key);
 
 		state.checkers = calcCheckers();
+		state.pinned = calcPinned();
 		state.threats = calcThreats();
 
 #ifndef NDEBUG
@@ -825,8 +824,6 @@ namespace stormphrax
 			}
 		}
 #endif
-
-		return true;
 	}
 
 	template <bool UpdateNnue>
@@ -1033,6 +1030,70 @@ namespace stormphrax
 		}
 
 		return true;
+	}
+
+	// This does *not* check for pseudolegality, moves are assumed to be pseudolegal
+	auto Position::isLegal(Move move) const -> bool
+	{
+		assert(move != NullMove);
+
+		const auto us = toMove();
+		const auto them = oppColor(us);
+
+		const auto state = currState();
+
+		const auto src = move.src();
+		const auto dst = move.dst();
+
+		const auto king = state.king(us);
+
+		if (move.type() == MoveType::Castling)
+		{
+			const auto kingDst = toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
+			return !state.threats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
+		}
+		else if (move.type() == MoveType::EnPassant)
+		{
+			auto rank = squareRank(dst);
+			const auto file = squareFile(dst);
+
+			rank = rank == 2 ? 3 : 4;
+
+			const auto captureSquare = toSquare(rank, file);
+
+			const auto postEpOcc = state.boards.occupancy()
+				^ Bitboard::fromSquare(src)
+				^ Bitboard::fromSquare(dst)
+				^ Bitboard::fromSquare(captureSquare);
+
+			const auto theirQueens = state.boards.queens(them);
+
+			return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | state.boards.bishops(them))).empty()
+				&& (attacks::getRookAttacks  (king, postEpOcc) & (theirQueens | state.boards.  rooks(them))).empty();
+		}
+
+		const auto moving = state.boards.pieceAt(src);
+
+		if (pieceType(moving) == PieceType::King)
+		{
+			const auto kinglessOcc = state.boards.occupancy() ^ state.boards.kings(us);
+			const auto theirQueens = state.boards.queens(them);
+
+			return !state.threats[move.dst()]
+				&& (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | state.boards.bishops(them))).empty()
+				&& (attacks::getRookAttacks  (dst, kinglessOcc) & (theirQueens | state.boards.  rooks(them))).empty();
+		}
+
+		// multiple checks can only be evaded with a king move
+		if (state.checkers.multiple()
+			|| state.pinned[src] && !rayIntersecting(src, dst)[king])
+			return false;
+
+		if (state.checkers.empty())
+			return true;
+
+		const auto checker = state.checkers.lowestSquare();
+		return (rayBetween(king, checker) | Bitboard::fromSquare(checker))[dst];
 	}
 
 	// see comment in cuckoo.cpp
@@ -1565,6 +1626,7 @@ namespace stormphrax
 		state.key ^= hash::enPassant(state.enPassant);
 
 		state.checkers = calcCheckers();
+		state.pinned = calcPinned();
 		state.threats = calcThreats();
 	}
 

@@ -839,12 +839,7 @@ namespace stormphrax::search
 					continue;
 			}
 
-			const auto movingPiece = boards.pieceAt(move.src());
-			assert(movingPiece != Piece::None);
-
-			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
-
-			if (!guard)
+			if (!pos.isLegal(move))
 				continue;
 
 			if (pvNode)
@@ -871,12 +866,10 @@ namespace stormphrax::search
 				const auto sDepth = (depth - 1) / 2;
 
 				stack.excluded = move;
-				pos.popMove(&thread.nnueState);
 
 				const auto score = search(thread, stack.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
 
 				stack.excluded = NullMove;
-				pos.applyMoveUnchecked(move, &thread.nnueState, &m_table);
 
 				if (score < sBeta)
 				{
@@ -903,6 +896,11 @@ namespace stormphrax::search
 				else if (cutnode)
 					extension = -1;
 			}
+
+			const auto movingPiece = boards.pieceAt(move.src());
+			assert(movingPiece != Piece::None);
+
+			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), move.historyDst()};
 
@@ -1112,10 +1110,10 @@ namespace stormphrax::search
 
 		while (const auto move = generator.next())
 		{
-			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
-
-			if (!guard)
+			if (!pos.isLegal(move.move))
 				continue;
+
+			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
 
 			++thread.search.nodes;
 
