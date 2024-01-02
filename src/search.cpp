@@ -791,7 +791,8 @@ namespace stormphrax::search
 		{
 			const auto [move, history] = moveAndHistory;
 
-			if (move == stack.excluded)
+			if (move == stack.excluded
+				|| !pos.isLegal(move))
 				continue;
 
 			stack.history = history;
@@ -838,9 +839,6 @@ namespace stormphrax::search
 					&& !see::see(pos, move, depth * (noisy ? noisySeeThreshold() : quietSeeThreshold())))
 					continue;
 			}
-
-			if (!pos.isLegal(move))
-				continue;
 
 			if (pvNode)
 				stack.pv.length = 0;
