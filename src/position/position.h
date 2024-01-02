@@ -44,7 +44,6 @@ namespace stormphrax
 		Bitboard checkers{};
 		Bitboard pinned{};
 		Bitboard threats{};
-		Bitboard kingMoveThreats{};
 
 		CastlingRooks castlingRooks{};
 
@@ -77,7 +76,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 120);
+	static_assert(sizeof(BoardState) == 112);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -529,7 +528,7 @@ namespace stormphrax
 			return pinned;
 		}
 
-		[[nodiscard]] inline auto calcThreats() const -> std::pair<Bitboard, Bitboard>
+		[[nodiscard]] inline auto calcThreats() const
 		{
 			const auto us = toMove();
 			const auto them = oppColor(us);
@@ -537,7 +536,6 @@ namespace stormphrax
 			const auto &state = currState();
 
 			Bitboard threats{};
-			Bitboard kingMoveThreats{};
 
 			const auto occ = state.boards.occupancy();
 			const auto kinglessOcc = occ ^ state.boards.kings(us);
@@ -549,7 +547,6 @@ namespace stormphrax
 			{
 				const auto rook = rooks.popLowestSquare();
 				threats |= attacks::getRookAttacks(rook, occ);
-				kingMoveThreats |= attacks::getRookAttacks(rook, kinglessOcc);
 			}
 
 			auto bishops = queens | state.boards.bishops(them);
@@ -557,7 +554,6 @@ namespace stormphrax
 			{
 				const auto bishop = bishops.popLowestSquare();
 				threats |= attacks::getBishopAttacks(bishop, occ);
-				kingMoveThreats |= attacks::getBishopAttacks(bishop, kinglessOcc);
 			}
 
 			auto knights = state.boards.knights(them);
@@ -573,9 +569,8 @@ namespace stormphrax
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 
 			threats |= attacks::getKingAttacks(state.king(them));
-			kingMoveThreats |= threats;
 
-			return {threats, kingMoveThreats};
+			return threats;
 		}
 
 		bool m_blackToMove{};

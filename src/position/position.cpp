@@ -698,10 +698,7 @@ namespace stormphrax
 #endif
 
 			state.pinned = calcPinned();
-
-			const auto [threats, kingMoveThreats] = calcThreats();
-			state.threats = threats;
-			state.kingMoveThreats = kingMoveThreats;
+			state.threats = calcThreats();
 
 			return;
 		}
@@ -815,10 +812,7 @@ namespace stormphrax
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
-
-		const auto [threats, kingMoveThreats] = calcThreats();
-		state.threats = threats;
-		state.kingMoveThreats = kingMoveThreats;
+		state.threats = calcThreats();
 
 #ifndef NDEBUG
 		if constexpr (VerifyAll)
@@ -1081,7 +1075,14 @@ namespace stormphrax
 		const auto moving = state.boards.pieceAt(src);
 
 		if (pieceType(moving) == PieceType::King)
-			return !state.kingMoveThreats[move.dst()];
+		{
+			const auto kinglessOcc = state.boards.occupancy() ^ state.boards.kings(us);
+			const auto theirQueens = state.boards.queens(them);
+
+			return !state.threats[move.dst()]
+				&& (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | state.boards.bishops(them))).empty()
+				&& (attacks::getRookAttacks  (dst, kinglessOcc) & (theirQueens | state.boards.  rooks(them))).empty();
+		}
 
 		// multiple checks can only be evaded with a king move
 		if (state.checkers.multiple()
@@ -1626,10 +1627,7 @@ namespace stormphrax
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
-
-		const auto [threats, kingMoveThreats] = calcThreats();
-		state.threats = threats;
-		state.kingMoveThreats = kingMoveThreats;
+		state.threats = calcThreats();
 	}
 
 #ifndef NDEBUG
