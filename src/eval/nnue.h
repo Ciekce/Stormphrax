@@ -44,6 +44,9 @@ namespace stormphrax::eval
 		>
 	>;
 
+	using Accumulator = FeatureTransformer::Accumulator;
+	using RefreshTable = FeatureTransformer::RefreshTable;
+
 	extern const Network &g_network;
 
 	auto loadDefaultNetwork() -> void;
@@ -79,11 +82,22 @@ namespace stormphrax::eval
 			assert(whiteKing != Square::None);
 			assert(blackKing != whiteKing);
 
+			m_refreshTable.init(g_network.featureTransformer());
+
 			m_accumulatorStack.clear();
 			m_curr = &m_accumulatorStack.emplace_back();
 
-			refreshAccumulator(*m_curr, Color::Black, boards, blackKing);
-			refreshAccumulator(*m_curr, Color::White, boards, whiteKing);
+			for (const auto c : { Color::Black, Color::White })
+			{
+				const auto king = c == Color::Black ? blackKing : whiteKing;
+				const auto bucket = InputFeatureSet::getBucket(c, king);
+
+				auto &rtEntry = m_refreshTable.table[bucket];
+				resetAccumulator(rtEntry.accumulator, c, boards, king);
+
+				m_curr->copyFrom(c, rtEntry.accumulator);
+				rtEntry.colorBoards(c) = boards;
+			}
 		}
 
 		inline auto refresh(Color c, const PositionBoards &boards, Square king)
@@ -93,7 +107,7 @@ namespace stormphrax::eval
 			assert(c != Color::None);
 			assert(king != Square::None);
 
-			refreshAccumulator(*m_curr, c, boards, king);
+			refreshAccumulator(*m_curr, c, boards, m_refreshTable, king);
 		}
 
 		inline auto moveFeatureSingle(Color c, Piece piece, Square src, Square dst, Square king)
@@ -216,17 +230,19 @@ namespace stormphrax::eval
 
 			Accumulator accumulator{};
 
-			refreshAccumulator(accumulator, Color::Black, boards, blackKing);
-			refreshAccumulator(accumulator, Color::White, boards, whiteKing);
+			accumulator.initBoth(g_network.featureTransformer());
+
+			resetAccumulator(accumulator, Color::Black, boards, blackKing);
+			resetAccumulator(accumulator, Color::White, boards, whiteKing);
 
 			return evaluate(accumulator, boards, stm);
 		}
 
 	private:
-		using Accumulator = nnue::Accumulator<FeatureTransformer>;
-
 		std::vector<Accumulator> m_accumulatorStack{};
 		Accumulator *m_curr{};
+
+		RefreshTable m_refreshTable{};
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
 			const PositionBoards &boards, Color stm) -> i32
@@ -242,12 +258,49 @@ namespace stormphrax::eval
 		}
 
 		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
+			const PositionBoards &boards, RefreshTable &refreshTable, Square king) -> void
+		{
+			const auto bucket = InputFeatureSet::getBucket(c, king);
+
+			auto &rtEntry = refreshTable.table[bucket];
+			auto &prevBoards = rtEntry.colorBoards(c);
+
+			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
+			{
+				const auto piece = static_cast<Piece>(pieceIdx);
+
+				const auto prev = prevBoards.forPiece(piece);
+				const auto curr =     boards.forPiece(piece);
+
+				auto   added = curr & ~prev;
+				auto removed = prev & ~curr;
+
+				while (added)
+				{
+					const auto sq = added.popLowestSquare();
+					const auto feature = featureIndex(c, piece, sq, king);
+
+					rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, feature);
+				}
+
+				while (removed)
+				{
+					const auto sq = removed.popLowestSquare();
+					const auto feature = featureIndex(c, piece, sq, king);
+
+					rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
+				}
+			}
+
+			accumulator.copyFrom(c, rtEntry.accumulator);
+			prevBoards = boards;
+		}
+
+		static inline auto resetAccumulator(Accumulator &accumulator, Color c,
 			const PositionBoards &boards, Square king) -> void
 		{
 			assert(c != Color::None);
 			assert(king != Square::None);
-
-			accumulator.init(g_network.featureTransformer(), c);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
