@@ -28,50 +28,12 @@
 
 #include "../../core.h"
 #include "../../util/simd.h"
+#include "../../position/boards.h"
 #include "io.h"
 #include "features.h"
 
 namespace stormphrax::eval::nnue
 {
-	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
-	struct FeatureTransformer
-	{
-		using WeightType = Type;
-		using OutputType = Type;
-
-		using InputFeatureSet = FeatureSet;
-
-		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
-		static constexpr auto OutputCount = Outputs;
-
-		static constexpr auto WeightCount =  InputCount * OutputCount;
-		static constexpr auto   BiasCount = OutputCount;
-
-		static_assert( InputCount > 0);
-		static_assert(OutputCount > 0);
-
-		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
-
-		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
-		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;
-
-		inline auto readFrom(std::istream &stream) -> std::istream &
-		{
-			readPadded(stream, weights);
-			readPadded(stream,  biases);
-
-			return stream;
-		}
-
-		inline auto writeTo(std::ostream &stream) const -> std::ostream &
-		{
-			writePadded(stream, weights);
-			writePadded(stream,  biases);
-
-			return stream;
-		}
-	};
-
 	template <typename Ft>
 	class Accumulator
 	{
@@ -108,9 +70,10 @@ namespace stormphrax::eval::nnue
 			return m_outputs[static_cast<i32>(c)];
 		}
 
-		inline void init(const Ft &featureTransformer, Color c)
+		inline void initBoth(const Ft &featureTransformer)
 		{
-			std::ranges::copy(featureTransformer.biases, forColor(c).begin());
+			std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
+			std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
 		}
 
 		inline auto moveFeature(const Ft &featureTransformer, Color c, u32 srcFeature, u32 dstFeature)
@@ -133,6 +96,12 @@ namespace stormphrax::eval::nnue
 		{
 			assert(feature < InputCount);
 			sub(forColor(c), featureTransformer.weights, feature * OutputCount);
+		}
+
+		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
+		{
+			const auto idx = static_cast<i32>(c);
+			std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
 		}
 
 	private:
@@ -220,6 +189,76 @@ namespace stormphrax::eval::nnue
 					accumulator[i] -= delta[offset + i];
 				}
 			}
+		}
+	};
+
+	template <typename Acc>
+	struct RefreshTableEntry
+	{
+		Acc accumulator{};
+		std::array<PositionBoards, 2> boards{};
+
+		[[nodiscard]] auto colorBoards(Color c) -> auto &
+		{
+			return boards[static_cast<i32>(c)];
+		}
+	};
+
+	template <typename Ft, u32 BucketCount>
+	struct RefreshTable
+	{
+		std::array<RefreshTableEntry<Accumulator<Ft>>, BucketCount> table{};
+
+		inline void init(const Ft &featureTransformer)
+		{
+			for (auto &entry : table)
+			{
+				entry.accumulator.initBoth(featureTransformer);
+				entry.boards.fill(PositionBoards{});
+			}
+		}
+	};
+
+	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
+	struct FeatureTransformer
+	{
+		using WeightType = Type;
+		using OutputType = Type;
+
+		using InputFeatureSet = FeatureSet;
+
+		using Accumulator = Accumulator<FeatureTransformer<Type, Inputs, Outputs, FeatureSet>>;
+		using RefreshTable = RefreshTable<FeatureTransformer<Type, Inputs, Outputs, FeatureSet>,
+		    FeatureSet::BucketCount>;
+
+		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
+		static constexpr auto OutputCount = Outputs;
+
+		static constexpr auto WeightCount =  InputCount * OutputCount;
+		static constexpr auto   BiasCount = OutputCount;
+
+		static_assert( InputCount > 0);
+		static_assert(OutputCount > 0);
+
+		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
+
+		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
+		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;
+
+		inline auto readFrom(std::istream &stream) -> std::istream &
+		{
+			readPadded(stream, weights);
+			readPadded(stream,  biases);
+
+			return stream;
+		}
+
+		inline auto writeTo(std::ostream &stream) const -> std::ostream &
+		{
+			writePadded(stream, weights);
+			writePadded(stream,  biases);
+
+			return stream;
 		}
 	};
 }
