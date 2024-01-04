@@ -25,6 +25,7 @@
 #include "nnue.h"
 #include "../position/position.h"
 #include "../core.h"
+#include "error.h"
 
 namespace stormphrax::eval
 {
@@ -38,11 +39,13 @@ namespace stormphrax::eval
 	}
 
 	template <bool Scale = true>
-	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+	inline auto adjustEval(const Position &pos, const Contempt &contempt, const ErrorHistory *errorHist, i32 eval)
 	{
 		if constexpr (Scale)
 			eval = scaleEval(pos, eval);
 		eval += contempt[static_cast<i32>(pos.toMove())];
+		if (errorHist)
+			eval -= errorHist->get(pos.pawnKey());
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
@@ -50,13 +53,13 @@ namespace stormphrax::eval
 	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
 	{
 		const auto nnueEval = nnueState.evaluate(pos.boards(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		return adjustEval<Scale>(pos, contempt, &nnueState.errorHistory(), nnueEval);
 	}
 
 	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.blackKing(), pos.whiteKing(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		return adjustEval<Scale>(pos, contempt, nullptr, nnueEval);
 	}
 }

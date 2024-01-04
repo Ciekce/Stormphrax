@@ -27,6 +27,7 @@
 #include "nnue/network.h"
 #include "nnue/layers.h"
 #include "nnue/activation.h"
+#include "error.h"
 
 namespace stormphrax::eval
 {
@@ -60,6 +61,16 @@ namespace stormphrax::eval
 		NnueState()
 		{
 			m_accumulatorStack.reserve(256);
+		}
+
+		[[nodiscard]] inline auto errorHistory() const -> const auto &
+		{
+			return m_errorHistory;
+		}
+
+		[[nodiscard]] inline auto errorHistory() -> auto &
+		{
+			return m_errorHistory;
 		}
 
 		inline auto push()
@@ -239,6 +250,8 @@ namespace stormphrax::eval
 		}
 
 	private:
+		ErrorHistory m_errorHistory{};
+
 		std::vector<Accumulator> m_accumulatorStack{};
 		Accumulator *m_curr{};
 

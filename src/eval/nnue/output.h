@@ -48,7 +48,7 @@ namespace stormphrax::eval::nnue::output
 	template <u32 Count>
 	struct [[maybe_unused]] MaterialCount
 	{
-		static_assert(Count > 0 && util::resetLsb(Count) == 0);
+		static_assert(util::isPowerOfTwo(Count));
 		static_assert(Count <= 32);
 
 		static constexpr u32 BucketCount = Count;

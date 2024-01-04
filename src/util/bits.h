@@ -174,4 +174,10 @@ namespace stormphrax::util
 		return fallback::pdep(v, mask);
 #endif
 	}
+
+	template <std::unsigned_integral T>
+	[[nodiscard]] constexpr auto isPowerOfTwo(T v)
+	{
+		return v > T{0} && (v & (v - 1)) == 0;
+	}
 }

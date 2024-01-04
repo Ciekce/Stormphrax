@@ -164,6 +164,7 @@ namespace stormphrax::search
 		{
 			std::fill(thread.stack.begin(), thread.stack.end(), SearchStackEntry{});
 			thread.history.clear();
+			thread.nnueState.errorHistory().clear();
 		}
 	}
 
@@ -600,6 +601,8 @@ namespace stormphrax::search
 		auto syzygyMin = -ScoreMate;
 		auto syzygyMax =  ScoreMate;
 
+		bool syzygyClamped = false;
+
 		const auto syzygyPieceLimit = std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST));
 
 		// Probe the Syzygy tablebases for a WDL result
@@ -670,6 +673,8 @@ namespace stormphrax::search
 							alpha = tbScore;
 						syzygyMin = tbScore;
 					}
+
+					syzygyClamped = true;
 				}
 			}
 		}
@@ -779,6 +784,8 @@ namespace stormphrax::search
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
+
+		bool bestMoveNoisy = false;
 
 		auto entryType = EntryType::Alpha;
 
@@ -965,6 +972,8 @@ namespace stormphrax::search
 				bestMove = move;
 				bestScore = score;
 
+				bestMoveNoisy = noisy;
+
 				if (pvNode)
 				{
 					pv.moves[0] = move;
@@ -1039,7 +1048,25 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!stack.excluded && !shouldStop(thread.search, false, false))
+		{
+			if (!syzygyClamped
+				&& !pos.isCheck()
+				&& !bestMoveNoisy
+				&& (entryType == EntryType::Exact
+					|| entryType == EntryType::Alpha && bestScore <= stack.staticEval
+					|| entryType == EntryType::Beta  && bestScore >= stack.staticEval))
+			{
+				const auto error = [&]
+				{
+					const auto error = bestScore - stack.staticEval;
+					return pos.toMove() == Color::Black ? -error : error;
+				}();
+
+				thread.nnueState.errorHistory().update(pos.pawnKey(), error);
+			}
+
 			m_table.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
+		}
 
 		return bestScore;
 	}
