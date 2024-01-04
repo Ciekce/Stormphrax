@@ -677,14 +677,10 @@ namespace stormphrax
 		m_blackToMove = !m_blackToMove;
 
 		state.key ^= hash::color();
-		state.pawnKey ^= hash::color();
 
 		if (state.enPassant != Square::None)
 		{
-			const auto epHash = hash::enPassant(state.enPassant);
-			state.key ^= epHash;
-			state.pawnKey ^= epHash;
-
+			state.key ^= hash::enPassant(state.enPassant);
 			state.enPassant = Square::None;
 		}
 
@@ -769,18 +765,12 @@ namespace stormphrax
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
 			state.enPassant = toSquare(5, move.srcFile());
-
-			const auto epHash = hash::enPassant(state.enPassant);
-			state.key ^= epHash;
-			state.pawnKey ^= epHash;
+			state.key ^= hash::enPassant(state.enPassant);
 		}
 		else if (moving == Piece::WhitePawn && move.srcRank() == 1 && move.dstRank() == 3)
 		{
 			state.enPassant = toSquare(2, move.srcFile());
-
-			const auto epHash = hash::enPassant(state.enPassant);
-			state.key ^= epHash;
-			state.pawnKey ^= epHash;
+			state.key ^= hash::enPassant(state.enPassant);
 		}
 
 		if (captured == Piece::None
@@ -1650,7 +1640,6 @@ namespace stormphrax
 		const auto castlingHash = hash::castling(state.castlingRooks);
 
 		state.key ^= colorHash ^ epHash ^ castlingHash;
-		state.pawnKey ^= colorHash ^ epHash;
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();

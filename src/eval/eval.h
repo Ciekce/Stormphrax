@@ -45,7 +45,14 @@ namespace stormphrax::eval
 			eval = scaleEval(pos, eval);
 		eval += contempt[static_cast<i32>(pos.toMove())];
 		if (errorHist)
-			eval -= errorHist->get(pos.pawnKey());
+		{
+			const auto error = [&]
+			{
+				const auto error = errorHist->get(pos.pawnKey());
+				return pos.toMove() == Color::Black ? -error : error;
+			}();
+			eval -= error;
+		}
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
