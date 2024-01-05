@@ -33,13 +33,15 @@ namespace stormphrax::eval
 	public:
 		inline auto update(u64 pawnKey, Score error)
 		{
+			error = std::clamp(error, -UpdateCap, UpdateCap);
+
 			auto &entry = m_data[pawnKey % Size];
-			entry = (entry * (UpdateScale - 1) + error) / UpdateScale;
+			entry = std::clamp((entry * (UpdateScale - 1) + error) / UpdateScale, -TotalCap, TotalCap);
 		}
 
 		[[nodiscard]] inline auto get(u64 pawnKey) const
 		{
-			return m_data[pawnKey % Size];
+			return m_data[pawnKey % Size] / Div;
 		}
 
 		inline auto clear()
@@ -49,9 +51,16 @@ namespace stormphrax::eval
 
 	private:
 		static constexpr u64 Size = 8192;
+
 		static constexpr Score UpdateScale = 256;
+		static constexpr Score UpdateCap = 1024;
+
+		static constexpr Score TotalCap = 256;
+
+		static constexpr Score Div = 32;
 
 		static_assert(util::isPowerOfTwo(Size));
+		static_assert(Div > 0 && util::isPowerOfTwo(static_cast<u32>(Div)));
 		static_assert(UpdateScale > 0 && util::isPowerOfTwo(static_cast<u32>(UpdateScale)));
 
 		std::array<Score, Size> m_data{};
