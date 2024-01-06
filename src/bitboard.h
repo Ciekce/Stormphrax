@@ -200,6 +200,7 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr auto empty() const { return m_board == 0; }
 		[[nodiscard]] constexpr auto multiple() const { return util::resetLsb(m_board) != 0; }
+		[[nodiscard]] constexpr auto one() const { return !empty() && !multiple(); }
 
 		[[nodiscard]] constexpr auto lowestSquare() const
 		{

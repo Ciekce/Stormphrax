@@ -64,7 +64,7 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr auto data() const { return m_move; }
 
-		// returns the king's actual destination square for
+		// returns the king's actual destination square for non-FRC
 		// castling moves, otherwise just the move's destination
 		// used to avoid inflating the history of the generally
 		// bad moves of putting the king in a corner when castling

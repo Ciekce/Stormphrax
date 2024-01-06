@@ -91,6 +91,7 @@ namespace stormphrax
 			// V ======= NONSTANDARD ======= V
 			auto handleD() -> void;
 			auto handleCheckers() -> void;
+			auto handleThreats() -> void;
 			auto handleEval() -> void;
 			auto handleRawEval() -> void;
 			auto handleRegen() -> void;
@@ -156,6 +157,8 @@ namespace stormphrax
 					handleRawEval();
 				else if (command == "checkers")
 					handleCheckers();
+				else if (command == "threats")
+					handleThreats();
 				else if (command == "regen")
 					handleRegen();
 				else if (command == "moves")
@@ -644,6 +647,16 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
+			std::cout << "Pinned:";
+
+			auto pinned = m_pos.pinned();
+			while (pinned)
+			{
+				std::cout << ' ' << squareToString(pinned.popLowestSquare());
+			}
+
+			std::cout << std::endl;
+
 			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
 
 			std::cout << "Static eval: ";
@@ -668,6 +681,12 @@ namespace stormphrax
 		{
 			std::cout << '\n';
 			printBitboard(std::cout, m_pos.checkers());
+		}
+
+		auto UciHandler::handleThreats() -> void
+		{
+			std::cout << '\n';
+			printBitboard(std::cout, m_pos.threats());
 		}
 
 		auto UciHandler::handleRegen() -> void
