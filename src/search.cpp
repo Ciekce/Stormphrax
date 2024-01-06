@@ -956,10 +956,13 @@ namespace stormphrax::search
 					{
 						const bool doDeeperSearch = score > bestScore
 							+ lmrDeeperBase() + lmrDeeperScale() * reduction;
-						newDepth += doDeeperSearch;
+						const bool doShallowerSearch = score < bestScore + newDepth;
 
-						score = -search(thread, stack.pv, newDepth,
-							ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+						newDepth += doDeeperSearch - doShallowerSearch;
+
+						if (newDepth > reduced)
+							score = -search(thread, stack.pv, newDepth,
+								ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 					}
 
 					if (score > alpha && score < beta)
