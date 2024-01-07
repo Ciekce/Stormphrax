@@ -1124,14 +1124,17 @@ namespace stormphrax::search
 
 		QMoveGenerator generator{pos, NullMove, thread.moveStack[moveStackIdx].movegenData, ttMove};
 
+		u32 legalMoves = 0;
+
 		while (const auto move = generator.next())
 		{
 			if (!pos.isLegal(move.move))
 				continue;
 
-			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
-
 			++thread.search.nodes;
+			++legalMoves;
+
+			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
 
 			const auto score = pos.isDrawn(false)
 				? drawScore(thread.search.nodes)
@@ -1153,6 +1156,9 @@ namespace stormphrax::search
 					entryType = EntryType::Exact;
 				}
 			}
+
+			if (legalMoves >= qsearchMaxMoves())
+				break;
 		}
 
 		if (!shouldStop(thread.search, false, false))
