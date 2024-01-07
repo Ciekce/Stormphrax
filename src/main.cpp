@@ -63,7 +63,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 				dfrc = true;
 			else if (std::string{argv[2]} != "standard")
 			{
-				std::cerr << "invalid variant " << argv[1] << std::endl;
+				std::cerr << "invalid variant " << argv[2] << std::endl;
 				std::cerr << "usage: " << argv[0]
 					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
 				return 1;
