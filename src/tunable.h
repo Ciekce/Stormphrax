@@ -143,6 +143,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 8336, 4096, 16384, 512)
 
+	SP_TUNABLE_PARAM(lmrDeeperBase, 64, 32, 96, 8)
+	SP_TUNABLE_PARAM(lmrDeeperScale, 8, 2, 12, 1)
+
 	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 74, 50, 120, 5, updateLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 242, 100, 300, 10, updateLmrTable)
 

@@ -910,21 +910,25 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				const auto newDepth = depth - 1 + extension;
+				auto newDepth = depth - 1 + extension;
 
 				if (pvNode && legalMoves == 1)
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
-					i32 reduction{};
+					// workaround for old clang on ob workers
+					const auto h = history;
 
 					// Late move reductions (LMR)
 					// Moves ordered later in the movelist are more likely to be bad,
 					// so search them to lower depth according to various heuristics
-					if (depth >= minLmrDepth()
-						&& legalMoves >= minLmrMoves
-						&& generator.stage() >= MovegenStage::Quiet)
+					const auto reduction = [&]
 					{
+						if (depth < minLmrDepth()
+							|| legalMoves < minLmrMoves
+							|| generator.stage() < MovegenStage::Quiet)
+							return 0;
+
 						auto lmr = baseLmr;
 
 						// reduce more in non-PV nodes
@@ -934,20 +938,32 @@ namespace stormphrax::search
 						lmr -= pos.isCheck();
 
 						// reduce moves with good history scores less and vice versa
-						lmr -= history / historyLmrDivisor();
+						lmr -= h / historyLmrDivisor();
 
 						// reduce less if improving
 						lmr -= improving;
 
-						reduction = std::clamp(lmr, 0, depth - 2);
-					}
+						return lmr;
+					}();
 
-					score = -search(thread, stack.pv, newDepth - reduction,
+					// std::clamp does not work here, because newDepth can be 0
+					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth);
+
+					score = -search(thread, stack.pv, reduced,
 						ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
-					if (score > alpha && reduction > 0)
-						score = -search(thread, stack.pv, newDepth,
-							ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+					if (score > alpha && reduced < newDepth)
+					{
+						const bool doDeeperSearch = score > bestScore
+							+ lmrDeeperBase() + lmrDeeperScale() * reduction;
+						const bool doShallowerSearch = score < bestScore + newDepth;
+
+						newDepth += doDeeperSearch - doShallowerSearch;
+
+						if (newDepth > reduced)
+							score = -search(thread, stack.pv, newDepth,
+								ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+					}
 
 					if (score > alpha && score < beta)
 						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
