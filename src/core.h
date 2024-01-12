@@ -210,10 +210,16 @@ namespace stormphrax
 		return static_cast<i32>(square) & 0x7;
 	}
 
-	[[nodiscard]] constexpr auto flipSquare(Square square)
+	[[nodiscard]] constexpr auto flipSquareRank(Square square)
 	{
 		assert(square != Square::None);
 		return static_cast<Square>(static_cast<i32>(square) ^ 0x38);
+	}
+
+	[[nodiscard]] constexpr auto flipSquareFile(Square square)
+	{
+		assert(square != Square::None);
+		return static_cast<Square>(static_cast<i32>(square) ^ 0x07);
 	}
 
 	[[nodiscard]] constexpr auto squareBit(Square square)

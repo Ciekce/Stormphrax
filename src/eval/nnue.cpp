@@ -79,7 +79,7 @@ namespace stormphrax::eval
 		inline auto activationFuncName(u8 func)
 		{
 			static constexpr auto ActivationFunctionNames = std::array {
-				"crelu", "screlu", "relu"
+				"crelu", "screlu", "relu", "identity", "sigmoid", "tanh"
 			};
 
 			if (func < ActivationFunctionNames.size())

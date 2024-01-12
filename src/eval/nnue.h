@@ -126,8 +126,8 @@ namespace stormphrax::eval
 
 			assert(king != Square::None);
 
-			const auto srcFeature = featureIndex(c, piece, src, king);
-			const auto dstFeature = featureIndex(c, piece, dst, king);
+			const auto srcFeature = InputFeatureSet::featureIndex(c, piece, src, king);
+			const auto dstFeature = InputFeatureSet::featureIndex(c, piece, dst, king);
 
 			m_curr->moveFeature(g_network.featureTransformer(), c, srcFeature, dstFeature);
 		}
@@ -143,7 +143,7 @@ namespace stormphrax::eval
 
 			assert(sq != king);
 
-			const auto feature = featureIndex(c, piece, sq, king);
+			const auto feature = InputFeatureSet::featureIndex(c, piece, sq, king);
 			m_curr->activateFeature(g_network.featureTransformer(), c, feature);
 		}
 
@@ -156,7 +156,7 @@ namespace stormphrax::eval
 			assert(sq != Square::None);
 			assert(king != Square::None);
 
-			const auto feature = featureIndex(c, piece, sq, king);
+			const auto feature = InputFeatureSet::featureIndex(c, piece, sq, king);
 			m_curr->deactivateFeature(g_network.featureTransformer(), c, feature);
 		}
 
@@ -260,7 +260,7 @@ namespace stormphrax::eval
 		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
 			const PositionBoards &boards, RefreshTable &refreshTable, Square king) -> void
 		{
-			const auto bucket = InputFeatureSet::getBucket(c, king);
+			const auto bucket = InputFeatureSet::getRefreshTableIdx(c, king);
 
 			auto &rtEntry = refreshTable.table[bucket];
 			auto &prevBoards = rtEntry.colorBoards(c);
@@ -278,7 +278,7 @@ namespace stormphrax::eval
 				while (added)
 				{
 					const auto sq = added.popLowestSquare();
-					const auto feature = featureIndex(c, piece, sq, king);
+					const auto feature = InputFeatureSet::featureIndex(c, piece, sq, king);
 
 					rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, feature);
 				}
@@ -286,7 +286,7 @@ namespace stormphrax::eval
 				while (removed)
 				{
 					const auto sq = removed.popLowestSquare();
-					const auto feature = featureIndex(c, piece, sq, king);
+					const auto feature = InputFeatureSet::featureIndex(c, piece, sq, king);
 
 					rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
 				}
@@ -313,31 +313,10 @@ namespace stormphrax::eval
 				{
 					const auto sq = board.popLowestSquare();
 
-					const auto feature = featureIndex(c, piece, sq, king);
+					const auto feature = InputFeatureSet::featureIndex(c, piece, sq, king);
 					accumulator.activateFeature(g_network.featureTransformer(), c, feature);
 				}
 			}
-		}
-
-		[[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32
-		{
-			assert(c != Color::None);
-			assert(piece != Piece::None);
-			assert(sq != Square::None);
-			assert(king != Square::None);
-
-			constexpr u32 ColorStride = 64 * 6;
-			constexpr u32 PieceStride = 64;
-
-			const auto type = static_cast<u32>(pieceType(piece));
-
-			const u32 color = pieceColor(piece) == c ? 0 : 1;
-
-			if (c == Color::Black)
-				sq = flipSquare(sq);
-
-			const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputSize;
-			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
 		}
 	};
 }
