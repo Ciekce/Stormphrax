@@ -38,7 +38,7 @@
 
 namespace
 {
-	INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
+	INCBIN(std::byte, defaultNet, /*SP_NETWORK_FILE*/"L:/Dev/misc/stormphrax/nets/net027.nnue");
 }
 
 namespace stormphrax::eval
