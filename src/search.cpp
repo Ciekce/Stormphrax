@@ -357,24 +357,21 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::searchRoot(ThreadData &thread, bool mainSearchThread) -> Score
+	auto Searcher::searchRoot(ThreadData &thread, bool actualSearch) -> Score
 	{
 		auto &searchData = thread.search;
 
-		const bool reportAndUpdate = mainSearchThread && thread.isMainThread();
+		const bool mainThread = actualSearch && thread.isMainThread();
 
-		thread.rootPv.moves[0] = NullMove;
-		thread.rootPv.length = 0;
+		thread.rootPv.reset();
 
-		auto score = -ScoreInf;
-		PvList pv{};
-
-		const auto startTime = reportAndUpdate ? util::g_timer.time() : 0.0;
-		const auto startDepth = 1 + static_cast<i32>(thread.id) % 16;
-
-		i32 depthCompleted{};
+		thread.lastPv.reset();
+		thread.depthCompleted = 0;
 
 		bool hitSoftTimeout = false;
+
+		const auto startTime = mainThread ? util::g_timer.time() : 0.0;
+		const auto startDepth = 1 + static_cast<i32>(thread.id) % 16;
 
 		for (i32 depth = startDepth;
 			depth <= thread.maxDepth
@@ -384,19 +381,19 @@ namespace stormphrax::search
 			searchData.depth = depth;
 			searchData.seldepth = 0;
 
-			bool reportThisIter = reportAndUpdate;
+			bool reportThisIter = mainThread;
 
 			if (depth < minAspDepth())
 			{
-				const auto newScore = search<true>(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf, false);
+				const auto score = search<true>(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf, false);
 
-				depthCompleted = depth;
+				thread.depthCompleted = depth;
 
 				if (depth > 1 && m_stop.load(std::memory_order::relaxed) || thread.rootPv.length == 0)
 					break;
 
-				score = newScore;
-				pv.copyFrom(thread.rootPv);
+				thread.lastScore = score;
+				thread.lastPv.copyFrom(thread.rootPv);
 			}
 			else
 			{
@@ -404,29 +401,29 @@ namespace stormphrax::search
 
 				auto delta = initialAspWindow();
 
-				auto alpha = std::max(score - delta, -ScoreInf);
-				auto beta  = std::min(score + delta,  ScoreInf);
+				auto alpha = std::max(thread.lastScore - delta, -ScoreInf);
+				auto beta  = std::min(thread.lastScore + delta,  ScoreInf);
+
+				auto currScore = thread.lastScore;
 
 				while (!shouldStop(searchData, thread.isMainThread(), false))
 				{
 					aspDepth = std::max(aspDepth, depth - maxAspReduction());
 
-					const auto newScore = search<true>(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
+					currScore = search<true>(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
 
-					const bool stop = m_stop.load(std::memory_order::relaxed);
-					if (stop || thread.rootPv.length == 0)
+					if (const bool stop = m_stop.load(std::memory_order::relaxed);
+						stop || thread.rootPv.length == 0)
 					{
 						reportThisIter &= !stop;
 						break;
 					}
 
-					score = newScore;
-
-					if (reportAndUpdate && (score <= alpha || score >= beta))
+					if (mainThread && (currScore <= alpha || currScore >= beta))
 					{
 						const auto time = util::g_timer.time() - startTime;
 						if (time > MinReportDelay)
-							report(thread, thread.rootPv, thread.search.depth, time, score, alpha, beta);
+							report(thread, thread.rootPv, thread.search.depth, time, currScore, alpha, beta);
 					}
 
 					delta += delta * aspWideningFactor() / 16;
@@ -434,12 +431,12 @@ namespace stormphrax::search
 					if (delta > maxAspWindow())
 						delta = ScoreInf;
 
-					if (score >= beta)
+					if (currScore >= beta)
 					{
 						beta = std::min(beta + delta, ScoreInf);
 						--aspDepth;
 					}
-					else if (score <= alpha)
+					else if (currScore <= alpha)
 					{
 						beta = (alpha + beta) / 2;
 						alpha = std::max(alpha - delta, -ScoreInf);
@@ -447,65 +444,62 @@ namespace stormphrax::search
 					}
 					else
 					{
-						pv.copyFrom(thread.rootPv);
-						depthCompleted = depth;
+						thread.depthCompleted = depth;
+						thread.lastPv.copyFrom(thread.rootPv);
+						thread.lastScore = currScore;
 						break;
 					}
 				}
 			}
 
-			if (reportAndUpdate)
-				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
+			if (mainThread)
+				m_limiter->update(thread.search, thread.lastPv.moves[0], thread.search.nodes);
 
 			if (reportThisIter && depth < thread.maxDepth)
 			{
-				if (pv.length == 0)
-					pv.copyFrom(thread.rootPv);
+				// if we didn't get a move from depth 1, try to grab the best move searched so far
+				if (thread.lastPv.length == 0)
+					thread.lastPv.copyFrom(thread.rootPv);
 
-				if (pv.length > 0)
-					report(thread, pv, searchData.depth, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
-				else
-				{
-					std::cout << "info string no legal moves" << std::endl;
-					break;
-				}
+				// if we didn't search a single legal move, there probably aren't any
+				// report if there are, otherwise give up
+				if (thread.lastPv.length > 0)
+					report(thread, thread.lastPv, searchData.depth,
+						util::g_timer.time() - startTime, thread.lastScore, -ScoreInf, ScoreInf);
+				else break;
 			}
 		}
 
-		if (reportAndUpdate)
+		if (thread.lastPv.length == 0)
 		{
-			if (mainSearchThread)
-				m_searchMutex.lock();
-
-			if (pv.length > 0)
-			{
-				if (!hitSoftTimeout || !m_limiter->stopped())
-					report(thread, pv, depthCompleted, util::g_timer.time() - startTime, score, -ScoreInf, ScoreInf);
-				std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
-			}
-			else std::cout << "info string no legal moves" << std::endl;
+			std::cout << "info string no legal moves" << std::endl;
+			return -ScoreMate;
 		}
 
-		if (mainSearchThread)
+		const auto waitForThreads = [&]
 		{
 			--m_runningThreads;
 			m_stopSignal.notify_all();
 
-			if (reportAndUpdate)
-			{
-				m_stop.store(true, std::memory_order::seq_cst);
-				m_searchEndBarrier.arriveAndWait();
+			m_searchEndBarrier.arriveAndWait();
+		};
 
-				m_searching.store(false, std::memory_order::relaxed);
+		if (mainThread)
+		{
+			std::unique_lock lock{m_searchMutex};
 
-				m_table.age();
+			m_stop.store(true, std::memory_order::seq_cst);
+			waitForThreads();
 
-				m_searchMutex.unlock();
-			}
-			else m_searchEndBarrier.arriveAndWait();
+			finalReport(startTime, hitSoftTimeout);
+
+			m_searching.store(false, std::memory_order::relaxed);
+
+			m_table.age();
 		}
+		else waitForThreads();
 
-		return score;
+		return thread.lastScore;
 	}
 
 	template <bool RootNode>
@@ -1161,7 +1155,7 @@ namespace stormphrax::search
 		return bestScore;
 	}
 
-	auto Searcher::report(const ThreadData &mainThread, const PvList &pv,
+	auto Searcher::report(const ThreadData &bestThread, const PvList &pv,
 		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
 	{
 		usize nodes = 0;
@@ -1175,7 +1169,7 @@ namespace stormphrax::search
 		const auto ms  = static_cast<usize>(time * 1000.0);
 		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
-		std::cout << "info depth " << depth << " seldepth " << mainThread.search.seldepth
+		std::cout << "info depth " << depth << " seldepth " << bestThread.search.seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
@@ -1188,7 +1182,7 @@ namespace stormphrax::search
 
 		score = std::clamp(score, m_minRootScore, m_maxRootScore);
 
-		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
+		const auto plyFromStartpos = bestThread.pos.plyFromStartpos();
 
 		// mates
 		if (std::abs(score) >= ScoreMaxMate)
@@ -1248,5 +1242,16 @@ namespace stormphrax::search
 		}
 
 		std::cout << std::endl;
+	}
+
+	auto Searcher::finalReport(f64 startTime, bool mainThreadSoftTimeout) -> void
+	{
+		const auto threadIdx = 0;
+		const auto &thread = m_threads[0];
+
+		if (threadIdx != 0 || !mainThreadSoftTimeout || !m_limiter->stopped())
+			report(thread, thread.lastPv, thread.depthCompleted,
+				util::g_timer.time() - startTime, thread.lastScore, -ScoreInf, ScoreInf);
+		std::cout << "bestmove " << uci::moveToString(thread.lastPv.moves[0]) << std::endl;
 	}
 }

@@ -60,6 +60,12 @@ namespace stormphrax::search
 		std::array<Move, MaxDepth> moves{};
 		u32 length{};
 
+		inline auto reset()
+		{
+			moves[0] = NullMove;
+			length = 0;
+		}
+
 		inline auto copyFrom(const PvList &other)
 		{
 			std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
@@ -109,6 +115,10 @@ namespace stormphrax::search
 		bool datagen{false};
 
 		PvList rootPv{};
+
+		i32 depthCompleted{};
+		PvList lastPv{};
+		Score lastScore{};
 
 		eval::NnueState nnueState{};
 
@@ -235,14 +245,15 @@ namespace stormphrax::search
 			return m_stop.load(std::memory_order::relaxed);
 		}
 
-		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
+		auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;
 
 		template <bool Root = false>
 		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, const PvList &pv,
+		auto report(const ThreadData &bestThread, const PvList &pv,
 			i32 depth, f64 time, Score score, Score alpha, Score beta) -> void;
+		auto finalReport(f64 startTime, bool mainThreadSoftTimeout) -> void;
 	};
 }
