@@ -1300,15 +1300,12 @@ namespace stormphrax::search
 						bestVotes = moveVotes;
 					}
 				}
-				else
+				else if (moveVotes > bestVotes
+					|| (moveVotes == bestVotes
+						&& threadScore(candidate) > threadScore(*bestThread)))
 				{
-					if (moveVotes > bestVotes
-						|| (moveVotes == bestVotes
-							&& threadScore(candidate) > threadScore(*bestThread)))
-					{
-						bestThread = &candidate;
-						bestVotes = moveVotes;
-					}
+					bestThread = &candidate;
+					bestVotes = moveVotes;
 				}
 			}
 
