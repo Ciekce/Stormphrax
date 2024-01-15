@@ -365,8 +365,9 @@ namespace stormphrax::search
 
 		thread.rootPv.reset();
 
-		thread.lastPv.reset();
 		thread.depthCompleted = 0;
+		thread.lastPv.reset();
+		thread.lastScore = -ScoreInf;
 
 		bool hitSoftTimeout = false;
 
