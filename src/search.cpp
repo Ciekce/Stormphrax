@@ -376,6 +376,7 @@ namespace stormphrax::search
 
 		for (i32 depth = startDepth;
 			depth <= thread.maxDepth
+				// imperfect
 				&& !(hitSoftTimeout = shouldStop(searchData, thread.isMainThread(), true));
 			++depth)
 		{
@@ -1247,11 +1248,40 @@ namespace stormphrax::search
 
 	auto Searcher::finalReport(f64 startTime, bool mainThreadSoftTimeout) const -> void
 	{
-		//TODO actual voting
-
 		const auto &thread = [&]() -> const auto &
 		{
+			if (m_threads.size() == 1)
+				return m_threads[0];
+
+			const auto minScore = std::ranges::min_element(m_threads,
+				[](const auto &a, const auto &b)
+			{
+				return a.lastScore < b.lastScore;
+			})->lastScore;
+
+			const auto threadScore = [minScore](const ThreadData &thread)
+			{
+				return (thread.lastScore - minScore) * thread.depthCompleted;
+			};
+
+			std::array<i32, 64 * 64 * 4> votes{};
+
+			const auto votesFor = [&votes](Move move) -> auto &
+			{
+				return votes[(move.srcIdx() * 64 + move.dstIdx()) * 4 + move.targetIdx()];
+			};
+
+			for (const auto &thread : m_threads)
+			{
+				if (thread.lastPv.length == 0)
+					continue;
+
+				const auto move = thread.lastPv.moves[0];
+				votesFor(move) += threadScore(thread);
+			}
+
 			auto *bestThread = &m_threads[0];
+			auto bestVotes = votesFor(bestThread->lastPv.moves[0]);
 
 			for (i32 i = 1; i < m_threads.size(); ++i)
 			{
@@ -1260,15 +1290,26 @@ namespace stormphrax::search
 				if (candidate.lastPv.length == 0)
 					continue;
 
+				const auto moveVotes = votesFor(candidate.lastPv.moves[0]);
+
 				if (std::abs(bestThread->lastScore) > ScoreWin)
 				{
 					if (candidate.lastScore > bestThread->lastScore)
+					{
 						bestThread = &candidate;
+						bestVotes = moveVotes;
+					}
 				}
-				else if (candidate.depthCompleted > bestThread->depthCompleted
-					|| (candidate.depthCompleted == bestThread->depthCompleted
-						&& candidate.lastScore > bestThread->lastScore))
-					bestThread = &candidate;
+				else
+				{
+					if (moveVotes > bestVotes
+						|| (moveVotes == bestVotes
+							&& threadScore(candidate) > threadScore(*bestThread)))
+					{
+						bestThread = &candidate;
+						bestVotes = moveVotes;
+					}
+				}
 			}
 
 			return *bestThread;
