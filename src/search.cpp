@@ -1156,7 +1156,7 @@ namespace stormphrax::search
 	}
 
 	auto Searcher::report(const ThreadData &bestThread, const PvList &pv,
-		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
+		i32 depth, f64 time, Score score, Score alpha, Score beta) const -> void
 	{
 		usize nodes = 0;
 
@@ -1244,12 +1244,38 @@ namespace stormphrax::search
 		std::cout << std::endl;
 	}
 
-	auto Searcher::finalReport(f64 startTime, bool mainThreadSoftTimeout) -> void
+	auto Searcher::finalReport(f64 startTime, bool mainThreadSoftTimeout) const -> void
 	{
-		const auto threadIdx = 0;
-		const auto &thread = m_threads[0];
+		//TODO actual voting
 
-		if (threadIdx != 0 || !mainThreadSoftTimeout || !m_limiter->stopped())
+		const auto &thread = [&]() -> const auto &
+		{
+			auto *bestThread = &m_threads[0];
+
+			for (i32 i = 1; i < m_threads.size(); ++i)
+			{
+				const auto &candidate = m_threads[i];
+
+				if (candidate.lastPv.length == 0)
+					continue;
+
+				if (std::abs(bestThread->lastScore) > ScoreWin)
+				{
+					if (candidate.lastScore > bestThread->lastScore)
+						bestThread = &candidate;
+				}
+				else if (candidate.depthCompleted > bestThread->depthCompleted
+					|| (candidate.depthCompleted == bestThread->depthCompleted
+						&& candidate.lastScore > bestThread->lastScore))
+					bestThread = &candidate;
+			}
+
+			return *bestThread;
+		}();
+
+		assert(thread.lastPv.length > 0);
+
+		if (thread.id != 0 || !mainThreadSoftTimeout || !m_limiter->stopped())
 			report(thread, thread.lastPv, thread.depthCompleted,
 				util::g_timer.time() - startTime, thread.lastScore, -ScoreInf, ScoreInf);
 		std::cout << "bestmove " << uci::moveToString(thread.lastPv.moves[0]) << std::endl;
