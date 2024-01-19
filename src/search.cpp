@@ -1095,8 +1095,8 @@ namespace stormphrax::search
 			{
 				const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 				return (ttEntry.type == EntryType::Exact
-					|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
-					|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
+						|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
+						|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
 					? ttEntry.score
 					: staticEval;
 			}
@@ -1115,7 +1115,11 @@ namespace stormphrax::search
 
 		const auto us = pos.toMove();
 
-		auto ttMove = ttEntry.move && pos.isPseudolegal(ttEntry.move) ? ttEntry.move : NullMove;
+		const auto ttMove = ttEntry.move
+				&& pos.isPseudolegal(ttEntry.move)
+				&& pos.isNoisy(ttEntry.move)
+			? ttEntry.move
+			: NullMove;
 
 		auto best = NullMove;
 		auto bestScore = eval;
