@@ -963,6 +963,9 @@ namespace stormphrax::search
 						if (newDepth > reduced)
 							score = -search(thread, stack.pv, newDepth,
 								ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+
+						const auto conthistAdjustment = historyAdjustment(depth);
+						thread.history.updateConthist(thread.prevMoves[ply], ply, thread.prevMoves, conthistAdjustment);
 					}
 
 					if (score > alpha && score < beta)
@@ -998,7 +1001,7 @@ namespace stormphrax::search
 					if (score >= beta)
 					{
 						// Update history on fail-highs
-						const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
+						const auto bonus = historyAdjustment(depth + (stack.staticEval <= alpha));
 						const auto penalty = static_cast<HistoryScore>(-bonus);
 
 						const auto currMove = thread.prevMoves[ply];
