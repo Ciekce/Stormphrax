@@ -771,6 +771,8 @@ namespace stormphrax::search
 		if (ply > 0)
 			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
 
+		const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
+
 		const auto minLmrMoves = pvNode
 			? lmrMinMovesPv()
 			: lmrMinMovesNonPv();
@@ -942,6 +944,9 @@ namespace stormphrax::search
 
 						// reduce less if improving
 						lmr -= improving;
+
+						// reduce more if the TT move is noisy
+						lmr += ttMoveNoisy;
 
 						return lmr;
 					}();
