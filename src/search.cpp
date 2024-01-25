@@ -470,7 +470,7 @@ namespace stormphrax::search
 
 					thread.stack[0].excluded = NullMove;
 
-					if (forcedScore >= forcedBeta)
+					if (forcedScore < forcedBeta)
 						return true;
 				}
 
