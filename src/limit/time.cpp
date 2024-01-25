@@ -69,10 +69,14 @@ namespace stormphrax::limit
 		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
-	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
+	auto TimeManager::update(const search::SearchData &data, bool forced, Move bestMove, usize totalNodes) -> void
 	{
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
+
+		const auto forcedMin = static_cast<f64>(forcedTimeScaleMin()) / 100.0;
+		const auto forcedMax = static_cast<f64>(forcedTimeScaleMax()) / 100.0;
+		const auto forcedScale = static_cast<f64>(forcedTimeScaleScale()) / 100.0;
 
 		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
 		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
@@ -81,11 +85,15 @@ namespace stormphrax::limit
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
 
+		const auto forcedMoveScale = forced
+			? std::max(forcedMax - data.depth * forcedScale, forcedMin)
+			: 1.0;
+
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
 		const auto moveNodeScale = std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
 
-		m_scale = std::max(moveNodeScale, minScale);
+		m_scale = std::max(forcedMoveScale * moveNodeScale, minScale);
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void

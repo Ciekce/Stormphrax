@@ -86,6 +86,14 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(timeScaleMin, 16, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(forcedTimeScaleMin, 20, 1, 100, 5)
+	SP_TUNABLE_PARAM(forcedTimeScaleMax, 50, 1, 100, 5)
+	SP_TUNABLE_PARAM(forcedTimeScaleScale, 4, 1, 10, 1)
+	SP_TUNABLE_PARAM(minForcedDepth, 8, 6, 16, 1)
+	SP_TUNABLE_PARAM(forcedMin, 100, 50, 600, 25)
+	SP_TUNABLE_PARAM(forcedBase, 400, 200, 600, 50)
+	SP_TUNABLE_PARAM(forcedScale, 50, 20, 100, 20)
+
 	SP_TUNABLE_PARAM(minAspDepth, 7, 1, 10, 1)
 
 	SP_TUNABLE_PARAM(maxAspReduction, 3, 0, 5, 1)

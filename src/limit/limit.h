@@ -29,7 +29,12 @@ namespace stormphrax::limit
 	public:
 		virtual ~ISearchLimiter() = default;
 
-		virtual auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void {}
+		[[nodiscard]] virtual inline auto supportsForced() -> bool
+		{
+			return false;
+		}
+
+		virtual auto update(const search::SearchData &data, bool forced, Move bestMove, usize totalNodes) -> void {}
 		virtual auto updateMoveNodes(Move move, usize nodes) -> void {}
 
 		[[nodiscard]] virtual auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool = 0;

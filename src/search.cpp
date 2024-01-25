@@ -454,8 +454,31 @@ namespace stormphrax::search
 				}
 			}
 
+			const bool forced = [&]
+			{
+				if (m_limiter->supportsForced()
+					&& depth >= minForcedDepth())
+				{
+					const auto forcedBeta = std::max(-ScoreMate,
+						score - std::max(forcedMin(), forcedBase() + depth * forcedScale()));
+					const auto forcedDepth = (depth - 1) / 2;
+
+					thread.stack[0].excluded = pv.moves[0];
+
+					const auto forcedScore = search(thread, thread.rootPv,
+						forcedDepth, 0, 0, forcedBeta - 1, forcedBeta, false);
+
+					thread.stack[0].excluded = NullMove;
+
+					if (forcedScore >= forcedBeta)
+						return true;
+				}
+
+				return false;
+			}();
+
 			if (reportAndUpdate)
-				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
+				m_limiter->update(thread.search, forced, pv.moves[0], thread.search.nodes);
 
 			if (reportThisIter && depth < thread.maxDepth)
 			{
