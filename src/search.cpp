@@ -460,7 +460,7 @@ namespace stormphrax::search
 					&& depth >= minForcedDepth())
 				{
 					const auto forcedBeta = std::max(-ScoreMate,
-						score - std::max(forcedMin(), forcedBase() + depth * forcedScale()));
+						score - std::max(forcedMin(), forcedBase() - depth * forcedScale()));
 					const auto forcedDepth = (depth - 1) / 2;
 
 					thread.stack[0].excluded = pv.moves[0];
