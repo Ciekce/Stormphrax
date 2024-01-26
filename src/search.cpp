@@ -889,8 +889,8 @@ namespace stormphrax::search
 				// The TT move is not singular, and in fact the reduced-depth search also returned
 				// a score that was at least beta - there are probably multiple moves in this position
 				// that will beat beta, so just save the time searching and do a cutoff now
-				else if (sBeta >= beta)
-					return sBeta;
+				else if (score >= beta)
+					return beta;
 				else if (ttEntry.score >= beta)
 					extension = -2;
 				else if (cutnode)
