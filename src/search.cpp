@@ -707,12 +707,14 @@ namespace stormphrax::search
 
 		if (!pvNode && !inCheck && !stack.excluded)
 		{
+			const auto ourThreatened = pos.threats() & pos.boards().occupancy(us);
+
 			// Reverse futility pruning (RFP)
 			// If static eval is above beta by some depth-dependent
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta
-					+ rfpMargin() * depth / (improving ? 2 : 1)
+					+ rfpMargin() * (depth - ourThreatened.empty()) / (improving ? 2 : 1)
 					+ thread.stack[ply - 1].history / rfpHistoryMargin())
 				return (stack.eval + beta) / 2;
 
