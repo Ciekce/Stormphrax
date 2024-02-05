@@ -731,6 +731,10 @@ namespace stormphrax::search
 				&& pos.lastMove()
 				&& !boards.nonPk(us).empty())
 			{
+				// prefetch as early as possible
+				// a nullmove only changes the stm
+				m_table.prefetch(pos.key() ^ hash::color());
+
 				const auto R = std::min(depth,
 					nmpReductionBase()
 						+ depth / nmpReductionDepthScale()
@@ -739,7 +743,7 @@ namespace stormphrax::search
 				// wrap in a scope so the nullmove gets unmade in case of verification search
 				const auto score = [&]
 				{
-					const auto guard = pos.applyMove<false>(NullMove, nullptr, &m_table);
+					const auto guard = pos.applyMove<false>(NullMove, nullptr);
 					return -search(thread, stack.pv, depth - R,
 						ply + 1, moveStackIdx + 1, -beta, -beta + 1, !cutnode);
 				}();
@@ -897,10 +901,13 @@ namespace stormphrax::search
 					extension = -1;
 			}
 
+			// prefetch as early as possible
+			m_table.prefetch(pos.roughKeyAfter(move));
+
 			const auto movingPiece = boards.pieceAt(move.src());
 			assert(movingPiece != Piece::None);
 
-			const auto guard = pos.applyMove(move, &thread.nnueState, &m_table);
+			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			thread.prevMoves[ply] = {movingPiece, move.src(), move.historyDst()};
 
@@ -1129,7 +1136,10 @@ namespace stormphrax::search
 			if (!pos.isLegal(move.move))
 				continue;
 
-			const auto guard = pos.applyMove(move.move, &thread.nnueState, &m_table);
+			// prefetch as early as possible
+			m_table.prefetch(pos.roughKeyAfter(move.move));
+
+			const auto guard = pos.applyMove(move.move, &thread.nnueState);
 
 			++thread.search.nodes;
 
