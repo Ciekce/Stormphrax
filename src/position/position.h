@@ -32,6 +32,7 @@
 #include "../ttable.h"
 #include "../eval/nnue.h"
 #include "../rays.h"
+#include "../hash.h"
 
 namespace stormphrax
 {
@@ -119,17 +120,16 @@ namespace stormphrax
 
 		// Moves are assumed to be legal
 		template <bool UpdateNnue = true, bool StateHistory = true>
-		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt = nullptr) -> void;
+		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void;
 
 		// Moves are assumed to be legal
 		template <bool UpdateNnue = true>
-		[[nodiscard]] inline auto applyMove(Move move,
-			eval::NnueState *nnueState, TTable *prefetchTt = nullptr)
+		[[nodiscard]] inline auto applyMove(Move move, eval::NnueState *nnueState)
 		{
 			if constexpr (UpdateNnue)
 				assert(nnueState != nullptr);
 
-			applyMoveUnchecked<UpdateNnue>(move, nnueState, prefetchTt);
+			applyMoveUnchecked<UpdateNnue>(move, nnueState);
 
 			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr};
 		}
@@ -167,6 +167,30 @@ namespace stormphrax
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return currState().key; }
+
+		[[nodiscard]] inline auto roughKeyAfter(Move move) const
+		{
+			assert(move);
+
+			const auto &state = currState();
+
+			const auto moving = state.boards.pieceAt(move.src());
+			assert(moving != Piece::None);
+
+			const auto captured = state.boards.pieceAt(move.dst());
+
+			auto key = state.key;
+
+			key ^= hash::pieceSquare(moving, move.src());
+			key ^= hash::pieceSquare(moving, move.dst());
+
+			if (captured != Piece::None)
+				key ^= hash::pieceSquare(captured, move.dst());
+
+			key ^= hash::color();
+
+			return key;
+		}
 
 		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
