@@ -28,7 +28,6 @@
 #include <sstream>
 #include <cassert>
 
-#include "../hash.h"
 #include "../util/parse.h"
 #include "../util/split.h"
 #include "../attacks/attacks.h"
@@ -121,10 +120,10 @@ namespace stormphrax
 		}
 	}
 
-	template auto Position::applyMoveUnchecked<false, false>(Move, eval::NnueState *, TTable *) -> void;
-	template auto Position::applyMoveUnchecked<true, false>(Move, eval::NnueState *, TTable *) -> void;
-	template auto Position::applyMoveUnchecked<false, true>(Move, eval::NnueState *, TTable *) -> void;
-	template auto Position::applyMoveUnchecked<true, true>(Move, eval::NnueState *, TTable *) -> void;
+	template auto Position::applyMoveUnchecked<false, false>(Move, eval::NnueState *) -> void;
+	template auto Position::applyMoveUnchecked<true, false>(Move, eval::NnueState *) -> void;
+	template auto Position::applyMoveUnchecked<false, true>(Move, eval::NnueState *) -> void;
+	template auto Position::applyMoveUnchecked<true, true>(Move, eval::NnueState *) -> void;
 
 	template auto Position::popMove<false>(eval::NnueState *) -> void;
 	template auto Position::popMove<true>(eval::NnueState *) -> void;
@@ -652,7 +651,7 @@ namespace stormphrax
 	}
 
 	template <bool UpdateNnue, bool StateHistory>
-	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState, TTable *prefetchTt) -> void
+	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void
 	{
 		if constexpr (UpdateNnue)
 			assert(nnueState != nullptr);
@@ -806,9 +805,6 @@ namespace stormphrax
 
 			state.castlingRooks = newCastlingRooks;
 		}
-
-		if (prefetchTt)
-			prefetchTt->prefetch(state.key);
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
