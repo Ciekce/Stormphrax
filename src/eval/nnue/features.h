@@ -211,7 +211,10 @@ namespace stormphrax::eval::nnue::features
 			using namespace internal;
 
 			if (squareFile(king) > 3)
+			{
+				king = flipSquareFile(king);
 				sq = flipSquareFile(sq);
+			}
 
 			const auto type = static_cast<u32>(pieceType(piece));
 
