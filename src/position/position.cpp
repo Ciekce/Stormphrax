@@ -733,7 +733,7 @@ namespace stormphrax
 			captured = movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
 			break;
 		case MoveType::Promotion:
-			captured = promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.target(), nnueState);
+			captured = promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), nnueState);
 			break;
 		case MoveType::Castling:
 			castle<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
@@ -1396,7 +1396,7 @@ namespace stormphrax
 
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::promotePawn(Piece pawn, Square src, Square dst,
-		PieceType target, eval::NnueState *nnueState) -> Piece
+		PieceType promo, eval::NnueState *nnueState) -> Piece
 	{
 		assert(pawn != Piece::None);
 		assert(pieceType(pawn) == PieceType::Pawn);
@@ -1408,7 +1408,7 @@ namespace stormphrax
 		assert(squareRank(dst) == relativeRank(pieceColor(pawn), 7));
 		assert(squareRank(src) == relativeRank(pieceColor(pawn), 6));
 
-		assert(target != PieceType::None);
+		assert(promo != PieceType::None);
 
 		if constexpr (UpdateNnue)
 			assert(nnueState != nullptr);
@@ -1430,20 +1430,20 @@ namespace stormphrax
 				state.key ^= keys::pieceSquare(captured, dst);
 		}
 
-		state.boards.moveAndChangePiece(src, dst, pawn, target);
+		state.boards.moveAndChangePiece(src, dst, pawn, promo);
 
 		if constexpr(UpdateNnue || UpdateKey)
 		{
-			const auto coloredTarget = copyPieceColor(pawn, target);
+			const auto coloredPromo = copyPieceColor(pawn, promo);
 
 			if constexpr (UpdateNnue)
 			{
 				nnueState->deactivateFeature(pawn, src, state.blackKing(), state.whiteKing());
-				nnueState->activateFeature(coloredTarget, dst, state.blackKing(), state.whiteKing());
+				nnueState->activateFeature(coloredPromo, dst, state.blackKing(), state.whiteKing());
 			}
 
 			if constexpr (UpdateKey)
-				state.key ^= keys::pieceSquare(pawn, src) ^ keys::pieceSquare(coloredTarget, dst);
+				state.key ^= keys::pieceSquare(pawn, src) ^ keys::pieceSquare(coloredPromo, dst);
 		}
 
 		return captured;

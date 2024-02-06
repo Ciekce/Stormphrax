@@ -347,19 +347,19 @@ namespace stormphrax
 			forColor(pieceColor(piece)) ^= mask;
 		}
 
-		inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType target)
+		inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo)
 		{
 			assert(src != Square::None);
 			assert(dst != Square::None);
 			assert(src != dst);
 
 			assert(moving != Piece::None);
-			assert(target != PieceType::None);
+			assert(promo != PieceType::None);
 
 			assert(pieceAt(src) == moving);
 
 			forPiece(pieceType(moving))[src] = false;
-			forPiece(target)[dst] = true;
+			forPiece(promo)[dst] = true;
 
 			const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
 			forColor(pieceColor(moving)) ^= mask;

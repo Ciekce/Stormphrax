@@ -76,7 +76,7 @@ namespace stormphrax::see
 		auto score = value(boards.pieceAt(move.dst()));
 
 		if (type == MoveType::Promotion)
-			score += value(move.target()) - values::Pawn;
+			score += value(move.promo()) - values::Pawn;
 
 		return score;
 	}
@@ -112,7 +112,7 @@ namespace stormphrax::see
 			return false;
 
 		auto next = move.type() == MoveType::Promotion
-			? move.target()
+			? move.promo()
 			: pieceType(boards.pieceAt(move.src()));
 
 		score -= value(next);

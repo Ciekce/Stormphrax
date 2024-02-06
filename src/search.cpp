@@ -63,10 +63,10 @@ namespace stormphrax::search
 
 				const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
 				const auto dst = static_cast<Square>(TB_MOVE_TO  (tbMove));
-				const auto target = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
+				const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
-				if (target != PieceType::None)
-					return Move::promotion(src, dst, target);
+				if (promo != PieceType::None)
+					return Move::promotion(src, dst, promo);
 				else if (dst == pos.enPassant()
 					&& pos.boards().pieceTypeAt(src) == PieceType::Pawn)
 					return Move::enPassant(src, dst);

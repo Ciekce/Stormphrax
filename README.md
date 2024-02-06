@@ -81,7 +81,7 @@ this project is a continuation of my HCE engine [Polaris](https://github.com/Cie
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
 
-Alternatively, build the makefile target `native` for a binary tuned for your specific CPU (see below)  
+Alternatively, build the makefile promo `native` for a binary tuned for your specific CPU (see below)  
 
 ### Note:  
 - If you have an AMD Zen 1 (Ryzen x 1xxx), Zen+ (Ryzen x 2xxx) or Zen 2 (Ryzen x 3xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.

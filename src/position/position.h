@@ -424,7 +424,7 @@ namespace stormphrax
 
 			return type != MoveType::Castling
 				&& (type == MoveType::EnPassant
-					|| move.target() == PieceType::Queen
+					|| move.promo() == PieceType::Queen
 					|| boards().pieceAt(move.dst()) != Piece::None);
 		}
 
@@ -441,7 +441,7 @@ namespace stormphrax
 			else
 			{
 				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.target() == PieceType::Queen, captured};
+				return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
 			}
 		}
 
@@ -507,7 +507,7 @@ namespace stormphrax
 		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, PieceType target, eval::NnueState *nnueState) -> Piece;
+		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueState *nnueState) -> Piece;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
 		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>

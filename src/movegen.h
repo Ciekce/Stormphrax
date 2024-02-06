@@ -316,7 +316,7 @@ namespace stormphrax
 			// knight promos first, rook then bishop promos last
 			//TODO capture promos first
 			if (move.move.type() == MoveType::Promotion)
-				move.score += PromoScores[move.move.targetIdx()] * PromoMultiplier;
+				move.score += PromoScores[move.move.promoIdx()] * PromoMultiplier;
 		}
 
 		inline auto scoreNoisy(i32 idx)
@@ -339,11 +339,11 @@ namespace stormphrax
 			if (captured != Piece::None)
 				move.score += Mvv[static_cast<i32>(pieceType(captured))];
 
-			if ((captured != Piece::None || move.move.target() == PieceType::Queen)
+			if ((captured != Piece::None || move.move.promo() == PieceType::Queen)
 				&& see::see(m_pos, move.move))
 				move.score += GoodNoisyBonus;
 			else if (move.move.type() == MoveType::Promotion)
-				move.score += PromoScores[move.move.targetIdx()] * PromoMultiplier;
+				move.score += PromoScores[move.move.promoIdx()] * PromoMultiplier;
 		}
 
 		const Position &m_pos;

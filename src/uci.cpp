@@ -846,7 +846,7 @@ namespace stormphrax
 			{
 				str << squareToString(move.dst());
 				if (type == MoveType::Promotion)
-					str << pieceTypeToChar(move.target());
+					str << pieceTypeToChar(move.promo());
 			}
 			else
 			{
