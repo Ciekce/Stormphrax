@@ -705,14 +705,18 @@ namespace stormphrax::search
 			return true;
 		}();
 
+		const auto threats = pos.threats();
+
 		if (!pvNode && !inCheck && !stack.excluded)
 		{
+			const auto ourThreatened = threats & boards.occupancy(us);
+
 			// Reverse futility pruning (RFP)
 			// If static eval is above beta by some depth-dependent
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta
-					+ rfpMargin() * depth / (improving ? 2 : 1)
+					+ rfpMargin() * depth / ((improving && ourThreatened.empty()) ? 2 : 1)
 					+ thread.stack[ply - 1].history / rfpHistoryMargin())
 				return (stack.eval + beta) / 2;
 
@@ -778,8 +782,6 @@ namespace stormphrax::search
 		const auto minLmrMoves = pvNode
 			? lmrMinMovesPv()
 			: lmrMinMovesNonPv();
-
-		const auto threats = pos.threats();
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
