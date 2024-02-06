@@ -136,7 +136,7 @@ namespace stormphrax::search
 	class Searcher
 	{
 	public:
-		explicit Searcher(std::optional<usize> hashSize = {});
+		explicit Searcher(std::optional<usize> ttSize = {});
 
 		~Searcher()
 		{
@@ -167,14 +167,14 @@ namespace stormphrax::search
 
 		auto setThreads(u32 threads) -> void;
 
-		inline auto clearHash()
+		inline auto clearTt()
 		{
-			m_table.clear();
+			m_ttable.clear();
 		}
 
-		inline auto setHashSize(usize size)
+		inline auto setTtSize(usize size)
 		{
-			m_table.resize(size);
+			m_ttable.resize(size);
 		}
 
 		inline auto quit() -> void
@@ -186,7 +186,7 @@ namespace stormphrax::search
 		}
 
 	private:
-		TTable m_table{};
+		TTable m_ttable{};
 
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};

@@ -189,8 +189,8 @@ namespace stormphrax
 #endif
 			std::cout << "id author " << Author << '\n';
 
-			std::cout << "option name Hash type spin default " << DefaultHashSize
-				<< " min " << HashSizeRange.min() << " max " << HashSizeRange.max() << '\n';
+			std::cout << "option name Hash type spin default " << DefaultTtSize
+			          << " min " << TtSizeRange.min() << " max " << TtSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
 			std::cout << "option name Threads type spin default " << search::DefaultThreadCount
 				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
@@ -508,8 +508,8 @@ namespace stormphrax
 				{
 					if (!valueEmpty)
 					{
-						if (const auto newHashSize = util::tryParseSize(valueStr))
-							m_searcher.setHashSize(HashSizeRange.clamp(*newHashSize));
+						if (const auto newTtSize = util::tryParseSize(valueStr))
+							m_searcher.setTtSize(TtSizeRange.clamp(*newTtSize));
 					}
 				}
 				else if (nameStr == "clear hash")
@@ -517,7 +517,7 @@ namespace stormphrax
 					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
 
-					m_searcher.clearHash();
+					m_searcher.clearTt();
 				}
 				else if (nameStr == "threads")
 				{
@@ -750,7 +750,7 @@ namespace stormphrax
 			}
 
 			i32 depth = bench::DefaultBenchDepth;
-			usize hash = 16;
+			usize ttSize = 16;
 
 			if (tokens.size() > 1)
 			{
@@ -779,17 +779,17 @@ namespace stormphrax
 
 			if (tokens.size() > 3)
 			{
-				if (const auto newHash = util::tryParseSize(tokens[3]))
-					hash = static_cast<i32>(*newHash);
+				if (const auto newTtSize = util::tryParseSize(tokens[3]))
+					ttSize = static_cast<i32>(*newTtSize);
 				else
 				{
-					std::cout << "info string invalid hash " << tokens[3] << std::endl;
+					std::cout << "info string invalid tt size " << tokens[3] << std::endl;
 					return;
 				}
 			}
 
-			m_searcher.setHashSize(hash);
-			std::cout << "info string set hash size to " << hash << std::endl;
+			m_searcher.setTtSize(ttSize);
+			std::cout << "info string set tt size to " << ttSize << std::endl;
 
 			if (depth == 0)
 				depth = 1;

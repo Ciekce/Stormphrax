@@ -47,7 +47,7 @@ option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture,
 
 set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h
 	src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h
-	src/move.h src/hash.h src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h
+	src/move.h src/keys.h src/position/position.h src/position/position.cpp src/search.h src/search.cpp src/movegen.h
 	src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h src/util/timer.cpp src/pretty.h
 	src/pretty.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h
 	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
@@ -56,8 +56,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/3rdparty/fathom/tbprobe.h src/3rdparty/fathom/tbprobe.cpp src/datagen.h src/datagen.cpp src/util/u4array.h
 	src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h src/cuckoo.h src/cuckoo.cpp
 	src/eval/nnue/network.h src/eval/nnue/layers.h src/eval/nnue/activation.h src/eval/nnue/output.h
-	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h
-	src/eval/nnue/features.h
+	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h src/eval/nnue/features.h
 )
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)

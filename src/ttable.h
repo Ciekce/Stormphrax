@@ -30,8 +30,8 @@
 
 namespace stormphrax
 {
-	constexpr usize DefaultHashSize = 64;
-	constexpr util::Range<usize> HashSizeRange{1, 131072};
+	constexpr usize DefaultTtSize = 64;
+	constexpr util::Range<usize> TtSizeRange{1, 131072};
 
 	enum class EntryType : u8
 	{
@@ -64,7 +64,7 @@ namespace stormphrax
 	class TTable
 	{
 	public:
-		explicit TTable(usize size = DefaultHashSize);
+		explicit TTable(usize size = DefaultTtSize);
 		~TTable() = default;
 
 		auto resize(usize size) -> void;

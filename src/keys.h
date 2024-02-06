@@ -25,7 +25,7 @@
 #include "core.h"
 #include "util/rng.h"
 
-namespace stormphrax::hash
+namespace stormphrax::keys
 {
 	namespace sizes
 	{
@@ -45,20 +45,20 @@ namespace stormphrax::hash
 		constexpr auto EnPassant = Castling + sizes::Castling;
 	}
 
-	constexpr auto Hashes = []
+	constexpr auto Keys = []
 	{
 		constexpr auto Seed = U64(0xD06C659954EC904A);
 
-		std::array<u64, sizes::Total> hashes{};
+		std::array<u64, sizes::Total> keys{};
 
 		util::rng::Jsf64Rng rng{Seed};
 
-		for (auto &hash : hashes)
+		for (auto &key : keys)
 		{
-			hash = rng.nextU64();
+			key = rng.nextU64();
 		}
 
-		return hashes;
+		return keys;
 	}();
 
 	inline auto pieceSquare(Piece piece, Square square) -> u64
@@ -66,13 +66,13 @@ namespace stormphrax::hash
 		if (piece == Piece::None || square == Square::None)
 			return 0;
 
-		return Hashes[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+		return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
 	}
 
 	// for flipping
 	inline auto color()
 	{
-		return Hashes[offsets::Color];
+		return Keys[offsets::Color];
 	}
 
 	inline auto color(Color c)
@@ -98,12 +98,12 @@ namespace stormphrax::hash
 		if (castlingRooks. longSquares.white != Square::None)
 			flags |= WhiteLong;
 
-		return Hashes[offsets::Castling + flags];
+		return Keys[offsets::Castling + flags];
 	}
 
 	inline auto enPassant(u32 file)
 	{
-		return Hashes[offsets::EnPassant + file];
+		return Keys[offsets::EnPassant + file];
 	}
 
 	inline auto enPassant(Square square) -> u64
@@ -111,6 +111,6 @@ namespace stormphrax::hash
 		if (square == Square::None)
 			return 0;
 
-		return Hashes[offsets::EnPassant + squareFile(square)];
+		return Keys[offsets::EnPassant + squareFile(square)];
 	}
 }

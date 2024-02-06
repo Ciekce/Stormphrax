@@ -174,7 +174,7 @@ namespace stormphrax
 	Position::Position()
 	{
 		m_states.reserve(256);
-		m_hashes.reserve(512);
+		m_keys.reserve(512);
 
 		m_states.push_back({});
 	}
@@ -182,7 +182,7 @@ namespace stormphrax
 	auto Position::resetToStarting() -> void
 	{
 		m_states.resize(1);
-		m_hashes.clear();
+		m_keys.clear();
 
 		auto &state = currState();
 		state = BoardState{};
@@ -518,7 +518,7 @@ namespace stormphrax
 		}
 
 		m_states.resize(1);
-		m_hashes.clear();
+		m_keys.clear();
 
 		m_blackToMove = newBlackToMove;
 		m_fullmove = newFullmove;
@@ -541,7 +541,7 @@ namespace stormphrax
 		}
 
 		m_states.resize(1);
-		m_hashes.clear();
+		m_keys.clear();
 
 		auto &state = currState();
 		state = BoardState{};
@@ -595,7 +595,7 @@ namespace stormphrax
 		}
 
 		m_states.resize(1);
-		m_hashes.clear();
+		m_keys.clear();
 
 		auto &state = currState();
 		state = BoardState{};
@@ -669,17 +669,17 @@ namespace stormphrax
 			m_states.push_back(prevState);
 		}
 
-		m_hashes.push_back(prevState.key);
+		m_keys.push_back(prevState.key);
 
 		auto &state = currState();
 
 		m_blackToMove = !m_blackToMove;
 
-		state.key ^= hash::color();
+		state.key ^= keys::color();
 
 		if (state.enPassant != Square::None)
 		{
-			state.key ^= hash::enPassant(state.enPassant);
+			state.key ^= keys::enPassant(state.enPassant);
 			state.enPassant = Square::None;
 		}
 
@@ -764,12 +764,12 @@ namespace stormphrax
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
 			state.enPassant = toSquare(5, move.srcFile());
-			state.key ^= hash::enPassant(state.enPassant);
+			state.key ^= keys::enPassant(state.enPassant);
 		}
 		else if (moving == Piece::WhitePawn && move.srcRank() == 1 && move.dstRank() == 3)
 		{
 			state.enPassant = toSquare(2, move.srcFile());
-			state.key ^= hash::enPassant(state.enPassant);
+			state.key ^= keys::enPassant(state.enPassant);
 		}
 
 		if (captured == Piece::None
@@ -800,8 +800,8 @@ namespace stormphrax
 
 		if (newCastlingRooks != state.castlingRooks)
 		{
-			state.key ^= hash::castling(newCastlingRooks);
-			state.key ^= hash::castling(state.castlingRooks);
+			state.key ^= keys::castling(newCastlingRooks);
+			state.key ^= keys::castling(state.castlingRooks);
 
 			state.castlingRooks = newCastlingRooks;
 		}
@@ -834,7 +834,7 @@ namespace stormphrax
 			nnueState->pop();
 
 		m_states.pop_back();
-		m_hashes.pop_back();
+		m_keys.pop_back();
 
 		m_blackToMove = !m_blackToMove;
 
@@ -1097,14 +1097,14 @@ namespace stormphrax
 	{
 		const auto &state = currState();
 
-		const auto end = std::min<i32>(state.halfmove, static_cast<i32>(m_hashes.size()));
+		const auto end = std::min<i32>(state.halfmove, static_cast<i32>(m_keys.size()));
 
 		if (end < 3)
 			return false;
 
 		const auto S = [this](i32 d)
 		{
-			return m_hashes[m_hashes.size() - d];
+			return m_keys[m_keys.size() - d];
 		};
 
 		const auto occ = state.boards.occupancy();
@@ -1235,8 +1235,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(piece, square);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(piece, square);
+			state.key ^= key;
 		}
 	}
 
@@ -1260,8 +1260,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(piece, square);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(piece, square);
+			state.key ^= key;
 		}
 	}
 
@@ -1310,8 +1310,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(piece, src) ^ keys::pieceSquare(piece, dst);
+			state.key ^= key;
 		}
 	}
 
@@ -1341,8 +1341,8 @@ namespace stormphrax
 
 			if constexpr (UpdateKey)
 			{
-				const auto hash = hash::pieceSquare(captured, dst);
-				state.key ^= hash;
+				const auto key = keys::pieceSquare(captured, dst);
+				state.key ^= key;
 			}
 		}
 
@@ -1387,8 +1387,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(piece, src) ^ hash::pieceSquare(piece, dst);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(piece, src) ^ keys::pieceSquare(piece, dst);
+			state.key ^= key;
 		}
 
 		return captured;
@@ -1427,7 +1427,7 @@ namespace stormphrax
 				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
 
 			if constexpr (UpdateKey)
-				state.key ^= hash::pieceSquare(captured, dst);
+				state.key ^= keys::pieceSquare(captured, dst);
 		}
 
 		state.boards.moveAndChangePiece(src, dst, pawn, target);
@@ -1443,7 +1443,7 @@ namespace stormphrax
 			}
 
 			if constexpr (UpdateKey)
-				state.key ^= hash::pieceSquare(pawn, src) ^ hash::pieceSquare(coloredTarget, dst);
+				state.key ^= keys::pieceSquare(pawn, src) ^ keys::pieceSquare(coloredTarget, dst);
 		}
 
 		return captured;
@@ -1544,8 +1544,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(pawn, src) ^ hash::pieceSquare(pawn, dst);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(pawn, src) ^ keys::pieceSquare(pawn, dst);
+			state.key ^= key;
 		}
 
 		auto rank = squareRank(dst);
@@ -1563,8 +1563,8 @@ namespace stormphrax
 
 		if constexpr (UpdateKey)
 		{
-			const auto hash = hash::pieceSquare(enemyPawn, captureSquare);
-			state.key ^= hash;
+			const auto key = keys::pieceSquare(enemyPawn, captureSquare);
+			state.key ^= key;
 		}
 
 		return enemyPawn;
@@ -1587,8 +1587,8 @@ namespace stormphrax
 					if (pieceType(piece) == PieceType::King)
 						state.king(pieceColor(piece)) = square;
 
-					const auto hash = hash::pieceSquare(piece, toSquare(rank, file));
-					state.key ^= hash;
+					const auto key = keys::pieceSquare(piece, toSquare(rank, file));
+					state.key ^= key;
 				}
 			}
 		}
@@ -1615,11 +1615,11 @@ namespace stormphrax
 			}
 		}
 
-		const auto colorHash = hash::color(toMove());
-		state.key ^= colorHash;
+		const auto colorKey = keys::color(toMove());
+		state.key ^= colorKey;
 
-		state.key ^= hash::castling(state.castlingRooks);
-		state.key ^= hash::enPassant(state.enPassant);
+		state.key ^= keys::castling(state.castlingRooks);
+		state.key ^= keys::enPassant(state.enPassant);
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();

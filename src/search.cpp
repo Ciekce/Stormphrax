@@ -144,8 +144,8 @@ namespace stormphrax::search
 		}
 	}
 
-	Searcher::Searcher(std::optional<usize> hashSize)
-		: m_table{hashSize ? *hashSize : DefaultHashSize}
+	Searcher::Searcher(std::optional<usize> ttSize)
+		: m_ttable{ttSize ? *ttSize : DefaultTtSize}
 	{
 		auto &thread = m_threads.emplace_back();
 
@@ -158,7 +158,7 @@ namespace stormphrax::search
 
 	auto Searcher::newGame() -> void
 	{
-		m_table.clear();
+		m_ttable.clear();
 
 		for (auto &thread : m_threads)
 		{
@@ -264,7 +264,7 @@ namespace stormphrax::search
 
 		const auto score = searchRoot(thread, false);
 
-		m_table.age();
+		m_ttable.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -score : score;
 		return {whitePovScore, wdl::normalizeScoreMove32(whitePovScore)};
@@ -498,7 +498,7 @@ namespace stormphrax::search
 
 				m_searching.store(false, std::memory_order::relaxed);
 
-				m_table.age();
+				m_ttable.age();
 
 				m_searchMutex.unlock();
 			}
@@ -576,7 +576,7 @@ namespace stormphrax::search
 
 		if (!stack.excluded)
 		{
-			if (m_table.probe(ttEntry, pos.key(), depth, ply, alpha, beta) && !pvNode)
+			if (m_ttable.probe(ttEntry, pos.key(), depth, ply, alpha, beta) && !pvNode)
 				return ttEntry.score;
 			else if (ttEntry.move && pos.isPseudolegal(ttEntry.move))
 				ttMove = ttEntry.move;
@@ -656,7 +656,7 @@ namespace stormphrax::search
 					|| tbEntryType == EntryType::Beta  && tbScore >= beta)
 				{
 					// Throw the TB score into the TT
-					m_table.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
+					m_ttable.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
 					return tbScore;
 				}
 
@@ -733,7 +733,7 @@ namespace stormphrax::search
 			{
 				// prefetch as early as possible
 				// a nullmove only changes the stm
-				m_table.prefetch(pos.key() ^ hash::color());
+				m_ttable.prefetch(pos.key() ^ keys::color());
 
 				const auto R = std::min(depth,
 					nmpReductionBase()
@@ -902,7 +902,7 @@ namespace stormphrax::search
 			}
 
 			// prefetch as early as possible
-			m_table.prefetch(pos.roughKeyAfter(move));
+			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			const auto movingPiece = boards.pieceAt(move.src());
 			assert(movingPiece != Piece::None);
@@ -1062,7 +1062,7 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!stack.excluded && !shouldStop(thread.search, false, false))
-			m_table.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
 
 		return bestScore;
 	}
@@ -1091,7 +1091,7 @@ namespace stormphrax::search
 
 		ProbedTTableEntry ttEntry{};
 
-		if (m_table.probe(ttEntry, pos.key(), 0, ply, alpha, beta))
+		if (m_ttable.probe(ttEntry, pos.key(), 0, ply, alpha, beta))
 			return ttEntry.score;
 
 		const auto eval = [&]
@@ -1137,7 +1137,7 @@ namespace stormphrax::search
 				continue;
 
 			// prefetch as early as possible
-			m_table.prefetch(pos.roughKeyAfter(move.move));
+			m_ttable.prefetch(pos.roughKeyAfter(move.move));
 
 			const auto guard = pos.applyMove(move.move, &thread.nnueState);
 
@@ -1166,7 +1166,7 @@ namespace stormphrax::search
 		}
 
 		if (!shouldStop(thread.search, false, false))
-			m_table.put(pos.key(), bestScore, best, 0, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, best, 0, ply, entryType);
 
 		return bestScore;
 	}
@@ -1235,7 +1235,7 @@ namespace stormphrax::search
 			}
 		}
 
-		std::cout << " hashfull " << m_table.full();
+		std::cout << " hashfull " << m_ttable.full();
 
 		if (g_opts.syzygyEnabled)
 		{

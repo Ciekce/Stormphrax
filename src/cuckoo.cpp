@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "hash.h"
+#include "keys.h"
 #include "attacks/attacks.h"
 
 namespace stormphrax::cuckoo
@@ -55,9 +55,9 @@ namespace stormphrax::cuckoo
 						continue;
 
 					auto move = Move::standard(square0, square1);
-					auto key = hash::pieceSquare(piece, square0)
-						^ hash::pieceSquare(piece, square1)
-						^ hash::color();
+					auto key = keys::pieceSquare(piece, square0)
+						^ keys::pieceSquare(piece, square1)
+						^ keys::color();
 
 					u32 slot = h1(key);
 

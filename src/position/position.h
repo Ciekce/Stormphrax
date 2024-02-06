@@ -32,7 +32,7 @@
 #include "../ttable.h"
 #include "../eval/nnue.h"
 #include "../rays.h"
-#include "../hash.h"
+#include "../keys.h"
 
 namespace stormphrax
 {
@@ -181,13 +181,13 @@ namespace stormphrax
 
 			auto key = state.key;
 
-			key ^= hash::pieceSquare(moving, move.src());
-			key ^= hash::pieceSquare(moving, move.dst());
+			key ^= keys::pieceSquare(moving, move.src());
+			key ^= keys::pieceSquare(moving, move.dst());
 
 			if (captured != Piece::None)
-				key ^= hash::pieceSquare(captured, move.dst());
+				key ^= keys::pieceSquare(captured, move.dst());
 
-			key ^= hash::color();
+			key ^= keys::color();
 
 			return key;
 		}
@@ -364,13 +364,13 @@ namespace stormphrax
 				return true;
 
 			const auto currKey = currState().key;
-			const auto limit = std::max(0, static_cast<i32>(m_hashes.size()) - halfmove - 2);
+			const auto limit = std::max(0, static_cast<i32>(m_keys.size()) - halfmove - 2);
 
 			i32 repetitionsLeft = threefold ? 2 : 1;
 
-			for (auto i = static_cast<i32>(m_hashes.size()) - 4; i >= limit; i -= 2)
+			for (auto i = static_cast<i32>(m_keys.size()) - 4; i >= limit; i -= 2)
 			{
-				if (m_hashes[i] == currKey
+				if (m_keys[i] == currKey
 					&& --repetitionsLeft == 0)
 					return true;
 			}
@@ -562,7 +562,6 @@ namespace stormphrax
 			Bitboard threats{};
 
 			const auto occ = state.boards.occupancy();
-			const auto kinglessOcc = occ ^ state.boards.kings(us);
 
 			const auto queens = state.boards.queens(them);
 
@@ -602,7 +601,7 @@ namespace stormphrax
 		u32 m_fullmove{1};
 
 		std::vector<BoardState> m_states{};
-		std::vector<u64> m_hashes{};
+		std::vector<u64> m_keys{};
 	};
 
 	template <bool UpdateNnue>
