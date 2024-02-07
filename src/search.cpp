@@ -896,7 +896,7 @@ namespace stormphrax::search
 				else if (score >= beta)
 					return beta;
 				else if (ttEntry.score >= beta)
-					extension = -2;
+					extension = -2 - !pvNode;
 				else if (cutnode)
 					extension = -1;
 			}
