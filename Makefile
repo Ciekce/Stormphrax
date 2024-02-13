@@ -22,6 +22,7 @@ CXX := clang++
 CXXFLAGS := -std=c++20 -O3 -flto -DNDEBUG -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
+CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
 CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=x86-64-v4 -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=haswell
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
@@ -127,6 +128,9 @@ $(EXE): $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,NATIVE)
 
 native: $(EXE)
+
+tunable: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+	$(call build,TUNABLE)
 
 avx512: $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX512)

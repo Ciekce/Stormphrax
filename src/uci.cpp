@@ -860,37 +860,58 @@ namespace stormphrax
 		}
 
 #if SP_EXTERNAL_TUNE
+		namespace
+		{
+			auto printParams(std::span<const std::string> params,
+				const std::function<void(const tunable::TunableParam &)> &printParam)
+			{
+				if (std::ranges::find(params, "<all>") != params.end())
+				{
+					for (const auto &[_, param] : tunableParams())
+					{
+						printParam(param);
+					}
+
+					return;
+				}
+
+				for (auto paramName : params)
+				{
+					std::transform(paramName.begin(), paramName.end(), paramName.begin(),
+						[](auto c) { return std::tolower(c); });
+
+					if (const auto *param = lookupTunableParam(paramName))
+						printParam(*param);
+					else
+					{
+						std::cerr << "unknown parameter " << paramName << std::endl;
+						return;
+					}
+				}
+			}
+		}
+
 		auto printWfTuningParams(std::span<const std::string> params) -> void
 		{
 			std::cout << "{\n";
 
 			bool first = true;
-
-			for (auto paramName : params)
+			const auto printParam = [&first](const auto &param)
 			{
-				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
-					[](auto c) { return std::tolower(c); });
+				if (!first)
+					std::cout << ",\n";
 
-				if (const auto *param = lookupTunableParam(paramName))
-				{
-					if (!first)
-						std::cout << ",\n";
+				std::cout << "  \"" << param.name << "\": {\n";
+				std::cout << "    \"value\": " << param.value << ",\n";
+				std::cout << "    \"min_value\": " << param.range.min() << ",\n";
+				std::cout << "    \"max_value\": " << param.range.max() << ",\n";
+				std::cout << "    \"step\": " << param.step << "\n";
+				std::cout << "  }";
 
-					std::cout << "  \"" << param->name << "\": {\n";
-					std::cout << "    \"value\": " << param->value << ",\n";
-					std::cout << "    \"min_value\": " << param->range.min() << ",\n";
-					std::cout << "    \"max_value\": " << param->range.max() << ",\n";
-					std::cout << "    \"step\": " << param->step << "\n";
-					std::cout << "  }";
+				first = false;
+			};
 
-					first = false;
-				}
-				else
-				{
-					std::cerr << "unknown parameter " << paramName << std::endl;
-					return;
-				}
-			}
+			printParams(params, printParam);
 
 			std::cout << "\n}" << std::endl;
 		}
@@ -898,58 +919,37 @@ namespace stormphrax
 		auto printCttTuningParams(std::span<const std::string> params) -> void
 		{
 			bool first = true;
-
-			for (auto paramName : params)
+			const auto printParam = [&first](const auto &param)
 			{
-				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
-					[](auto c) { return std::tolower(c); });
+				if (!first)
+					std::cout << ",\n";
 
-				if (const auto *param = lookupTunableParam(paramName))
-				{
-					if (!first)
-						std::cout << ",\n";
-
-					std::cout << "\""
-						<< param->name << "\": \"Integer("
-						<< param->range.min() << ", "
-						<< param->range.max() << ")\"";
-
-					first = false;
-				}
-				else
-				{
-					std::cerr << "unknown parameter " << paramName << std::endl;
-					return;
-				}
+				std::cout << "\""
+					<< param.name << "\": \"Integer("
+					<< param.range.min() << ", "
+					<< param.range.max() << ")\"";
 
 				first = false;
-			}
+			};
+
+			printParams(params, printParam);
 
 			std::cout << std::endl;
 		}
 
 		auto printObTuningParams(std::span<const std::string> params) -> void
 		{
-			for (auto paramName : params)
+			const auto printParam = [](const auto &param)
 			{
-				std::transform(paramName.begin(), paramName.end(), paramName.begin(),
-					[](auto c) { return std::tolower(c); });
+				std::cout << param.name << ", int, "
+					<< param.value << ".0, "
+					<< param.range.min() << ".0, "
+					<< param.range.max() << ".0, "
+					<< param.step << ".0, 0.002"
+					<< std::endl;
+			};
 
-				if (const auto *param = lookupTunableParam(paramName))
-				{
-					std::cout << param->name << ", int, "
-						<< param->value << ".0, "
-						<< param->range.min() << ".0, "
-						<< param->range.max() << ".0, "
-						<< param->step << ".0, 0.002"
-						<< std::endl;
-				}
-				else
-				{
-					std::cerr << "unknown parameter " << paramName << std::endl;
-					return;
-				}
-			}
+			printParams(params, printParam);
 		}
 #endif // SP_EXTERNAL_TUNE
 

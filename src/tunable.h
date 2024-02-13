@@ -110,7 +110,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 2, 0, 5, 1)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 7, 4, 12, 1)
-	SP_TUNABLE_PARAM(rfpMargin, 78, 25, 150, 5)
+	SP_TUNABLE_PARAM(rfpMarginNonImproving, 78, 25, 150, 5)
+	SP_TUNABLE_PARAM(rfpMarginImproving, 39, 25, 150, 5)
 	SP_TUNABLE_PARAM(rfpHistoryMargin, 267, 64, 1024, 64)
 
 	SP_TUNABLE_PARAM(maxSeePruningDepth, 10, 4, 15, 1)
@@ -137,9 +138,14 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmpMinMovesBase, 3, 2, 5, 1)
 
 	SP_TUNABLE_PARAM(maxHistory, 16375, 8192, 32768, 256)
-	SP_TUNABLE_PARAM(maxHistoryAdjustment, 1381, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyDepthScale, 365, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyOffset, 427, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(maxHistoryBonus, 1381, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyBonusDepthScale, 365, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyBonusOffset, 427, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(maxHistoryPenalty, 1381, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 365, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyPenaltyOffset, 427, 128, 768, 64)
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 8336, 4096, 16384, 512)
 

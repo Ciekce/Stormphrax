@@ -712,7 +712,7 @@ namespace stormphrax::search
 			// margin, assume that this is a cutnode and just prune it
 			if (depth <= maxRfpDepth()
 				&& stack.eval >= beta
-					+ rfpMargin() * depth / (improving ? 2 : 1)
+					+ depth * (improving ? rfpMarginImproving() : rfpMarginNonImproving())
 					+ thread.stack[ply - 1].history / rfpHistoryMargin())
 				return (stack.eval + beta) / 2;
 
@@ -1004,9 +1004,11 @@ namespace stormphrax::search
 				{
 					if (score >= beta)
 					{
+						const auto historyDepth = depth + (stack.staticEval <= alpha);
+
 						// Update history on fail-highs
-						const auto bonus = historyAdjustment(depth, alpha, stack.staticEval);
-						const auto penalty = static_cast<HistoryScore>(-bonus);
+						const auto bonus = historyBonus(historyDepth);
+						const auto penalty = historyPenalty(historyDepth);
 
 						const auto currMove = thread.prevMoves[ply];
 

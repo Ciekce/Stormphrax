@@ -33,11 +33,20 @@ namespace stormphrax
 {
 	using HistoryScore = i16;
 
-	inline auto historyAdjustment(i32 depth, Score alpha, Score staticEval) -> HistoryScore
+	inline auto historyBonus(i32 depth) -> HistoryScore
 	{
-		depth += staticEval <= alpha;
-		return static_cast<HistoryScore>(std::min(depth * tunable::historyDepthScale() - tunable::historyOffset(),
-			tunable::maxHistoryAdjustment()));
+		return static_cast<HistoryScore>(std::min(
+			depth * tunable::historyBonusDepthScale() - tunable::historyBonusOffset(),
+			tunable::maxHistoryBonus()
+		));
+	}
+
+	inline auto historyPenalty(i32 depth) -> HistoryScore
+	{
+		return static_cast<HistoryScore>(-std::min(
+			depth * tunable::historyPenaltyDepthScale() - tunable::historyPenaltyOffset(),
+			tunable::maxHistoryPenalty()
+		));
 	}
 
 	inline auto updateHistoryScore(HistoryScore &score, HistoryScore adjustment)

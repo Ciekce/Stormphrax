@@ -275,6 +275,7 @@ namespace stormphrax
 				scoreNoisy(i);
 			}
 
+			//FIXME this does not sort histories, so they're broken
 			std::stable_sort(m_data.moves.begin() + m_idx, m_data.moves.end(), [](const auto &a, const auto &b)
 			{
 				return a.score > b.score;
