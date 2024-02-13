@@ -27,7 +27,7 @@
 #include "util/range.h"
 
 #ifndef SP_EXTERNAL_TUNE
-	#define SP_EXTERNAL_TUNE 0
+	#define SP_EXTERNAL_TUNE 1
 #endif
 
 namespace stormphrax::tunable
@@ -50,12 +50,12 @@ namespace stormphrax::tunable
 		i32 defaultValue;
 		i32 value;
 		util::Range<i32> range;
-		i32 step;
+		f64 step;
 		std::function<void()> callback;
 	};
 
 	auto addTunableParam(const std::string &name, i32 value,
-		i32 min, i32 max, i32 step, std::function<void()> callback) -> TunableParam &;
+		i32 min, i32 max, f64 step, std::function<void()> callback) -> TunableParam &;
 
 	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
 	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
@@ -94,9 +94,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(maxAspWindow, 365, 100, 1000, 100)
 	SP_TUNABLE_PARAM(aspWideningFactor, 8, 1, 24, 1)
 
-	SP_TUNABLE_PARAM(minNmpDepth, 3, 3, 8, 1)
+	SP_TUNABLE_PARAM(minNmpDepth, 3, 3, 8, 0.5)
 
-	SP_TUNABLE_PARAM(nmpReductionBase, 3, 2, 5, 1)
+	SP_TUNABLE_PARAM(nmpReductionBase, 3, 2, 5, 0.5)
 	SP_TUNABLE_PARAM(nmpReductionDepthScale, 3, 1, 8, 1)
 	SP_TUNABLE_PARAM(nmpReductionEvalScale, 184, 50, 300, 25)
 	SP_TUNABLE_PARAM(maxNmpEvalReduction, 4, 2, 5, 1)
@@ -109,7 +109,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmrMinMovesPv, 3, 0, 5, 1)
 	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 2, 0, 5, 1)
 
-	SP_TUNABLE_PARAM(maxRfpDepth, 7, 4, 12, 1)
+	SP_TUNABLE_PARAM(maxRfpDepth, 7, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(rfpMarginNonImproving, 78, 25, 150, 5)
 	SP_TUNABLE_PARAM(rfpMarginImproving, 39, 25, 150, 5)
 	SP_TUNABLE_PARAM(rfpHistoryMargin, 267, 64, 1024, 64)
@@ -119,7 +119,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(quietSeeThreshold, -51, -120, -20, 10)
 	SP_TUNABLE_PARAM(noisySeeThreshold, -89, -120, -20, 10)
 
-	SP_TUNABLE_PARAM(minSingularityDepth, 8, 4, 12, 1)
+	SP_TUNABLE_PARAM(minSingularityDepth, 8, 4, 12, 0.5)
 
 	SP_TUNABLE_PARAM(singularityDepthMargin, 3, 1, 4, 1)
 	SP_TUNABLE_PARAM(singularityDepthScale, 12, 8, 32, 2)
@@ -127,12 +127,12 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(doubleExtensionMargin, 14, 2, 30, 2)
 	SP_TUNABLE_PARAM(doubleExtensionLimit, 10, 4, 16, 1)
 
-	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 1)
+	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 0.5)
 
 	SP_TUNABLE_PARAM(fpMargin, 255, 120, 350, 15)
 	SP_TUNABLE_PARAM(fpScale, 55, 40, 80, 5)
 
-	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 1)
+	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxLmpDepth, 9, 4, 12, 1)
 	SP_TUNABLE_PARAM(lmpMinMovesBase, 3, 2, 5, 1)

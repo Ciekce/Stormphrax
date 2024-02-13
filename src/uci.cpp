@@ -810,7 +810,7 @@ namespace stormphrax
 	namespace tunable
 	{
 		auto addTunableParam(const std::string &name, i32 value,
-			i32 min, i32 max, i32 step, std::function<void()> callback) -> TunableParam &
+			i32 min, i32 max, f64 step, std::function<void()> callback) -> TunableParam &
 		{
 			auto lowerName = name;
 			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
@@ -945,7 +945,7 @@ namespace stormphrax
 					<< param.value << ".0, "
 					<< param.range.min() << ".0, "
 					<< param.range.max() << ".0, "
-					<< param.step << ".0, 0.002"
+					<< param.step << ", 0.002"
 					<< std::endl;
 			};
 
