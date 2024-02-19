@@ -75,85 +75,85 @@ namespace stormphrax::tunable
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 #endif
 
-	SP_TUNABLE_PARAM(defaultMovesToGo, 21, 12, 40, 1)
-	SP_TUNABLE_PARAM(incrementScale, 75, 50, 100, 5)
-	SP_TUNABLE_PARAM(softTimeScale, 65, 50, 100, 5)
-	SP_TUNABLE_PARAM(hardTimeScale, 51, 20, 100, 5)
+	SP_TUNABLE_PARAM(defaultMovesToGo, 22, 12, 40, 1)
+	SP_TUNABLE_PARAM(incrementScale, 77, 50, 100, 5)
+	SP_TUNABLE_PARAM(softTimeScale, 69, 50, 100, 5)
+	SP_TUNABLE_PARAM(hardTimeScale, 42, 20, 100, 5)
 
-	SP_TUNABLE_PARAM(nodeTimeBase, 161, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScale, 144, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScaleMin, 96, 1, 1000, 100)
+	SP_TUNABLE_PARAM(nodeTimeBase, 162, 100, 250, 10)
+	SP_TUNABLE_PARAM(nodeTimeScale, 160, 100, 250, 10)
+	SP_TUNABLE_PARAM(nodeTimeScaleMin, 17, 1, 1000, 100)
 
-	SP_TUNABLE_PARAM(timeScaleMin, 16, 1, 1000, 100)
+	SP_TUNABLE_PARAM(timeScaleMin, 19, 1, 1000, 100)
 
 	SP_TUNABLE_PARAM(minAspDepth, 7, 1, 10, 1)
 
 	SP_TUNABLE_PARAM(maxAspReduction, 3, 0, 5, 1)
 
 	SP_TUNABLE_PARAM(initialAspWindow, 10, 8, 50, 4)
-	SP_TUNABLE_PARAM(maxAspWindow, 365, 100, 1000, 100)
-	SP_TUNABLE_PARAM(aspWideningFactor, 8, 1, 24, 1)
+	SP_TUNABLE_PARAM(maxAspWindow, 492, 100, 1000, 100)
+	SP_TUNABLE_PARAM(aspWideningFactor, 6, 1, 24, 1)
 
 	SP_TUNABLE_PARAM(minNmpDepth, 3, 3, 8, 0.5)
 
-	SP_TUNABLE_PARAM(nmpReductionBase, 3, 2, 5, 0.5)
-	SP_TUNABLE_PARAM(nmpReductionDepthScale, 3, 1, 8, 1)
-	SP_TUNABLE_PARAM(nmpReductionEvalScale, 184, 50, 300, 25)
-	SP_TUNABLE_PARAM(maxNmpEvalReduction, 4, 2, 5, 1)
+	SP_TUNABLE_PARAM(nmpReductionBase, 5, 2, 5, 0.5)
+	SP_TUNABLE_PARAM(nmpReductionDepthScale, 4, 1, 8, 1)
+	SP_TUNABLE_PARAM(nmpReductionEvalScale, 206, 50, 300, 25)
+	SP_TUNABLE_PARAM(maxNmpEvalReduction, 3, 2, 5, 1)
 
 	SP_TUNABLE_PARAM(minNmpVerifDepth, 14, 6, 18, 1)
 	SP_TUNABLE_PARAM(nmpVerifDepthFactor, 12, 8, 14, 1)
 
-	SP_TUNABLE_PARAM(minLmrDepth, 3, 2, 5, 1)
+	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(lmrMinMovesPv, 3, 0, 5, 1)
-	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 2, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesPv, 1, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 1, 0, 5, 1)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 7, 4, 12, 0.5)
-	SP_TUNABLE_PARAM(rfpMarginNonImproving, 78, 25, 150, 5)
+	SP_TUNABLE_PARAM(rfpMarginNonImproving, 75, 25, 150, 5)
 	SP_TUNABLE_PARAM(rfpMarginImproving, 39, 25, 150, 5)
-	SP_TUNABLE_PARAM(rfpHistoryMargin, 267, 64, 1024, 64)
+	SP_TUNABLE_PARAM(rfpHistoryMargin, 331, 64, 1024, 64)
 
-	SP_TUNABLE_PARAM(maxSeePruningDepth, 10, 4, 15, 1)
+	SP_TUNABLE_PARAM(maxSeePruningDepth, 8, 4, 15, 1)
 
-	SP_TUNABLE_PARAM(quietSeeThreshold, -51, -120, -20, 10)
-	SP_TUNABLE_PARAM(noisySeeThreshold, -89, -120, -20, 10)
+	SP_TUNABLE_PARAM(quietSeeThreshold, -63, -120, -20, 10)
+	SP_TUNABLE_PARAM(noisySeeThreshold, -96, -120, -20, 10)
 
 	SP_TUNABLE_PARAM(minSingularityDepth, 8, 4, 12, 0.5)
 
-	SP_TUNABLE_PARAM(singularityDepthMargin, 3, 1, 4, 1)
+	SP_TUNABLE_PARAM(singularityDepthMargin, 4, 1, 4, 1)
 	SP_TUNABLE_PARAM(singularityDepthScale, 12, 8, 32, 2)
 
-	SP_TUNABLE_PARAM(doubleExtensionMargin, 14, 2, 30, 2)
-	SP_TUNABLE_PARAM(doubleExtensionLimit, 10, 4, 16, 1)
+	SP_TUNABLE_PARAM(doubleExtensionMargin, 13, 2, 30, 2)
+	SP_TUNABLE_PARAM(doubleExtensionLimit, 11, 4, 16, 1)
 
 	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 0.5)
 
-	SP_TUNABLE_PARAM(fpMargin, 255, 120, 350, 15)
-	SP_TUNABLE_PARAM(fpScale, 55, 40, 80, 5)
+	SP_TUNABLE_PARAM(fpMargin, 238, 120, 350, 15)
+	SP_TUNABLE_PARAM(fpScale, 64, 40, 80, 5)
 
-	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
+	SP_TUNABLE_PARAM(minIirDepth, 4, 3, 6, 0.5)
 
-	SP_TUNABLE_PARAM(maxLmpDepth, 9, 4, 12, 1)
-	SP_TUNABLE_PARAM(lmpMinMovesBase, 3, 2, 5, 1)
+	SP_TUNABLE_PARAM(maxLmpDepth, 10, 4, 12, 1)
+	SP_TUNABLE_PARAM(lmpMinMovesBase, 2, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(maxHistory, 16375, 8192, 32768, 256)
+	SP_TUNABLE_PARAM(maxHistory, 16182, 8192, 32768, 256)
 
-	SP_TUNABLE_PARAM(maxHistoryBonus, 1381, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyBonusDepthScale, 365, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyBonusOffset, 427, 128, 768, 64)
+	SP_TUNABLE_PARAM(maxHistoryBonus, 1915, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyBonusDepthScale, 279, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyBonusOffset, 494, 128, 768, 64)
 
-	SP_TUNABLE_PARAM(maxHistoryPenalty, 1381, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 365, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyPenaltyOffset, 427, 128, 768, 64)
+	SP_TUNABLE_PARAM(maxHistoryPenalty, 1044, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 397, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyPenaltyOffset, 264, 128, 768, 64)
 
-	SP_TUNABLE_PARAM(historyLmrDivisor, 8336, 4096, 16384, 512)
+	SP_TUNABLE_PARAM(historyLmrDivisor, 9038, 4096, 16384, 512)
 
-	SP_TUNABLE_PARAM(lmrDeeperBase, 64, 32, 96, 8)
-	SP_TUNABLE_PARAM(lmrDeeperScale, 8, 2, 12, 1)
+	SP_TUNABLE_PARAM(lmrDeeperBase, 62, 32, 96, 8)
+	SP_TUNABLE_PARAM(lmrDeeperScale, 9, 2, 12, 1)
 
-	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 74, 50, 120, 5, updateLmrTable)
-	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 242, 100, 300, 10, updateLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 78, 50, 120, 5, updateLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
 
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
