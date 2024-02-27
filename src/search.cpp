@@ -954,7 +954,7 @@ namespace stormphrax::search
 					}();
 
 					// std::clamp does not work here, because newDepth can be 0
-					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth);
+					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth + 1);
 
 					score = -search(thread, stack.pv, reduced,
 						ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
