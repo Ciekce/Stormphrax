@@ -953,8 +953,13 @@ namespace stormphrax::search
 						return lmr;
 					}();
 
+					if (reduction <= -2 && extension == 0)
+						++newDepth;
+
 					// std::clamp does not work here, because newDepth can be 0
-					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth + 1);
+					// essentially the idea is to do a depth 0 search if newDepth is
+					// already 0, but not allow LMR to drop it to 0 if it is higher
+					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth);
 
 					score = -search(thread, stack.pv, reduced,
 						ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
