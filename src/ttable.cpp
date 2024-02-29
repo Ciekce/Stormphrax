@@ -73,7 +73,7 @@ namespace stormphrax
 		clear();
 	}
 
-	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool
+	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void
 	{
 		const auto entry = loadEntry(index(key));
 
@@ -84,16 +84,8 @@ namespace stormphrax
 			dst.depth = entry.depth;
 			dst.move = entry.move;
 			dst.type = entry.type;
-
-			if (entry.depth >= depth
-				&& (entry.type == EntryType::Exact
-					|| entry.type == EntryType::Alpha && entry.score <= alpha
-					|| entry.type == EntryType::Beta  && entry.score >= beta))
-				return true;
 		}
 		else dst.type = EntryType::None;
-
-		return false;
 	}
 
 	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void

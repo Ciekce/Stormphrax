@@ -69,7 +69,7 @@ namespace stormphrax
 
 		auto resize(usize size) -> void;
 
-		auto probe(ProbedTTableEntry &dst, u64 key, i32 depth, i32 ply, Score alpha, Score beta) const -> bool;
+		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
 
 		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
 

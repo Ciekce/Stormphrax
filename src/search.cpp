@@ -576,9 +576,16 @@ namespace stormphrax::search
 
 		if (!stack.excluded)
 		{
-			if (m_ttable.probe(ttEntry, pos.key(), depth, ply, alpha, beta) && !pvNode)
+			m_ttable.probe(ttEntry, pos.key(), ply);
+
+			if (!pvNode
+				&& ttEntry.depth >= depth
+				&& (ttEntry.type == EntryType::Exact
+					|| ttEntry.type == EntryType::Alpha && ttEntry.score <= alpha
+					|| ttEntry.type == EntryType::Beta  && ttEntry.score >= beta))
 				return ttEntry.score;
-			else if (ttEntry.move && pos.isPseudolegal(ttEntry.move))
+
+			if (ttEntry.move && pos.isPseudolegal(ttEntry.move))
 				ttMove = ttEntry.move;
 
 			// Internal iterative reduction (IIR)
@@ -1092,8 +1099,11 @@ namespace stormphrax::search
 			thread.search.seldepth = ply;
 
 		ProbedTTableEntry ttEntry{};
+		m_ttable.probe(ttEntry, pos.key(), ply);
 
-		if (m_ttable.probe(ttEntry, pos.key(), 0, ply, alpha, beta))
+		if (ttEntry.type == EntryType::Exact
+			|| ttEntry.type == EntryType::Alpha && ttEntry.score <= alpha
+			|| ttEntry.type == EntryType::Beta  && ttEntry.score >= beta)
 			return ttEntry.score;
 
 		const auto eval = [&]
