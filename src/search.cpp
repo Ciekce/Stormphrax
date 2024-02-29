@@ -578,12 +578,21 @@ namespace stormphrax::search
 		{
 			m_ttable.probe(ttEntry, pos.key(), ply);
 
-			if (!pvNode
-				&& ttEntry.depth >= depth
-				&& (ttEntry.type == EntryType::Exact
-					|| ttEntry.type == EntryType::Alpha && ttEntry.score <= alpha
-					|| ttEntry.type == EntryType::Beta  && ttEntry.score >= beta))
-				return ttEntry.score;
+			if (!pvNode)
+			{
+				if (ttEntry.depth >= depth
+					&& (ttEntry.type == EntryType::Exact
+						|| ttEntry.type == EntryType::Alpha && ttEntry.score <= alpha
+						|| ttEntry.type == EntryType::Beta  && ttEntry.score >= beta))
+					return ttEntry.score;
+
+				// idea from Ethereal: accept TT cutoffs from entries 1 depth lower
+				// if failing low is likely to cause a re-search in the parent node
+				if (ttEntry.depth >= depth - 1
+					&& ttEntry.type == EntryType::Alpha
+					&& ttEntry.score + 120 <= alpha)
+					return alpha;
+			}
 
 			if (ttEntry.move && pos.isPseudolegal(ttEntry.move))
 				ttMove = ttEntry.move;
