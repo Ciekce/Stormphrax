@@ -859,6 +859,8 @@ namespace stormphrax::search
 			++thread.search.nodes;
 			++legalMoves;
 
+			auto newDepth = depth - 1;
+
 			i32 extension{};
 
 			// Singular extensions (SE)
@@ -893,6 +895,12 @@ namespace stormphrax::search
 						// Limit the amount this can happen in a particular branch to avoid explosions
 						extension = 2;
 						++stack.doubleExtensions;
+
+						// At low depth, extend the entire node as well as the TT move.
+						// Unextended depth is saved before SE is tried to
+						// avoid accidentally triple extending the TT move
+						if (depth < 14)
+							++depth;
 					}
 					else extension = 1;
 				}
@@ -907,6 +915,8 @@ namespace stormphrax::search
 				else if (cutnode)
 					extension = -1;
 			}
+
+			newDepth += extension;
 
 			// prefetch as early as possible
 			m_ttable.prefetch(pos.roughKeyAfter(move));
@@ -924,8 +934,6 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				auto newDepth = depth - 1 + extension;
-
 				if (pvNode && legalMoves == 1)
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
