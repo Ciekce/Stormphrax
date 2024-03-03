@@ -149,6 +149,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 9139, 4096, 16384, 512)
 
+	SP_TUNABLE_PARAM(evalDeltaLmrDiv, 400, 100, 1000, 50)
+	SP_TUNABLE_PARAM(maxEvalDeltaReduction, 2, 1, 4, 1)
+
 	SP_TUNABLE_PARAM(lmrDeeperBase, 63, 32, 96, 8)
 	SP_TUNABLE_PARAM(lmrDeeperScale, 8, 2, 12, 1)
 
