@@ -76,6 +76,8 @@ namespace stormphrax::search
 
 		Move excluded{};
 
+		bool currOrPrevPv;
+
 		i32 history{};
 
 		i32 doubleExtensions{0};

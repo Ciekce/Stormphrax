@@ -47,7 +47,8 @@ namespace stormphrax
 		i16 score;
 		Move move;
 		u8 depth;
-		u8 age : 6;
+		u8 age : 5;
+		bool pvNode : 1;
 		EntryType type : 2;
 	};
 
@@ -58,6 +59,7 @@ namespace stormphrax
 		i32 score;
 		i32 depth;
 		Move move;
+		bool pvNode;
 		EntryType type;
 	};
 
@@ -71,7 +73,7 @@ namespace stormphrax
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
 
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
+		auto put(u64 key, Score score, Move move, bool pvNode, i32 depth, i32 ply, EntryType type) -> void;
 
 		auto clear() -> void;
 
@@ -87,7 +89,7 @@ namespace stormphrax
 
 		inline auto age()
 		{
-			m_currentAge = (m_currentAge + 1) % 64;
+			m_currentAge = (m_currentAge + 1) % 32;
 		}
 
 	private:

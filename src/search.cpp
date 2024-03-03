@@ -602,6 +602,9 @@ namespace stormphrax::search
 
 		const bool ttHit = ttEntry.type != EntryType::None;
 
+		if (!stack.excluded)
+			stack.currOrPrevPv = pvNode || (ttHit && ttEntry.pvNode);
+
 		const auto pieceCount = boards.occupancy().popcount();
 
 		auto syzygyMin = -ScoreMate;
@@ -663,7 +666,7 @@ namespace stormphrax::search
 					|| tbEntryType == EntryType::Beta  && tbScore >= beta)
 				{
 					// Throw the TB score into the TT
-					m_ttable.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
+					m_ttable.put(pos.key(), tbScore, NullMove, stack.currOrPrevPv, depth, ply, tbEntryType);
 					return tbScore;
 				}
 
@@ -945,8 +948,8 @@ namespace stormphrax::search
 
 						auto lmr = baseLmr;
 
-						// reduce more in non-PV nodes
-						lmr += !pvNode;
+						// reduce more in nodes that neither are nor were PV nodes
+						lmr += !stack.currOrPrevPv;
 
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
@@ -1071,7 +1074,7 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!stack.excluded && !shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, bestMove, pvNode, depth, ply, entryType);
 
 		return bestScore;
 	}
@@ -1178,7 +1181,7 @@ namespace stormphrax::search
 		}
 
 		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, best, 0, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, best, false, 0, ply, entryType);
 
 		return bestScore;
 	}

@@ -83,12 +83,13 @@ namespace stormphrax
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
 			dst.depth = entry.depth;
 			dst.move = entry.move;
+			dst.pvNode = entry.pvNode;
 			dst.type = entry.type;
 		}
 		else dst.type = EntryType::None;
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
+	auto TTable::put(u64 key, Score score, Move move, bool pvNode, i32 depth, i32 ply, EntryType type) -> void
 	{
 		auto entry = loadEntry(index(key));
 
@@ -117,6 +118,7 @@ namespace stormphrax
 		entry.move = move;
 		entry.depth = depth;
 		entry.age = m_currentAge;
+		entry.pvNode = pvNode;
 		entry.type = type;
 
 		storeEntry(index(key), entry);
