@@ -1187,17 +1187,19 @@ namespace stormphrax::search
 		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
 	{
 		usize nodes = 0;
+		i32 seldepth = 0;
 
 		// technically a potential race but it doesn't matter
 		for (const auto &thread : m_threads)
 		{
 			nodes += thread.search.nodes;
+			seldepth = std::max(seldepth, thread.search.seldepth);
 		}
 
 		const auto ms  = static_cast<usize>(time * 1000.0);
 		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
-		std::cout << "info depth " << depth << " seldepth " << mainThread.search.seldepth
+		std::cout << "info depth " << depth << " seldepth " << seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);
