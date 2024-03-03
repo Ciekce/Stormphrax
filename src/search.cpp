@@ -957,6 +957,9 @@ namespace stormphrax::search
 						// reduce less if improving
 						lmr -= improving;
 
+						// reduce more if static eval is significantly below alpha
+						lmr += std::clamp((alpha - stack.staticEval) / 400, 0, 2);
+
 						return lmr;
 					}();
 
