@@ -78,7 +78,7 @@ namespace stormphrax::search
 
 		i32 history{};
 
-		i32 doubleExtensions{0};
+		i32 multiExtensions{0};
 
 		PvList pv{};
 	};

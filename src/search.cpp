@@ -598,6 +598,7 @@ namespace stormphrax::search
 		}
 
 		const bool ttHit = ttEntry.type != EntryType::None;
+		const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
 		const auto pieceCount = boards.occupancy().popcount();
 
@@ -777,7 +778,7 @@ namespace stormphrax::search
 		moveStack.noisiesTried.clear();
 
 		if (ply > 0)
-			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
+			stack.multiExtensions = thread.stack[ply - 1].multiExtensions;
 
 		const auto minLmrMoves = pvNode
 			? lmrMinMovesPv()
@@ -883,13 +884,15 @@ namespace stormphrax::search
 				{
 					if (!pvNode
 						&& score < sBeta - doubleExtensionMargin()
-						&& stack.doubleExtensions <= doubleExtensionLimit())
+						&& stack.multiExtensions <= multiExtensionLimit())
 					{
-						// The returned score is *far* below the TT score - the TT move is
+						// The returned score is far below the TT score - the TT move is
 						// probably much better than the other moves, extend it by 2 plies instead.
-						// Limit the amount this can happen in a particular branch to avoid explosions
-						extension = 2;
-						++stack.doubleExtensions;
+						// Limit the amount this can happen in a particular branch to avoid explosions.
+						// If the TT move is quiet and the returned score is
+						// *drastically* below the TT score, then extend by 3 plies.
+						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtensionMargin());
+						++stack.multiExtensions;
 					}
 					else extension = 1;
 				}
