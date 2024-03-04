@@ -90,6 +90,9 @@ namespace stormphrax
 
 	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
+		assert(depth >= 0);
+		assert(depth < MaxDepth);
+
 		auto entry = loadEntry(index(key));
 
 		const auto entryKey = packEntryKey(key);

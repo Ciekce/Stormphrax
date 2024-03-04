@@ -532,6 +532,9 @@ namespace stormphrax::search
 		if (depth <= 0 && !inCheck)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
 
+		if (depth < 0)
+			depth = 0;
+
 		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
 		{
 			alpha = drawScore(thread.search.nodes);
