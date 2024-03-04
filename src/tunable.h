@@ -125,7 +125,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(singularityDepthScale, 12, 8, 32, 2)
 
 	SP_TUNABLE_PARAM(doubleExtensionMargin, 12, 2, 30, 2)
-	SP_TUNABLE_PARAM(tripleExtensionMargin, 200, 50, 300, 15)
+	SP_TUNABLE_PARAM(tripleExtensionMargin, 100, 50, 300, 15)
 	SP_TUNABLE_PARAM(multiExtensionLimit, 12, 4, 16, 1)
 
 	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 0.5)
