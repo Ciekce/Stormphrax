@@ -528,15 +528,12 @@ namespace stormphrax::search
 
 		const bool inCheck = pos.isCheck();
 
-		// Check extension
-		// If in check, extend. This helps resolve
-		// perpetuals and other long checking sequences.
-		if (inCheck && depth < MaxDepth)
-			++depth;
-
-		// Drop into quiescence search in leaf nodes
-		if (depth <= 0)
+		// Drop into quiescence search in leaf nodes when not in check
+		if (depth <= 0 && !inCheck)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+
+		if (depth < 0)
+			depth = 0;
 
 		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
 		{
