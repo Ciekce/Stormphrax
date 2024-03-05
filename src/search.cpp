@@ -594,7 +594,7 @@ namespace stormphrax::search
 				&& depth >= minIirDepth()
 				&& !ttMove
 				&& (pvNode || cutnode))
-				--depth;
+				depth -= 1 + pvNode;
 		}
 
 		const bool ttHit = ttEntry.type != EntryType::None;
