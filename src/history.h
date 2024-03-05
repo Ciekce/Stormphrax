@@ -106,19 +106,6 @@ namespace stormphrax
 		HistoryTable() = default;
 		~HistoryTable() = default;
 
-		inline auto updateCountermove(i32 ply, std::span<const HistoryMove> prevMoves, Move countermove)
-		{
-			if (ply > 0 && prevMoves[ply - 1])
-				countermoveEntry(prevMoves[ply - 1]) = countermove;
-		}
-
-		[[nodiscard]] inline auto countermove(i32 ply, std::span<const HistoryMove> prevMoves) const
-		{
-			if (ply > 0 && prevMoves[ply - 1])
-				return countermoveEntry(prevMoves[ply - 1]);
-			else return NullMove;
-		}
-
 		inline auto updateQuietScore(HistoryMove move, Bitboard threats,
 			i32 ply, std::span<const HistoryMove> prevMoves, HistoryScore adjustment)
 		{
@@ -154,14 +141,12 @@ namespace stormphrax
 		inline auto clear()
 		{
 			std::memset(m_table.data(), 0, sizeof(Table));
-			std::memset(m_countermoveTable.data(), 0, sizeof(CountermoveTable));
 			std::memset(m_captureTable.data(), 0, sizeof(CaptureTable));
 			std::memset(m_continuationTable.data(), 0, sizeof(ContinuationTable));
 		}
 
 	private:
 		using Table = std::array<std::array<std::array<std::array<HistoryScore, 2>, 2>, 64>, 12>;
-		using CountermoveTable = std::array<std::array<Move, 64>, 12>;
 		// 13 to account for non-capture queen promos
 		using CaptureTable = std::array<std::array<std::array<std::array<HistoryScore, 2>, 64>, 12>, 13>;
 		using ContinuationTable = std::array<std::array<ContinuationEntry, 64>, 12>;
@@ -174,16 +159,6 @@ namespace stormphrax
 		[[nodiscard]] inline auto entry(HistoryMove move, bool srcThreat, bool dstThreat) const -> const auto &
 		{
 			return m_table[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)][srcThreat][dstThreat];
-		}
-
-		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) -> Move &
-		{
-			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
-		}
-
-		[[nodiscard]] inline auto countermoveEntry(HistoryMove move) const -> Move
-		{
-			return m_countermoveTable[static_cast<i32>(move.moving)][static_cast<i32>(move.dst)];
 		}
 
 		[[nodiscard]] inline auto noisyEntry(HistoryMove move,
@@ -236,7 +211,6 @@ namespace stormphrax
 		}
 
 		Table m_table{};
-		CountermoveTable m_countermoveTable{};
 		CaptureTable m_captureTable{};
 		ContinuationTable m_continuationTable{};
 	};

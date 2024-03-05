@@ -52,8 +52,7 @@ namespace stormphrax
 		static constexpr i32 TtMove = Start + 1;
 		static constexpr i32 GoodNoisy = TtMove + 1;
 		static constexpr i32 Killer = GoodNoisy + 1;
-		static constexpr i32 Countermove = Killer + 1;
-		static constexpr i32 Quiet = Countermove + 1;
+		static constexpr i32 Quiet = Killer + 1;
 		static constexpr i32 BadNoisy = Quiet + 1;
 		static constexpr i32 End = BadNoisy + 1;
 	};
@@ -87,7 +86,6 @@ namespace stormphrax
 			{
 				static constexpr auto TtMoveScore = std::numeric_limits<i32>::max() - MovegenStage::TtMove;
 				static constexpr auto KillerScore = GoodNoisyThreshold - MovegenStage::Killer;
-				static constexpr auto CountermoveScore = GoodNoisyThreshold - MovegenStage::Killer;
 
 				for (i32 i = 0; i < data.moves.size(); ++i)
 				{
@@ -101,11 +99,6 @@ namespace stormphrax
 					else if (move.move == m_killer)
 					{
 						move.score = KillerScore;
-						data.histories[i] = moveHistory(move.move);
-					}
-					else if (move.move == m_countermove)
-					{
-						move.score = CountermoveScore;
 						data.histories[i] = moveHistory(move.move);
 					}
 					else if (m_pos.isNoisy(move.move))
@@ -161,18 +154,6 @@ namespace stormphrax
 							return MoveWithHistory{m_killer, moveHistory(m_killer)};
 						break;
 
-					case MovegenStage::Countermove:
-						if (m_history && m_ply > 0)
-						{
-							m_countermove = m_history->countermove(m_ply, m_prevMoves);
-							if (m_countermove
-								&& m_countermove != m_ttMove
-								&& m_countermove != m_killer
-								&& m_pos.isPseudolegal(m_countermove))
-								return MoveWithHistory{m_countermove, moveHistory(m_countermove)};
-						}
-						break;
-
 					case MovegenStage::Quiet:
 						genQuiet();
 						break;
@@ -193,8 +174,7 @@ namespace stormphrax
 				const auto move = m_data.moves[idx].move;
 
 				if (move != m_ttMove
-					&& move != m_killer
-					&& move != m_countermove)
+					&& move != m_killer)
 					return MoveWithHistory{move, m_data.histories[idx]};
 			}
 		}
@@ -359,8 +339,6 @@ namespace stormphrax
 		std::span<const HistoryMove> m_prevMoves;
 
 		Move m_killer;
-
-		Move m_countermove{NullMove};
 
 		const HistoryTable *m_history;
 

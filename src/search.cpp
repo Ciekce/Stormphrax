@@ -1023,13 +1023,9 @@ namespace stormphrax::search
 						const auto currMove = thread.prevMoves[ply];
 
 						// If the fail-high move is a quiet move or losing
-						// capture, set it as the killer for this ply and the
-						// countermove for the opponent's previous move
+						// capture, set it as the killer for this ply
 						if (quietOrLosing)
-						{
 							stack.killer = move;
-							thread.history.updateCountermove(ply, thread.prevMoves, move);
-						}
 
 						if (noisy)
 							thread.history.updateNoisyScore(currMove, threats, captured, bonus);
