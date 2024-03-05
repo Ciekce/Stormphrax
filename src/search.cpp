@@ -772,6 +772,18 @@ namespace stormphrax::search
 						return verifScore;
 				}
 			}
+
+			// Razoring
+			// If static eval is well below alpha and cannot be raised back
+			// to alpha by any captures (i.e. by a qsearch), fail low early
+			if (depth <= 6
+				&& !inCheck
+				&& stack.eval + 250 * depth <= alpha)
+			{
+				const auto score = qsearch(thread, ply, moveStackIdx, alpha, beta);
+				if (score <= alpha)
+					return score;
+			}
 		}
 
 		moveStack.quietsTried.clear();
