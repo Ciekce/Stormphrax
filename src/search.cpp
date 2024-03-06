@@ -948,9 +948,6 @@ namespace stormphrax::search
 						// reduce more in non-PV nodes
 						lmr += !pvNode;
 
-						// reduce less if this move gives check
-						lmr -= pos.isCheck();
-
 						// reduce moves with good history scores less and vice versa
 						lmr -= h / historyLmrDivisor();
 
