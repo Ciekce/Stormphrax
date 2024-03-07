@@ -897,9 +897,9 @@ namespace stormphrax::search
 						++stack.multiExtensions;
 
 						// At low depth, extend the entire node as well as the TT move.
-						// Unextended depth is saved before SE is tried to
-						// avoid accidentally triple extending the TT move
-						if (depth < 10)
+						// Unextended depth is saved before SE is tried to avoid
+						// accidentally triple/quadruple extending the TT move
+						if (depth < 7)
 							++depth;
 					}
 					else extension = 1;
