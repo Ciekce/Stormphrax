@@ -528,15 +528,12 @@ namespace stormphrax::search
 
 		const bool inCheck = pos.isCheck();
 
-		// Check extension
-		// If in check, extend. This helps resolve
-		// perpetuals and other long checking sequences.
-		if (inCheck && depth < MaxDepth)
-			++depth;
-
-		// Drop into quiescence search in leaf nodes
-		if (depth <= 0)
+		// Drop into quiescence search in leaf nodes when not in check
+		if (depth <= 0 && !inCheck)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+
+		if (depth < 0)
+			depth = 0;
 
 		if (!RootNode && alpha < 0 && pos.hasCycle(ply))
 		{
@@ -601,6 +598,7 @@ namespace stormphrax::search
 		}
 
 		const bool ttHit = ttEntry.type != EntryType::None;
+		const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
 		const auto pieceCount = boards.occupancy().popcount();
 
@@ -780,7 +778,7 @@ namespace stormphrax::search
 		moveStack.noisiesTried.clear();
 
 		if (ply > 0)
-			stack.doubleExtensions = thread.stack[ply - 1].doubleExtensions;
+			stack.multiExtensions = thread.stack[ply - 1].multiExtensions;
 
 		const auto minLmrMoves = pvNode
 			? lmrMinMovesPv()
@@ -888,13 +886,15 @@ namespace stormphrax::search
 				{
 					if (!pvNode
 						&& score < sBeta - doubleExtensionMargin()
-						&& stack.doubleExtensions <= doubleExtensionLimit())
+						&& stack.multiExtensions <= multiExtensionLimit())
 					{
-						// The returned score is *far* below the TT score - the TT move is
+						// The returned score is far below the TT score - the TT move is
 						// probably much better than the other moves, extend it by 2 plies instead.
-						// Limit the amount this can happen in a particular branch to avoid explosions
-						extension = 2;
-						++stack.doubleExtensions;
+						// Limit the amount this can happen in a particular branch to avoid explosions.
+						// If the TT move is quiet and the returned score is
+						// *drastically* below the TT score, then extend by 3 plies.
+						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtensionMargin());
+						++stack.multiExtensions;
 
 						// At low depth, extend the entire node as well as the TT move.
 						// Unextended depth is saved before SE is tried to
@@ -964,6 +964,9 @@ namespace stormphrax::search
 
 						// reduce less if improving
 						lmr -= improving;
+
+						// reduce more if static eval is significantly below alpha
+						lmr += std::clamp((alpha - stack.staticEval) / evalDeltaLmrDiv(), 0, maxEvalDeltaReduction());
 
 						return lmr;
 					}();
@@ -1195,17 +1198,19 @@ namespace stormphrax::search
 		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
 	{
 		usize nodes = 0;
+		i32 seldepth = 0;
 
 		// technically a potential race but it doesn't matter
 		for (const auto &thread : m_threads)
 		{
 			nodes += thread.search.nodes;
+			seldepth = std::max(seldepth, thread.search.seldepth);
 		}
 
 		const auto ms  = static_cast<usize>(time * 1000.0);
 		const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
-		std::cout << "info depth " << depth << " seldepth " << mainThread.search.seldepth
+		std::cout << "info depth " << depth << " seldepth " << seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
 		score = std::clamp(score, alpha, beta);

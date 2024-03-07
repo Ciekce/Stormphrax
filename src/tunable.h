@@ -125,7 +125,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(singularityDepthScale, 12, 8, 32, 2)
 
 	SP_TUNABLE_PARAM(doubleExtensionMargin, 12, 2, 30, 2)
-	SP_TUNABLE_PARAM(doubleExtensionLimit, 12, 4, 16, 1)
+	SP_TUNABLE_PARAM(tripleExtensionMargin, 100, 50, 300, 15)
+	SP_TUNABLE_PARAM(multiExtensionLimit, 12, 4, 16, 1)
 
 	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 0.5)
 
@@ -148,6 +149,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyPenaltyOffset, 222, 128, 768, 64)
 
 	SP_TUNABLE_PARAM(historyLmrDivisor, 9139, 4096, 16384, 512)
+
+	SP_TUNABLE_PARAM(evalDeltaLmrDiv, 400, 100, 1000, 50)
+	SP_TUNABLE_PARAM(maxEvalDeltaReduction, 2, 1, 4, 1)
 
 	SP_TUNABLE_PARAM(lmrDeeperBase, 63, 32, 96, 8)
 	SP_TUNABLE_PARAM(lmrDeeperScale, 8, 2, 12, 1)
