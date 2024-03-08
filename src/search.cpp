@@ -948,6 +948,9 @@ namespace stormphrax::search
 						// reduce more in non-PV nodes
 						lmr += !pvNode;
 
+						if (pvNode)
+							lmr -= ttEntry.depth >= depth;
+
 						// reduce less if this move gives check
 						lmr -= pos.isCheck();
 
