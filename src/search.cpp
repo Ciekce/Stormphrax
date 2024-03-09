@@ -568,7 +568,7 @@ namespace stormphrax::search
 				return mdAlpha;
 		}
 
-		ProbedTTableEntry ttEntry{};
+		ProbedTtEntry ttEntry{};
 		auto ttMove = NullMove;
 
 		if (!stack.excluded)
@@ -661,7 +661,7 @@ namespace stormphrax::search
 					|| tbEntryType == EntryType::Beta  && tbScore >= beta)
 				{
 					// Throw the TB score into the TT
-					m_ttable.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
+					m_ttable.put(pos.key(), tbScore, tbScore, NullMove, depth, ply, tbEntryType);
 					return tbScore;
 				}
 
@@ -679,14 +679,14 @@ namespace stormphrax::search
 			}
 		}
 
-		// we already have the static eval in a singularity search
+		// we already have eval in a singularity search
 		if (!stack.excluded)
 		{
 			if (inCheck)
 				stack.eval = stack.staticEval = -ScoreInf;
 			else
 			{
-				stack.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				stack.staticEval = ttHit ? ttEntry.staticEval : eval::staticEval(pos, thread.nnueState, m_contempt);
 				stack.eval = (ttEntry.type == EntryType::Exact
 						|| ttEntry.type == EntryType::Alpha && ttEntry.score < stack.staticEval
 						|| ttEntry.type == EntryType::Beta  && ttEntry.score > stack.staticEval)
@@ -1074,7 +1074,7 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!stack.excluded && !shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, stack.staticEval, bestMove, depth, ply, entryType);
 
 		return bestScore;
 	}
@@ -1101,7 +1101,7 @@ namespace stormphrax::search
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
-		ProbedTTableEntry ttEntry{};
+		ProbedTtEntry ttEntry{};
 		m_ttable.probe(ttEntry, pos.key(), ply);
 
 		if (ttEntry.type == EntryType::Exact
@@ -1109,19 +1109,26 @@ namespace stormphrax::search
 			|| ttEntry.type == EntryType::Beta  && ttEntry.score >= beta)
 			return ttEntry.score;
 
+		const auto staticEval = [&]
+		{
+			if (pos.isCheck())
+				return -ScoreMate;
+
+			return ttEntry.type != EntryType::None
+				? ttEntry.staticEval
+				: eval::staticEval(pos, thread.nnueState, m_contempt);
+		}();
+
 		const auto eval = [&]
 		{
 			if (pos.isCheck())
 				return -ScoreMate;
-			else
-			{
-				const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-				return (ttEntry.type == EntryType::Exact
+
+			return (ttEntry.type == EntryType::Exact
 					|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
 					|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
-					? ttEntry.score
-					: staticEval;
-			}
+				? ttEntry.score
+				: staticEval;
 		}();
 
 		if (eval > alpha)
@@ -1181,7 +1188,7 @@ namespace stormphrax::search
 		}
 
 		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, best, 0, ply, entryType);
+			m_ttable.put(pos.key(), bestScore, staticEval, best, 0, ply, entryType);
 
 		return bestScore;
 	}

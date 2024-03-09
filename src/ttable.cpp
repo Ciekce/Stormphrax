@@ -19,7 +19,9 @@
 #include "ttable.h"
 
 #include <cstring>
-#include <bit>
+#include <stdexcept>
+#include <iostream>
+#include <cstdlib>
 
 #ifndef NDEBUG
 #include <iostream>
@@ -64,23 +66,46 @@ namespace stormphrax
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(TTableEntry);
+		const auto capacity = size / sizeof(Cluster);
 
-		//TODO handle oom
-		m_table.resize(capacity);
-		m_table.shrink_to_fit();
+		// don't bother reallocating if we're already at the right size
+		if (m_table.size() != capacity)
+		{
+			try
+			{
+				m_table.resize(capacity);
+				m_table.shrink_to_fit();
+			}
+			catch (...)
+			{
+				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+				throw;
+			}
+		}
 
 		clear();
 	}
 
-	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void
+	auto TTable::probe(ProbedTtEntry &dst, u64 key, i32 ply) const -> void
 	{
-		const auto entry = loadEntry(index(key));
+		const auto &cluster = m_table[index(key)];
 
-		if (entry.type != EntryType::None
-			&& packEntryKey(key) == entry.key)
+		Entry entry{};
+		for (const auto candidate : cluster.entries)
 		{
-			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+			if (candidate.type != EntryType::None
+				&& packEntryKey(key) == candidate.key)
+			{
+				entry = candidate;
+				break;
+			}
+		}
+
+		if (entry.type != EntryType::None)
+		{
+			const auto score = entry.score;
+			dst.score = std::abs(score) == ScoreMate ? score : scoreFromTt(static_cast<Score>(entry.score), ply);
+			dst.staticEval = entry.staticEval;
 			dst.depth = entry.depth;
 			dst.move = entry.move;
 			dst.type = entry.type;
@@ -88,21 +113,49 @@ namespace stormphrax
 		else dst.type = EntryType::None;
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
+	auto TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
 		assert(depth >= 0);
 		assert(depth < MaxDepth);
 
-		auto entry = loadEntry(index(key));
+		assert(std::abs(staticEval) <= std::numeric_limits<i16>::max());
 
 		const auto entryKey = packEntryKey(key);
 
+		auto &cluster = m_table[index(key)];
+
+		Entry entry{};
+		usize entryIdx = 0;
+
+		auto worstQuality = std::numeric_limits<i32>::max();
+
+		for (usize i = 0; i < EntriesPerCluster; ++i)
+		{
+			const auto candidate = cluster.entries[i];
+
+			if (candidate.type == EntryType::None || candidate.key == entryKey)
+			{
+				entry = candidate;
+				entryIdx = i;
+				break;
+			}
+
+			const auto age = std::min(0, static_cast<i32>(m_currentAge) - static_cast<i32>(entry.age));
+			const auto quality = static_cast<i32>(entry.depth) - age;
+
+			if (quality < worstQuality)
+			{
+				entry = candidate;
+				entryIdx = i;
+
+				worstQuality = quality;
+			}
+		}
+
 		// always replace empty entries
-		const bool replace = entry.key == 0
+		const bool replace = entry.type == EntryType::None
 			// always replace with PV entries
 			|| type == EntryType::Exact
-			// always replace entries from previous searches
-			|| entry.age != m_currentAge
 			// otherwise, replace if the depth is greater
 			// only keep entries from the same position if their depth is significantly greater
 			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
@@ -111,25 +164,25 @@ namespace stormphrax
 			return;
 
 #ifndef NDEBUG
-		if (std::abs(score) > std::numeric_limits<i16>::max())
+		if (std::abs(score) != ScoreMate && std::abs(scoreToTt(score, ply)) > std::numeric_limits<i16>::max())
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
 #endif
 
 		entry.key = entryKey;
-		entry.score = static_cast<i16>(scoreToTt(score, ply));
+		entry.score = static_cast<i16>(std::abs(score) == ScoreMate ? score : scoreToTt(score, ply));
+		entry.staticEval = static_cast<i16>(staticEval);
 		entry.move = move;
 		entry.depth = depth;
 		entry.age = m_currentAge;
 		entry.type = type;
 
-		storeEntry(index(key), entry);
+		cluster.entries[entryIdx] = entry;
 	}
 
 	auto TTable::clear() -> void
 	{
 		m_currentAge = 0;
-
-		std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
+		std::memset(m_table.data(), 0, m_table.size() * sizeof(Cluster));
 	}
 
 	auto TTable::full() const -> u32
@@ -138,10 +191,15 @@ namespace stormphrax
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			if (loadEntry(i).type != EntryType::None)
-				++filledEntries;
+			const auto &cluster = m_table[i];
+
+			for (const auto &entry : cluster.entries)
+			{
+				if (entry.type != EntryType::None)
+					++filledEntries;
+			}
 		}
 
-		return filledEntries;
+		return filledEntries / EntriesPerCluster;
 	}
 }
