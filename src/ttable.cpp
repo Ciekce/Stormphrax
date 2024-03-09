@@ -140,7 +140,7 @@ namespace stormphrax
 				break;
 			}
 
-			const auto age = std::min(0, static_cast<i32>(m_currentAge) - static_cast<i32>(entry.age));
+			const auto age = (64 + m_currentAge - entry.age) % 64;
 			const auto quality = static_cast<i32>(entry.depth) - age;
 
 			if (quality < worstQuality)
