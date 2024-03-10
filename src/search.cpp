@@ -686,7 +686,12 @@ namespace stormphrax::search
 				stack.eval = stack.staticEval = -ScoreInf;
 			else
 			{
-				stack.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				stack.staticEval = qsearch(thread, ply, moveStackIdx + 1, alpha, beta);
+
+				// all winning captures led to checks that couldn't be evaded with a winning capture
+				if (std::abs(stack.staticEval) > ScoreWin)
+					stack.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
 				stack.eval = (ttEntry.type == EntryType::Exact
 						|| ttEntry.type == EntryType::Alpha && ttEntry.score < stack.staticEval
 						|| ttEntry.type == EntryType::Beta  && ttEntry.score > stack.staticEval)
