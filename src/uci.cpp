@@ -200,7 +200,6 @@ namespace stormphrax
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name UCI_ShowWDL type check default "
 				<< (defaultOpts.showWdl ? "true" : "false") << '\n';
-			std::cout << "option name LowerMoveAverage type check default false" << std::endl;
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 			std::cout << "option name SyzygyPath type string default <empty>\n";
