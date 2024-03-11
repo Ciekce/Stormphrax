@@ -5,7 +5,8 @@ VERSION := $(file < version.txt)
 EVALFILE = src/eval/edgelands.nnue
 
 ifndef EXE
-    EXE = stormphrax-$(VERSION)-native
+    EXE = stormphrax-$(VERSION)
+    NO_EXE_SET = true
 endif
 
 PGO = on
@@ -98,20 +99,17 @@ ifeq ($(COMMIT_HASH),on)
     CXXFLAGS += -DSP_COMMIT_HASH=$(shell git log -1 --pretty=format:%h)
 endif
 
-OUT := $(EXE)$(SUFFIX)
-PROFILE_OUT := sp_profile$(SUFFIX)
-
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(OUT) $^
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $^
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $^
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o sp_profile$(SUFFIX) $(PGO_GENERATE) $^
     ./$(PROFILE_OUT) bench
-    $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(OUT) $(PGO_USE) $^
     $(RM) $(PROFILE_OUT)
+    $(PGO_MERGE)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $(PGO_USE) $^
     $(RM) *.profraw
     $(RM) sp.profdata
 endef
@@ -125,24 +123,24 @@ all: native release
 .DEFAULT_GOAL := native
 
 $(EXE): $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,NATIVE)
+	$(call build,NATIVE,native)
 
 native: $(EXE)
 
 tunable: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,TUNABLE)
+	$(call build,TUNABLE,tunable)
 
 avx512: $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,AVX512)
+	$(call build,AVX512,avx512)
 
 avx2-bmi2: $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,AVX2_BMI2)
+	$(call build,AVX2_BMI2,avx2-bmi2)
 
 avx2: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,AVX2)
+	$(call build,AVX2,avx2)
 
 sse41-popcnt: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,SSE41_POPCNT)
+	$(call build,SSE41_POPCNT,sse41-popcnt)
 
 clean:
 
