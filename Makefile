@@ -99,13 +99,15 @@ ifeq ($(COMMIT_HASH),on)
     CXXFLAGS += -DSP_COMMIT_HASH=$(shell git log -1 --pretty=format:%h)
 endif
 
+PROFILE_OUT = sp_profile$(SUFFIX)
+
 ifneq ($(PGO),on)
 define build
     $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $^
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o sp_profile$(SUFFIX) $(PGO_GENERATE) $^
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $^
     ./$(PROFILE_OUT) bench
     $(RM) $(PROFILE_OUT)
     $(PGO_MERGE)
