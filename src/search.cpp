@@ -455,7 +455,7 @@ namespace stormphrax::search
 			}
 
 			if (reportAndUpdate)
-				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
+				m_limiter->update(thread.search, score, pv.moves[0], thread.search.nodes);
 
 			if (reportThisIter && depth < thread.maxDepth)
 			{

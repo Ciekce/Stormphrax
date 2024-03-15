@@ -53,7 +53,7 @@ namespace stormphrax::limit
 		TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
 		~TimeManager() final = default;
 
-		auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final;
+		auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final;
 		auto updateMoveNodes(Move move, usize nodes) -> void final;
 
 		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
@@ -61,6 +61,9 @@ namespace stormphrax::limit
 		[[nodiscard]] auto stopped() const -> bool final;
 
 	private:
+		auto calcNodeScale(Move bestMove, usize totalNodes) -> f64;
+		auto calcScoreScale(Score score) -> f64;
+
 		f64 m_startTime;
 
 		f64 m_softTime{};

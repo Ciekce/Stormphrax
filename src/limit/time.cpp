@@ -69,23 +69,16 @@ namespace stormphrax::limit
 		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
-	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
+	auto TimeManager::update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void
 	{
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
-		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
-		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
-
-		const auto nodeMin = static_cast<f64>(nodeTimeScaleMin()) / 1000.0;
+		const auto nodeScale = calcNodeScale(bestMove, totalNodes);
+		const auto scoreScale = calcScoreScale(score);
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
-
-		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
-			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
-
-		m_scale = std::max(moveNodeScale, minScale);
+		m_scale = std::max(nodeScale * scoreScale, minScale);
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
@@ -115,5 +108,28 @@ namespace stormphrax::limit
 	auto TimeManager::stopped() const -> bool
 	{
 		return m_stopped.load(std::memory_order_acquire);
+	}
+
+	auto TimeManager::calcNodeScale(Move bestMove, usize totalNodes) -> f64
+	{
+		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
+		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
+
+		const auto nodeMin = static_cast<f64>(nodeTimeScaleMin()) / 1000.0;
+
+		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
+			/ static_cast<f64>(totalNodes);
+
+		return std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
+	}
+
+	auto TimeManager::calcScoreScale(Score score) -> f64
+	{
+		static constexpr f64 Stretch = 0.46;
+		static constexpr f64 Scale = 0.9;
+
+		const auto s = static_cast<f64>(score) / 2.5;
+
+		return 1.0 - s * Scale / (std::abs(s) + Stretch);
 	}
 }
