@@ -125,8 +125,8 @@ namespace stormphrax::limit
 
 	auto TimeManager::calcScoreScale(Score score) -> f64
 	{
-		static constexpr f64 Stretch = 0.46;
-		static constexpr f64 Scale = 0.9;
+		static constexpr f64 Stretch = 0.72;
+		static constexpr f64 Scale = 0.4;
 
 		const auto s = static_cast<f64>(score) / 2.5;
 
