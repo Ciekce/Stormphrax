@@ -128,7 +128,7 @@ namespace stormphrax::limit
 		static constexpr f64 Stretch = 0.72;
 		static constexpr f64 Scale = 0.4;
 
-		const auto s = static_cast<f64>(score) / 2.5;
+		const auto s = static_cast<f64>(score) / 250.0;
 
 		return 1.0 - s * Scale / (std::abs(s) + Stretch);
 	}
