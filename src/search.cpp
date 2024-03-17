@@ -1135,7 +1135,7 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval;
 
-		const auto futility = eval + 150;
+		const auto futility = eval + qsearchFpMargin();
 
 		const auto us = pos.toMove();
 
