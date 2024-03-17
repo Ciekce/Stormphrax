@@ -1117,8 +1117,8 @@ namespace stormphrax::search
 			{
 				const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 				return (ttEntry.type == EntryType::Exact
-					|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
-					|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
+						|| ttEntry.type == EntryType::Alpha && ttEntry.score < staticEval
+						|| ttEntry.type == EntryType::Beta  && ttEntry.score > staticEval)
 					? ttEntry.score
 					: staticEval;
 			}
@@ -1135,6 +1135,8 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval;
 
+		const auto futility = eval + 150;
+
 		const auto us = pos.toMove();
 
 		auto ttMove = ttEntry.move && pos.isPseudolegal(ttEntry.move) ? ttEntry.move : NullMove;
@@ -1150,6 +1152,15 @@ namespace stormphrax::search
 		{
 			if (!pos.isLegal(move.move))
 				continue;
+
+			if (!pos.isCheck()
+				&& futility <= alpha
+				&& !see::see(pos, move.move, 1))
+			{
+				if (bestScore < futility)
+					bestScore = futility;
+				continue;
+			}
 
 			// prefetch as early as possible
 			m_ttable.prefetch(pos.roughKeyAfter(move.move));
