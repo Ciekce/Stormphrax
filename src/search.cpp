@@ -794,6 +794,7 @@ namespace stormphrax::search
 		MoveGenerator<RootNode> generator{pos, stack.killer, moveStack.movegenData,
 			ttMove, ply, thread.prevMoves, &thread.history};
 
+		bool skipQuiets = false;
 		u32 legalMoves = 0;
 
 		while (const auto moveAndHistory = generator.next())
@@ -809,6 +810,9 @@ namespace stormphrax::search
 
 			const bool quietOrLosing = generator.stage() >= MovegenStage::Quiet;
 			const auto [noisy, captured] = pos.noisyCapturedPiece(move);
+
+			if (!noisy && skipQuiets)
+				continue;
 
 			const auto baseLmr = g_lmrTable[depth][legalMoves + 1];
 
@@ -831,6 +835,14 @@ namespace stormphrax::search
 						&& depth <= maxLmpDepth()
 						&& legalMoves >= lmpMinMovesBase() + lmrDepth * lmrDepth / (improving ? 1 : 2))
 						break;
+
+					if (!pvNode
+						&& depth <= 7
+						&& history < -2500 * (depth - 1))
+					{
+						skipQuiets = true;
+						continue;
+					}
 
 					// Futility pruning (FP)
 					// At this point, alpha is so far above static eval that it is
