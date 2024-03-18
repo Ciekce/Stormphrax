@@ -1135,27 +1135,36 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval;
 
-		const auto futility = eval + qsearchFpMargin();
-
+		auto &moveStack = thread.moveStack[moveStackIdx];
 		const auto us = pos.toMove();
 
-		auto ttMove = ttEntry.move && pos.isPseudolegal(ttEntry.move) ? ttEntry.move : NullMove;
+		const auto threats = pos.threats();
+		const auto futility = eval + qsearchFpMargin();
+
+		const auto ttMove = ttEntry.move && pos.isPseudolegal(ttEntry.move) ? ttEntry.move : NullMove;
+		const auto [ttMoveNoisy, ttMoveCaptured] = !ttEntry.move
+			? std::pair{false, Piece::None}
+			: pos.noisyCapturedPiece(ttMove);
+
+		moveStack.noisiesTried.clear();
 
 		auto best = NullMove;
 		auto bestScore = eval;
 
 		auto entryType = EntryType::Alpha;
 
-		QMoveGenerator generator{pos, NullMove, thread.moveStack[moveStackIdx].movegenData, ttMove};
+		QMoveGenerator generator{pos, NullMove, moveStack.movegenData, ttMove};
 
-		while (const auto move = generator.next())
+		while (const auto moveAndHistory = generator.next())
 		{
-			if (!pos.isLegal(move.move))
+			const auto move = moveAndHistory.move;
+
+			if (!pos.isLegal(move))
 				continue;
 
 			if (!pos.isCheck()
 				&& futility <= alpha
-				&& !see::see(pos, move.move, 1))
+				&& !see::see(pos, move, 1))
 			{
 				if (bestScore < futility)
 					bestScore = futility;
@@ -1163,9 +1172,14 @@ namespace stormphrax::search
 			}
 
 			// prefetch as early as possible
-			m_ttable.prefetch(pos.roughKeyAfter(move.move));
+			m_ttable.prefetch(pos.roughKeyAfter(move));
 
-			const auto guard = pos.applyMove(move.move, &thread.nnueState);
+			thread.prevMoves[ply] = HistoryMove::from(pos, move);
+
+			const bool noisy = move != ttMove || ttMoveNoisy;
+			const auto captured = move == ttMove ? ttMoveCaptured : pos.captureTarget(move);
+
+			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			++thread.search.nodes;
 
@@ -1181,6 +1195,27 @@ namespace stormphrax::search
 				{
 					if (score >= beta)
 					{
+						const auto bonus = 2;
+						const auto penalty = -2;
+
+						if (move == ttMove)
+						{
+							if (!ttMoveNoisy)
+								thread.history.updateQuietScore(thread.prevMoves[ply],
+									threats, ply, thread.prevMoves, bonus);
+						}
+						else
+						{
+							thread.history.updateNoisyScore(thread.prevMoves[ply], threats, captured, bonus);
+							thread.history.updateQuietScore(thread.prevMoves[ply],
+								threats, ply, thread.prevMoves, penalty);
+						}
+
+						for (const auto [prevMove, prevCaptured] : moveStack.noisiesTried)
+						{
+							thread.history.updateNoisyScore(prevMove, threats, prevCaptured, penalty);
+						}
+
 						entryType = EntryType::Beta;
 						break;
 					}
@@ -1189,6 +1224,9 @@ namespace stormphrax::search
 					entryType = EntryType::Exact;
 				}
 			}
+
+			if (noisy)
+				moveStack.noisiesTried.push({thread.prevMoves[ply], captured});
 		}
 
 		if (!shouldStop(thread.search, false, false))
