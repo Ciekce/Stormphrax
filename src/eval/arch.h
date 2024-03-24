@@ -42,14 +42,14 @@ namespace stormphrax::eval
 
 	// visually flipped upside down, a1 = 0
 	using InputFeatureSet = nnue::features::KingBuckets<
-		0, 0, 0, 0, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3,
-		2, 2, 2, 2, 3, 3, 3, 3
+		0, 0, 1, 1, 2, 2, 3, 3,
+		4, 4, 4, 4, 5, 5, 5, 5,
+		6, 6, 6, 6, 7, 7, 7, 7,
+		6, 6, 6, 6, 7, 7, 7, 7,
+		6, 6, 6, 6, 7, 7, 7, 7,
+		6, 6, 6, 6, 7, 7, 7, 7,
+		6, 6, 6, 6, 7, 7, 7, 7,
+		6, 6, 6, 6, 7, 7, 7, 7
 	>;
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
