@@ -20,15 +20,22 @@
 
 #include "../types.h"
 
-#define ENUM_FLAG_OPERATOR(T,UT,O) \
-[[maybe_unused]] inline constexpr auto operator O(T lhs, T rhs) { return static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); } \
-[[maybe_unused]] inline constexpr auto operator O##=(T &lhs, T rhs) { return lhs = static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); }
-#define ENUM_FLAGS(UT,T) \
+#define SP_ENUM_FLAG_OPERATOR(T,UT,O) \
+[[maybe_unused]] inline constexpr auto operator O(T lhs, T rhs) \
+{ \
+	return static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
+} \
+[[maybe_unused]] inline constexpr auto operator O##=(T &lhs, T rhs) \
+{ \
+	return lhs = static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
+}
+
+#define SP_ENUM_FLAGS(UT,T) \
 enum class T : UT; \
 [[maybe_unused]] inline constexpr auto operator ~(T t) { return static_cast<T>(~static_cast<UT>(t)); } \
-ENUM_FLAG_OPERATOR(T,UT,|) \
-ENUM_FLAG_OPERATOR(T,UT,^) \
-ENUM_FLAG_OPERATOR(T,UT,&) \
+SP_ENUM_FLAG_OPERATOR(T, UT, |) \
+SP_ENUM_FLAG_OPERATOR(T, UT, ^) \
+SP_ENUM_FLAG_OPERATOR(T, UT, &) \
 enum class T : UT
 
 namespace stormphrax
