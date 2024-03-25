@@ -38,7 +38,7 @@ namespace stormphrax::eval::nnue
 	{
 		using  InputType = Input;
 		using  ParamType = Param;
-		using OutputType = typename Activation::Type;
+		using OutputType = typename Activation::OutputType;
 
 		static constexpr auto  InputCount =  Inputs;
 		static constexpr auto OutputCount = Outputs;
@@ -51,11 +51,11 @@ namespace stormphrax::eval::nnue
 		static_assert( InputCount > 0);
 		static_assert(OutputCount > 0);
 
-		static_assert(sizeof(InputType) * InputCount >= util::SimdAlignment
-			&& (sizeof(InputType) * InputCount) % util::SimdAlignment == 0);
+		static_assert(sizeof(InputType) * InputCount >= util::simd::Alignment
+			&& (sizeof(InputType) * InputCount) % util::simd::Alignment == 0);
 
-		static_assert(sizeof(ParamType) * WeightCount >= util::SimdAlignment
-			&& (sizeof(ParamType) * WeightCount) % util::SimdAlignment == 0);
+		static_assert(sizeof(ParamType) * WeightCount >= util::simd::Alignment
+			&& (sizeof(ParamType) * WeightCount) % util::simd::Alignment == 0);
 
 		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount * WeightCount> weights;
 		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount *   BiasCount> biases;
@@ -110,8 +110,10 @@ namespace stormphrax::eval::nnue
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
 		{
-			assert(util::isAligned( inputs.data()));
-			assert(util::isAligned(outputs.data()));
+			using namespace util::simd;
+
+			assert(isAligned( inputs.data()));
+			assert(isAligned(outputs.data()));
 
 			const auto outputBucket = OutputBucketing::getBucket(boards);
 
@@ -128,33 +130,31 @@ namespace stormphrax::eval::nnue
 				{
 					for (u32 i = 0; i < Base::InputCount; i += 256)
 					{
-						for (u32 j = 0; j < 256; ++j)
+						for (u32 j = 0; j < 256; j += ChunkSize)
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<typename Base::OutputType>(inputs[inputIdx]);
-							const auto activated = Activation::activate(input);
-
-							const auto weight = static_cast<typename Base::OutputType>(
-								Base::weights[weightOffset + inputIdx]
+							const auto inputVec = util::simd::load<typename Base::InputType>(&inputs[inputIdx]);
+							const auto weightVec = util::simd::load<typename Base::ParamType>(
+								&Base::weights[weightOffset + inputIdx]
 							);
 
-							sum += weight * activated;
+							const auto products = Activation::activateAndDot(inputVec, weightVec);
+							sum = add<typename Base::OutputType>(sum, products);
 						}
 					}
 				}
 				else
 				{
-					for (u32 inputIdx = 0; inputIdx < Base::InputCount; ++inputIdx)
+					for (u32 inputIdx = 0; inputIdx < Base::InputCount; inputIdx += ChunkSize)
 					{
-						const auto input = static_cast<typename Base::OutputType>(inputs[inputIdx]);
-						const auto activated = Activation::activate(input);
-
-						const auto weight = static_cast<typename Base::OutputType>(
-							Base::weights[weightOffset + inputIdx]
+						const auto inputVec = util::simd::load<typename Base::InputType>(&inputs[inputIdx]);
+						const auto weightVec = util::simd::load<typename Base::ParamType>(
+							&Base::weights[weightOffset + inputIdx]
 						);
 
-						sum += weight * activated;
+						const auto products = Activation::activateAndDot(inputVec, weightVec);
+						sum = add<typename Base::OutputType>(sum, products);
 					}
 				}
 
@@ -179,9 +179,11 @@ namespace stormphrax::eval::nnue
 			std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
 		{
-			assert(util::isAligned( stmInputs.data()));
-			assert(util::isAligned(nstmInputs.data()));
-			assert(util::isAligned(   outputs.data()));
+			using namespace util::simd;
+
+			assert(isAligned( stmInputs.data()));
+			assert(isAligned(nstmInputs.data()));
+			assert(isAligned(   outputs.data()));
 
 			const auto outputBucket = OutputBucketing::getBucket(boards);
 
@@ -192,77 +194,75 @@ namespace stormphrax::eval::nnue
 			{
 				const auto weightOffset = bucketWeightOffset + outputIdx * PerspectiveInputCount;
 
-				typename Base::OutputType sum{0};
+				auto sum = zero<typename Base::OutputType>();
 
 				if constexpr(PerspectiveInputCount >= 512)
 				{
 					// stm perspective
 					for (u32 i = 0; i < PerspectiveInputCount; i += 256)
 					{
-						for (u32 j = 0; j < 256; ++j)
+						for (u32 j = 0; j < 256; j += ChunkSize)
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<typename Base::OutputType>(stmInputs[inputIdx]);
-							const auto activated = Activation::activate(input);
-
-							const auto weight = static_cast<typename Base::OutputType>(
-								Base::weights[weightOffset + inputIdx]
+							const auto inputVec = load<typename Base::InputType>(&stmInputs[inputIdx]);
+							const auto weightVec = load<typename Base::ParamType>(
+								&Base::weights[weightOffset + inputIdx]
 							);
 
-							sum += weight * activated;
+							const auto products = Activation::activateAndDot(inputVec, weightVec);
+							sum = add<typename Base::OutputType>(sum, products);
 						}
 					}
 
 					// nstm perspective
 					for (u32 i = 0; i < PerspectiveInputCount; i += 256)
 					{
-						for (u32 j = 0; j < 256; ++j)
+						for (u32 j = 0; j < 256; j += ChunkSize)
 						{
 							const auto inputIdx = i + j;
 
-							const auto input = static_cast<typename Base::OutputType>(nstmInputs[inputIdx]);
-							const auto activated = Activation::activate(input);
-
-							const auto weight = static_cast<typename Base::OutputType>(
-								Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
+							const auto inputVec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
+							const auto weightVec = load<typename Base::ParamType>(
+								&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
 							);
 
-							sum += weight * activated;
+							const auto products = Activation::activateAndDot(inputVec, weightVec);
+							sum = add<typename Base::OutputType>(sum, products);
 						}
 					}
 				}
 				else
 				{
 					// stm perspective
-					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; ++inputIdx)
+					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
 					{
-						const auto input = static_cast<typename Base::OutputType>(stmInputs[inputIdx]);
-						const auto activated = Activation::activate(input);
-
-						const auto weight = static_cast<typename Base::OutputType>(
-							Base::weights[weightOffset + inputIdx]
+						const auto inputVec = load<typename Base::InputType>(&stmInputs[inputIdx]);
+						const auto weightVec = load<typename Base::ParamType>(
+							&Base::weights[weightOffset + inputIdx]
 						);
 
-						sum += weight * activated;
+						const auto products = Activation::activateAndDot(inputVec, weightVec);
+						sum = add<typename Base::OutputType>(sum, products);
 					}
 
 					// nstm perspective
-					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; ++inputIdx)
+					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
 					{
-						const auto input = static_cast<typename Base::OutputType>(nstmInputs[inputIdx]);
-						const auto activated = Activation::activate(input);
-
-						const auto weight = static_cast<typename Base::OutputType>(
-							Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
+						const auto inputVec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
+						const auto weightVec = load<typename Base::ParamType>(
+							&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
 						);
 
-						sum += weight * activated;
+						const auto products = Activation::activateAndDot(inputVec, weightVec);
+						sum = add<typename Base::OutputType>(sum, products);
 					}
 				}
 
+				const auto output = hsum<typename Base::OutputType>(sum);
+
 				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
-				outputs[outputIdx] = bias + Activation::output(sum);
+				outputs[outputIdx] = bias + Activation::output(output);
 			}
 		}
 	};
