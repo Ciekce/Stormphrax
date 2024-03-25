@@ -373,15 +373,12 @@ namespace stormphrax::util::simd
 #if SP_HAS_AVX512
 			SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32Avx512(__m512i v) -> i32
 			{
-				/*
 				const auto high256 = _mm512_extracti64x4_epi64(v, 1);
 				const auto low256 = _mm512_castsi512_si256(v);
 
 				const auto sum256 = _mm256_add_epi32(high256, low256);
 
 				return hsumI32Avx2(sum256);
-				*/
-				return _mm512_reduce_add_epi32(v);
 			}
 #endif
 		}
