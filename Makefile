@@ -2,7 +2,7 @@
 # BUILD WITH CMAKE PER THE INSTRUCTIONS IN THE README
 
 VERSION := $(file < version.txt)
-EVALFILE = src/eval/edgelands.nnue
+EVALFILE = src/eval/net030.nnue
 
 ifndef EXE
     EXE = stormphrax-$(VERSION)

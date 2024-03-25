@@ -5,7 +5,7 @@ project(stormphrax VERSION ${SP_VERSION})
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(SP_DEFAULT_NET_NAME edgelands)
+set(SP_DEFAULT_NET_NAME net030)
 
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
