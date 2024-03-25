@@ -35,7 +35,7 @@ namespace stormphrax::eval::nnue
 	private:
 		template <typename Layer>
 		using OutputStorageType = util::AlignedArray<
-		    util::SimdAlignment, typename Layer::OutputType, Layer::OutputCount
+		    util::simd::Alignment, typename Layer::OutputType, Layer::OutputCount
 		>;
 
 		using LayerStack = std::tuple<Layers...>;

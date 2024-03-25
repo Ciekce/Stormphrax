@@ -46,3 +46,9 @@ namespace stormphrax
 
 #define SP_STRINGIFY_(S) #S
 #define SP_STRINGIFY(S) SP_STRINGIFY_(S)
+
+#ifndef NDEBUG
+#define SP_ALWAYS_INLINE_NDEBUG
+#else
+#define SP_ALWAYS_INLINE_NDEBUG __attribute__((always_inline))
+#endif
