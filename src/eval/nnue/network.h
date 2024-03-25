@@ -72,20 +72,16 @@ namespace stormphrax::eval::nnue
 			return std::get<sizeof...(Layers) - 1>(storage)[0];
 		}
 
-		inline auto readFrom(std::istream &stream) -> std::istream &
+		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			m_featureTransformer.readFrom(stream);
-			readLayersFrom(std::make_index_sequence<sizeof...(Layers)>(), stream);
-
-			return stream;
+			return m_featureTransformer.readFrom(stream)
+				&& readLayersFrom(std::make_index_sequence<sizeof...(Layers)>(), stream);
 		}
 
-		inline auto writeTo(std::ostream &stream) const -> std::ostream &
+		inline auto writeTo(IParamStream &stream) const -> bool
 		{
-			m_featureTransformer.writeTo(stream);
-			writeLayersTo(std::make_index_sequence<sizeof...(Layers)>(), stream);
-
-			return stream;
+			return m_featureTransformer.writeTo(stream)
+				&& writeLayersTo(std::make_index_sequence<sizeof...(Layers)>(), stream);
 		}
 
 	private:
@@ -110,15 +106,19 @@ namespace stormphrax::eval::nnue
 		}
 
 		template <usize... Indices>
-		inline auto readLayersFrom(std::index_sequence<Indices...>, std::istream &stream)
+		inline auto readLayersFrom(std::index_sequence<Indices...>, IParamStream &stream) -> bool
 		{
-			((std::get<Indices>(m_layers).readFrom(stream)), ...);
+			bool success = true;
+			((success &= std::get<Indices>(m_layers).readFrom(stream)), ...);
+			return success;
 		}
 
 		template <usize... Indices>
-		inline auto writeLayersTo(std::index_sequence<Indices...>, std::ostream &stream) const
+		inline auto writeLayersTo(std::index_sequence<Indices...>, IParamStream &stream) const -> bool
 		{
-			((std::get<Indices>(m_layers).writeTo(stream)), ...);
+			bool success = true;
+			((success &= std::get<Indices>(m_layers).writeTo(stream)), ...);
+			return success;
 		}
 
 		FeatureTransformer m_featureTransformer{};

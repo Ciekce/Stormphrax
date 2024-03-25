@@ -24,38 +24,117 @@
 #include <ostream>
 #include <span>
 #include <array>
+#include <variant>
+#include <cassert>
 
 namespace stormphrax::eval::nnue
 {
-	template <typename T, usize BlockSize = 64>
-	inline auto readPadded(std::istream &stream, std::span<T> dst) -> std::istream &
+	class IParamStream
 	{
-		stream.read(reinterpret_cast<char *>(dst.data()), dst.size_bytes());
-		stream.ignore(dst.size_bytes() % BlockSize);
+	public:
+		virtual ~IParamStream() = default;
 
-		return stream;
-	}
+		template <typename T>
+		inline auto read(std::span<T> dst) -> bool = delete;
 
-	template <typename T, usize Count, usize BlockSize = 64>
-	inline auto readPadded(std::istream &stream, std::array<T, Count> &dst) -> std::istream &
+		template <>
+		inline auto read<i16>(std::span<i16> dst) -> bool
+		{
+			return readI16s(dst);
+		}
+
+		template <typename T, usize Size>
+		inline auto read(std::array<T, Size> &dst)
+		{
+			return read(std::span<T, std::dynamic_extent>{dst});
+		}
+
+		template <typename T>
+		inline auto write(std::span<T> src) -> bool = delete;
+
+		template <>
+		inline auto write<i16>(std::span<i16> src) -> bool
+		{
+			return writeI16s(src);
+		}
+
+		template <typename T, usize Size>
+		inline auto write(const std::array<T, Size> &src)
+		{
+			return write(std::span<T, std::dynamic_extent>{src});
+		}
+
+	protected:
+		virtual auto readI16s(std::span<i16> dst) -> bool = 0;
+		virtual auto writeI16s(std::span<const i16> src) -> bool = 0;
+	};
+
+	template <usize BlockSize>
+	class PaddedParamStream final : public IParamStream
 	{
-		return readPadded<T, BlockSize>(stream, std::span{dst});
-	}
+	public:
+		explicit PaddedParamStream(std::istream &in)
+			: m_stream{&in} {}
+		explicit PaddedParamStream(std::ostream &out)
+			: m_stream{&out} {}
 
-	template <typename T, usize BlockSize = 64>
-	inline auto writePadded(std::ostream &stream, std::span<const T> src) -> std::ostream &
-	{
-		stream.write(reinterpret_cast<const char *>(src.data()), src.size_bytes());
+		~PaddedParamStream() final = default;
 
-		std::array<std::byte, BlockSize> empty{};
-		stream.write(reinterpret_cast<const char *>(empty.data()), src.size_bytes() % BlockSize);
+	protected:
+		inline auto readI16s(std::span<i16> dst) -> bool final
+		{
+			return read(dst.data(), dst.size_bytes());
+		}
 
-		return stream;
-	}
+		inline auto writeI16s(std::span<const i16> src) -> bool final
+		{
+			return write(src.data(), src.size_bytes());
+		}
 
-	template <typename T, usize Count, usize BlockSize = 64>
-	inline auto writePadded(std::ostream &stream, const std::array<T, Count> &src) -> std::ostream &
-	{
-		return writePadded<T, BlockSize>(stream, std::span{src});
-	}
+	private:
+		std::variant<std::istream *, std::ostream *> m_stream;
+
+		inline auto read(void *dst, usize n) -> bool
+		{
+			if (!std::holds_alternative<std::istream *>(m_stream))
+			{
+				assert(false);
+				return false;
+			}
+
+			auto &stream = *std::get<std::istream *>(m_stream);
+
+			const auto padding = calcPadding(n);
+
+			stream.read(static_cast<char *>(dst), static_cast<std::streamsize>(n));
+			stream.ignore(static_cast<std::streamsize>(padding));
+
+			return !stream.fail();
+		}
+
+		inline auto write(const void *src, usize n) -> bool
+		{
+			if (!std::holds_alternative<std::ostream *>(m_stream))
+			{
+				assert(false);
+				return false;
+			}
+
+			static constexpr std::array<std::byte, BlockSize> Empty{};
+
+			auto &stream = *std::get<std::ostream *>(m_stream);
+
+			const auto padding = calcPadding(n);
+
+			stream.write(static_cast<const char *>(src), static_cast<std::streamsize>(n));
+			stream.write(reinterpret_cast<const char *>(Empty.data()), padding);
+
+			return !stream.fail();
+		}
+
+		[[nodiscard]] static constexpr auto calcPadding(usize v) -> usize
+		{
+			return v - ((v + BlockSize - 1) / BlockSize) * BlockSize;
+		}
+	};
 }

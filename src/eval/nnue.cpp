@@ -21,6 +21,7 @@
 #include <fstream>
 
 #include "../util/memstream.h"
+#include "nnue/io.h"
 
 #ifdef _MSC_VER
 #define SP_MSVC
@@ -45,13 +46,18 @@ namespace stormphrax::eval
 {
 	namespace
 	{
+		SP_ENUM_FLAGS(u16, NetworkFlags)
+		{
+			None = 0x0000,
+		};
+
 		constexpr u16 ExpectedHeaderVersion = 1;
 
 		struct __attribute__((packed)) NetworkHeader
 		{
 			std::array<char, 4> magic{};
 			u16 version{};
-			[[maybe_unused]] u16 flags{};
+			NetworkFlags flags{};
 			[[maybe_unused]] u8 padding{};
 			u8 arch{};
 			u8 activation{};
@@ -153,7 +159,9 @@ namespace stormphrax::eval
 		const auto *end = g_defaultNetData + g_defaultNetSize;
 
 		util::MemoryIstream stream{{begin, end}};
-		s_network.readFrom(stream);
+		nnue::PaddedParamStream<64> paramStream{stream};
+
+		s_network.readFrom(paramStream);
 	}
 
 	auto loadNetwork(const std::string &name) -> void
@@ -178,7 +186,8 @@ namespace stormphrax::eval
 		if (!validate(header))
 			return;
 
-		if (!s_network.readFrom(stream))
+		nnue::PaddedParamStream<64> paramStream{stream};
+		if (!s_network.readFrom(paramStream))
 		{
 			std::cerr << "failed to read network parameters" << std::endl;
 			return;

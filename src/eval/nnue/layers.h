@@ -60,20 +60,16 @@ namespace stormphrax::eval::nnue
 		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount * WeightCount> weights;
 		SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount *   BiasCount> biases;
 
-		inline auto readFrom(std::istream &stream) -> std::istream &
+		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			readPadded(stream, weights);
-			readPadded(stream,  biases);
-
-			return stream;
+			return stream.read(weights)
+				&& stream.read(biases);
 		}
 
-		inline auto writeTo(std::ostream &stream) const -> std::ostream &
+		inline auto writeTo(IParamStream &stream) const -> bool
 		{
-			writePadded(stream, weights);
-			writePadded(stream,  biases);
-
-			return stream;
+			return stream.write(weights)
+				&& stream.write(biases);
 		}
 	};
 
