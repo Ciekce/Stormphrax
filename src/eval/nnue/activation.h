@@ -25,122 +25,113 @@
 #include <type_traits>
 #include <concepts>
 
+#include "../../util/simd.h"
+
 namespace stormphrax::eval::nnue::activation
 {
 	template <typename T>
 	concept Activation = requires(T t)
 	{
 		{ T::Id } -> std::same_as<const u8 &>;
-		{ T::activate(typename T::Type{}) } -> std::same_as<typename T::Type>;
-		{ T::  output(typename T::Type{}) } -> std::same_as<typename T::Type>;
+		{ T::activateAndDot(util::simd::zero<typename T::InputType>(), util::simd::zero<typename T::InputType>()) }
+			-> std::same_as<util::simd::Vector<typename T::OutputType>>;
+		{ T::  output(typename T::OutputType{}) }
+			-> std::same_as<typename T::OutputType>;
 	};
 
-	template <typename T>
+	template <typename T, typename Output>
 	struct [[maybe_unused]] Identity
 	{
-		using Type = T;
+		using InputType = T;
+		using InputVector = util::simd::Vector<InputType>;
+		using OutputType = Output;
 
 		static constexpr u8 Id = 3;
 
-		static inline auto activate(Type value)
+		static inline auto activateAndDot(InputVector inputs, InputVector weights)
 		{
-			return value;
+			using namespace util::simd;
+
+			return mulAddAdj<InputType>(inputs, weights);
 		}
 
-		static inline auto output(Type value)
+		static inline auto output(OutputType value)
 		{
 			return value;
 		}
 	};
 
-	template <typename T>
+	template <typename T, typename Output>
 	struct [[maybe_unused]] ReLU
 	{
-		using Type = T;
+		using InputType = T;
+		using InputVector = util::simd::Vector<InputType>;
+		using OutputType = Output;
 
 		static constexpr u8 Id = 2;
 
-		static inline auto activate(Type value)
+		static inline auto activateAndDot(InputVector inputs, InputVector weights)
 		{
-			return std::max(value, Type{0});
+			using namespace util::simd;
+
+			const auto activated = max<InputType>(inputs, zero<InputType>());
+			return mulAddAdj<InputType>(activated, weights);
 		}
 
-		static inline auto output(Type value)
+		static inline auto output(OutputType value)
 		{
 			return value;
 		}
 	};
 
-	template <typename T, T Max>
+	template <typename T, typename Output, T Max>
 	struct [[maybe_unused]] ClippedReLU
 	{
-		using Type = T;
+		using InputType = T;
+		using InputVector = util::simd::Vector<InputType>;
+		using OutputType = Output;
 
 		static constexpr u8 Id = 0;
 
-		static inline auto activate(Type value)
+		static inline auto activateAndDot(InputVector inputs, InputVector weights)
 		{
-			return std::clamp(value, Type{0}, Max);
+			using namespace util::simd;
+
+			static const auto max = set1(Max);
+
+			const auto activated = clamp<InputType>(inputs, zero<InputType>(), max);
+			return mulAddAdj<InputType>(activated, weights);
 		}
 
-		static inline auto output(Type value)
+		static inline auto output(OutputType value)
 		{
 			return value;
 		}
 	};
 
-	template <typename T, T Max>
+	template <typename T, typename Output, T Max>
 	struct [[maybe_unused]] SquaredClippedReLU
 	{
-		using Type = T;
+		using InputType = T;
+		using InputVector = util::simd::Vector<InputType>;
+		using OutputType = Output;
 
 		static constexpr u8 Id = 1;
 
-		static inline auto activate(Type value)
+		static inline auto activateAndDot(InputVector inputs, InputVector weights)
 		{
-			const auto clipped = std::clamp(value, Type{0}, Max);
-			return clipped * clipped;
+			using namespace util::simd;
+
+			static const auto max = set1(Max);
+
+			const auto clipped = util::simd::clamp<InputType>(inputs, zero<InputType>(), max);
+			const auto crelu = mul<InputType>(clipped, weights);
+			return mulAddAdj<InputType>(crelu, clipped);
 		}
 
-		static inline auto output(Type value)
+		static inline auto output(OutputType value)
 		{
-			return value / Max;
-		}
-	};
-
-	template <std::floating_point T>
-	struct [[maybe_unused]] Sigmoid
-	{
-		using Type = T;
-
-		static constexpr u8 Id = 4;
-
-		static inline auto activate(Type value)
-		{
-			return Type{1} / (Type{1} + std::exp(-value));
-		}
-
-		static inline auto output(Type value)
-		{
-			return value;
-		}
-	};
-
-	template <std::floating_point T>
-	struct [[maybe_unused]] Tanh
-	{
-		using Type = T;
-
-		static constexpr u8 Id = 5;
-
-		static inline auto activate(Type value)
-		{
-			return std::tanh(value);
-		}
-
-		static inline auto output(Type value)
-		{
-			return value;
+			return value / static_cast<OutputType>(Max);
 		}
 	};
 }
