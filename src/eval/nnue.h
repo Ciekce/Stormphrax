@@ -27,6 +27,7 @@
 #include "nnue/network.h"
 #include "nnue/layers.h"
 #include "nnue/activation.h"
+#include "../util/static_vector.h"
 
 namespace stormphrax::eval
 {
@@ -53,6 +54,38 @@ namespace stormphrax::eval
 	auto loadNetwork(const std::string &name) -> void;
 
 	[[nodiscard]] auto defaultNetworkName() -> std::string_view;
+
+	struct NnueUpdates
+	{
+		using PieceSquare = std::pair<Piece, Square>;
+
+		// [black, white]
+		std::array<bool, 2> refresh{};
+
+		StaticVector<PieceSquare, 2> sub{};
+		StaticVector<PieceSquare, 2> add{};
+
+		inline auto setRefresh(Color c)
+		{
+			refresh[static_cast<i32>(c)] = true;
+		}
+
+		inline auto pushSubAdd(Piece piece, Square src, Square dst)
+		{
+			sub.push({piece, src});
+			add.push({piece, dst});
+		}
+
+		inline auto pushSub(Piece piece, Square square)
+		{
+			sub.push({piece, square});
+		}
+
+		inline auto pushAdd(Piece piece, Square square)
+		{
+			add.push({piece, square});
+		}
+	};
 
 	class NnueState
 	{
@@ -100,115 +133,63 @@ namespace stormphrax::eval
 			}
 		}
 
-		inline auto refresh(Color c, const PositionBoards &boards, Square king)
+		inline auto update(const NnueUpdates &updates, const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr == &m_accumulatorStack.back());
 
-			assert(c != Color::None);
-			assert(king != Square::None);
+			assert(!updates.refresh[0] || !updates.refresh[1]);
 
-			refreshAccumulator(*m_curr, c, boards, m_refreshTable, king);
-		}
+			const auto subCount = updates.sub.size();
+			const auto addCount = updates.add.size();
 
-		inline auto moveFeatureSingle(Color c, Piece piece, Square src, Square dst, Square king)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
+			for (const auto c : { Color::Black, Color::White })
+			{
+				const auto king = c == Color::Black ? blackKing : whiteKing;
 
-			assert(c != Color::None);
+				if (updates.refresh[static_cast<i32>(c)])
+				{
+					refreshAccumulator(*m_curr, c, boards, m_refreshTable, king);
+					continue;
+				}
 
-			assert(piece != Piece::None);
+				if (addCount == 1 && subCount == 1) // regular non-capture
+				{
+					const auto [subPiece, subSquare] = updates.sub[0];
+					const auto [addPiece, addSquare] = updates.add[0];
 
-			assert(src != Square::None);
-			assert(dst != Square::None);
-			assert(src != dst);
+					const auto sub = featureIndex(c, subPiece, subSquare, king);
+					const auto add = featureIndex(c, addPiece, addSquare, king);
 
-			assert(src != king);
+					m_curr->subAdd(g_network.featureTransformer(), c, sub, add);
+				}
+				else if (addCount == 1 && subCount == 2) // any capture
+				{
+					const auto [subPiece0, subSquare0] = updates.sub[0];
+					const auto [subPiece1, subSquare1] = updates.sub[1];
+					const auto [addPiece , addSquare ] = updates.add[0];
 
-			assert(king != Square::None);
+					const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
+					const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
+					const auto add  = featureIndex(c, addPiece , addSquare , king);
 
-			const auto srcFeature = featureIndex(c, piece, src, king);
-			const auto dstFeature = featureIndex(c, piece, dst, king);
+					m_curr->subSubAdd(g_network.featureTransformer(), c, sub0, sub1, add);
+				}
+				else if (addCount == 2 && subCount == 2) // castling
+				{
+					const auto [subPiece0, subSquare0] = updates.sub[0];
+					const auto [subPiece1, subSquare1] = updates.sub[1];
+					const auto [addPiece0, addSquare0] = updates.add[0];
+					const auto [addPiece1, addSquare1] = updates.add[1];
 
-			m_curr->moveFeature(g_network.featureTransformer(), c, srcFeature, dstFeature);
-		}
+					const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
+					const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
+					const auto add0 = featureIndex(c, addPiece0, addSquare0, king);
+					const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
 
-		inline auto activateFeatureSingle(Color c, Piece piece, Square sq, Square king)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			assert(c != Color::None);
-			assert(piece != Piece::None);
-			assert(sq != Square::None);
-			assert(king != Square::None);
-
-			assert(sq != king);
-
-			const auto feature = featureIndex(c, piece, sq, king);
-			m_curr->activateFeature(g_network.featureTransformer(), c, feature);
-		}
-
-		inline auto deactivateFeatureSingle(Color c, Piece piece, Square sq, Square king)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			assert(c != Color::None);
-			assert(piece != Piece::None);
-			assert(sq != Square::None);
-			assert(king != Square::None);
-
-			const auto feature = featureIndex(c, piece, sq, king);
-			m_curr->deactivateFeature(g_network.featureTransformer(), c, feature);
-		}
-
-		inline auto moveFeature(Piece piece, Square src, Square dst, Square blackKing, Square whiteKing)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			assert(piece != Piece::None);
-
-			assert(src != Square::None);
-			assert(dst != Square::None);
-			assert(src != dst);
-
-			assert(src != blackKing);
-			assert(src != whiteKing);
-
-			assert(blackKing != Square::None);
-			assert(whiteKing != Square::None);
-			assert(blackKing != whiteKing);
-
-			moveFeatureSingle(Color::Black, piece, src, dst, blackKing);
-			moveFeatureSingle(Color::White, piece, src, dst, whiteKing);
-		}
-
-		inline auto activateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			assert(piece != Piece::None);
-			assert(sq != Square::None);
-
-			assert(blackKing != Square::None);
-			assert(whiteKing != Square::None);
-			assert(blackKing != whiteKing);
-
-			activateFeatureSingle(Color::Black, piece, sq, blackKing);
-			activateFeatureSingle(Color::White, piece, sq, whiteKing);
-		}
-
-		inline auto deactivateFeature(Piece piece, Square sq, Square blackKing, Square whiteKing)
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			assert(piece != Piece::None);
-			assert(sq != Square::None);
-
-			assert(blackKing != Square::None);
-			assert(whiteKing != Square::None);
-			assert(blackKing != whiteKing);
-
-			deactivateFeatureSingle(Color::Black, piece, sq, blackKing);
-			deactivateFeatureSingle(Color::White, piece, sq, whiteKing);
+					m_curr->subSubAddAdd(g_network.featureTransformer(), c, sub0, sub1, add0, add1);
+				}
+				else assert(false && "Materialising a piece from nowhere?");
+			}
 		}
 
 		[[nodiscard]] inline auto evaluate(const PositionBoards &boards, Color stm) const

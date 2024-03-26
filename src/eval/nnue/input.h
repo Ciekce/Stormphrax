@@ -76,14 +76,33 @@ namespace stormphrax::eval::nnue
 			std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
 		}
 
-		inline auto moveFeature(const Ft &featureTransformer, Color c, u32 srcFeature, u32 dstFeature)
+		inline auto subAdd(const Ft &featureTransformer, Color c, u32 sub, u32 add)
 		{
-			assert(srcFeature < InputCount);
-			assert(dstFeature < InputCount);
+			assert(sub < InputCount);
+			assert(add < InputCount);
 
-			assert(srcFeature != dstFeature);
+			subAdd(forColor(c), featureTransformer.weights, sub * OutputCount, add * OutputCount);
+		}
 
-			subAdd(forColor(c), featureTransformer.weights, srcFeature * OutputCount, dstFeature * OutputCount);
+		inline auto subSubAdd(const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add)
+		{
+			assert(sub0 < InputCount);
+			assert(sub1 < InputCount);
+			assert(add  < InputCount);
+
+			subSubAdd(forColor(c), featureTransformer.weights,
+				sub0 * OutputCount, sub1 * OutputCount, add * OutputCount);
+		}
+
+		inline auto subSubAddAdd(const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
+		{
+			assert(sub0 < InputCount);
+			assert(sub1 < InputCount);
+			assert(add0 < InputCount);
+			assert(add1 < InputCount);
+
+			subSubAddAdd(forColor(c), featureTransformer.weights,
+				sub0 * OutputCount, sub1 * OutputCount, add0 * OutputCount, add1 * OutputCount);
 		}
 
 		inline auto activateFeature(const Ft &featureTransformer, Color c, u32 feature)
@@ -128,7 +147,8 @@ namespace stormphrax::eval::nnue
 					for (u32 j = 0; j < 256; ++j)
 					{
 						const auto idx = i + j;
-						accumulator[idx] += delta[addOffset + idx] - delta[subOffset + idx];
+						accumulator[idx] += delta[addOffset + idx]
+							- delta[subOffset + idx];
 					}
 				}
 			}
@@ -136,7 +156,74 @@ namespace stormphrax::eval::nnue
 			{
 				for (u32 i = 0; i < OutputCount; ++i)
 				{
-					accumulator[i] += delta[addOffset + i] - delta[subOffset + i];
+					accumulator[i] += delta[addOffset + i]
+						- delta[subOffset + i];
+				}
+			}
+		}
+
+		static inline auto subSubAdd(std::span<Type, OutputCount> accumulator,
+			std::span<const Type, WeightCount> delta, u32 subOffset0, u32 subOffset1, u32 addOffset) -> void
+		{
+			assert(subOffset0 + OutputCount <= delta.size());
+			assert(subOffset1 + OutputCount <= delta.size());
+			assert(addOffset  + OutputCount <= delta.size());
+
+			if constexpr(OutputCount >= 512)
+			{
+				for (usize i = 0; i < OutputCount; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						accumulator[idx] += delta[addOffset + idx]
+							- delta[subOffset0 + idx]
+							- delta[subOffset1 + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < OutputCount; ++i)
+				{
+					accumulator[i] += delta[addOffset + i]
+						- delta[subOffset0 + i]
+						- delta[subOffset1 + i];
+				}
+			}
+		}
+
+		static inline auto subSubAddAdd(std::span<Type, OutputCount> accumulator,
+			std::span<const Type, WeightCount> delta,
+			u32 subOffset0, u32 subOffset1, u32 addOffset0, u32 addOffset1) -> void
+		{
+			assert(subOffset0 + OutputCount <= delta.size());
+			assert(subOffset1 + OutputCount <= delta.size());
+			assert(addOffset0 + OutputCount <= delta.size());
+			assert(addOffset1 + OutputCount <= delta.size());
+
+			if constexpr(OutputCount >= 512)
+			{
+				for (usize i = 0; i < OutputCount; i += 256)
+				{
+					for (u32 j = 0; j < 256; ++j)
+					{
+						const auto idx = i + j;
+						accumulator[idx] += delta[addOffset0 + idx]
+							- delta[subOffset0 + idx]
+							+ delta[addOffset1 + idx]
+							- delta[subOffset1 + idx];
+					}
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < OutputCount; ++i)
+				{
+					accumulator[i] += delta[addOffset0 + i]
+						- delta[subOffset0 + i]
+						+ delta[addOffset1 + i]
+						- delta[subOffset1 + i];
 				}
 			}
 		}

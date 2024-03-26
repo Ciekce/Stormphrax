@@ -496,22 +496,22 @@ namespace stormphrax
 		[[nodiscard]] static auto fromDfrcIndex(u32 n) -> std::optional<Position>;
 
 	private:
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto removePiece(Piece piece, Square square, eval::NnueState *nnueState) -> void;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto movePieceNoCap(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> void;
+		template <bool UpdateKeys = true>
+		auto setPiece(Piece piece, Square square) -> void;
+		template <bool UpdateKeys = true>
+		auto removePiece(Piece piece, Square square) -> void;
+		template <bool UpdateKeys = true>
+		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
+		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueState *nnueState) -> Piece;
+		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void;
+		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueState *nnueState) -> Piece;
+		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
 
 		[[nodiscard]] inline auto calcCheckers() const
 		{
