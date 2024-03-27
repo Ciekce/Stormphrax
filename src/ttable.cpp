@@ -138,7 +138,8 @@ namespace stormphrax
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			if (loadEntry(i).type != EntryType::None)
+			const auto entry = loadEntry(i);
+			if (entry.type != EntryType::None && entry.age == m_currentAge)
 				++filledEntries;
 		}
 
