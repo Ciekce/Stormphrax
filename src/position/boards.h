@@ -337,11 +337,10 @@ namespace stormphrax
 		{
 			assert(src != Square::None);
 			assert(dst != Square::None);
-			assert(src != dst);
 
 			assert(pieceAt(src) == piece);
 
-			const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
+			const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
 
 			forPiece(pieceType(piece)) ^= mask;
 			forColor(pieceColor(piece)) ^= mask;
@@ -361,7 +360,7 @@ namespace stormphrax
 			forPiece(pieceType(moving))[src] = false;
 			forPiece(promo)[dst] = true;
 
-			const auto mask = Bitboard::fromSquare(src) | Bitboard::fromSquare(dst);
+			const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
 			forColor(pieceColor(moving)) ^= mask;
 		}
 

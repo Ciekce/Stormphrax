@@ -368,7 +368,7 @@ namespace stormphrax
 						const auto square = toSquare(rank, file);
 
 						const auto piece = newState.boards.pieceAt(square);
-						if (pieceType(piece) == PieceType::King)
+						if (piece != Piece::None && pieceType(piece) == PieceType::King)
 							newState.king(pieceColor(piece)) = square;
 					}
 				}
@@ -1221,7 +1221,9 @@ namespace stormphrax
 
 		assert(src != Square::None);
 		assert(dst != Square::None);
-		assert(src != dst);
+
+		if (src == dst)
+			return;
 
 		auto &state = currState();
 
@@ -1381,27 +1383,12 @@ namespace stormphrax
 
 		const auto rook = copyPieceColor(king, PieceType::Rook);
 
-		if (g_opts.chess960)
-		{
-			removePiece<UpdateKey>(rook, rookSrc);
-
-			if (kingSrc != kingDst)
-				movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
-
-			setPiece<UpdateKey>(rook, rookDst);
-		}
-		else
-		{
-			movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
-			movePieceNoCap<UpdateKey>(rook, rookSrc, rookDst);
-		}
+		movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
+		movePieceNoCap<UpdateKey>(rook, rookSrc, rookDst);
 
 		if constexpr (UpdateNnue)
 		{
-			const auto &state = currState();
-
 			const auto color = pieceColor(king);
-			const auto opponent = oppColor(color);
 
 			if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst))
 				nnueUpdates.setRefresh(color);
