@@ -128,40 +128,34 @@ namespace stormphrax
 	template auto Position::popMove<false>(eval::NnueState *) -> void;
 	template auto Position::popMove<true>(eval::NnueState *) -> void;
 
-	template auto Position::setPiece<false, false>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::setPiece<true, false>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::setPiece<false, true>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::setPiece<true, true>(Piece, Square, eval::NnueState *) -> void;
+	template auto Position::setPiece<false>(Piece, Square) -> void;
+	template auto Position::setPiece<true>(Piece, Square) -> void;
 
-	template auto Position::removePiece<false, false>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::removePiece<true, false>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::removePiece<false, true>(Piece, Square, eval::NnueState *) -> void;
-	template auto Position::removePiece<true, true>(Piece, Square, eval::NnueState *) -> void;
+	template auto Position::removePiece<false>(Piece, Square) -> void;
+	template auto Position::removePiece<true>(Piece, Square) -> void;
 
-	template auto Position::movePieceNoCap<false, false>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::movePieceNoCap<true, false>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::movePieceNoCap<false, true>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::movePieceNoCap<true, true>(Piece, Square, Square, eval::NnueState *) -> void;
+	template auto Position::movePieceNoCap<false>(Piece, Square, Square) -> void;
+	template auto Position::movePieceNoCap<true>(Piece, Square, Square) -> void;
 
-	template auto Position::movePiece<false, false>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::movePiece<true, false>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::movePiece<false, true>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::movePiece<true, true>(Piece, Square, Square, eval::NnueState *) -> Piece;
+	template auto Position::movePiece<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::movePiece<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::movePiece<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::movePiece<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 
-	template auto Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueState *) -> Piece;
-	template auto Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueState *) -> Piece;
-	template auto Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueState *) -> Piece;
-	template auto Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueState *) -> Piece;
+	template auto Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
+	template auto Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
+	template auto Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
+	template auto Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
 
-	template auto Position::castle<false, false>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::castle<true, false>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::castle<false, true>(Piece, Square, Square, eval::NnueState *) -> void;
-	template auto Position::castle<true, true>(Piece, Square, Square, eval::NnueState *) -> void;
+	template auto Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
+	template auto Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
+	template auto Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
+	template auto Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
 
-	template auto Position::enPassant<false, false>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::enPassant<true, false>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueState *) -> Piece;
-	template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueState *) -> Piece;
+	template auto Position::enPassant<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 
 	template auto Position::regen<false>() -> void;
 	template auto Position::regen<true>() -> void;
@@ -656,9 +650,6 @@ namespace stormphrax
 		if constexpr (UpdateNnue)
 			assert(nnueState != nullptr);
 
-		if constexpr (UpdateNnue && StateHistory)
-			nnueState->push();
-
 		auto &prevState = currState();
 
 		prevState.lastMove = move;
@@ -725,23 +716,27 @@ namespace stormphrax
 		}
 #endif
 
+		eval::NnueUpdates updates{};
 		auto captured = Piece::None;
 
 		switch (moveType)
 		{
 		case MoveType::Standard:
-			captured = movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
+			captured = movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
 			break;
 		case MoveType::Promotion:
-			captured = promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), nnueState);
+			captured = promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), updates);
 			break;
 		case MoveType::Castling:
-			castle<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
+			castle<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
 			break;
 		case MoveType::EnPassant:
-			captured = enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, nnueState);
+			captured = enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
 			break;
 		}
+
+		if constexpr (UpdateNnue)
+			nnueState->update<StateHistory>(updates, state.boards, state.blackKing(), state.whiteKing());
 
 		if (moving == Piece::BlackRook)
 		{
@@ -1215,24 +1210,18 @@ namespace stormphrax
 		return fen.str();
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::setPiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
+	template <bool UpdateKey>
+	auto Position::setPiece(Piece piece, Square square) -> void
 	{
 		assert(piece != Piece::None);
 		assert(square != Square::None);
 
 		assert(pieceType(piece) != PieceType::King);
-
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
 
 		auto &state = currState();
 
 		state.boards.setPiece(square, piece);
 
-		if constexpr (UpdateNnue)
-			nnueState->activateFeature(piece, square, state.blackKing(), state.whiteKing());
-
 		if constexpr (UpdateKey)
 		{
 			const auto key = keys::pieceSquare(piece, square);
@@ -1240,23 +1229,17 @@ namespace stormphrax
 		}
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::removePiece(Piece piece, Square square, eval::NnueState *nnueState) -> void
+	template <bool UpdateKey>
+	auto Position::removePiece(Piece piece, Square square) -> void
 	{
 		assert(piece != Piece::None);
 		assert(square != Square::None);
 
 		assert(pieceType(piece) != PieceType::King);
 
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
-
 		auto &state = currState();
 
 		state.boards.removePiece(square, piece);
-
-		if constexpr (UpdateNnue)
-			nnueState->deactivateFeature(piece, square, state.blackKing(), state.whiteKing());
 
 		if constexpr (UpdateKey)
 		{
@@ -1265,17 +1248,14 @@ namespace stormphrax
 		}
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::movePieceNoCap(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> void
+	template <bool UpdateKey>
+	auto Position::movePieceNoCap(Piece piece, Square src, Square dst) -> void
 	{
 		assert(piece != Piece::None);
 
 		assert(src != Square::None);
 		assert(dst != Square::None);
 		assert(src != dst);
-
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
 
 		auto &state = currState();
 
@@ -1284,28 +1264,7 @@ namespace stormphrax
 		if (pieceType(piece) == PieceType::King)
 		{
 			const auto color = pieceColor(piece);
-
-			if constexpr (UpdateNnue)
-			{
-				const auto prevKingSquare = state.king(color);
-
-				state.king(color) = dst;
-
-				if (eval::InputFeatureSet::refreshRequired(color, prevKingSquare, dst))
-				{
-					const auto opponent = oppColor(color);
-
-					nnueState->refresh(color, state.boards, state.king(color));
-					nnueState->moveFeatureSingle(opponent, piece, src, dst, state.king(opponent));
-				}
-				else nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
-			}
-			else state.king(color) = dst;
-		}
-		else
-		{
-			if constexpr (UpdateNnue)
-				nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			state.king(color) = dst;
 		}
 
 		if constexpr (UpdateKey)
@@ -1316,16 +1275,13 @@ namespace stormphrax
 	}
 
 	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::movePiece(Piece piece, Square src, Square dst, eval::NnueState *nnueState) -> Piece
+	auto Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece
 	{
 		assert(piece != Piece::None);
 
 		assert(src != Square::None);
 		assert(dst != Square::None);
 		assert(src != dst);
-
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
 
 		auto &state = currState();
 
@@ -1359,30 +1315,17 @@ namespace stormphrax
 				state.king(color) = dst;
 
 				if (eval::InputFeatureSet::refreshRequired(color, prevKingSquare, dst))
-				{
-					const auto opponent = oppColor(color);
-					const auto oppKing = state.king(opponent);
-
-					nnueState->refresh(color, state.boards, state.king(color));
-
-					nnueState->moveFeatureSingle(opponent, piece, src, dst, oppKing);
-					if (captured != Piece::None)
-						nnueState->deactivateFeatureSingle(opponent, captured, dst, oppKing);
-				}
-				else
-				{
-					nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
-					if (captured != Piece::None)
-						nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
-				}
+					nnueUpdates.setRefresh(color);
 			}
 			else state.king(color) = dst;
 		}
-		else if constexpr (UpdateNnue)
+
+		if constexpr (UpdateNnue)
 		{
-			nnueState->moveFeature(piece, src, dst, state.blackKing(), state.whiteKing());
+			nnueUpdates.pushSubAdd(piece, src, dst);
+
 			if (captured != Piece::None)
-				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+				nnueUpdates.pushSub(captured, dst);
 		}
 
 		if constexpr (UpdateKey)
@@ -1396,7 +1339,7 @@ namespace stormphrax
 
 	template <bool UpdateKey, bool UpdateNnue>
 	auto Position::promotePawn(Piece pawn, Square src, Square dst,
-		PieceType promo, eval::NnueState *nnueState) -> Piece
+		PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece
 	{
 		assert(pawn != Piece::None);
 		assert(pieceType(pawn) == PieceType::Pawn);
@@ -1410,9 +1353,6 @@ namespace stormphrax
 
 		assert(promo != PieceType::None);
 
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
-
 		auto &state = currState();
 
 		const auto captured = state.boards.pieceAt(dst);
@@ -1424,7 +1364,7 @@ namespace stormphrax
 			state.boards.removePiece(dst, captured);
 
 			if constexpr (UpdateNnue)
-				nnueState->deactivateFeature(captured, dst, state.blackKing(), state.whiteKing());
+				nnueUpdates.pushSub(captured, dst);
 
 			if constexpr (UpdateKey)
 				state.key ^= keys::pieceSquare(captured, dst);
@@ -1438,8 +1378,8 @@ namespace stormphrax
 
 			if constexpr (UpdateNnue)
 			{
-				nnueState->deactivateFeature(pawn, src, state.blackKing(), state.whiteKing());
-				nnueState->activateFeature(coloredPromo, dst, state.blackKing(), state.whiteKing());
+				nnueUpdates.pushSub(pawn, src);
+				nnueUpdates.pushAdd(coloredPromo, dst);
 			}
 
 			if constexpr (UpdateKey)
@@ -1450,7 +1390,7 @@ namespace stormphrax
 	}
 
 	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueState *nnueState) -> void
+	auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void
 	{
 		assert(king != Piece::None);
 		assert(pieceType(king) == PieceType::King);
@@ -1458,9 +1398,6 @@ namespace stormphrax
 		assert(kingSrc != Square::None);
 		assert(rookSrc != Square::None);
 		assert(kingSrc != rookSrc);
-
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
 
 		const auto rank = squareRank(kingSrc);
 
@@ -1483,17 +1420,17 @@ namespace stormphrax
 
 		if (g_opts.chess960)
 		{
-			removePiece<UpdateKey, false>(rook, rookSrc, nnueState);
+			removePiece<UpdateKey>(rook, rookSrc);
 
 			if (kingSrc != kingDst)
-				movePieceNoCap<UpdateKey, false>(king, kingSrc, kingDst, nnueState);
+				movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
 
-			setPiece<UpdateKey, false>(rook, rookDst, nnueState);
+			setPiece<UpdateKey>(rook, rookDst);
 		}
 		else
 		{
-			movePieceNoCap<UpdateKey, false>(king, kingSrc, kingDst, nnueState);
-			movePieceNoCap<UpdateKey, false>(rook, rookSrc, rookDst, nnueState);
+			movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
+			movePieceNoCap<UpdateKey>(rook, rookSrc, rookDst);
 		}
 
 		if constexpr (UpdateNnue)
@@ -1504,24 +1441,15 @@ namespace stormphrax
 			const auto opponent = oppColor(color);
 
 			if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst))
-			{
-				nnueState->refresh(color, state.boards, kingDst);
+				nnueUpdates.setRefresh(color);
 
-				const auto oppKing = state.king(opponent);
-
-				nnueState->moveFeatureSingle(oppColor(color), king, kingSrc, kingDst, oppKing);
-				nnueState->moveFeatureSingle(oppColor(color), rook, rookSrc, rookDst, oppKing);
-			}
-			else
-			{
-				nnueState->moveFeature(king, kingSrc, kingDst, state.blackKing(), state.whiteKing());
-				nnueState->moveFeature(rook, rookSrc, rookDst, state.blackKing(), state.whiteKing());
-			}
+			nnueUpdates.pushSubAdd(king, kingSrc, kingDst);
+			nnueUpdates.pushSubAdd(rook, rookSrc, rookDst);
 		}
 	}
 
 	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueState *nnueState) -> Piece
+	auto Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece
 	{
 		assert(pawn != Piece::None);
 		assert(pieceType(pawn) == PieceType::Pawn);
@@ -1530,9 +1458,6 @@ namespace stormphrax
 		assert(dst != Square::None);
 		assert(src != dst);
 
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
-
 		auto &state = currState();
 
 		const auto color = pieceColor(pawn);
@@ -1540,7 +1465,7 @@ namespace stormphrax
 		state.boards.movePiece(src, dst, pawn);
 
 		if constexpr (UpdateNnue)
-			nnueState->moveFeature(pawn, src, dst, state.blackKing(), state.whiteKing());
+			nnueUpdates.pushSubAdd(pawn, src, dst);
 
 		if constexpr (UpdateKey)
 		{
@@ -1559,7 +1484,7 @@ namespace stormphrax
 		state.boards.removePiece(captureSquare, enemyPawn);
 
 		if constexpr (UpdateNnue)
-			nnueState->deactivateFeature(enemyPawn, captureSquare, state.blackKing(), state.whiteKing());
+			nnueUpdates.pushSub(enemyPawn, captureSquare);
 
 		if constexpr (UpdateKey)
 		{
