@@ -89,13 +89,13 @@ namespace stormphrax::keys
 
 		usize flags{};
 
-		if (castlingRooks.shortSquares.black != Square::None)
+		if (castlingRooks.black().kingside  != Square::None)
 			flags |= BlackShort;
-		if (castlingRooks. longSquares.black != Square::None)
+		if (castlingRooks.black().queenside != Square::None)
 			flags |= BlackLong;
-		if (castlingRooks.shortSquares.white != Square::None)
+		if (castlingRooks.white().kingside  != Square::None)
 			flags |= WhiteShort;
-		if (castlingRooks. longSquares.white != Square::None)
+		if (castlingRooks.white().queenside != Square::None)
 			flags |= WhiteLong;
 
 		return Keys[offsets::Castling + flags];
