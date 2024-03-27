@@ -92,21 +92,7 @@ namespace stormphrax::eval
 	public:
 		NnueState()
 		{
-			m_accumulatorStack.reserve(256);
-		}
-
-		inline auto push()
-		{
-			assert(m_curr == &m_accumulatorStack.back());
-
-			m_accumulatorStack.push_back(*m_curr);
-			m_curr = &m_accumulatorStack.back();
-		}
-
-		inline auto pop()
-		{
-			m_accumulatorStack.pop_back();
-			m_curr = &m_accumulatorStack.back();
+			m_accumulatorStack.resize(256);
 		}
 
 		inline auto reset(const PositionBoards &boards, Square blackKing, Square whiteKing)
@@ -117,8 +103,7 @@ namespace stormphrax::eval
 
 			m_refreshTable.init(g_network.featureTransformer());
 
-			m_accumulatorStack.clear();
-			m_curr = &m_accumulatorStack.emplace_back();
+			m_curr = &m_accumulatorStack[0];
 
 			for (const auto c : { Color::Black, Color::White })
 			{
@@ -133,11 +118,16 @@ namespace stormphrax::eval
 			}
 		}
 
-		inline auto update(const NnueUpdates &updates, const PositionBoards &boards, Square blackKing, Square whiteKing)
+		template <bool Push>
+		inline auto update(const NnueUpdates &updates,
+			const PositionBoards &boards, Square blackKing, Square whiteKing)
 		{
-			assert(m_curr == &m_accumulatorStack.back());
-
+			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(!updates.refresh[0] || !updates.refresh[1]);
+
+			auto *next = Push ? m_curr + 1 : m_curr;
+
+			assert(next <= &m_accumulatorStack.back());
 
 			const auto subCount = updates.sub.size();
 			const auto addCount = updates.add.size();
@@ -148,7 +138,7 @@ namespace stormphrax::eval
 
 				if (updates.refresh[static_cast<i32>(c)])
 				{
-					refreshAccumulator(*m_curr, c, boards, m_refreshTable, king);
+					refreshAccumulator(*next, c, boards, m_refreshTable, king);
 					continue;
 				}
 
@@ -160,7 +150,7 @@ namespace stormphrax::eval
 					const auto sub = featureIndex(c, subPiece, subSquare, king);
 					const auto add = featureIndex(c, addPiece, addSquare, king);
 
-					m_curr->subAdd(g_network.featureTransformer(), c, sub, add);
+					next->subAddFrom(*m_curr, g_network.featureTransformer(), c, sub, add);
 				}
 				else if (addCount == 1 && subCount == 2) // any capture
 				{
@@ -172,7 +162,7 @@ namespace stormphrax::eval
 					const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
 					const auto add  = featureIndex(c, addPiece , addSquare , king);
 
-					m_curr->subSubAdd(g_network.featureTransformer(), c, sub0, sub1, add);
+					next->subSubAddFrom(*m_curr, g_network.featureTransformer(), c, sub0, sub1, add);
 				}
 				else if (addCount == 2 && subCount == 2) // castling
 				{
@@ -186,15 +176,23 @@ namespace stormphrax::eval
 					const auto add0 = featureIndex(c, addPiece0, addSquare0, king);
 					const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
 
-					m_curr->subSubAddAdd(g_network.featureTransformer(), c, sub0, sub1, add0, add1);
+					next->subSubAddAddFrom(*m_curr, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
 				}
 				else assert(false && "Materialising a piece from nowhere?");
 			}
+
+			m_curr = next;
+		}
+
+		inline auto pop()
+		{
+			assert(m_curr > &m_accumulatorStack[0]);
+			--m_curr;
 		}
 
 		[[nodiscard]] inline auto evaluate(const PositionBoards &boards, Color stm) const
 		{
-			assert(m_curr == &m_accumulatorStack.back());
+			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(stm != Color::None);
 
 			return evaluate(*m_curr, boards, stm);

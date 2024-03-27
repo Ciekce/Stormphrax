@@ -650,9 +650,6 @@ namespace stormphrax
 		if constexpr (UpdateNnue)
 			assert(nnueState != nullptr);
 
-		if constexpr (UpdateNnue && StateHistory)
-			nnueState->push();
-
 		auto &prevState = currState();
 
 		prevState.lastMove = move;
@@ -739,7 +736,7 @@ namespace stormphrax
 		}
 
 		if constexpr (UpdateNnue)
-			nnueState->update(updates, state.boards, state.blackKing(), state.whiteKing());
+			nnueState->update<StateHistory>(updates, state.boards, state.blackKing(), state.whiteKing());
 
 		if (moving == Piece::BlackRook)
 		{

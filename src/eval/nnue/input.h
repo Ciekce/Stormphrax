@@ -76,32 +76,36 @@ namespace stormphrax::eval::nnue
 			std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
 		}
 
-		inline auto subAdd(const Ft &featureTransformer, Color c, u32 sub, u32 add)
+		inline auto subAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
+			Color c, u32 sub, u32 add)
 		{
 			assert(sub < InputCount);
 			assert(add < InputCount);
 
-			subAdd(forColor(c), featureTransformer.weights, sub * OutputCount, add * OutputCount);
+			subAdd(src.forColor(c), forColor(c), featureTransformer.weights,
+				sub * OutputCount, add * OutputCount);
 		}
 
-		inline auto subSubAdd(const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add)
+		inline auto subSubAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
+			Color c, u32 sub0, u32 sub1, u32 add)
 		{
 			assert(sub0 < InputCount);
 			assert(sub1 < InputCount);
 			assert(add  < InputCount);
 
-			subSubAdd(forColor(c), featureTransformer.weights,
+			subSubAdd(src.forColor(c), forColor(c), featureTransformer.weights,
 				sub0 * OutputCount, sub1 * OutputCount, add * OutputCount);
 		}
 
-		inline auto subSubAddAdd(const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
+		inline auto subSubAddAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
+			Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
 		{
 			assert(sub0 < InputCount);
 			assert(sub1 < InputCount);
 			assert(add0 < InputCount);
 			assert(add1 < InputCount);
 
-			subSubAddAdd(forColor(c), featureTransformer.weights,
+			subSubAddAdd(src.forColor(c), forColor(c), featureTransformer.weights,
 				sub0 * OutputCount, sub1 * OutputCount, add0 * OutputCount, add1 * OutputCount);
 		}
 
@@ -134,7 +138,7 @@ namespace stormphrax::eval::nnue
 
 		SP_SIMD_ALIGNAS std::array<std::array<Type, OutputCount>, 2> m_outputs;
 
-		static inline auto subAdd(std::span<Type, OutputCount> accumulator,
+		static inline auto subAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta, u32 subOffset, u32 addOffset) -> void
 		{
 			assert(subOffset + OutputCount <= delta.size());
@@ -147,7 +151,8 @@ namespace stormphrax::eval::nnue
 					for (u32 j = 0; j < 256; ++j)
 					{
 						const auto idx = i + j;
-						accumulator[idx] += delta[addOffset + idx]
+						dst[idx] = src[idx]
+							+ delta[addOffset + idx]
 							- delta[subOffset + idx];
 					}
 				}
@@ -156,13 +161,14 @@ namespace stormphrax::eval::nnue
 			{
 				for (u32 i = 0; i < OutputCount; ++i)
 				{
-					accumulator[i] += delta[addOffset + i]
+					dst[i] = src[i]
+						+ delta[addOffset + i]
 						- delta[subOffset + i];
 				}
 			}
 		}
 
-		static inline auto subSubAdd(std::span<Type, OutputCount> accumulator,
+		static inline auto subSubAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta, u32 subOffset0, u32 subOffset1, u32 addOffset) -> void
 		{
 			assert(subOffset0 + OutputCount <= delta.size());
@@ -176,7 +182,8 @@ namespace stormphrax::eval::nnue
 					for (u32 j = 0; j < 256; ++j)
 					{
 						const auto idx = i + j;
-						accumulator[idx] += delta[addOffset + idx]
+						dst[idx] = src[idx]
+							+ delta[addOffset + idx]
 							- delta[subOffset0 + idx]
 							- delta[subOffset1 + idx];
 					}
@@ -186,14 +193,15 @@ namespace stormphrax::eval::nnue
 			{
 				for (u32 i = 0; i < OutputCount; ++i)
 				{
-					accumulator[i] += delta[addOffset + i]
+					dst[i] = src[i]
+						+ delta[addOffset + i]
 						- delta[subOffset0 + i]
 						- delta[subOffset1 + i];
 				}
 			}
 		}
 
-		static inline auto subSubAddAdd(std::span<Type, OutputCount> accumulator,
+		static inline auto subSubAddAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta,
 			u32 subOffset0, u32 subOffset1, u32 addOffset0, u32 addOffset1) -> void
 		{
@@ -209,7 +217,8 @@ namespace stormphrax::eval::nnue
 					for (u32 j = 0; j < 256; ++j)
 					{
 						const auto idx = i + j;
-						accumulator[idx] += delta[addOffset0 + idx]
+						dst[idx] = src[idx]
+							+ delta[addOffset0 + idx]
 							- delta[subOffset0 + idx]
 							+ delta[addOffset1 + idx]
 							- delta[subOffset1 + idx];
@@ -220,7 +229,8 @@ namespace stormphrax::eval::nnue
 			{
 				for (u32 i = 0; i < OutputCount; ++i)
 				{
-					accumulator[i] += delta[addOffset0 + i]
+					dst[i] = src[i]
+						+ delta[addOffset0 + i]
 						- delta[subOffset0 + i]
 						+ delta[addOffset1 + i]
 						- delta[subOffset1 + i];
