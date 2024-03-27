@@ -793,10 +793,10 @@ namespace stormphrax
 		assert(m_states.size() > 1 && "popMove() with no previous move?");
 
 		if constexpr (UpdateNnue)
+		{
 			assert(nnueState != nullptr);
-
-		if constexpr (UpdateNnue)
 			nnueState->pop();
+		}
 
 		m_states.pop_back();
 		m_keys.pop_back();
@@ -1276,14 +1276,11 @@ namespace stormphrax
 
 			if constexpr (UpdateNnue)
 			{
-				const auto prevKingSquare = state.king(color);
-
-				state.king(color) = dst;
-
-				if (eval::InputFeatureSet::refreshRequired(color, prevKingSquare, dst))
+				if (eval::InputFeatureSet::refreshRequired(color, state.king(color), dst))
 					nnueUpdates.setRefresh(color);
 			}
-			else state.king(color) = dst;
+
+			state.king(color) = dst;
 		}
 
 		if constexpr (UpdateNnue)
