@@ -134,8 +134,6 @@ namespace stormphrax::eval::nnue
 		static constexpr auto WeightCount = Ft::WeightCount;
 		static constexpr auto OutputCount = Ft::OutputCount;
 
-		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
-
 		SP_SIMD_ALIGNAS std::array<std::array<Type, OutputCount>, 2> m_outputs;
 
 		static inline auto subAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
@@ -144,27 +142,11 @@ namespace stormphrax::eval::nnue
 			assert(subOffset + OutputCount <= delta.size());
 			assert(addOffset + OutputCount <= delta.size());
 
-			if constexpr(OutputCount >= 512)
+			for (u32 i = 0; i < OutputCount; ++i)
 			{
-				for (usize i = 0; i < OutputCount; i += 256)
-				{
-					for (u32 j = 0; j < 256; ++j)
-					{
-						const auto idx = i + j;
-						dst[idx] = src[idx]
-							+ delta[addOffset + idx]
-							- delta[subOffset + idx];
-					}
-				}
-			}
-			else
-			{
-				for (u32 i = 0; i < OutputCount; ++i)
-				{
-					dst[i] = src[i]
-						+ delta[addOffset + i]
-						- delta[subOffset + i];
-				}
+				dst[i] = src[i]
+					+ delta[addOffset + i]
+					- delta[subOffset + i];
 			}
 		}
 
@@ -175,29 +157,12 @@ namespace stormphrax::eval::nnue
 			assert(subOffset1 + OutputCount <= delta.size());
 			assert(addOffset  + OutputCount <= delta.size());
 
-			if constexpr(OutputCount >= 512)
+			for (u32 i = 0; i < OutputCount; ++i)
 			{
-				for (usize i = 0; i < OutputCount; i += 256)
-				{
-					for (u32 j = 0; j < 256; ++j)
-					{
-						const auto idx = i + j;
-						dst[idx] = src[idx]
-							+ delta[addOffset + idx]
-							- delta[subOffset0 + idx]
-							- delta[subOffset1 + idx];
-					}
-				}
-			}
-			else
-			{
-				for (u32 i = 0; i < OutputCount; ++i)
-				{
-					dst[i] = src[i]
-						+ delta[addOffset + i]
-						- delta[subOffset0 + i]
-						- delta[subOffset1 + i];
-				}
+				dst[i] = src[i]
+					+ delta[addOffset + i]
+					- delta[subOffset0 + i]
+					- delta[subOffset1 + i];
 			}
 		}
 
@@ -210,31 +175,13 @@ namespace stormphrax::eval::nnue
 			assert(addOffset0 + OutputCount <= delta.size());
 			assert(addOffset1 + OutputCount <= delta.size());
 
-			if constexpr(OutputCount >= 512)
+			for (u32 i = 0; i < OutputCount; ++i)
 			{
-				for (usize i = 0; i < OutputCount; i += 256)
-				{
-					for (u32 j = 0; j < 256; ++j)
-					{
-						const auto idx = i + j;
-						dst[idx] = src[idx]
-							+ delta[addOffset0 + idx]
-							- delta[subOffset0 + idx]
-							+ delta[addOffset1 + idx]
-							- delta[subOffset1 + idx];
-					}
-				}
-			}
-			else
-			{
-				for (u32 i = 0; i < OutputCount; ++i)
-				{
-					dst[i] = src[i]
-						+ delta[addOffset0 + i]
-						- delta[subOffset0 + i]
-						+ delta[addOffset1 + i]
-						- delta[subOffset1 + i];
-				}
+				dst[i] = src[i]
+					+ delta[addOffset0 + i]
+					- delta[subOffset0 + i]
+					+ delta[addOffset1 + i]
+					- delta[subOffset1 + i];
 			}
 		}
 
@@ -243,23 +190,9 @@ namespace stormphrax::eval::nnue
 		{
 			assert(offset + OutputCount <= delta.size());
 
-			if constexpr(OutputCount >= 512)
+			for (u32 i = 0; i < OutputCount; ++i)
 			{
-				for (usize i = 0; i < OutputCount; i += 256)
-				{
-					for (u32 j = 0; j < 256; ++j)
-					{
-						const auto idx = i + j;
-						accumulator[idx] += delta[offset + idx];
-					}
-				}
-			}
-			else
-			{
-				for (u32 i = 0; i < OutputCount; ++i)
-				{
-					accumulator[i] += delta[offset + i];
-				}
+				accumulator[i] += delta[offset + i];
 			}
 		}
 
@@ -268,23 +201,9 @@ namespace stormphrax::eval::nnue
 		{
 			assert(offset + OutputCount <= delta.size());
 
-			if constexpr(OutputCount >= 512)
+			for (u32 i = 0; i < OutputCount; ++i)
 			{
-				for (usize i = 0; i < OutputCount; i += 256)
-				{
-					for (u32 j = 0; j < 256; ++j)
-					{
-						const auto idx = i + j;
-						accumulator[idx] -= delta[offset + idx];
-					}
-				}
-			}
-			else
-			{
-				for (u32 i = 0; i < OutputCount; ++i)
-				{
-					accumulator[i] -= delta[offset + i];
-				}
+				accumulator[i] -= delta[offset + i];
 			}
 		}
 	};
@@ -336,8 +255,6 @@ namespace stormphrax::eval::nnue
 
 		static_assert( InputCount > 0);
 		static_assert(OutputCount > 0);
-
-		static_assert(OutputCount < 512 || (OutputCount % 256) == 0);
 
 		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
 		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;

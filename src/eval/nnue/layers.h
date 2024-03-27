@@ -97,11 +97,6 @@ namespace stormphrax::eval::nnue
 	{
 		using Base = BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
 
-		// for larger layers, operations are done in blocks of 256
-		// values - this allows GCC to unroll loops without dying
-		// cheers @jhonnold for the tip
-		static_assert(Base::InputCount < 512 || (Base::InputCount % 256) == 0);
-
 		inline auto forward(const PositionBoards &boards,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
@@ -122,36 +117,15 @@ namespace stormphrax::eval::nnue
 
 				typename Base::OutputType sum{0};
 
-				if constexpr(Base::InputCount >= 512)
+				for (u32 inputIdx = 0; inputIdx < Base::InputCount; inputIdx += ChunkSize)
 				{
-					for (u32 i = 0; i < Base::InputCount; i += 256)
-					{
-						for (u32 j = 0; j < 256; j += ChunkSize)
-						{
-							const auto inputIdx = i + j;
+					const auto inputVec = util::simd::load<typename Base::InputType>(&inputs[inputIdx]);
+					const auto weightVec = util::simd::load<typename Base::ParamType>(
+						&Base::weights[weightOffset + inputIdx]
+					);
 
-							const auto inputVec = util::simd::load<typename Base::InputType>(&inputs[inputIdx]);
-							const auto weightVec = util::simd::load<typename Base::ParamType>(
-								&Base::weights[weightOffset + inputIdx]
-							);
-
-							const auto products = Activation::activateAndDot(inputVec, weightVec);
-							sum = add<typename Base::OutputType>(sum, products);
-						}
-					}
-				}
-				else
-				{
-					for (u32 inputIdx = 0; inputIdx < Base::InputCount; inputIdx += ChunkSize)
-					{
-						const auto inputVec = util::simd::load<typename Base::InputType>(&inputs[inputIdx]);
-						const auto weightVec = util::simd::load<typename Base::ParamType>(
-							&Base::weights[weightOffset + inputIdx]
-						);
-
-						const auto products = Activation::activateAndDot(inputVec, weightVec);
-						sum = add<typename Base::OutputType>(sum, products);
-					}
+					const auto products = Activation::activateAndDot(inputVec, weightVec);
+					sum = add<typename Base::OutputType>(sum, products);
 				}
 
 				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
@@ -168,7 +142,6 @@ namespace stormphrax::eval::nnue
 		using Base = BaseAffineLayer<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>;
 
 		static constexpr auto PerspectiveInputCount = Inputs;
-		static_assert(PerspectiveInputCount < 512 || (PerspectiveInputCount % 256) == 0);
 
 		inline auto forward(const PositionBoards &boards,
 			std::span<const typename Base::InputType, PerspectiveInputCount>  stmInputs,
@@ -192,67 +165,28 @@ namespace stormphrax::eval::nnue
 
 				auto sum = zero<typename Base::OutputType>();
 
-				if constexpr(PerspectiveInputCount >= 512)
+				// stm perspective
+				for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
 				{
-					// stm perspective
-					for (u32 i = 0; i < PerspectiveInputCount; i += 256)
-					{
-						for (u32 j = 0; j < 256; j += ChunkSize)
-						{
-							const auto inputIdx = i + j;
+					const auto inputVec = load<typename Base::InputType>(&stmInputs[inputIdx]);
+					const auto weightVec = load<typename Base::ParamType>(
+						&Base::weights[weightOffset + inputIdx]
+					);
 
-							const auto inputVec = load<typename Base::InputType>(&stmInputs[inputIdx]);
-							const auto weightVec = load<typename Base::ParamType>(
-								&Base::weights[weightOffset + inputIdx]
-							);
-
-							const auto products = Activation::activateAndDot(inputVec, weightVec);
-							sum = add<typename Base::OutputType>(sum, products);
-						}
-					}
-
-					// nstm perspective
-					for (u32 i = 0; i < PerspectiveInputCount; i += 256)
-					{
-						for (u32 j = 0; j < 256; j += ChunkSize)
-						{
-							const auto inputIdx = i + j;
-
-							const auto inputVec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
-							const auto weightVec = load<typename Base::ParamType>(
-								&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
-							);
-
-							const auto products = Activation::activateAndDot(inputVec, weightVec);
-							sum = add<typename Base::OutputType>(sum, products);
-						}
-					}
+					const auto products = Activation::activateAndDot(inputVec, weightVec);
+					sum = add<typename Base::OutputType>(sum, products);
 				}
-				else
+
+				// nstm perspective
+				for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
 				{
-					// stm perspective
-					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
-					{
-						const auto inputVec = load<typename Base::InputType>(&stmInputs[inputIdx]);
-						const auto weightVec = load<typename Base::ParamType>(
-							&Base::weights[weightOffset + inputIdx]
-						);
+					const auto inputVec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
+					const auto weightVec = load<typename Base::ParamType>(
+						&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
+					);
 
-						const auto products = Activation::activateAndDot(inputVec, weightVec);
-						sum = add<typename Base::OutputType>(sum, products);
-					}
-
-					// nstm perspective
-					for (u32 inputIdx = 0; inputIdx < PerspectiveInputCount; inputIdx += ChunkSize)
-					{
-						const auto inputVec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
-						const auto weightVec = load<typename Base::ParamType>(
-							&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
-						);
-
-						const auto products = Activation::activateAndDot(inputVec, weightVec);
-						sum = add<typename Base::OutputType>(sum, products);
-					}
+					const auto products = Activation::activateAndDot(inputVec, weightVec);
+					sum = add<typename Base::OutputType>(sum, products);
 				}
 
 				const auto output = hsum<typename Base::OutputType>(sum);
