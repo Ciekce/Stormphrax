@@ -97,7 +97,7 @@ namespace stormphrax::eval::nnue
 	{
 		using Base = BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
 
-		inline auto forward(const PositionBoards &boards,
+		inline auto forward(const BitboardSet &bbs,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
 		{
@@ -106,7 +106,7 @@ namespace stormphrax::eval::nnue
 			assert(isAligned( inputs.data()));
 			assert(isAligned(outputs.data()));
 
-			const auto outputBucket = OutputBucketing::getBucket(boards);
+			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
 			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
 			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;
@@ -143,7 +143,7 @@ namespace stormphrax::eval::nnue
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 
-		inline auto forward(const PositionBoards &boards,
+		inline auto forward(const BitboardSet &bbs,
 			std::span<const typename Base::InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
@@ -154,7 +154,7 @@ namespace stormphrax::eval::nnue
 			assert(isAligned(nstmInputs.data()));
 			assert(isAligned(   outputs.data()));
 
-			const auto outputBucket = OutputBucketing::getBucket(boards);
+			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
 			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
 			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;

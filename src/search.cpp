@@ -74,20 +74,20 @@ namespace stormphrax::search
 				else return Move::standard(src, dst);
 			};
 
-			const auto &boards = pos.boards();
+			const auto &bbs = pos.bbs();
 
 			TbRootMoves tbRootMoves{};
 
 			const auto epSq = pos.enPassant();
 			auto result = tb_probe_root_dtz(
-				boards.whiteOccupancy(),
-				boards.blackOccupancy(),
-				boards.kings(),
-				boards.queens(),
-				boards.rooks(),
-				boards.bishops(),
-				boards.knights(),
-				boards.pawns(),
+				bbs.whiteOccupancy(),
+				bbs.blackOccupancy(),
+				bbs.kings(),
+				bbs.queens(),
+				bbs.rooks(),
+				bbs.bishops(),
+				bbs.knights(),
+				bbs.pawns(),
 				pos.halfmove(), 0,
 				epSq == Square::None ? 0 : static_cast<i32>(epSq),
 				pos.toMove() == Color::White,
@@ -96,14 +96,14 @@ namespace stormphrax::search
 
 			if (!result) // DTZ tables unavailable, fall back to WDL
 				result = tb_probe_root_wdl(
-					boards.whiteOccupancy(),
-					boards.blackOccupancy(),
-					boards.kings(),
-					boards.queens(),
-					boards.rooks(),
-					boards.bishops(),
-					boards.knights(),
-					boards.pawns(),
+					bbs.whiteOccupancy(),
+					bbs.blackOccupancy(),
+					bbs.kings(),
+					bbs.queens(),
+					bbs.rooks(),
+					bbs.bishops(),
+					bbs.knights(),
+					bbs.pawns(),
 					pos.halfmove(), 0,
 					epSq == Square::None ? 0 : static_cast<i32>(epSq),
 					pos.toMove() == Color::White,
@@ -183,7 +183,8 @@ namespace stormphrax::search
 		ScoredMoveList rootMoves{};
 
 		if (g_opts.syzygyEnabled
-			&& pos.boards().occupancy().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+			&& pos.bbs().occupancy().popcount()
+				<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
 		{
 			tbRoot = true;
 			const auto wdl = probeRootTb(rootMoves, pos);
@@ -226,7 +227,7 @@ namespace stormphrax::search
 
 			thread.rootMoves() = rootMoves;
 
-			thread.nnueState.reset(thread.pos.boards(), thread.pos.blackKing(), thread.pos.whiteKing());
+			thread.nnueState.reset(thread.pos.bbs(), thread.pos.blackKing(), thread.pos.whiteKing());
 		}
 
 		if (tbRoot)
@@ -282,7 +283,7 @@ namespace stormphrax::search
 		thread->pos = pos;
 		thread->maxDepth = depth;
 
-		thread->nnueState.reset(thread->pos.boards(), thread->pos.blackKing(), thread->pos.whiteKing());
+		thread->nnueState.reset(thread->pos.bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
 
 		thread->rootMoves().clear();
 		generateAll(thread->rootMoves(), thread->pos);
@@ -522,6 +523,7 @@ namespace stormphrax::search
 
 		auto &pos = thread.pos;
 		const auto &boards = pos.boards();
+		const auto &bbs = pos.bbs();
 
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
@@ -600,7 +602,7 @@ namespace stormphrax::search
 		const bool ttHit = ttEntry.type != EntryType::None;
 		const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
-		const auto pieceCount = boards.occupancy().popcount();
+		const auto pieceCount = bbs.occupancy().popcount();
 
 		auto syzygyMin = -ScoreMate;
 		auto syzygyMax =  ScoreMate;
@@ -619,14 +621,14 @@ namespace stormphrax::search
 		{
 			const auto epSq = pos.enPassant();
 			const auto wdl = tb_probe_wdl(
-				boards.whiteOccupancy(),
-				boards.blackOccupancy(),
-				boards.kings(),
-				boards.queens(),
-				boards.rooks(),
-				boards.bishops(),
-				boards.knights(),
-				boards.pawns(),
+				bbs.whiteOccupancy(),
+				bbs.blackOccupancy(),
+				bbs.kings(),
+				bbs.queens(),
+				bbs.rooks(),
+				bbs.bishops(),
+				bbs.knights(),
+				bbs.pawns(),
 				0, 0,
 				epSq == Square::None ? 0 : static_cast<i32>(epSq),
 				us == Color::White
@@ -734,7 +736,7 @@ namespace stormphrax::search
 				&& stack.eval >= beta
 				&& !(ttHit && ttEntry.type == EntryType::Alpha && ttEntry.score < beta)
 				&& pos.lastMove()
-				&& !boards.nonPk(us).empty())
+				&& !bbs.nonPk(us).empty())
 			{
 				// prefetch as early as possible
 				// a nullmove only changes the stm

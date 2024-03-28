@@ -32,14 +32,14 @@ namespace stormphrax::eval::nnue::output
 	concept OutputBucketing = requires
 	{
 		{ T::BucketCount } -> std::same_as<const u32 &>;
-		{ T::getBucket(PositionBoards{}) } -> std::same_as<u32>;
+		{ T::getBucket(BitboardSet{}) } -> std::same_as<u32>;
 	};
 
 	struct [[maybe_unused]] Single
 	{
 		static constexpr u32 BucketCount = 1;
 
-		static constexpr auto getBucket(const PositionBoards &) -> u32
+		static constexpr auto getBucket(const BitboardSet &) -> u32
 		{
 			return 0;
 		}
@@ -53,10 +53,10 @@ namespace stormphrax::eval::nnue::output
 
 		static constexpr u32 BucketCount = Count;
 
-		static inline auto getBucket(const PositionBoards &boards) -> u32
+		static inline auto getBucket(const BitboardSet &bbs) -> u32
 		{
 			constexpr auto Div = 32 / Count;
-			return (boards.occupancy().popcount() - 2) / Div;
+			return (bbs.occupancy().popcount() - 2) / Div;
 		}
 	};
 
@@ -64,12 +64,12 @@ namespace stormphrax::eval::nnue::output
 	{
 		static constexpr u32 BucketCount = 2;
 
-		static inline auto getBucket(const PositionBoards &boards) -> u32
+		static inline auto getBucket(const BitboardSet &bbs) -> u32
 		{
-			return (!boards.blackBishops().empty()
-					&& !boards.whiteBishops().empty()
-					&& (boards.blackBishops() & boards::LightSquares).empty()
-						!= (boards.whiteBishops() & boards::LightSquares).empty())
+			return (!bbs.blackBishops().empty()
+					&& !bbs.whiteBishops().empty()
+					&& (bbs.blackBishops() & boards::LightSquares).empty()
+						!= (bbs.whiteBishops() & boards::LightSquares).empty())
 				? 1 : 0;
 		}
 	};
@@ -80,9 +80,9 @@ namespace stormphrax::eval::nnue::output
 	{
 		static constexpr u32 BucketCount = L::BucketCount * R::BucketCount;
 
-		static inline auto getBucket(const PositionBoards &boards) -> u32
+		static inline auto getBucket(const BitboardSet &bbs) -> u32
 		{
-			return L::getBucket(boards) * R::BucketCount + R::getBucket(boards);
+			return L::getBucket(bbs) * R::BucketCount + R::getBucket(bbs);
 		}
 	};
 }
