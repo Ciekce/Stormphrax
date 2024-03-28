@@ -114,7 +114,7 @@ namespace stormphrax::eval
 				resetAccumulator(rtEntry.accumulator, c, bbs, king);
 
 				m_curr->copyFrom(c, rtEntry.accumulator);
-				rtEntry.colorBoards(c) = bbs;
+				rtEntry.colorBbs(c) = bbs;
 			}
 		}
 
@@ -241,7 +241,7 @@ namespace stormphrax::eval
 			const auto bucket = InputFeatureSet::getBucket(c, king);
 
 			auto &rtEntry = refreshTable.table[bucket];
-			auto &prevBoards = rtEntry.colorBoards(c);
+			auto &prevBoards = rtEntry.colorBbs(c);
 
 			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
 			{

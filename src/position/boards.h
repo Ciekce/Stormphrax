@@ -45,17 +45,17 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto forPiece(PieceType piece) -> Bitboard &
 		{
-			return m_boards[static_cast<i32>(piece)];
+			return m_pieces[static_cast<i32>(piece)];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece) const
 		{
-			return m_boards[static_cast<i32>(piece)];
+			return m_pieces[static_cast<i32>(piece)];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece, Color c) const
 		{
-			return m_boards[static_cast<i32>(piece)] & forColor(c);
+			return m_pieces[static_cast<i32>(piece)] & forColor(c);
 		}
 
 		[[nodiscard]] inline auto forPiece(Piece piece) const
@@ -270,7 +270,7 @@ namespace stormphrax
 
 	private:
 		std::array<Bitboard, 2> m_colors{};
-		std::array<Bitboard, 6> m_boards{};
+		std::array<Bitboard, 6> m_pieces{};
 	};
 
 	class PositionBoards
