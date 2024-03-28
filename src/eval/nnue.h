@@ -95,7 +95,7 @@ namespace stormphrax::eval
 			m_accumulatorStack.resize(256);
 		}
 
-		inline auto reset(const PositionBbs &boards, Square blackKing, Square whiteKing)
+		inline auto reset(const BitboardSet &bbs, Square blackKing, Square whiteKing)
 		{
 			assert(blackKing != Square::None);
 			assert(whiteKing != Square::None);
@@ -111,16 +111,15 @@ namespace stormphrax::eval
 				const auto bucket = InputFeatureSet::getBucket(c, king);
 
 				auto &rtEntry = m_refreshTable.table[bucket];
-				resetAccumulator(rtEntry.accumulator, c, boards, king);
+				resetAccumulator(rtEntry.accumulator, c, bbs, king);
 
 				m_curr->copyFrom(c, rtEntry.accumulator);
-				rtEntry.colorBoards(c) = boards;
+				rtEntry.colorBoards(c) = bbs;
 			}
 		}
 
 		template <bool Push>
-		inline auto update(const NnueUpdates &updates,
-			const PositionBbs &boards, Square blackKing, Square whiteKing)
+		inline auto update(const NnueUpdates &updates, const BitboardSet &bbs, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(!updates.refresh[0] || !updates.refresh[1]);
@@ -138,7 +137,7 @@ namespace stormphrax::eval
 
 				if (updates.refresh[static_cast<i32>(c)])
 				{
-					refreshAccumulator(*next, c, boards, m_refreshTable, king);
+					refreshAccumulator(*next, c, bbs, m_refreshTable, king);
 					continue;
 				}
 
@@ -190,15 +189,15 @@ namespace stormphrax::eval
 			--m_curr;
 		}
 
-		[[nodiscard]] inline auto evaluate(const PositionBbs &boards, Color stm) const
+		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, Color stm) const
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(stm != Color::None);
 
-			return evaluate(*m_curr, boards, stm);
+			return evaluate(*m_curr, bbs, stm);
 		}
 
-		[[nodiscard]] static inline auto evaluateOnce(const PositionBbs &boards,
+		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs,
 			Square blackKing, Square whiteKing, Color stm)
 		{
 			assert(blackKing != Square::None);
@@ -211,10 +210,10 @@ namespace stormphrax::eval
 
 			accumulator.initBoth(g_network.featureTransformer());
 
-			resetAccumulator(accumulator, Color::Black, boards, blackKing);
-			resetAccumulator(accumulator, Color::White, boards, whiteKing);
+			resetAccumulator(accumulator, Color::Black, bbs, blackKing);
+			resetAccumulator(accumulator, Color::White, bbs, whiteKing);
 
-			return evaluate(accumulator, boards, stm);
+			return evaluate(accumulator, bbs, stm);
 		}
 
 	private:
@@ -224,20 +223,20 @@ namespace stormphrax::eval
 		RefreshTable m_refreshTable{};
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
-			const PositionBbs &boards, Color stm) -> i32
+			const BitboardSet &bbs, Color stm) -> i32
 		{
 			assert(stm != Color::None);
 
 			constexpr i32 Q = L1Q * OutputQ;
 
 			const auto output = stm == Color::Black
-				? g_network.propagate(boards, accumulator.black(), accumulator.white())
-				: g_network.propagate(boards, accumulator.white(), accumulator.black());
+				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
+				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
 			return output * Scale / Q;
 		}
 
 		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
-			const PositionBbs &boards, RefreshTable &refreshTable, Square king) -> void
+			const BitboardSet &bbs, RefreshTable &refreshTable, Square king) -> void
 		{
 			const auto bucket = InputFeatureSet::getBucket(c, king);
 
@@ -249,7 +248,7 @@ namespace stormphrax::eval
 				const auto piece = static_cast<Piece>(pieceIdx);
 
 				const auto prev = prevBoards.forPiece(piece);
-				const auto curr =     boards.forPiece(piece);
+				const auto curr =     bbs.forPiece(piece);
 
 				auto   added = curr & ~prev;
 				auto removed = prev & ~curr;
@@ -272,11 +271,11 @@ namespace stormphrax::eval
 			}
 
 			accumulator.copyFrom(c, rtEntry.accumulator);
-			prevBoards = boards;
+			prevBoards = bbs;
 		}
 
 		static inline auto resetAccumulator(Accumulator &accumulator, Color c,
-			const PositionBbs &boards, Square king) -> void
+			const BitboardSet &bbs, Square king) -> void
 		{
 			assert(c != Color::None);
 			assert(king != Square::None);
@@ -287,7 +286,7 @@ namespace stormphrax::eval
 			{
 				const auto piece = static_cast<Piece>(pieceIdx);
 
-				auto board = boards.forPiece(piece);
+				auto board = bbs.forPiece(piece);
 				while (!board.empty())
 				{
 					const auto sq = board.popLowestSquare();

@@ -81,13 +81,13 @@ namespace stormphrax::see
 		return score;
 	}
 
-	[[nodiscard]] inline auto popLeastValuable(const PositionBbs &boards,
+	[[nodiscard]] inline auto popLeastValuable(const BitboardSet &bbs,
 		Bitboard &occ, Bitboard attackers, Color color)
 	{
 		for (i32 i = 0; i < 6; ++i)
 		{
 			const auto piece = static_cast<PieceType>(i);
-			auto board = attackers & boards.forPiece(piece, color);
+			auto board = attackers & bbs.forPiece(piece, color);
 
 			if (!board.empty())
 			{

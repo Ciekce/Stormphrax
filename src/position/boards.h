@@ -27,11 +27,11 @@
 
 namespace stormphrax
 {
-	class PositionBbs
+	class BitboardSet
 	{
 	public:
-		PositionBbs() = default;
-		~PositionBbs() = default;
+		BitboardSet() = default;
+		~BitboardSet() = default;
 
 		[[nodiscard]] inline auto forColor(Color color) -> auto &
 		{
@@ -266,7 +266,7 @@ namespace stormphrax
 			return color == Color::Black ? blackNonPk() : whiteNonPk();
 		}
 
-		[[nodiscard]] inline auto operator==(const PositionBbs &other) const -> bool = default;
+		[[nodiscard]] inline auto operator==(const BitboardSet &other) const -> bool = default;
 
 	private:
 		std::array<Bitboard, 2> m_colors{};
@@ -405,7 +405,7 @@ namespace stormphrax
 			return m_mailbox[static_cast<i32>(square)];
 		}
 
-		PositionBbs m_bbs{};
+		BitboardSet m_bbs{};
 		std::array<Piece, 64> m_mailbox{};
 	};
 }

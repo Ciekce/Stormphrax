@@ -101,7 +101,7 @@ namespace stormphrax
 			constexpr auto LeftOffset = offsets::upLeft<Us>();
 			constexpr auto RightOffset = offsets::upRight<Us>();
 
-			const auto &bbs = pos.boards().bbs();
+			const auto &bbs = pos.bbs();
 
 			const auto theirs = bbs.occupancy<Them>();
 
@@ -138,7 +138,7 @@ namespace stormphrax
 		}
 
 		template <Color Us>
-		auto generatePawnsQuiet_(ScoredMoveList &quiet, const PositionBbs &bbs, Bitboard dstMask, Bitboard occ)
+		auto generatePawnsQuiet_(ScoredMoveList &quiet, const BitboardSet &bbs, Bitboard dstMask, Bitboard occ)
 		{
 			constexpr auto Them = oppColor(Us);
 
@@ -179,8 +179,8 @@ namespace stormphrax
 		inline auto generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
 		{
 			if (pos.toMove() == Color::Black)
-				generatePawnsQuiet_<Color::Black>(quiet, pos.boards().bbs(), dstMask, occ);
-			else generatePawnsQuiet_<Color::White>(quiet, pos.boards().bbs(), dstMask, occ);
+				generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
+			else generatePawnsQuiet_<Color::White>(quiet, pos.bbs(), dstMask, occ);
 		}
 
 		template <PieceType Piece, const std::array<Bitboard, 64> &Attacks>
@@ -188,7 +188,7 @@ namespace stormphrax
 		{
 			const auto us = pos.toMove();
 
-			auto pieces = pos.boards().bbs().forPiece(Piece, us);
+			auto pieces = pos.bbs().forPiece(Piece, us);
 			while (!pieces.empty())
 			{
 				const auto srcSquare = pieces.popLowestSquare();
@@ -226,7 +226,7 @@ namespace stormphrax
 				if (!pos.isCheck())
 				{
 					const auto &castlingRooks = pos.castlingRooks();
-					const auto occupancy = pos.boards().bbs().occupancy();
+					const auto occupancy = pos.bbs().occupancy();
 
 					// this branch is cheaper than the extra checks the chess960 castling movegen does
 					if (g_opts.chess960)
@@ -287,7 +287,7 @@ namespace stormphrax
 
 		auto generateSliders(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			const auto &bbs = pos.boards().bbs();
+			const auto &bbs = pos.bbs();
 
 			const auto us = pos.toMove();
 			const auto them = oppColor(us);
@@ -322,7 +322,7 @@ namespace stormphrax
 
 	auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void
 	{
-		const auto &bbs = pos.boards().bbs();
+		const auto &bbs = pos.bbs();
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -372,7 +372,7 @@ namespace stormphrax
 
 	auto generateQuiet(ScoredMoveList &quiet, const Position &pos) -> void
 	{
-		const auto &bbs = pos.boards().bbs();
+		const auto &bbs = pos.bbs();
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -408,7 +408,7 @@ namespace stormphrax
 
 	auto generateAll(ScoredMoveList &dst, const Position &pos) -> void
 	{
-		const auto &bbs = pos.boards().bbs();
+		const auto &bbs = pos.bbs();
 
 		const auto us = pos.toMove();
 

@@ -148,6 +148,7 @@ namespace stormphrax
 
 	public:
 		[[nodiscard]] inline auto boards() const -> const auto & { return currState().boards; }
+		[[nodiscard]] inline auto bbs() const -> const auto & { return currState().boards.bbs(); }
 
 		[[nodiscard]] inline auto toMove() const
 		{
@@ -196,7 +197,7 @@ namespace stormphrax
 		{
 			assert(square != Square::None);
 
-			const auto &bbs = this->boards().bbs();
+			const auto &bbs = this->bbs();
 
 			Bitboard attackers{};
 
@@ -224,7 +225,7 @@ namespace stormphrax
 		{
 			assert(square != Square::None);
 
-			const auto &bbs = this->boards().bbs();
+			const auto &bbs = this->bbs();
 
 			Bitboard attackers{};
 
@@ -377,7 +378,7 @@ namespace stormphrax
 					return true;
 			}
 
-			const auto &bbs = this->boards().bbs();
+			const auto &bbs = this->bbs();
 
 			if (!bbs.pawns().empty() || !bbs.majors().empty())
 				return false;

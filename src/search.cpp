@@ -74,7 +74,7 @@ namespace stormphrax::search
 				else return Move::standard(src, dst);
 			};
 
-			const auto &bbs = pos.boards().bbs();
+			const auto &bbs = pos.bbs();
 
 			TbRootMoves tbRootMoves{};
 
@@ -183,7 +183,7 @@ namespace stormphrax::search
 		ScoredMoveList rootMoves{};
 
 		if (g_opts.syzygyEnabled
-			&& pos.boards().bbs().occupancy().popcount()
+			&& pos.bbs().occupancy().popcount()
 				<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
 		{
 			tbRoot = true;
@@ -227,7 +227,7 @@ namespace stormphrax::search
 
 			thread.rootMoves() = rootMoves;
 
-			thread.nnueState.reset(thread.pos.boards().bbs(), thread.pos.blackKing(), thread.pos.whiteKing());
+			thread.nnueState.reset(thread.pos.bbs(), thread.pos.blackKing(), thread.pos.whiteKing());
 		}
 
 		if (tbRoot)
@@ -283,7 +283,7 @@ namespace stormphrax::search
 		thread->pos = pos;
 		thread->maxDepth = depth;
 
-		thread->nnueState.reset(thread->pos.boards().bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
+		thread->nnueState.reset(thread->pos.bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
 
 		thread->rootMoves().clear();
 		generateAll(thread->rootMoves(), thread->pos);
@@ -523,7 +523,7 @@ namespace stormphrax::search
 
 		auto &pos = thread.pos;
 		const auto &boards = pos.boards();
-		const auto &bbs = pos.boards().bbs();
+		const auto &bbs = pos.bbs();
 
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
