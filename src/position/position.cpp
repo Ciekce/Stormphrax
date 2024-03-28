@@ -201,7 +201,6 @@ namespace stormphrax
 		m_blackToMove = false;
 		m_fullmove = 1;
 
-		state.boards.regenFromBbs();
 		regen();
 	}
 
@@ -1460,6 +1459,7 @@ namespace stormphrax
 	{
 		auto &state = currState();
 
+		state.boards.regenFromBbs();
 		state.key = 0;
 
 		for (u32 rank = 0; rank < 8; ++rank)
