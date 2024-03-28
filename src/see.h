@@ -81,7 +81,7 @@ namespace stormphrax::see
 		return score;
 	}
 
-	[[nodiscard]] inline auto popLeastValuable(const PositionBoards &boards,
+	[[nodiscard]] inline auto popLeastValuable(const PositionBbs &boards,
 		Bitboard &occ, Bitboard attackers, Color color)
 	{
 		for (i32 i = 0; i < 6; ++i)
@@ -103,6 +103,7 @@ namespace stormphrax::see
 	inline auto see(const Position &pos, Move move, Score threshold = 0)
 	{
 		const auto &boards = pos.boards();
+		const auto &bbs = boards.bbs();
 
 		const auto color = pos.toMove();
 
@@ -122,14 +123,14 @@ namespace stormphrax::see
 
 		const auto square = move.dst();
 
-		auto occupancy = boards.occupancy()
+		auto occupancy = bbs.occupancy()
 			^ squareBit(move.src())
 			^ squareBit(square);
 
-		const auto queens = boards.queens();
+		const auto queens = bbs.queens();
 
-		const auto bishops = queens | boards.bishops();
-		const auto rooks = queens | boards.rooks();
+		const auto bishops = queens | bbs.bishops();
+		const auto rooks = queens | bbs.rooks();
 
 		auto attackers = pos.allAttackersTo(square, occupancy);
 
@@ -137,12 +138,12 @@ namespace stormphrax::see
 
 		while (true)
 		{
-			const auto ourAttackers = attackers & boards.forColor(us);
+			const auto ourAttackers = attackers & bbs.forColor(us);
 
 			if (ourAttackers.empty())
 				break;
 
-			next = popLeastValuable(boards, occupancy, ourAttackers, us);
+			next = popLeastValuable(bbs, occupancy, ourAttackers, us);
 
 			if (next == PieceType::Pawn
 				|| next == PieceType::Bishop
@@ -162,7 +163,7 @@ namespace stormphrax::see
 			{
 				// our only attacker is our king, but the opponent still has defenders
 				if (next == PieceType::King
-					&& !(attackers & boards.forColor(us)).empty())
+					&& !(attackers & bbs.forColor(us)).empty())
 					us = oppColor(us);
 				break;
 			}

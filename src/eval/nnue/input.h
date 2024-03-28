@@ -212,7 +212,7 @@ namespace stormphrax::eval::nnue
 	struct RefreshTableEntry
 	{
 		Acc accumulator{};
-		std::array<PositionBoards, 2> boards{};
+		std::array<PositionBbs, 2> boards{};
 
 		[[nodiscard]] auto colorBoards(Color c) -> auto &
 		{
@@ -230,7 +230,7 @@ namespace stormphrax::eval::nnue
 			for (auto &entry : table)
 			{
 				entry.accumulator.initBoth(featureTransformer);
-				entry.boards.fill(PositionBoards{});
+				entry.boards.fill(PositionBbs{});
 			}
 		}
 	};

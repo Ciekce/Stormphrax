@@ -77,7 +77,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 112);
+	static_assert(sizeof(BoardState) == 176);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -196,25 +196,25 @@ namespace stormphrax
 		{
 			assert(square != Square::None);
 
-			const auto &boards = this->boards();
+			const auto &bbs = this->boards().bbs();
 
 			Bitboard attackers{};
 
-			const auto queens = boards.queens();
+			const auto queens = bbs.queens();
 
-			const auto rooks = queens | boards.rooks();
+			const auto rooks = queens | bbs.rooks();
 			attackers |= rooks & attacks::getRookAttacks(square, occupancy);
 
-			const auto bishops = queens | boards.bishops();
+			const auto bishops = queens | bbs.bishops();
 			attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
-			attackers |= boards.blackPawns() & attacks::getPawnAttacks(square, Color::White);
-			attackers |= boards.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
+			attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::White);
+			attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
 
-			const auto knights = boards.knights();
+			const auto knights = bbs.knights();
 			attackers |= knights & attacks::getKnightAttacks(square);
 
-			const auto kings = boards.kings();
+			const auto kings = bbs.kings();
 			attackers |= kings & attacks::getKingAttacks(square);
 
 			return attackers;
@@ -224,27 +224,27 @@ namespace stormphrax
 		{
 			assert(square != Square::None);
 
-			const auto &boards = this->boards();
+			const auto &bbs = this->boards().bbs();
 
 			Bitboard attackers{};
 
-			const auto occ = boards.occupancy();
+			const auto occ = bbs.occupancy();
 
-			const auto queens = boards.queens(attacker);
+			const auto queens = bbs.queens(attacker);
 
-			const auto rooks = queens | boards.rooks(attacker);
+			const auto rooks = queens | bbs.rooks(attacker);
 			attackers |= rooks & attacks::getRookAttacks(square, occ);
 
-			const auto bishops = queens | boards.bishops(attacker);
+			const auto bishops = queens | bbs.bishops(attacker);
 			attackers |= bishops & attacks::getBishopAttacks(square, occ);
 
-			const auto pawns = boards.pawns(attacker);
+			const auto pawns = bbs.pawns(attacker);
 			attackers |= pawns & attacks::getPawnAttacks(square, oppColor(attacker));
 
-			const auto knights = boards.knights(attacker);
+			const auto knights = bbs.knights(attacker);
 			attackers |= knights & attacks::getKnightAttacks(square);
 
-			const auto kings = boards.kings(attacker);
+			const auto kings = bbs.kings(attacker);
 			attackers |= kings & attacks::getKingAttacks(square);
 
 			return attackers;
@@ -264,27 +264,29 @@ namespace stormphrax
 					return state.threats[square];
 			}
 
-			const auto occ = state.boards.occupancy();
+			const auto &bbs = state.boards.bbs();
 
-			if (const auto knights = state.boards.knights(attacker);
+			const auto occ = bbs.occupancy();
+
+			if (const auto knights = bbs.knights(attacker);
 				!(knights & attacks::getKnightAttacks(square)).empty())
 				return true;
 
-			if (const auto pawns = state.boards.pawns(attacker);
+			if (const auto pawns = bbs.pawns(attacker);
 				!(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
 				return true;
 
-			if (const auto kings = state.boards.kings(attacker);
+			if (const auto kings = bbs.kings(attacker);
 				!(kings & attacks::getKingAttacks(square)).empty())
 				return true;
 
-			const auto queens = state.boards.queens(attacker);
+			const auto queens = bbs.queens(attacker);
 
-			if (const auto bishops = queens | state.boards.bishops(attacker);
+			if (const auto bishops = queens | bbs.bishops(attacker);
 				!(bishops & attacks::getBishopAttacks(square, occ)).empty())
 				return true;
 
-			if (const auto rooks = queens | state.boards.rooks(attacker);
+			if (const auto rooks = queens | bbs.rooks(attacker);
 				!(rooks & attacks::getRookAttacks(square, occ)).empty())
 				return true;
 
@@ -375,24 +377,24 @@ namespace stormphrax
 					return true;
 			}
 
-			const auto &boards = this->boards();
+			const auto &bbs = this->boards().bbs();
 
-			if (!boards.pawns().empty() || !boards.majors().empty())
+			if (!bbs.pawns().empty() || !bbs.majors().empty())
 				return false;
 
 			// KK
-			if (boards.nonPk().empty())
+			if (bbs.nonPk().empty())
 				return true;
 
 			// KNK or KBK
-			if ((boards.blackNonPk().empty() && boards.whiteNonPk() == boards.whiteMinors() && !boards.whiteMinors().multiple())
-				|| (boards.whiteNonPk().empty() && boards.blackNonPk() == boards.blackMinors() && !boards.blackMinors().multiple()))
+			if ((bbs.blackNonPk().empty() && bbs.whiteNonPk() == bbs.whiteMinors() && !bbs.whiteMinors().multiple())
+				|| (bbs.whiteNonPk().empty() && bbs.blackNonPk() == bbs.blackMinors() && !bbs.blackMinors().multiple()))
 				return true;
 
 			// KBKB OCB
-			if ((boards.blackNonPk() == boards.blackBishops() && boards.whiteNonPk() == boards.whiteBishops())
-				&& !boards.blackBishops().multiple() && !boards.whiteBishops().multiple()
-				&& (boards.blackBishops() & boards::LightSquares).empty() != (boards.whiteBishops() & boards::LightSquares).empty())
+			if ((bbs.blackNonPk() == bbs.blackBishops() && bbs.whiteNonPk() == bbs.whiteBishops())
+				&& !bbs.blackBishops().multiple() && !bbs.whiteBishops().multiple()
+				&& (bbs.blackBishops() & boards::LightSquares).empty() != (bbs.whiteBishops() & boards::LightSquares).empty())
 				return true;
 
 			return false;
@@ -531,14 +533,16 @@ namespace stormphrax
 			const auto king = state.king(color);
 			const auto opponent = oppColor(color);
 
-			const auto ourOcc = state.boards.occupancy(color);
-			const auto oppOcc = state.boards.occupancy(opponent);
+			const auto &bbs = state.boards.bbs();
 
-			const auto oppQueens = state.boards.queens(opponent);
+			const auto ourOcc = bbs.occupancy(color);
+			const auto oppOcc = bbs.occupancy(opponent);
+
+			const auto oppQueens = bbs.queens(opponent);
 
 			auto potentialAttackers
-				= attacks::getBishopAttacks(king, oppOcc) & (oppQueens | state.boards.bishops(opponent))
-				| attacks::  getRookAttacks(king, oppOcc) & (oppQueens | state.boards.  rooks(opponent));
+				= attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
+				| attacks::  getRookAttacks(king, oppOcc) & (oppQueens | bbs.  rooks(opponent));
 
 			while (potentialAttackers)
 			{
@@ -558,35 +562,36 @@ namespace stormphrax
 			const auto them = oppColor(us);
 
 			const auto &state = currState();
+			const auto &bbs = state.boards.bbs();
 
 			Bitboard threats{};
 
-			const auto occ = state.boards.occupancy();
+			const auto occ = bbs.occupancy();
 
-			const auto queens = state.boards.queens(them);
+			const auto queens = bbs.queens(them);
 
-			auto rooks = queens | state.boards.rooks(them);
+			auto rooks = queens | bbs.rooks(them);
 			while (rooks)
 			{
 				const auto rook = rooks.popLowestSquare();
 				threats |= attacks::getRookAttacks(rook, occ);
 			}
 
-			auto bishops = queens | state.boards.bishops(them);
+			auto bishops = queens | bbs.bishops(them);
 			while (bishops)
 			{
 				const auto bishop = bishops.popLowestSquare();
 				threats |= attacks::getBishopAttacks(bishop, occ);
 			}
 
-			auto knights = state.boards.knights(them);
+			auto knights = bbs.knights(them);
 			while (knights)
 			{
 				const auto knight = knights.popLowestSquare();
 				threats |= attacks::getKnightAttacks(knight);
 			}
 
-			const auto pawns = state.boards.pawns(them);
+			const auto pawns = bbs.pawns(them);
 			if (them == Color::Black)
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();

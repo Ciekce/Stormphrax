@@ -49,14 +49,14 @@ namespace stormphrax::eval
 	template <bool Scale = true>
 	inline auto staticEval(const Position &pos, const NnueState &nnueState, const Contempt &contempt = {})
 	{
-		const auto nnueEval = nnueState.evaluate(pos.boards(), pos.toMove());
+		const auto nnueEval = nnueState.evaluate(pos.boards().bbs(), pos.toMove());
 		return adjustEval<Scale>(pos, contempt, nnueEval);
 	}
 
 	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
-		const auto nnueEval = NnueState::evaluateOnce(pos.boards(), pos.blackKing(), pos.whiteKing(), pos.toMove());
+		const auto nnueEval = NnueState::evaluateOnce(pos.boards().bbs(), pos.blackKing(), pos.whiteKing(), pos.toMove());
 		return adjustEval<Scale>(pos, contempt, nnueEval);
 	}
 }

@@ -95,7 +95,7 @@ namespace stormphrax::eval
 			m_accumulatorStack.resize(256);
 		}
 
-		inline auto reset(const PositionBoards &boards, Square blackKing, Square whiteKing)
+		inline auto reset(const PositionBbs &boards, Square blackKing, Square whiteKing)
 		{
 			assert(blackKing != Square::None);
 			assert(whiteKing != Square::None);
@@ -120,7 +120,7 @@ namespace stormphrax::eval
 
 		template <bool Push>
 		inline auto update(const NnueUpdates &updates,
-			const PositionBoards &boards, Square blackKing, Square whiteKing)
+			const PositionBbs &boards, Square blackKing, Square whiteKing)
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(!updates.refresh[0] || !updates.refresh[1]);
@@ -190,7 +190,7 @@ namespace stormphrax::eval
 			--m_curr;
 		}
 
-		[[nodiscard]] inline auto evaluate(const PositionBoards &boards, Color stm) const
+		[[nodiscard]] inline auto evaluate(const PositionBbs &boards, Color stm) const
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(stm != Color::None);
@@ -198,7 +198,7 @@ namespace stormphrax::eval
 			return evaluate(*m_curr, boards, stm);
 		}
 
-		[[nodiscard]] static inline auto evaluateOnce(const PositionBoards &boards,
+		[[nodiscard]] static inline auto evaluateOnce(const PositionBbs &boards,
 			Square blackKing, Square whiteKing, Color stm)
 		{
 			assert(blackKing != Square::None);
@@ -224,7 +224,7 @@ namespace stormphrax::eval
 		RefreshTable m_refreshTable{};
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
-			const PositionBoards &boards, Color stm) -> i32
+			const PositionBbs &boards, Color stm) -> i32
 		{
 			assert(stm != Color::None);
 
@@ -237,7 +237,7 @@ namespace stormphrax::eval
 		}
 
 		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
-			const PositionBoards &boards, RefreshTable &refreshTable, Square king) -> void
+			const PositionBbs &boards, RefreshTable &refreshTable, Square king) -> void
 		{
 			const auto bucket = InputFeatureSet::getBucket(c, king);
 
@@ -276,7 +276,7 @@ namespace stormphrax::eval
 		}
 
 		static inline auto resetAccumulator(Accumulator &accumulator, Color c,
-			const PositionBoards &boards, Square king) -> void
+			const PositionBbs &boards, Square king) -> void
 		{
 			assert(c != Color::None);
 			assert(king != Square::None);

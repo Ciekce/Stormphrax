@@ -60,7 +60,7 @@ namespace stormphrax::eval::nnue
 			return std::get<I>(m_layers);
 		}
 
-		inline auto propagate(const PositionBoards &boards,
+		inline auto propagate(const PositionBbs &boards,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount>  stmInputs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs) const
 		{
@@ -86,7 +86,7 @@ namespace stormphrax::eval::nnue
 
 	private:
 		template <usize I>
-		inline auto forward(OutputStorage &storage, const PositionBoards &boards) const
+		inline auto forward(OutputStorage &storage, const PositionBbs &boards) const
 		{
 			if constexpr (I > 0)
 			{
@@ -100,7 +100,7 @@ namespace stormphrax::eval::nnue
 
 		template <usize... Indices>
 		inline auto propagate(OutputStorage &storage,
-			const PositionBoards &boards, std::index_sequence<Indices...>) const
+			const PositionBbs &boards, std::index_sequence<Indices...>) const
 		{
 			((forward<Indices>(storage, boards)), ...);
 		}

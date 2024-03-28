@@ -181,15 +181,17 @@ namespace stormphrax
 		auto &state = currState();
 		state = BoardState{};
 
-		state.boards.forPiece(PieceType::  Pawn) = U64(0x00FF00000000FF00);
-		state.boards.forPiece(PieceType::Knight) = U64(0x4200000000000042);
-		state.boards.forPiece(PieceType::Bishop) = U64(0x2400000000000024);
-		state.boards.forPiece(PieceType::  Rook) = U64(0x8100000000000081);
-		state.boards.forPiece(PieceType:: Queen) = U64(0x0800000000000008);
-		state.boards.forPiece(PieceType::  King) = U64(0x1000000000000010);
+		auto &bbs = state.boards.bbs();
 
-		state.boards.forColor(Color::Black) = U64(0xFFFF000000000000);
-		state.boards.forColor(Color::White) = U64(0x000000000000FFFF);
+		bbs.forPiece(PieceType::  Pawn) = U64(0x00FF00000000FF00);
+		bbs.forPiece(PieceType::Knight) = U64(0x4200000000000042);
+		bbs.forPiece(PieceType::Bishop) = U64(0x2400000000000024);
+		bbs.forPiece(PieceType::  Rook) = U64(0x8100000000000081);
+		bbs.forPiece(PieceType:: Queen) = U64(0x0800000000000008);
+		bbs.forPiece(PieceType::  King) = U64(0x1000000000000010);
+
+		bbs.forColor(Color::Black) = U64(0xFFFF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FFFF);
 
 		state.castlingRooks.black().kingside  = Square::H8;
 		state.castlingRooks.black().queenside = Square::A8;
@@ -199,6 +201,7 @@ namespace stormphrax
 		m_blackToMove = false;
 		m_fullmove = 1;
 
+		state.boards.regenFromBbs();
 		regen();
 	}
 
@@ -249,6 +252,7 @@ namespace stormphrax
 		}
 
 		BoardState newState{};
+		auto &newBbs = newState.boards.bbs();
 
 		u32 rankIdx = 0;
 
@@ -301,21 +305,21 @@ namespace stormphrax
 			++rankIdx;
 		}
 
-		if (const auto blackKingCount = newState.boards.forPiece(Piece::BlackKing).popcount();
+		if (const auto blackKingCount = newBbs.forPiece(Piece::BlackKing).popcount();
 			blackKingCount != 1)
 		{
 			std::cerr << "black must have exactly 1 king, " << blackKingCount << " in fen " << fen << std::endl;
 			return false;
 		}
 
-		if (const auto whiteKingCount = newState.boards.forPiece(Piece::WhiteKing).popcount();
+		if (const auto whiteKingCount = newBbs.forPiece(Piece::WhiteKing).popcount();
 			whiteKingCount != 1)
 		{
 			std::cerr << "white must have exactly 1 king, " << whiteKingCount << " in fen " << fen << std::endl;
 			return false;
 		}
 
-		if (newState.boards.occupancy().popcount() > 32)
+		if (newBbs.occupancy().popcount() > 32)
 		{
 			std::cerr << "too many pieces in fen " << fen << std::endl;
 			return false;
@@ -342,7 +346,7 @@ namespace stormphrax
 
 		if (const auto stm = newBlackToMove ? Color::Black : Color::White;
 			isAttacked<false>(newState, stm,
-				newState.boards.forPiece(PieceType::King, oppColor(stm)).lowestSquare(),
+				newBbs.forPiece(PieceType::King, oppColor(stm)).lowestSquare(),
 				stm))
 		{
 			std::cerr << "opponent must not be in check" << std::endl;
@@ -540,10 +544,12 @@ namespace stormphrax
 		auto &state = currState();
 		state = BoardState{};
 
-		state.boards.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+		auto &bbs = state.boards.bbs();
 
-		state.boards.forColor(Color::Black) = U64(0x00FF000000000000);
-		state.boards.forColor(Color::White) = U64(0x000000000000FF00);
+		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+
+		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FF00);
 
 		const auto backrank = scharnaglToBackrank(n);
 
@@ -598,10 +604,12 @@ namespace stormphrax
 		auto &state = currState();
 		state = BoardState{};
 
-		state.boards.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+		auto &bbs = state.boards.bbs();
 
-		state.boards.forColor(Color::Black) = U64(0x00FF000000000000);
-		state.boards.forColor(Color::White) = U64(0x000000000000FF00);
+		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+
+		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FF00);
 
 		const auto blackBackrank = scharnaglToBackrank(n / 960);
 		const auto whiteBackrank = scharnaglToBackrank(n % 960);
@@ -738,7 +746,8 @@ namespace stormphrax
 		}
 
 		if constexpr (UpdateNnue)
-			nnueState->update<StateHistory>(updates, state.boards, state.blackKing(), state.whiteKing());
+			nnueState->update<StateHistory>(updates,
+				state.boards.bbs(), state.blackKing(), state.whiteKing());
 
 		if (movingType == PieceType::Rook)
 			newCastlingRooks.color(stm).unset(moveSrc);
@@ -858,7 +867,7 @@ namespace stormphrax
 
 		const auto srcPieceType = pieceType(srcPiece);
 		const auto them = oppColor(us);
-		const auto occ = state.boards.occupancy();
+		const auto occ = state.boards.bbs().occupancy();
 
 		if (type == MoveType::Castling)
 		{
@@ -944,7 +953,7 @@ namespace stormphrax
 			if (move.srcFile() != move.dstFile())
 			{
 				// not valid attack
-				if (!(attacks::getPawnAttacks(src, us) & state.boards.forColor(them))[dst])
+				if (!(attacks::getPawnAttacks(src, us) & state.boards.bbs().forColor(them))[dst])
 					return false;
 			}
 			// forward move onto a piece
@@ -997,7 +1006,8 @@ namespace stormphrax
 		const auto us = toMove();
 		const auto them = oppColor(us);
 
-		const auto state = currState();
+		const auto &state = currState();
+		const auto &bbs = state.boards.bbs();
 
 		const auto src = move.src();
 		const auto dst = move.dst();
@@ -1018,27 +1028,27 @@ namespace stormphrax
 
 			const auto captureSquare = toSquare(rank, file);
 
-			const auto postEpOcc = state.boards.occupancy()
+			const auto postEpOcc = bbs.occupancy()
 				^ Bitboard::fromSquare(src)
 				^ Bitboard::fromSquare(dst)
 				^ Bitboard::fromSquare(captureSquare);
 
-			const auto theirQueens = state.boards.queens(them);
+			const auto theirQueens = bbs.queens(them);
 
-			return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | state.boards.bishops(them))).empty()
-				&& (attacks::getRookAttacks  (king, postEpOcc) & (theirQueens | state.boards.  rooks(them))).empty();
+			return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | bbs.bishops(them))).empty()
+				&& (attacks::getRookAttacks  (king, postEpOcc) & (theirQueens | bbs.  rooks(them))).empty();
 		}
 
 		const auto moving = state.boards.pieceAt(src);
 
 		if (pieceType(moving) == PieceType::King)
 		{
-			const auto kinglessOcc = state.boards.occupancy() ^ state.boards.kings(us);
-			const auto theirQueens = state.boards.queens(them);
+			const auto kinglessOcc = bbs.occupancy() ^ bbs.kings(us);
+			const auto theirQueens = bbs.queens(them);
 
 			return !state.threats[move.dst()]
-				&& (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | state.boards.bishops(them))).empty()
-				&& (attacks::getRookAttacks  (dst, kinglessOcc) & (theirQueens | state.boards.  rooks(them))).empty();
+				&& (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | bbs.bishops(them))).empty()
+				&& (attacks::getRookAttacks  (dst, kinglessOcc) & (theirQueens | bbs.  rooks(them))).empty();
 		}
 
 		// multiple checks can only be evaded with a king move
@@ -1068,7 +1078,7 @@ namespace stormphrax
 			return m_keys[m_keys.size() - d];
 		};
 
-		const auto occ = state.boards.occupancy();
+		const auto occ = state.boards.bbs().occupancy();
 		const auto originalKey = state.key;
 
 		auto other = ~(originalKey ^ S(1));

@@ -148,7 +148,7 @@ namespace stormphrax::datagen
 				const auto castlingRooks = pos.castlingRooks();
 				const auto &boards = pos.boards();
 
-				auto occupancy = boards.occupancy();
+				auto occupancy = boards.bbs().occupancy();
 				board.occupancy = occupancy;
 
 				usize i = 0;
@@ -270,7 +270,7 @@ namespace stormphrax::datagen
 				}
 
 				thread->pos.clearStateHistory();
-				thread->nnueState.reset(thread->pos.boards(), thread->pos.blackKing(), thread->pos.whiteKing());
+				thread->nnueState.reset(thread->pos.boards().bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
 
 				thread->maxDepth = 10;
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
