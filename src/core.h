@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <array>
 
 #include "util/bitfield.h"
 #include "util/cemath.h"
@@ -250,15 +251,61 @@ namespace stormphrax
 	{
 		struct RookPair
 		{
-			Square black{Square::None};
-			Square white{Square::None};
+			Square kingside{Square::None};
+			Square queenside{Square::None};
+
+			inline auto clear()
+			{
+				kingside = Square::None;
+				queenside = Square::None;
+			}
+
+			inline auto unset(Square square)
+			{
+				assert(square != Square::None);
+
+				if (square == kingside)
+					kingside = Square::None;
+				else if (square == queenside)
+					queenside = Square::None;
+			}
 
 			[[nodiscard]] inline auto operator==(const RookPair &) const -> bool = default;
 		};
 
-		// wish I could call these "short" and "long"
-		RookPair shortSquares{Square::None};
-		RookPair  longSquares{Square::None};
+		std::array<RookPair, 2> rooks;
+
+		[[nodiscard]] inline auto black() const -> const auto &
+		{
+			return rooks[0];
+		}
+
+		[[nodiscard]] inline auto white() const -> const auto &
+		{
+			return rooks[1];
+		}
+
+		[[nodiscard]] inline auto black() -> auto &
+		{
+			return rooks[0];
+		}
+
+		[[nodiscard]] inline auto white() -> auto &
+		{
+			return rooks[1];
+		}
+
+		[[nodiscard]] inline auto color(Color c) const -> const auto &
+		{
+			assert(c != Color::None);
+			return rooks[static_cast<i32>(c)];
+		}
+
+		[[nodiscard]] inline auto color(Color c) -> auto &
+		{
+			assert(c != Color::None);
+			return rooks[static_cast<i32>(c)];
+		}
 
 		[[nodiscard]] inline auto operator==(const CastlingRooks &) const -> bool = default;
 	};
