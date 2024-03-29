@@ -95,7 +95,7 @@ Requires Make and a competent C++20 compiler that optionally supports LTO. GCC i
   - if not specified, the compiler defaults to `clang++`
 - replace `<BUILD>` with the binary you wish to build - `native`/`avx512`/`avx2-bmi2`/`avx2`/`sse41-popcnt`
   - if not specified, the default build is `native`
-- if you wish, you can have Stormphrax include the current git commit keys in its UCI version string - pass `COMMIT_HASH=on`
+- if you wish, you can have Stormphrax include the current git commit hash in its UCI version string - pass `COMMIT_HASH=on`
 
 By default, the makefile builds binaries with profile-guided optimisation (PGO). To disable this, pass `PGO=off`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
 
