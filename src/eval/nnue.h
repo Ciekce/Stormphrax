@@ -208,8 +208,6 @@ namespace stormphrax::eval
 
 			Accumulator accumulator{};
 
-			accumulator.initBoth(g_network.featureTransformer());
-
 			resetAccumulator(accumulator, Color::Black, bbs, blackKing);
 			resetAccumulator(accumulator, Color::White, bbs, whiteKing);
 
@@ -238,17 +236,54 @@ namespace stormphrax::eval
 		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
 			const BitboardSet &bbs, RefreshTable &refreshTable, Square king) -> void
 		{
+			assert(c != Color::None);
+			assert(king != Square::None);
+
 			const auto bucket = InputFeatureSet::getBucket(c, king);
 
 			auto &rtEntry = refreshTable.table[bucket];
-			auto &prevBoards = rtEntry.colorBbs(c);
+			auto &prevBbs = rtEntry.colorBbs(c);
+
+			const auto fullRefreshCost = bbs.occupancy().popcount();
+
+			u32 tableRefreshCost = 0;
+
+			for (u32 pieceIdx = 0;
+				pieceIdx < static_cast<u32>(Piece::None)
+					&& tableRefreshCost <= fullRefreshCost;
+				++pieceIdx)
+			{
+				const auto piece = static_cast<Piece>(pieceIdx);
+
+				const auto prev = prevBbs.forPiece(piece);
+				const auto curr =     bbs.forPiece(piece);
+
+				auto diff = curr ^ prev;
+				tableRefreshCost += diff.popcount();
+			}
+
+			// tiebreak in favour of the refresh table diff, because
+			// a full refresh requires reinitialising with biases
+			if (fullRefreshCost < tableRefreshCost)
+				resetAccumulator(rtEntry.accumulator, c, bbs, king);
+			else diffAccumulator(rtEntry.accumulator, c, prevBbs, bbs, king);
+
+			accumulator.copyFrom(c, rtEntry.accumulator);
+			prevBbs = bbs;
+		}
+
+		static inline auto diffAccumulator(Accumulator &accumulator, Color c,
+			const BitboardSet &oldBbs, const BitboardSet &newBbs, Square king) -> void
+		{
+			assert(c != Color::None);
+			assert(king != Square::None);
 
 			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
 			{
 				const auto piece = static_cast<Piece>(pieceIdx);
 
-				const auto prev = prevBoards.forPiece(piece);
-				const auto curr =     bbs.forPiece(piece);
+				const auto prev = oldBbs.forPiece(piece);
+				const auto curr =     newBbs.forPiece(piece);
 
 				auto   added = curr & ~prev;
 				auto removed = prev & ~curr;
@@ -258,7 +293,7 @@ namespace stormphrax::eval
 					const auto sq = added.popLowestSquare();
 					const auto feature = featureIndex(c, piece, sq, king);
 
-					rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, feature);
+					accumulator.activateFeature(g_network.featureTransformer(), c, feature);
 				}
 
 				while (removed)
@@ -266,19 +301,18 @@ namespace stormphrax::eval
 					const auto sq = removed.popLowestSquare();
 					const auto feature = featureIndex(c, piece, sq, king);
 
-					rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
+					accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
 				}
 			}
-
-			accumulator.copyFrom(c, rtEntry.accumulator);
-			prevBoards = bbs;
 		}
 
-		static inline auto resetAccumulator(Accumulator &accumulator, Color c,
-			const BitboardSet &bbs, Square king) -> void
+		static inline auto resetAccumulator(Accumulator &accumulator,
+			Color c, const BitboardSet &bbs, Square king) -> void
 		{
 			assert(c != Color::None);
 			assert(king != Square::None);
+
+			accumulator.init(g_network.featureTransformer(), c);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
