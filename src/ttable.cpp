@@ -51,7 +51,8 @@ namespace stormphrax
 
 		inline auto packEntryKey(u64 key)
 		{
-			return static_cast<u16>(key);
+		//	return static_cast<u16>(key);
+			return key;
 		}
 	}
 
@@ -64,7 +65,7 @@ namespace stormphrax
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(TTableEntry);
+		const auto capacity = size / sizeof(Entry);
 
 		//TODO handle oom
 		m_table.resize(capacity);
@@ -73,32 +74,39 @@ namespace stormphrax
 		clear();
 	}
 
-	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void
+	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool
 	{
-		const auto entry = loadEntry(index(key));
+		const auto entry = m_table[index(key)];
 
 		if (entry.type != EntryType::None
 			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+			dst.staticEval = entry.staticEval;
 			dst.depth = entry.depth;
 			dst.move = entry.move;
 			dst.type = entry.type;
+
+			return true;
 		}
-		else dst.type = EntryType::None;
+		else
+		{
+			dst.type = EntryType::None;
+			return false;
+		}
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
+	auto TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, EntryType type) -> void
 	{
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
-		auto entry = loadEntry(index(key));
+		auto entry = m_table[index(key)];
 
 		const auto entryKey = packEntryKey(key);
 
 		// always replace empty entries
-		const bool replace = entry.key == 0
+		const bool replace = entry.type == EntryType::None
 			// always replace with PV entries
 			|| type == EntryType::Exact
 			// always replace entries from previous searches
@@ -117,19 +125,20 @@ namespace stormphrax
 
 		entry.key = entryKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
+		entry.staticEval = static_cast<i16>(staticEval);
 		entry.move = move;
 		entry.depth = depth;
 		entry.age = m_currentAge;
 		entry.type = type;
 
-		storeEntry(index(key), entry);
+		m_table[index(key)] = entry;
 	}
 
 	auto TTable::clear() -> void
 	{
 		m_currentAge = 0;
 
-		std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
+		std::memset(m_table.data(), 0, m_table.size() * sizeof(Entry));
 	}
 
 	auto TTable::full() const -> u32
@@ -138,7 +147,7 @@ namespace stormphrax
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			const auto entry = loadEntry(i);
+			const auto entry = m_table[i];
 			if (entry.type != EntryType::None && entry.age == m_currentAge)
 				++filledEntries;
 		}

@@ -41,21 +41,10 @@ namespace stormphrax
 		Exact
 	};
 
-	struct TTableEntry
-	{
-		u16 key;
-		i16 score;
-		Move move;
-		u8 depth;
-		u8 age : 6;
-		EntryType type : 2;
-	};
-
-	static_assert(sizeof(TTableEntry) == 8);
-
 	struct ProbedTTableEntry
 	{
-		i32 score;
+		Score score;
+		Score staticEval;
 		i32 depth;
 		Move move;
 		EntryType type;
@@ -69,9 +58,8 @@ namespace stormphrax
 
 		auto resize(usize size) -> void;
 
-		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
-
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
+		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool;
+		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, EntryType type) -> void;
 
 		auto clear() -> void;
 
@@ -79,9 +67,6 @@ namespace stormphrax
 
 		inline auto prefetch(u64 key)
 		{
-			if (m_table.empty())
-				return;
-
 			__builtin_prefetch(&m_table[index(key)]);
 		}
 
@@ -91,34 +76,26 @@ namespace stormphrax
 		}
 
 	private:
+		struct Entry
+		{
+			u64 key;
+			i16 score;
+			i16 staticEval;
+			Move move;
+			u8 depth;
+			u8 age : 6;
+			EntryType type : 2;
+		};
+
+		static_assert(sizeof(Entry) == 16);
+
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
 			// this emits a single mul on both x64 and arm64
 			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_table.size())) >> 64);
 		}
 
-		[[nodiscard]] inline auto loadEntry(usize index) const
-		{
-			const auto *ptr = static_cast<volatile const i64 *>(&m_table[index]);
-			const auto v = *ptr;
-
-			TTableEntry entry{};
-			std::memcpy(&entry, &v, sizeof(TTableEntry));
-
-			return entry;
-		}
-
-		inline auto storeEntry(usize index, TTableEntry entry)
-		{
-			auto *ptr = static_cast<volatile i64 *>(&m_table[index]);
-
-			i64 v{};
-			std::memcpy(&v, &entry, sizeof(TTableEntry));
-
-			*ptr = v;
-		}
-
-		std::vector<i64> m_table{};
+		std::vector<Entry> m_table{};
 
 		u8 m_currentAge{};
 	};
