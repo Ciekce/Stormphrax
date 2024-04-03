@@ -332,10 +332,8 @@ namespace stormphrax
 			assert(src != Square::None);
 			assert(dst != Square::None);
 
-			assert(pieceAt(src) == piece);
-			assert(slot(src) == piece);
-
-			slot(src) = Piece::None;
+			if (slot(src) == piece) [[likely]]
+				slot(src) = Piece::None;
 			slot(dst) = piece;
 
 			const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
