@@ -23,6 +23,8 @@
 #include <chrono>
 #include <atomic>
 #include <filesystem>
+#include <optional>
+#include <cassert>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -32,13 +34,15 @@
 //TODO
 #endif
 
-#include "limit/limit.h"
-#include "search.h"
-#include "movegen.h"
-#include "util/rng.h"
-#include "opts.h"
-#include "util/timer.h"
-#include "util/u4array.h"
+#include "../limit/limit.h"
+#include "../search.h"
+#include "../movegen.h"
+#include "../util/rng.h"
+#include "../opts.h"
+#include "../util/timer.h"
+#include "format.h"
+#include "viri_binpack.h"
+#include "marlinformat.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
@@ -120,74 +124,10 @@ namespace stormphrax::datagen
 
 		constexpr i32 ReportInterval = 1024;
 
-		enum class Outcome : u8
-		{
-			WhiteLoss = 0,
-			Draw,
-			WhiteWin
-		};
-
-		// https://github.com/jnlt3/marlinflow/blob/main/marlinformat/src/lib.rs
-		struct __attribute__((packed)) PackedBoard
-		{
-			u64 occupancy;
-			util::U4Array<32> pieces;
-			u8 stmEpSquare;
-			u8 halfmoveClock;
-			u16 fullmoveNumber;
-			i16 eval;
-			Outcome wdl;
-			[[maybe_unused]] u8 extra;
-
-			[[nodiscard]] static auto pack(const Position &pos, i16 score)
-			{
-				static constexpr u8 UnmovedRook = 6;
-
-				PackedBoard board{};
-
-				const auto castlingRooks = pos.castlingRooks();
-				const auto &boards = pos.boards();
-
-				auto occupancy = boards.bbs().occupancy();
-				board.occupancy = occupancy;
-
-				usize i = 0;
-				while (occupancy)
-				{
-					const auto square = occupancy.popLowestSquare();
-					const auto piece = boards.pieceAt(square);
-
-					auto pieceId = static_cast<u8>(pieceType(piece));
-
-					if (pieceType(piece) == PieceType::Rook
-						&& (square == castlingRooks.black().kingside
-							|| square == castlingRooks.black().queenside
-							|| square == castlingRooks.white().kingside
-							|| square == castlingRooks.white().queenside))
-						pieceId = UnmovedRook;
-
-					const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
-
-					board.pieces[i++] = pieceId | colorId;
-				}
-
-				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
-
-				const Square relativeEpSquare = pos.enPassant() == Square::None ? Square::None
-					: toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
-
-				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
-				board.halfmoveClock = pos.halfmove();
-				board.fullmoveNumber = pos.fullmove();
-				board.eval = score;
-
-				return board;
-			}
-		};
-
+		template <OutputFormat Format>
 		auto runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir)
 		{
-			const auto outFile = outDir / (std::to_string(id) + ".bin");
+			const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
 			std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
 			if (!out)
@@ -215,8 +155,7 @@ namespace stormphrax::datagen
 				thread->history.clear();
 			};
 
-			std::vector<PackedBoard> positions{};
-			positions.reserve(256);
+			Format output{};
 
 			const auto startTime = util::g_timer.time();
 
@@ -224,8 +163,6 @@ namespace stormphrax::datagen
 
 			for (i32 game = 0; game < games && !s_stop.load(std::memory_order::seq_cst); ++game)
 			{
-				positions.clear();
-
 				resetSearch();
 
 				if (dfrc)
@@ -269,6 +206,8 @@ namespace stormphrax::datagen
 					continue;
 				}
 
+				output.start(thread->pos);
+
 				thread->pos.clearStateHistory();
 				thread->nnueState.reset(thread->pos.bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
 
@@ -294,7 +233,7 @@ namespace stormphrax::datagen
 				u32 lossPlies{};
 				u32 drawPlies{};
 
-				Outcome outcome;
+				std::optional<Outcome> outcome{};
 
 				while (true)
 				{
@@ -305,85 +244,88 @@ namespace stormphrax::datagen
 
 					if (!move)
 					{
-						outcome = thread->pos.isCheck()
-							? thread->pos.toMove() == Color::Black ? Outcome::WhiteWin : Outcome::WhiteLoss
-							: Outcome::Draw; // stalemate
+						if (thread->pos.isCheck())
+						{
+							if (thread->pos.toMove() == Color::Black)
+							{
+								outcome = Outcome::WhiteWin;
+								output.push(true, move, ScoreMate);
+							}
+							else
+							{
+								outcome = Outcome::WhiteLoss;
+								output.push(true, move, -ScoreMate);
+							}
+						}
+						else // stalemate
+						{
+							outcome = Outcome::Draw;
+							output.push(true, move, 0);
+						}
+
 						break;
 					}
 
 					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
 
 					if (std::abs(score) > ScoreWin)
-					{
 						outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
-						break;
-					}
-
-					if (normScore > WinAdjMinScore)
-					{
-						++winPlies;
-						lossPlies = 0;
-						drawPlies = 0;
-					}
-					else if (normScore < -WinAdjMinScore)
-					{
-						winPlies = 0;
-						++lossPlies;
-						drawPlies = 0;
-					}
-					else if (std::abs(normScore) < DrawAdjMaxScore)
-					{
-						winPlies = 0;
-						lossPlies = 0;
-						++drawPlies;
-					}
 					else
 					{
-						winPlies = 0;
-						lossPlies = 0;
-						drawPlies = 0;
+						if (normScore > WinAdjMinScore)
+						{
+							++winPlies;
+							lossPlies = 0;
+							drawPlies = 0;
+						}
+						else if (normScore < -WinAdjMinScore)
+						{
+							winPlies = 0;
+							++lossPlies;
+							drawPlies = 0;
+						}
+						else if (std::abs(normScore) < DrawAdjMaxScore)
+						{
+							winPlies = 0;
+							lossPlies = 0;
+							++drawPlies;
+						}
+						else
+						{
+							winPlies = 0;
+							lossPlies = 0;
+							drawPlies = 0;
+						}
+
+						if (winPlies >= WinAdjMaxPlies)
+							outcome = Outcome::WhiteWin;
+						else if (lossPlies >= WinAdjMaxPlies)
+							outcome = Outcome::WhiteLoss;
+						else if (drawPlies >= DrawAdjMaxPlies)
+							outcome = Outcome::Draw;
 					}
 
-					if (winPlies >= WinAdjMaxPlies)
-					{
-						outcome = Outcome::WhiteWin;
-						break;
-					}
-					else if (lossPlies >= WinAdjMaxPlies)
-					{
-						outcome = Outcome::WhiteLoss;
-						break;
-					}
-					else if (drawPlies >= DrawAdjMaxPlies)
-					{
-						outcome = Outcome::Draw;
-						break;
-					}
-
-					const bool noisy = thread->pos.isNoisy(move);
+					const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
 
 					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 
 					if (thread->pos.isDrawn(false))
 					{
 						outcome = Outcome::Draw;
+						output.push(true, move, 0);
 						break;
 					}
 
-					// positions with win scores are filtered earlier
-					if (!noisy && !thread->pos.isCheck())
-						positions.emplace_back(PackedBoard::pack(thread->pos, static_cast<i16>(score)));
+					output.push(filtered, move, score);
+
+					if (outcome)
+						break;
 				}
 
-				for (auto &board : positions)
-				{
-					board.wdl = outcome;
-				}
+				assert(outcome.has_value());
 
-				out.write(reinterpret_cast<const char *>(positions.data()),
-					static_cast<std::streamsize>(positions.size() * sizeof(PackedBoard)));
-
-				totalPositions += positions.size();
+				const auto positions = output.writeAllWithOutcome(out, *outcome);
+				totalPositions += positions;
 
 				if (game == games - 1
 					|| ((game + 1) % ReportInterval) == 0
@@ -396,10 +338,29 @@ namespace stormphrax::datagen
 				}
 			}
 		}
+
+		template auto runThread<Marlinformat>(u32 id, bool dfrc,
+			u32 games, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<ViriBinpack>(u32 id, bool dfrc,
+			u32 games, u64 seed, const std::filesystem::path &outDir);
 	}
 
-	auto run(bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
+	auto run(const std::function<void()> &printUsage, const std::string &format,
+		bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
 	{
+		std::function<decltype(runThread<Marlinformat>)> threadFunc{};
+
+		if (format == "marlinformat")
+			threadFunc = runThread<Marlinformat>;
+		else if (format == "viri_binpack")
+			threadFunc = runThread<ViriBinpack>;
+		else
+		{
+			std::cerr << "invalid output format " << format << std::endl;
+			printUsage();
+			return 1;
+		}
+
 		opts::mutableOpts().chess960 = dfrc;
 
 		const auto baseSeed = util::rng::generateSeed();
@@ -418,9 +379,9 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([dfrc, games, baseSeed, i, &outDir]()
+			theThreads.emplace_back([&, i]()
 			{
-				runThread(i, dfrc, games, baseSeed + i, outDir);
+				threadFunc(i, dfrc, games, baseSeed + i, outDir);
 			});
 		}
 

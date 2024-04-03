@@ -118,6 +118,8 @@ namespace stormphrax
 		auto resetFromFrcIndex(u32 n) -> bool;
 		auto resetFromDfrcIndex(u32 n) -> bool;
 
+		auto copyStateFrom(const Position &other) -> void;
+
 		// Moves are assumed to be legal
 		template <bool UpdateNnue = true, bool StateHistory = true>
 		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void;

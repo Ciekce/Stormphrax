@@ -18,7 +18,7 @@
 
 #include "uci.h"
 #include "bench.h"
-#include "datagen.h"
+#include "datagen/datagen.h"
 #include "util/parse.h"
 #include "eval/nnue.h"
 #include "tunable.h"
@@ -50,44 +50,47 @@ auto main(i32 argc, const char *argv[]) -> i32
 		}
 		else if (mode == "datagen")
 		{
-			if (argc < 4)
+			const auto printUsage = [&]()
 			{
 				std::cerr << "usage: " << argv[0]
-					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
+					<< " datagen <marlinformat/viri_binpack> <standard/dfrc> <path> [threads] [game limit per thread]"
+					<< std::endl;
+			};
+
+			if (argc < 5)
+			{
+				printUsage();
 				return 1;
 			}
 
 			bool dfrc = false;
 
-			if (std::string{argv[2]} == "dfrc")
+			if (std::string{argv[3]} == "dfrc")
 				dfrc = true;
-			else if (std::string{argv[2]} != "standard")
+			else if (std::string{argv[3]} != "standard")
 			{
-				std::cerr << "invalid variant " << argv[2] << std::endl;
-				std::cerr << "usage: " << argv[0]
-					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "invalid variant " << argv[3] << std::endl;
+				printUsage();
 				return 1;
 			}
 
 			u32 threads = 1;
-			if (argc > 4 && !util::tryParseU32(threads, argv[4]))
+			if (argc > 5 && !util::tryParseU32(threads, argv[5]))
 			{
-				std::cerr << "invalid number of threads " << argv[4] << std::endl;
-				std::cerr << "usage: " << argv[0]
-					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "invalid number of threads " << argv[5] << std::endl;
+				printUsage();
 				return 1;
 			}
 
 			auto games = datagen::UnlimitedGames;
-			if (argc > 5 && !util::tryParseU32(games, argv[5]))
+			if (argc > 6 && !util::tryParseU32(games, argv[6]))
 			{
-				std::cerr << "invalid number of games " << argv[5] << std::endl;
-				std::cerr << "usage: " << argv[0]
-					<< " datagen <standard/dfrc> <path> [threads] [game limit per thread]" << std::endl;
+				std::cerr << "invalid number of games " << argv[6] << std::endl;
+				printUsage();
 				return 1;
 			}
 
-			return datagen::run(dfrc, argv[3], static_cast<i32>(threads), games);
+			return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), games);
 		}
 #if SP_EXTERNAL_TUNE
 		else if (mode == "printwf"
