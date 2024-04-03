@@ -437,6 +437,7 @@ namespace stormphrax::search
 
 					if (score >= beta)
 					{
+						pv.copyFrom(thread.rootPv);
 						beta = std::min(beta + delta, ScoreInf);
 						--aspDepth;
 					}
