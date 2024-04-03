@@ -651,6 +651,17 @@ namespace stormphrax
 		return true;
 	}
 
+	auto Position::copyStateFrom(const Position &other) -> void
+	{
+		m_states.clear();
+		m_keys.clear();
+
+		m_states.push_back(other.currState());
+
+		m_blackToMove = other.m_blackToMove;
+		m_fullmove = other.m_fullmove;
+	}
+
 	template <bool UpdateNnue, bool StateHistory>
 	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void
 	{

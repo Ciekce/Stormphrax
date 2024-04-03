@@ -18,14 +18,14 @@
 
 #pragma once
 
-#include "types.h"
-
-#include <string>
-#include <limits>
+#include "../types.h"
 
 namespace stormphrax::datagen
 {
-	constexpr auto UnlimitedGames = std::numeric_limits<u32>::max();
-
-	auto run(bool dfrc, const std::string &output, i32 threads, u32 games = UnlimitedGames) -> i32;
+	enum class Outcome : u8
+	{
+		WhiteLoss = 0,
+		Draw,
+		WhiteWin
+	};
 }

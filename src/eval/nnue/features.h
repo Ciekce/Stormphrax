@@ -68,7 +68,6 @@ namespace stormphrax::eval::nnue::features
 
 			assert(prevKingSq != Square::None);
 			assert(kingSq != Square::None);
-			assert(prevKingSq != kingSq);
 
 			if (c == Color::Black)
 			{
