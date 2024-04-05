@@ -29,7 +29,7 @@
 	#endif
 	#define SP_HAS_AVX512 __AVX512F__
 	#define SP_HAS_AVX2 __AVX2__
-	#define SP_HAS_NEON __neon__
+	#define SP_HAS_NEON __ARM_NEON
 	#define SP_HAS_BMI1 __BMI__
 	#define SP_HAS_POPCNT __POPCNT__
 	#define SP_HAS_SSE41 __SSE4_1__
