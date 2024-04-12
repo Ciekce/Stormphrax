@@ -115,11 +115,7 @@ namespace stormphrax
 
 				m_stage = MovegenStage::End;
 			}
-			else
-			{
-				m_data.moves.clear();
-				m_data.moves.fill({NullMove, 0});
-			}
+			else m_data.moves.clear();
 		}
 
 		~MoveGenerator() = default;
