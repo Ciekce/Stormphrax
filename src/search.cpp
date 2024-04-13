@@ -26,7 +26,6 @@
 #include "movegen.h"
 #include "limit/trivial.h"
 #include "opts.h"
-#include "3rdparty/fathom/tbprobe.h"
 #include "tb.h"
 
 namespace stormphrax::search
