@@ -341,7 +341,7 @@ namespace stormphrax::search
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 
-		if (depth > 1 && shouldStop(thread.search, thread.isMainThread(), false))
+		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
 			return 0;
 
 		auto &pos = thread.pos;
