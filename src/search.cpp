@@ -494,6 +494,9 @@ namespace stormphrax::search
 		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
 			return 0;
 
+		if (ply > thread.search.seldepth)
+			thread.search.seldepth = ply;
+
 		auto &pos = thread.pos;
 
 		if (ply >= MaxDepth)
