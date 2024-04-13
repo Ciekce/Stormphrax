@@ -27,6 +27,7 @@
 #include "limit/trivial.h"
 #include "opts.h"
 #include "3rdparty/fathom/tbprobe.h"
+#include "tb.h"
 
 namespace stormphrax::search
 {
@@ -39,108 +40,6 @@ namespace stormphrax::search
 		inline auto drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
-		}
-
-		enum class RootProbeResult
-		{
-			Failed,
-			Win,
-			Draw,
-			Loss
-		};
-
-		auto probeRootTb(ScoredMoveList &rootMoves, const Position &pos)
-		{
-			const auto moveFromTb = [&pos](auto tbMove)
-			{
-				static constexpr auto PromoPieces = std::array {
-					PieceType::None,
-					PieceType::Queen,
-					PieceType::Rook,
-					PieceType::Bishop,
-					PieceType::Knight
-				};
-
-				const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
-				const auto dst = static_cast<Square>(TB_MOVE_TO  (tbMove));
-				const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
-
-				if (promo != PieceType::None)
-					return Move::promotion(src, dst, promo);
-				else if (dst == pos.enPassant()
-					&& pos.boards().pieceTypeAt(src) == PieceType::Pawn)
-					return Move::enPassant(src, dst);
-					// Syzygy TBs do not encode positions with castling rights
-				else return Move::standard(src, dst);
-			};
-
-			const auto &bbs = pos.bbs();
-
-			TbRootMoves tbRootMoves{};
-
-			const auto epSq = pos.enPassant();
-			auto result = tb_probe_root_dtz(
-				bbs.whiteOccupancy(),
-				bbs.blackOccupancy(),
-				bbs.kings(),
-				bbs.queens(),
-				bbs.rooks(),
-				bbs.bishops(),
-				bbs.knights(),
-				bbs.pawns(),
-				pos.halfmove(), 0,
-				epSq == Square::None ? 0 : static_cast<i32>(epSq),
-				pos.toMove() == Color::White,
-				false /*TODO*/, true, &tbRootMoves
-			);
-
-			if (!result) // DTZ tables unavailable, fall back to WDL
-				result = tb_probe_root_wdl(
-					bbs.whiteOccupancy(),
-					bbs.blackOccupancy(),
-					bbs.kings(),
-					bbs.queens(),
-					bbs.rooks(),
-					bbs.bishops(),
-					bbs.knights(),
-					bbs.pawns(),
-					pos.halfmove(), 0,
-					epSq == Square::None ? 0 : static_cast<i32>(epSq),
-					pos.toMove() == Color::White,
-					true, &tbRootMoves
-				);
-
-			if (!result
-				|| tbRootMoves.size == 0) // mate or stalemate at root, handled by search
-				return RootProbeResult::Failed;
-
-			std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](auto a, auto b)
-			{
-				return a.tbRank > b.tbRank;
-			});
-
-			const auto [wdl, minRank] = [&]() -> std::pair<RootProbeResult, i32>
-			{
-				const auto best = tbRootMoves.moves[0];
-
-				if (best.tbRank >= 900)
-					return {RootProbeResult::Win, 900};
-				else if (best.tbRank >= -899) // includes cursed wins and blessed losses
-					return {RootProbeResult::Draw, -899};
-				else return {RootProbeResult::Loss, -1000};
-			}();
-
-			for (u32 i = 0; i < tbRootMoves.size; ++i)
-			{
-				const auto move = tbRootMoves.moves[i];
-
-				if (move.tbRank < minRank)
-					break;
-
-				rootMoves.push({moveFromTb(move.move), 0});
-			}
-
-			return wdl;
 		}
 	}
 
@@ -187,17 +86,17 @@ namespace stormphrax::search
 				<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
 		{
 			tbRoot = true;
-			const auto wdl = probeRootTb(rootMoves, pos);
+			const auto wdl = tb::probeRoot(rootMoves, pos);
 
 			switch (wdl)
 			{
-			case RootProbeResult::Win:
+			case tb::ProbeResult::Win:
 				m_minRootScore = ScoreTbWin;
 				break;
-			case RootProbeResult::Draw:
+			case tb::ProbeResult::Draw:
 				m_minRootScore = m_maxRootScore = 0;
 				break;
-			case RootProbeResult::Loss:
+			case tb::ProbeResult::Loss:
 				m_maxRootScore = -ScoreTbWin;
 				break;
 			default:
@@ -619,63 +518,50 @@ namespace stormphrax::search
 			&& pos.halfmove() == 0
 			&& pos.castlingRooks() == CastlingRooks{})
 		{
-			const auto epSq = pos.enPassant();
-			const auto wdl = tb_probe_wdl(
-				bbs.whiteOccupancy(),
-				bbs.blackOccupancy(),
-				bbs.kings(),
-				bbs.queens(),
-				bbs.rooks(),
-				bbs.bishops(),
-				bbs.knights(),
-				bbs.pawns(),
-				0, 0,
-				epSq == Square::None ? 0 : static_cast<i32>(epSq),
-				us == Color::White
-			);
+			const auto result = tb::probe(pos);
 
-			if (wdl != TB_RESULT_FAILED)
+			if (result != tb::ProbeResult::Failed)
 			{
 				++thread.search.tbhits;
 
-				Score tbScore{};
-				EntryType tbEntryType{};
+				Score score{};
+				EntryType entryType{};
 
-				if (wdl == TB_WIN)
+				if (result == tb::ProbeResult::Win)
 				{
-					tbScore = ScoreTbWin - ply;
-					tbEntryType = EntryType::Beta;
+					score = ScoreTbWin - ply;
+					entryType = EntryType::Beta;
 				}
-				else if (wdl == TB_LOSS)
+				else if (result == tb::ProbeResult::Loss)
 				{
-					tbScore = -ScoreTbWin + ply;
-					tbEntryType = EntryType::Alpha;
+					score = -ScoreTbWin + ply;
+					entryType = EntryType::Alpha;
 				}
 				else // draw
 				{
-					tbScore = drawScore(thread.search.nodes);
-					tbEntryType = EntryType::Exact;
+					score = drawScore(thread.search.nodes);
+					entryType = EntryType::Exact;
 				}
 
-				// Cut off with the same conditions as TT cutoffs
-				if (tbEntryType == EntryType::Exact
-					|| tbEntryType == EntryType::Alpha && tbScore <= alpha
-					|| tbEntryType == EntryType::Beta  && tbScore >= beta)
+				// Cut off if
+				if (entryType == EntryType::Exact
+					|| entryType == EntryType::Alpha && score <= alpha
+					|| entryType == EntryType::Beta  && score >= beta)
 				{
 					// Throw the TB score into the TT
-					m_ttable.put(pos.key(), tbScore, NullMove, depth, ply, tbEntryType);
-					return tbScore;
+					m_ttable.put(pos.key(), score, NullMove, depth, ply, entryType);
+					return score;
 				}
 
 				if (pvNode)
 				{
-					if (tbEntryType == EntryType::Alpha)
-						syzygyMax = tbScore;
-					else if (tbEntryType == EntryType::Beta)
+					if (entryType == EntryType::Alpha)
+						syzygyMax = score;
+					else if (entryType == EntryType::Beta)
 					{
-						if (tbScore > alpha)
-							alpha = tbScore;
-						syzygyMin = tbScore;
+						if (score > alpha)
+							alpha = score;
+						syzygyMin = score;
 					}
 				}
 			}
