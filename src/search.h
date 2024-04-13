@@ -206,7 +206,8 @@ namespace stormphrax::search
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
 		template <bool Root = false>
-		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply, u32 moveStackIdx) -> Score;
+		auto search(ThreadData &thread, PvList &pv, i32 depth,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void;
 		auto finalReport(f64 startTime, const ThreadData &mainThread,
