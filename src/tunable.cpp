@@ -18,30 +18,10 @@
 
 #include "tunable.h"
 
-#include <cmath>
-
 namespace stormphrax::tunable
 {
-	std::array<std::array<i32, 256>, 256> g_lmrTable{};
-
-	auto updateLmrTable() -> void
-	{
-		const auto base = static_cast<f64>(lmrBase()) / 100.0;
-		const auto divisor = static_cast<f64>(lmrDivisor()) / 100.0;
-
-		for (i32 depth = 1; depth < 256; ++depth)
-		{
-			for (i32 moves = 1; moves < 256; ++moves)
-			{
-				g_lmrTable[depth][moves] = static_cast<i32>(
-					base + std::log(static_cast<f64>(depth)) * std::log(static_cast<f64>(moves)) / divisor
-				);
-			}
-		}
-	}
-
 	auto init() -> void
 	{
-		updateLmrTable();
+		//
 	}
 }

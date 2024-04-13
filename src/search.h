@@ -69,25 +69,12 @@ namespace stormphrax::search
 
 	struct SearchStackEntry
 	{
-		Move killer{NullMove};
-
-		Score staticEval{};
-		Score eval{};
-
-		Move excluded{};
-
-		i32 history{};
-
-		i32 multiExtensions{0};
-
 		PvList pv{};
 	};
 
 	struct MoveStackEntry
 	{
 		MovegenData movegenData{};
-		StaticVector<HistoryMove, 256> quietsTried{};
-		StaticVector<std::pair<HistoryMove, Piece>, 64> noisiesTried{};
 	};
 
 	struct alignas(SP_CACHE_LINE_SIZE) ThreadData
@@ -106,8 +93,6 @@ namespace stormphrax::search
 		i32 maxDepth{};
 		SearchData search{};
 
-		bool datagen{false};
-
 		PvList rootPv{};
 
 		eval::NnueState nnueState{};
@@ -115,12 +100,7 @@ namespace stormphrax::search
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 
-		PrevMoveTable prevMoves{};
-		HistoryTable history{};
-
 		Position pos{};
-
-		i32 minNmpPly{0};
 
 		[[nodiscard]] inline auto rootMoves() -> auto &
 		{
@@ -136,7 +116,7 @@ namespace stormphrax::search
 	class Searcher
 	{
 	public:
-		explicit Searcher(std::optional<usize> ttSize = {});
+		explicit Searcher();
 
 		~Searcher()
 		{
@@ -167,16 +147,6 @@ namespace stormphrax::search
 
 		auto setThreads(u32 threads) -> void;
 
-		inline auto clearTt()
-		{
-			m_ttable.clear();
-		}
-
-		inline auto setTtSize(usize size)
-		{
-			m_ttable.resize(size);
-		}
-
 		inline auto quit() -> void
 		{
 			m_quit.store(true, std::memory_order::release);
@@ -186,8 +156,6 @@ namespace stormphrax::search
 		}
 
 	private:
-		TTable m_ttable{};
-
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
 
@@ -238,11 +206,10 @@ namespace stormphrax::search
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
 		template <bool Root = false>
-		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
-			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
-		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
+		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply, u32 moveStackIdx) -> Score;
 
-		auto report(const ThreadData &mainThread, const PvList &pv,
-			i32 depth, f64 time, Score score, Score alpha, Score beta) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void;
+		auto finalReport(f64 startTime, const ThreadData &mainThread,
+			const PvList &pv, Score score, i32 depthCompleted, bool softTimeout) -> void;
 	};
 }
