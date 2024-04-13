@@ -72,7 +72,7 @@ namespace stormphrax::tunable
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 #endif
 
-	SP_TUNABLE_PARAM(defaultMovesToGo, 40, 12, 40, 1)
+	SP_TUNABLE_PARAM(defaultMovesToGo, 21, 12, 40, 1)
 	SP_TUNABLE_PARAM(incrementScale, 81, 50, 100, 5)
 	SP_TUNABLE_PARAM(softTimeScale, 68, 50, 100, 5)
 	SP_TUNABLE_PARAM(hardTimeScale, 43, 20, 100, 5)
