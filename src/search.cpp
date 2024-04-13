@@ -276,7 +276,7 @@ namespace stormphrax::search
 			searchData.depth = depth;
 			searchData.seldepth = 0;
 
-			const auto newScore = search<true>(thread, thread.rootPv, depth, 0, 0);
+			const auto newScore = search<true>(thread, thread.rootPv, depth, 0, 0, -ScoreInf, ScoreInf);
 
 			depthCompleted = depth;
 
@@ -337,7 +337,8 @@ namespace stormphrax::search
 	}
 
 	template <bool RootNode>
-	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth, i32 ply, u32 moveStackIdx) -> Score
+	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
+		i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 
@@ -440,7 +441,7 @@ namespace stormphrax::search
 			else
 			{
 				const auto newDepth = depth - 1;
-				score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1);
+				score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
 			}
 
 			if constexpr (RootNode)
@@ -452,18 +453,28 @@ namespace stormphrax::search
 			if (score > bestScore)
 			{
 				bestScore = score;
-				bestMove = move;
 
-				if (pvNode)
+				if (score > alpha)
 				{
-					pv.moves[0] = move;
+					alpha = score;
+					bestMove = move;
 
-					assert(stack.pv.length + 1 <= MaxDepth);
+					if (pvNode)
+					{
+						pv.moves[0] = move;
 
-					std::copy(stack.pv.moves.begin(), stack.pv.moves.begin() + stack.pv.length, pv.moves.begin() + 1);
-					pv.length = stack.pv.length + 1;
+						assert(stack.pv.length + 1 <= MaxDepth);
 
-					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
+						std::copy(stack.pv.moves.begin(),
+							stack.pv.moves.begin() + stack.pv.length,
+							pv.moves.begin() + 1);
+						pv.length = stack.pv.length + 1;
+
+						assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
+					}
+
+					if (score >= beta)
+						break;
 				}
 			}
 		}
