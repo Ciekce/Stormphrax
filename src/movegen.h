@@ -51,7 +51,7 @@ namespace stormphrax
 		static constexpr i32 End = All + 1;
 	};
 
-	template <bool Root, bool GoodNoisiesOnly = false>
+	template <bool Root, bool NoisiesOnly = false>
 	class MoveGenerator
 	{
 	public:
@@ -82,7 +82,9 @@ namespace stormphrax
 					switch (m_stage)
 					{
 					case MovegenStage::All:
-						generateAll(m_data.moves, m_pos);
+						if constexpr (NoisiesOnly)
+							generateNoisy(m_data.moves, m_pos);
+						else generateAll(m_data.moves, m_pos);
 						break;
 
 					default:

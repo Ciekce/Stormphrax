@@ -353,7 +353,7 @@ namespace stormphrax::search
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (depth <= 0)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
+			return qsearch(thread, ply, moveStackIdx, alpha, beta);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -483,6 +483,65 @@ namespace stormphrax::search
 			return pos.isCheck() ? (-ScoreMate + ply) : 0;
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
+
+		return bestScore;
+	}
+
+	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
+	{
+		assert(ply >= 0 && ply <= MaxDepth);
+
+		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
+			return 0;
+
+		auto &pos = thread.pos;
+
+		if (ply >= MaxDepth)
+			return eval::staticEval(pos, thread.nnueState, m_contempt);
+
+		Score staticEval;
+
+		if (pos.isCheck())
+			staticEval = -ScoreMate + ply;
+		else
+		{
+			staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+			if (staticEval >= beta)
+				return staticEval;
+
+			if (staticEval > alpha)
+				alpha = staticEval;
+		}
+
+		auto bestScore = staticEval;
+
+		QMoveGenerator generator{pos, thread.moveStack[moveStackIdx].movegenData};
+
+		while (const auto move = generator.next())
+		{
+			if (!pos.isLegal(move))
+				continue;
+
+			++thread.search.nodes;
+
+			const auto guard = pos.applyMove(move, &thread.nnueState);
+
+			const auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+
+				if (score > alpha)
+				{
+					alpha = score;
+
+					if (score >= beta)
+						break;
+				}
+			}
+		}
 
 		return bestScore;
 	}
