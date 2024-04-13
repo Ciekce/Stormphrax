@@ -43,7 +43,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 
 		if (mode == "bench")
 		{
-			search::Searcher searcher{16};
+			search::Searcher searcher{};
 			bench::run(searcher);
 
 			return 0;

@@ -503,6 +503,7 @@ namespace stormphrax
 				std::transform(nameStr.begin(), nameStr.end(), nameStr.begin(),
 					[](auto c) { return std::tolower(c); });
 
+				/*
 				if (nameStr == "hash")
 				{
 					if (!valueEmpty)
@@ -518,7 +519,7 @@ namespace stormphrax
 
 					m_searcher.clearTt();
 				}
-				else if (nameStr == "threads")
+				else */if (nameStr == "threads")
 				{
 					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
@@ -776,6 +777,7 @@ namespace stormphrax
 				}
 			}
 
+			/*
 			if (tokens.size() > 3)
 			{
 				if (const auto newTtSize = util::tryParseSize(tokens[3]))
@@ -789,6 +791,7 @@ namespace stormphrax
 
 			m_searcher.setTtSize(ttSize);
 			std::cout << "info string set tt size to " << ttSize << std::endl;
+			 */
 
 			if (depth == 0)
 				depth = 1;

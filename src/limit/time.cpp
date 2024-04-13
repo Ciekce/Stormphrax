@@ -96,8 +96,7 @@ namespace stormphrax::limit
 
 	auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
 	{
-		if (data.depth < 5
-			|| data.nodes == 0
+		if (data.nodes == 0
 			|| (!allowSoftTimeout && (data.nodes % 1024) != 0))
 			return false;
 
