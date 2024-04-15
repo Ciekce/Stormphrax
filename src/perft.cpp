@@ -45,9 +45,13 @@ namespace stormphrax
 				if (!pos.isLegal(move))
 					continue;
 
-				const auto guard = pos.applyMove<false>(move, nullptr);
-
-				total += depth == 0 ? 1 : doPerft(pos, depth);
+				if (depth == 0)
+					++total;
+				else
+				{
+					const auto guard = pos.applyMove<false>(move, nullptr);
+					total += doPerft(pos, depth);
+				}
 			}
 
 			return total;
