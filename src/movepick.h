@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include "movegen.h"
+#include "see.h"
 
 namespace stormphrax
 {
@@ -32,10 +33,8 @@ namespace stormphrax
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
-		static constexpr i32 GenNoisy = Start + 1;
-		static constexpr i32 Noisy = GenNoisy + 1;
-		static constexpr i32 GenQuiet = Noisy + 1;
-		static constexpr i32 Quiet = GenQuiet + 1;
+		static constexpr i32 Noisy = Start + 1;
+		static constexpr i32 Quiet = Noisy + 1;
 		static constexpr i32 End = Quiet + 1;
 	};
 
@@ -45,10 +44,11 @@ namespace stormphrax
 	public:
 		MoveGenerator(const Position &pos, MovegenData &data)
 			: m_pos{pos},
-			m_data{data}
+			  m_data{data}
 		{
-			if constexpr (!Root)
-				m_data.moves.clear();
+			if constexpr (Root)
+				scoreAll();
+			else m_data.moves.clear();
 		}
 
 		~MoveGenerator() = default;
@@ -57,30 +57,28 @@ namespace stormphrax
 		{
 			if constexpr (Root)
 			{
+				if (m_idx == m_data.moves.size())
+					return NullMove;
+
 				const auto idx = findNext();
-				return idx == m_data.moves.size() ? NullMove : m_data.moves[idx].move;
+				return m_data.moves[idx].move;
 			}
 
 			while (true)
 			{
 				while (m_idx == m_data.moves.size())
 				{
-					++m_stage;
-
-					switch (m_stage)
+					switch (++m_stage)
 					{
-						case MovegenStage::GenNoisy:
-							generateNoisy(m_data.moves, m_pos);
-							[[fallthrough]];
-
 						case MovegenStage::Noisy:
+							generateNoisy(m_data.moves, m_pos);
+							scoreNoisy();
+							if constexpr (NoisiesOnly)
+								m_stage = MovegenStage::End;
 							break;
 
-						case MovegenStage::GenQuiet:
-							generateQuiet(m_data.moves, m_pos);
-							[[fallthrough]];
-
 						case MovegenStage::Quiet:
+							generateQuiet(m_data.moves, m_pos);
 							break;
 
 						default:
@@ -88,8 +86,7 @@ namespace stormphrax
 					}
 				}
 
-				if (m_idx == m_data.moves.size())
-					return NullMove;
+				assert(m_idx < m_data.moves.size());
 
 				const auto idx = findNext();
 				return m_data.moves[idx].move;
@@ -99,9 +96,47 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
+		inline auto scoreSingleNoisy(const PositionBoards &boards, ScoredMove &scoredMove)
+		{
+			const auto move = scoredMove.move;
+			auto &score = scoredMove.score;
+
+			const auto moving = boards.pieceAt(move.src());
+			score -= see::value(moving);
+
+			const auto captured = move.type() == MoveType::EnPassant
+				? PieceType::Pawn
+				: pieceTypeOrNone(boards.pieceAt(move.dst()));
+
+			score += see::value(captured) * 4000;
+		}
+
+		inline auto scoreNoisy() -> void
+		{
+			const auto &boards = m_pos.boards();
+			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			{
+				scoreSingleNoisy(boards, m_data.moves[i]);
+			}
+		}
+
+		inline auto scoreAll() -> void
+		{
+			const auto &boards = m_pos.boards();
+			for (auto &move : m_data.moves)
+			{
+				move.score = 0;
+
+				if (m_pos.isNoisy(move.move))
+				{
+					move.score += 16000000;
+					scoreSingleNoisy(boards, move);
+				}
+			}
+		}
+
 		inline auto findNext()
 		{
-			/*
 			auto best = m_idx;
 			auto bestScore = m_data.moves[m_idx].score;
 
@@ -116,7 +151,6 @@ namespace stormphrax
 
 			if (best != m_idx)
 				std::swap(m_data.moves[m_idx], m_data.moves[best]);
-			 */
 
 			return m_idx++;
 		}
