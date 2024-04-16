@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include "movegen.h"
+#include "see.h"
 
 namespace stormphrax
 {
@@ -32,10 +33,8 @@ namespace stormphrax
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
-		static constexpr i32 GenNoisy = Start + 1;
-		static constexpr i32 Noisy = GenNoisy + 1;
-		static constexpr i32 GenQuiet = Noisy + 1;
-		static constexpr i32 Quiet = GenQuiet + 1;
+		static constexpr i32 Noisy = Start + 1;
+		static constexpr i32 Quiet = Noisy + 1;
 		static constexpr i32 End = Quiet + 1;
 	};
 
@@ -69,18 +68,15 @@ namespace stormphrax
 
 					switch (m_stage)
 					{
-						case MovegenStage::GenNoisy:
-							generateNoisy(m_data.moves, m_pos);
-							[[fallthrough]];
-
 						case MovegenStage::Noisy:
+							generateNoisy(m_data.moves, m_pos);
+							scoreNoisy();
+							if constexpr (NoisiesOnly)
+								m_stage = MovegenStage::End;
 							break;
 
-						case MovegenStage::GenQuiet:
-							generateQuiet(m_data.moves, m_pos);
-							[[fallthrough]];
-
 						case MovegenStage::Quiet:
+							generateQuiet(m_data.moves, m_pos);
 							break;
 
 						default:
@@ -99,9 +95,28 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
+		inline auto scoreNoisy() -> void
+		{
+			const auto &boards = m_pos.boards();
+
+			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			{
+				const auto move = m_data.moves[i].move;
+				auto &score = m_data.moves[i].score;
+
+				const auto moving = boards.pieceAt(move.src());
+				score -= see::value(moving);
+
+				const auto captured = move.type() == MoveType::EnPassant
+					? PieceType::Pawn
+					: pieceTypeOrNone(boards.pieceAt(move.dst()));
+
+				score += see::value(captured) * 10000;
+			}
+		}
+
 		inline auto findNext()
 		{
-			/*
 			auto best = m_idx;
 			auto bestScore = m_data.moves[m_idx].score;
 
@@ -116,7 +131,6 @@ namespace stormphrax
 
 			if (best != m_idx)
 				std::swap(m_data.moves[m_idx], m_data.moves[best]);
-			 */
 
 			return m_idx++;
 		}
