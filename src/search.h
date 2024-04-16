@@ -38,7 +38,7 @@
 #include "util/timer.h"
 #include "ttable.h"
 #include "eval/eval.h"
-#include "movegen.h"
+#include "movepick.h"
 #include "util/barrier.h"
 
 namespace stormphrax::search

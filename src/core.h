@@ -87,6 +87,13 @@ namespace stormphrax
 		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
 	}
 
+	[[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece)
+	{
+		if (piece == Piece::None)
+			return PieceType::None;
+		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+	}
+
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
 		assert(piece != Piece::None);
