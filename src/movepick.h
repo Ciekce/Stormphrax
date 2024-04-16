@@ -44,10 +44,11 @@ namespace stormphrax
 	public:
 		MoveGenerator(const Position &pos, MovegenData &data)
 			: m_pos{pos},
-			m_data{data}
+			  m_data{data}
 		{
-			if constexpr (!Root)
-				m_data.moves.clear();
+			if constexpr (Root)
+				scoreAll();
+			else m_data.moves.clear();
 		}
 
 		~MoveGenerator() = default;
@@ -56,8 +57,11 @@ namespace stormphrax
 		{
 			if constexpr (Root)
 			{
+				if (m_idx == m_data.moves.size())
+					return NullMove;
+
 				const auto idx = findNext();
-				return idx == m_data.moves.size() ? NullMove : m_data.moves[idx].move;
+				return m_data.moves[idx].move;
 			}
 
 			while (true)
@@ -70,7 +74,7 @@ namespace stormphrax
 					{
 						case MovegenStage::Noisy:
 							generateNoisy(m_data.moves, m_pos);
-							scoreNoisy();
+							scoreNoisies();
 							if constexpr (NoisiesOnly)
 								m_stage = MovegenStage::End;
 							break;
@@ -84,8 +88,7 @@ namespace stormphrax
 					}
 				}
 
-				if (m_idx == m_data.moves.size())
-					return NullMove;
+				assert(m_idx < m_data.moves.size());
 
 				const auto idx = findNext();
 				return m_data.moves[idx].move;
@@ -95,23 +98,42 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		inline auto scoreNoisy() -> void
+		inline auto scoreNoisy(const PositionBoards &boards, ScoredMove &scoredMove)
+		{
+			const auto move = scoredMove.move;
+			auto &score = scoredMove.score;
+
+			const auto moving = boards.pieceAt(move.src());
+			score -= see::value(moving);
+
+			const auto captured = move.type() == MoveType::EnPassant
+				? PieceType::Pawn
+				: pieceTypeOrNone(boards.pieceAt(move.dst()));
+
+			score += see::value(captured) * 4000;
+		}
+
+		inline auto scoreNoisies() -> void
 		{
 			const auto &boards = m_pos.boards();
-
 			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
 			{
-				const auto move = m_data.moves[i].move;
-				auto &score = m_data.moves[i].score;
+				scoreNoisy(boards, m_data.moves[i]);
+			}
+		}
 
-				const auto moving = boards.pieceAt(move.src());
-				score -= see::value(moving);
+		inline auto scoreAll() -> void
+		{
+			const auto &boards = m_pos.boards();
+			for (auto &move : m_data.moves)
+			{
+				move.score = 0;
 
-				const auto captured = move.type() == MoveType::EnPassant
-					? PieceType::Pawn
-					: pieceTypeOrNone(boards.pieceAt(move.dst()));
-
-				score += see::value(captured) * 10000;
+				if (m_pos.isNoisy(move.move))
+				{
+					move.score += 16000000;
+					scoreNoisy(boards, move);
+				}
 			}
 		}
 
