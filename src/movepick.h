@@ -68,13 +68,11 @@ namespace stormphrax
 			{
 				while (m_idx == m_data.moves.size())
 				{
-					++m_stage;
-
-					switch (m_stage)
+					switch (++m_stage)
 					{
 						case MovegenStage::Noisy:
 							generateNoisy(m_data.moves, m_pos);
-							scoreNoisies();
+							scoreNoisy();
 							if constexpr (NoisiesOnly)
 								m_stage = MovegenStage::End;
 							break;
@@ -98,7 +96,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		inline auto scoreNoisy(const PositionBoards &boards, ScoredMove &scoredMove)
+		inline auto scoreSingleNoisy(const PositionBoards &boards, ScoredMove &scoredMove)
 		{
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
@@ -113,12 +111,12 @@ namespace stormphrax
 			score += see::value(captured) * 4000;
 		}
 
-		inline auto scoreNoisies() -> void
+		inline auto scoreNoisy() -> void
 		{
 			const auto &boards = m_pos.boards();
 			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
 			{
-				scoreNoisy(boards, m_data.moves[i]);
+				scoreSingleNoisy(boards, m_data.moves[i]);
 			}
 		}
 
@@ -132,7 +130,7 @@ namespace stormphrax
 				if (m_pos.isNoisy(move.move))
 				{
 					move.score += 16000000;
-					scoreNoisy(boards, move);
+					scoreSingleNoisy(boards, move);
 				}
 			}
 		}
