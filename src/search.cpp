@@ -352,7 +352,7 @@ namespace stormphrax::search
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (depth <= 0)
-			return qsearch(thread, 4, ply, moveStackIdx, alpha, beta);
+			return qsearch(thread, ply, moveStackIdx, alpha, beta);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -486,7 +486,7 @@ namespace stormphrax::search
 		return bestScore;
 	}
 
-	auto Searcher::qsearch(ThreadData &thread, i32 depth, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
+	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 
@@ -496,9 +496,6 @@ namespace stormphrax::search
 		auto &pos = thread.pos;
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
-
-		if (depth <= 0 && !pos.isCheck())
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (ply > thread.search.seldepth)
@@ -532,7 +529,7 @@ namespace stormphrax::search
 
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
-			const auto score = -qsearch(thread, depth - 1, ply + 1, moveStackIdx + 1, -beta, -alpha);
+			const auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
 			{
