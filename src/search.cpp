@@ -23,7 +23,6 @@
 #include <cassert>
 
 #include "uci.h"
-#include "movegen.h"
 #include "limit/trivial.h"
 #include "opts.h"
 #include "3rdparty/fathom/tbprobe.h"
@@ -415,7 +414,7 @@ namespace stormphrax::search
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
-		MoveGenerator<RootNode> generator{pos, moveStack.movegenData};
+		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData);
 
 		u32 legalMoves = 0;
 
