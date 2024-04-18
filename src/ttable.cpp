@@ -103,16 +103,18 @@ namespace stormphrax
 
 		auto entry = loadEntry(index(key));
 
-		const auto entryKey = packEntryKey(key);
+		const auto newKey = packEntryKey(key);
 
 #ifndef NDEBUG
 		if (std::abs(score) > std::numeric_limits<i16>::max())
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
 #endif
 
-		entry.key = entryKey;
+		if (move || entry.key != newKey)
+			entry.move = move;
+
+		entry.key = newKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
-		entry.move = move;
 		entry.depth = depth;
 		entry.flag = flag;
 

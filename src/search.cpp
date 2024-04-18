@@ -422,6 +422,8 @@ namespace stormphrax::search
 			}
 		}
 
+		const auto originalAlpha = alpha;
+
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
@@ -510,7 +512,10 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
+		{
+			const auto newTtMove = alpha > originalAlpha ? bestMove : NullMove;
+			m_ttable.put(pos.key(), bestScore, newTtMove, depth, ply, ttFlag);
+		}
 
 		return bestScore;
 	}
