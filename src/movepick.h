@@ -96,7 +96,10 @@ namespace stormphrax
 				assert(m_idx < m_data.moves.size());
 
 				const auto idx = findNext();
-				return m_data.moves[idx].move;
+				const auto move = m_data.moves[idx].move;
+
+				if (move != m_ttMove)
+					return move;
 			}
 		}
 
