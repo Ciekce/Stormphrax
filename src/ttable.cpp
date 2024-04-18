@@ -20,10 +20,7 @@
 
 #include <cstring>
 #include <bit>
-
-#ifndef NDEBUG
 #include <iostream>
-#endif
 
 namespace stormphrax
 {
@@ -64,11 +61,22 @@ namespace stormphrax
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(TTableEntry);
+		const auto capacity = size / sizeof(Entry);
 
-		//TODO handle oom
-		m_table.resize(capacity);
-		m_table.shrink_to_fit();
+		// don't bother reallocating if we're already at the right size
+		if (m_table.size() != capacity)
+		{
+			try
+			{
+				m_table.resize(capacity);
+				m_table.shrink_to_fit();
+			}
+			catch (...)
+			{
+				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+				throw;
+			}
+		}
 
 		clear();
 	}
@@ -97,19 +105,6 @@ namespace stormphrax
 
 		const auto entryKey = packEntryKey(key);
 
-		// always replace empty entries
-		const bool replace = entry.key == 0
-			// always replace with PV entries
-			|| type == EntryType::Exact
-			// always replace entries from previous searches
-			|| entry.age != m_currentAge
-			// otherwise, replace if the depth is greater
-			// only keep entries from the same position if their depth is significantly greater
-			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
-
-		if (!replace)
-			return;
-
 #ifndef NDEBUG
 		if (std::abs(score) > std::numeric_limits<i16>::max())
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
@@ -119,7 +114,6 @@ namespace stormphrax
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
 		entry.move = move;
 		entry.depth = depth;
-		entry.age = m_currentAge;
 		entry.type = type;
 
 		storeEntry(index(key), entry);
@@ -127,9 +121,7 @@ namespace stormphrax
 
 	auto TTable::clear() -> void
 	{
-		m_currentAge = 0;
-
-		std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
+		std::memset(m_table.data(), 0, m_table.size() * sizeof(Entry));
 	}
 
 	auto TTable::full() const -> u32
@@ -139,7 +131,7 @@ namespace stormphrax
 		for (u64 i = 0; i < 1000; ++i)
 		{
 			const auto entry = loadEntry(i);
-			if (entry.type != EntryType::None && entry.age == m_currentAge)
+			if (entry.type != EntryType::None)
 				++filledEntries;
 		}
 

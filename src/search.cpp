@@ -43,7 +43,8 @@ namespace stormphrax::search
 		}
 	}
 
-	Searcher::Searcher()
+	Searcher::Searcher(usize ttSize)
+		: m_ttable{ttSize}
 	{
 		auto &thread = m_threads.emplace_back();
 
@@ -56,7 +57,7 @@ namespace stormphrax::search
 
 	auto Searcher::newGame() -> void
 	{
-		//
+		m_ttable.clear();
 	}
 
 	auto Searcher::startSearch(const Position &pos, i32 maxDepth,
@@ -613,6 +614,8 @@ namespace stormphrax::search
 				std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
 			}
 		}
+
+		std::cout << " hashfull " << m_ttable.full();
 
 		if (g_opts.syzygyEnabled)
 		{

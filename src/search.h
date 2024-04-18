@@ -116,7 +116,7 @@ namespace stormphrax::search
 	class Searcher
 	{
 	public:
-		explicit Searcher();
+		explicit Searcher(usize ttSize = DefaultTtSize);
 
 		~Searcher()
 		{
@@ -147,6 +147,11 @@ namespace stormphrax::search
 
 		auto setThreads(u32 threads) -> void;
 
+		inline auto setTtSize(usize size)
+		{
+			m_ttable.resize(size);
+		}
+
 		inline auto quit() -> void
 		{
 			m_quit.store(true, std::memory_order::release);
@@ -156,6 +161,8 @@ namespace stormphrax::search
 		}
 
 	private:
+		TTable m_ttable;
+
 		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
 
