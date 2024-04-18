@@ -141,7 +141,7 @@ namespace stormphrax::search
 
 		[[nodiscard]] inline auto searching() const
 		{
-			std::unique_lock lock{m_searchMutex};
+			const std::unique_lock lock{m_searchMutex};
 			return m_searching.load(std::memory_order::relaxed);
 		}
 

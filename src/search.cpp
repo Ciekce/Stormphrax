@@ -322,7 +322,7 @@ namespace stormphrax::search
 
 		if (mainThread)
 		{
-			std::unique_lock lock{m_searchMutex};
+			const std::unique_lock lock{m_searchMutex};
 
 			m_stop.store(true, std::memory_order::seq_cst);
 			waitForThreads();
