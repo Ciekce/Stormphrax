@@ -33,7 +33,8 @@ namespace stormphrax
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
-		static constexpr i32 Noisy = Start + 1;
+		static constexpr i32 TtMove = Start + 1;
+		static constexpr i32 Noisy = TtMove + 1;
 		static constexpr i32 Quiet = Noisy + 1;
 		static constexpr i32 End = Quiet + 1;
 	};
@@ -42,9 +43,10 @@ namespace stormphrax
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove)
 			: m_pos{pos},
-			  m_data{data}
+			  m_data{data},
+			  m_ttMove{ttMove}
 		{
 			if constexpr (Root)
 				scoreAll();
@@ -70,6 +72,11 @@ namespace stormphrax
 				{
 					switch (++m_stage)
 					{
+						case MovegenStage::TtMove:
+							if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+								return m_ttMove;
+							break;
+
 						case MovegenStage::Noisy:
 							generateNoisy(m_data.moves, m_pos);
 							scoreNoisy();
@@ -161,16 +168,18 @@ namespace stormphrax
 
 		MovegenData &m_data;
 		u32 m_idx{};
+
+		Move m_ttMove;
 	};
 
 	template <bool Root>
-	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data)
+	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data, Move ttMove)
 	{
-		return MoveGenerator<Root, false>(pos, data);
+		return MoveGenerator<Root, false>(pos, data, ttMove);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos, MovegenData &data)
 	{
-		return MoveGenerator<false, true>(pos, data);
+		return MoveGenerator<false, true>(pos, data, NullMove);
 	}
 }
