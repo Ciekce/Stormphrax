@@ -83,6 +83,8 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(timeScaleMin, 13, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
+
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
 #undef SP_TUNABLE_ASSERTS

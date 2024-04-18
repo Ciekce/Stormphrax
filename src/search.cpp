@@ -554,7 +554,7 @@ namespace stormphrax::search
 			if (!pos.isLegal(move))
 				continue;
 
-			if (!see::see(pos, move, -105))
+			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
 
 			++thread.search.nodes;
