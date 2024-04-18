@@ -427,7 +427,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData);
+		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData, ttEntry.move);
 
 		u32 legalMoves = 0;
 
