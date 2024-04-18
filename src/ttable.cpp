@@ -85,18 +85,18 @@ namespace stormphrax
 	{
 		const auto entry = loadEntry(index(key));
 
-		if (entry.type != EntryType::None
+		if (entry.flag != TtFlag::None
 			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
 			dst.depth = entry.depth;
 			dst.move = entry.move;
-			dst.type = entry.type;
+			dst.flag = entry.flag;
 		}
-		else dst.type = EntryType::None;
+		else dst.flag = TtFlag::None;
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
+	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void
 	{
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
@@ -114,7 +114,7 @@ namespace stormphrax
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
 		entry.move = move;
 		entry.depth = depth;
-		entry.type = type;
+		entry.flag = flag;
 
 		storeEntry(index(key), entry);
 	}
@@ -131,7 +131,7 @@ namespace stormphrax
 		for (u64 i = 0; i < 1000; ++i)
 		{
 			const auto entry = loadEntry(i);
-			if (entry.type != EntryType::None)
+			if (entry.flag != TtFlag::None)
 				++filledEntries;
 		}
 

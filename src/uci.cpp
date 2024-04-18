@@ -749,7 +749,7 @@ namespace stormphrax
 			}
 
 			i32 depth = bench::DefaultBenchDepth;
-			usize ttSize = 16;
+			usize ttSize = bench::DefaultBenchTtSize;
 
 			if (tokens.size() > 1)
 			{
@@ -788,7 +788,7 @@ namespace stormphrax
 			}
 
 			m_searcher.setTtSize(ttSize);
-			std::cout << "info string set tt size to " << ttSize << std::endl;
+			std::cout << "info string set tt size to " << ttSize << " MB" << std::endl;
 
 			if (depth == 0)
 				depth = 1;

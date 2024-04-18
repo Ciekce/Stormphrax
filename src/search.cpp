@@ -367,6 +367,16 @@ namespace stormphrax::search
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
+		ProbedTTableEntry ttEntry{};
+		m_ttable.probe(ttEntry, pos.key(), ply);
+
+		if (!pvNode
+			&& ttEntry.depth >= depth
+			&& (ttEntry.flag == TtFlag::Exact
+				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
+				|| ttEntry.flag == TtFlag::LowerBound  && ttEntry.score >= beta))
+			return ttEntry.score;
+
 		const auto pieceCount = bbs.occupancy().popcount();
 
 		auto syzygyMin = -ScoreMate;
@@ -390,22 +400,22 @@ namespace stormphrax::search
 				++thread.search.tbhits;
 
 				Score score{};
-				EntryType entryType{};
+				TtFlag entryType{};
 
 				if (result == tb::ProbeResult::Win)
 				{
 					score = ScoreTbWin - ply;
-					entryType = EntryType::Beta;
+					entryType = TtFlag::LowerBound;
 				}
 				else if (result == tb::ProbeResult::Loss)
 				{
 					score = -ScoreTbWin + ply;
-					entryType = EntryType::Alpha;
+					entryType = TtFlag::UpperBound;
 				}
 				else // draw
 				{
 					score = drawScore(thread.search.nodes);
-					entryType = EntryType::Exact;
+					entryType = TtFlag::Exact;
 				}
 
 				return score;
@@ -414,6 +424,8 @@ namespace stormphrax::search
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
+
+		auto ttFlag = TtFlag::UpperBound;
 
 		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData);
 
@@ -482,7 +494,12 @@ namespace stormphrax::search
 					}
 
 					if (score >= beta)
+					{
+						ttFlag = TtFlag::LowerBound;
 						break;
+					}
+
+					ttFlag = TtFlag::Exact;
 				}
 			}
 		}
@@ -491,6 +508,9 @@ namespace stormphrax::search
 			return pos.isCheck() ? (-ScoreMate + ply) : 0;
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
+
+		if (!shouldStop(thread.search, false, false))
+			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
 
 		return bestScore;
 	}

@@ -33,11 +33,11 @@ namespace stormphrax
 	constexpr usize DefaultTtSize = 64;
 	constexpr util::Range<usize> TtSizeRange{1, 131072};
 
-	enum class EntryType : u8
+	enum class TtFlag : u8
 	{
 		None = 0,
-		Alpha,
-		Beta,
+		UpperBound,
+		LowerBound,
 		Exact
 	};
 
@@ -46,7 +46,7 @@ namespace stormphrax
 		Score score;
 		i32 depth;
 		Move move;
-		EntryType type;
+		TtFlag flag;
 	};
 
 	class TTable
@@ -59,7 +59,7 @@ namespace stormphrax
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
 
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
+		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
 
 		auto clear() -> void;
 
@@ -77,7 +77,7 @@ namespace stormphrax
 			i16 score;
 			Move move;
 			u8 depth;
-			EntryType type;
+			TtFlag flag;
 		};
 
 		static_assert(sizeof(Entry) == 8);
