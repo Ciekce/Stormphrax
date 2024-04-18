@@ -27,6 +27,7 @@
 #include "opts.h"
 #include "3rdparty/fathom/tbprobe.h"
 #include "tb.h"
+#include "see.h"
 
 namespace stormphrax::search
 {
@@ -523,6 +524,9 @@ namespace stormphrax::search
 		while (const auto move = generator.next())
 		{
 			if (!pos.isLegal(move))
+				continue;
+
+			if (!see::see(pos, move, -105))
 				continue;
 
 			++thread.search.nodes;
