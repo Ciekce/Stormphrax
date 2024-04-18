@@ -358,8 +358,7 @@ namespace stormphrax::search
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
-		// placeholder
-		const bool pvNode = true;
+		const bool pvNode = beta - alpha > 1;
 
 		auto &stack = thread.stack[ply];
 		auto &moveStack = thread.moveStack[moveStackIdx];
@@ -441,7 +440,15 @@ namespace stormphrax::search
 			else
 			{
 				const auto newDepth = depth - 1;
-				score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
+
+				if (legalMoves == 1)
+					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
+				else
+				{
+					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+					if (score > alpha && score < beta)
+						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
+				}
 			}
 
 			if constexpr (RootNode)
