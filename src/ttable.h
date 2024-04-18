@@ -33,32 +33,20 @@ namespace stormphrax
 	constexpr usize DefaultTtSize = 64;
 	constexpr util::Range<usize> TtSizeRange{1, 131072};
 
-	enum class EntryType : u8
+	enum class TtFlag : u8
 	{
 		None = 0,
-		Alpha,
-		Beta,
+		UpperBound,
+		LowerBound,
 		Exact
 	};
 
-	struct TTableEntry
-	{
-		u16 key;
-		i16 score;
-		Move move;
-		u8 depth;
-		u8 age : 6;
-		EntryType type : 2;
-	};
-
-	static_assert(sizeof(TTableEntry) == 8);
-
 	struct ProbedTTableEntry
 	{
-		i32 score;
+		Score score;
 		i32 depth;
 		Move move;
-		EntryType type;
+		TtFlag flag;
 	};
 
 	class TTable
@@ -71,7 +59,7 @@ namespace stormphrax
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
 
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void;
+		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
 
 		auto clear() -> void;
 
@@ -79,18 +67,21 @@ namespace stormphrax
 
 		inline auto prefetch(u64 key)
 		{
-			if (m_table.empty())
-				return;
-
 			__builtin_prefetch(&m_table[index(key)]);
 		}
 
-		inline auto age()
-		{
-			m_currentAge = (m_currentAge + 1) % 64;
-		}
-
 	private:
+		struct Entry
+		{
+			u16 key;
+			i16 score;
+			Move move;
+			u8 depth;
+			TtFlag flag;
+		};
+
+		static_assert(sizeof(Entry) == 8);
+
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
 			// this emits a single mul on both x64 and arm64
@@ -99,27 +90,14 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto loadEntry(usize index) const
 		{
-			const auto *ptr = static_cast<volatile const i64 *>(&m_table[index]);
-			const auto v = *ptr;
-
-			TTableEntry entry{};
-			std::memcpy(&entry, &v, sizeof(TTableEntry));
-
-			return entry;
+			return m_table[index];
 		}
 
-		inline auto storeEntry(usize index, TTableEntry entry)
+		inline auto storeEntry(usize index, Entry entry)
 		{
-			auto *ptr = static_cast<volatile i64 *>(&m_table[index]);
-
-			i64 v{};
-			std::memcpy(&v, &entry, sizeof(TTableEntry));
-
-			*ptr = v;
+			m_table[index] = entry;
 		}
 
-		std::vector<i64> m_table{};
-
-		u8 m_currentAge{};
+		std::vector<Entry> m_table{};
 	};
 }
