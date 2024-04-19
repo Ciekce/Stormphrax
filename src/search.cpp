@@ -466,14 +466,16 @@ namespace stormphrax::search
 			--depth;
 
 		if (!pvNode
-			&& depth <= maxRfpDepth())
+			&& !pos.isCheck())
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-			if (staticEval - rfpMargin() * depth >= beta)
+
+			if (depth <= maxRfpDepth()
+				&& staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
 		}
 
-		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
+		auto &failLowQuiets = moveStack.failLowQuiets;
 		failLowQuiets.clear();
 
 		auto bestMove = NullMove;
@@ -498,6 +500,7 @@ namespace stormphrax::search
 			++thread.search.nodes;
 			++legalMoves;
 
+			stack.move = move;
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			Score score{};

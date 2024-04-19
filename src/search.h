@@ -71,6 +71,7 @@ namespace stormphrax::search
 	struct SearchStackEntry
 	{
 		PvList pv{};
+		Move move;
 	};
 
 	struct MoveStackEntry
