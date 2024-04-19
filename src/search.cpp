@@ -465,29 +465,14 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
-		if (!pvNode && !pos.isCheck())
+		if (!pvNode
+			&& !pos.isCheck())
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
 			if (depth <= maxRfpDepth()
 				&& staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
-
-			/*
-			if (depth >= 4 && staticEval >= beta && !thread.stack[ply - 1].move.isNull() && !bbs.nonPk(us).empty())
-			{
-				constexpr auto R = 3;
-
-				stack.move = NullMove;
-				const auto guard = pos.applyNullMove();
-
-				const auto score = -search(thread, stack.pv, depth - R,
-					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
-
-				if (score >= beta)
-					return score > ScoreWin ? beta : score;
-			}
-			 */
 		}
 
 		auto &failLowQuiets = moveStack.failLowQuiets;
