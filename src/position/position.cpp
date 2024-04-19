@@ -721,6 +721,8 @@ namespace stormphrax
 			break;
 		}
 
+		assert(pieceTypeOrNone(captured) != PieceType::King);
+
 		if constexpr (UpdateNnue)
 			nnueState->update<StateHistory>(updates,
 				state.boards.bbs(), state.blackKing(), state.whiteKing());
