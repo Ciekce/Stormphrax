@@ -429,8 +429,8 @@ namespace stormphrax::search
 			}
 		}
 
-		auto &quietsTried = thread.moveStack[moveStackIdx].quietsTried;
-		quietsTried.clear();
+		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
+		failLowQuiets.clear();
 
 		const auto originalAlpha = alpha;
 
@@ -515,8 +515,8 @@ namespace stormphrax::search
 				}
 			}
 
-			if (!pos.isNoisy(move))
-				quietsTried.push(move);
+			if (move != bestMove && !pos.isNoisy(move))
+				failLowQuiets.push(move);
 		}
 
 		if (legalMoves == 0)
@@ -527,10 +527,9 @@ namespace stormphrax::search
 			const auto bonus = historyBonus(depth);
 			const auto penalty = -bonus;
 
-			if (bestScore >= beta)
-				thread.history.updateQuietScore(bestMove, bonus);
+			thread.history.updateQuietScore(bestMove, bonus);
 
-			for (const auto prevQuiet : quietsTried)
+			for (const auto prevQuiet : failLowQuiets)
 			{
 				thread.history.updateQuietScore(prevQuiet, penalty);
 			}
