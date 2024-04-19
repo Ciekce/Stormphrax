@@ -470,7 +470,20 @@ namespace stormphrax::search
 					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
 				else
 				{
-					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+					const auto reduction = [&]
+					{
+						if (depth < 2 || legalMoves < 3 || generator.stage() < MovegenStage::Quiet)
+							return 0;
+
+						return g_lmrTable[depth][legalMoves];
+					}();
+
+					const auto reduced = std::clamp(newDepth - reduction, 0, newDepth);
+					score = -search(thread, stack.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+
+					if (score > alpha && reduced < newDepth)
+						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+
 					if (score > alpha && score < beta)
 						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
 				}
