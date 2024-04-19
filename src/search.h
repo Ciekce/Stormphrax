@@ -40,6 +40,7 @@
 #include "eval/eval.h"
 #include "movepick.h"
 #include "util/barrier.h"
+#include "history.h"
 
 namespace stormphrax::search
 {
@@ -99,6 +100,8 @@ namespace stormphrax::search
 
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
+
+		HistoryTables history{};
 
 		Position pos{};
 

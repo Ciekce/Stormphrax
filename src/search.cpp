@@ -58,6 +58,11 @@ namespace stormphrax::search
 	auto Searcher::newGame() -> void
 	{
 		m_ttable.clear();
+
+		for (auto &thread : m_threads)
+		{
+			thread.history.clear();
+		}
 	}
 
 	auto Searcher::startSearch(const Position &pos, i32 maxDepth,
@@ -313,6 +318,8 @@ namespace stormphrax::search
 			return -ScoreMate;
 		}
 
+		thread.history.clear();
+
 		const auto waitForThreads = [&]
 		{
 			--m_runningThreads;
@@ -429,7 +436,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData, ttEntry.move);
+		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData, ttEntry.move, thread.history);
 
 		u32 legalMoves = 0;
 
@@ -508,6 +515,12 @@ namespace stormphrax::search
 
 		if (legalMoves == 0)
 			return pos.isCheck() ? (-ScoreMate + ply) : 0;
+
+		if (bestScore >= beta && !pos.isNoisy(bestMove))
+		{
+			const auto bonus = historyBonus(depth);
+			thread.history.updateQuietScore(bestMove, bonus);
+		}
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
