@@ -429,10 +429,11 @@ namespace stormphrax::search
 			}
 		}
 
-		if (!pvNode && depth <= 6)
+		if (!pvNode
+			&& depth <= maxRfpDepth())
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-			if (staticEval - 75 * depth >= beta)
+			if (staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
 		}
 
