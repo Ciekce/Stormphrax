@@ -429,6 +429,15 @@ namespace stormphrax::search
 			}
 		}
 
+		if (!pvNode && depth <= 6)
+		{
+			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			if (staticEval - 75 * depth > beta)
+				return staticEval;
+		}
+
+		const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
 		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
 		failLowQuiets.clear();
 
