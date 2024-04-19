@@ -472,7 +472,9 @@ namespace stormphrax::search
 				{
 					const auto reduction = [&]
 					{
-						if (depth < 2 || legalMoves < 3 || generator.stage() < MovegenStage::Quiet)
+						if (depth < minLmrDepth()
+							|| legalMoves < lmrMinMoves()
+							|| generator.stage() < MovegenStage::Quiet)
 							return 0;
 
 						return g_lmrTable[depth][legalMoves];

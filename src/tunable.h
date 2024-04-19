@@ -92,6 +92,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
+	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
+
 	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
 
