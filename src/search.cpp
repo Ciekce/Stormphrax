@@ -479,7 +479,7 @@ namespace stormphrax::search
 				&& !thread.stack[ply - 1].move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
-				constexpr auto R = 3;
+				constexpr auto R = 4;
 
 				stack.move = NullMove;
 				const auto guard = pos.applyNullMove();
