@@ -412,7 +412,7 @@ namespace stormphrax::search
 			&& ttEntry.depth >= depth
 			&& (ttEntry.flag == TtFlag::Exact
 				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
-				|| ttEntry.flag == TtFlag::LowerBound  && ttEntry.score >= beta))
+				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
 			return ttEntry.score;
 
 		const auto pieceCount = bbs.occupancy().popcount();
