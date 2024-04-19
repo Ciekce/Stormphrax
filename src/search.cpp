@@ -471,8 +471,6 @@ namespace stormphrax::search
 				return staticEval;
 		}
 
-		const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-
 		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
 		failLowQuiets.clear();
 
