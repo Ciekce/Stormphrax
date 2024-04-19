@@ -299,7 +299,7 @@ namespace stormphrax::search
 
 			while (!shouldStop(searchData, false, false))
 			{
-				newScore = search<true>(thread, thread.rootPv, depth, 0, 0, alpha, beta);
+				newScore = search<true>(thread, thread.rootPv, depth, 0, 0, alpha, beta, false);
 
 				if (newScore <= alpha)
 				{
@@ -375,7 +375,7 @@ namespace stormphrax::search
 
 	template <bool RootNode>
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
-		i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
+		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 
@@ -396,6 +396,8 @@ namespace stormphrax::search
 		const auto them = oppColor(us);
 
 		const bool pvNode = beta - alpha > 1;
+
+		assert(!pvNode || !cutnode);
 
 		auto &stack = thread.stack[ply];
 		auto &moveStack = thread.moveStack[moveStackIdx];
@@ -458,6 +460,9 @@ namespace stormphrax::search
 			}
 		}
 
+		if (depth >= 3 && (pvNode || cutnode) && !ttEntry.move)
+			--depth;
+
 		if (!pvNode
 			&& depth <= maxRfpDepth())
 		{
@@ -506,7 +511,7 @@ namespace stormphrax::search
 				const auto newDepth = depth - 1;
 
 				if (legalMoves == 1)
-					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
+					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
 					const auto reduction = [&]
@@ -524,13 +529,14 @@ namespace stormphrax::search
 					}();
 
 					const auto reduced = std::clamp(newDepth - reduction, 0, newDepth);
-					score = -search(thread, stack.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+					score = -search(thread, stack.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
-						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+						score = -search(thread, stack.pv, newDepth, ply + 1,
+							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 
 					if (score > alpha && score < beta)
-						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha);
+						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
 			}
 
