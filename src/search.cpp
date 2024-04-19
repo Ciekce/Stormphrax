@@ -432,7 +432,7 @@ namespace stormphrax::search
 		if (!pvNode && depth <= 6)
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-			if (staticEval - 75 * depth > beta)
+			if (staticEval - 75 * depth >= beta)
 				return staticEval;
 		}
 
