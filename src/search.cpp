@@ -460,7 +460,9 @@ namespace stormphrax::search
 			}
 		}
 
-		if (depth >= 3 && (pvNode || cutnode) && !ttEntry.move)
+		if (depth >= minIirDepth()
+			&& (pvNode || cutnode)
+			&& !ttEntry.move)
 			--depth;
 
 		if (!pvNode

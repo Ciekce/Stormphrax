@@ -90,11 +90,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
-	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
-
-	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
+	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(rfpMargin, 75, 25, 150, 5)
@@ -104,6 +100,12 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
+
+	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
+
+	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
 
