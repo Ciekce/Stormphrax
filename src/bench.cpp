@@ -79,6 +79,8 @@ namespace stormphrax::bench
 			"2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93"
 		};
 
+		searcher.newGame();
+
 		usize nodes{};
 		f64 time{};
 
@@ -88,8 +90,6 @@ namespace stormphrax::bench
 		{
 			if (!pos.resetFromFen(fen))
 				return;
-
-			searcher.newGame();
 
 			search::BenchData data{};
 			searcher.runBench(data, pos, depth);
