@@ -86,6 +86,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(timeScaleMin, 13, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(minAspDepth, 5, 1, 10, 1)
+	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
+
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 
 	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)
