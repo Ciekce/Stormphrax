@@ -465,7 +465,7 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
-		if (!pvNode)
+		if (!pvNode && !pos.isCheck())
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
@@ -473,6 +473,7 @@ namespace stormphrax::search
 				&& staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
 
+			/*
 			if (depth >= 4 && staticEval >= beta && !thread.stack[ply - 1].move.isNull() && !bbs.nonPk(us).empty())
 			{
 				constexpr auto R = 3;
@@ -486,6 +487,7 @@ namespace stormphrax::search
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
 			}
+			 */
 		}
 
 		auto &failLowQuiets = moveStack.failLowQuiets;
