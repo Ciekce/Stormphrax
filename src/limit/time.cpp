@@ -55,8 +55,8 @@ namespace stormphrax::limit
 
 		const auto incScale = static_cast<f64>(incrementScale()) / 100.0;
 
-	//	const auto softScale = static_cast<f64>(softTimeScale()) / 100.0;
-	//	const auto hardScale = static_cast<f64>(hardTimeScale()) / 100.0;
+		const auto softScale = static_cast<f64>(softTimeScale()) / 100.0;
+		const auto hardScale = static_cast<f64>(hardTimeScale()) / 100.0;
 
 		const auto limit = std::max(0.001, remaining - overhead);
 
@@ -65,10 +65,8 @@ namespace stormphrax::limit
 
 		const auto baseTime = limit / static_cast<f64>(toGo) + increment * incScale;
 
-	//	m_maxTime  = limit * hardScale;
-	//	m_softTime = std::min(baseTime * softScale, m_maxTime);
-		m_maxTime  = baseTime;
-		m_softTime = baseTime;
+		m_maxTime  = limit * hardScale;
+		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
 	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
