@@ -458,6 +458,9 @@ namespace stormphrax::search
 			}
 		}
 
+		if (pvNode && !ttEntry.move)
+			--depth;
+
 		if (!pvNode
 			&& depth <= maxRfpDepth())
 		{
