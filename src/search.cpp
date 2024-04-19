@@ -474,8 +474,6 @@ namespace stormphrax::search
 		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
 		failLowQuiets.clear();
 
-		const auto originalAlpha = alpha;
-
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
@@ -545,36 +543,34 @@ namespace stormphrax::search
 			}
 
 			if (score > bestScore)
-			{
 				bestScore = score;
 
-				if (score > alpha)
+			if (score > alpha)
+			{
+				alpha = score;
+				bestMove = move;
+
+				if (pvNode)
 				{
-					alpha = score;
-					bestMove = move;
+					pv.moves[0] = move;
 
-					if (pvNode)
-					{
-						pv.moves[0] = move;
+					assert(stack.pv.length + 1 <= MaxDepth);
 
-						assert(stack.pv.length + 1 <= MaxDepth);
+					std::copy(stack.pv.moves.begin(),
+						stack.pv.moves.begin() + stack.pv.length,
+						pv.moves.begin() + 1);
+					pv.length = stack.pv.length + 1;
 
-						std::copy(stack.pv.moves.begin(),
-							stack.pv.moves.begin() + stack.pv.length,
-							pv.moves.begin() + 1);
-						pv.length = stack.pv.length + 1;
-
-						assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
-					}
-
-					if (score >= beta)
-					{
-						ttFlag = TtFlag::LowerBound;
-						break;
-					}
-
-					ttFlag = TtFlag::Exact;
+					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
 				}
+
+				ttFlag = TtFlag::Exact;
+			}
+
+			if (score >= beta)
+			{
+				ttFlag = TtFlag::LowerBound;
+				break;
 			}
 
 			if (move != bestMove && !pos.isNoisy(move))
