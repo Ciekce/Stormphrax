@@ -477,7 +477,11 @@ namespace stormphrax::search
 							|| generator.stage() < MovegenStage::Quiet)
 							return 0;
 
-						return g_lmrTable[depth][legalMoves];
+						auto r =  g_lmrTable[depth][legalMoves];
+
+						r += !pvNode;
+
+						return r;
 					}();
 
 					const auto reduced = std::clamp(newDepth - reduction, 0, newDepth);
