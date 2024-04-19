@@ -474,12 +474,12 @@ namespace stormphrax::search
 				&& staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
 
-			if (depth >= 4
+			if (depth >= minNmpDepth()
 				&& staticEval >= beta
 				&& !thread.stack[ply - 1].move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
-				constexpr auto R = 4;
+				constexpr auto R = nmpBaseReduction();
 
 				stack.move = NullMove;
 				const auto guard = pos.applyNullMove();
