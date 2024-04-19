@@ -429,6 +429,9 @@ namespace stormphrax::search
 			}
 		}
 
+		auto &failLowQuiets = thread.moveStack[moveStackIdx].failLowQuiets;
+		failLowQuiets.clear();
+
 		const auto originalAlpha = alpha;
 
 		auto bestMove = NullMove;
@@ -511,24 +514,31 @@ namespace stormphrax::search
 					ttFlag = TtFlag::Exact;
 				}
 			}
+
+			if (move != bestMove && !pos.isNoisy(move))
+				failLowQuiets.push(move);
 		}
 
 		if (legalMoves == 0)
 			return pos.isCheck() ? (-ScoreMate + ply) : 0;
 
-		if (bestScore >= beta && !pos.isNoisy(bestMove))
+		if (bestMove && !pos.isNoisy(bestMove))
 		{
 			const auto bonus = historyBonus(depth);
+			const auto penalty = -bonus;
+
 			thread.history.updateQuietScore(bestMove, bonus);
+
+			for (const auto prevQuiet : failLowQuiets)
+			{
+				thread.history.updateQuietScore(prevQuiet, penalty);
+			}
 		}
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!shouldStop(thread.search, false, false))
-		{
-			const auto newTtMove = alpha > originalAlpha ? bestMove : NullMove;
-			m_ttable.put(pos.key(), bestScore, newTtMove, depth, ply, ttFlag);
-		}
+			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
 
 		return bestScore;
 	}
