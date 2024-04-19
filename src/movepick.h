@@ -22,6 +22,7 @@
 
 #include "movegen.h"
 #include "see.h"
+#include "history.h"
 
 namespace stormphrax
 {
@@ -43,10 +44,11 @@ namespace stormphrax
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables *history)
 			: m_pos{pos},
 			  m_data{data},
-			  m_ttMove{ttMove}
+			  m_ttMove{ttMove},
+			  m_history{history}
 		{
 			if constexpr (Root)
 				scoreAll();
@@ -86,6 +88,7 @@ namespace stormphrax
 
 						case MovegenStage::Quiet:
 							generateQuiet(m_data.moves, m_pos);
+							scoreQuiet();
 							break;
 
 						default:
@@ -106,7 +109,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		inline auto scoreSingleNoisy(const PositionBoards &boards, ScoredMove &scoredMove)
+		inline auto scoreSingleNoisy(ScoredMove &scoredMove, const PositionBoards &boards)
 		{
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
@@ -126,7 +129,20 @@ namespace stormphrax
 			const auto &boards = m_pos.boards();
 			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
 			{
-				scoreSingleNoisy(boards, m_data.moves[i]);
+				scoreSingleNoisy(m_data.moves[i], boards);
+			}
+		}
+
+		inline auto scoreSingleQuiet(ScoredMove &move)
+		{
+			move.score = m_history->quietScore(move.move);
+		}
+
+		inline auto scoreQuiet() -> void
+		{
+			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			{
+				scoreSingleQuiet(m_data.moves[i]);
 			}
 		}
 
@@ -140,8 +156,9 @@ namespace stormphrax
 				if (m_pos.isNoisy(move.move))
 				{
 					move.score += 16000000;
-					scoreSingleNoisy(boards, move);
+					scoreSingleNoisy(move, boards);
 				}
+				else scoreSingleQuiet(move);
 			}
 		}
 
@@ -169,6 +186,8 @@ namespace stormphrax
 
 		i32 m_stage{MovegenStage::Start};
 
+		const HistoryTables *m_history;
+
 		MovegenData &m_data;
 		u32 m_idx{};
 
@@ -176,13 +195,14 @@ namespace stormphrax
 	};
 
 	template <bool Root>
-	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data, Move ttMove)
+	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
+		Move ttMove, const HistoryTables &history)
 	{
-		return MoveGenerator<Root, false>(pos, data, ttMove);
+		return MoveGenerator<Root, false>(pos, data, ttMove, &history);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos, MovegenData &data)
 	{
-		return MoveGenerator<false, true>(pos, data, NullMove);
+		return MoveGenerator<false, true>(pos, data, NullMove, nullptr);
 	}
 }
