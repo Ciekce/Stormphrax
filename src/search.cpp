@@ -479,7 +479,8 @@ namespace stormphrax::search
 				&& !thread.stack[ply - 1].move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
-				const auto R = nmpBaseReduction() + depth / 4;
+				const auto R = nmpBaseReduction()
+					+ depth / nmpDepthReductionDiv();
 
 				stack.move = NullMove;
 				const auto guard = pos.applyNullMove();
