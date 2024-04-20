@@ -654,6 +654,8 @@ namespace stormphrax::search
 				alpha = staticEval;
 		}
 
+		const auto futility = staticEval + 150;
+
 		auto bestScore = staticEval;
 
 		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData);
@@ -662,6 +664,15 @@ namespace stormphrax::search
 		{
 			if (!pos.isLegal(move))
 				continue;
+
+			if (!pos.isCheck()
+				&& futility <= alpha
+				&& !see::see(pos, move, 1))
+			{
+				if (bestScore < futility)
+					bestScore = futility;
+				continue;
+			}
 
 			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
