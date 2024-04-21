@@ -27,7 +27,7 @@ namespace stormphrax::bench
 #ifdef SP_PGO_PROFILE
 	constexpr i32 DefaultBenchDepth = 3;
 #else
-	constexpr i32 DefaultBenchDepth = 10;
+	constexpr i32 DefaultBenchDepth = 12;
 #endif
 
 	constexpr usize DefaultBenchTtSize = 16;
