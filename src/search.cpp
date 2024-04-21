@@ -389,8 +389,13 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
-		if (depth <= 0)
+		const bool inCheck = pos.isCheck();
+
+		if (depth <= 0 && !inCheck)
 			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+
+		if (depth < 0)
+			depth = 0;
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -466,7 +471,7 @@ namespace stormphrax::search
 			--depth;
 
 		if (!pvNode
-			&& !pos.isCheck())
+			&& !inCheck)
 		{
 			const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
@@ -611,7 +616,7 @@ namespace stormphrax::search
 		}
 
 		if (legalMoves == 0)
-			return pos.isCheck() ? (-ScoreMate + ply) : 0;
+			return inCheck ? (-ScoreMate + ply) : 0;
 
 		if (bestMove && !pos.isNoisy(bestMove))
 		{
