@@ -378,6 +378,7 @@ namespace stormphrax::search
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
+		assert(RootNode || ply > 0);
 
 		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
 			return 0;
@@ -404,7 +405,9 @@ namespace stormphrax::search
 
 		assert(!pvNode || !cutnode);
 
-		auto &stack = thread.stack[ply];
+		auto &curr = thread.stack[ply];
+		const auto *parent = RootNode ? nullptr : &thread.stack[ply - 1];
+
 		auto &moveStack = thread.moveStack[moveStackIdx];
 
 		if (ply > thread.search.seldepth)
@@ -491,16 +494,16 @@ namespace stormphrax::search
 
 			if (depth >= minNmpDepth()
 				&& staticEval >= beta
-				&& !thread.stack[ply - 1].move.isNull()
+				&& !parent->move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv();
 
-				stack.move = NullMove;
+				curr.move = NullMove;
 				const auto guard = pos.applyNullMove();
 
-				const auto score = -search(thread, stack.pv, depth - R,
+				const auto score = -search(thread, curr.pv, depth - R,
 					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
@@ -526,14 +529,14 @@ namespace stormphrax::search
 				continue;
 
 			if (pvNode)
-				stack.pv.length = 0;
+				curr.pv.length = 0;
 
 			const auto prevNodes = thread.search.nodes;
 
 			++thread.search.nodes;
 			++legalMoves;
 
-			stack.move = move;
+			curr.move = move;
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			Score score{};
@@ -545,7 +548,7 @@ namespace stormphrax::search
 				const auto newDepth = depth - 1;
 
 				if (legalMoves == 1)
-					score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
+					score = -search(thread, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				else
 				{
 					const auto reduction = [&]
@@ -563,14 +566,14 @@ namespace stormphrax::search
 					}();
 
 					const auto reduced = std::clamp(newDepth - reduction, 0, newDepth);
-					score = -search(thread, stack.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
+					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
-						score = -search(thread, stack.pv, newDepth, ply + 1,
+						score = -search(thread, curr.pv, newDepth, ply + 1,
 							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 
 					if (score > alpha && score < beta)
-						score = -search(thread, stack.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
+						score = -search(thread, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
 			}
 
@@ -592,12 +595,12 @@ namespace stormphrax::search
 				{
 					pv.moves[0] = move;
 
-					assert(stack.pv.length + 1 <= MaxDepth);
+					assert(curr.pv.length + 1 <= MaxDepth);
 
-					std::copy(stack.pv.moves.begin(),
-						stack.pv.moves.begin() + stack.pv.length,
+					std::copy(curr.pv.moves.begin(),
+						curr.pv.moves.begin() + curr.pv.length,
 						pv.moves.begin() + 1);
-					pv.length = stack.pv.length + 1;
+					pv.length = curr.pv.length + 1;
 
 					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
 				}
