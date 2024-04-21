@@ -474,9 +474,9 @@ namespace stormphrax::search
 				&& staticEval - rfpMargin() * depth >= beta)
 				return staticEval;
 
-			if (depth <= 4
+			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
-				&& staticEval + 250 * depth <= alpha)
+				&& staticEval + razoringMargin() * depth <= alpha)
 			{
 				const auto score = qsearch(thread, ply, moveStackIdx, alpha, alpha + 1);
 

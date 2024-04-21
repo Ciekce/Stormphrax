@@ -95,6 +95,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(rfpMargin, 75, 25, 150, 5)
 
+	SP_TUNABLE_PARAM(maxRazoringDepth, 4, 2, 6, 0.5)
+	SP_TUNABLE_PARAM(razoringMargin, 250, 100, 350, 40)
+
 	SP_TUNABLE_PARAM(minNmpDepth, 4, 3, 8, 0.5)
 	SP_TUNABLE_PARAM(nmpBaseReduction, 4, 2, 5, 0.5)
 	SP_TUNABLE_PARAM(nmpDepthReductionDiv, 4, 1, 8, 1)
