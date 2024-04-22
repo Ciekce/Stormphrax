@@ -561,9 +561,9 @@ namespace stormphrax::search
 			if (bestScore > -ScoreWin)
 			{
 				if (!noisy
-					&& depth <= 8
+					&& depth <= maxFpDepth()
 					&& std::abs(alpha) < 2000
-					&& staticEval + 250 + depth * 65 <= alpha)
+					&& staticEval + fpMargin() + depth * fpScale() <= alpha)
 				{
 					generator.skipQuiets();
 					continue;
