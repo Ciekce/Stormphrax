@@ -532,8 +532,8 @@ namespace stormphrax::search
 			}
 		}
 
-		auto &failLowQuiets = moveStack.failLowQuiets;
-		failLowQuiets.clear();
+		moveStack.failLowQuiets .clear();
+		moveStack.failLowNoisies.clear();
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
@@ -664,23 +664,42 @@ namespace stormphrax::search
 				break;
 			}
 
-			if (move != bestMove && !noisy)
-				failLowQuiets.push(move);
+			if (move != bestMove)
+			{
+				if (noisy)
+					moveStack.failLowNoisies.push(move);
+				else moveStack.failLowQuiets.push(move);
+			}
 		}
 
 		if (legalMoves == 0)
 			return inCheck ? (-ScoreMate + ply) : 0;
 
-		if (bestMove && !pos.isNoisy(bestMove))
+		if (bestMove)
 		{
 			const auto bonus = historyBonus(depth);
 			const auto penalty = -bonus;
 
-			thread.history.updateQuietScore(bestMove, bonus);
-
-			for (const auto prevQuiet : failLowQuiets)
+			if (!pos.isNoisy(bestMove))
 			{
-				thread.history.updateQuietScore(prevQuiet, penalty);
+				thread.history.updateQuietScore(bestMove, bonus);
+
+				for (const auto prevQuiet : moveStack.failLowQuiets)
+				{
+					thread.history.updateQuietScore(prevQuiet, penalty);
+				}
+			}
+			else
+			{
+				const auto captured = pos.captureTarget(bestMove);
+				thread.history.updateNoisyScore(bestMove, captured, bonus);
+			}
+
+			// unconditionally update capthist
+			for (const auto prevNoisy : moveStack.failLowNoisies)
+			{
+				const auto captured = pos.captureTarget(prevNoisy);
+				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
 			}
 		}
 
@@ -724,7 +743,7 @@ namespace stormphrax::search
 
 		auto bestScore = staticEval;
 
-		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData);
+		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
 
 		while (const auto move = generator.next())
 		{

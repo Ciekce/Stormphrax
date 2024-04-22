@@ -78,6 +78,7 @@ namespace stormphrax::search
 	{
 		MovegenData movegenData{};
 		StaticVector<Move, 256> failLowQuiets{};
+		StaticVector<Move, 32> failLowNoisies{};
 	};
 
 	struct alignas(SP_CACHE_LINE_SIZE) ThreadData

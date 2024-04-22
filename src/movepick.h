@@ -44,7 +44,7 @@ namespace stormphrax
 	class MoveGenerator
 	{
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables *history)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables &history)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
@@ -114,14 +114,13 @@ namespace stormphrax
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
 
-			const auto moving = boards.pieceAt(move.src());
-			score -= see::value(moving);
+			const auto captured = m_pos.captureTarget(move);
 
-			const auto captured = move.type() == MoveType::EnPassant
-				? PieceType::Pawn
-				: pieceTypeOrNone(boards.pieceAt(move.dst()));
+			score += m_history.noisyScore(move, captured) / 8;
+			score += see::value(captured);
 
-			score += see::value(captured) * 4000;
+			if (move.type() == MoveType::Promotion)
+				score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
 		}
 
 		inline auto scoreNoisy() -> void
@@ -135,7 +134,7 @@ namespace stormphrax
 
 		inline auto scoreSingleQuiet(ScoredMove &move)
 		{
-			move.score = m_history->quietScore(move.move);
+			move.score = m_history.quietScore(move.move);
 		}
 
 		inline auto scoreQuiet() -> void
@@ -188,7 +187,7 @@ namespace stormphrax
 
 		bool m_skipQuiets{false};
 
-		const HistoryTables *m_history;
+		const HistoryTables &m_history;
 
 		MovegenData &m_data;
 		u32 m_idx{};
@@ -199,11 +198,12 @@ namespace stormphrax
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
 		Move ttMove, const HistoryTables &history)
 	{
-		return MoveGenerator<false>(pos, data, ttMove, &history);
+		return MoveGenerator<false>(pos, data, ttMove, history);
 	}
 
-	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos, MovegenData &data)
+	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
+		MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<true>(pos, data, NullMove, nullptr);
+		return MoveGenerator<true>(pos, data, NullMove, history);
 	}
 }
