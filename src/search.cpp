@@ -558,6 +558,16 @@ namespace stormphrax::search
 
 			const bool noisy = pos.isNoisy(move);
 
+			if (bestScore > -ScoreWin)
+			{
+				const auto seeThreshold = noisy
+					? -90 * depth
+					: -25 * depth * depth;
+
+				if (!see::see(pos, move, seeThreshold))
+					continue;
+			}
+
 			if (pvNode)
 				curr.pv.length = 0;
 
