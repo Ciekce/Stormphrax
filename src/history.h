@@ -71,7 +71,8 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(&m_main, 0, sizeof(m_main));
+			std::memset(&m_main , 0, sizeof(m_main ));
+			std::memset(&m_noisy, 0, sizeof(m_noisy));
 		}
 
 		inline auto updateQuietScore(Move move, HistoryScore bonus)
@@ -80,12 +81,28 @@ namespace stormphrax
 			score.update(bonus);
 		}
 
+		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
+		{
+			auto &score = m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			score.update(bonus);
+		}
+
 		[[nodiscard]] inline auto quietScore(Move move) const -> HistoryScore
 		{
 			return m_main[move.srcIdx()][move.dstIdx()];
 		}
 
+		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> HistoryScore
+		{
+			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+		}
+
 	private:
+		// [from][to]
 		std::array<std::array<HistoryEntry, 64>, 64> m_main{};
+
+		// [from][to][captured]
+		// additional slot for non-capture queen promos
+		std::array<std::array<std::array<HistoryEntry, 13>, 64>, 64> m_noisy{};
 	};
 }
