@@ -40,7 +40,7 @@ namespace stormphrax
 		static constexpr i32 End = Quiet + 1;
 	};
 
-	template <bool Root, bool NoisiesOnly = false>
+	template <bool NoisiesOnly>
 	class MoveGenerator
 	{
 	public:
@@ -50,24 +50,13 @@ namespace stormphrax
 			  m_ttMove{ttMove},
 			  m_history{history}
 		{
-			if constexpr (Root)
-				scoreAll();
-			else m_data.moves.clear();
+			m_data.moves.clear();
 		}
 
 		~MoveGenerator() = default;
 
 		[[nodiscard]] inline auto next()
 		{
-			if constexpr (Root)
-			{
-				if (m_idx == m_data.moves.size())
-					return NullMove;
-
-				const auto idx = findNext();
-				return m_data.moves[idx].move;
-			}
-
 			while (true)
 			{
 				while (m_idx == m_data.moves.size())
@@ -194,15 +183,14 @@ namespace stormphrax
 		Move m_ttMove;
 	};
 
-	template <bool Root>
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
 		Move ttMove, const HistoryTables &history)
 	{
-		return MoveGenerator<Root, false>(pos, data, ttMove, &history);
+		return MoveGenerator<false>(pos, data, ttMove, &history);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos, MovegenData &data)
 	{
-		return MoveGenerator<false, true>(pos, data, NullMove, nullptr);
+		return MoveGenerator<true>(pos, data, NullMove, nullptr);
 	}
 }

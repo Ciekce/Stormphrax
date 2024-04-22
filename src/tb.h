@@ -34,6 +34,6 @@ namespace stormphrax::tb
 		Loss
 	};
 
-	auto probeRoot(ScoredMoveList &rootMoves, const Position &pos) -> ProbeResult;
+	auto probeRoot(MoveList &rootMoves, const Position &pos) -> ProbeResult;
 	auto probe(const Position &pos) -> ProbeResult;
 }
