@@ -561,8 +561,8 @@ namespace stormphrax::search
 			if (bestScore > -ScoreWin)
 			{
 				const auto seeThreshold = noisy
-					? -90 * depth
-					: -25 * depth * depth;
+					? seePruningThresholdNoisy() * depth
+					: seePruningThresholdQuiet() * depth * depth;
 
 				if (!see::see(pos, move, seeThreshold))
 					continue;
