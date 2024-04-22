@@ -402,6 +402,15 @@ namespace stormphrax::search
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
+		if (!RootNode)
+		{
+			alpha = std::max(alpha, -ScoreMate + ply);
+			beta  = std::min( beta,  ScoreMate - ply - 1);
+
+			if (alpha >= beta)
+				return alpha;
+		}
+
 		const bool inCheck = pos.isCheck();
 
 		if (depth <= 0 && !inCheck)
