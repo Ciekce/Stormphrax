@@ -556,6 +556,8 @@ namespace stormphrax::search
 			else if (!pos.isLegal(move))
 				continue;
 
+			const bool noisy = pos.isNoisy(move);
+
 			if (pvNode)
 				curr.pv.length = 0;
 
@@ -643,7 +645,7 @@ namespace stormphrax::search
 				break;
 			}
 
-			if (move != bestMove && !pos.isNoisy(move))
+			if (move != bestMove && !noisy)
 				failLowQuiets.push(move);
 		}
 
