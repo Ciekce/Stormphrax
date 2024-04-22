@@ -26,6 +26,7 @@
 
 #include "tunable.h"
 #include "move.h"
+#include "bitboard.h"
 
 namespace stormphrax
 {
@@ -75,9 +76,9 @@ namespace stormphrax
 			std::memset(&m_noisy, 0, sizeof(m_noisy));
 		}
 
-		inline auto updateQuietScore(Move move, HistoryScore bonus)
+		inline auto updateQuietScore(Bitboard threats, Move move, HistoryScore bonus)
 		{
-			auto &score = m_main[move.srcIdx()][move.dstIdx()];
+			auto &score = m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 			score.update(bonus);
 		}
 
@@ -87,9 +88,9 @@ namespace stormphrax
 			score.update(bonus);
 		}
 
-		[[nodiscard]] inline auto quietScore(Move move) const -> HistoryScore
+		[[nodiscard]] inline auto quietScore(Bitboard threats, Move move) const -> HistoryScore
 		{
-			return m_main[move.srcIdx()][move.dstIdx()];
+			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
 		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> HistoryScore
@@ -98,8 +99,8 @@ namespace stormphrax
 		}
 
 	private:
-		// [from][to]
-		std::array<std::array<HistoryEntry, 64>, 64> m_main{};
+		// [from][to][from attacked][to attacked]
+		std::array<std::array<std::array<std::array<HistoryEntry, 2>, 2>, 64>, 64> m_main{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
