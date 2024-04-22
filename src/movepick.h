@@ -76,8 +76,11 @@ namespace stormphrax
 							break;
 
 						case MovegenStage::Quiet:
-							generateQuiet(m_data.moves, m_pos);
-							scoreQuiet();
+							if (!m_skipQuiets)
+							{
+								generateQuiet(m_data.moves, m_pos);
+								scoreQuiet();
+							}
 							break;
 
 						default:
@@ -87,12 +90,20 @@ namespace stormphrax
 
 				assert(m_idx < m_data.moves.size());
 
+				if (m_skipQuiets && m_stage >= MovegenStage::Quiet)
+					return NullMove;
+
 				const auto idx = findNext();
 				const auto move = m_data.moves[idx].move;
 
 				if (move != m_ttMove)
 					return move;
 			}
+		}
+
+		inline auto skipQuiets()
+		{
+			m_skipQuiets = true;
 		}
 
 		[[nodiscard]] inline auto stage() const { return m_stage; }
@@ -174,6 +185,8 @@ namespace stormphrax
 		const Position &m_pos;
 
 		i32 m_stage{MovegenStage::Start};
+
+		bool m_skipQuiets{false};
 
 		const HistoryTables *m_history;
 
