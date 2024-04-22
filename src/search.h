@@ -103,18 +103,20 @@ namespace stormphrax::search
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 
+		MoveList rootMoves{};
+
 		HistoryTables history{};
 
 		Position pos{};
 
-		[[nodiscard]] inline auto rootMoves() -> auto &
-		{
-			return moveStack[0].movegenData.moves;
-		}
-
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;
+		}
+
+		[[nodiscard]] inline auto isLegalRootMove(Move move) const
+		{
+			return std::ranges::find(rootMoves, move) != rootMoves.end();
 		}
 	};
 

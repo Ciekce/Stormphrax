@@ -41,6 +41,18 @@ namespace stormphrax::search
 		{
 			return 2 - static_cast<Score>(nodes % 4);
 		}
+
+		inline auto generateLegal(MoveList &moves, const Position &pos)
+		{
+			ScoredMoveList generated{};
+			generateAll(generated, pos);
+
+			for (const auto [move, _s] : generated)
+			{
+				if (pos.isLegal(move))
+					moves.push(move);
+			}
+		}
 	}
 
 	Searcher::Searcher(usize ttSize)
@@ -78,7 +90,7 @@ namespace stormphrax::search
 		m_maxRootScore =  ScoreInf;
 
 		bool tbRoot = false;
-		ScoredMoveList rootMoves{};
+		MoveList rootMoves{};
 
 		if (g_opts.syzygyEnabled
 			&& pos.bbs().occupancy().popcount()
@@ -105,7 +117,7 @@ namespace stormphrax::search
 		}
 
 		if (rootMoves.empty())
-			generateAll(rootMoves, pos);
+			generateLegal(rootMoves, pos);
 
 		m_resetBarrier.arriveAndWait();
 
@@ -123,7 +135,7 @@ namespace stormphrax::search
 			thread.search = SearchData{};
 			thread.pos = pos;
 
-			thread.rootMoves() = rootMoves;
+			thread.rootMoves = rootMoves;
 
 			thread.nnueState.reset(thread.pos.bbs(), thread.pos.blackKing(), thread.pos.whiteKing());
 		}
@@ -156,8 +168,8 @@ namespace stormphrax::search
 
 	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
-		thread.rootMoves().clear();
-		generateAll(thread.rootMoves(), thread.pos);
+		thread.rootMoves.clear();
+		generateLegal(thread.rootMoves, thread.pos);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -181,8 +193,8 @@ namespace stormphrax::search
 
 		thread->nnueState.reset(thread->pos.bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
 
-		thread->rootMoves().clear();
-		generateAll(thread->rootMoves(), thread->pos);
+		thread->rootMoves.clear();
+		generateLegal(thread->rootMoves, thread->pos);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -519,13 +531,20 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator<RootNode>(pos, moveStack.movegenData, ttEntry.move, thread.history);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move, thread.history);
 
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
 		{
-			if (!pos.isLegal(move))
+			if constexpr (RootNode)
+			{
+				if (!thread.isLegalRootMove(move))
+					continue;
+
+				assert(pos.isLegal(move));
+			}
+			else if (!pos.isLegal(move))
 				continue;
 
 			if (pvNode)
