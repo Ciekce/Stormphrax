@@ -819,16 +819,6 @@ namespace stormphrax
 				|| pieceType(dstPiece) == PieceType::King))
 			return false;
 
-		// take advantage of evasion generation if in check
-		if (isCheck())
-		{
-			ScoredMoveList moves{};
-			generateAll(moves, *this);
-
-			return std::any_of(moves.begin(), moves.end(),
-				[move](const auto m) { return m.move == move; });
-		}
-
 		const auto srcPieceType = pieceType(srcPiece);
 		const auto them = oppColor(us);
 		const auto occ = state.boards.bbs().occupancy();
