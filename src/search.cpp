@@ -493,7 +493,8 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
-		const auto staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+		const auto staticEval = inCheck ? -ScoreInf
+			: eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (!pvNode
 			&& !inCheck)
@@ -559,20 +560,22 @@ namespace stormphrax::search
 
 			if (bestScore > -ScoreWin)
 			{
-				if (!noisy
-					&& depth <= maxFpDepth()
-					&& std::abs(alpha) < 2000
-					&& staticEval + fpMargin() + depth * fpScale() <= alpha)
+				if (!noisy)
 				{
-					generator.skipQuiets();
-					continue;
-				}
+					if (!inCheck
+						&& depth <= maxFpDepth()
+						&& std::abs(alpha) < 2000
+						&& staticEval + fpMargin() + depth * fpScale() <= alpha)
+					{
+						generator.skipQuiets();
+						continue;
+					}
 
-				if (!noisy
-					&& legalMoves >= 3 + depth * depth)
-				{
-					generator.skipQuiets();
-					continue;
+					if (legalMoves >= 3 + depth * depth)
+					{
+						generator.skipQuiets();
+						continue;
+					}
 				}
 
 				const auto seeThreshold = noisy
