@@ -90,6 +90,11 @@ namespace stormphrax
 								m_end = m_data.moves.size();
 								scoreQuiet();
 							}
+							else
+							{
+								++m_stage;
+								continue;
+							}
 							break;
 
 						case MovegenStage::BadNoisy:
@@ -102,7 +107,7 @@ namespace stormphrax
 					}
 				}
 
-				assert(m_idx < m_data.moves.size());
+				assert(m_idx < m_end);
 
 				if (m_skipQuiets && m_stage == MovegenStage::Quiet)
 					return NullMove;
@@ -163,7 +168,7 @@ namespace stormphrax
 		inline auto scoreNoisy() -> void
 		{
 			const auto &boards = m_pos.boards();
-			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleNoisy(m_data.moves[i], boards);
 			}
@@ -176,7 +181,7 @@ namespace stormphrax
 
 		inline auto scoreQuiet() -> void
 		{
-			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleQuiet(m_data.moves[i]);
 			}
@@ -203,7 +208,7 @@ namespace stormphrax
 			auto best = m_idx;
 			auto bestScore = m_data.moves[m_idx].score;
 
-			for (auto i = m_idx + 1; i < m_data.moves.size(); ++i)
+			for (auto i = m_idx + 1; i < m_end; ++i)
 			{
 				if (m_data.moves[i].score > bestScore)
 				{
