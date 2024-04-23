@@ -539,7 +539,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move, thread.history);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move, thread.history, curr.killer);
 
 		u32 legalMoves = 0;
 
@@ -651,6 +651,9 @@ namespace stormphrax::search
 
 			if (score >= beta)
 			{
+				if (!noisy)
+					curr.killer = move;
+
 				ttFlag = TtFlag::LowerBound;
 				break;
 			}

@@ -87,6 +87,8 @@ namespace stormphrax::search
 	{
 		PvList pv{};
 		Move move;
+
+		Move killer{};
 	};
 
 	struct MoveStackEntry
