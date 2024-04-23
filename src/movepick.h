@@ -134,7 +134,7 @@ namespace stormphrax
 
 		inline auto scoreSingleQuiet(ScoredMove &move)
 		{
-			move.score = m_history.quietScore(move.move);
+			move.score = m_history.quietScore(m_pos.threats(), move.move);
 		}
 
 		inline auto scoreQuiet() -> void

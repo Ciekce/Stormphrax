@@ -682,11 +682,11 @@ namespace stormphrax::search
 
 			if (!pos.isNoisy(bestMove))
 			{
-				thread.history.updateQuietScore(bestMove, bonus);
+				thread.history.updateQuietScore(pos.threats(), bestMove, bonus);
 
 				for (const auto prevQuiet : moveStack.failLowQuiets)
 				{
-					thread.history.updateQuietScore(prevQuiet, penalty);
+					thread.history.updateQuietScore(pos.threats(), prevQuiet, penalty);
 				}
 			}
 			else
