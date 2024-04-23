@@ -31,6 +31,7 @@
 #include <condition_variable>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 #include "search_fwd.h"
 #include "position/position.h"
@@ -61,10 +62,24 @@ namespace stormphrax::search
 		std::array<Move, MaxDepth> moves{};
 		u32 length{};
 
-		inline auto copyFrom(const PvList &other)
+		inline auto update(Move move, const PvList &child)
+		{
+			moves[0] = move;
+			std::copy(child.moves.begin(),
+				child.moves.begin() + child.length,
+				moves.begin() + 1);
+
+			length = child.length + 1;
+
+			assert(length == 1 || moves[0] != moves[1]);
+		}
+
+		inline auto operator=(const PvList &other) -> auto &
 		{
 			std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
 			length = other.length;
+
+			return *this;
 		}
 	};
 

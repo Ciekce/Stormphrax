@@ -20,7 +20,6 @@
 
 #include <iostream>
 #include <cmath>
-#include <cassert>
 
 #include "uci.h"
 #include "limit/trivial.h"
@@ -332,7 +331,7 @@ namespace stormphrax::search
 			depthCompleted = depth;
 
 			score = newScore;
-			pv.copyFrom(thread.rootPv);
+			pv = thread.rootPv;
 
 			if (mainThread)
 			{
@@ -341,7 +340,7 @@ namespace stormphrax::search
 				if (depth < thread.maxDepth)
 				{
 					if (pv.length == 0)
-						pv.copyFrom(thread.rootPv);
+						pv = thread.rootPv;
 
 					if (pv.length > 0)
 					{
@@ -643,16 +642,8 @@ namespace stormphrax::search
 
 				if (pvNode)
 				{
-					pv.moves[0] = move;
-
 					assert(curr.pv.length + 1 <= MaxDepth);
-
-					std::copy(curr.pv.moves.begin(),
-						curr.pv.moves.begin() + curr.pv.length,
-						pv.moves.begin() + 1);
-					pv.length = curr.pv.length + 1;
-
-					assert(pv.length == 1 || pv.moves[0] != pv.moves[1]);
+					pv.update(move, curr.pv);
 				}
 
 				ttFlag = TtFlag::Exact;
