@@ -174,6 +174,8 @@ namespace stormphrax::search
 
 		const auto score = searchRoot(thread, false);
 
+		m_ttable.age();
+
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -score : score;
 		return {whitePovScore, wdl::normalizeScoreMove32(whitePovScore)};
 	}
@@ -202,6 +204,8 @@ namespace stormphrax::search
 		searchRoot(*thread, false);
 
 		const auto time = util::g_timer.time() - start;
+
+		m_ttable.age();
 
 		data.search = thread->search;
 		data.time = time;
@@ -376,6 +380,8 @@ namespace stormphrax::search
 			waitForThreads();
 
 			finalReport(startTime, thread, pv, score, depthCompleted, hitSoftTimeout);
+
+			m_ttable.age();
 
 			m_searching.store(false, std::memory_order::relaxed);
 		}

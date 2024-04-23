@@ -65,19 +65,43 @@ namespace stormphrax
 
 		[[nodiscard]] auto full() const -> u32;
 
+		inline auto age()
+		{
+			m_age = (m_age + 1) & ((1 << AgeBits) - 1);
+		}
+
 		inline auto prefetch(u64 key)
 		{
 			__builtin_prefetch(&m_table[index(key)]);
 		}
 
 	private:
+		static constexpr u32 AgeBits = 6;
+		static constexpr u32 FlagBits = 2;
+
 		struct Entry
 		{
 			u16 key;
 			i16 score;
 			Move move;
 			u8 depth;
-			TtFlag flag;
+			u8 ageAndFlag;
+
+			[[nodiscard]] inline auto age() const -> u32
+			{
+				return (ageAndFlag >> FlagBits) & ((1 << AgeBits) - 1);
+			}
+
+			[[nodiscard]] inline auto flag() const
+			{
+				return static_cast<TtFlag>(ageAndFlag & ((1 << FlagBits) - 1));
+			}
+
+			[[nodiscard]] static inline auto encodeAgeAndFlag(u32 age, TtFlag flag)
+			{
+				assert(age <= (1 << AgeBits) - 1);
+				return static_cast<u8>((age << FlagBits) | static_cast<u32>(flag));
+			}
 		};
 
 		static_assert(sizeof(Entry) == 8);
@@ -99,5 +123,6 @@ namespace stormphrax
 		}
 
 		std::vector<Entry> m_table{};
+		u32 m_age{};
 	};
 }
