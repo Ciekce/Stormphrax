@@ -493,19 +493,30 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
-		const auto staticEval = inCheck ? -ScoreInf
+		curr.staticEval = inCheck ? -ScoreInf
 			: eval::staticEval(pos, thread.nnueState, m_contempt);
+
+		const bool improving = [&]
+		{
+			if (inCheck)
+				return false;
+			if (ply > 1 && thread.stack[ply - 2].staticEval != -ScoreInf)
+				return curr.staticEval > thread.stack[ply - 2].staticEval;
+			if (ply > 3 && thread.stack[ply - 4].staticEval != -ScoreInf)
+				return curr.staticEval > thread.stack[ply - 4].staticEval;
+			return true;
+		}();
 
 		if (!pvNode
 			&& !inCheck)
 		{
 			if (depth <= maxRfpDepth()
-				&& staticEval - rfpMargin() * depth >= beta)
-				return staticEval;
+				&& curr.staticEval - rfpMargin() * (depth - improving) >= beta)
+				return curr.staticEval;
 
 			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
-				&& staticEval + razoringMargin() * depth <= alpha)
+				&& curr.staticEval + razoringMargin() * depth <= alpha)
 			{
 				const auto score = qsearch(thread, ply, moveStackIdx, alpha, alpha + 1);
 
@@ -514,7 +525,7 @@ namespace stormphrax::search
 			}
 
 			if (depth >= minNmpDepth()
-				&& staticEval >= beta
+				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
@@ -565,7 +576,7 @@ namespace stormphrax::search
 					if (!inCheck
 						&& depth <= maxFpDepth()
 						&& std::abs(alpha) < 2000
-						&& staticEval + fpMargin() + depth * fpScale() <= alpha)
+						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
 					{
 						generator.skipQuiets();
 						continue;
