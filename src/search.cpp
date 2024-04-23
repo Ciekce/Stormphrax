@@ -568,6 +568,13 @@ namespace stormphrax::search
 					continue;
 				}
 
+				if (!noisy
+					&& legalMoves >= 3 + depth * depth)
+				{
+					generator.skipQuiets();
+					continue;
+				}
+
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
 					: seePruningThresholdQuiet() * depth * depth;
