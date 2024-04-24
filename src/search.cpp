@@ -638,6 +638,8 @@ namespace stormphrax::search
 
 				if (score < sBeta)
 					extension = 1;
+				else if (sBeta >= beta)
+					return sBeta;
 			}
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
