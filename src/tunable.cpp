@@ -40,8 +40,24 @@ namespace stormphrax::tunable
 		}
 	}
 
+	std::array<std::array<i32, 16>, 2> g_lmpTable{};
+
+	auto updateLmpTable() -> void
+	{
+		const auto base = lmpBaseMoves();
+
+		for (i32 improving = 0; improving < 2; ++improving)
+		{
+			for (i32 depth = 0; depth < 16; ++depth)
+			{
+				g_lmpTable[improving][depth] = (base + depth * depth) / (2 - improving);
+			}
+		}
+	}
+
 	auto init() -> void
 	{
 		updateLmrTable();
+		updateLmpTable();
 	}
 }

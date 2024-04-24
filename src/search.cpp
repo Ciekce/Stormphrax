@@ -573,16 +573,16 @@ namespace stormphrax::search
 			{
 				if (!noisy)
 				{
-					if (!inCheck
-						&& depth <= maxFpDepth()
-						&& std::abs(alpha) < 2000
-						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
+					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
 					{
 						generator.skipQuiets();
 						continue;
 					}
 
-					if (legalMoves >= (3 + depth * depth) / (2 - improving))
+					if (!inCheck
+						&& depth <= maxFpDepth()
+						&& std::abs(alpha) < 2000
+						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
 					{
 						generator.skipQuiets();
 						continue;

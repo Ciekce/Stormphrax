@@ -34,8 +34,13 @@ namespace stormphrax::tunable
 {
 	auto init() -> void;
 
+	// [depth][legal moves]
 	extern std::array<std::array<i32, 256>, 256> g_lmrTable;
 	auto updateLmrTable() -> void;
+
+	// [improving][clamped depth]
+	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
+	auto updateLmpTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert(Default >= Min); \
@@ -101,6 +106,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(minNmpDepth, 4, 3, 8, 0.5)
 	SP_TUNABLE_PARAM(nmpBaseReduction, 4, 2, 5, 0.5)
 	SP_TUNABLE_PARAM(nmpDepthReductionDiv, 4, 1, 8, 1)
+
+	SP_TUNABLE_PARAM_CALLBACK(lmpBaseMoves, 3, 2, 5, 0.5, updateLmpTable)
 
 	SP_TUNABLE_PARAM(maxFpDepth, 8, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(fpMargin, 250, 120, 350, 45)
