@@ -582,7 +582,7 @@ namespace stormphrax::search
 						continue;
 					}
 
-					if (legalMoves >= 3 + depth * depth)
+					if (legalMoves >= (3 + depth * depth) / (2 - improving))
 					{
 						generator.skipQuiets();
 						continue;
