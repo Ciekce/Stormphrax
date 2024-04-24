@@ -529,6 +529,8 @@ namespace stormphrax::search
 				&& !parent->move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
+				m_ttable.prefetch(pos.key() ^ keys::color());
+
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv();
 
@@ -596,6 +598,8 @@ namespace stormphrax::search
 				if (!see::see(pos, move, seeThreshold))
 					continue;
 			}
+
+			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			if (pvNode)
 				curr.pv.length = 0;
