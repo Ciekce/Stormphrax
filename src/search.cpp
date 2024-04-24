@@ -668,6 +668,9 @@ namespace stormphrax::search
 
 						r += !pvNode;
 
+						if (!inCheck)
+							r += std::clamp((alpha - curr.staticEval) / 400, 0, 2);
+
 						return r;
 					}();
 
