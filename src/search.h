@@ -89,6 +89,8 @@ namespace stormphrax::search
 		Move move;
 
 		Score staticEval;
+
+		Move excluded{};
 	};
 
 	struct MoveStackEntry
