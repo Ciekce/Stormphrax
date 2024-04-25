@@ -34,7 +34,8 @@ namespace stormphrax
 	enum class MovegenType
 	{
 		Normal = 0,
-		Qsearch
+		Qsearch,
+		Probcut
 	};
 
 	struct MovegenStage
@@ -50,7 +51,7 @@ namespace stormphrax
 	template <MovegenType Type>
 	class MoveGenerator
 	{
-		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
+		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch || Type == MovegenType::Probcut;
 
 	public:
 		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables &history)
@@ -73,7 +74,8 @@ namespace stormphrax
 					switch (++m_stage)
 					{
 						case MovegenStage::TtMove:
-							if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+							if (m_ttMove && m_pos.isPseudolegal(m_ttMove)
+								)//&& (Type != MovegenType::Probcut || m_pos.isNoisy(m_ttMove)))
 								return m_ttMove;
 							break;
 
@@ -119,7 +121,7 @@ namespace stormphrax
 						const auto idx = findNext();
 						const auto move = m_data.moves[idx].move;
 
-						if constexpr (Type == MovegenType::Qsearch)
+						if constexpr (Type != MovegenType::Normal)
 							return move;
 						else
 						{
@@ -251,5 +253,11 @@ namespace stormphrax
 		MovegenData &data, const HistoryTables &history)
 	{
 		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history);
+	}
+
+	[[nodiscard]] static inline auto probcutMoveGenerator(const Position &pos,
+		Move ttMove, MovegenData &data, const HistoryTables &history)
+	{
+		return MoveGenerator<MovegenType::Probcut>(pos, data, NullMove, history);
 	}
 }

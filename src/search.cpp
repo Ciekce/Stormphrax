@@ -450,6 +450,8 @@ namespace stormphrax::search
 				return ttEntry.score;
 		}
 
+		const bool ttHit = ttEntry.flag != TtFlag::None;
+
 		const auto pieceCount = bbs.occupancy().popcount();
 
 		auto syzygyMin = -ScoreMate;
@@ -552,6 +554,42 @@ namespace stormphrax::search
 
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
+			}
+
+			const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
+			const auto probcutBeta = beta + 200;
+
+			if (depth >= 5
+				&& std::abs(beta) < ScoreWin
+				&& (!ttEntry.move || ttMoveNoisy)
+				&& !(ttHit && ttEntry.depth >= depth - 3 && ttEntry.score < probcutBeta))
+			{
+				const auto seeThreshold = probcutBeta > curr.staticEval ? 1 : 0;
+
+				auto generator = probcutMoveGenerator(pos, ttEntry.move, moveStack.movegenData, thread.history);
+
+				while (const auto move = generator.next())
+				{
+					if (!pos.isLegal(move))
+						continue;
+
+					if (!see::see(pos, move, seeThreshold))
+						continue;
+
+					const auto guard = pos.applyMove(move, &thread.nnueState);
+
+					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
+
+					if (score >= probcutBeta)
+						score = -search(thread, curr.pv, depth - 4, ply + 1,
+							moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
+
+					if (score >= probcutBeta)
+					{
+						m_ttable.put(pos.key(), score, move, depth - 3, ply, TtFlag::LowerBound);
+						return score;
+					}
+				}
 			}
 		}
 
