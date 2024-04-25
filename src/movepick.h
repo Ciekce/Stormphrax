@@ -74,8 +74,7 @@ namespace stormphrax
 					switch (++m_stage)
 					{
 						case MovegenStage::TtMove:
-							if (m_ttMove && m_pos.isPseudolegal(m_ttMove)
-								)//&& (Type != MovegenType::Probcut || m_pos.isNoisy(m_ttMove)))
+							if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
 								return m_ttMove;
 							break;
 
@@ -258,6 +257,6 @@ namespace stormphrax
 	[[nodiscard]] static inline auto probcutMoveGenerator(const Position &pos,
 		Move ttMove, MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<MovegenType::Probcut>(pos, data, NullMove, history);
+		return MoveGenerator<MovegenType::Probcut>(pos, data, ttMove, history);
 	}
 }
