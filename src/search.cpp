@@ -580,6 +580,8 @@ namespace stormphrax::search
 					++thread.search.nodes;
 
 					m_ttable.prefetch(pos.roughKeyAfter(move));
+
+					curr.move = move;
 					const auto guard = pos.applyMove(move, &thread.nnueState);
 
 					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
