@@ -557,7 +557,7 @@ namespace stormphrax::search
 			}
 
 			const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
-			const auto probcutBeta = beta + 200;
+			const auto probcutBeta = beta + 200 - 70 * improving;
 
 			if (depth >= 5
 				&& std::abs(beta) < ScoreWin
