@@ -576,6 +576,8 @@ namespace stormphrax::search
 					if (!see::see(pos, move, seeThreshold))
 						continue;
 
+					++thread.search.nodes;
+
 					const auto guard = pos.applyMove(move, &thread.nnueState);
 
 					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
