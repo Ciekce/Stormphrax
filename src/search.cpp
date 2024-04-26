@@ -564,7 +564,7 @@ namespace stormphrax::search
 				&& (!ttEntry.move || ttMoveNoisy)
 				&& !(ttHit && ttEntry.depth >= depth - 3 && ttEntry.score < probcutBeta))
 			{
-				const auto seeThreshold = probcutBeta > curr.staticEval ? 1 : 0;
+				const auto seeThreshold = probcutBeta - curr.staticEval;
 				const auto keyBefore = pos.key();
 
 				auto generator = probcutMoveGenerator(pos, ttEntry.move, moveStack.movegenData, thread.history);
