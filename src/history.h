@@ -23,6 +23,7 @@
 #include <cmath>
 #include <array>
 #include <cstring>
+#include <utility>
 
 #include "tunable.h"
 #include "move.h"
@@ -64,6 +65,30 @@ namespace stormphrax
 		));
 	}
 
+	class ContinuationSubtable
+	{
+	public:
+		ContinuationSubtable() = default;
+		~ContinuationSubtable() = default;
+
+		//TODO take two args when c++23 is usable
+		inline auto operator[](std::pair<Piece, Move> move) const -> HistoryScore
+		{
+			const auto [piece, mv] = move;
+			return m_data[static_cast<i32>(pieceType(piece))][static_cast<i32>(mv.dst())];
+		}
+
+		inline auto operator[](std::pair<Piece, Move> move) -> auto &
+		{
+			const auto [piece, mv] = move;
+			return m_data[static_cast<i32>(pieceType(piece))][static_cast<i32>(mv.dst())];
+		}
+
+	private:
+		// [piece type][to]
+		std::array<std::array<HistoryEntry, 64>, 6> m_data{};
+	};
+
 	class HistoryTables
 	{
 	public:
@@ -72,38 +97,105 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(&m_main , 0, sizeof(m_main ));
-			std::memset(&m_noisy, 0, sizeof(m_noisy));
+			std::memset(&m_main        , 0, sizeof(m_main        ));
+			std::memset(&m_continuation, 0, sizeof(m_continuation));
+			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
 
-		inline auto updateQuietScore(Bitboard threats, Move move, HistoryScore bonus)
+		[[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto &
 		{
-			auto &score = m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
-			score.update(bonus);
+			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
+		}
+
+		[[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto &
+		{
+			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
+		}
+
+		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
+			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
+		{
+			mainEntry(threats, move).update(bonus);
+			updateConthist(continuations, ply, moving, move, bonus, 1);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
 		{
-			auto &score = m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
-			score.update(bonus);
+			noisyEntry(move, captured).update(bonus);
 		}
 
-		[[nodiscard]] inline auto quietScore(Bitboard threats, Move move) const -> HistoryScore
+		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
+			i32 ply, Bitboard threats, Piece moving, Move move) const -> i32
 		{
-			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			i32 score{};
+
+			score += mainEntry(threats, move);
+			score += conthistScore(continuations, ply, moving, move, 1);
+
+			return score;
 		}
 
-		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> HistoryScore
+		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> i32
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return noisyEntry(move, captured);
 		}
 
 	private:
 		// [from][to][from attacked][to attacked]
 		std::array<std::array<std::array<std::array<HistoryEntry, 2>, 2>, 64>, 64> m_main{};
+		// [prev piece][to][curr piece type][to]
+		std::array<std::array<ContinuationSubtable, 64>, 12> m_continuation{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
 		std::array<std::array<std::array<HistoryEntry, 13>, 64>, 64> m_noisy{};
+
+		static inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
+			i32 ply, Piece moving, Move move, HistoryScore bonus, i32 offset) -> void
+		{
+			if (offset <= ply)
+				conthistEntry(continuations, ply, offset)[{moving, move}].update(bonus);
+		}
+
+		static inline auto conthistScore(std::span<ContinuationSubtable *const > continuations,
+			i32 ply, Piece moving, Move move, i32 offset) -> HistoryScore
+		{
+			if (offset <= ply)
+				conthistEntry(continuations, ply, offset)[{moving, move}];
+
+			return 0;
+		}
+
+		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) const -> const HistoryEntry &
+		{
+			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+		}
+
+		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) -> HistoryEntry &
+		{
+			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+		}
+
+		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
+			i32 ply, i32 offset) -> const ContinuationSubtable &
+		{
+			return *continuations[ply - offset];
+		}
+
+		[[nodiscard]] static inline auto conthistEntry(
+			std::span<ContinuationSubtable *> continuations, i32 ply, i32 offset) -> ContinuationSubtable &
+		{
+			return *continuations[ply - offset];
+		}
+
+		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) const -> const HistoryEntry &
+		{
+			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+		}
+
+		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry &
+		{
+			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+		}
 	};
 }

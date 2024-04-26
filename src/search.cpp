@@ -400,7 +400,7 @@ namespace stormphrax::search
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 		assert(RootNode || ply > 0);
-		assert(!PvNode || alpha + 1 == beta);
+		assert(PvNode || alpha + 1 == beta);
 
 		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
 			return 0;
@@ -552,7 +552,7 @@ namespace stormphrax::search
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv();
 
-				curr.move = NullMove;
+				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
 
 				const auto score = -search(thread, curr.pv, depth - R,
@@ -571,7 +571,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move, thread.history);
+		auto generator = mainMoveGenerator(pos,
+			moveStack.movegenData, ttEntry.move, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -650,7 +651,7 @@ namespace stormphrax::search
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
-			curr.move = move;
+			thread.setMove(ply, move);
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			Score score{};
@@ -741,11 +742,13 @@ namespace stormphrax::search
 
 			if (!pos.isNoisy(bestMove))
 			{
-				thread.history.updateQuietScore(pos.threats(), bestMove, bonus);
+				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
+					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
 
 				for (const auto prevQuiet : moveStack.failLowQuiets)
 				{
-					thread.history.updateQuietScore(pos.threats(), prevQuiet, penalty);
+					thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
+						pos.boards().pieceAt(prevQuiet.src()), prevQuiet, penalty);
 				}
 			}
 			else
