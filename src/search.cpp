@@ -563,6 +563,9 @@ namespace stormphrax::search
 			}
 		}
 
+		if constexpr (!RootNode)
+			curr.doubleExtensions = parent->doubleExtensions;
+
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
@@ -645,8 +648,19 @@ namespace stormphrax::search
 				curr.excluded = NullMove;
 
 				if (score < sBeta)
-					extension = 1;
+				{
+					if (!PvNode
+						&& score <= sBeta - 18
+						&& curr.doubleExtensions <= 8)
+					{
+						extension = 2;
+						++curr.doubleExtensions;
+					}
+					else extension = 1;
+				}
 			}
+
+			curr.doubleExtensions += extension >= 2;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 

@@ -91,6 +91,8 @@ namespace stormphrax::search
 		Score staticEval;
 
 		Move excluded{};
+
+		i32 doubleExtensions{};
 	};
 
 	struct MoveStackEntry
