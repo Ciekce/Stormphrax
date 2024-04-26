@@ -140,6 +140,13 @@ namespace stormphrax::search
 		}
 	};
 
+	SP_ENUM_FLAGS(u32, NodeType)
+	{
+		None = 0x0,
+		Pv = 0x1,
+		Root = 0x3
+	};
+
 	class Searcher
 	{
 	public:
@@ -239,9 +246,14 @@ namespace stormphrax::search
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
-		template <bool Root = false>
+		template <bool RootNode = false, bool PvNode = false>
 		auto search(ThreadData &thread, PvList &pv, i32 depth,
 			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
+
+		template <>
+		auto search<true, false>(ThreadData &thread, PvList &pv, i32 depth,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
+
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void;
