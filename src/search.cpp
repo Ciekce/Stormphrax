@@ -34,7 +34,7 @@ namespace stormphrax::search
 
 	namespace
 	{
-		constexpr f64 MinReportDelay = 1.0;
+		constexpr f64 MinWidenReportDelay = 1.0;
 
 		inline auto drawScore(usize nodes)
 		{
@@ -280,6 +280,11 @@ namespace stormphrax::search
 		const auto startTime = mainThread ? util::g_timer.time() : 0.0;
 		const auto startDepth = 1 + static_cast<i32>(thread.id) % 16;
 
+		const auto totalTime = [&]
+		{
+			return util::g_timer.time() - startTime;
+		};
+
 		i32 depthCompleted{};
 
 		bool hitSoftTimeout = false;
@@ -312,14 +317,22 @@ namespace stormphrax::search
 			{
 				newScore = search<true, true>(thread, thread.rootPv, depth, 0, 0, alpha, beta, false);
 
+				if (newScore > alpha && newScore < beta)
+					break;
+
+				if (mainThread)
+				{
+					const auto time = totalTime();
+					if (time >= MinWidenReportDelay)
+						report(thread, thread.rootPv, depth, time, newScore, alpha, beta);
+				}
+
 				if (newScore <= alpha)
 				{
 					beta = (alpha + beta) / 2;
 					alpha = std::max(newScore - delta, -ScoreInf);
 				}
-				else if (newScore >= beta)
-					beta = std::min(newScore + delta, ScoreInf);
-				else break;
+				else beta = std::min(newScore + delta, ScoreInf);
 
 				delta += delta * aspWideningFactor() / 16;
 			}
@@ -343,10 +356,7 @@ namespace stormphrax::search
 						pv = thread.rootPv;
 
 					if (pv.length > 0)
-					{
-						const auto time = util::g_timer.time() - startTime;
-						report(thread, pv, searchData.depth, time, score);
-					}
+						report(thread, pv, searchData.depth, totalTime(), score);
 					else break;
 				}
 			}
@@ -375,7 +385,7 @@ namespace stormphrax::search
 			m_stop.store(true, std::memory_order::seq_cst);
 			waitForThreads();
 
-			finalReport(startTime, thread, pv, score, depthCompleted, hitSoftTimeout);
+			finalReport(thread, pv, depthCompleted, totalTime(), score, hitSoftTimeout);
 
 			m_searching.store(false, std::memory_order::relaxed);
 		}
@@ -825,7 +835,8 @@ namespace stormphrax::search
 		return bestScore;
 	}
 
-	auto Searcher::report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void
+	auto Searcher::report(const ThreadData &mainThread, const PvList &pv,
+		i32 depth, f64 time, Score score, Score alpha, Score beta) -> void
 	{
 		usize nodes = 0;
 		i32 seldepth = 0;
@@ -843,9 +854,13 @@ namespace stormphrax::search
 		std::cout << "info depth " << depth << " seldepth " << seldepth
 			<< " time " << ms << " nodes " << nodes << " nps " << nps << " score ";
 
+		const bool upperbound = score <= alpha;
+		const bool lowerbound = score >= beta;
+
 		if (std::abs(score) <= 2) // draw score
 			score = 0;
 
+		score = std::clamp(score, alpha, beta);
 		score = std::clamp(score, m_minRootScore, m_maxRootScore);
 
 		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
@@ -863,6 +878,11 @@ namespace stormphrax::search
 			const auto normScore = wdl::normalizeScore(score, plyFromStartpos);
 			std::cout << "cp " << normScore;
 		}
+
+		if (upperbound)
+			std::cout << " upperbound";
+		if (lowerbound)
+			std::cout << " lowerbound";
 
 		// wdl display
 		if (g_opts.showWdl)
@@ -905,14 +925,11 @@ namespace stormphrax::search
 		std::cout << std::endl;
 	}
 
-	auto Searcher::finalReport(f64 startTime, const ThreadData &mainThread,
-		const PvList &pv, Score score, i32 depthCompleted, bool softTimeout) -> void
+	auto Searcher::finalReport(const ThreadData &mainThread, const PvList &pv,
+		i32 depthCompleted, f64 time, Score score, bool softTimeout) -> void
 	{
 		if (!softTimeout || !m_limiter->stopped())
-		{
-			const auto time = util::g_timer.time() - startTime;
 			report(mainThread, pv, depthCompleted, time, score);
-		}
 
 		std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
 	}

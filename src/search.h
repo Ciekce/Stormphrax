@@ -256,8 +256,9 @@ namespace stormphrax::search
 
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void;
-		auto finalReport(f64 startTime, const ThreadData &mainThread,
-			const PvList &pv, Score score, i32 depthCompleted, bool softTimeout) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
+			f64 time, Score score, Score alpha = -ScoreInf, Score beta = ScoreInf) -> void;
+		auto finalReport(const ThreadData &mainThread, const PvList &pv,
+			i32 depthCompleted, f64 time, Score score, bool softTimeout) -> void;
 	};
 }
