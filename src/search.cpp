@@ -634,13 +634,13 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
-				&& depth >= 8
+				&& depth >= minSeDepth()
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - 4
+				&& ttEntry.depth >= depth - seTtDepthMargin()
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
-				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - 2 * depth);
+				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
 				const auto sDepth = (depth - 1) / 2;
 
 				curr.excluded = move;
@@ -650,8 +650,8 @@ namespace stormphrax::search
 				if (score < sBeta)
 				{
 					if (!PvNode
-						&& score <= sBeta - 18
-						&& curr.doubleExtensions <= 8)
+						&& score <= sBeta - doubleExtMargin()
+						&& curr.doubleExtensions <= doubleExtLimit())
 					{
 						extension = 2;
 						++curr.doubleExtensions;
