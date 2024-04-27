@@ -400,7 +400,7 @@ namespace stormphrax::search
 	{
 		assert(ply >= 0 && ply <= MaxDepth);
 		assert(RootNode || ply > 0);
-		assert(!PvNode || alpha + 1 == beta);
+		assert(PvNode || alpha + 1 == beta);
 
 		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
 			return 0;
@@ -457,6 +457,8 @@ namespace stormphrax::search
 					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
 				return ttEntry.score;
 		}
+
+		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
 
 		const auto pieceCount = bbs.occupancy().popcount();
 
@@ -650,10 +652,10 @@ namespace stormphrax::search
 				if (score < sBeta)
 				{
 					if (!PvNode
-						&& score <= sBeta - doubleExtMargin()
+						&& score < sBeta - doubleExtMargin()
 						&& curr.doubleExtensions <= doubleExtLimit())
 					{
-						extension = 2;
+						extension = 2 + (!ttMoveNoisy && score < sBeta - 100);
 						++curr.doubleExtensions;
 					}
 					else extension = 1;
