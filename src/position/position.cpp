@@ -147,10 +147,10 @@ namespace stormphrax
 	template auto Position::promotePawn<true, true>(Piece,
 		Square, Square, Piece, PieceType, eval::NnueUpdates &) -> void;
 
-	template auto Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
+	template auto Position::castle<false, false>(Piece, Square, Square, bool kingside, eval::NnueUpdates &) -> void;
+	template auto Position::castle<true, false>(Piece, Square, Square, bool kingside, eval::NnueUpdates &) -> void;
+	template auto Position::castle<false, true>(Piece, Square, Square, bool kingside, eval::NnueUpdates &) -> void;
+	template auto Position::castle<true, true>(Piece, Square, Square, bool kingside, eval::NnueUpdates &) -> void;
 
 	template auto Position::enPassant<false, false>(Piece, Square, Square, Piece, eval::NnueUpdates &) -> void;
 	template auto Position::enPassant<true, false>(Piece, Square, Square, Piece, eval::NnueUpdates &) -> void;
@@ -727,7 +727,7 @@ namespace stormphrax
 			promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, captured, move.promo(), updates);
 			break;
 		case MoveType::Castling:
-			castle<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			castle<true, UpdateNnue>(moving, moveSrc, moveDst, move.kingside(), updates);
 			break;
 		case MoveType::EnPassant:
 			enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, captured, updates);
@@ -1330,7 +1330,8 @@ namespace stormphrax
 	}
 
 	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void
+	auto Position::castle(Piece king, Square kingSrc,
+		Square rookSrc, bool kingside, eval::NnueUpdates &nnueUpdates) -> void
 	{
 		assert(king != Piece::None);
 		assert(pieceType(king) == PieceType::King);
@@ -1341,20 +1342,8 @@ namespace stormphrax
 
 		const auto rank = squareRank(kingSrc);
 
-		Square kingDst, rookDst;
-
-		if (squareFile(kingSrc) < squareFile(rookSrc))
-		{
-			// short
-			kingDst = toSquare(rank, 6);
-			rookDst = toSquare(rank, 5);
-		}
-		else
-		{
-			// long
-			kingDst = toSquare(rank, 2);
-			rookDst = toSquare(rank, 3);
-		}
+		const auto kingDst = toSquare(rank, kingside ? 6 : 2);
+		const auto rookDst = toSquare(rank, kingside ? 5 : 3);
 
 		const auto rook = copyPieceColor(king, PieceType::Rook);
 
@@ -1473,18 +1462,18 @@ namespace stormphrax
 		{
 			if (srcPiece == Piece::BlackKing || srcPiece == Piece::WhiteKing)
 			{
-				const bool queenside = squareFile(src) > squareFile(dst);
+				const bool kingside = squareFile(src) < squareFile(dst);
 
 				if (g_opts.chess960)
 				{
 					if (state.boards.pieceAt(dst) == copyPieceColor(srcPiece, PieceType::Rook))
-						return Move::castling(srcPiece, src, dst, queenside);
+						return Move::castling(srcPiece, src, dst, kingside);
 					else return Move::standard(srcPiece, src, dst, dstPiece);
 				}
 				else if (std::abs(squareFile(src) - squareFile(dst)) == 2)
 				{
-					const auto rookFile = queenside ? 0 : 7;
-					return Move::castling(srcPiece, src, toSquare(squareRank(src), rookFile), queenside);
+					const auto rookFile = kingside ? 7 : 0;
+					return Move::castling(srcPiece, src, toSquare(squareRank(src), rookFile), kingside);
 				}
 			}
 

@@ -460,7 +460,7 @@ namespace stormphrax
 		auto promotePawn(Piece pawn, Square src, Square dst,
 			Piece captured, PieceType promo, eval::NnueUpdates &nnueUpdates) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void;
+		auto castle(Piece king, Square kingSrc, Square rookSrc, bool kingside, eval::NnueUpdates &nnueUpdates) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
 		auto enPassant(Piece pawn, Square src, Square dst, Piece enemyPawn, eval::NnueUpdates &nnueUpdates) -> void;
 
