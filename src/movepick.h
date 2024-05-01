@@ -156,10 +156,8 @@ namespace stormphrax
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
 
-			const auto captured = m_pos.captureTarget(move);
-
-			score += m_history.noisyScore(move, captured) / 8;
-			score += see::value(captured);
+			score += m_history.noisyScore(move) / 8;
+			score += see::value(move.captured());
 
 			if (move.type() == MoveType::Promotion)
 				score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
@@ -194,7 +192,7 @@ namespace stormphrax
 			{
 				move.score = 0;
 
-				if (m_pos.isNoisy(move.move))
+				if (move.move.noisy())
 				{
 					move.score += 16000000;
 					scoreSingleNoisy(move, boards);

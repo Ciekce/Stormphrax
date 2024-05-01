@@ -30,63 +30,80 @@ namespace stormphrax
 {
 	namespace
 	{
-		inline auto pushStandards(ScoredMoveList &dst, i32 offset, Bitboard board)
+		inline auto pushStandards(ScoredMoveList &dst,
+			const PositionBoards &boards, Piece moving, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-				dst.push({Move::standard(srcSquare, dstSquare), 0});
+				const auto captured = boards.pieceAt(dstSquare);
+				assert(captured == Piece::None || pieceColor(captured) != pieceColor(moving));
+
+				dst.push({Move::standard(moving, srcSquare, dstSquare, captured), 0});
 			}
 		}
 
-		inline auto pushStandards(ScoredMoveList &dst, Square srcSquare, Bitboard board)
+		inline auto pushStandards(ScoredMoveList &dst,
+			const PositionBoards &boards, Piece moving, Square srcSquare, Bitboard board)
 		{
 			while (!board.empty())
 			{
 				const auto dstSquare = board.popLowestSquare();
-				dst.push({Move::standard(srcSquare, dstSquare), 0});
+
+				const auto captured = boards.pieceAt(dstSquare);
+				assert(captured == Piece::None || pieceColor(captured) != pieceColor(moving));
+
+				dst.push({Move::standard(moving, srcSquare, dstSquare, captured), 0});
 			}
 		}
 
-		inline auto pushQueenPromotions(ScoredMoveList &noisy, i32 offset, Bitboard board)
-		{
-			while (!board.empty())
-			{
-				const auto dstSquare = board.popLowestSquare();
-				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
-
-				noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::Queen), 0});
-			}
-		}
-
-		inline auto pushUnderpromotions(ScoredMoveList &quiet, i32 offset, Bitboard board)
-		{
-			while (!board.empty())
-			{
-				const auto dstSquare = board.popLowestSquare();
-				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
-
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Knight), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Rook), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Bishop), 0});
-			}
-		}
-
-		inline auto pushCastling(ScoredMoveList &dst, Square srcSquare, Square dstSquare)
-		{
-			dst.push({Move::castling(srcSquare, dstSquare), 0});
-		}
-
-		inline auto pushEnPassants(ScoredMoveList &noisy, i32 offset, Bitboard board)
+		inline auto pushQueenPromotions(ScoredMoveList &noisy,
+			const PositionBoards &boards, Piece pawn, i32 offset, Bitboard board)
 		{
 			while (!board.empty())
 			{
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-				noisy.push({Move::enPassant(srcSquare, dstSquare), 0});
+				const auto captured = boards.pieceAt(dstSquare);
+				assert(captured == Piece::None || pieceColor(captured) != pieceColor(pawn));
+
+				noisy.push({Move::promotion(pawn, srcSquare, dstSquare, captured, PieceType::Queen), 0});
+			}
+		}
+
+		inline auto pushUnderpromotions(ScoredMoveList &quiet,
+			const PositionBoards &boards, Piece pawn, i32 offset, Bitboard board)
+		{
+			while (!board.empty())
+			{
+				const auto dstSquare = board.popLowestSquare();
+				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+
+				const auto captured = boards.pieceAt(dstSquare);
+				assert(captured == Piece::None || pieceColor(captured) != pieceColor(pawn));
+
+				quiet.push({Move::promotion(pawn, srcSquare, dstSquare, captured, PieceType::Knight), 0});
+				quiet.push({Move::promotion(pawn, srcSquare, dstSquare, captured, PieceType::Rook  ), 0});
+				quiet.push({Move::promotion(pawn, srcSquare, dstSquare, captured, PieceType::Bishop), 0});
+			}
+		}
+
+		inline auto pushCastling(ScoredMoveList &dst, Piece king, Square srcSquare, Square dstSquare, bool kingside)
+		{
+			dst.push({Move::castling(king, srcSquare, dstSquare, kingside), 0});
+		}
+
+		inline auto pushEnPassants(ScoredMoveList &noisy, Piece pawn, i32 offset, Bitboard board)
+		{
+			while (!board.empty())
+			{
+				const auto dstSquare = board.popLowestSquare();
+				const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+
+				noisy.push({Move::enPassant(pawn, srcSquare, dstSquare), 0});
 			}
 		}
 
@@ -101,7 +118,10 @@ namespace stormphrax
 			constexpr auto LeftOffset = offsets::upLeft<Us>();
 			constexpr auto RightOffset = offsets::upRight<Us>();
 
-			const auto &bbs = pos.bbs();
+			constexpr auto OurPawn = colorPiece(PieceType::Pawn, Us);
+
+			const auto &boards = pos.boards();
+			const auto &bbs = boards.bbs();
 
 			const auto theirs = bbs.occupancy<Them>();
 
@@ -109,24 +129,24 @@ namespace stormphrax
 
 			const auto pawns = bbs.pawns<Us>();
 
-			const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
+			const auto  leftAttacks = pawns.template  shiftUpLeftRelative<Us>() & dstMask;
 			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
 
-			pushQueenPromotions(noisy, LeftOffset,   leftAttacks & theirs & PromotionRank);
-			pushQueenPromotions(noisy, RightOffset, rightAttacks & theirs & PromotionRank);
+			pushQueenPromotions(noisy, boards, OurPawn, LeftOffset,   leftAttacks & theirs & PromotionRank);
+			pushQueenPromotions(noisy, boards, OurPawn, RightOffset, rightAttacks & theirs & PromotionRank);
 
 			const auto forwards = pawns.template shiftUpRelative<Us>() & forwardDstMask;
-			pushQueenPromotions(noisy, ForwardOffset, forwards);
+			pushQueenPromotions(noisy, boards, OurPawn, ForwardOffset, forwards);
 
-			pushStandards(noisy,  LeftOffset,  leftAttacks & theirs & ~PromotionRank);
-			pushStandards(noisy, RightOffset, rightAttacks & theirs & ~PromotionRank);
+			pushStandards(noisy, boards, OurPawn,  LeftOffset,  leftAttacks & theirs & ~PromotionRank);
+			pushStandards(noisy, boards, OurPawn, RightOffset, rightAttacks & theirs & ~PromotionRank);
 
 			if (pos.enPassant() != Square::None)
 			{
 				const auto epMask = Bitboard::fromSquare(pos.enPassant());
 
-				pushEnPassants(noisy,  LeftOffset,  leftAttacks & epMask);
-				pushEnPassants(noisy, RightOffset, rightAttacks & epMask);
+				pushEnPassants(noisy, OurPawn,  LeftOffset,  leftAttacks & epMask);
+				pushEnPassants(noisy, OurPawn, RightOffset, rightAttacks & epMask);
 			}
 		}
 
@@ -138,7 +158,7 @@ namespace stormphrax
 		}
 
 		template <Color Us>
-		auto generatePawnsQuiet_(ScoredMoveList &quiet, const BitboardSet &bbs, Bitboard dstMask, Bitboard occ)
+		auto generatePawnsQuiet_(ScoredMoveList &quiet, const PositionBoards &boards, Bitboard dstMask, Bitboard occ)
 		{
 			constexpr auto Them = oppColor(Us);
 
@@ -151,6 +171,10 @@ namespace stormphrax
 			constexpr auto  LeftOffset = offsets::upLeft <Us>();
 			constexpr auto RightOffset = offsets::upRight<Us>();
 
+			constexpr auto OurPawn = colorPiece(PieceType::Pawn, Us);
+
+			const auto &bbs = boards.bbs();
+
 			const auto theirs = bbs.occupancy<Them>();
 
 			const auto forwardDstMask = dstMask & ~theirs;
@@ -160,27 +184,27 @@ namespace stormphrax
 			const auto  leftAttacks = pawns.template shiftUpLeftRelative <Us>() & dstMask;
 			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
 
-			pushUnderpromotions(quiet,  LeftOffset,  leftAttacks & theirs & PromotionRank);
-			pushUnderpromotions(quiet, RightOffset, rightAttacks & theirs & PromotionRank);
+			pushUnderpromotions(quiet, boards, OurPawn,  LeftOffset,  leftAttacks & theirs & PromotionRank);
+			pushUnderpromotions(quiet, boards, OurPawn, RightOffset, rightAttacks & theirs & PromotionRank);
 
 			auto forwards = pawns.template shiftUpRelative<Us>() & ~occ;
 
 			auto singles = forwards & forwardDstMask;
-			pushUnderpromotions(quiet, ForwardOffset, singles & PromotionRank);
+			pushUnderpromotions(quiet, boards, OurPawn, ForwardOffset, singles & PromotionRank);
 			singles &= ~PromotionRank;
 
 			forwards &= ThirdRank;
 			const auto doubles = forwards.template shiftUpRelative<Us>() & forwardDstMask;
 
-			pushStandards(quiet,  DoubleOffset, doubles);
-			pushStandards(quiet, ForwardOffset, singles);
+			pushStandards(quiet, boards, OurPawn,  DoubleOffset, doubles);
+			pushStandards(quiet, boards, OurPawn, ForwardOffset, singles);
 		}
 
 		inline auto generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
 		{
 			if (pos.toMove() == Color::Black)
-				generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
-			else generatePawnsQuiet_<Color::White>(quiet, pos.bbs(), dstMask, occ);
+				generatePawnsQuiet_<Color::Black>(quiet, pos.boards(), dstMask, occ);
+			else generatePawnsQuiet_<Color::White>(quiet, pos.boards(), dstMask, occ);
 		}
 
 		template <PieceType Piece, const std::array<Bitboard, 64> &Attacks>
@@ -188,13 +212,18 @@ namespace stormphrax
 		{
 			const auto us = pos.toMove();
 
-			auto pieces = pos.bbs().forPiece(Piece, us);
+			const auto moving = colorPiece(Piece, us);
+
+			const auto boards = pos.boards();
+			const auto bbs = boards.bbs();
+
+			auto pieces = bbs.forPiece(Piece, us);
 			while (!pieces.empty())
 			{
 				const auto srcSquare = pieces.popLowestSquare();
 				const auto attacks = Attacks[static_cast<usize>(srcSquare)];
 
-				pushStandards(dst, srcSquare, attacks & dstMask);
+				pushStandards(dst, boards, moving, srcSquare, attacks & dstMask);
 			}
 		}
 
@@ -203,8 +232,8 @@ namespace stormphrax
 			precalculated<PieceType::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
 		}
 
-		inline auto generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
-			Square king, Square kingDst, Square rook, Square rookDst)
+		inline auto generateFrcCastling(ScoredMoveList &dst, Piece kingPiece, const Position &pos,
+			Bitboard occupancy, Square king, Square kingDst, Square rook, Square rookDst, bool kingside)
 		{
 			const auto toKingDst = rayBetween(king, kingDst);
 			const auto toRook = rayBetween(king, rook);
@@ -213,13 +242,15 @@ namespace stormphrax
 
 			if ((occ & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
 				&& !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.opponent()))
-				pushCastling(dst, king, rook);
+				pushCastling(dst, kingPiece, king, rook, kingside);
 		}
 
 		template <bool Castling>
 		auto generateKings(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
 			precalculated<PieceType::King, attacks::KingAttacks>(dst, pos, dstMask);
+
+			const auto kingPiece = colorPiece(PieceType::King, pos.toMove());
 
 			if constexpr (Castling)
 			{
@@ -234,24 +265,24 @@ namespace stormphrax
 						if (pos.toMove() == Color::Black)
 						{
 							if (castlingRooks.black().kingside != Square::None)
-								generateFrcCastling(dst, pos, occupancy,
+								generateFrcCastling(dst, kingPiece, pos, occupancy,
 									pos.blackKing(), Square::G8,
-									castlingRooks.black().kingside, Square::F8);
+									castlingRooks.black().kingside, Square::F8, true);
 							if (castlingRooks.black().queenside != Square::None)
-								generateFrcCastling(dst, pos, occupancy,
+								generateFrcCastling(dst, kingPiece, pos, occupancy,
 									pos.blackKing(), Square::C8,
-									castlingRooks.black().queenside, Square::D8);
+									castlingRooks.black().queenside, Square::D8, false);
 						}
 						else
 						{
 							if (castlingRooks.white().kingside != Square::None)
-								generateFrcCastling(dst, pos, occupancy,
+								generateFrcCastling(dst, kingPiece, pos, occupancy,
 									pos.whiteKing(), Square::G1,
-									castlingRooks.white().kingside, Square::F1);
+									castlingRooks.white().kingside, Square::F1, true);
 							if (castlingRooks.white().queenside != Square::None)
-								generateFrcCastling(dst, pos, occupancy,
+								generateFrcCastling(dst, kingPiece, pos, occupancy,
 									pos.whiteKing(), Square::C1,
-									castlingRooks.white().queenside, Square::D1);
+									castlingRooks.white().queenside, Square::D1, false);
 						}
 					}
 					else
@@ -261,24 +292,24 @@ namespace stormphrax
 							if (castlingRooks.black().kingside != Square::None
 								&& (occupancy & U64(0x6000000000000000)).empty()
 								&& !pos.isAttacked(Square::F8, Color::White))
-								pushCastling(dst, pos.blackKing(), Square::H8);
+								pushCastling(dst, kingPiece, pos.blackKing(), Square::H8, true);
 
 							if (castlingRooks.black().queenside != Square::None
 								&& (occupancy & U64(0x0E00000000000000)).empty()
 								&& !pos.isAttacked(Square::D8, Color::White))
-								pushCastling(dst, pos.blackKing(), Square::A8);
+								pushCastling(dst, kingPiece, pos.blackKing(), Square::A8, false);
 						}
 						else
 						{
 							if (castlingRooks.white().kingside != Square::None
 								&& (occupancy & U64(0x0000000000000060)).empty()
 								&& !pos.isAttacked(Square::F1, Color::Black))
-								pushCastling(dst, pos.whiteKing(), Square::H1);
+								pushCastling(dst, kingPiece, pos.whiteKing(), Square::H1, true);
 
 							if (castlingRooks.white().queenside != Square::None
 								&& (occupancy & U64(0x000000000000000E)).empty()
 								&& !pos.isAttacked(Square::D1, Color::Black))
-								pushCastling(dst, pos.whiteKing(), Square::A1);
+								pushCastling(dst, kingPiece, pos.whiteKing(), Square::A1, false);
 						}
 					}
 				}
@@ -287,7 +318,8 @@ namespace stormphrax
 
 		auto generateSliders(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			const auto &bbs = pos.bbs();
+			const auto &boards = pos.boards();
+			const auto &bbs = boards.bbs();
 
 			const auto us = pos.toMove();
 			const auto them = oppColor(us);
@@ -307,7 +339,10 @@ namespace stormphrax
 				const auto src = rooks.popLowestSquare();
 				const auto attacks = attacks::getRookAttacks(src, occupancy);
 
-				pushStandards(dst, src, attacks & dstMask);
+				const auto moving = boards.pieceAt(src);
+				assert(pieceType(moving) == PieceType::Rook || pieceType(moving) == PieceType::Queen);
+
+				pushStandards(dst, boards, moving, src, attacks & dstMask);
 			}
 
 			while (!bishops.empty())
@@ -315,7 +350,10 @@ namespace stormphrax
 				const auto src = bishops.popLowestSquare();
 				const auto attacks = attacks::getBishopAttacks(src, occupancy);
 
-				pushStandards(dst, src, attacks & dstMask);
+				const auto moving = boards.pieceAt(src);
+				assert(pieceType(moving) == PieceType::Bishop || pieceType(moving) == PieceType::Queen);
+
+				pushStandards(dst, boards, moving, src, attacks & dstMask);
 			}
 		}
 	}

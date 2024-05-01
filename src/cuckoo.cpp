@@ -30,7 +30,7 @@ namespace stormphrax::cuckoo
 	// Implementation based on Stockfish's
 
 	std::array<u64, 8192> keys{};
-	std::array<Move, 8192> moves{};
+	std::array<CuckooMove, 8192> moves{};
 
 	void init()
 	{
@@ -54,7 +54,7 @@ namespace stormphrax::cuckoo
 					if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1])
 						continue;
 
-					auto move = Move::standard(square0, square1);
+					auto move = CuckooMove{square0, square1};
 					auto key = keys::pieceSquare(piece, square0)
 						^ keys::pieceSquare(piece, square1)
 						^ keys::color();
@@ -66,7 +66,7 @@ namespace stormphrax::cuckoo
 						std::swap(keys[slot], key);
 						std::swap(moves[slot], move);
 
-						if (move == NullMove)
+						if (move == CuckooMove{})
 							break;
 
 						slot = slot == h1(key) ? h2(key) : h1(key);

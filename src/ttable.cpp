@@ -111,7 +111,7 @@ namespace stormphrax
 #endif
 
 		if (move || entry.key != newKey)
-			entry.move = move;
+			entry.move = move.pack();
 
 		entry.key = newKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));

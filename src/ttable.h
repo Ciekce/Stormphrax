@@ -45,7 +45,7 @@ namespace stormphrax
 	{
 		Score score;
 		i32 depth;
-		Move move;
+		PackedMove move;
 		TtFlag flag;
 	};
 
@@ -75,7 +75,7 @@ namespace stormphrax
 		{
 			u16 key;
 			i16 score;
-			Move move;
+			PackedMove move;
 			u8 depth;
 			TtFlag flag;
 		};

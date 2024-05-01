@@ -178,14 +178,10 @@ namespace stormphrax
 		{
 			assert(move);
 
-			const auto &state = currState();
+			const auto moving = move.moving();
+			const auto captured = move.captured();
 
-			const auto moving = state.boards.pieceAt(move.src());
-			assert(moving != Piece::None);
-
-			const auto captured = state.boards.pieceAt(move.dst());
-
-			auto key = state.key;
+			auto key = this->key();
 
 			key ^= keys::pieceSquare(moving, move.src());
 			key ^= keys::pieceSquare(moving, move.dst());
@@ -406,48 +402,6 @@ namespace stormphrax
 			return false;
 		}
 
-		[[nodiscard]] inline auto captureTarget(Move move) const
-		{
-			assert(move != NullMove);
-
-			const auto type = move.type();
-
-			if (type == MoveType::Castling)
-				return Piece::None;
-			else if (type == MoveType::EnPassant)
-				return flipPieceColor(boards().pieceAt(move.src()));
-			else return boards().pieceAt(move.dst());
-		}
-
-		[[nodiscard]] inline auto isNoisy(Move move) const
-		{
-			assert(move != NullMove);
-
-			const auto type = move.type();
-
-			return type != MoveType::Castling
-				&& (type == MoveType::EnPassant
-					|| move.promo() == PieceType::Queen
-					|| boards().pieceAt(move.dst()) != Piece::None);
-		}
-
-		[[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece>
-		{
-			assert(move != NullMove);
-
-			const auto type = move.type();
-
-			if (type == MoveType::Castling)
-				return {false, Piece::None};
-			else if (type == MoveType::EnPassant)
-				return {true, colorPiece(PieceType::Pawn, toMove())};
-			else
-			{
-				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
-			}
-		}
-
 		[[nodiscard]] auto toFen() const -> std::string;
 
 		[[nodiscard]] inline auto operator==(const Position &other) const
@@ -499,14 +453,16 @@ namespace stormphrax
 		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		auto movePiece(Piece piece, Square src, Square dst,
+			Piece captured, eval::NnueUpdates &nnueUpdates) -> void;
 
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece;
+		auto promotePawn(Piece pawn, Square src, Square dst,
+			Piece captured, PieceType promo, eval::NnueUpdates &nnueUpdates) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
 		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void;
 		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		auto enPassant(Piece pawn, Square src, Square dst, Piece enemyPawn, eval::NnueUpdates &nnueUpdates) -> void;
 
 		[[nodiscard]] inline auto calcCheckers() const
 		{

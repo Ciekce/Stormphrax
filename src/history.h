@@ -82,9 +82,9 @@ namespace stormphrax
 			score.update(bonus);
 		}
 
-		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
+		inline auto updateNoisyScore(Move move, HistoryScore bonus)
 		{
-			auto &score = m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			auto &score = m_noisy[move.srcIdx()][move.dstIdx()][move.capturedIdx()];
 			score.update(bonus);
 		}
 
@@ -93,9 +93,9 @@ namespace stormphrax
 			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
-		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> HistoryScore
+		[[nodiscard]] inline auto noisyScore(Move move) const -> HistoryScore
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return m_noisy[move.srcIdx()][move.dstIdx()][move.capturedIdx()];
 		}
 
 	private:

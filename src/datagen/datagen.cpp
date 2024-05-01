@@ -302,7 +302,7 @@ namespace stormphrax::datagen
 							outcome = Outcome::Draw;
 					}
 
-					const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
+					const bool filtered = move.noisy() || thread->pos.isCheck();
 
 					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 

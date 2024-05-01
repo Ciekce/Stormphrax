@@ -18,34 +18,29 @@
 
 #pragma once
 
-#include "types.h"
+#include "../types.h"
 
-#include <array>
+#include <concepts>
 
-#include "move.h"
-
-namespace stormphrax::cuckoo
+namespace stormphrax::util
 {
-	constexpr auto h1(u64 key)
+	template <u32 Offset, u32 Bits>
+	constexpr auto getBits(std::unsigned_integral auto field)
 	{
-		return static_cast<usize>(key & 0x1FFF);
+		constexpr auto Mask = (1 << Bits) - 1;
+		return (field >> Offset) & Mask;
 	}
 
-	constexpr auto h2(u64 key)
+	template <u32 Offset>
+	constexpr auto setBits(std::unsigned_integral auto field, decltype(field) value)
 	{
-		return static_cast<usize>((key >> 16) & 0x1FFF);
+		return field | (value << Offset);
 	}
 
-	struct CuckooMove
+	template <u32 Offset, u32 Bits>
+	constexpr auto replaceBits(std::unsigned_integral auto field, decltype(field) value)
 	{
-		Square src{};
-		Square dst{};
-
-		[[nodiscard]] auto operator==(const CuckooMove &) const -> bool = default;
-	};
-
-	extern std::array<u64, 8192> keys;
-	extern std::array<CuckooMove, 8192> moves;
-
-	void init();
+		constexpr auto Mask = ((1 << Bits) - 1) << Offset;
+		return (field & ~Mask) | (value << Offset);
+	}
 }

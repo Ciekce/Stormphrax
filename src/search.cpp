@@ -458,7 +458,7 @@ namespace stormphrax::search
 				return ttEntry.score;
 		}
 
-		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
+		const auto ttMove = ttEntry.move.unpack(pos.boards());
 
 		const auto pieceCount = bbs.occupancy().popcount();
 
@@ -508,7 +508,7 @@ namespace stormphrax::search
 		if (depth >= minIirDepth()
 			&& !curr.excluded
 			&& (PvNode || cutnode)
-			&& !ttEntry.move)
+			&& !ttMove)
 			--depth;
 
 		if (!curr.excluded)
@@ -576,12 +576,14 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move, thread.history);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttMove, thread.history);
 
 		u32 legalMoves = 0;
 
 		while (const auto move = generator.next())
 		{
+			assert(pos.isPseudolegal(move));
+
 			if (move == curr.excluded)
 				continue;
 
@@ -595,7 +597,7 @@ namespace stormphrax::search
 			else if (!pos.isLegal(move))
 				continue;
 
-			const bool noisy = pos.isNoisy(move);
+			const bool noisy = move.noisy();
 
 			if (bestScore > -ScoreWin)
 			{
@@ -637,7 +639,7 @@ namespace stormphrax::search
 
 			if (!RootNode
 				&& depth >= minSeDepth()
-				&& move == ttEntry.move
+				&& move == ttMove
 				&& !curr.excluded
 				&& ttEntry.depth >= depth - seTtDepthMargin()
 				&& ttEntry.flag != TtFlag::UpperBound)
@@ -655,7 +657,7 @@ namespace stormphrax::search
 						&& score < sBeta - doubleExtMargin()
 						&& curr.doubleExtensions <= doubleExtLimit())
 					{
-						extension = 2 + (!ttMoveNoisy && score < sBeta - 100);
+						extension = 2 + (!ttMove.noisy() && score < sBeta - 100);
 						++curr.doubleExtensions;
 					}
 					else extension = 1;
@@ -755,7 +757,7 @@ namespace stormphrax::search
 			const auto bonus = historyBonus(depth);
 			const auto penalty = -bonus;
 
-			if (!pos.isNoisy(bestMove))
+			if (!bestMove.noisy())
 			{
 				thread.history.updateQuietScore(pos.threats(), bestMove, bonus);
 
@@ -764,17 +766,12 @@ namespace stormphrax::search
 					thread.history.updateQuietScore(pos.threats(), prevQuiet, penalty);
 				}
 			}
-			else
-			{
-				const auto captured = pos.captureTarget(bestMove);
-				thread.history.updateNoisyScore(bestMove, captured, bonus);
-			}
+			else thread.history.updateNoisyScore(bestMove, bonus);
 
 			// unconditionally update capthist
 			for (const auto prevNoisy : moveStack.failLowNoisies)
 			{
-				const auto captured = pos.captureTarget(prevNoisy);
-				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
+				thread.history.updateNoisyScore(prevNoisy, penalty);
 			}
 		}
 

@@ -39,13 +39,15 @@ namespace stormphrax::tb
 			const auto dst = static_cast<Square>(TB_MOVE_TO  (tbMove));
 			const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
+			const auto boards = pos.boards();
+			const auto moving = boards.pieceAt(src);
+
 			if (promo != PieceType::None)
-				return Move::promotion(src, dst, promo);
-			else if (dst == pos.enPassant()
-				&& pos.boards().pieceTypeAt(src) == PieceType::Pawn)
-				return Move::enPassant(src, dst);
+				return Move::promotion(moving, src, dst, boards.pieceAt(dst), promo);
+			else if (dst == pos.enPassant() && pieceType(moving) == PieceType::Pawn)
+				return Move::enPassant(moving, src, dst);
 				// Syzygy TBs do not encode positions with castling rights
-			else return Move::standard(src, dst);
+			else return Move::standard(moving, src, dst, boards.pieceAt(dst));
 		};
 
 		const auto &bbs = pos.bbs();

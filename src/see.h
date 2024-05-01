@@ -64,16 +64,14 @@ namespace stormphrax::see
 		return Values[static_cast<i32>(piece) * 2];
 	}
 
-	inline auto gain(const PositionBoards &boards, Move move)
+	inline auto gain(Move move)
 	{
 		const auto type = move.type();
 
 		if (type == MoveType::Castling)
 			return 0;
-		else if (type == MoveType::EnPassant)
-			return values::Pawn;
 
-		auto score = value(boards.pieceAt(move.dst()));
+		auto score = value(move.captured());
 
 		if (type == MoveType::Promotion)
 			score += value(move.promo()) - values::Pawn;
@@ -107,14 +105,14 @@ namespace stormphrax::see
 
 		const auto color = pos.toMove();
 
-		auto score = gain(boards, move) - threshold;
+		auto score = gain(move) - threshold;
 
 		if (score < 0)
 			return false;
 
 		auto next = move.type() == MoveType::Promotion
 			? move.promo()
-			: pieceType(boards.pieceAt(move.src()));
+			: pieceType(move.moving());
 
 		score -= value(next);
 
