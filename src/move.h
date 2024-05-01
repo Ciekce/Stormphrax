@@ -236,15 +236,7 @@ namespace stormphrax
 			move = util::setBits<  CapturedOffset>(move, static_cast<u32>(captured));
 			move = util::setBits<HistoryDstOffset>(move, static_cast<u32>(dst));
 
-			const auto mv = Move{move};
-
-			assert(mv.moving() == pawn);
-			assert(mv.src() == src);
-			assert(mv.dst() == dst);
-			assert(mv.captured() == captured);
-			assert(mv.promo() == promo);
-
-			return mv;
+			return Move{move};
 		}
 
 		[[nodiscard]] static constexpr auto castling(Piece king, Square src, Square dst, bool kingside)
