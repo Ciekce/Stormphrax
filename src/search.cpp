@@ -597,6 +597,12 @@ namespace stormphrax::search
 			const bool noisy = pos.isNoisy(move);
 			const auto moving = boards.pieceAt(move.src());
 
+			const auto captured = pos.captureTarget(move);
+
+			const auto history = noisy
+				? thread.history.noisyScore(move, captured)
+				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+
 			if (bestScore > -ScoreWin)
 			{
 				if (!noisy)
@@ -606,8 +612,6 @@ namespace stormphrax::search
 						generator.skipQuiets();
 						continue;
 					}
-
-					const auto history = thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
 					if (depth <= maxHistoryPruningDepth()
 						&& history < historyPruningMargin() * depth)
@@ -701,6 +705,7 @@ namespace stormphrax::search
 						auto r =  g_lmrTable[noisy][depth][legalMoves];
 
 						r += !PvNode;
+						r -= history / 8192;
 
 						return r;
 					}();
