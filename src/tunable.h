@@ -34,9 +34,11 @@ namespace stormphrax::tunable
 {
 	auto init() -> void;
 
-	// [depth][legal moves]
-	extern std::array<std::array<i32, 256>, 256> g_lmrTable;
-	auto updateLmrTable() -> void;
+	// [noisy][depth][legal moves]
+	extern std::array<std::array<std::array<i32, 256>, 256>, 2> g_lmrTable;
+
+	auto updateQuietLmrTable() -> void;
+	auto updateNoisyLmrTable() -> void;
 
 	// [improving][clamped depth]
 	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
@@ -126,8 +128,11 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
 	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
 
-	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
-	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 77, 50, 120, 15, updateQuietLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 226, 100, 300, 10, updateQuietLmrTable)
+
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, 0, -50, 75, 10, updateNoisyLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 250, 150, 350, 10, updateNoisyLmrTable)
 
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 

@@ -689,7 +689,7 @@ namespace stormphrax::search
 							|| generator.stage() < MovegenStage::Quiet)
 							return 0;
 
-						auto r =  g_lmrTable[depth][legalMoves];
+						auto r =  g_lmrTable[noisy][depth][legalMoves];
 
 						r += !PvNode;
 
