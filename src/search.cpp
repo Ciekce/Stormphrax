@@ -609,7 +609,8 @@ namespace stormphrax::search
 
 					const auto history = thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-					if (depth <= 4 && history < -2500 * depth)
+					if (depth <= maxHistoryPruningDepth()
+						&& history < historyPruningMargin() * depth)
 					{
 						generator.skipQuiets();
 						continue;
