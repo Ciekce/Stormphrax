@@ -161,7 +161,7 @@ namespace stormphrax
 			i32 ply, Piece moving, Move move, i32 offset) -> HistoryScore
 		{
 			if (offset <= ply)
-				conthistEntry(continuations, ply, offset)[{moving, move}];
+				return conthistEntry(continuations, ply, offset)[{moving, move}];
 
 			return 0;
 		}
