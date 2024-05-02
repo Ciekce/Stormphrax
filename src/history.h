@@ -75,18 +75,18 @@ namespace stormphrax
 		inline auto operator[](std::pair<Piece, Move> move) const -> HistoryScore
 		{
 			const auto [piece, mv] = move;
-			return m_data[static_cast<i32>(pieceType(piece))][static_cast<i32>(mv.dst())];
+			return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
 		}
 
 		inline auto operator[](std::pair<Piece, Move> move) -> auto &
 		{
 			const auto [piece, mv] = move;
-			return m_data[static_cast<i32>(pieceType(piece))][static_cast<i32>(mv.dst())];
+			return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
 		}
 
 	private:
 		// [piece type][to]
-		std::array<std::array<HistoryEntry, 64>, 6> m_data{};
+		std::array<std::array<HistoryEntry, 64>, 12> m_data{};
 	};
 
 	class HistoryTables
