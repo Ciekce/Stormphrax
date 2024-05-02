@@ -47,6 +47,7 @@ namespace stormphrax
 		i32 depth;
 		Move move;
 		TtFlag flag;
+		bool pv;
 	};
 
 	class TTable
@@ -59,7 +60,7 @@ namespace stormphrax
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
 
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
+		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag, bool ttpv) -> void;
 
 		auto clear() -> void;
 
@@ -77,7 +78,22 @@ namespace stormphrax
 			i16 score;
 			Move move;
 			u8 depth;
-			TtFlag flag;
+			u8 flagAndPv;
+
+			[[nodiscard]] inline auto flag() const
+			{
+				return static_cast<TtFlag>(flagAndPv >> 1);
+			}
+
+			[[nodiscard]] inline auto pv() const
+			{
+				return (flagAndPv & 1) != 0;
+			}
+
+			inline auto setFlagAndPv(TtFlag flag, bool pv)
+			{
+				flagAndPv = (static_cast<u8>(flag) << 1) | pv;
+			}
 		};
 
 		static_assert(sizeof(Entry) == 8);

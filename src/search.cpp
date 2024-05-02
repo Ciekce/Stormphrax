@@ -458,7 +458,9 @@ namespace stormphrax::search
 				return ttEntry.score;
 		}
 
+
 		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
+		const bool ttpv = PvNode || ttEntry.pv;
 
 		const auto pieceCount = bbs.occupancy().popcount();
 
@@ -691,7 +693,7 @@ namespace stormphrax::search
 
 						auto r =  g_lmrTable[noisy][depth][legalMoves];
 
-						r += !PvNode;
+						r += !ttpv;
 
 						return r;
 					}();
@@ -781,7 +783,7 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
+			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag, ttpv);
 
 		return bestScore;
 	}
