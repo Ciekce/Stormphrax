@@ -83,6 +83,8 @@ namespace stormphrax::search
 		}
 	};
 
+	struct ThreadData;
+
 	struct SearchStackEntry
 	{
 		PvList pv{};
@@ -108,6 +110,7 @@ namespace stormphrax::search
 		{
 			stack.resize(MaxDepth + 4);
 			moveStack.resize(MaxDepth * 2);
+			conthist.resize(MaxDepth + 4);
 		}
 
 		u32 id{};
@@ -124,6 +127,7 @@ namespace stormphrax::search
 
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
+		std::vector<ContinuationSubtable *> conthist{};
 
 		MoveList rootMoves{};
 
@@ -139,6 +143,22 @@ namespace stormphrax::search
 		[[nodiscard]] inline auto isLegalRootMove(Move move) const
 		{
 			return std::ranges::find(rootMoves, move) != rootMoves.end();
+		}
+
+		inline auto setNullmove(i32 ply)
+		{
+			assert(ply <= MaxDepth);
+
+			stack[ply].move = NullMove;
+			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
+		}
+
+		inline auto setMove(i32 ply, Move move)
+		{
+			assert(ply <= MaxDepth);
+
+			stack[ply].move = move;
+			conthist[ply] = &history.contTable(pos.boards().pieceAt(move.src()), move.dst());
 		}
 	};
 
