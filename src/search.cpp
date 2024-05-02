@@ -368,8 +368,6 @@ namespace stormphrax::search
 			return -ScoreMate;
 		}
 
-		thread.history.clear();
-
 		const auto waitForThreads = [&]
 		{
 			--m_runningThreads;
