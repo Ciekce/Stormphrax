@@ -481,25 +481,43 @@ namespace stormphrax::search
 				++thread.search.tbhits;
 
 				Score score{};
-				TtFlag entryType{};
+				TtFlag flag{};
 
 				if (result == tb::ProbeResult::Win)
 				{
 					score = ScoreTbWin - ply;
-					entryType = TtFlag::LowerBound;
+					flag = TtFlag::LowerBound;
 				}
 				else if (result == tb::ProbeResult::Loss)
 				{
 					score = -ScoreTbWin + ply;
-					entryType = TtFlag::UpperBound;
+					flag = TtFlag::UpperBound;
 				}
 				else // draw
 				{
 					score = drawScore(thread.search.nodes);
-					entryType = TtFlag::Exact;
+					flag = TtFlag::Exact;
 				}
 
-				return score;
+				if (flag == TtFlag::Exact
+					|| flag == TtFlag::UpperBound && score <= alpha
+					|| flag == TtFlag::LowerBound && score >= beta)
+				{
+					m_ttable.put(pos.key(), score, NullMove, depth, ply, flag);
+					return score;
+				}
+
+				if constexpr (PvNode)
+				{
+					if (flag == TtFlag::UpperBound)
+						syzygyMax = score;
+					else if (flag == TtFlag::LowerBound)
+					{
+						if (score > alpha)
+							alpha = score;
+						syzygyMin = score;
+					}
+				}
 			}
 		}
 
