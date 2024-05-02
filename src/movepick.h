@@ -31,46 +31,47 @@ namespace stormphrax
 		ScoredMoveList moves;
 	};
 
+	enum class MovegenType
+	{
+		Normal = 0,
+		Qsearch
+	};
+
 	struct MovegenStage
 	{
 		static constexpr i32 Start = 0;
 		static constexpr i32 TtMove = Start + 1;
-		static constexpr i32 Noisy = TtMove + 1;
-		static constexpr i32 Quiet = Noisy + 1;
-		static constexpr i32 End = Quiet + 1;
+		static constexpr i32 GoodNoisy = TtMove + 1;
+		static constexpr i32 Quiet = GoodNoisy + 1;
+		static constexpr i32 BadNoisy = Quiet + 1;
+		static constexpr i32 End = BadNoisy + 1;
 	};
 
-	template <bool Root, bool NoisiesOnly = false>
+	template <MovegenType Type>
 	class MoveGenerator
 	{
+		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
+
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables *history)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove,
+			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
-			  m_history{history}
+			  m_history{history},
+			  m_continuations{continuations},
+			  m_ply{ply}
 		{
-			if constexpr (Root)
-				scoreAll();
-			else m_data.moves.clear();
+			m_data.moves.clear();
 		}
 
 		~MoveGenerator() = default;
 
 		[[nodiscard]] inline auto next()
 		{
-			if constexpr (Root)
-			{
-				if (m_idx == m_data.moves.size())
-					return NullMove;
-
-				const auto idx = findNext();
-				return m_data.moves[idx].move;
-			}
-
 			while (true)
 			{
-				while (m_idx == m_data.moves.size())
+				while (m_idx == m_end)
 				{
 					switch (++m_stage)
 					{
@@ -79,16 +80,29 @@ namespace stormphrax
 								return m_ttMove;
 							break;
 
-						case MovegenStage::Noisy:
+						case MovegenStage::GoodNoisy:
 							generateNoisy(m_data.moves, m_pos);
+							m_end = m_data.moves.size();
 							scoreNoisy();
-							if constexpr (NoisiesOnly)
-								m_stage = MovegenStage::End;
 							break;
 
 						case MovegenStage::Quiet:
-							generateQuiet(m_data.moves, m_pos);
-							scoreQuiet();
+							if (!NoisiesOnly && !m_skipQuiets)
+							{
+								generateQuiet(m_data.moves, m_pos);
+								m_end = m_data.moves.size();
+								scoreQuiet();
+							}
+							else
+							{
+								++m_stage;
+								continue;
+							}
+							break;
+
+						case MovegenStage::BadNoisy:
+							m_idx = 0;
+							m_end = m_badNoisyEnd;
 							break;
 
 						default:
@@ -96,14 +110,45 @@ namespace stormphrax
 					}
 				}
 
-				assert(m_idx < m_data.moves.size());
+				assert(m_idx < m_end);
 
-				const auto idx = findNext();
-				const auto move = m_data.moves[idx].move;
+				if (m_skipQuiets && m_stage == MovegenStage::Quiet)
+					return NullMove;
 
-				if (move != m_ttMove)
-					return move;
+				if (m_stage == MovegenStage::GoodNoisy)
+				{
+					while (m_idx != m_end)
+					{
+						const auto idx = findNext();
+						const auto move = m_data.moves[idx].move;
+
+						if constexpr (Type == MovegenType::Qsearch)
+							return move;
+						else
+						{
+							if (move == m_ttMove)
+								continue;
+
+							if (!see::see(m_pos, move, 0))
+								m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
+							else return move;
+						}
+					}
+				}
+				else
+				{
+					const auto idx = findNext();
+					const auto move = m_data.moves[idx].move;
+
+					if (move != m_ttMove)
+						return move;
+				}
 			}
+		}
+
+		inline auto skipQuiets()
+		{
+			m_skipQuiets = true;
 		}
 
 		[[nodiscard]] inline auto stage() const { return m_stage; }
@@ -114,20 +159,19 @@ namespace stormphrax
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
 
-			const auto moving = boards.pieceAt(move.src());
-			score -= see::value(moving);
+			const auto captured = m_pos.captureTarget(move);
 
-			const auto captured = move.type() == MoveType::EnPassant
-				? PieceType::Pawn
-				: pieceTypeOrNone(boards.pieceAt(move.dst()));
+			score += m_history.noisyScore(move, captured) / 8;
+			score += see::value(captured);
 
-			score += see::value(captured) * 4000;
+			if (move.type() == MoveType::Promotion)
+				score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
 		}
 
 		inline auto scoreNoisy() -> void
 		{
 			const auto &boards = m_pos.boards();
-			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleNoisy(m_data.moves[i], boards);
 			}
@@ -135,12 +179,13 @@ namespace stormphrax
 
 		inline auto scoreSingleQuiet(ScoredMove &move)
 		{
-			move.score = m_history->quietScore(move.move);
+			move.score = m_history.quietScore(m_continuations, m_ply,
+				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
 		}
 
 		inline auto scoreQuiet() -> void
 		{
-			for (u32 i = m_idx; i < m_data.moves.size(); ++i)
+			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleQuiet(m_data.moves[i]);
 			}
@@ -167,7 +212,7 @@ namespace stormphrax
 			auto best = m_idx;
 			auto bestScore = m_data.moves[m_idx].score;
 
-			for (auto i = m_idx + 1; i < m_data.moves.size(); ++i)
+			for (auto i = m_idx + 1; i < m_end; ++i)
 			{
 				if (m_data.moves[i].score > bestScore)
 				{
@@ -186,23 +231,32 @@ namespace stormphrax
 
 		i32 m_stage{MovegenStage::Start};
 
-		const HistoryTables *m_history;
+		bool m_skipQuiets{false};
+
+		const HistoryTables &m_history;
+
+		std::span<ContinuationSubtable *const> m_continuations;
+		i32 m_ply{};
 
 		MovegenData &m_data;
+
 		u32 m_idx{};
+		u32 m_end{};
+
+		u32 m_badNoisyEnd{};
 
 		Move m_ttMove;
 	};
 
-	template <bool Root>
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
-		Move ttMove, const HistoryTables &history)
+		Move ttMove, const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 	{
-		return MoveGenerator<Root, false>(pos, data, ttMove, &history);
+		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, history, continuations, ply);
 	}
 
-	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos, MovegenData &data)
+	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
+		MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<false, true>(pos, data, NullMove, nullptr);
+		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history, {}, 0);
 	}
 }

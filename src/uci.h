@@ -40,8 +40,4 @@ namespace stormphrax::uci
 	auto printCttTuningParams(std::span<const std::string> params) -> void;
 	auto printObTuningParams(std::span<const std::string> params) -> void;
 #endif
-
-#ifndef NDEBUG
-	[[nodiscard]] auto moveAndTypeToString(Move move) -> std::string;
-#endif
 }

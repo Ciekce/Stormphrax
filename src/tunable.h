@@ -34,6 +34,16 @@ namespace stormphrax::tunable
 {
 	auto init() -> void;
 
+	// [noisy][depth][legal moves]
+	extern std::array<std::array<std::array<i32, 256>, 256>, 2> g_lmrTable;
+
+	auto updateQuietLmrTable() -> void;
+	auto updateNoisyLmrTable() -> void;
+
+	// [improving][clamped depth]
+	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
+	auto updateLmpTable() -> void;
+
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert(Default >= Min); \
 	static_assert(Default <= Max); \
@@ -82,6 +92,47 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(nodeTimeScaleMin, 95, 1, 1000, 100)
 
 	SP_TUNABLE_PARAM(timeScaleMin, 13, 1, 1000, 100)
+
+	SP_TUNABLE_PARAM(minAspDepth, 5, 1, 10, 1)
+	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
+	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
+
+	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
+
+	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
+	SP_TUNABLE_PARAM(rfpMargin, 75, 25, 150, 5)
+
+	SP_TUNABLE_PARAM(maxRazoringDepth, 4, 2, 6, 0.5)
+	SP_TUNABLE_PARAM(razoringMargin, 250, 100, 350, 40)
+
+	SP_TUNABLE_PARAM(minNmpDepth, 4, 3, 8, 0.5)
+	SP_TUNABLE_PARAM(nmpBaseReduction, 4, 2, 5, 0.5)
+	SP_TUNABLE_PARAM(nmpDepthReductionDiv, 4, 1, 8, 1)
+
+	SP_TUNABLE_PARAM_CALLBACK(lmpBaseMoves, 3, 2, 5, 0.5, updateLmpTable)
+
+	SP_TUNABLE_PARAM(maxFpDepth, 8, 4, 12, 0.5)
+	SP_TUNABLE_PARAM(fpMargin, 250, 120, 350, 45)
+	SP_TUNABLE_PARAM(fpScale, 65, 40, 80, 8)
+
+	SP_TUNABLE_PARAM(seePruningThresholdQuiet, -25, -80, -15, 12)
+	SP_TUNABLE_PARAM(seePruningThresholdNoisy, -90, -120, -40, 20)
+
+	SP_TUNABLE_PARAM(minSeDepth, 8, 4, 10, 0.5)
+	SP_TUNABLE_PARAM(seTtDepthMargin, 4, 2, 6, 1)
+	SP_TUNABLE_PARAM(sBetaMargin, 32, 4, 64, 12)
+
+	SP_TUNABLE_PARAM(doubleExtMargin, 17, 0, 32, 5)
+	SP_TUNABLE_PARAM(doubleExtLimit, 8, 4, 24, 4)
+
+	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
+
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 77, 50, 120, 15, updateQuietLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 226, 100, 300, 10, updateQuietLmrTable)
+
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, 0, -50, 75, 10, updateNoisyLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 250, 150, 350, 10, updateNoisyLmrTable)
 
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 

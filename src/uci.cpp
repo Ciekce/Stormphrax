@@ -99,9 +99,6 @@ namespace stormphrax
 			auto handlePerft(const std::vector<std::string> &tokens) -> void;
 			auto handleSplitperft(const std::vector<std::string> &tokens) -> void;
 			auto handleBench(const std::vector<std::string> &tokens) -> void;
-#ifndef NDEBUG
-			auto handleVerify() -> void;
-#endif
 
 			bool m_fathomInitialized{false};
 
@@ -169,10 +166,6 @@ namespace stormphrax
 					handleSplitperft(tokens);
 				else if (command == "bench")
 					handleBench(tokens);
-#ifndef NDEBUG
-				else if (command == "verify")
-					handleVerify();
-#endif
 			}
 
 			return 0;
@@ -795,14 +788,6 @@ namespace stormphrax
 
 			bench::run(m_searcher, depth);
 		}
-
-#ifndef NDEBUG
-		auto UciHandler::handleVerify() -> void
-		{
-			if (m_pos.verify())
-				std::cout << "info string boards and keys ok" << std::endl;
-		}
-#endif
 	}
 
 #if SP_EXTERNAL_TUNE
@@ -951,30 +936,5 @@ namespace stormphrax
 			printParams(params, printParam);
 		}
 #endif // SP_EXTERNAL_TUNE
-
-#ifndef NDEBUG
-		auto moveAndTypeToString(Move move) -> std::string
-		{
-			if (!move)
-				return "0000";
-
-			std::ostringstream str{};
-
-			if (move.type() != MoveType::Standard)
-			{
-				switch (move.type())
-				{
-				case MoveType::Promotion: str << "p:"; break;
-				case MoveType::Castling:  str << "c:"; break;
-				case MoveType::EnPassant: str << "e:"; break;
-				default: __builtin_unreachable();
-				}
-			}
-
-			str << moveToString(move);
-
-			return str.str();
-		}
-#endif
 	}
 }

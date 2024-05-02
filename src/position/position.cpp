@@ -40,10 +40,6 @@ namespace stormphrax
 {
 	namespace
 	{
-#ifndef NDEBUG
-		constexpr bool VerifyAll = true;
-#endif
-
 		auto scharnaglToBackrank(u32 n)
 		{
 			// https://en.wikipedia.org/wiki/Fischer_random_chess_numbering_scheme#Direct_derivation
@@ -156,14 +152,6 @@ namespace stormphrax
 	template auto Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 	template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 	template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-
-	template auto Position::regen<false>() -> void;
-	template auto Position::regen<true>() -> void;
-
-#ifndef NDEBUG
-	template bool Position::verify<false>();
-	template bool Position::verify<true>();
-#endif
 
 	Position::Position()
 	{
@@ -670,8 +658,6 @@ namespace stormphrax
 
 		auto &prevState = currState();
 
-		prevState.lastMove = move;
-
 		if constexpr (StateHistory)
 		{
 			assert(m_states.size() < m_states.capacity());
@@ -694,17 +680,6 @@ namespace stormphrax
 
 		if (!move)
 		{
-#ifndef NDEBUG
-			if constexpr (VerifyAll)
-			{
-				if (!verify<StateHistory>())
-				{
-					printHistory(move);
-					__builtin_trap();
-				}
-			}
-#endif
-
 			state.pinned = calcPinned();
 			state.threats = calcThreats();
 
@@ -727,15 +702,6 @@ namespace stormphrax
 		const auto moving = state.boards.pieceAt(moveSrc);
 		const auto movingType = pieceType(moving);
 
-#ifndef NDEBUG
-		if (moving == Piece::None)
-		{
-			std::cerr << "corrupt board state" << std::endl;
-			printHistory(move);
-			__builtin_trap();
-		}
-#endif
-
 		eval::NnueUpdates updates{};
 		auto captured = Piece::None;
 
@@ -754,6 +720,8 @@ namespace stormphrax
 			captured = enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
 			break;
 		}
+
+		assert(pieceTypeOrNone(captured) != PieceType::King);
 
 		if constexpr (UpdateNnue)
 			nnueState->update<StateHistory>(updates,
@@ -793,17 +761,6 @@ namespace stormphrax
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
 		state.threats = calcThreats();
-
-#ifndef NDEBUG
-		if constexpr (VerifyAll)
-		{
-			if (!verify<StateHistory>())
-			{
-				printHistory();
-				__builtin_trap();
-			}
-		}
-#endif
 	}
 
 	template <bool UpdateNnue>
@@ -821,9 +778,6 @@ namespace stormphrax
 		m_keys.pop_back();
 
 		m_blackToMove = !m_blackToMove;
-
-		if (!currState().lastMove)
-			return;
 
 		if (toMove() == Color::Black)
 			--m_fullmove;
@@ -864,16 +818,6 @@ namespace stormphrax
 				// or trying to capture a king
 				|| pieceType(dstPiece) == PieceType::King))
 			return false;
-
-		// take advantage of evasion generation if in check
-		if (isCheck())
-		{
-			ScoredMoveList moves{};
-			generateAll(moves, *this);
-
-			return std::any_of(moves.begin(), moves.end(),
-				[move](const auto m) { return m.move == move; });
-		}
 
 		const auto srcPieceType = pieceType(srcPiece);
 		const auto them = oppColor(us);
@@ -1465,7 +1409,6 @@ namespace stormphrax
 		return enemyPawn;
 	}
 
-	template <bool EnPassantFromMoves>
 	auto Position::regen() -> void
 	{
 		auto &state = currState();
@@ -1489,28 +1432,6 @@ namespace stormphrax
 			}
 		}
 
-		if constexpr (EnPassantFromMoves)
-		{
-			state.enPassant = Square::None;
-
-			if (m_states.size() > 1)
-			{
-				const auto lastMove = m_states[m_states.size() - 2].lastMove;
-
-				if (lastMove && lastMove.type() == MoveType::Standard)
-				{
-					const auto piece = state.boards.pieceAt(lastMove.dst());
-
-					if (pieceType(piece) == PieceType::Pawn
-						&& std::abs(lastMove.srcRank() - lastMove.dstRank()) == 2)
-					{
-						state.enPassant = toSquare(lastMove.dstRank()
-							+ (piece == Piece::BlackPawn ? 1 : -1), lastMove.dstFile());
-					}
-				}
-			}
-		}
-
 		const auto colorKey = keys::color(toMove());
 		state.key ^= colorKey;
 
@@ -1521,66 +1442,6 @@ namespace stormphrax
 		state.pinned = calcPinned();
 		state.threats = calcThreats();
 	}
-
-#ifndef NDEBUG
-	auto Position::printHistory(Move last) -> void
-	{
-		for (usize i = 0; i < m_states.size() - 1; ++i)
-		{
-			if (i != 0)
-				std::cerr << ' ';
-			std::cerr << uci::moveAndTypeToString(m_states[i].lastMove);
-		}
-
-		if (last)
-		{
-			if (!m_states.empty())
-				std::cerr << ' ';
-			std::cerr << uci::moveAndTypeToString(last);
-		}
-
-		std::cerr << std::endl;
-	}
-
-	template <bool HasHistory>
-	auto Position::verify() -> bool
-	{
-		Position regened{*this};
-		regened.regen<HasHistory>();
-
-		std::ostringstream out{};
-		out << std::hex << std::uppercase;
-
-		bool failed = false;
-
-#define SP_CHECK(A, B, Str) \
-		if ((A) != (B)) \
-		{ \
-			out << "info string " Str " do not match"; \
-			out << "\ninfo string current: " << std::setw(16) << std::setfill('0') << (A); \
-			out << "\ninfo string regened: " << std::setw(16) << std::setfill('0') << (B); \
-			out << '\n'; \
-			failed = true; \
-		}
-
-		out << std::dec;
-		SP_CHECK(static_cast<u64>(currState().enPassant), static_cast<u64>(regened.currState().enPassant), "en passant squares")
-		out << std::hex;
-
-		SP_CHECK(currState().key, regened.currState().key, "keys")
-
-		out << std::dec;
-
-#undef SP_CHECK_PIECES
-#undef SP_CHECK_PIECE
-#undef SP_CHECK
-
-		if (failed)
-			std::cout << out.view() << std::flush;
-
-		return !failed;
-	}
-#endif
 
 	auto Position::moveFromUci(const std::string &move) const -> Move
 	{
