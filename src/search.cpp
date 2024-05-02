@@ -458,6 +458,8 @@ namespace stormphrax::search
 				return ttEntry.score;
 		}
 
+		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
+
 		const auto pieceCount = bbs.occupancy().popcount();
 
 		auto syzygyMin = -ScoreMate;
@@ -563,6 +565,9 @@ namespace stormphrax::search
 			}
 		}
 
+		if constexpr (!RootNode)
+			curr.doubleExtensions = parent->doubleExtensions;
+
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
@@ -632,13 +637,13 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
-				&& depth >= 8
+				&& depth >= minSeDepth()
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - 4
+				&& ttEntry.depth >= depth - seTtDepthMargin()
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
-				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - 2 * depth);
+				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
 				const auto sDepth = (depth - 1) / 2;
 
 				curr.excluded = move;
@@ -646,8 +651,19 @@ namespace stormphrax::search
 				curr.excluded = NullMove;
 
 				if (score < sBeta)
-					extension = 1;
+				{
+					if (!PvNode
+						&& score < sBeta - doubleExtMargin()
+						&& curr.doubleExtensions <= doubleExtLimit())
+					{
+						extension = 2 + (!ttMoveNoisy && score < sBeta - 100);
+						++curr.doubleExtensions;
+					}
+					else extension = 1;
+				}
 			}
+
+			curr.doubleExtensions += extension >= 2;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
@@ -674,7 +690,7 @@ namespace stormphrax::search
 							|| generator.stage() < MovegenStage::Quiet)
 							return 0;
 
-						auto r =  g_lmrTable[depth][legalMoves];
+						auto r =  g_lmrTable[noisy][depth][legalMoves];
 
 						r += !PvNode;
 
