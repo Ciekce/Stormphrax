@@ -595,12 +595,21 @@ namespace stormphrax::search
 				continue;
 
 			const bool noisy = pos.isNoisy(move);
+			const auto moving = boards.pieceAt(move.src());
 
 			if (bestScore > -ScoreWin)
 			{
 				if (!noisy)
 				{
 					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
+					{
+						generator.skipQuiets();
+						continue;
+					}
+
+					const auto history = thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+
+					if (depth <= 4 && history < -2500 * depth)
 					{
 						generator.skipQuiets();
 						continue;
