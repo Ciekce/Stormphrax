@@ -582,7 +582,7 @@ namespace stormphrax::search
 		}
 
 		if constexpr (!RootNode)
-			curr.doubleExtensions = parent->doubleExtensions;
+			curr.multiExtensions = parent->multiExtensions;
 
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
@@ -682,18 +682,13 @@ namespace stormphrax::search
 
 				if (score < sBeta)
 				{
-					if (!PvNode
-						&& score < sBeta - doubleExtMargin()
-						&& curr.doubleExtensions <= doubleExtLimit())
-					{
-						extension = 2 + (!ttMoveNoisy && score < sBeta - 100);
-						++curr.doubleExtensions;
-					}
+					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
 					else extension = 1;
 				}
 			}
 
-			curr.doubleExtensions += extension >= 2;
+			curr.multiExtensions += extension >= 2;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
