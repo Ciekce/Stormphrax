@@ -705,7 +705,7 @@ namespace stormphrax::search
 						auto r =  g_lmrTable[noisy][depth][legalMoves];
 
 						r += !PvNode;
-						r -= history / 8192;
+						r -= history / lmrHistoryDivisor();
 
 						return r;
 					}();

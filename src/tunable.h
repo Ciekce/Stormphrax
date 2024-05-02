@@ -137,6 +137,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, 0, -50, 75, 10, updateNoisyLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 250, 150, 350, 10, updateNoisyLmrTable)
 
+	SP_TUNABLE_PARAM(lmrHistoryDivisor, 8192, 4096, 16384, 650)
+
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 
 	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)
