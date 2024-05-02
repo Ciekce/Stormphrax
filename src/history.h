@@ -116,7 +116,9 @@ namespace stormphrax
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
 			mainEntry(threats, move).update(bonus);
+
 			updateConthist(continuations, ply, moving, move, bonus, 1);
+			updateConthist(continuations, ply, moving, move, bonus, 2);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
@@ -130,7 +132,9 @@ namespace stormphrax
 			i32 score{};
 
 			score += mainEntry(threats, move);
+
 			score += conthistScore(continuations, ply, moving, move, 1);
+			score += conthistScore(continuations, ply, moving, move, 2);
 
 			return score;
 		}
