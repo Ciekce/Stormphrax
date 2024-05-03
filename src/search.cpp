@@ -689,7 +689,7 @@ namespace stormphrax::search
 				else if (sBeta >= beta)
 					return sBeta;
 				else if (ttEntry.score >= beta)
-					extension = -1;
+					extension = -2;
 			}
 
 			curr.multiExtensions += extension >= 2;
