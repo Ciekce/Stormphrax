@@ -686,6 +686,8 @@ namespace stormphrax::search
 						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
 					else extension = 1;
 				}
+				else if (sBeta >= beta)
+					return sBeta;
 			}
 
 			curr.multiExtensions += extension >= 2;
