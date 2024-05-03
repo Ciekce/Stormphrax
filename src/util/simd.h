@@ -413,7 +413,7 @@ namespace stormphrax::util::simd
 	};
 
 	template <typename T>
-	using Vector = VectorImpl<T>::Type;
+	using Vector = typename VectorImpl<T>::Type;
 
 #define SP_SIMD_OP_0(Name) \
 	template <typename T> \

@@ -53,11 +53,14 @@ namespace stormphrax
 		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
 
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables &history)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove,
+			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
-			  m_history{history}
+			  m_history{history},
+			  m_continuations{continuations},
+			  m_ply{ply}
 		{
 			m_data.moves.clear();
 		}
@@ -176,7 +179,8 @@ namespace stormphrax
 
 		inline auto scoreSingleQuiet(ScoredMove &move)
 		{
-			move.score = m_history.quietScore(m_pos.threats(), move.move);
+			move.score = m_history.quietScore(m_continuations, m_ply,
+				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
 		}
 
 		inline auto scoreQuiet() -> void
@@ -231,6 +235,9 @@ namespace stormphrax
 
 		const HistoryTables &m_history;
 
+		std::span<ContinuationSubtable *const> m_continuations;
+		i32 m_ply{};
+
 		MovegenData &m_data;
 
 		u32 m_idx{};
@@ -242,14 +249,14 @@ namespace stormphrax
 	};
 
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
-		Move ttMove, const HistoryTables &history)
+		Move ttMove, const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 	{
-		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, history);
+		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, history, continuations, ply);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
 		MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history);
+		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history, {}, 0);
 	}
 }
