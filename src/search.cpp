@@ -285,8 +285,9 @@ namespace stormphrax::search
 			return util::g_timer.time() - startTime;
 		};
 
-		i32 depthCompleted{};
+		searchData.nodes = 1;
 
+		i32 depthCompleted{};
 		bool hitSoftTimeout = false;
 
 		for (i32 depth = startDepth;
