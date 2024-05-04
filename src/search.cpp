@@ -569,7 +569,8 @@ namespace stormphrax::search
 				m_ttable.prefetch(pos.key() ^ keys::color());
 
 				const auto R = nmpBaseReduction()
-					+ depth / nmpDepthReductionDiv();
+					+ depth / nmpDepthReductionDiv()
+					+ std::min((curr.staticEval - beta) / 200, 3);
 
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
