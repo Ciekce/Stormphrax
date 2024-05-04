@@ -625,7 +625,7 @@ namespace stormphrax::search
 			if (bestScore > -ScoreWin)
 			{
 				if (!RootNode && legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
-					continue;
+					generator.skipQuiets();
 				else if (!noisy)
 				{
 					if (depth <= maxHistoryPruningDepth()
