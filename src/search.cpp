@@ -626,7 +626,8 @@ namespace stormphrax::search
 			{
 				if (!noisy)
 				{
-					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
+					if (!RootNode
+						&& legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
 					{
 						generator.skipQuiets();
 						continue;
