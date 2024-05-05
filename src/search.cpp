@@ -618,6 +618,8 @@ namespace stormphrax::search
 
 			const auto captured = pos.captureTarget(move);
 
+			const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
+
 			const auto history = noisy
 				? thread.history.noisyScore(move, captured)
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
@@ -640,10 +642,12 @@ namespace stormphrax::search
 						continue;
 					}
 
+					const auto lmrDepth = std::max(depth - baseLmr, 0);
+
 					if (!inCheck
-						&& depth <= maxFpDepth()
+						&& lmrDepth <= maxFpDepth()
 						&& std::abs(alpha) < 2000
-						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
+						&& curr.staticEval + fpMargin() + lmrDepth * fpScale() <= alpha)
 					{
 						generator.skipQuiets();
 						continue;
@@ -721,7 +725,7 @@ namespace stormphrax::search
 							|| generator.stage() < MovegenStage::Quiet)
 							return 0;
 
-						auto r =  g_lmrTable[noisy][depth][legalMoves];
+						auto r =  baseLmr;
 
 						r += !PvNode;
 						r -= history / lmrHistoryDivisor();
