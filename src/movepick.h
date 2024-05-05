@@ -122,17 +122,12 @@ namespace stormphrax
 						const auto idx = findNext();
 						const auto move = m_data.moves[idx].move;
 
-						if constexpr (Type == MovegenType::Qsearch)
-							return move;
-						else
-						{
-							if (move == m_ttMove)
-								continue;
+						if (move == m_ttMove)
+							continue;
 
-							if (!see::see(m_pos, move, 0))
-								m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
-							else return move;
-						}
+						if (Type != MovegenType::Qsearch && !see::see(m_pos, move, 0))
+							m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
+						else return move;
 					}
 				}
 				else
@@ -255,8 +250,8 @@ namespace stormphrax
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
-		MovegenData &data, const HistoryTables &history)
+		MovegenData &data, Move ttMove, const HistoryTables &history)
 	{
-		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history, {}, 0);
+		return MoveGenerator<MovegenType::Qsearch>(pos, data, ttMove, history, {}, 0);
 	}
 }

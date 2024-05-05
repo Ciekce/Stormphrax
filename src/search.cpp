@@ -850,6 +850,9 @@ namespace stormphrax::search
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
+		ProbedTTableEntry ttEntry{};
+		m_ttable.probe(ttEntry, pos.key(), ply);
+
 		Score staticEval;
 
 		if (pos.isCheck())
@@ -867,7 +870,8 @@ namespace stormphrax::search
 
 		auto bestScore = staticEval;
 
-		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
+		auto generator = qsearchMoveGenerator(pos,
+			thread.moveStack[moveStackIdx].movegenData, ttEntry.move, thread.history);
 
 		while (const auto move = generator.next())
 		{
