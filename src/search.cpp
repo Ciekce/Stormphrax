@@ -418,6 +418,13 @@ namespace stormphrax::search
 
 			if (alpha >= beta)
 				return alpha;
+
+			if (alpha < 0 && pos.hasCycle(ply))
+			{
+				alpha = drawScore(thread.search.nodes);
+				if (alpha >= beta)
+					return alpha;
+			}
 		}
 
 		const bool inCheck = pos.isCheck();
@@ -832,6 +839,13 @@ namespace stormphrax::search
 
 		if (ply >= MaxDepth)
 			return eval::staticEval(pos, thread.nnueState, m_contempt);
+
+		if (alpha < 0 && pos.hasCycle(ply))
+		{
+			alpha = drawScore(thread.search.nodes);
+			if (alpha >= beta)
+				return alpha;
+		}
 
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
