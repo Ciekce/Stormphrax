@@ -732,7 +732,7 @@ namespace stormphrax::search
 
 						r += !PvNode;
 						r -= history / lmrHistoryDivisor();
-						r += !improving;
+						r -= improving;
 
 						return r;
 					}();
