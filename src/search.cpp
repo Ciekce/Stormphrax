@@ -733,6 +733,7 @@ namespace stormphrax::search
 						r += !PvNode;
 						r -= history / lmrHistoryDivisor();
 						r -= improving;
+						r -= pos.isCheck();
 
 						return r;
 					}();
