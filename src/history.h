@@ -119,6 +119,7 @@ namespace stormphrax
 
 			updateConthist(continuations, ply, moving, move, bonus, 1);
 			updateConthist(continuations, ply, moving, move, bonus, 2);
+			updateConthist(continuations, ply, moving, move, bonus, 4);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
@@ -135,6 +136,7 @@ namespace stormphrax
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
+			score += conthistScore(continuations, ply, moving, move, 4);
 
 			return score;
 		}
