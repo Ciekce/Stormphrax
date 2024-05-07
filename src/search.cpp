@@ -780,7 +780,6 @@ namespace stormphrax::search
 
 			if (score >= beta)
 			{
-				curr.killers.push(move);
 				ttFlag = TtFlag::LowerBound;
 				break;
 			}
@@ -803,6 +802,8 @@ namespace stormphrax::search
 
 			if (!pos.isNoisy(bestMove))
 			{
+				curr.killers.push(bestMove);
+
 				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
 					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
 
