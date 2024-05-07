@@ -28,8 +28,8 @@ namespace stormphrax
 {
 	struct KillerTable
 	{
-		Move killer1;
-		Move killer2;
+		Move killer1{};
+		Move killer2{};
 
 		inline auto push(Move move)
 		{
@@ -80,12 +80,13 @@ namespace stormphrax
 			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_pos{pos},
 			  m_data{data},
-			  m_killers{killers},
 			  m_ttMove{ttMove},
 			  m_history{history},
 			  m_continuations{continuations},
 			  m_ply{ply}
 		{
+			if (killers)
+				m_killers = *killers;
 			m_data.moves.clear();
 		}
 
@@ -112,27 +113,19 @@ namespace stormphrax
 
 						case MovegenStage::Killer1:
 							if (!NoisiesOnly && !m_skipQuiets
-								&& !m_killers->killer1.isNull()
-								&& m_killers->killer1 != m_ttMove
-								&& m_pos.isPseudolegal(m_killers->killer1))
-								return m_killers->killer1;
-							else
-							{
-								++m_stage;
-								continue;
-							}
+								&& !m_killers.killer1.isNull()
+								&& m_killers.killer1 != m_ttMove
+								&& m_pos.isPseudolegal(m_killers.killer1))
+								return m_killers.killer1;
+							else continue;
 
 						case MovegenStage::Killer2:
 							if (!NoisiesOnly && !m_skipQuiets
-								&& !m_killers->killer2.isNull()
-								&& m_killers->killer2 != m_ttMove
-								&& m_pos.isPseudolegal(m_killers->killer2))
-								return m_killers->killer2;
-							else
-							{
-								++m_stage;
-								continue;
-							}
+								&& !m_killers.killer2.isNull()
+								&& m_killers.killer2 != m_ttMove
+								&& m_pos.isPseudolegal(m_killers.killer2))
+								return m_killers.killer2;
+							else continue;
 
 						case MovegenStage::Quiet:
 							if (!NoisiesOnly && !m_skipQuiets)
@@ -191,7 +184,7 @@ namespace stormphrax
 					const auto idx = findNext();
 					const auto move = m_data.moves[idx].move;
 
-					if (move != m_ttMove && move != m_killers->killer1 && move != m_killers->killer2)
+					if (move != m_ttMove && move != m_killers.killer1 && move != m_killers.killer2)
 						return move;
 				}
 			}
@@ -273,7 +266,7 @@ namespace stormphrax
 		i32 m_ply{};
 
 		MovegenData &m_data;
-		const KillerTable *m_killers;
+		KillerTable m_killers{};
 
 		u32 m_idx{};
 		u32 m_end{};
