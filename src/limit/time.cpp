@@ -90,10 +90,10 @@ namespace stormphrax::limit
 		 */
 
 		if (bestMove == m_prevBestMove)
-			m_bmStability = std::min<u32>(m_bmStability + 1, 8);
+			m_bmStability = std::min<u32>(m_bmStability + 1, 10);
 		else m_bmStability = 0;
 
-		const auto stabilityScale = 1.3 - 0.07 * m_bmStability;
+		const auto stabilityScale = 1.35 - 0.07 * m_bmStability;
 		m_scale *= stabilityScale;
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
