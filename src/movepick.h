@@ -65,7 +65,8 @@ namespace stormphrax
 		static constexpr i32 GoodNoisy = TtMove + 1;
 		static constexpr i32 Killer1 = GoodNoisy + 1;
 		static constexpr i32 Killer2 = Killer1 + 1;
-		static constexpr i32 Quiet = Killer2 + 1;
+		static constexpr i32 Countermove = Killer2 + 1;
+		static constexpr i32 Quiet = Countermove + 1;
 		static constexpr i32 BadNoisy = Quiet + 1;
 		static constexpr i32 End = BadNoisy + 1;
 	};
@@ -76,10 +77,12 @@ namespace stormphrax
 		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
 
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const KillerTable *killers,
-			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove,
+			const KillerTable *killers, Move countermove, const HistoryTables &history,
+			std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_pos{pos},
 			  m_data{data},
+			  m_countermove{countermove},
 			  m_ttMove{ttMove},
 			  m_history{history},
 			  m_continuations{continuations},
@@ -125,6 +128,16 @@ namespace stormphrax
 								&& m_killers.killer2 != m_ttMove
 								&& m_pos.isPseudolegal(m_killers.killer2))
 								return m_killers.killer2;
+							else continue;
+
+						case MovegenStage::Countermove:
+							if (!NoisiesOnly && !m_skipQuiets
+								&& !m_countermove.isNull()
+								&& m_countermove != m_ttMove
+								&& m_countermove != m_killers.killer1
+								&& m_countermove != m_killers.killer2
+								&& m_pos.isPseudolegal(m_countermove))
+								return m_countermove;
 							else continue;
 
 						case MovegenStage::Quiet:
@@ -184,7 +197,10 @@ namespace stormphrax
 					const auto idx = findNext();
 					const auto move = m_data.moves[idx].move;
 
-					if (move != m_ttMove && move != m_killers.killer1 && move != m_killers.killer2)
+					if (move != m_ttMove
+						&& move != m_killers.killer1
+						&& move != m_killers.killer2
+						&& move != m_countermove)
 						return move;
 				}
 			}
@@ -268,6 +284,8 @@ namespace stormphrax
 		MovegenData &m_data;
 		KillerTable m_killers{};
 
+		Move m_countermove;
+
 		u32 m_idx{};
 		u32 m_end{};
 
@@ -277,15 +295,16 @@ namespace stormphrax
 	};
 
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
-		Move ttMove, const KillerTable &killers, const HistoryTables &history,
+		Move ttMove, const KillerTable &killers, Move countermove, const HistoryTables &history,
 		std::span<ContinuationSubtable *const> continuations, i32 ply)
 	{
-		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, &killers, history, continuations, ply);
+		return MoveGenerator<MovegenType::Normal>(pos, data,
+			ttMove, &killers, countermove, history, continuations, ply);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
 		MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, nullptr, history, {}, 0);
+		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, nullptr, NullMove, history, {}, 0);
 	}
 }

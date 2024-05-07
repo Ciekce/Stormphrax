@@ -590,8 +590,17 @@ namespace stormphrax::search
 			}
 		}
 
+		auto prevTo = Square::None;
+		auto countermove = NullMove;
+
 		if constexpr (!RootNode)
+		{
 			curr.multiExtensions = parent->multiExtensions;
+
+			prevTo = parent->move.dst();
+			// this appears on the surface to be broken wrt promos (moved piece), but this is intentional
+			countermove = thread.history.countermove(boards.pieceAt(prevTo), prevTo);
+		}
 
 		thread.stack[ply + 1].killers.clear();
 
@@ -603,8 +612,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos, moveStack.movegenData,
-			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData, ttEntry.move,
+			curr.killers, countermove, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -803,6 +812,9 @@ namespace stormphrax::search
 			if (!pos.isNoisy(bestMove))
 			{
 				curr.killers.push(bestMove);
+
+				if constexpr (!RootNode)
+					thread.history.setCountermove(boards.pieceAt(prevTo), prevTo, bestMove);
 
 				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
 					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);

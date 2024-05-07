@@ -99,6 +99,7 @@ namespace stormphrax
 		{
 			std::memset(&m_main        , 0, sizeof(m_main        ));
 			std::memset(&m_continuation, 0, sizeof(m_continuation));
+			std::memset(&m_countermoves, 0, sizeof(m_countermoves));
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
 
@@ -110,6 +111,11 @@ namespace stormphrax
 		[[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto &
 		{
 			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
+		}
+
+		inline auto setCountermove(Piece prevPiece, Square prevTo, Move move)
+		{
+			m_countermoves[static_cast<i32>(prevPiece)][static_cast<i32>(prevTo)] = move;
 		}
 
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
@@ -124,6 +130,11 @@ namespace stormphrax
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
 		{
 			noisyEntry(move, captured).update(bonus);
+		}
+
+		[[nodiscard]] inline auto countermove(Piece prevPiece, Square prevTo)
+		{
+			return m_countermoves[static_cast<i32>(prevPiece)][static_cast<i32>(prevTo)];
 		}
 
 		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
@@ -149,6 +160,9 @@ namespace stormphrax
 		std::array<std::array<std::array<std::array<HistoryEntry, 2>, 2>, 64>, 64> m_main{};
 		// [prev piece][to][curr piece type][to]
 		std::array<std::array<ContinuationSubtable, 64>, 12> m_continuation{};
+
+		// [prev piece][to]
+		std::array<std::array<Move, 64>, 12> m_countermoves{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
