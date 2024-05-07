@@ -92,8 +92,9 @@ namespace stormphrax::search
 
 		Score staticEval;
 
-		Move excluded{};
+		KillerTable killers{};
 
+		Move excluded{};
 		i32 multiExtensions{};
 	};
 
