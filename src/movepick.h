@@ -113,7 +113,10 @@ namespace stormphrax
 				assert(m_idx < m_end);
 
 				if (m_skipQuiets && m_stage == MovegenStage::Quiet)
-					return NullMove;
+				{
+					m_idx = m_end;
+					continue;
+				}
 
 				if (m_stage == MovegenStage::GoodNoisy)
 				{
@@ -154,7 +157,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		inline auto scoreSingleNoisy(ScoredMove &scoredMove, const PositionBoards &boards)
+		inline auto scoreSingleNoisy(ScoredMove &scoredMove)
 		{
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
@@ -170,10 +173,9 @@ namespace stormphrax
 
 		inline auto scoreNoisy() -> void
 		{
-			const auto &boards = m_pos.boards();
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
-				scoreSingleNoisy(m_data.moves[i], boards);
+				scoreSingleNoisy(m_data.moves[i]);
 			}
 		}
 
@@ -188,22 +190,6 @@ namespace stormphrax
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleQuiet(m_data.moves[i]);
-			}
-		}
-
-		inline auto scoreAll() -> void
-		{
-			const auto &boards = m_pos.boards();
-			for (auto &move : m_data.moves)
-			{
-				move.score = 0;
-
-				if (m_pos.isNoisy(move.move))
-				{
-					move.score += 16000000;
-					scoreSingleNoisy(move, boards);
-				}
-				else scoreSingleQuiet(move);
 			}
 		}
 
