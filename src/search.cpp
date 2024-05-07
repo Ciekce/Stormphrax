@@ -286,6 +286,7 @@ namespace stormphrax::search
 		};
 
 		searchData.nodes = 1;
+		thread.stack[0].killers.clear();
 
 		i32 depthCompleted{};
 		bool hitSoftTimeout = false;
@@ -440,8 +441,8 @@ namespace stormphrax::search
 
 		assert(!PvNode || !cutnode);
 
-		auto &curr = thread.stack[ply];
 		const auto *parent = RootNode ? nullptr : &thread.stack[ply - 1];
+		auto &curr = thread.stack[ply];
 
 		assert(!RootNode || curr.excluded == NullMove);
 
@@ -592,6 +593,8 @@ namespace stormphrax::search
 		if constexpr (!RootNode)
 			curr.multiExtensions = parent->multiExtensions;
 
+		thread.stack[ply + 1].killers.clear();
+
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
@@ -600,8 +603,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos,
-			moveStack.movegenData, ttEntry.move, thread.history, thread.conthist, ply);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData,
+			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -725,7 +728,7 @@ namespace stormphrax::search
 					{
 						if (depth < minLmrDepth()
 							|| legalMoves < lmrMinMoves()
-							|| generator.stage() < MovegenStage::Quiet)
+							|| generator.stage() <= MovegenStage::GoodNoisy)
 							return 0;
 
 						auto r =  g_lmrTable[noisy][depth][legalMoves];
@@ -777,6 +780,7 @@ namespace stormphrax::search
 
 			if (score >= beta)
 			{
+				curr.killers.push(move);
 				ttFlag = TtFlag::LowerBound;
 				break;
 			}
