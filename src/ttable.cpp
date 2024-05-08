@@ -145,7 +145,7 @@ namespace stormphrax
 		for (u64 i = 0; i < 1000; ++i)
 		{
 			const auto entry = loadEntry(i);
-			if (entry.flag() != TtFlag::None)
+			if (entry.flag() != TtFlag::None && entry.age() == m_age)
 				++filledEntries;
 		}
 

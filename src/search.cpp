@@ -385,9 +385,9 @@ namespace stormphrax::search
 			m_stop.store(true, std::memory_order::seq_cst);
 			waitForThreads();
 
-			m_ttable.age();
-
 			finalReport(thread, pv, depthCompleted, totalTime(), score, hitSoftTimeout);
+
+			m_ttable.age();
 
 			m_searching.store(false, std::memory_order::relaxed);
 		}
