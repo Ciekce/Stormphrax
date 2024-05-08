@@ -22,8 +22,12 @@
 #include <bit>
 #include <iostream>
 
+#include "tunable.h"
+
 namespace stormphrax
 {
+	using namespace stormphrax::tunable;
+
 	namespace
 	{
 		// for a long time, these were backwards
@@ -85,13 +89,13 @@ namespace stormphrax
 	{
 		const auto entry = loadEntry(index(key));
 
-		if (entry.flag != TtFlag::None
+		if (entry.flag() != TtFlag::None
 			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
 			dst.depth = entry.depth;
 			dst.move = entry.move;
-			dst.flag = entry.flag;
+			dst.flag = entry.flag();
 		}
 		else dst.flag = TtFlag::None;
 	}
@@ -110,13 +114,20 @@ namespace stormphrax
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
 #endif
 
+		// Roughly the SF replacement scheme
+		if (!(flag == TtFlag::Exact
+				|| newKey != entry.key
+				|| entry.age() != m_age
+				|| depth + ttReplacementDepthOffset() > entry.depth))
+			return;
+
 		if (move || entry.key != newKey)
 			entry.move = move;
 
 		entry.key = newKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
 		entry.depth = depth;
-		entry.flag = flag;
+		entry.setAgeAndFlag(m_age, flag);
 
 		storeEntry(index(key), entry);
 	}
@@ -124,6 +135,7 @@ namespace stormphrax
 	auto TTable::clear() -> void
 	{
 		std::memset(m_table.data(), 0, m_table.size() * sizeof(Entry));
+		m_age = 0;
 	}
 
 	auto TTable::full() const -> u32
@@ -133,7 +145,7 @@ namespace stormphrax
 		for (u64 i = 0; i < 1000; ++i)
 		{
 			const auto entry = loadEntry(i);
-			if (entry.flag != TtFlag::None)
+			if (entry.flag() != TtFlag::None)
 				++filledEntries;
 		}
 
