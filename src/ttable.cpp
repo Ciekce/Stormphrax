@@ -22,8 +22,12 @@
 #include <bit>
 #include <iostream>
 
+#include "tunable.h"
+
 namespace stormphrax
 {
+	using namespace stormphrax::tunable;
+
 	namespace
 	{
 		// for a long time, these were backwards
@@ -112,9 +116,9 @@ namespace stormphrax
 
 		// Roughly the SF replacement scheme
 		if (!(flag == TtFlag::Exact
-			|| newKey != entry.key
-			|| entry.age() != m_age
-			|| depth + 4 > entry.depth))
+				|| newKey != entry.key
+				|| entry.age() != m_age
+				|| depth + ttReplacementDepthOffset() > entry.depth))
 			return;
 
 		if (move || entry.key != newKey)
