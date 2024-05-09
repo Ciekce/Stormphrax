@@ -739,6 +739,7 @@ namespace stormphrax::search
 						r -= history / lmrHistoryDivisor();
 						r -= improving;
 						r -= pos.isCheck();
+						r -= generator.stage() < MovegenStage::Quiet;
 
 						return r;
 					}();
