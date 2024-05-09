@@ -133,7 +133,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(tripleExtMargin, 100, 10, 150, 7)
 
 	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
-	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
+
+	SP_TUNABLE_PARAM(lmrMinMovesRoot, 3, 1, 5, 0.5)
+	SP_TUNABLE_PARAM(lmrMinMovesNonRoot, 2, 1, 5, 0.5)
 
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 77, 50, 120, 15, updateQuietLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 226, 100, 300, 10, updateQuietLmrTable)

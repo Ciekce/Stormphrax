@@ -600,6 +600,10 @@ namespace stormphrax::search
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
+		const auto lmrMinMoves = RootNode
+			? lmrMinMovesRoot()
+			: lmrMinMovesNonRoot();
+
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
@@ -729,7 +733,7 @@ namespace stormphrax::search
 					const auto reduction = [&]
 					{
 						if (depth < minLmrDepth()
-							|| legalMoves < lmrMinMoves()
+							|| legalMoves < lmrMinMoves
 							|| generator.stage() <= MovegenStage::GoodNoisy)
 							return 0;
 
