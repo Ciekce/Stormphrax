@@ -719,13 +719,13 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				const auto newDepth = depth + extension - 1;
+				auto newDepth = depth + extension - 1;
 
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves()
 					&& generator.stage() > MovegenStage::GoodNoisy)
 				{
-					auto r =  g_lmrTable[noisy][depth][legalMoves];
+					auto r = g_lmrTable[noisy][depth][legalMoves];
 
 					r += !PvNode;
 					r -= history / lmrHistoryDivisor();
@@ -737,8 +737,16 @@ namespace stormphrax::search
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
-						score = -search(thread, curr.pv, newDepth, ply + 1,
-							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+					{
+						const bool doDeeperSearch = score > bestScore + 64 + 8 * depth;
+						const bool doShallowerSearch = score < bestScore + newDepth;
+
+						newDepth += doDeeperSearch - doShallowerSearch;
+
+						if (reduced < newDepth)
+							score = -search(thread, curr.pv, newDepth, ply + 1,
+								moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+					}
 				}
 				// if we're skipping LMR for some reason (first move in a non-PV
 				// node, or the conditions above for LMR were not met) then do an
