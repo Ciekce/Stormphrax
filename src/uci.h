@@ -30,6 +30,7 @@
 namespace stormphrax::uci
 {
 	constexpr auto ContemptRange = util::Range<i32>{-1000, 1000};
+	constexpr auto IllegalChanceRange = util::Range<i32>{0, 10000};
 
 	auto run() -> i32;
 

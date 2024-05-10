@@ -42,6 +42,7 @@
 #include "movepick.h"
 #include "util/barrier.h"
 #include "history.h"
+#include "util/rng.h"
 
 namespace stormphrax::search
 {
@@ -245,6 +246,8 @@ namespace stormphrax::search
 		Score m_maxRootScore{};
 
 		eval::Contempt m_contempt{};
+
+		util::rng::Jsf64Rng m_rng;
 
 		auto stopThreads() -> void;
 

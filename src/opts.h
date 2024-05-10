@@ -38,6 +38,10 @@ namespace stormphrax
 			i32 syzygyProbeLimit{7};
 
 			i32 contempt{wdl::unnormalizeScoreMove32(DefaultNormalizedContempt)};
+
+			i32 illegalPvMoveChance{200};
+			i32 illegalBestmoveChance{200};
+			i32 illegalPromoChance{10};
 		};
 
 		auto mutableOpts() -> GlobalOptions &;

@@ -52,10 +52,30 @@ namespace stormphrax::search
 					moves.push(move);
 			}
 		}
+
+		inline auto generateIllegalMove(util::rng::Jsf64Rng &rng, const Position &pos)
+		{
+			while (true)
+			{
+				const auto src = static_cast<Square>(rng.nextU32(64));
+				const auto dst = static_cast<Square>(rng.nextU32(64));
+
+				const bool promo = g_opts.illegalPromoChance > 0 && rng.nextU32(g_opts.illegalPromoChance) == 0;
+				const auto promoPiece = promo ? static_cast<PieceType>(rng.nextU32(4) + 1) : PieceType::None;
+
+				const auto move = promo
+					? Move::promotion(src, dst, promoPiece)
+					: Move::standard(src, dst);
+
+				if (!pos.isPseudolegal(move) || !pos.isLegal(move))
+					return move;
+			}
+		}
 	}
 
 	Searcher::Searcher(usize ttSize)
-		: m_ttable{ttSize}
+		: m_ttable{ttSize},
+		  m_rng{util::rng::generateSeed()}
 	{
 		auto &thread = m_threads.emplace_back();
 
@@ -992,7 +1012,21 @@ namespace stormphrax::search
 
 		for (u32 i = 0; i < pv.length; ++i)
 		{
-			std::cout << ' ' << uci::moveToString(pv.moves[i]);
+			auto move = pv.moves[i];
+
+			if (g_opts.illegalPvMoveChance > 0 && m_rng.nextU32(g_opts.illegalPvMoveChance) == 0)
+			{
+				auto pos = mainThread.pos;
+
+				for (u32 j = 0; j < i; ++j)
+				{
+					pos.applyMoveUnchecked<false, false>(pv.moves[j], nullptr);
+				}
+
+				move = generateIllegalMove(m_rng, pos);
+			}
+
+			std::cout << ' ' << uci::moveToString(move);
 		}
 
 		std::cout << std::endl;
@@ -1004,6 +1038,11 @@ namespace stormphrax::search
 		if (!softTimeout || !m_limiter->stopped())
 			report(mainThread, pv, depthCompleted, time, score);
 
-		std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
+		auto bestmove = pv.moves[0];
+
+		if (g_opts.illegalBestmoveChance > 0 && m_rng.nextU32(g_opts.illegalBestmoveChance) == 0)
+			bestmove = generateIllegalMove(m_rng, mainThread.pos);
+
+		std::cout << "bestmove " << uci::moveToString(bestmove) << std::endl;
 	}
 }

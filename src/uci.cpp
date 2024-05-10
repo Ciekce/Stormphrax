@@ -189,6 +189,12 @@ namespace stormphrax
 				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
 			std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt
 				<< " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
+			std::cout << "option name IllegalPvMoveChance type spin default " << defaultOpts.illegalPvMoveChance
+				<< " min " << IllegalChanceRange.min() << " max " << IllegalChanceRange.max() << '\n';
+			std::cout << "option name IllegalBestmoveChance type spin default " << defaultOpts.illegalBestmoveChance
+				<< " min " << IllegalChanceRange.min() << " max " << IllegalChanceRange.max() << '\n';
+			std::cout << "option name IllegalPromoChance type spin default " << defaultOpts.illegalPromoChance
+				<< " min " << IllegalChanceRange.min() << " max " << IllegalChanceRange.max() << '\n';
 			std::cout << "option name UCI_Chess960 type check default "
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name UCI_ShowWDL type check default "
@@ -529,6 +535,33 @@ namespace stormphrax
 						if (const auto newContempt = util::tryParseI32(valueStr))
 							opts::mutableOpts().contempt = wdl::unnormalizeScoreMove32(
 								ContemptRange.clamp(*newContempt));
+					}
+				}
+				else if (nameStr == "illegalpvmovechance")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newIllegalPvMoveChance = util::tryParseI32(valueStr))
+							opts::mutableOpts().illegalPvMoveChance
+								= IllegalChanceRange.clamp(*newIllegalPvMoveChance);
+					}
+				}
+				else if (nameStr == "illegalbestmovechance")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newIllegalBestmoveChance = util::tryParseI32(valueStr))
+							opts::mutableOpts().illegalBestmoveChance
+								= IllegalChanceRange.clamp(*newIllegalBestmoveChance);
+					}
+				}
+				else if (nameStr == "illegalpromochance")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newIllegalPromoChance = util::tryParseI32(valueStr))
+							opts::mutableOpts().illegalPromoChance
+								= IllegalChanceRange.clamp(*newIllegalPromoChance);
 					}
 				}
 				else if (nameStr == "uci_chess960")
