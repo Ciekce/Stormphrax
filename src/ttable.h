@@ -44,6 +44,7 @@ namespace stormphrax
 	struct ProbedTTableEntry
 	{
 		Score score;
+		Score staticEval;
 		i32 depth;
 		Move move;
 		TtFlag flag;
@@ -58,7 +59,7 @@ namespace stormphrax
 		auto resize(usize size) -> void;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
+		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
 
 		inline auto age()
 		{
@@ -81,6 +82,7 @@ namespace stormphrax
 		{
 			u16 key;
 			i16 score;
+			i16 staticEval;
 			Move move;
 			u8 depth;
 			u8 ageAndFlag;
@@ -102,7 +104,7 @@ namespace stormphrax
 			}
 		};
 
-		static_assert(sizeof(Entry) == 8);
+		static_assert(sizeof(Entry) == 10);
 
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
