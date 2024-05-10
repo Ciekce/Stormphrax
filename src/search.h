@@ -269,12 +269,12 @@ namespace stormphrax::search
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
-		template <bool RootNode = false, bool PvNode = false>
+		template <bool PvNode = false, bool RootNode = false>
 		auto search(ThreadData &thread, PvList &pv, i32 depth,
 			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 
 		template <>
-		auto search<true, false>(ThreadData &thread, PvList &pv, i32 depth,
+		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth,
 			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
 
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;

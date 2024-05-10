@@ -396,7 +396,7 @@ namespace stormphrax::search
 		return score;
 	}
 
-	template <bool RootNode, bool PvNode>
+	template <bool PvNode, bool RootNode>
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
@@ -584,7 +584,7 @@ namespace stormphrax::search
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
 
-				const auto score = -search(thread, curr.pv, depth - R,
+				const auto score = -search<false>(thread, curr.pv, depth - R,
 					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
@@ -721,40 +721,39 @@ namespace stormphrax::search
 			{
 				const auto newDepth = depth + extension - 1;
 
-				if (legalMoves == 1)
-					score = -search<false, PvNode>(thread, curr.pv,
-						newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
-				else
+				if (depth >= minLmrDepth()
+					&& legalMoves >= lmrMinMoves()
+					&& generator.stage() > MovegenStage::GoodNoisy)
 				{
-					const auto reduction = [&]
-					{
-						if (depth < minLmrDepth()
-							|| legalMoves < lmrMinMoves()
-							|| generator.stage() <= MovegenStage::GoodNoisy)
-							return 0;
+					auto r =  g_lmrTable[noisy][depth][legalMoves];
 
-						auto r =  g_lmrTable[noisy][depth][legalMoves];
-
-						r += !PvNode;
-						r -= history / lmrHistoryDivisor();
-						r -= improving;
-						r -= pos.isCheck();
-
-						return r;
-					}();
+					r += !PvNode;
+					r -= history / lmrHistoryDivisor();
+					r -= improving;
+					r -= pos.isCheck();
 
 					// can't use std::clamp because newDepth can be <0
-					const auto reduced = std::min(std::max(newDepth - reduction, 1), newDepth);
+					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
 						score = -search(thread, curr.pv, newDepth, ply + 1,
 							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
-
-					if (score > alpha && score < beta)
-						score = -search<false, true>(thread, curr.pv,
-							newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
+				// if we're skipping LMR for some reason (first move in a non-PV
+				// node, or the conditions above for LMR were not met) then do an
+				// unreduced zero-window search to check if this move can raise alpha
+				else if (!PvNode || legalMoves > 1)
+					score = -search(thread, curr.pv, newDepth, ply + 1,
+						moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+
+				// if we're in a PV node and
+				//   - we're searching the first legal move, or
+				//   - alpha was raised by a previous zero-window search,
+				// then do a full-window search to get the true score of this node
+				if (PvNode && (legalMoves == 1 || score > alpha))
+					score = -search<true>(thread, curr.pv, newDepth,
+						ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 			}
 
 			if constexpr (RootNode)
