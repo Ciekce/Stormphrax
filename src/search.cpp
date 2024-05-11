@@ -652,7 +652,7 @@ namespace stormphrax::search
 					}
 
 					if (depth <= maxHistoryPruningDepth()
-						&& history < historyPruningMargin() * depth)
+						&& history < historyPruningMargin() * depth + 2200)
 					{
 						generator.skipQuiets();
 						continue;
