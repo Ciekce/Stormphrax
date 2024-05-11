@@ -26,6 +26,27 @@
 
 namespace stormphrax
 {
+	struct KillerTable
+	{
+		Move killer1{};
+		Move killer2{};
+
+		inline auto push(Move move)
+		{
+			if (move != killer1)
+			{
+				killer2 = killer1;
+				killer1 = move;
+			}
+		}
+
+		inline auto clear()
+		{
+			killer1 = NullMove;
+			killer2 = NullMove;
+		}
+	};
+
 	struct MovegenData
 	{
 		ScoredMoveList moves;
@@ -42,7 +63,9 @@ namespace stormphrax
 		static constexpr i32 Start = 0;
 		static constexpr i32 TtMove = Start + 1;
 		static constexpr i32 GoodNoisy = TtMove + 1;
-		static constexpr i32 Quiet = GoodNoisy + 1;
+		static constexpr i32 Killer1 = GoodNoisy + 1;
+		static constexpr i32 Killer2 = Killer1 + 1;
+		static constexpr i32 Quiet = Killer2 + 1;
 		static constexpr i32 BadNoisy = Quiet + 1;
 		static constexpr i32 End = BadNoisy + 1;
 	};
@@ -53,12 +76,17 @@ namespace stormphrax
 		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
 
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables &history)
+		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const KillerTable *killers,
+			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
-			  m_history{history}
+			  m_history{history},
+			  m_continuations{continuations},
+			  m_ply{ply}
 		{
+			if (killers)
+				m_killers = *killers;
 			m_data.moves.clear();
 		}
 
@@ -82,6 +110,22 @@ namespace stormphrax
 							m_end = m_data.moves.size();
 							scoreNoisy();
 							break;
+
+						case MovegenStage::Killer1:
+							if (!NoisiesOnly && !m_skipQuiets
+								&& !m_killers.killer1.isNull()
+								&& m_killers.killer1 != m_ttMove
+								&& m_pos.isPseudolegal(m_killers.killer1))
+								return m_killers.killer1;
+							else continue;
+
+						case MovegenStage::Killer2:
+							if (!NoisiesOnly && !m_skipQuiets
+								&& !m_killers.killer2.isNull()
+								&& m_killers.killer2 != m_ttMove
+								&& m_pos.isPseudolegal(m_killers.killer2))
+								return m_killers.killer2;
+							else continue;
 
 						case MovegenStage::Quiet:
 							if (!NoisiesOnly && !m_skipQuiets)
@@ -110,7 +154,10 @@ namespace stormphrax
 				assert(m_idx < m_end);
 
 				if (m_skipQuiets && m_stage == MovegenStage::Quiet)
-					return NullMove;
+				{
+					m_idx = m_end;
+					continue;
+				}
 
 				if (m_stage == MovegenStage::GoodNoisy)
 				{
@@ -137,7 +184,7 @@ namespace stormphrax
 					const auto idx = findNext();
 					const auto move = m_data.moves[idx].move;
 
-					if (move != m_ttMove)
+					if (move != m_ttMove && move != m_killers.killer1 && move != m_killers.killer2)
 						return move;
 				}
 			}
@@ -151,7 +198,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto stage() const { return m_stage; }
 
 	private:
-		inline auto scoreSingleNoisy(ScoredMove &scoredMove, const PositionBoards &boards)
+		inline auto scoreSingleNoisy(ScoredMove &scoredMove)
 		{
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
@@ -167,16 +214,16 @@ namespace stormphrax
 
 		inline auto scoreNoisy() -> void
 		{
-			const auto &boards = m_pos.boards();
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
-				scoreSingleNoisy(m_data.moves[i], boards);
+				scoreSingleNoisy(m_data.moves[i]);
 			}
 		}
 
 		inline auto scoreSingleQuiet(ScoredMove &move)
 		{
-			move.score = m_history.quietScore(m_pos.threats(), move.move);
+			move.score = m_history.quietScore(m_continuations, m_ply,
+				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
 		}
 
 		inline auto scoreQuiet() -> void
@@ -184,22 +231,6 @@ namespace stormphrax
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
 				scoreSingleQuiet(m_data.moves[i]);
-			}
-		}
-
-		inline auto scoreAll() -> void
-		{
-			const auto &boards = m_pos.boards();
-			for (auto &move : m_data.moves)
-			{
-				move.score = 0;
-
-				if (m_pos.isNoisy(move.move))
-				{
-					move.score += 16000000;
-					scoreSingleNoisy(move, boards);
-				}
-				else scoreSingleQuiet(move);
 			}
 		}
 
@@ -231,7 +262,11 @@ namespace stormphrax
 
 		const HistoryTables &m_history;
 
+		std::span<ContinuationSubtable *const> m_continuations;
+		i32 m_ply{};
+
 		MovegenData &m_data;
+		KillerTable m_killers{};
 
 		u32 m_idx{};
 		u32 m_end{};
@@ -242,14 +277,15 @@ namespace stormphrax
 	};
 
 	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
-		Move ttMove, const HistoryTables &history)
+		Move ttMove, const KillerTable &killers, const HistoryTables &history,
+		std::span<ContinuationSubtable *const> continuations, i32 ply)
 	{
-		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, history);
+		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, &killers, history, continuations, ply);
 	}
 
 	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
 		MovegenData &data, const HistoryTables &history)
 	{
-		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, history);
+		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, nullptr, history, {}, 0);
 	}
 }

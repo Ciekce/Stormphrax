@@ -44,6 +44,7 @@ namespace stormphrax
 	struct ProbedTTableEntry
 	{
 		Score score;
+		Score staticEval;
 		i32 depth;
 		Move move;
 		TtFlag flag;
@@ -58,8 +59,12 @@ namespace stormphrax
 		auto resize(usize size) -> void;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
+		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
 
-		auto put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
+		inline auto age()
+		{
+			m_age = (m_age + 1) % (1 << AgeBits);
+		}
 
 		auto clear() -> void;
 
@@ -71,16 +76,35 @@ namespace stormphrax
 		}
 
 	private:
+		static constexpr u32 AgeBits = 6;
+
 		struct Entry
 		{
 			u16 key;
 			i16 score;
+			i16 staticEval;
 			Move move;
 			u8 depth;
-			TtFlag flag;
+			u8 ageAndFlag;
+
+			[[nodiscard]] inline auto age() const
+			{
+				return static_cast<u32>(ageAndFlag >> 2);
+			}
+
+			[[nodiscard]] inline auto flag() const
+			{
+				return static_cast<TtFlag>(ageAndFlag & 0x3);
+			}
+
+			inline auto setAgeAndFlag(u32 age, TtFlag flag)
+			{
+				assert(age < (1 << AgeBits));
+				ageAndFlag = age << 2 | static_cast<u32>(flag);
+			}
 		};
 
-		static_assert(sizeof(Entry) == 8);
+		static_assert(sizeof(Entry) == 10);
 
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
@@ -99,5 +123,6 @@ namespace stormphrax
 		}
 
 		std::vector<Entry> m_table{};
+		u32 m_age{};
 	};
 }

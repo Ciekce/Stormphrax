@@ -83,12 +83,19 @@ namespace stormphrax::search
 		}
 	};
 
+	struct ThreadData;
+
 	struct SearchStackEntry
 	{
 		PvList pv{};
 		Move move;
 
 		Score staticEval;
+
+		KillerTable killers{};
+
+		Move excluded{};
+		i32 multiExtensions{};
 	};
 
 	struct MoveStackEntry
@@ -104,6 +111,7 @@ namespace stormphrax::search
 		{
 			stack.resize(MaxDepth + 4);
 			moveStack.resize(MaxDepth * 2);
+			conthist.resize(MaxDepth + 4);
 		}
 
 		u32 id{};
@@ -120,6 +128,7 @@ namespace stormphrax::search
 
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
+		std::vector<ContinuationSubtable *> conthist{};
 
 		MoveList rootMoves{};
 
@@ -136,6 +145,29 @@ namespace stormphrax::search
 		{
 			return std::ranges::find(rootMoves, move) != rootMoves.end();
 		}
+
+		inline auto setNullmove(i32 ply)
+		{
+			assert(ply <= MaxDepth);
+
+			stack[ply].move = NullMove;
+			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
+		}
+
+		inline auto setMove(i32 ply, Move move)
+		{
+			assert(ply <= MaxDepth);
+
+			stack[ply].move = move;
+			conthist[ply] = &history.contTable(pos.boards().pieceAt(move.src()), move.dst());
+		}
+	};
+
+	SP_ENUM_FLAGS(u32, NodeType)
+	{
+		None = 0x0,
+		Pv = 0x1,
+		Root = 0x3
 	};
 
 	class Searcher
@@ -237,13 +269,19 @@ namespace stormphrax::search
 
 		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
 
-		template <bool Root = false>
+		template <bool PvNode = false, bool RootNode = false>
 		auto search(ThreadData &thread, PvList &pv, i32 depth,
 			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
+
+		template <>
+		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
+
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
-		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth, f64 time, Score score) -> void;
-		auto finalReport(f64 startTime, const ThreadData &mainThread,
-			const PvList &pv, Score score, i32 depthCompleted, bool softTimeout) -> void;
+		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
+			f64 time, Score score, Score alpha = -ScoreInf, Score beta = ScoreInf) -> void;
+		auto finalReport(const ThreadData &mainThread, const PvList &pv,
+			i32 depthCompleted, f64 time, Score score, bool softTimeout) -> void;
 	};
 }
