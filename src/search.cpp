@@ -514,7 +514,7 @@ namespace stormphrax::search
 					|| flag == TtFlag::UpperBound && score <= alpha
 					|| flag == TtFlag::LowerBound && score >= beta)
 				{
-					m_ttable.put(pos.key(), score, NullMove, depth, ply, flag);
+					m_ttable.put(pos.key(), score, -ScoreInf, NullMove, depth, ply, flag);
 					return score;
 				}
 
@@ -539,8 +539,13 @@ namespace stormphrax::search
 			--depth;
 
 		if (!curr.excluded)
-			curr.staticEval = inCheck ? -ScoreInf
-				: eval::staticEval(pos, thread.nnueState, m_contempt);
+		{
+			if (inCheck)
+				curr.staticEval = -ScoreInf;
+			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != -ScoreInf)
+				curr.staticEval = ttEntry.staticEval;
+			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+		}
 
 		const bool improving = [&]
 		{
@@ -831,7 +836,7 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
+			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag);
 
 		return bestScore;
 	}

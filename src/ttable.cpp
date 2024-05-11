@@ -93,6 +93,7 @@ namespace stormphrax
 			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+			dst.staticEval = static_cast<Score>(entry.staticEval);
 			dst.depth = entry.depth;
 			dst.move = entry.move;
 			dst.flag = entry.flag();
@@ -100,7 +101,7 @@ namespace stormphrax
 		else dst.flag = TtFlag::None;
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, TtFlag flag) -> void
+	auto TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag) -> void
 	{
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
@@ -126,6 +127,7 @@ namespace stormphrax
 
 		entry.key = newKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
+		entry.staticEval = static_cast<i16>(staticEval);
 		entry.depth = depth;
 		entry.setAgeAndFlag(m_age, flag);
 
