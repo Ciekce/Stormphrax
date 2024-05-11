@@ -479,6 +479,7 @@ namespace stormphrax::search
 		// Probe the Syzygy tablebases for a WDL result
 		// if there are few enough pieces left on the board
 		if (!RootNode
+			&& !curr.excluded
 			&& g_opts.syzygyEnabled
 			&& pieceCount <= syzygyPieceLimit
 			&& (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
@@ -835,7 +836,7 @@ namespace stormphrax::search
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
-		if (!shouldStop(thread.search, false, false))
+		if (!curr.excluded && !shouldStop(thread.search, false, false))
 			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag);
 
 		return bestScore;
