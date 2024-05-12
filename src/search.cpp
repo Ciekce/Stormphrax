@@ -578,6 +578,7 @@ namespace stormphrax::search
 			}
 
 			if (depth >= minNmpDepth()
+				&& ply >= thread.minNmpPly
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !bbs.nonPk(us).empty())
@@ -587,11 +588,14 @@ namespace stormphrax::search
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv();
 
-				thread.setNullmove(ply);
-				const auto guard = pos.applyNullMove();
-
-				const auto score = -search(thread, curr.pv, depth - R,
-					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
+				// wrap in a scope so the nullmove gets unmade in case of verification search
+				const auto score = [&]
+				{
+					thread.setNullmove(ply);
+					const auto guard = pos.applyNullMove();
+					return -search(thread, curr.pv, depth - R,
+						ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
+				}();
 
 				if (score >= beta)
 				{
