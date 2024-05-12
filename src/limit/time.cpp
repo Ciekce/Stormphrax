@@ -90,7 +90,7 @@ namespace stormphrax::limit
 
 		m_scale *= moveNodeScale;
 
-		const auto firstMoveScale = m_firstMove ? 3.0 : 1.0;
+		const auto firstMoveScale = m_firstMove ? 1.8 : 1.0;
 		m_scale *= firstMoveScale;
 
 		m_scale = std::max(m_scale, minScale);
