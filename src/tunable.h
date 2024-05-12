@@ -119,6 +119,7 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxHistoryPruningDepth, 4, 2, 8, 0.5)
 	SP_TUNABLE_PARAM(historyPruningMargin, -2500, -4000, -1000, 175)
+	SP_TUNABLE_PARAM(historyPruningOffset, 0, -4000, 4000, 400)
 
 	SP_TUNABLE_PARAM(seePruningThresholdQuiet, -25, -80, -15, 12)
 	SP_TUNABLE_PARAM(seePruningThresholdNoisy, -90, -120, -40, 20)
