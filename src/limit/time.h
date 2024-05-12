@@ -68,6 +68,8 @@ namespace stormphrax::limit
 
 		f64 m_scale{1.0};
 
+		bool m_firstMove{true};
+
 		std::array<std::array<usize, 64>, 64> m_moveNodeCounts{};
 
 		std::atomic_bool m_stopped{false};
