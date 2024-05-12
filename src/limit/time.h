@@ -50,7 +50,7 @@ namespace stormphrax::limit
 	class TimeManager final : public ISearchLimiter
 	{
 	public:
-		TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
+		TimeManager(bool firstMove, f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
 		~TimeManager() final = default;
 
 		auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final;
@@ -68,7 +68,7 @@ namespace stormphrax::limit
 
 		f64 m_scale{1.0};
 
-		bool m_firstMove{true};
+		bool m_firstMove;
 
 		std::array<std::array<usize, 64>, 64> m_moveNodeCounts{};
 

@@ -106,6 +106,7 @@ namespace stormphrax
 
 			Position m_pos{Position::starting()};
 
+			bool m_firstMove{true};
 			i32 m_moveOverhead{limit::DefaultMoveOverhead};
 		};
 
@@ -219,7 +220,11 @@ namespace stormphrax
 		{
 			if (m_searcher.searching())
 				std::cerr << "still searching" << std::endl;
-			else m_searcher.newGame();
+			else
+			{
+				m_searcher.newGame();
+				m_firstMove = true;
+			}
 		}
 
 		auto UciHandler::handleIsready() -> void
@@ -430,7 +435,8 @@ namespace stormphrax
 					depth = MaxDepth;
 
 				if (tournamentTime && timeRemaining > 0)
-					limiter = std::make_unique<limit::TimeManager>(startTime,
+					limiter = std::make_unique<limit::TimeManager>(m_firstMove,
+						startTime,
 						static_cast<f64>(timeRemaining) / 1000.0,
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
@@ -438,6 +444,8 @@ namespace stormphrax
 					limiter = std::make_unique<limit::InfiniteLimiter>();
 
 				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
+
+				m_firstMove = false;
 			}
 		}
 

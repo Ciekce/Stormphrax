@@ -48,8 +48,9 @@ namespace stormphrax::limit
 		return m_stopped.load(std::memory_order_acquire);
 	}
 
-	TimeManager::TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
-		: m_startTime{start}
+	TimeManager::TimeManager(bool firstMove, f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
+		: m_firstMove{firstMove},
+		  m_startTime{start}
 	{
 		assert(toGo >= 0);
 
@@ -89,14 +90,7 @@ namespace stormphrax::limit
 
 		m_scale *= moveNodeScale;
 
-		auto firstMoveScale = 1.0;
-
-		if (m_firstMove)
-		{
-			firstMoveScale = 3.0;
-			m_firstMove = false;
-		}
-
+		const auto firstMoveScale = m_firstMove ? 3.0 : 1.0;
 		m_scale *= firstMoveScale;
 
 		m_scale = std::max(m_scale, minScale);
