@@ -590,11 +590,27 @@ namespace stormphrax::search
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
 
-				const auto score = -search<false>(thread, curr.pv, depth - R,
+				const auto score = -search(thread, curr.pv, depth - R,
 					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
-					return score > ScoreWin ? beta : score;
+				{
+					if (depth < minNmpVerifDepth() || thread.minNmpPly > 0)
+						return score > ScoreWin ? beta : score;
+
+					// At higher depths, disable NMP for a certain number of plies
+					// and do a reduced-depth verification search. This is not for
+					// elo purposes, but mainly exists to improve puzzle performance
+					thread.minNmpPly = ply + (depth - R) * nmpVerifDepthFactor() / 16;
+
+					const auto verifScore = search(thread, curr.pv,
+						depth - R, ply, moveStackIdx + 1, beta - 1, beta, false);
+
+					thread.minNmpPly = 0;
+
+					if (verifScore >= beta)
+						return verifScore;
+				}
 			}
 		}
 

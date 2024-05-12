@@ -136,6 +136,8 @@ namespace stormphrax::search
 
 		Position pos{};
 
+		i32 minNmpPly{};
+
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;
