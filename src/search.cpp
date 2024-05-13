@@ -413,9 +413,6 @@ namespace stormphrax::search
 		const auto &boards = pos.boards();
 		const auto &bbs = pos.bbs();
 
-		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
-
 		if constexpr (!RootNode)
 		{
 			alpha = std::max(alpha, -ScoreMate + ply);
@@ -440,6 +437,12 @@ namespace stormphrax::search
 		if (depth < 0)
 			depth = 0;
 
+		if (ply + 1 > thread.search.seldepth)
+			thread.search.seldepth = ply + 1;
+
+		if (ply >= MaxDepth)
+			return eval::staticEval(pos, thread.nnueState, m_contempt);
+
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
@@ -451,9 +454,6 @@ namespace stormphrax::search
 		assert(!RootNode || curr.excluded == NullMove);
 
 		auto &moveStack = thread.moveStack[moveStackIdx];
-
-		if (ply > thread.search.seldepth)
-			thread.search.seldepth = ply;
 
 		ProbedTTableEntry ttEntry{};
 
@@ -854,9 +854,6 @@ namespace stormphrax::search
 
 		auto &pos = thread.pos;
 
-		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
-
 		if (alpha < 0 && pos.hasCycle(ply))
 		{
 			alpha = drawScore(thread.search.nodes);
@@ -864,8 +861,11 @@ namespace stormphrax::search
 				return alpha;
 		}
 
-		if (ply > thread.search.seldepth)
-			thread.search.seldepth = ply;
+		if (PvNode && ply + 1 > thread.search.seldepth)
+			thread.search.seldepth = ply + 1;
+
+		if (ply >= MaxDepth)
+			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		m_ttable.probe(ttEntry, pos.key(), ply);
