@@ -441,7 +441,7 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
+			return inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -865,7 +865,7 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
+			return pos.isCheck() ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		m_ttable.probe(ttEntry, pos.key(), ply);
