@@ -544,10 +544,19 @@ namespace stormphrax::search
 		if (!curr.excluded)
 		{
 			if (inCheck)
-				curr.staticEval = ScoreNone;
-			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
-				curr.staticEval = ttEntry.staticEval;
-			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				curr.eval = curr.staticEval = ScoreNone;
+			else
+			{
+				if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
+					curr.staticEval = ttEntry.staticEval;
+				else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+				if (ttEntry.flag == TtFlag::Exact
+					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < curr.staticEval
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > curr.staticEval)
+					curr.eval = ttEntry.score;
+				else curr.eval = curr.staticEval;
+			}
 		}
 
 		const bool improving = [&]
@@ -580,7 +589,7 @@ namespace stormphrax::search
 			}
 
 			if (depth >= minNmpDepth()
-				&& curr.staticEval >= beta
+				&& curr.eval >= beta
 				&& !parent->move.isNull()
 				&& !bbs.nonPk(us).empty())
 			{
