@@ -604,11 +604,9 @@ namespace stormphrax::search
 
 			if (depth >= 6
 				&& std::abs(beta) < ScoreWin
-				&& (!ttEntry.move || ttMoveNoisy)
-				&& !(ttHit && ttEntry.depth >= depth - 3 && ttEntry.score < probcutBeta))
+				&& (!ttEntry.move || ttMoveNoisy))
 			{
 				const auto seeThreshold = probcutBeta - curr.staticEval;
-				const auto keyBefore = pos.key();
 
 				auto generator = probcutMoveGenerator(pos, ttEntry.move, moveStack.movegenData, thread.history);
 
@@ -634,10 +632,7 @@ namespace stormphrax::search
 							moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
 
 					if (score >= probcutBeta)
-					{
-						m_ttable.put(keyBefore, score, curr.staticEval, move, depth - 3, ply, TtFlag::LowerBound);
 						return score;
-					}
 				}
 			}
 		}
