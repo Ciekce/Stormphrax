@@ -892,10 +892,10 @@ namespace stormphrax::search
 			eval = staticEval;
 
 			if (eval >= beta)
-				return staticEval;
+				return eval;
 
 			if (eval > alpha)
-				alpha = staticEval;
+				alpha = eval;
 		}
 
 		auto bestMove = NullMove;
