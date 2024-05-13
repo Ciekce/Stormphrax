@@ -106,6 +106,9 @@ namespace stormphrax
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
+		assert(staticEval == ScoreNone || staticEval > -ScoreWin);
+		assert(staticEval == ScoreNone || staticEval <  ScoreWin);
+
 		auto entry = loadEntry(index(key));
 
 		const auto newKey = packEntryKey(key);

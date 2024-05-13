@@ -324,6 +324,8 @@ namespace stormphrax
 	constexpr auto ScoreTbWin = 30000;
 	constexpr auto ScoreWin = 25000;
 
+	constexpr auto ScoreNone = -ScoreInf;
+
 	constexpr i32 MaxDepth = 255;
 
 	constexpr auto ScoreMaxMate = ScoreMate - MaxDepth;

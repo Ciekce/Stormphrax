@@ -517,7 +517,7 @@ namespace stormphrax::search
 					|| flag == TtFlag::UpperBound && score <= alpha
 					|| flag == TtFlag::LowerBound && score >= beta)
 				{
-					m_ttable.put(pos.key(), score, -ScoreInf, NullMove, depth, ply, flag);
+					m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag);
 					return score;
 				}
 
@@ -544,8 +544,8 @@ namespace stormphrax::search
 		if (!curr.excluded)
 		{
 			if (inCheck)
-				curr.staticEval = -ScoreInf;
-			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != -ScoreInf)
+				curr.staticEval = ScoreNone;
+			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
 				curr.staticEval = ttEntry.staticEval;
 			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
@@ -554,9 +554,9 @@ namespace stormphrax::search
 		{
 			if (inCheck)
 				return false;
-			if (ply > 1 && thread.stack[ply - 2].staticEval != -ScoreInf)
+			if (ply > 1 && thread.stack[ply - 2].staticEval != ScoreNone)
 				return curr.staticEval > thread.stack[ply - 2].staticEval;
-			if (ply > 3 && thread.stack[ply - 4].staticEval != -ScoreInf)
+			if (ply > 3 && thread.stack[ply - 4].staticEval != ScoreNone)
 				return curr.staticEval > thread.stack[ply - 4].staticEval;
 			return true;
 		}();
@@ -876,25 +876,30 @@ namespace stormphrax::search
 				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
 			return ttEntry.score;
 
-		Score staticEval;
+		Score staticEval, eval;
 
 		if (pos.isCheck())
-			staticEval = -ScoreMate + ply;
+		{
+			staticEval = ScoreNone;
+			eval = -ScoreMate + ply;
+		}
 		else
 		{
-			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != -ScoreInf)
+			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
 				staticEval = ttEntry.staticEval;
 			else staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
-			if (staticEval >= beta)
+			eval = staticEval;
+
+			if (eval >= beta)
 				return staticEval;
 
-			if (staticEval > alpha)
+			if (eval > alpha)
 				alpha = staticEval;
 		}
 
 		auto bestMove = NullMove;
-		auto bestScore = staticEval;
+		auto bestScore = eval;
 
 		auto ttFlag = TtFlag::UpperBound;
 
