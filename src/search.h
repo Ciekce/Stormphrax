@@ -289,6 +289,7 @@ namespace stormphrax::search
 		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
 			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
 
+		template <bool PvNode = false>
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,

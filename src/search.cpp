@@ -435,7 +435,7 @@ namespace stormphrax::search
 		const bool inCheck = pos.isCheck();
 
 		if (depth <= 0 && !inCheck)
-			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+			return qsearch<PvNode>(thread, ply, moveStackIdx, alpha, beta);
 
 		if (depth < 0)
 			depth = 0;
@@ -844,6 +844,7 @@ namespace stormphrax::search
 		return bestScore;
 	}
 
+	template <bool PvNode>
 	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
 		assert(ply > 0 && ply <= MaxDepth);
@@ -866,13 +867,24 @@ namespace stormphrax::search
 		if (ply > thread.search.seldepth)
 			thread.search.seldepth = ply;
 
+		ProbedTTableEntry ttEntry{};
+		m_ttable.probe(ttEntry, pos.key(), ply);
+
+		if (!PvNode
+			&& (ttEntry.flag == TtFlag::Exact
+				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
+				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
+			return ttEntry.score;
+
 		Score staticEval;
 
 		if (pos.isCheck())
 			staticEval = -ScoreMate + ply;
 		else
 		{
-			staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != -ScoreInf)
+				staticEval = ttEntry.staticEval;
+			else staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
 			if (staticEval >= beta)
 				return staticEval;
@@ -881,7 +893,10 @@ namespace stormphrax::search
 				alpha = staticEval;
 		}
 
+		auto bestMove = NullMove;
 		auto bestScore = staticEval;
+
+		auto ttFlag = TtFlag::UpperBound;
 
 		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
 
@@ -897,21 +912,28 @@ namespace stormphrax::search
 
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
-			const auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+			const auto score = -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
-			{
 				bestScore = score;
 
-				if (score > alpha)
-				{
-					alpha = score;
+			if (score > alpha)
+			{
+				alpha = score;
+				bestMove = move;
 
-					if (score >= beta)
-						break;
-				}
+				ttFlag = TtFlag::Exact;
+			}
+
+			if (score >= beta)
+			{
+				ttFlag = TtFlag::LowerBound;
+				break;
 			}
 		}
+
+		if (!hasStopped())
+			m_ttable.put(pos.key(), bestScore, staticEval, bestMove, 0, ply, ttFlag);
 
 		return bestScore;
 	}
