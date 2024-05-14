@@ -898,7 +898,7 @@ namespace stormphrax::search
 				alpha = eval;
 		}
 
-		const auto futility = eval + 150;
+		const auto futility = eval + qsearchFpMargin();
 
 		auto bestMove = NullMove;
 		auto bestScore = eval;
