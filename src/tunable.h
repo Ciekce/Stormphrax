@@ -150,6 +150,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
+	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 17)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM
