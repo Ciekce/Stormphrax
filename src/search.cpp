@@ -118,6 +118,12 @@ namespace stormphrax::search
 		if (rootMoves.empty())
 			generateLegal(rootMoves, pos);
 
+		if (rootMoves.empty())
+		{
+			std::cout << "info string no legal moves" << std::endl;
+			return;
+		}
+
 		m_resetBarrier.arriveAndWait();
 
 		if (limiter)
@@ -170,6 +176,9 @@ namespace stormphrax::search
 		thread.rootMoves.clear();
 		generateLegal(thread.rootMoves, thread.pos);
 
+		if (thread.rootMoves.empty())
+			return {-ScoreMate, -ScoreMate};
+
 		m_stop.store(false, std::memory_order::seq_cst);
 
 		const auto score = searchRoot(thread, false);
@@ -194,6 +203,9 @@ namespace stormphrax::search
 
 		thread->rootMoves.clear();
 		generateLegal(thread->rootMoves, thread->pos);
+
+		if (thread->rootMoves.empty())
+			return;
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
@@ -267,6 +279,8 @@ namespace stormphrax::search
 
 	auto Searcher::searchRoot(ThreadData &thread, bool actualSearch) -> Score
 	{
+		assert(!thread.rootMoves.empty());
+
 		auto &searchData = thread.search;
 
 		const bool mainThread = actualSearch && thread.isMainThread();
@@ -286,39 +300,33 @@ namespace stormphrax::search
 		};
 
 		searchData.nodes = 1;
+		thread.stack[0].killers.clear();
 
 		i32 depthCompleted{};
-		bool hitSoftTimeout = false;
 
-		for (i32 depth = startDepth;
-			depth <= thread.maxDepth
-				// imperfect
-				&& !(hitSoftTimeout = shouldStop(searchData, thread.isMainThread(), true));
-			++depth)
+		for (i32 depth = startDepth;; ++depth)
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;
 
-			Score delta{};
+			auto delta = initialAspWindow();
 
 			auto alpha = -ScoreInf;
 			auto beta = ScoreInf;
 
 			if (depth >= minAspDepth())
 			{
-				delta = initialAspWindow();
-
 				alpha = std::max(score - delta, -ScoreInf);
 				beta  = std::min(score + delta,  ScoreInf);
 			}
 
 			Score newScore{};
 
-			while (!shouldStop(searchData, false, false))
+			while (!hasStopped())
 			{
 				newScore = search<true, true>(thread, thread.rootPv, depth, 0, 0, alpha, beta, false);
 
-				if (newScore > alpha && newScore < beta)
+				if ((newScore > alpha && newScore < beta) || hasStopped())
 					break;
 
 				if (mainThread)
@@ -338,8 +346,9 @@ namespace stormphrax::search
 				delta += delta * aspWideningFactor() / 16;
 			}
 
-			if (thread.rootPv.length == 0
-				|| depth > 1 && m_stop.load(std::memory_order::relaxed))
+			assert(thread.rootPv.length > 0);
+
+			if (hasStopped())
 				break;
 
 			depthCompleted = depth;
@@ -347,26 +356,20 @@ namespace stormphrax::search
 			score = newScore;
 			pv = thread.rootPv;
 
+			if (depth >= thread.maxDepth)
+				break;
+
 			if (mainThread)
 			{
 				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
 
-				if (depth < thread.maxDepth)
-				{
-					if (pv.length == 0)
-						pv = thread.rootPv;
+				if (checkSoftTimeout(thread.search, true))
+					break;
 
-					if (pv.length > 0)
-						report(thread, pv, searchData.depth, totalTime(), score);
-					else break;
-				}
+				report(thread, pv, searchData.depth, totalTime(), score);
 			}
-		}
-
-		if (pv.length == 0)
-		{
-			std::cout << "info string no legal moves" << std::endl;
-			return -ScoreMate;
+			else if (checkSoftTimeout(thread.search, false))
+				break;
 		}
 
 		const auto waitForThreads = [&]
@@ -384,7 +387,9 @@ namespace stormphrax::search
 			m_stop.store(true, std::memory_order::seq_cst);
 			waitForThreads();
 
-			finalReport(thread, pv, depthCompleted, totalTime(), score, hitSoftTimeout);
+			finalReport(thread, pv, depthCompleted, totalTime(), score);
+
+			m_ttable.age();
 
 			m_searching.store(false, std::memory_order::relaxed);
 		}
@@ -393,7 +398,7 @@ namespace stormphrax::search
 		return score;
 	}
 
-	template <bool RootNode, bool PvNode>
+	template <bool PvNode, bool RootNode>
 	auto Searcher::search(ThreadData &thread, PvList &pv, i32 depth,
 		i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score
 	{
@@ -401,15 +406,12 @@ namespace stormphrax::search
 		assert(RootNode || ply > 0);
 		assert(PvNode || alpha + 1 == beta);
 
-		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
+		if (ply > 0 && checkHardTimeout(thread.search, thread.isMainThread()))
 			return 0;
 
 		auto &pos = thread.pos;
 		const auto &boards = pos.boards();
 		const auto &bbs = pos.bbs();
-
-		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if constexpr (!RootNode)
 		{
@@ -430,25 +432,28 @@ namespace stormphrax::search
 		const bool inCheck = pos.isCheck();
 
 		if (depth <= 0 && !inCheck)
-			return qsearch(thread, ply, moveStackIdx, alpha, beta);
+			return qsearch<PvNode>(thread, ply, moveStackIdx, alpha, beta);
 
 		if (depth < 0)
 			depth = 0;
+
+		if (ply + 1 > thread.search.seldepth)
+			thread.search.seldepth = ply + 1;
+
+		if (ply >= MaxDepth)
+			return inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
 
 		assert(!PvNode || !cutnode);
 
-		auto &curr = thread.stack[ply];
 		const auto *parent = RootNode ? nullptr : &thread.stack[ply - 1];
+		auto &curr = thread.stack[ply];
 
 		assert(!RootNode || curr.excluded == NullMove);
 
 		auto &moveStack = thread.moveStack[moveStackIdx];
-
-		if (ply > thread.search.seldepth)
-			thread.search.seldepth = ply;
 
 		ProbedTTableEntry ttEntry{};
 
@@ -476,6 +481,7 @@ namespace stormphrax::search
 		// Probe the Syzygy tablebases for a WDL result
 		// if there are few enough pieces left on the board
 		if (!RootNode
+			&& !curr.excluded
 			&& g_opts.syzygyEnabled
 			&& pieceCount <= syzygyPieceLimit
 			&& (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
@@ -511,7 +517,7 @@ namespace stormphrax::search
 					|| flag == TtFlag::UpperBound && score <= alpha
 					|| flag == TtFlag::LowerBound && score >= beta)
 				{
-					m_ttable.put(pos.key(), score, NullMove, depth, ply, flag);
+					m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag);
 					return score;
 				}
 
@@ -536,16 +542,21 @@ namespace stormphrax::search
 			--depth;
 
 		if (!curr.excluded)
-			curr.staticEval = inCheck ? -ScoreInf
-				: eval::staticEval(pos, thread.nnueState, m_contempt);
+		{
+			if (inCheck)
+				curr.staticEval = ScoreNone;
+			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
+				curr.staticEval = ttEntry.staticEval;
+			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+		}
 
 		const bool improving = [&]
 		{
 			if (inCheck)
 				return false;
-			if (ply > 1 && thread.stack[ply - 2].staticEval != -ScoreInf)
+			if (ply > 1 && thread.stack[ply - 2].staticEval != ScoreNone)
 				return curr.staticEval > thread.stack[ply - 2].staticEval;
-			if (ply > 3 && thread.stack[ply - 4].staticEval != -ScoreInf)
+			if (ply > 3 && thread.stack[ply - 4].staticEval != ScoreNone)
 				return curr.staticEval > thread.stack[ply - 4].staticEval;
 			return true;
 		}();
@@ -581,7 +592,7 @@ namespace stormphrax::search
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
 
-				const auto score = -search(thread, curr.pv, depth - R,
+				const auto score = -search<false>(thread, curr.pv, depth - R,
 					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
@@ -592,6 +603,8 @@ namespace stormphrax::search
 		if constexpr (!RootNode)
 			curr.multiExtensions = parent->multiExtensions;
 
+		thread.stack[ply + 1].killers.clear();
+
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
@@ -600,8 +613,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos,
-			moveStack.movegenData, ttEntry.move, thread.history, thread.conthist, ply);
+		auto generator = mainMoveGenerator(pos, moveStack.movegenData,
+			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -641,7 +654,7 @@ namespace stormphrax::search
 					}
 
 					if (depth <= maxHistoryPruningDepth()
-						&& history < historyPruningMargin() * depth)
+						&& history < historyPruningMargin() * depth + historyPruningOffset())
 					{
 						generator.skipQuiets();
 						continue;
@@ -716,38 +729,39 @@ namespace stormphrax::search
 			{
 				const auto newDepth = depth + extension - 1;
 
-				if (legalMoves == 1)
-					score = -search<false, PvNode>(thread, curr.pv,
-						newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
-				else
+				if (depth >= minLmrDepth()
+					&& legalMoves >= lmrMinMoves()
+					&& generator.stage() > MovegenStage::GoodNoisy)
 				{
-					const auto reduction = [&]
-					{
-						if (depth < minLmrDepth()
-							|| legalMoves < lmrMinMoves()
-							|| generator.stage() < MovegenStage::Quiet)
-							return 0;
+					auto r =  g_lmrTable[noisy][depth][legalMoves];
 
-						auto r =  g_lmrTable[noisy][depth][legalMoves];
-
-						r += !PvNode;
-						r -= history / lmrHistoryDivisor();
-
-						return r;
-					}();
+					r += !PvNode;
+					r -= history / lmrHistoryDivisor();
+					r -= improving;
+					r -= pos.isCheck();
 
 					// can't use std::clamp because newDepth can be <0
-					const auto reduced = std::min(std::max(newDepth - reduction, 0), newDepth);
+					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
 						score = -search(thread, curr.pv, newDepth, ply + 1,
 							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
-
-					if (score > alpha && score < beta)
-						score = -search<false, true>(thread, curr.pv,
-							newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 				}
+				// if we're skipping LMR for some reason (first move in a non-PV
+				// node, or the conditions above for LMR were not met) then do an
+				// unreduced zero-window search to check if this move can raise alpha
+				else if (!PvNode || legalMoves > 1)
+					score = -search(thread, curr.pv, newDepth, ply + 1,
+						moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+
+				// if we're in a PV node and
+				//   - we're searching the first legal move, or
+				//   - alpha was raised by a previous zero-window search,
+				// then do a full-window search to get the true score of this node
+				if (PvNode && (legalMoves == 1 || score > alpha))
+					score = -search<true>(thread, curr.pv, newDepth,
+						ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 			}
 
 			if constexpr (RootNode)
@@ -797,6 +811,8 @@ namespace stormphrax::search
 
 			if (!pos.isNoisy(bestMove))
 			{
+				curr.killers.push(bestMove);
+
 				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
 					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
 
@@ -822,23 +838,21 @@ namespace stormphrax::search
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
-		if (!shouldStop(thread.search, false, false))
-			m_ttable.put(pos.key(), bestScore, bestMove, depth, ply, ttFlag);
+		if (!curr.excluded && !hasStopped())
+			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag);
 
 		return bestScore;
 	}
 
+	template <bool PvNode>
 	auto Searcher::qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score
 	{
-		assert(ply >= 0 && ply <= MaxDepth);
+		assert(ply > 0 && ply <= MaxDepth);
 
-		if (ply > 0 && shouldStop(thread.search, thread.isMainThread(), false))
+		if (checkHardTimeout(thread.search, thread.isMainThread()))
 			return 0;
 
 		auto &pos = thread.pos;
-
-		if (ply >= MaxDepth)
-			return eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		if (alpha < 0 && pos.hasCycle(ply))
 		{
@@ -847,28 +861,54 @@ namespace stormphrax::search
 				return alpha;
 		}
 
-		if (ply > thread.search.seldepth)
-			thread.search.seldepth = ply;
+		if (PvNode && ply + 1 > thread.search.seldepth)
+			thread.search.seldepth = ply + 1;
+
+		if (ply >= MaxDepth)
+			return pos.isCheck() ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		m_ttable.probe(ttEntry, pos.key(), ply);
 
-		Score staticEval;
+		if (!PvNode
+			&& (ttEntry.flag == TtFlag::Exact
+				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
+				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
+			return ttEntry.score;
+
+		Score staticEval, eval;
 
 		if (pos.isCheck())
-			staticEval = -ScoreMate + ply;
+		{
+			staticEval = ScoreNone;
+			eval = -ScoreMate + ply;
+		}
 		else
 		{
-			staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
+				staticEval = ttEntry.staticEval;
+			else staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
-			if (staticEval >= beta)
-				return staticEval;
+			if (ttEntry.flag != TtFlag::None
+				&& (ttEntry.flag == TtFlag::Exact
+					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > staticEval))
+				eval = ttEntry.score;
+			else eval = staticEval;
 
-			if (staticEval > alpha)
-				alpha = staticEval;
+			if (eval >= beta)
+				return eval;
+
+			if (eval > alpha)
+				alpha = eval;
 		}
 
-		auto bestScore = staticEval;
+		const auto futility = eval + qsearchFpMargin();
+
+		auto bestMove = NullMove;
+		auto bestScore = eval;
+
+		auto ttFlag = TtFlag::UpperBound;
 
 		auto generator = qsearchMoveGenerator(pos,
 			thread.moveStack[moveStackIdx].movegenData, ttEntry.move, thread.history);
@@ -878,6 +918,15 @@ namespace stormphrax::search
 			if (!pos.isLegal(move))
 				continue;
 
+			if (!pos.isCheck()
+				&& futility <= alpha
+				&& !see::see(pos, move, 1))
+			{
+				if (bestScore < futility)
+					bestScore = futility;
+				continue;
+			}
+
 			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
 
@@ -885,21 +934,28 @@ namespace stormphrax::search
 
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
-			const auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+			const auto score = -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
-			{
 				bestScore = score;
 
-				if (score > alpha)
-				{
-					alpha = score;
+			if (score > alpha)
+			{
+				alpha = score;
+				bestMove = move;
 
-					if (score >= beta)
-						break;
-				}
+				ttFlag = TtFlag::Exact;
+			}
+
+			if (score >= beta)
+			{
+				ttFlag = TtFlag::LowerBound;
+				break;
 			}
 		}
+
+		if (!hasStopped())
+			m_ttable.put(pos.key(), bestScore, staticEval, bestMove, 0, ply, ttFlag);
 
 		return bestScore;
 	}
@@ -994,12 +1050,10 @@ namespace stormphrax::search
 		std::cout << std::endl;
 	}
 
-	auto Searcher::finalReport(const ThreadData &mainThread, const PvList &pv,
-		i32 depthCompleted, f64 time, Score score, bool softTimeout) -> void
+	auto Searcher::finalReport(const ThreadData &mainThread,
+		const PvList &pv, i32 depthCompleted, f64 time, Score score) -> void
 	{
-		if (!softTimeout || !m_limiter->stopped())
-			report(mainThread, pv, depthCompleted, time, score);
-
+		report(mainThread, pv, depthCompleted, time, score);
 		std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
 	}
 }

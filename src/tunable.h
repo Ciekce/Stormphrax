@@ -97,6 +97,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
+	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
+
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
@@ -117,6 +119,7 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxHistoryPruningDepth, 4, 2, 8, 0.5)
 	SP_TUNABLE_PARAM(historyPruningMargin, -2500, -4000, -1000, 175)
+	SP_TUNABLE_PARAM(historyPruningOffset, 0, -4000, 4000, 400)
 
 	SP_TUNABLE_PARAM(seePruningThresholdQuiet, -25, -80, -15, 12)
 	SP_TUNABLE_PARAM(seePruningThresholdNoisy, -90, -120, -40, 20)
@@ -147,6 +150,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
+	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 17)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM
