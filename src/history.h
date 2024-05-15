@@ -112,13 +112,18 @@ namespace stormphrax
 			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
 		}
 
+		inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
+			i32 ply, Piece moving, Move move, HistoryScore bonus)
+		{
+			updateConthist(continuations, ply, moving, move, bonus, 1);
+			updateConthist(continuations, ply, moving, move, bonus, 2);
+		}
+
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
 			mainEntry(threats, move).update(bonus);
-
-			updateConthist(continuations, ply, moving, move, bonus, 1);
-			updateConthist(continuations, ply, moving, move, bonus, 2);
+			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)

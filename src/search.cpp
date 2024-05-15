@@ -745,8 +745,16 @@ namespace stormphrax::search
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
+					{
 						score = -search(thread, curr.pv, newDepth, ply + 1,
 							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
+
+						if (!noisy && (score <= alpha || score >= beta))
+						{
+							const auto bonus = score <= alpha ? -historyBonus(newDepth) : historyBonus(newDepth);
+							thread.history.updateConthist(thread.conthist, ply, moving, move, bonus);
+						}
+					}
 				}
 				// if we're skipping LMR for some reason (first move in a non-PV
 				// node, or the conditions above for LMR were not met) then do an
