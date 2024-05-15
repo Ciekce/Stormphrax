@@ -740,6 +740,9 @@ namespace stormphrax::search
 					r -= improving;
 					r -= pos.isCheck();
 
+					if (generator.stage() == MovegenStage::GoodNoisy)
+						r -= 1 + PvNode;
+
 					// can't use std::clamp because newDepth can be <0
 					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
