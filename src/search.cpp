@@ -731,7 +731,7 @@ namespace stormphrax::search
 
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves()
-					&& generator.stage() > MovegenStage::GoodNoisy)
+					&& generator.stage() >= MovegenStage::GoodNoisy)
 				{
 					auto r =  g_lmrTable[noisy][depth][legalMoves];
 
