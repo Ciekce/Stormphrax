@@ -926,7 +926,12 @@ namespace stormphrax::search
 				staticEval = ttEntry.staticEval;
 			else staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
-			eval = staticEval;
+			if (ttEntry.flag != TtFlag::None
+				&& (ttEntry.flag == TtFlag::Exact
+					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > staticEval))
+				eval = ttEntry.score;
+			else eval = staticEval;
 
 			if (eval >= beta)
 				return eval;
@@ -934,6 +939,8 @@ namespace stormphrax::search
 			if (eval > alpha)
 				alpha = eval;
 		}
+
+		const auto futility = eval + qsearchFpMargin();
 
 		auto bestMove = NullMove;
 		auto bestScore = eval;
@@ -946,6 +953,15 @@ namespace stormphrax::search
 		{
 			if (!pos.isLegal(move))
 				continue;
+
+			if (!pos.isCheck()
+				&& futility <= alpha
+				&& !see::see(pos, move, 1))
+			{
+				if (bestScore < futility)
+					bestScore = futility;
+				continue;
+			}
 
 			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
