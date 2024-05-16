@@ -746,7 +746,7 @@ namespace stormphrax::search
 				{
 					auto r = baseLmr;
 
-					r += !PvNode + !ttpv;
+					r += !PvNode - ttpv;
 					r -= history / lmrHistoryDivisor();
 					r -= improving;
 					r -= pos.isCheck();
