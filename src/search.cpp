@@ -633,6 +633,8 @@ namespace stormphrax::search
 			else if (!pos.isLegal(move))
 				continue;
 
+			const bool quietOrLosing = generator.stage() > MovegenStage::GoodNoisy;
+
 			const bool noisy = pos.isNoisy(move);
 			const auto moving = boards.pieceAt(move.src());
 
@@ -674,7 +676,7 @@ namespace stormphrax::search
 					? seePruningThresholdNoisy() * depth
 					: seePruningThresholdQuiet() * depth * depth;
 
-				if (!see::see(pos, move, seeThreshold))
+				if (quietOrLosing && !see::see(pos, move, seeThreshold))
 					continue;
 			}
 
@@ -731,7 +733,7 @@ namespace stormphrax::search
 
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves()
-					&& generator.stage() > MovegenStage::GoodNoisy)
+					&& quietOrLosing)
 				{
 					auto r =  g_lmrTable[noisy][depth][legalMoves];
 
