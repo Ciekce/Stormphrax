@@ -102,14 +102,14 @@ namespace stormphrax
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
 
-		[[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto &
+		[[nodiscard]] inline auto contTable(bool noisy, Piece moving, Square to) const -> const auto &
 		{
-			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
+			return m_continuation[noisy][static_cast<i32>(moving)][static_cast<i32>(to)];
 		}
 
-		[[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto &
+		[[nodiscard]] inline auto contTable(bool noisy, Piece moving, Square to) -> auto &
 		{
-			return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
+			return m_continuation[noisy][static_cast<i32>(moving)][static_cast<i32>(to)];
 		}
 
 		inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
@@ -152,8 +152,8 @@ namespace stormphrax
 	private:
 		// [from][to][from attacked][to attacked]
 		std::array<std::array<std::array<std::array<HistoryEntry, 2>, 2>, 64>, 64> m_main{};
-		// [prev piece][to][curr piece type][to]
-		std::array<std::array<ContinuationSubtable, 64>, 12> m_continuation{};
+		// [prev noisy][prev piece][to][curr piece type][to]
+		std::array<std::array<std::array<ContinuationSubtable, 64>, 12>, 2> m_continuation{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos

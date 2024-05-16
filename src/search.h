@@ -151,15 +151,15 @@ namespace stormphrax::search
 			assert(ply <= MaxDepth);
 
 			stack[ply].move = NullMove;
-			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
+			conthist[ply] = &history.contTable(false, Piece::WhitePawn, Square::A1);
 		}
 
-		inline auto setMove(i32 ply, Move move)
+		inline auto setMove(i32 ply, bool noisy, Move move)
 		{
 			assert(ply <= MaxDepth);
 
 			stack[ply].move = move;
-			conthist[ply] = &history.contTable(pos.boards().pieceAt(move.src()), move.dst());
+			conthist[ply] = &history.contTable(noisy, pos.boards().pieceAt(move.src()), move.dst());
 		}
 	};
 

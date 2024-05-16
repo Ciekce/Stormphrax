@@ -724,7 +724,7 @@ namespace stormphrax::search
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
-			thread.setMove(ply, move);
+			thread.setMove(ply, noisy, move);
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			Score score{};
