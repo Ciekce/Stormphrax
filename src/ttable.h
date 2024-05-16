@@ -47,6 +47,7 @@ namespace stormphrax
 		Score staticEval;
 		i32 depth;
 		Move move;
+		bool wasPv;
 		TtFlag flag;
 	};
 
@@ -59,7 +60,7 @@ namespace stormphrax
 		auto resize(usize size) -> void;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void;
-		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag) -> void;
+		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void;
 
 		inline auto age()
 		{
@@ -76,7 +77,7 @@ namespace stormphrax
 		}
 
 	private:
-		static constexpr u32 AgeBits = 6;
+		static constexpr u32 AgeBits = 5;
 
 		struct Entry
 		{
@@ -85,22 +86,27 @@ namespace stormphrax
 			i16 staticEval;
 			Move move;
 			u8 depth;
-			u8 ageAndFlag;
+			u8 agePvFlag;
 
 			[[nodiscard]] inline auto age() const
 			{
-				return static_cast<u32>(ageAndFlag >> 2);
+				return static_cast<u32>(agePvFlag >> 3);
+			}
+
+			[[nodiscard]] inline auto pv() const
+			{
+				return (static_cast<u32>(agePvFlag >> 2) & 1) != 0;
 			}
 
 			[[nodiscard]] inline auto flag() const
 			{
-				return static_cast<TtFlag>(ageAndFlag & 0x3);
+				return static_cast<TtFlag>(agePvFlag & 0x3);
 			}
 
-			inline auto setAgeAndFlag(u32 age, TtFlag flag)
+			inline auto setAgePvFlag(u32 age, bool pv, TtFlag flag)
 			{
 				assert(age < (1 << AgeBits));
-				ageAndFlag = age << 2 | static_cast<u32>(flag);
+				agePvFlag = (age << 3) | (static_cast<u32>(pv) << 2) | static_cast<u32>(flag);
 			}
 		};
 

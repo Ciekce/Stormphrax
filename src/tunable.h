@@ -98,6 +98,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
+	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
