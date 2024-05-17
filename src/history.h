@@ -28,6 +28,7 @@
 #include "tunable.h"
 #include "move.h"
 #include "bitboard.h"
+#include "util/multi_array.h"
 
 namespace stormphrax
 {
@@ -86,7 +87,7 @@ namespace stormphrax
 
 	private:
 		// [piece type][to]
-		std::array<std::array<HistoryEntry, 64>, 12> m_data{};
+		util::MultiArray<HistoryEntry, 12, 64> m_data{};
 	};
 
 	class HistoryTables
@@ -151,13 +152,13 @@ namespace stormphrax
 
 	private:
 		// [from][to][from attacked][to attacked]
-		std::array<std::array<std::array<std::array<HistoryEntry, 2>, 2>, 64>, 64> m_main{};
+		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_main{};
 		// [prev piece][to][curr piece type][to]
-		std::array<std::array<ContinuationSubtable, 64>, 12> m_continuation{};
+		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
-		std::array<std::array<std::array<HistoryEntry, 13>, 64>, 64> m_noisy{};
+		util::MultiArray<HistoryEntry, 64, 64, 13> m_noisy{};
 
 		static inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Piece moving, Move move, HistoryScore bonus, i32 offset) -> void

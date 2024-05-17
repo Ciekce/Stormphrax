@@ -25,6 +25,7 @@
 #include <functional>
 
 #include "util/range.h"
+#include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
 	#define SP_EXTERNAL_TUNE 0
@@ -35,13 +36,13 @@ namespace stormphrax::tunable
 	auto init() -> void;
 
 	// [noisy][depth][legal moves]
-	extern std::array<std::array<std::array<i32, 256>, 256>, 2> g_lmrTable;
+	extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
 
 	auto updateQuietLmrTable() -> void;
 	auto updateNoisyLmrTable() -> void;
 
 	// [improving][clamped depth]
-	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
+	extern util::MultiArray<i32, 2, 16> g_lmpTable;
 	auto updateLmpTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
