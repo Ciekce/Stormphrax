@@ -600,7 +600,7 @@ namespace stormphrax::search
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
 
-				const auto score = -search<false>(thread, curr.pv, depth - R,
+				const auto score = -search(thread, curr.pv, depth - R,
 					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
 
 				if (score >= beta)
@@ -648,7 +648,7 @@ namespace stormphrax::search
 
 			const auto captured = pos.captureTarget(move);
 
-			const auto baseLmr =  g_lmrTable[noisy][depth][legalMoves + 1];
+			const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
 			const auto history = noisy
 				? thread.history.noisyScore(move, captured)
