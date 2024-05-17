@@ -471,7 +471,8 @@ namespace stormphrax::search
 					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
 					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta)
 					return ttEntry.score;
-				else depth += depth < 7;
+				else if (depth <= maxTtNonCutoffExtDepth())
+					++depth;
 			}
 		}
 
