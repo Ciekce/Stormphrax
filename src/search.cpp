@@ -465,12 +465,15 @@ namespace stormphrax::search
 		{
 			m_ttable.probe(ttEntry, pos.key(), ply);
 
-			if (!PvNode
-				&& ttEntry.depth >= depth
-				&& (ttEntry.flag == TtFlag::Exact
+			if (!PvNode && ttEntry.depth >= depth)
+			{
+				if (ttEntry.flag == TtFlag::Exact
 					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
-					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta))
-				return ttEntry.score;
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta)
+					return ttEntry.score;
+				else if (depth <= maxTtNonCutoffExtDepth())
+					++depth;
+			}
 		}
 
 		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);

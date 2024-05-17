@@ -48,7 +48,8 @@ namespace stormphrax::tunable
 	static_assert(Default >= Min); \
 	static_assert(Default <= Max); \
 	static_assert(Min < Max); \
-	static_assert(Min + Step <= Max);
+	static_assert(Min + Step <= Max); \
+	static_assert(Step >= 0.5);
 
 #if SP_EXTERNAL_TUNE
 	struct TunableParam
@@ -99,6 +100,8 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
 	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
+
+	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
