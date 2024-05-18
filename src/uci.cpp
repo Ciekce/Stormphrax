@@ -324,8 +324,6 @@ namespace stormphrax
 							limiter = std::make_unique<limit::InfiniteLimiter>();
 						else if (tokens[i] == "nodes" && ++i < tokens.size())
 						{
-							std::cout << "info string node limiting currently broken" << std::endl;
-
 							usize nodes{};
 							if (!util::tryParseSize(nodes, tokens[i]))
 								std::cerr << "invalid node count " << tokens[i] << std::endl;

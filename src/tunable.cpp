@@ -22,25 +22,52 @@
 
 namespace stormphrax::tunable
 {
-	std::array<std::array<i32, 256>, 256> g_lmrTable{};
-
-	auto updateLmrTable() -> void
+	namespace
 	{
-		const auto base = static_cast<f64>(lmrBase()) / 100.0;
-		const auto divisor = static_cast<f64>(lmrDivisor()) / 100.0;
+		inline auto lmrReduction(f64 base, f64 divisor, i32 depth, i32 moves)
+		{
+			const auto lnDepth = std::log(static_cast<f64>(depth));
+			const auto lnMoves = std::log(static_cast<f64>(moves));
+			return static_cast<i32>(base + lnDepth * lnMoves / divisor);
+		}
+
+		inline auto lmpMoveCount(i32 base, bool improving, i32 depth)
+		{
+			return (base + depth * depth) / (2 - improving);
+		}
+	}
+
+	util::MultiArray<i32, 2, 256, 256> g_lmrTable{};
+
+	auto updateQuietLmrTable() -> void
+	{
+		const auto base = static_cast<f64>(quietLmrBase()) / 100.0;
+		const auto divisor = static_cast<f64>(quietLmrDivisor()) / 100.0;
 
 		for (i32 depth = 1; depth < 256; ++depth)
 		{
 			for (i32 moves = 1; moves < 256; ++moves)
 			{
-				g_lmrTable[depth][moves] = static_cast<i32>(
-					base + std::log(static_cast<f64>(depth)) * std::log(static_cast<f64>(moves)) / divisor
-				);
+				g_lmrTable[0][depth][moves] = lmrReduction(base, divisor, depth, moves);
 			}
 		}
 	}
 
-	std::array<std::array<i32, 16>, 2> g_lmpTable{};
+	auto updateNoisyLmrTable() -> void
+	{
+		const auto base = static_cast<f64>(noisyLmrBase()) / 100.0;
+		const auto divisor = static_cast<f64>(noisyLmrDivisor()) / 100.0;
+
+		for (i32 depth = 1; depth < 256; ++depth)
+		{
+			for (i32 moves = 1; moves < 256; ++moves)
+			{
+				g_lmrTable[1][depth][moves] = lmrReduction(base, divisor, depth, moves);
+			}
+		}
+	}
+
+	util::MultiArray<i32, 2, 16> g_lmpTable{};
 
 	auto updateLmpTable() -> void
 	{
@@ -50,14 +77,16 @@ namespace stormphrax::tunable
 		{
 			for (i32 depth = 0; depth < 16; ++depth)
 			{
-				g_lmpTable[improving][depth] = (base + depth * depth) / (2 - improving);
+				g_lmpTable[improving][depth] = lmpMoveCount(base, improving, depth);
 			}
 		}
 	}
 
 	auto init() -> void
 	{
-		updateLmrTable();
+		updateQuietLmrTable();
+		updateNoisyLmrTable();
+
 		updateLmpTable();
 	}
 }

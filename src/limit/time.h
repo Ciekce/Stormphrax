@@ -26,6 +26,7 @@
 #include "limit.h"
 #include "../util/timer.h"
 #include "../util/range.h"
+#include "../util/multi_array.h"
 
 namespace stormphrax::limit
 {
@@ -68,7 +69,7 @@ namespace stormphrax::limit
 
 		f64 m_scale{1.0};
 
-		std::array<std::array<usize, 64>, 64> m_moveNodeCounts{};
+		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
 		std::atomic_bool m_stopped{false};
 	};

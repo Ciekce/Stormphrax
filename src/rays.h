@@ -25,12 +25,13 @@
 #include "core.h"
 #include "bitboard.h"
 #include "attacks/util.h"
+#include "util/multi_array.h"
 
 namespace stormphrax
 {
 	consteval auto generateBetweenRays()
 	{
-		std::array<std::array<Bitboard, 64>, 64> dst{};
+		util::MultiArray<Bitboard, 64, 64> dst{};
 
 		for (i32 from = 0; from < 64; ++from)
 		{
@@ -64,7 +65,7 @@ namespace stormphrax
 
 	consteval auto generateIntersectingRays()
 	{
-		std::array<std::array<Bitboard, 64>, 64> dst{};
+		util::MultiArray<Bitboard, 64, 64> dst{};
 
 		for (i32 from = 0; from < 64; ++from)
 		{

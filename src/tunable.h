@@ -25,6 +25,7 @@
 #include <functional>
 
 #include "util/range.h"
+#include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
 	#define SP_EXTERNAL_TUNE 0
@@ -34,19 +35,22 @@ namespace stormphrax::tunable
 {
 	auto init() -> void;
 
-	// [depth][legal moves]
-	extern std::array<std::array<i32, 256>, 256> g_lmrTable;
-	auto updateLmrTable() -> void;
+	// [noisy][depth][legal moves]
+	extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
+
+	auto updateQuietLmrTable() -> void;
+	auto updateNoisyLmrTable() -> void;
 
 	// [improving][clamped depth]
-	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
+	extern util::MultiArray<i32, 2, 16> g_lmpTable;
 	auto updateLmpTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert(Default >= Min); \
 	static_assert(Default <= Max); \
 	static_assert(Min < Max); \
-	static_assert(Min + Step <= Max);
+	static_assert(Min + Step <= Max); \
+	static_assert(Step >= 0.5);
 
 #if SP_EXTERNAL_TUNE
 	struct TunableParam
@@ -95,6 +99,11 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
+	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
+	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
+
+	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
+
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
@@ -113,14 +122,32 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(fpMargin, 250, 120, 350, 45)
 	SP_TUNABLE_PARAM(fpScale, 65, 40, 80, 8)
 
+	SP_TUNABLE_PARAM(maxHistoryPruningDepth, 4, 2, 8, 0.5)
+	SP_TUNABLE_PARAM(historyPruningMargin, -2500, -4000, -1000, 175)
+	SP_TUNABLE_PARAM(historyPruningOffset, 0, -4000, 4000, 400)
+
 	SP_TUNABLE_PARAM(seePruningThresholdQuiet, -25, -80, -15, 12)
 	SP_TUNABLE_PARAM(seePruningThresholdNoisy, -90, -120, -40, 20)
+
+	SP_TUNABLE_PARAM(minSeDepth, 8, 4, 10, 0.5)
+	SP_TUNABLE_PARAM(seTtDepthMargin, 4, 2, 6, 1)
+	SP_TUNABLE_PARAM(sBetaMargin, 32, 4, 64, 12)
+
+	SP_TUNABLE_PARAM(multiExtLimit, 8, 4, 24, 4)
+
+	SP_TUNABLE_PARAM(doubleExtMargin, 17, 0, 32, 5)
+	SP_TUNABLE_PARAM(tripleExtMargin, 100, 10, 150, 7)
 
 	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
 	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
 
-	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
-	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 77, 50, 120, 15, updateQuietLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 226, 100, 300, 10, updateQuietLmrTable)
+
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, 0, -50, 75, 10, updateNoisyLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 250, 150, 350, 10, updateNoisyLmrTable)
+
+	SP_TUNABLE_PARAM(lmrHistoryDivisor, 8192, 4096, 16384, 650)
 
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 
@@ -128,6 +155,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
+	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 17)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM
