@@ -608,9 +608,10 @@ namespace stormphrax::search
 					return score > ScoreWin ? beta : score;
 			}
 
-			const auto probcutBeta = beta + 200 - 70 * improving;
+			const auto probcutBeta = beta + 300;
 
-			if (depth >= 6
+			if (!ttpv
+				&& depth >= 6
 				&& std::abs(beta) < ScoreWin
 				&& (!ttEntry.move || ttMoveNoisy)
 				&& !(ttHit && ttEntry.depth >= depth - 3 && ttEntry.score < probcutBeta))
@@ -643,7 +644,8 @@ namespace stormphrax::search
 
 					if (score >= probcutBeta)
 					{
-						m_ttable.put(keyBefore, score, curr.staticEval, move, depth - 3, ply, TtFlag::LowerBound);
+						m_ttable.put(keyBefore, score, curr.staticEval,
+							move, depth - 3, ply, TtFlag::LowerBound, false);
 						return score;
 					}
 				}
