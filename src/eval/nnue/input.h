@@ -28,6 +28,7 @@
 
 #include "../../core.h"
 #include "../../util/simd.h"
+#include "../../util/multi_array.h"
 #include "../../position/boards.h"
 #include "io.h"
 #include "features.h"
@@ -134,7 +135,7 @@ namespace stormphrax::eval::nnue
 		static constexpr auto WeightCount = Ft::WeightCount;
 		static constexpr auto OutputCount = Ft::OutputCount;
 
-		SP_SIMD_ALIGNAS std::array<std::array<Type, OutputCount>, 2> m_outputs;
+		SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
 
 		static inline auto subAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta, u32 subOffset, u32 addOffset) -> void

@@ -135,11 +135,7 @@ namespace stormphrax
 								m_end = m_data.moves.size();
 								scoreQuiet();
 							}
-							else
-							{
-								++m_stage;
-								continue;
-							}
+							else continue;
 							break;
 
 						case MovegenStage::BadNoisy:
