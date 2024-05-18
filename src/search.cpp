@@ -654,12 +654,11 @@ namespace stormphrax::search
 				? thread.history.noisyScore(move, captured)
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-			if (bestScore > -ScoreWin)
+			if (!RootNode && bestScore > -ScoreWin)
 			{
 				if (!noisy)
 				{
-					if (!RootNode
-						&& legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
+					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
 					{
 						generator.skipQuiets();
 						continue;
