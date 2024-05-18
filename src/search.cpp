@@ -549,6 +549,8 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
+		Score eval{};
+
 		if (!curr.excluded)
 		{
 			if (inCheck)
@@ -556,6 +558,14 @@ namespace stormphrax::search
 			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
 				curr.staticEval = ttEntry.staticEval;
 			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+			eval = curr.staticEval;
+
+			if (ttEntry.flag != TtFlag::None
+				&& (ttEntry.flag == TtFlag::Exact
+					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < eval
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > eval))
+				eval = ttEntry.score;
 		}
 
 		const bool improving = [&]
@@ -574,8 +584,8 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= maxRfpDepth()
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
-				return curr.staticEval;
+				&& eval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				return eval;
 
 			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
