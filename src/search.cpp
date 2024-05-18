@@ -584,6 +584,7 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= maxRfpDepth()
+				&& std::abs(eval) < ScoreWin
 				&& eval - rfpMargin() * std::max(depth - improving, 0) >= beta)
 				return eval;
 
