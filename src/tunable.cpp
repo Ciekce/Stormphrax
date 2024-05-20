@@ -37,7 +37,7 @@ namespace stormphrax::tunable
 		}
 	}
 
-	std::array<std::array<std::array<i32, 256>, 256>, 2> g_lmrTable{};
+	util::MultiArray<i32, 2, 256, 256> g_lmrTable{};
 
 	auto updateQuietLmrTable() -> void
 	{
@@ -67,7 +67,7 @@ namespace stormphrax::tunable
 		}
 	}
 
-	std::array<std::array<i32, 16>, 2> g_lmpTable{};
+	util::MultiArray<i32, 2, 16> g_lmpTable{};
 
 	auto updateLmpTable() -> void
 	{
