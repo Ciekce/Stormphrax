@@ -747,6 +747,7 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
+				&& ply < thread.search.depth * 2
 				&& depth >= minSeDepth()
 				&& move == ttEntry.move
 				&& !curr.excluded
