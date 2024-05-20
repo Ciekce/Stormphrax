@@ -476,6 +476,7 @@ namespace stormphrax::search
 			}
 		}
 
+		const bool ttHit = ttEntry.flag != TtFlag::None;
 		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
 		const bool ttpv = PvNode || ttEntry.wasPv;
 
@@ -553,7 +554,7 @@ namespace stormphrax::search
 		{
 			if (inCheck)
 				curr.staticEval = ScoreNone;
-			else if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
+			else if (ttHit && ttEntry.staticEval != ScoreNone)
 				curr.staticEval = ttEntry.staticEval;
 			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 		}
@@ -605,6 +606,50 @@ namespace stormphrax::search
 
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
+			}
+
+			const auto probcutBeta = beta + probcutMargin();
+			const auto probcutDepth = std::max(depth - probcutReduction(), 1);
+
+			if (!ttpv
+				&& depth >= minProbcutDepth()
+				&& std::abs(beta) < ScoreWin
+				&& (!ttEntry.move || ttMoveNoisy)
+				&& !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
+			{
+				const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
+				const auto keyBefore = pos.key();
+
+				auto generator = probcutMoveGenerator(pos, ttEntry.move, moveStack.movegenData, thread.history);
+
+				while (const auto move = generator.next())
+				{
+					if (!pos.isLegal(move))
+						continue;
+
+					if (!see::see(pos, move, seeThreshold))
+						continue;
+
+					++thread.search.nodes;
+
+					m_ttable.prefetch(pos.roughKeyAfter(move));
+
+					thread.setMove(ply, move);
+					const auto guard = pos.applyMove(move, &thread.nnueState);
+
+					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
+
+					if (score >= probcutBeta)
+						score = -search(thread, curr.pv, probcutDepth - 1, ply + 1,
+							moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
+
+					if (score >= probcutBeta)
+					{
+						m_ttable.put(keyBefore, score, curr.staticEval,
+							move, probcutDepth, ply, TtFlag::LowerBound, false);
+						return score;
+					}
+				}
 			}
 		}
 
