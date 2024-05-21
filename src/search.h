@@ -252,38 +252,51 @@ namespace stormphrax::search
 
 		auto run(ThreadData &thread) -> void;
 
-		[[nodiscard]] inline auto shouldStop(const SearchData &data, bool checkLimiter, bool allowSoftTimeout) -> bool
+		[[nodiscard]] inline auto hasStopped() const
 		{
-			if (checkLimiter)
-			{
-				if (m_stop.load(std::memory_order::relaxed))
-					return true;
-
-				if (m_limiter->stop(data, allowSoftTimeout))
-				{
-					m_stop.store(true, std::memory_order::relaxed);
-					return true;
-				}
-			}
-
-			return m_stop.load(std::memory_order::relaxed);
+			return m_stop.load(std::memory_order::relaxed) != 0;
 		}
 
-		auto searchRoot(ThreadData &thread, bool mainSearchThread) -> Score;
+		[[nodiscard]] inline auto checkStop(const SearchData &data, bool mainThread, bool allowSoft)
+		{
+			if (hasStopped())
+				return true;
+
+			if (mainThread && m_limiter->stop(data, allowSoft))
+			{
+				m_stop.store(1, std::memory_order::relaxed);
+				return true;
+			}
+
+			return false;
+		}
+
+		[[nodiscard]] inline auto checkHardTimeout(const SearchData &data, bool mainThread) -> bool
+		{
+			return checkStop(data, mainThread, false);
+		}
+
+		[[nodiscard]] inline auto checkSoftTimeout(const SearchData &data, bool mainThread)
+		{
+			return checkStop(data, mainThread, true);
+		}
+
+		auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;
 
 		template <bool PvNode = false, bool RootNode = false>
-		auto search(ThreadData &thread, PvList &pv, i32 depth,
-			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
+		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
+			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 
 		template <>
-		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth,
-			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
+		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
+			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
 
+		template <bool PvNode = false>
 		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
 			f64 time, Score score, Score alpha = -ScoreInf, Score beta = ScoreInf) -> void;
 		auto finalReport(const ThreadData &mainThread, const PvList &pv,
-			i32 depthCompleted, f64 time, Score score, bool softTimeout) -> void;
+			i32 depthCompleted, f64 time, Score score) -> void;
 	};
 }

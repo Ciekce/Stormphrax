@@ -25,6 +25,7 @@
 #include <functional>
 
 #include "util/range.h"
+#include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
 	#define SP_EXTERNAL_TUNE 0
@@ -35,20 +36,21 @@ namespace stormphrax::tunable
 	auto init() -> void;
 
 	// [noisy][depth][legal moves]
-	extern std::array<std::array<std::array<i32, 256>, 256>, 2> g_lmrTable;
+	extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
 
 	auto updateQuietLmrTable() -> void;
 	auto updateNoisyLmrTable() -> void;
 
 	// [improving][clamped depth]
-	extern std::array<std::array<i32, 16>, 2> g_lmpTable;
+	extern util::MultiArray<i32, 2, 16> g_lmpTable;
 	auto updateLmpTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert(Default >= Min); \
 	static_assert(Default <= Max); \
 	static_assert(Min < Max); \
-	static_assert(Min + Step <= Max);
+	static_assert(Min + Step <= Max); \
+	static_assert(Step >= 0.5);
 
 #if SP_EXTERNAL_TUNE
 	struct TunableParam
@@ -98,6 +100,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
+	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
+
+	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
@@ -111,8 +116,13 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(nmpBaseReduction, 4, 2, 5, 0.5)
 	SP_TUNABLE_PARAM(nmpDepthReductionDiv, 4, 1, 8, 1)
 
-	SP_TUNABLE_PARAM(minNmpVerifDepth, 16, 6, 18, 0.5)
-	SP_TUNABLE_PARAM(nmpVerifDepthFactor, 12, 8, 14, 0.5)
+	SP_TUNABLE_PARAM(minNmpVerifDepth, 14, 6, 18, 0.5)
+	SP_TUNABLE_PARAM(nmpVerifDepthFactor, 12, 8, 14, 1)
+
+	SP_TUNABLE_PARAM(minProbcutDepth, 6, 4, 8, 0.5)
+	SP_TUNABLE_PARAM(probcutMargin, 300, 150, 400, 13)
+	SP_TUNABLE_PARAM(probcutReduction, 3, 2, 5, 0.5)
+	SP_TUNABLE_PARAM(probcutSeeScale, 16, 6, 24, 1)
 
 	SP_TUNABLE_PARAM_CALLBACK(lmpBaseMoves, 3, 2, 5, 0.5, updateLmpTable)
 
@@ -153,6 +163,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
 
+	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 17)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM

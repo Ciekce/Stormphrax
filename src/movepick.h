@@ -55,7 +55,8 @@ namespace stormphrax
 	enum class MovegenType
 	{
 		Normal = 0,
-		Qsearch
+		Qsearch,
+		Probcut
 	};
 
 	struct MovegenStage
@@ -73,7 +74,7 @@ namespace stormphrax
 	template <MovegenType Type>
 	class MoveGenerator
 	{
-		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch;
+		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch || Type == MovegenType::Probcut;
 
 	public:
 		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const KillerTable *killers,
@@ -134,11 +135,7 @@ namespace stormphrax
 								m_end = m_data.moves.size();
 								scoreQuiet();
 							}
-							else
-							{
-								++m_stage;
-								continue;
-							}
+							else continue;
 							break;
 
 						case MovegenStage::BadNoisy:
@@ -173,7 +170,7 @@ namespace stormphrax
 							if (move == m_ttMove)
 								continue;
 
-							if (!see::see(m_pos, move, 0))
+							if (Type == MovegenType::Normal && !see::see(m_pos, move, 0))
 								m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
 							else return move;
 						}
@@ -287,5 +284,11 @@ namespace stormphrax
 		MovegenData &data, const HistoryTables &history)
 	{
 		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, nullptr, history, {}, 0);
+	}
+
+	[[nodiscard]] static inline auto probcutMoveGenerator(const Position &pos,
+		Move ttMove, MovegenData &data, const HistoryTables &history)
+	{
+		return MoveGenerator<MovegenType::Probcut>(pos, data, ttMove, nullptr, history, {}, 0);
 	}
 }
