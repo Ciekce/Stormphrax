@@ -726,7 +726,12 @@ namespace stormphrax::search
 					}
 				}
 
-				const auto lmrDepth = std::max(depth - baseLmr, 0);
+				const auto lmrDepth = [&]
+				{
+					auto r = baseLmr;
+					r -= history / lmrHistoryDivisor();
+					return std::max(depth - r, 0);
+				}();
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
