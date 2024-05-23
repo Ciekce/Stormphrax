@@ -1002,7 +1002,9 @@ namespace stormphrax::search
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
-			const auto score = -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+			const auto score = pos.isDrawn(false)
+				? drawScore(thread.search.nodes)
+				: -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
 			if (score > bestScore)
 				bestScore = score;
