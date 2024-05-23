@@ -620,7 +620,7 @@ namespace stormphrax::search
 				const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
 				const auto keyBefore = pos.key();
 
-				auto generator = probcutMoveGenerator(pos, ttEntry.move, moveStack.movegenData, thread.history);
+				auto generator = MoveGenerator::probcut(pos, ttEntry.move, moveStack.movegenData, thread.history);
 
 				while (const auto move = generator.next())
 				{
@@ -666,7 +666,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = mainMoveGenerator(pos, moveStack.movegenData,
+		auto generator = MoveGenerator::main(pos, moveStack.movegenData,
 			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
@@ -978,7 +978,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = qsearchMoveGenerator(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
+		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
 
 		while (const auto move = generator.next())
 		{
