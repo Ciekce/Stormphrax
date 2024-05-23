@@ -978,7 +978,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
+		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData,
+			thread.stack[ply].killers, thread.history, thread.conthist, ply);
 
 		while (const auto move = generator.next())
 		{
@@ -1000,6 +1001,8 @@ namespace stormphrax::search
 			++thread.search.nodes;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
+
+			thread.setMove(ply, move);
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			const auto score = -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
@@ -1022,7 +1025,7 @@ namespace stormphrax::search
 			}
 		}
 
-		if (!hasStopped())
+		if (bestScore > -ScoreWin && !hasStopped())
 			m_ttable.put(pos.key(), bestScore, staticEval, bestMove, 0, ply, ttFlag, ttpv);
 
 		return bestScore;

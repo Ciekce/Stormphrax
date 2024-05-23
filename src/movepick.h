@@ -269,9 +269,11 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] static inline auto qsearch(const Position &pos,
-			MovegenData &data, const HistoryTables &history)
+			MovegenData &data, const KillerTable &killers, const HistoryTables &history,
+			std::span<ContinuationSubtable *const> continuations, i32 ply)
 		{
-			return MoveGenerator(MovegenStage::QsearchGenNoisy, pos, data, NullMove, nullptr, history, {}, 0);
+			const auto stage = pos.isCheck() ? MovegenStage::GenNoisy : MovegenStage::QsearchGenNoisy;
+			return MoveGenerator(stage, pos, data, NullMove, &killers, history, continuations, ply);
 		}
 
 		[[nodiscard]] static inline auto probcut(const Position &pos,
