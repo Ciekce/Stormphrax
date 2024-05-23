@@ -52,34 +52,240 @@ namespace stormphrax
 		ScoredMoveList moves;
 	};
 
-	enum class MovegenType
+	enum class MovegenStage : i32
 	{
-		Normal = 0,
-		Qsearch,
-		Probcut
+		TtMove = 0,
+		GenNoisy,
+		GoodNoisy,
+		Killer1,
+		Killer2,
+		GenQuiet,
+		Quiet,
+		StartBadNoisy,
+		BadNoisy,
+		QsearchGenNoisy,
+		QsearchNoisy,
+		ProbcutTtMove,
+		ProbcutGenNoisy,
+		ProbcutNoisy,
+		End,
 	};
 
-	struct MovegenStage
+	inline auto operator++(MovegenStage &v) -> auto &
 	{
-		static constexpr i32 Start = 0;
-		static constexpr i32 TtMove = Start + 1;
-		static constexpr i32 GoodNoisy = TtMove + 1;
-		static constexpr i32 Killer1 = GoodNoisy + 1;
-		static constexpr i32 Killer2 = Killer1 + 1;
-		static constexpr i32 Quiet = Killer2 + 1;
-		static constexpr i32 BadNoisy = Quiet + 1;
-		static constexpr i32 End = BadNoisy + 1;
-	};
+		v = static_cast<MovegenStage>(static_cast<i32>(v) + 1);
+		return v;
+	}
 
-	template <MovegenType Type>
+	inline auto operator<=>(MovegenStage a, MovegenStage b)
+	{
+		return static_cast<i32>(a) <=> static_cast<i32>(b);
+	}
+
 	class MoveGenerator
 	{
-		static constexpr bool NoisiesOnly = Type == MovegenType::Qsearch || Type == MovegenType::Probcut;
-
 	public:
-		MoveGenerator(const Position &pos, MovegenData &data, Move ttMove, const KillerTable *killers,
-			const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
-			: m_pos{pos},
+		~MoveGenerator() = default;
+
+		[[nodiscard]] inline auto next()
+		{
+			switch (m_stage)
+			{
+			case MovegenStage::TtMove:
+			{
+				++m_stage;
+
+				if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+					return m_ttMove;
+
+				[[fallthrough]];
+			}
+
+			case MovegenStage::GenNoisy:
+			{
+				generateNoisy(m_data.moves, m_pos);
+				m_end = m_data.moves.size();
+				scoreNoisies();
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::GoodNoisy:
+			{
+				while (m_idx < m_end)
+				{
+					const auto idx = findNext();
+					const auto move = m_data.moves[idx].move;
+
+					if (move == m_ttMove)
+						continue;
+
+					if (!see::see(m_pos, move, 0))
+						m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
+					else return move;
+				}
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::Killer1:
+			{
+				++m_stage;
+
+				if (!m_skipQuiets
+					&& m_killers.killer1
+					&& m_killers.killer1 != m_ttMove
+					&& m_pos.isPseudolegal(m_killers.killer1))
+					return m_killers.killer1;
+
+				[[fallthrough]];
+			}
+
+			case MovegenStage::Killer2:
+			{
+				++m_stage;
+
+				if (!m_skipQuiets
+					&& m_killers.killer2
+					&& m_killers.killer2 != m_ttMove
+					&& m_pos.isPseudolegal(m_killers.killer2))
+					return m_killers.killer2;
+
+				[[fallthrough]];
+			}
+
+			case MovegenStage::GenQuiet:
+			{
+				if (!m_skipQuiets)
+				{
+					generateQuiet(m_data.moves, m_pos);
+					m_end = m_data.moves.size();
+					scoreQuiets();
+				}
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::Quiet:
+			{
+				if (!m_skipQuiets)
+				{
+					if (const auto move = selectNext([this](auto move) { return !isSpecial(move); }))
+						return move;
+				}
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::StartBadNoisy:
+			{
+				m_idx = 0;
+				m_end = m_badNoisyEnd;
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::BadNoisy:
+			{
+				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+					return move;
+
+				m_stage = MovegenStage::End;
+				return NullMove;
+			}
+
+			case MovegenStage::QsearchGenNoisy:
+			{
+				generateNoisy(m_data.moves, m_pos);
+				m_end = m_data.moves.size();
+				scoreNoisies();
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::QsearchNoisy:
+			{
+				if (const auto move = selectNext([](auto move) { return true; }))
+					return move;
+
+				m_stage = MovegenStage::End;
+				return NullMove;
+			}
+
+			case MovegenStage::ProbcutTtMove:
+			{
+				++m_stage;
+
+				if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+					return m_ttMove;
+
+				[[fallthrough]];
+			}
+
+			case MovegenStage::ProbcutGenNoisy:
+			{
+				generateNoisy(m_data.moves, m_pos);
+				m_end = m_data.moves.size();
+				scoreNoisies();
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::ProbcutNoisy:
+			{
+				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+					return move;
+
+				m_stage = MovegenStage::End;
+				return NullMove;
+			}
+
+			default: return NullMove;
+			}
+		}
+
+		inline auto skipQuiets()
+		{
+			m_skipQuiets = true;
+		}
+
+		[[nodiscard]] inline auto stage() const
+		{
+			return m_stage;
+		}
+
+		[[nodiscard]] static inline auto main(const Position &pos, MovegenData &data,
+			Move ttMove, const KillerTable &killers, const HistoryTables &history,
+			std::span<ContinuationSubtable *const> continuations, i32 ply)
+		{
+			return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, &killers, history, continuations, ply);
+		}
+
+		[[nodiscard]] static inline auto qsearch(const Position &pos,
+			MovegenData &data, const HistoryTables &history)
+		{
+			return MoveGenerator(MovegenStage::QsearchGenNoisy, pos, data, NullMove, nullptr, history, {}, 0);
+		}
+
+		[[nodiscard]] static inline auto probcut(const Position &pos,
+			Move ttMove, MovegenData &data, const HistoryTables &history)
+		{
+			return MoveGenerator(MovegenStage::ProbcutTtMove, pos, data, ttMove, nullptr, history, {}, 0);
+		}
+
+	private:
+		MoveGenerator(MovegenStage initialStage, const Position &pos, MovegenData &data,
+			Move ttMove, const KillerTable *killers, const HistoryTables &history,
+			std::span<ContinuationSubtable *const> continuations, i32 ply)
+			: m_stage{initialStage},
+			  m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
 			  m_history{history},
@@ -91,111 +297,7 @@ namespace stormphrax
 			m_data.moves.clear();
 		}
 
-		~MoveGenerator() = default;
-
-		[[nodiscard]] inline auto next()
-		{
-			while (true)
-			{
-				while (m_idx == m_end)
-				{
-					switch (++m_stage)
-					{
-						case MovegenStage::TtMove:
-							if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
-								return m_ttMove;
-							break;
-
-						case MovegenStage::GoodNoisy:
-							generateNoisy(m_data.moves, m_pos);
-							m_end = m_data.moves.size();
-							scoreNoisy();
-							break;
-
-						case MovegenStage::Killer1:
-							if (!NoisiesOnly && !m_skipQuiets
-								&& !m_killers.killer1.isNull()
-								&& m_killers.killer1 != m_ttMove
-								&& m_pos.isPseudolegal(m_killers.killer1))
-								return m_killers.killer1;
-							else continue;
-
-						case MovegenStage::Killer2:
-							if (!NoisiesOnly && !m_skipQuiets
-								&& !m_killers.killer2.isNull()
-								&& m_killers.killer2 != m_ttMove
-								&& m_pos.isPseudolegal(m_killers.killer2))
-								return m_killers.killer2;
-							else continue;
-
-						case MovegenStage::Quiet:
-							if (!NoisiesOnly && !m_skipQuiets)
-							{
-								generateQuiet(m_data.moves, m_pos);
-								m_end = m_data.moves.size();
-								scoreQuiet();
-							}
-							else continue;
-							break;
-
-						case MovegenStage::BadNoisy:
-							m_idx = 0;
-							m_end = m_badNoisyEnd;
-							break;
-
-						default:
-							return NullMove;
-					}
-				}
-
-				assert(m_idx < m_end);
-
-				if (m_skipQuiets && m_stage == MovegenStage::Quiet)
-				{
-					m_idx = m_end;
-					continue;
-				}
-
-				if (m_stage == MovegenStage::GoodNoisy)
-				{
-					while (m_idx != m_end)
-					{
-						const auto idx = findNext();
-						const auto move = m_data.moves[idx].move;
-
-						if constexpr (Type == MovegenType::Qsearch)
-							return move;
-						else
-						{
-							if (move == m_ttMove)
-								continue;
-
-							if (Type == MovegenType::Normal && !see::see(m_pos, move, 0))
-								m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
-							else return move;
-						}
-					}
-				}
-				else
-				{
-					const auto idx = findNext();
-					const auto move = m_data.moves[idx].move;
-
-					if (move != m_ttMove && move != m_killers.killer1 && move != m_killers.killer2)
-						return move;
-				}
-			}
-		}
-
-		inline auto skipQuiets()
-		{
-			m_skipQuiets = true;
-		}
-
-		[[nodiscard]] inline auto stage() const { return m_stage; }
-
-	private:
-		inline auto scoreSingleNoisy(ScoredMove &scoredMove)
+		inline auto scoreNoisy(ScoredMove &scoredMove)
 		{
 			const auto move = scoredMove.move;
 			auto &score = scoredMove.score;
@@ -209,29 +311,29 @@ namespace stormphrax
 				score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
 		}
 
-		inline auto scoreNoisy() -> void
+		inline auto scoreNoisies() -> void
 		{
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
-				scoreSingleNoisy(m_data.moves[i]);
+				scoreNoisy(m_data.moves[i]);
 			}
 		}
 
-		inline auto scoreSingleQuiet(ScoredMove &move)
+		inline auto scoreQuiet(ScoredMove &move)
 		{
 			move.score = m_history.quietScore(m_continuations, m_ply,
 				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
 		}
 
-		inline auto scoreQuiet() -> void
+		inline auto scoreQuiets() -> void
 		{
 			for (u32 i = m_idx; i < m_end; ++i)
 			{
-				scoreSingleQuiet(m_data.moves[i]);
+				scoreQuiet(m_data.moves[i]);
 			}
 		}
 
-		inline auto findNext()
+		[[nodiscard]] inline auto findNext() -> u32
 		{
 			auto best = m_idx;
 			auto bestScore = m_data.moves[m_idx].score;
@@ -251,44 +353,45 @@ namespace stormphrax
 			return m_idx++;
 		}
 
+		[[nodiscard]] inline auto selectNext(auto predicate) -> Move
+		{
+			while (m_idx < m_end)
+			{
+				const auto idx = findNext();
+				const auto move = m_data.moves[idx].move;
+
+				if (predicate(move))
+					return move;
+			}
+
+			return NullMove;
+		}
+
+		[[nodiscard]] inline auto isSpecial(Move move) -> bool
+		{
+			return move == m_ttMove
+				|| move == m_killers.killer1
+				|| move == m_killers.killer2;
+		}
+
+		MovegenStage m_stage;
+
 		const Position &m_pos;
+		MovegenData &m_data;
 
-		i32 m_stage{MovegenStage::Start};
+		Move m_ttMove;
 
-		bool m_skipQuiets{false};
-
+		KillerTable m_killers{};
 		const HistoryTables &m_history;
 
 		std::span<ContinuationSubtable *const> m_continuations;
 		i32 m_ply{};
 
-		MovegenData &m_data;
-		KillerTable m_killers{};
+		bool m_skipQuiets{false};
 
 		u32 m_idx{};
 		u32 m_end{};
 
 		u32 m_badNoisyEnd{};
-
-		Move m_ttMove;
 	};
-
-	[[nodiscard]] static inline auto mainMoveGenerator(const Position &pos, MovegenData &data,
-		Move ttMove, const KillerTable &killers, const HistoryTables &history,
-		std::span<ContinuationSubtable *const> continuations, i32 ply)
-	{
-		return MoveGenerator<MovegenType::Normal>(pos, data, ttMove, &killers, history, continuations, ply);
-	}
-
-	[[nodiscard]] static inline auto qsearchMoveGenerator(const Position &pos,
-		MovegenData &data, const HistoryTables &history)
-	{
-		return MoveGenerator<MovegenType::Qsearch>(pos, data, NullMove, nullptr, history, {}, 0);
-	}
-
-	[[nodiscard]] static inline auto probcutMoveGenerator(const Position &pos,
-		Move ttMove, MovegenData &data, const HistoryTables &history)
-	{
-		return MoveGenerator<MovegenType::Probcut>(pos, data, ttMove, nullptr, history, {}, 0);
-	}
 }
