@@ -1013,8 +1013,7 @@ namespace stormphrax::search
 			{
 				alpha = score;
 				bestMove = move;
-
-				ttFlag = TtFlag::Exact;
+				// don't save exact TT entries from qsearch
 			}
 
 			if (score >= beta)
