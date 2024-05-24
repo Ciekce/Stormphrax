@@ -63,6 +63,7 @@ namespace stormphrax
 		Quiet,
 		StartBadNoisy,
 		BadNoisy,
+		QsearchTtMove,
 		QsearchGenNoisy,
 		QsearchNoisy,
 		ProbcutTtMove,
@@ -199,6 +200,16 @@ namespace stormphrax
 				return NullMove;
 			}
 
+			case MovegenStage::QsearchTtMove:
+			{
+				++m_stage;
+
+				if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+					return m_ttMove;
+
+				[[fallthrough]];
+			}
+
 			case MovegenStage::QsearchGenNoisy:
 			{
 				generateNoisy(m_data.moves, m_pos);
@@ -211,7 +222,7 @@ namespace stormphrax
 
 			case MovegenStage::QsearchNoisy:
 			{
-				if (const auto move = selectNext([](auto move) { return true; }))
+				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
 					return move;
 
 				m_stage = MovegenStage::End;
@@ -269,9 +280,9 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] static inline auto qsearch(const Position &pos,
-			MovegenData &data, const HistoryTables &history)
+			MovegenData &data, Move ttMove, const HistoryTables &history)
 		{
-			return MoveGenerator(MovegenStage::QsearchGenNoisy, pos, data, NullMove, nullptr, history, {}, 0);
+			return MoveGenerator(MovegenStage::QsearchGenNoisy, pos, data, ttMove, nullptr, history, {}, 0);
 		}
 
 		[[nodiscard]] static inline auto probcut(const Position &pos,

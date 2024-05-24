@@ -978,7 +978,7 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData, thread.history);
+		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData, ttEntry.move, thread.history);
 
 		while (const auto move = generator.next())
 		{
