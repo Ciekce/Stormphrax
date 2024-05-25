@@ -983,22 +983,29 @@ namespace stormphrax::search
 		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData,
 			thread.stack[ply].killers, thread.history, thread.conthist, ply);
 
+		u32 legalMoves = 0;
+
 		while (const auto move = generator.next())
 		{
 			if (!pos.isLegal(move))
 				continue;
 
-			if (!pos.isCheck()
-				&& futility <= alpha
-				&& !see::see(pos, move, 1))
-			{
-				if (bestScore < futility)
-					bestScore = futility;
-				continue;
-			}
+			++legalMoves;
 
-			if (!see::see(pos, move, qsearchSeeThreshold()))
-				continue;
+			if (bestScore > -ScoreWin)
+			{
+				if (!pos.isCheck()
+					&& futility <= alpha
+					&& !see::see(pos, move, 1))
+				{
+					if (bestScore < futility)
+						bestScore = futility;
+					continue;
+				}
+
+				if (!see::see(pos, move, qsearchSeeThreshold()))
+					continue;
+			}
 
 			++thread.search.nodes;
 
@@ -1008,6 +1015,9 @@ namespace stormphrax::search
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			const auto score = -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+
+			if (score > -ScoreWin)
+				generator.skipQuiets();
 
 			if (score > bestScore)
 				bestScore = score;
@@ -1026,6 +1036,9 @@ namespace stormphrax::search
 				break;
 			}
 		}
+
+		if (legalMoves == 0)
+			return pos.isCheck() ? -ScoreMate + ply : drawScore(thread.search.nodes);
 
 		if (bestScore > -ScoreWin && !hasStopped())
 			m_ttable.put(pos.key(), bestScore, staticEval, bestMove, 0, ply, ttFlag, ttpv);
