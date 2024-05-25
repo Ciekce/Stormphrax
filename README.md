@@ -11,7 +11,7 @@
 
 </div>
 
-#### Stormphrax's search is currently undergoing a full rewrite - see the [`search_rewrite` branch](/Ciekce/Stormphrax/tree/search_rewrite)
+#### Stormphrax's search is currently undergoing a full rewrite - see the [`search_rewrite` branch](https://github.com/Ciekce/Stormphrax/tree/search_rewrite)
 
 a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained from zero knowledge starting with random weights
 
