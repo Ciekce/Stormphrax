@@ -701,6 +701,8 @@ namespace stormphrax::search
 
 			if (!RootNode && bestScore > -ScoreWin)
 			{
+				const auto lmrDepth = std::max(depth - baseLmr, 0);
+
 				if (!noisy)
 				{
 					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
@@ -709,7 +711,7 @@ namespace stormphrax::search
 						continue;
 					}
 
-					if (depth <= maxHistoryPruningDepth()
+					if (lmrDepth <= maxHistoryPruningDepth()
 						&& history < historyPruningMargin() * depth + historyPruningOffset())
 					{
 						generator.skipQuiets();
@@ -725,8 +727,6 @@ namespace stormphrax::search
 						continue;
 					}
 				}
-
-				const auto lmrDepth = std::max(depth - baseLmr, 0);
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
@@ -768,6 +768,8 @@ namespace stormphrax::search
 				}
 				else if (sBeta >= beta)
 					return sBeta;
+				else if (cutnode)
+					extension = -2;
 				else if (ttEntry.score >= beta)
 					extension = -1;
 			}
