@@ -65,7 +65,7 @@ namespace stormphrax
 
 		inline auto age()
 		{
-			m_age = (m_age + 1) % Entry::AgeMask;
+			m_age = (m_age + 1) % Entry::AgeCycle;
 		}
 
 		auto clear() -> void;
