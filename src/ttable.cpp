@@ -65,7 +65,7 @@ namespace stormphrax
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(Entry);
+		const auto capacity = size / sizeof(Cluster);
 
 		// don't bother reallocating if we're already at the right size
 		if (m_table.size() != capacity)
@@ -87,19 +87,26 @@ namespace stormphrax
 
 	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void
 	{
-		const auto entry = loadEntry(index(key));
+		const auto packedKey = packEntryKey(key);
 
-		if (entry.flag() != TtFlag::None
-			&& packEntryKey(key) == entry.key)
+		const auto &cluster = m_table[index(key)];
+		for (const auto entry : cluster.entries)
 		{
-			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
-			dst.staticEval = static_cast<Score>(entry.staticEval);
-			dst.depth = entry.depth;
-			dst.move = entry.move;
-			dst.wasPv = entry.pv();
-			dst.flag = entry.flag();
+			if (entry.flag() != TtFlag::None
+				&& entry.key == packedKey)
+			{
+				dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+				dst.staticEval = static_cast<Score>(entry.staticEval);
+				dst.depth = entry.depth;
+				dst.move = entry.move;
+				dst.wasPv = entry.pv();
+				dst.flag = entry.flag();
+
+				return;
+			}
 		}
-		else dst.flag = TtFlag::None;
+
+		dst.flag = TtFlag::None;
 	}
 
 	auto TTable::put(u64 key, Score score, Score staticEval,
@@ -108,17 +115,46 @@ namespace stormphrax
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
+		assert(std::abs(score) <= std::numeric_limits<i16>::max());
+
 		assert(staticEval == ScoreNone || staticEval > -ScoreWin);
 		assert(staticEval == ScoreNone || staticEval <  ScoreWin);
 
-		auto entry = loadEntry(index(key));
-
 		const auto newKey = packEntryKey(key);
 
-#ifndef NDEBUG
-		if (std::abs(score) > std::numeric_limits<i16>::max())
-			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
-#endif
+		const auto entryValue = [this](const auto &entry)
+		{
+			const i32 relativeAge = (Entry::AgeCycle + m_age - entry.age()) & Entry::AgeMask;
+			return entry.depth - relativeAge;
+		};
+
+		auto &cluster = m_table[index(key)];
+
+		Entry *entryPtr = nullptr;
+		auto minValue = std::numeric_limits<i32>::max();
+
+		for (auto &candidate : cluster.entries)
+		{
+			// always take an empty entry, or one from the same position
+			if (candidate.key == newKey || candidate.flag() == TtFlag::None)
+			{
+				entryPtr = &candidate;
+				break;
+			}
+
+			// otherwise, take the lowest-weighted entry by depth and age
+			const auto value = entryValue(candidate);
+
+			if (value < minValue)
+			{
+				entryPtr = &candidate;
+				minValue = value;
+			}
+		}
+
+		assert(entryPtr != nullptr);
+
+		auto entry = *entryPtr;
 
 		// Roughly the SF replacement scheme
 		if (!(flag == TtFlag::Exact
@@ -136,7 +172,7 @@ namespace stormphrax
 		entry.depth = depth;
 		entry.setAgePvFlag(m_age, pv, flag);
 
-		storeEntry(index(key), entry);
+		*entryPtr = entry;
 	}
 
 	auto TTable::clear() -> void
@@ -151,11 +187,14 @@ namespace stormphrax
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			const auto entry = loadEntry(i);
-			if (entry.flag() != TtFlag::None && entry.age() == m_age)
-				++filledEntries;
+			const auto cluster = m_table[i];
+			for (const auto &entry : cluster.entries)
+			{
+				if (entry.flag() != TtFlag::None && entry.age() == m_age)
+					++filledEntries;
+			}
 		}
 
-		return filledEntries;
+		return filledEntries / Cluster::EntriesPerCluster;
 	}
 }

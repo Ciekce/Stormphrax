@@ -23,6 +23,7 @@
 #include <vector>
 #include <atomic>
 #include <cstring>
+#include <bit>
 
 #include "core.h"
 #include "move.h"
@@ -64,7 +65,7 @@ namespace stormphrax
 
 		inline auto age()
 		{
-			m_age = (m_age + 1) % (1 << AgeBits);
+			m_age = (m_age + 1) % Entry::AgeMask;
 		}
 
 		auto clear() -> void;
@@ -77,10 +78,13 @@ namespace stormphrax
 		}
 
 	private:
-		static constexpr u32 AgeBits = 5;
-
 		struct Entry
 		{
+			static constexpr u32 AgeBits = 5;
+
+			static constexpr u32 AgeCycle = 1 << AgeBits;
+			static constexpr u32 AgeMask = AgeCycle - 1;
+
 			u16 key;
 			i16 score;
 			i16 staticEval;
@@ -105,12 +109,24 @@ namespace stormphrax
 
 			inline auto setAgePvFlag(u32 age, bool pv, TtFlag flag)
 			{
-				assert(age < (1 << AgeBits));
+				assert(age < AgeCycle);
 				agePvFlag = (age << 3) | (static_cast<u32>(pv) << 2) | static_cast<u32>(flag);
 			}
 		};
 
 		static_assert(sizeof(Entry) == 10);
+
+		struct alignas(32) Cluster
+		{
+			static constexpr usize EntriesPerCluster = 4;
+
+			std::array<Entry, EntriesPerCluster> entries{};
+
+			// round up to nearest power of 2 bytes
+			[[maybe_unused]] std::array<u8,
+				std::bit_ceil(sizeof(Entry) * EntriesPerCluster) - sizeof(Entry) * EntriesPerCluster
+			> padding{};
+		};
 
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
@@ -118,17 +134,7 @@ namespace stormphrax
 			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_table.size())) >> 64);
 		}
 
-		[[nodiscard]] inline auto loadEntry(usize index) const
-		{
-			return m_table[index];
-		}
-
-		inline auto storeEntry(usize index, Entry entry)
-		{
-			m_table[index] = entry;
-		}
-
-		std::vector<Entry> m_table{};
+		std::vector<Cluster> m_table{};
 		u32 m_age{};
 	};
 }
