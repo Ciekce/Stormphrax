@@ -874,7 +874,9 @@ namespace stormphrax::search
 
 		if (bestMove)
 		{
-			const auto bonus = historyBonus(depth);
+			const auto historyDepth = depth + (curr.staticEval <= alpha);
+
+			const auto bonus = historyBonus(historyDepth);
 			const auto penalty = -bonus;
 
 			if (!pos.isNoisy(bestMove))
