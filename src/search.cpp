@@ -801,7 +801,7 @@ namespace stormphrax::search
 					r -= pos.isCheck();
 
 					// can't use std::clamp because newDepth can be <0
-					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
+					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth + (depth < 5));
 					score = -search(thread, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
 
 					if (score > alpha && reduced < newDepth)
