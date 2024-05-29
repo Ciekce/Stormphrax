@@ -478,7 +478,8 @@ namespace stormphrax::search
 
 		const bool ttHit = ttEntry.flag != TtFlag::None;
 		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
-		const bool ttpv = PvNode || ttEntry.wasPv;
+
+		curr.ttpv = PvNode || ttEntry.wasPv;
 
 		const auto pieceCount = bbs.occupancy().popcount();
 
@@ -526,7 +527,7 @@ namespace stormphrax::search
 					|| flag == TtFlag::UpperBound && score <= alpha
 					|| flag == TtFlag::LowerBound && score >= beta)
 				{
-					m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag, ttpv);
+					m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag, curr.ttpv);
 					return score;
 				}
 
@@ -612,7 +613,7 @@ namespace stormphrax::search
 			const auto probcutBeta = beta + probcutMargin();
 			const auto probcutDepth = std::max(depth - probcutReduction(), 1);
 
-			if (!ttpv
+			if (!curr.ttpv
 				&& depth >= minProbcutDepth()
 				&& std::abs(beta) < ScoreWin
 				&& (!ttEntry.move || ttMoveNoisy)
@@ -796,7 +797,7 @@ namespace stormphrax::search
 				{
 					auto r = baseLmr;
 
-					r += !PvNode - ttpv;
+					r += !PvNode - curr.ttpv;
 					r -= history / lmrHistoryDivisor();
 					r -= improving;
 					r -= pos.isCheck();
@@ -906,11 +907,13 @@ namespace stormphrax::search
 				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
 			}
 		}
+		else if (!RootNode && depth >= 4 && parent->ttpv)
+			curr.ttpv = true;
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!curr.excluded && !hasStopped())
-			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag, ttpv);
+			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag, curr.ttpv);
 
 		return bestScore;
 	}
