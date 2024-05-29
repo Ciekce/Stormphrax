@@ -871,7 +871,7 @@ namespace stormphrax::search
 		}
 
 		if (legalMoves == 0)
-			return inCheck ? (-ScoreMate + ply) : 0;
+			bestScore = inCheck ? (-ScoreMate + ply) : 0;
 
 		if (bestMove)
 		{
