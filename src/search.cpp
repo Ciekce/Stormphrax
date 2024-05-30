@@ -784,7 +784,7 @@ namespace stormphrax::search
 
 			Score score{};
 
-			if (pos.isDrawn(true))
+			if (pos.isDrawn(PvNode))
 				score = drawScore(thread.search.nodes);
 			else
 			{
