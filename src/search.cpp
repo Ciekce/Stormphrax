@@ -326,9 +326,11 @@ namespace stormphrax::search
 
 			Score newScore{};
 
+			auto aspDepth = depth;
+
 			while (!hasStopped())
 			{
-				newScore = search<true, true>(thread, thread.rootPv, depth, 0, 0, alpha, beta, false);
+				newScore = search<true, true>(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
 
 				if ((newScore > alpha && newScore < beta) || hasStopped())
 					break;
@@ -342,10 +344,16 @@ namespace stormphrax::search
 
 				if (newScore <= alpha)
 				{
+					aspDepth = depth;
+
 					beta = (alpha + beta) / 2;
 					alpha = std::max(newScore - delta, -ScoreInf);
 				}
-				else beta = std::min(newScore + delta, ScoreInf);
+				else
+				{
+					aspDepth = std::max(aspDepth - 1, depth - 3);
+					beta = std::min(newScore + delta, ScoreInf);
+				}
 
 				delta += delta * aspWideningFactor() / 16;
 			}
