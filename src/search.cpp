@@ -352,7 +352,7 @@ namespace stormphrax::search
 				}
 				else
 				{
-					aspReduction = std::min(aspReduction + 1, 3);
+					aspReduction = std::min(aspReduction + 1, maxAspFailHighReduction());
 					beta = std::min(newScore + delta, ScoreInf);
 				}
 

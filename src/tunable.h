@@ -99,6 +99,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(initialAspWindow, 30, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
+	SP_TUNABLE_PARAM(maxAspFailHighReduction, 3, 1, 5, 1)
+
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
 	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
 
