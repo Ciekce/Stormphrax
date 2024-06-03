@@ -296,7 +296,6 @@ namespace stormphrax::search
 		PvList pv{};
 
 		const auto startTime = mainThread ? util::g_timer.time() : 0.0;
-		const auto startDepth = 1 + static_cast<i32>(thread.id) % 16;
 
 		const auto totalTime = [&]
 		{
@@ -308,7 +307,7 @@ namespace stormphrax::search
 
 		i32 depthCompleted{};
 
-		for (i32 depth = startDepth;; ++depth)
+		for (i32 depth = 1;; ++depth)
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;
