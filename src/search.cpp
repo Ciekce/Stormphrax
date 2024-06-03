@@ -584,7 +584,10 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= maxRfpDepth()
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				&& curr.staticEval
+						- rfpMargin() * std::max(depth - improving, 0)
+						- parent->history / 256
+					>= beta)
 				return curr.staticEval;
 
 			if (depth <= maxRazoringDepth()
@@ -705,7 +708,7 @@ namespace stormphrax::search
 
 			const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-			const auto history = noisy
+			curr.history = noisy
 				? thread.history.noisyScore(move, captured)
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
@@ -722,7 +725,7 @@ namespace stormphrax::search
 					}
 
 					if (lmrDepth <= maxHistoryPruningDepth()
-						&& history < historyPruningMargin() * depth + historyPruningOffset())
+						&& curr.history < historyPruningMargin() * depth + historyPruningOffset())
 					{
 						generator.skipQuiets();
 						continue;
@@ -806,7 +809,7 @@ namespace stormphrax::search
 					auto r = baseLmr;
 
 					r += !PvNode - ttpv;
-					r -= history / lmrHistoryDivisor();
+					r -= curr.history / lmrHistoryDivisor();
 					r -= improving;
 					r -= pos.isCheck();
 
