@@ -204,7 +204,7 @@ namespace stormphrax
 			{
 				++m_stage;
 
-				if (m_ttMove && m_pos.isNoisy(m_ttMove) && m_pos.isPseudolegal(m_ttMove))
+				if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
 					return m_ttMove;
 
 				[[fallthrough]];
