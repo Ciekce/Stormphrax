@@ -999,17 +999,20 @@ namespace stormphrax::search
 			if (!pos.isLegal(move))
 				continue;
 
-			if (!pos.isCheck()
-				&& futility <= alpha
-				&& !see::see(pos, move, 1))
+			if (bestScore > -ScoreWin)
 			{
-				if (bestScore < futility)
-					bestScore = futility;
-				continue;
-			}
+				if (!pos.isCheck()
+					&& futility <= alpha
+					&& !see::see(pos, move, 1))
+				{
+					if (bestScore < futility)
+						bestScore = futility;
+					continue;
+				}
 
-			if (!see::see(pos, move, qsearchSeeThreshold()))
-				continue;
+				if (!see::see(pos, move, qsearchSeeThreshold()))
+					continue;
+			}
 
 			++thread.search.nodes;
 
