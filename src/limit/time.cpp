@@ -74,7 +74,6 @@ namespace stormphrax::limit
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
-		/*
 		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
 		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
 
@@ -87,7 +86,6 @@ namespace stormphrax::limit
 		const auto moveNodeScale = std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
 
 		m_scale = std::max(moveNodeScale, minScale);
-		 */
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
