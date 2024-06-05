@@ -606,7 +606,8 @@ namespace stormphrax::search
 
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv()
-					+ std::min((curr.staticEval - beta) / 200, 3);
+					+ std::min((curr.staticEval - beta) / 200, 3)
+					+ improving;
 
 				thread.setNullmove(ply);
 				const auto guard = pos.applyNullMove();
