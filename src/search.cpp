@@ -561,10 +561,19 @@ namespace stormphrax::search
 		if (!curr.excluded)
 		{
 			if (inCheck)
-				curr.staticEval = ScoreNone;
-			else if (ttHit && ttEntry.staticEval != ScoreNone)
-				curr.staticEval = ttEntry.staticEval;
-			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				curr.eval = curr.staticEval = ScoreNone;
+			else
+			{
+				if (ttHit && ttEntry.staticEval != ScoreNone)
+					curr.staticEval = ttEntry.staticEval;
+				else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+				if (ttEntry.flag == TtFlag::Exact
+						|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < curr.staticEval
+						|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > curr.staticEval)
+					curr.eval = ttEntry.score;
+				else curr.eval = curr.staticEval;
+			}
 		}
 
 		const bool improving = [&]
@@ -583,21 +592,20 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= maxRfpDepth()
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
-				return curr.staticEval;
+				&& curr.eval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				return curr.eval;
 
 			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
-				&& curr.staticEval + razoringMargin() * depth <= alpha)
+				&& curr.eval + razoringMargin() * depth <= alpha)
 			{
 				const auto score = qsearch(thread, ply, moveStackIdx, alpha, alpha + 1);
-
 				if (score <= alpha)
 					return score;
 			}
 
 			if (depth >= minNmpDepth()
-				&& curr.staticEval >= beta
+				&& curr.eval >= beta
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
 				&& !bbs.nonPk(us).empty())
