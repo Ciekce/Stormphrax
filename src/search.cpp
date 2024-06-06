@@ -606,7 +606,7 @@ namespace stormphrax::search
 
 				const auto R = nmpBaseReduction()
 					+ depth / nmpDepthReductionDiv()
-					+ std::min((curr.staticEval - beta) / 200, 3)
+					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), maxNmpEvalReduction())
 					+ improving;
 
 				thread.setNullmove(ply);
