@@ -798,7 +798,7 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				const auto newDepth = depth + extension - 1;
+				auto newDepth = depth + extension - 1;
 
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves()
@@ -817,6 +817,11 @@ namespace stormphrax::search
 
 					if (score > alpha && reduced < newDepth)
 					{
+						const bool doDeeperSearch    = score > bestScore + 40 + 6 * newDepth;
+						const bool doShallowerSearch = score < bestScore + newDepth;
+
+						newDepth += doDeeperSearch - doShallowerSearch;
+
 						score = -search(thread, curr.pv, newDepth, ply + 1,
 							moveStackIdx + 1, -alpha - 1, -alpha, !cutnode);
 
