@@ -158,6 +158,9 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(lmrHistoryDivisor, 8192, 4096, 16384, 650)
 
+	SP_TUNABLE_PARAM(lmrDeeperBase, 40, 20, 100, 6)
+	SP_TUNABLE_PARAM(lmrDeeperScale, 6, 3, 12, 1)
+
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 
 	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)

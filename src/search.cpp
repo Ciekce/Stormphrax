@@ -817,7 +817,7 @@ namespace stormphrax::search
 
 					if (score > alpha && reduced < newDepth)
 					{
-						const bool doDeeperSearch    = score > bestScore + 40 + 6 * newDepth;
+						const bool doDeeperSearch = score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
 						const bool doShallowerSearch = score < bestScore + newDepth;
 
 						newDepth += doDeeperSearch - doShallowerSearch;
