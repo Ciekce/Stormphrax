@@ -333,7 +333,7 @@ namespace stormphrax
 		inline auto scoreQuiet(ScoredMove &move)
 		{
 			move.score = m_history.quietScore(m_continuations, m_ply,
-				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
+				m_pos.threats(), m_pos.pawnKey(), m_pos.boards().pieceAt(move.move.src()), move.move);
 		}
 
 		inline auto scoreQuiets() -> void

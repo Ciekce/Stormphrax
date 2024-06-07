@@ -708,7 +708,7 @@ namespace stormphrax::search
 
 			const auto history = noisy
 				? thread.history.noisyScore(move, captured)
-				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+				: thread.history.quietScore(thread.conthist, ply, pos.threats(), pos.pawnKey(), moving, move);
 
 			if (!RootNode && bestScore > -ScoreWin)
 			{
@@ -900,12 +900,12 @@ namespace stormphrax::search
 				curr.killers.push(bestMove);
 
 				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
-					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
+					pos.pawnKey(), pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
 
 				for (const auto prevQuiet : moveStack.failLowQuiets)
 				{
 					thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
-						pos.boards().pieceAt(prevQuiet.src()), prevQuiet, penalty);
+						pos.pawnKey(), pos.boards().pieceAt(prevQuiet.src()), prevQuiet, penalty);
 				}
 			}
 			else

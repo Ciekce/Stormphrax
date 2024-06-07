@@ -32,6 +32,11 @@
 
 namespace stormphrax
 {
+	constexpr u32 PawnHistoryEntries = 512;
+
+	// power of 2
+	static_assert(PawnHistoryEntries > 0 && util::resetLsb(PawnHistoryEntries) == 0);
+
 	using HistoryScore = i16;
 
 	struct HistoryEntry
@@ -100,6 +105,7 @@ namespace stormphrax
 		{
 			std::memset(&m_main        , 0, sizeof(m_main        ));
 			std::memset(&m_continuation, 0, sizeof(m_continuation));
+			std::memset(&m_pawn        , 0, sizeof(m_pawn        ));
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
 
@@ -122,10 +128,11 @@ namespace stormphrax
 		}
 
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
-			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move, HistoryScore bonus)
 		{
 			mainEntry(threats, move).update(bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
+			pawnEntry(pawnKey, moving, move.dst()).update(bonus);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
@@ -134,7 +141,7 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
-			i32 ply, Bitboard threats, Piece moving, Move move) const -> i32
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move) const -> i32
 		{
 			i32 score{};
 
@@ -143,6 +150,8 @@ namespace stormphrax
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
 			score += conthistScore(continuations, ply, moving, move, 4) / 2;
+
+			score += pawnEntry(pawnKey, moving, move.dst());
 
 			return score;
 		}
@@ -157,6 +166,8 @@ namespace stormphrax
 		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_main{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
+		// [pawn key][piece][to]
+		util::MultiArray<HistoryEntry, PawnHistoryEntries, 12, 64> m_pawn{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
@@ -198,6 +209,16 @@ namespace stormphrax
 			std::span<ContinuationSubtable *> continuations, i32 ply, i32 offset) -> ContinuationSubtable &
 		{
 			return *continuations[ply - offset];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Square dst) const -> const HistoryEntry &
+		{
+			return m_pawn[pawnKey & (PawnHistoryEntries - 1)][static_cast<i32>(moving)][static_cast<i32>(dst)];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Square dst) -> HistoryEntry &
+		{
+			return m_pawn[pawnKey & (PawnHistoryEntries - 1)][static_cast<i32>(moving)][static_cast<i32>(dst)];
 		}
 
 		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) const -> const HistoryEntry &

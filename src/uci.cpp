@@ -627,6 +627,10 @@ namespace stormphrax
 			key << std::hex << std::setw(16) << std::setfill('0') << m_pos.key();
 			std::cout << "Key: " << key.str() << std::endl;
 
+			std::ostringstream pawnKey{};
+			pawnKey << std::hex << std::setw(16) << std::setfill('0') << m_pos.pawnKey();
+			std::cout << "Pawn key: " << pawnKey.str() << std::endl;
+
 			std::cout << "Checkers:";
 
 			auto checkers = m_pos.checkers();
