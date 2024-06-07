@@ -163,9 +163,13 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxHistory, 16384, 8192, 32768, 256)
 
-	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 3072, 256)
+	SP_TUNABLE_PARAM(maxHistoryBonus, 2300, 1024, 4096, 256)
 	SP_TUNABLE_PARAM(historyBonusDepthScale, 300, 128, 512, 32)
 	SP_TUNABLE_PARAM(historyBonusOffset, 300, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(maxHistoryPenalty, 2300, 1024, 4096, 256)
+	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 300, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyPenaltyOffset, 300, 128, 768, 64)
 
 	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 17)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -105, -2000, 200, 100)

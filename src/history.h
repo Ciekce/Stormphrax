@@ -60,9 +60,17 @@ namespace stormphrax
 
 	inline auto historyBonus(i32 depth) -> HistoryScore
 	{
-		return static_cast<HistoryScore>(std::min(
+		return static_cast<HistoryScore>(std::clamp(
 			depth * tunable::historyBonusDepthScale() - tunable::historyBonusOffset(),
-			tunable::maxHistoryBonus()
+			0, tunable::maxHistoryBonus()
+		));
+	}
+
+	inline auto historyPenalty(i32 depth) -> HistoryScore
+	{
+		return static_cast<HistoryScore>(-std::clamp(
+			depth * tunable::historyPenaltyDepthScale() - tunable::historyPenaltyOffset(),
+			0, tunable::maxHistoryPenalty()
 		));
 	}
 

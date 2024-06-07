@@ -827,7 +827,7 @@ namespace stormphrax::search
 
 						if (!noisy && (score <= alpha || score >= beta))
 						{
-							const auto bonus = score <= alpha ? -historyBonus(newDepth) : historyBonus(newDepth);
+							const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
 							thread.history.updateConthist(thread.conthist, ply, moving, move, bonus);
 						}
 					}
@@ -893,7 +893,7 @@ namespace stormphrax::search
 			const auto historyDepth = depth + (curr.staticEval <= alpha);
 
 			const auto bonus = historyBonus(historyDepth);
-			const auto penalty = -bonus;
+			const auto penalty = historyPenalty(historyDepth);
 
 			if (!pos.isNoisy(bestMove))
 			{
