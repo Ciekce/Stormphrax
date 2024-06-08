@@ -28,7 +28,7 @@
 #include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
-	#define SP_EXTERNAL_TUNE 0
+	#define SP_EXTERNAL_TUNE 1
 #endif
 
 namespace stormphrax::tunable
@@ -56,6 +56,7 @@ namespace stormphrax::tunable
 	struct TunableParam
 	{
 		std::string name;
+		std::string lowerName;
 		i32 defaultValue;
 		i32 value;
 		util::Range<i32> range;
@@ -148,7 +149,9 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(tripleExtMargin, 100, 10, 150, 7)
 
 	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
-	SP_TUNABLE_PARAM(lmrMinMoves, 3, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesRoot, 3, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesPv, 3, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 3, 0, 5, 1)
 
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 77, 50, 120, 15, updateQuietLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 226, 100, 300, 10, updateQuietLmrTable)
