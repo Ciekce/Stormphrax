@@ -20,6 +20,8 @@
 
 #include "types.h"
 
+#include <new>
+
 #if defined(SP_NATIVE)
 	// cannot expand a macro to defined()
 	#if __BMI2__ && defined(SP_FAST_PEXT)
@@ -69,5 +71,7 @@
 #error no arch specified
 #endif
 
-// should be good on all(tm) architectures
-#define SP_CACHE_LINE_SIZE (64)
+namespace stormphrax
+{
+	constexpr auto CacheLineSize = std::hardware_destructive_interference_size;
+}

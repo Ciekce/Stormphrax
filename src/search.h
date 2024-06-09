@@ -105,7 +105,7 @@ namespace stormphrax::search
 		StaticVector<Move, 32> failLowNoisies{};
 	};
 
-	struct alignas(SP_CACHE_LINE_SIZE) ThreadData
+	struct alignas(CacheLineSize) ThreadData
 	{
 		ThreadData()
 		{
