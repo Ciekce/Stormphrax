@@ -122,7 +122,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(maxNmpEvalReduction, 2, 2, 5, 1)
 
 	SP_TUNABLE_PARAM(minProbcutDepth, 7, 4, 8, 0.5)
-	SP_TUNABLE_PARAM(probcutMargin, 211, 150, 400, 13)
+	SP_TUNABLE_PARAM(probcutMargin, 311, 150, 400, 13)
 	SP_TUNABLE_PARAM(probcutReduction, 3, 2, 5, 0.5)
 	SP_TUNABLE_PARAM(probcutSeeScale, 16, 6, 24, 1)
 
@@ -141,7 +141,7 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(minSeDepth, 8, 4, 10, 0.5)
 	SP_TUNABLE_PARAM(seTtDepthMargin, 4, 2, 6, 1)
-	SP_TUNABLE_PARAM(sBetaMargin, 26, 4, 64, 12)
+	SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
 
 	SP_TUNABLE_PARAM(multiExtLimit, 8, 4, 24, 4)
 
