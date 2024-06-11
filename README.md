@@ -11,8 +11,6 @@
 
 </div>
 
-#### Stormphrax's search is currently undergoing a full rewrite - see the [`search_rewrite` branch](https://github.com/Ciekce/Stormphrax/tree/search_rewrite)
-
 a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained from zero knowledge starting with random weights
 
 this project is a continuation of my HCE engine [Polaris]
@@ -29,22 +27,22 @@ this project is a continuation of my HCE engine [Polaris]
 ## Features
 - standard PVS with quiescence search and iterative deepening
   - aspiration windows
-  - check extensions
-  - countermoves
   - futility pruning
   - history
     - capture history
     - 1-ply continuation history (countermove history)
     - 2-ply continuation history (follow-up history)
     - 4-ply continuation history
+  - history pruning
   - internal iterative reduction
-  - killers (1 per ply)
+  - killers (2 per ply)
   - late move reductions
   - late move pruning
   - mate distance pruning
   - multicut
   - nullmove pruning
   - reverse futility pruning
+  - probcut
   - SEE move ordering and pruning
   - singular extensions
     - double extensions
