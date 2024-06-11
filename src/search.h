@@ -163,13 +163,6 @@ namespace stormphrax::search
 		}
 	};
 
-	SP_ENUM_FLAGS(u32, NodeType)
-	{
-		None = 0x0,
-		Pv = 0x1,
-		Root = 0x3
-	};
-
 	class Searcher
 	{
 	public:

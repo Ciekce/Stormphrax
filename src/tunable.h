@@ -76,7 +76,6 @@ namespace stormphrax::tunable
 	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 		inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step, Callback); \
 		inline auto Name() { return param_##Name.value; }
-
 #else
 	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
 		SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
