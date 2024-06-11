@@ -41,9 +41,9 @@ namespace stormphrax
 			std::memset(&m_table, 0, sizeof(m_table));
 		}
 
-		inline auto update(const Position &pos, i32 depth, i32 error)
+		inline auto update(const Position &pos, i32 depth, Score searchScore, Score staticEval)
 		{
-			m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(depth, error);
+			m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(depth, searchScore, staticEval);
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos, Score score) const
@@ -62,9 +62,9 @@ namespace stormphrax
 		{
 			i32 value{};
 
-			inline auto update(i32 depth, i32 error) -> void
+			inline auto update(i32 depth, Score searchScore, Score staticEval) -> void
 			{
-				const auto scaledError = error * Grain;
+				const auto scaledError = (searchScore - staticEval) * Grain;
 				const auto newWeight = std::min(depth + 1, 16);
 
 				value = util::ilerp<WeightScale>(value, scaledError, newWeight);
