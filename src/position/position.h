@@ -41,6 +41,7 @@ namespace stormphrax
 		PositionBoards boards{};
 
 		u64 key{};
+		u64 pawnKey{};
 
 		Bitboard checkers{};
 		Bitboard pinned{};
@@ -75,7 +76,7 @@ namespace stormphrax
 		}
 	};
 
-	static_assert(sizeof(BoardState) == 176);
+	static_assert(sizeof(BoardState) == 184);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -173,6 +174,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return currState().key; }
+		[[nodiscard]] inline auto pawnKey() const { return currState().pawnKey; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{

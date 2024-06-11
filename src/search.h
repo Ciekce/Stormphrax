@@ -42,6 +42,7 @@
 #include "movepick.h"
 #include "util/barrier.h"
 #include "history.h"
+#include "correction.h"
 
 namespace stormphrax::search
 {
@@ -133,6 +134,7 @@ namespace stormphrax::search
 		MoveList rootMoves{};
 
 		HistoryTables history{};
+		CorrectionHistoryTable correctionHistory{};
 
 		Position pos{};
 

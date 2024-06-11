@@ -73,6 +73,7 @@ namespace stormphrax::search
 		for (auto &thread : m_threads)
 		{
 			thread.history.clear();
+			thread.correctionHistory.clear();
 		}
 	}
 
@@ -558,13 +559,17 @@ namespace stormphrax::search
 			&& !ttEntry.move)
 			--depth;
 
+		Score rawStaticEval{};
+
 		if (!curr.excluded)
 		{
 			if (inCheck)
-				curr.staticEval = ScoreNone;
+				rawStaticEval = ScoreNone;
 			else if (ttHit && ttEntry.staticEval != ScoreNone)
-				curr.staticEval = ttEntry.staticEval;
-			else curr.staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				rawStaticEval = ttEntry.staticEval;
+			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+			curr.staticEval = inCheck ? ScoreNone : thread.correctionHistory.correct(pos, rawStaticEval);
 		}
 
 		const bool improving = [&]
@@ -930,7 +935,16 @@ namespace stormphrax::search
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
 		if (!curr.excluded && !hasStopped())
-			m_ttable.put(pos.key(), bestScore, curr.staticEval, bestMove, depth, ply, ttFlag, ttpv);
+		{
+			if (!inCheck
+				&& (bestMove.isNull() || !pos.isNoisy(bestMove))
+				&& (ttFlag == TtFlag::Exact
+					|| ttFlag == TtFlag::UpperBound && bestScore < curr.staticEval
+					|| ttFlag == TtFlag::LowerBound && bestScore > curr.staticEval))
+				thread.correctionHistory.update(pos, depth, bestScore, curr.staticEval);
+
+			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
+		}
 
 		return bestScore;
 	}
@@ -969,18 +983,20 @@ namespace stormphrax::search
 
 		const bool ttpv = PvNode || ttEntry.wasPv;
 
-		Score staticEval, eval;
+		Score rawStaticEval, eval;
 
 		if (pos.isCheck())
 		{
-			staticEval = ScoreNone;
+			rawStaticEval = ScoreNone;
 			eval = -ScoreMate + ply;
 		}
 		else
 		{
 			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
-				staticEval = ttEntry.staticEval;
-			else staticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+				rawStaticEval = ttEntry.staticEval;
+			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+			const auto staticEval = thread.correctionHistory.correct(pos, rawStaticEval);
 
 			if (ttEntry.flag != TtFlag::None
 				&& (ttEntry.flag == TtFlag::Exact
@@ -1051,7 +1067,7 @@ namespace stormphrax::search
 		}
 
 		if (!hasStopped())
-			m_ttable.put(pos.key(), bestScore, staticEval, bestMove, 0, ply, ttFlag, ttpv);
+			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
 
 		return bestScore;
 	}
