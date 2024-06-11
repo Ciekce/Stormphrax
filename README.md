@@ -11,6 +11,8 @@
 
 </div>
 
+#### Stormphrax's search is currently undergoing a full rewrite - see the [`search_rewrite` branch](https://github.com/Ciekce/Stormphrax/tree/search_rewrite)
+
 a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained from zero knowledge starting with random weights
 
 this project is a continuation of my HCE engine [Polaris]
