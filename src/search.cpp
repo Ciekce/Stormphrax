@@ -938,8 +938,9 @@ namespace stormphrax::search
 		{
 			if (!inCheck
 				&& (bestMove.isNull() || !pos.isNoisy(bestMove)
-				&& (ttFlag != TtFlag::UpperBound || bestScore > curr.staticEval)
-				&& (ttFlag != TtFlag::LowerBound || bestScore < curr.staticEval)))
+				&& (ttFlag == TtFlag::Exact
+					|| ttFlag == TtFlag::UpperBound && bestScore < curr.staticEval
+					|| ttFlag == TtFlag::LowerBound && bestScore > curr.staticEval)))
 				thread.correctionHistory.update(pos, depth, bestScore - curr.staticEval);
 
 			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
