@@ -23,7 +23,7 @@
 
 namespace stormphrax::tb
 {
-	auto probeRoot(ScoredMoveList &rootMoves, const Position &pos) -> ProbeResult
+	auto probeRoot(MoveList &rootMoves, const Position &pos) -> ProbeResult
 	{
 		const auto moveFromTb = [&pos](auto tbMove)
 		{
@@ -111,7 +111,7 @@ namespace stormphrax::tb
 			if (move.tbRank < minRank)
 				break;
 
-			rootMoves.push({moveFromTb(move.move), 0});
+			rootMoves.push(moveFromTb(move.move));
 		}
 
 		return wdl;

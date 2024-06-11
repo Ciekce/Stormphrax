@@ -25,6 +25,7 @@
 #include <functional>
 
 #include "util/range.h"
+#include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
 	#define SP_EXTERNAL_TUNE 0
@@ -32,21 +33,30 @@
 
 namespace stormphrax::tunable
 {
-	extern std::array<std::array<i32, 256>, 256> g_lmrTable;
-	auto updateLmrTable() -> void;
-
 	auto init() -> void;
+
+	// [noisy][depth][legal moves]
+	extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
+
+	auto updateQuietLmrTable() -> void;
+	auto updateNoisyLmrTable() -> void;
+
+	// [improving][clamped depth]
+	extern util::MultiArray<i32, 2, 16> g_lmpTable;
+	auto updateLmpTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert(Default >= Min); \
 	static_assert(Default <= Max); \
 	static_assert(Min < Max); \
-	static_assert(Min + Step <= Max);
+	static_assert(Min + Step <= Max); \
+	static_assert(Step >= 0.5);
 
 #if SP_EXTERNAL_TUNE
 	struct TunableParam
 	{
 		std::string name;
+		std::string lowerName;
 		i32 defaultValue;
 		i32 value;
 		util::Range<i32> range;
@@ -66,7 +76,6 @@ namespace stormphrax::tunable
 	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 		inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step, Callback); \
 		inline auto Name() { return param_##Name.value; }
-
 #else
 	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
 		SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
@@ -75,91 +84,97 @@ namespace stormphrax::tunable
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 #endif
 
-	SP_TUNABLE_PARAM(defaultMovesToGo, 21, 12, 40, 1)
-	SP_TUNABLE_PARAM(incrementScale, 81, 50, 100, 5)
-	SP_TUNABLE_PARAM(softTimeScale, 68, 50, 100, 5)
-	SP_TUNABLE_PARAM(hardTimeScale, 43, 20, 100, 5)
+	SP_TUNABLE_PARAM(defaultMovesToGo, 20, 12, 40, 1)
+	SP_TUNABLE_PARAM(incrementScale, 83, 50, 100, 5)
+	SP_TUNABLE_PARAM(softTimeScale, 69, 50, 100, 5)
+	SP_TUNABLE_PARAM(hardTimeScale, 46, 20, 100, 5)
 
-	SP_TUNABLE_PARAM(nodeTimeBase, 155, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScale, 169, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScaleMin, 95, 1, 1000, 100)
+	SP_TUNABLE_PARAM(nodeTimeBase, 148, 100, 250, 10)
+	SP_TUNABLE_PARAM(nodeTimeScale, 174, 100, 250, 10)
+	SP_TUNABLE_PARAM(nodeTimeScaleMin, 108, 1, 1000, 100)
 
-	SP_TUNABLE_PARAM(timeScaleMin, 13, 1, 1000, 100)
+	SP_TUNABLE_PARAM(timeScaleMin, 126, 1, 1000, 100)
 
-	SP_TUNABLE_PARAM(minAspDepth, 8, 1, 10, 1)
+	SP_TUNABLE_PARAM(minAspDepth, 4, 1, 10, 1)
+	SP_TUNABLE_PARAM(initialAspWindow, 12, 4, 50, 4)
+	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
 
-	SP_TUNABLE_PARAM(maxAspReduction, 2, 0, 5, 1)
+	SP_TUNABLE_PARAM(maxAspFailHighReduction, 3, 1, 5, 1)
 
-	SP_TUNABLE_PARAM(initialAspWindow, 8, 8, 50, 4)
-	SP_TUNABLE_PARAM(maxAspWindow, 518, 100, 1000, 100)
-	SP_TUNABLE_PARAM(aspWideningFactor, 6, 1, 24, 1)
+	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
+	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
 
-	SP_TUNABLE_PARAM(minNmpDepth, 4, 3, 8, 0.5)
-
-	SP_TUNABLE_PARAM(nmpReductionBase, 4, 2, 5, 0.5)
-	SP_TUNABLE_PARAM(nmpReductionDepthScale, 4, 1, 8, 1)
-	SP_TUNABLE_PARAM(nmpReductionEvalScale, 200, 50, 300, 25)
-	SP_TUNABLE_PARAM(maxNmpEvalReduction, 2, 2, 5, 1)
-
-	SP_TUNABLE_PARAM(minNmpVerifDepth, 16, 6, 18, 1)
-	SP_TUNABLE_PARAM(nmpVerifDepthFactor, 12, 8, 14, 1)
-
-	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
-
-	SP_TUNABLE_PARAM(lmrMinMovesPv, 1, 0, 5, 1)
-	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 0, 0, 5, 1)
-
-	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
-	SP_TUNABLE_PARAM(rfpMarginNonImproving, 74, 25, 150, 5)
-	SP_TUNABLE_PARAM(rfpMarginImproving, 33, 25, 150, 5)
-	SP_TUNABLE_PARAM(rfpHistoryMargin, 344, 64, 1024, 64)
-
-	SP_TUNABLE_PARAM(maxSeePruningDepth, 9, 4, 15, 1)
-
-	SP_TUNABLE_PARAM(quietSeeThreshold, -59, -120, -20, 10)
-	SP_TUNABLE_PARAM(noisySeeThreshold, -94, -120, -20, 10)
-
-	SP_TUNABLE_PARAM(minSingularityDepth, 9, 4, 12, 0.5)
-
-	SP_TUNABLE_PARAM(singularityDepthMargin, 4, 1, 4, 1)
-	SP_TUNABLE_PARAM(singularityDepthScale, 12, 8, 32, 2)
-
-	SP_TUNABLE_PARAM(doubleExtensionMargin, 12, 2, 30, 2)
-	SP_TUNABLE_PARAM(tripleExtensionMargin, 100, 50, 300, 15)
-	SP_TUNABLE_PARAM(multiExtensionLimit, 12, 4, 16, 1)
-
-	SP_TUNABLE_PARAM(maxFpDepth, 9, 4, 12, 0.5)
-
-	SP_TUNABLE_PARAM(fpMargin, 236, 120, 350, 15)
-	SP_TUNABLE_PARAM(fpScale, 68, 40, 80, 5)
+	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
 
-	SP_TUNABLE_PARAM(maxLmpDepth, 11, 4, 12, 1)
-	SP_TUNABLE_PARAM(lmpMinMovesBase, 2, 2, 5, 1)
+	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
+	SP_TUNABLE_PARAM(rfpMargin, 68, 25, 150, 5)
 
-	SP_TUNABLE_PARAM(maxHistory, 16084, 8192, 32768, 256)
+	SP_TUNABLE_PARAM(maxRazoringDepth, 4, 2, 6, 0.5)
+	SP_TUNABLE_PARAM(razoringMargin, 302, 100, 350, 40)
 
-	SP_TUNABLE_PARAM(maxHistoryBonus, 2316, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyBonusDepthScale, 276, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyBonusOffset, 509, 128, 768, 64)
+	SP_TUNABLE_PARAM(minNmpDepth, 4, 3, 8, 0.5)
+	SP_TUNABLE_PARAM(nmpBaseReduction, 4, 2, 5, 0.5)
+	SP_TUNABLE_PARAM(nmpDepthReductionDiv, 5, 1, 8, 1)
+	SP_TUNABLE_PARAM(nmpEvalReductionScale, 217, 50, 300, 25)
+	SP_TUNABLE_PARAM(maxNmpEvalReduction, 2, 2, 5, 1)
 
-	SP_TUNABLE_PARAM(maxHistoryPenalty, 1107, 1024, 3072, 256)
-	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 401, 128, 512, 32)
-	SP_TUNABLE_PARAM(historyPenaltyOffset, 222, 128, 768, 64)
+	SP_TUNABLE_PARAM(minProbcutDepth, 7, 4, 8, 0.5)
+	SP_TUNABLE_PARAM(probcutMargin, 311, 150, 400, 13)
+	SP_TUNABLE_PARAM(probcutReduction, 3, 2, 5, 0.5)
+	SP_TUNABLE_PARAM(probcutSeeScale, 16, 6, 24, 1)
 
-	SP_TUNABLE_PARAM(historyLmrDivisor, 9139, 4096, 16384, 512)
+	SP_TUNABLE_PARAM_CALLBACK(lmpBaseMoves, 3, 2, 5, 0.5, updateLmpTable)
 
-	SP_TUNABLE_PARAM(evalDeltaLmrDiv, 400, 100, 1000, 50)
-	SP_TUNABLE_PARAM(maxEvalDeltaReduction, 2, 1, 4, 1)
+	SP_TUNABLE_PARAM(maxFpDepth, 8, 4, 12, 0.5)
+	SP_TUNABLE_PARAM(fpMargin, 297, 120, 350, 45)
+	SP_TUNABLE_PARAM(fpScale, 63, 40, 80, 8)
 
-	SP_TUNABLE_PARAM(lmrDeeperBase, 63, 32, 96, 8)
-	SP_TUNABLE_PARAM(lmrDeeperScale, 8, 2, 12, 1)
+	SP_TUNABLE_PARAM(maxHistoryPruningDepth, 5, 2, 8, 0.5)
+	SP_TUNABLE_PARAM(historyPruningMargin, -2254, -4000, -1000, 175)
+	SP_TUNABLE_PARAM(historyPruningOffset, -1056, -4000, 4000, 400)
 
-	SP_TUNABLE_PARAM_CALLBACK(lmrBase, 77, 50, 120, 5, updateLmrTable)
-	SP_TUNABLE_PARAM_CALLBACK(lmrDivisor, 226, 100, 300, 10, updateLmrTable)
+	SP_TUNABLE_PARAM(seePruningThresholdQuiet, -18, -80, -15, 12)
+	SP_TUNABLE_PARAM(seePruningThresholdNoisy, -99, -120, -40, 20)
 
-	SP_TUNABLE_PARAM(qsearchFpMargin, 150, 50, 400, 10);
+	SP_TUNABLE_PARAM(minSeDepth, 8, 4, 10, 0.5)
+	SP_TUNABLE_PARAM(seTtDepthMargin, 4, 2, 6, 1)
+	SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
+
+	SP_TUNABLE_PARAM(multiExtLimit, 8, 4, 24, 4)
+
+	SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
+	SP_TUNABLE_PARAM(tripleExtMargin, 106, 10, 150, 7)
+
+	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesRoot, 5, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesPv, 4, 0, 5, 1)
+	SP_TUNABLE_PARAM(lmrMinMovesNonPv, 2, 0, 5, 1)
+
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 85, 50, 120, 15, updateQuietLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 215, 100, 300, 10, updateQuietLmrTable)
+
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -15, -50, 75, 10, updateNoisyLmrTable)
+	SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 257, 150, 350, 10, updateNoisyLmrTable)
+
+	SP_TUNABLE_PARAM(lmrHistoryDivisor, 9579, 4096, 16384, 650)
+
+	SP_TUNABLE_PARAM(lmrDeeperBase, 41, 20, 100, 6)
+	SP_TUNABLE_PARAM(lmrDeeperScale, 5, 3, 12, 1)
+
+	SP_TUNABLE_PARAM(maxHistory, 16113, 8192, 32768, 256)
+
+	SP_TUNABLE_PARAM(maxHistoryBonus, 2376, 1024, 4096, 256)
+	SP_TUNABLE_PARAM(historyBonusDepthScale, 309, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyBonusOffset, 461, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(maxHistoryPenalty, 1760, 1024, 4096, 256)
+	SP_TUNABLE_PARAM(historyPenaltyDepthScale, 337, 128, 512, 32)
+	SP_TUNABLE_PARAM(historyPenaltyOffset, 217, 128, 768, 64)
+
+	SP_TUNABLE_PARAM(qsearchFpMargin, 132, 50, 400, 17)
+	SP_TUNABLE_PARAM(qsearchSeeThreshold, -122, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK

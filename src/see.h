@@ -100,7 +100,7 @@ namespace stormphrax::see
 	}
 
 	// basically ported from ethereal and weiss (their implementation is the same)
-	inline auto see(const Position &pos, Move move, Score threshold = 0)
+	inline auto see(const Position &pos, Move move, Score threshold)
 	{
 		const auto &boards = pos.boards();
 		const auto &bbs = boards.bbs();

@@ -48,8 +48,6 @@ namespace stormphrax
 
 		CastlingRooks castlingRooks{};
 
-		Move lastMove{NullMove};
-
 		u16 halfmove{};
 
 		Square enPassant{Square::None};
@@ -134,6 +132,11 @@ namespace stormphrax
 			applyMoveUnchecked<UpdateNnue>(move, nnueState);
 
 			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr};
+		}
+
+		[[nodiscard]] inline auto applyNullMove()
+		{
+			return applyMove<false>(NullMove, nullptr);
 		}
 
 		template <bool UpdateNnue = true>
@@ -403,11 +406,6 @@ namespace stormphrax
 			return false;
 		}
 
-		[[nodiscard]] inline auto lastMove() const
-		{
-			return m_states.empty() ? NullMove : currState().lastMove;
-		}
-
 		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
 			assert(move != NullMove);
@@ -475,15 +473,7 @@ namespace stormphrax
 				&& currState().key == other.m_states.back().key;
 		}
 
-		template <bool EnPassantFromMoves = false>
 		auto regen() -> void;
-
-#ifndef NDEBUG
-		auto printHistory(Move last = NullMove) -> void;
-
-		template <bool HasHistory = true>
-		auto verify() -> bool;
-#endif
 
 		[[nodiscard]] auto moveFromUci(const std::string &move) const -> Move;
 

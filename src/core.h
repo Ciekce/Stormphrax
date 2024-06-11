@@ -87,6 +87,13 @@ namespace stormphrax
 		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
 	}
 
+	[[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece)
+	{
+		if (piece == Piece::None)
+			return PieceType::None;
+		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+	}
+
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
 		assert(piece != Piece::None);
@@ -316,6 +323,8 @@ namespace stormphrax
 	constexpr auto ScoreMate = 32766;
 	constexpr auto ScoreTbWin = 30000;
 	constexpr auto ScoreWin = 25000;
+
+	constexpr auto ScoreNone = -ScoreInf;
 
 	constexpr i32 MaxDepth = 255;
 

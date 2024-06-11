@@ -20,13 +20,14 @@
 
 #include <cstring>
 #include <bit>
-
-#ifndef NDEBUG
 #include <iostream>
-#endif
+
+#include "tunable.h"
 
 namespace stormphrax
 {
+	using namespace stormphrax::tunable;
+
 	namespace
 	{
 		// for a long time, these were backwards
@@ -64,11 +65,22 @@ namespace stormphrax
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(TTableEntry);
+		const auto capacity = size / sizeof(Entry);
 
-		//TODO handle oom
-		m_table.resize(capacity);
-		m_table.shrink_to_fit();
+		// don't bother reallocating if we're already at the right size
+		if (m_table.size() != capacity)
+		{
+			try
+			{
+				m_table.resize(capacity);
+				m_table.shrink_to_fit();
+			}
+			catch (...)
+			{
+				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+				throw;
+			}
+		}
 
 		clear();
 	}
@@ -77,59 +89,60 @@ namespace stormphrax
 	{
 		const auto entry = loadEntry(index(key));
 
-		if (entry.type != EntryType::None
+		if (entry.flag() != TtFlag::None
 			&& packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+			dst.staticEval = static_cast<Score>(entry.staticEval);
 			dst.depth = entry.depth;
 			dst.move = entry.move;
-			dst.type = entry.type;
+			dst.wasPv = entry.pv();
+			dst.flag = entry.flag();
 		}
-		else dst.type = EntryType::None;
+		else dst.flag = TtFlag::None;
 	}
 
-	auto TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, EntryType type) -> void
+	auto TTable::put(u64 key, Score score, Score staticEval,
+		Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void
 	{
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
+		assert(staticEval == ScoreNone || staticEval > -ScoreWin);
+		assert(staticEval == ScoreNone || staticEval <  ScoreWin);
+
 		auto entry = loadEntry(index(key));
 
-		const auto entryKey = packEntryKey(key);
-
-		// always replace empty entries
-		const bool replace = entry.key == 0
-			// always replace with PV entries
-			|| type == EntryType::Exact
-			// always replace entries from previous searches
-			|| entry.age != m_currentAge
-			// otherwise, replace if the depth is greater
-			// only keep entries from the same position if their depth is significantly greater
-			|| entry.depth < depth + (entry.key == entryKey ? 3 : 0);
-
-		if (!replace)
-			return;
+		const auto newKey = packEntryKey(key);
 
 #ifndef NDEBUG
 		if (std::abs(score) > std::numeric_limits<i16>::max())
 			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
 #endif
 
-		entry.key = entryKey;
+		// Roughly the SF replacement scheme
+		if (!(flag == TtFlag::Exact
+				|| newKey != entry.key
+				|| entry.age() != m_age
+				|| depth + ttReplacementDepthOffset() + pv * ttReplacementPvOffset() > entry.depth))
+			return;
+
+		if (move || entry.key != newKey)
+			entry.move = move;
+
+		entry.key = newKey;
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
-		entry.move = move;
+		entry.staticEval = static_cast<i16>(staticEval);
 		entry.depth = depth;
-		entry.age = m_currentAge;
-		entry.type = type;
+		entry.setAgePvFlag(m_age, pv, flag);
 
 		storeEntry(index(key), entry);
 	}
 
 	auto TTable::clear() -> void
 	{
-		m_currentAge = 0;
-
-		std::memset(m_table.data(), 0, m_table.size() * sizeof(TTableEntry));
+		std::memset(m_table.data(), 0, m_table.size() * sizeof(Entry));
+		m_age = 0;
 	}
 
 	auto TTable::full() const -> u32
@@ -139,7 +152,7 @@ namespace stormphrax
 		for (u64 i = 0; i < 1000; ++i)
 		{
 			const auto entry = loadEntry(i);
-			if (entry.type != EntryType::None && entry.age == m_currentAge)
+			if (entry.flag() != TtFlag::None && entry.age() == m_age)
 				++filledEntries;
 		}
 

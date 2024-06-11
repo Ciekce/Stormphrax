@@ -59,15 +59,24 @@ namespace stormphrax
 #if SP_EXTERNAL_TUNE
 		auto tunableParams() -> auto &
 		{
-			static std::unordered_map<std::string, tunable::TunableParam> params{};
+			static auto params = []
+			{
+				std::vector<tunable::TunableParam> params{};
+				params.reserve(128);
+				return params;
+			}();
+
 			return params;
 		}
 
-		inline auto lookupTunableParam(const std::string &param) -> tunable::TunableParam *
+		inline auto lookupTunableParam(const std::string &name) -> tunable::TunableParam *
 		{
-			auto &params = tunableParams();
-			if (auto itr = params.find(param); itr != params.end())
-				return &itr->second;
+			for (auto &param : tunableParams())
+			{
+				if (param.lowerName == name)
+					return &param;
+			}
+
 			return nullptr;
 		}
 #endif
@@ -99,9 +108,6 @@ namespace stormphrax
 			auto handlePerft(const std::vector<std::string> &tokens) -> void;
 			auto handleSplitperft(const std::vector<std::string> &tokens) -> void;
 			auto handleBench(const std::vector<std::string> &tokens) -> void;
-#ifndef NDEBUG
-			auto handleVerify() -> void;
-#endif
 
 			bool m_fathomInitialized{false};
 
@@ -169,10 +175,6 @@ namespace stormphrax
 					handleSplitperft(tokens);
 				else if (command == "bench")
 					handleBench(tokens);
-#ifndef NDEBUG
-				else if (command == "verify")
-					handleVerify();
-#endif
 			}
 
 			return 0;
@@ -212,7 +214,7 @@ namespace stormphrax
 			std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
 #if SP_EXTERNAL_TUNE
-			for (const auto &[_lowerName, param] : tunableParams())
+			for (const auto &param : tunableParams())
 			{
 				std::cout << "option name " << param.name << " type spin default " << param.defaultValue
 					<< " min " << param.range.min() << " max " << param.range.max() << std::endl;
@@ -331,8 +333,6 @@ namespace stormphrax
 							limiter = std::make_unique<limit::InfiniteLimiter>();
 						else if (tokens[i] == "nodes" && ++i < tokens.size())
 						{
-							std::cout << "info string node limiting currently broken" << std::endl;
-
 							usize nodes{};
 							if (!util::tryParseSize(nodes, tokens[i]))
 								std::cerr << "invalid node count " << tokens[i] << std::endl;
@@ -516,7 +516,7 @@ namespace stormphrax
 					if (m_searcher.searching())
 						std::cerr << "still searching" << std::endl;
 
-					m_searcher.clearTt();
+					m_searcher.newGame();
 				}
 				else if (nameStr == "threads")
 				{
@@ -749,7 +749,7 @@ namespace stormphrax
 			}
 
 			i32 depth = bench::DefaultBenchDepth;
-			usize ttSize = 16;
+			usize ttSize = bench::DefaultBenchTtSize;
 
 			if (tokens.size() > 1)
 			{
@@ -788,21 +788,13 @@ namespace stormphrax
 			}
 
 			m_searcher.setTtSize(ttSize);
-			std::cout << "info string set tt size to " << ttSize << std::endl;
+			std::cout << "info string set tt size to " << ttSize << " MB" << std::endl;
 
 			if (depth == 0)
 				depth = 1;
 
 			bench::run(m_searcher, depth);
 		}
-
-#ifndef NDEBUG
-		auto UciHandler::handleVerify() -> void
-		{
-			if (m_pos.verify())
-				std::cout << "info string boards and keys ok" << std::endl;
-		}
-#endif
 	}
 
 #if SP_EXTERNAL_TUNE
@@ -811,13 +803,20 @@ namespace stormphrax
 		auto addTunableParam(const std::string &name, i32 value,
 			i32 min, i32 max, f64 step, std::function<void()> callback) -> TunableParam &
 		{
+			auto &params = tunableParams();
+
+			if (params.size() == params.capacity())
+			{
+				std::cerr << "Tunable vector full, cannot reallocate" << std::endl;
+				std::terminate();
+			}
+
 			auto lowerName = name;
-			std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
-				[](auto c) { return std::tolower(c); });
-			return tunableParams().try_emplace(
-					std::move(lowerName),
-					TunableParam{name, value, value, {min, max}, step, std::move(callback)}
-				).first->second;
+			std::transform(lowerName.begin(), lowerName.end(),
+				lowerName.begin(), [](auto c) { return std::tolower(c); });
+
+			return params.emplace_back(TunableParam{name,
+				std::move(lowerName), value, value, {min, max}, step, std::move(callback)});
 		}
 	}
 #endif
@@ -866,7 +865,7 @@ namespace stormphrax
 			{
 				if (std::ranges::find(params, "<all>") != params.end())
 				{
-					for (const auto &[_, param] : tunableParams())
+					for (const auto &param : tunableParams())
 					{
 						printParam(param);
 					}
@@ -951,30 +950,5 @@ namespace stormphrax
 			printParams(params, printParam);
 		}
 #endif // SP_EXTERNAL_TUNE
-
-#ifndef NDEBUG
-		auto moveAndTypeToString(Move move) -> std::string
-		{
-			if (!move)
-				return "0000";
-
-			std::ostringstream str{};
-
-			if (move.type() != MoveType::Standard)
-			{
-				switch (move.type())
-				{
-				case MoveType::Promotion: str << "p:"; break;
-				case MoveType::Castling:  str << "c:"; break;
-				case MoveType::EnPassant: str << "e:"; break;
-				default: __builtin_unreachable();
-				}
-			}
-
-			str << moveToString(move);
-
-			return str.str();
-		}
-#endif
 	}
 }
