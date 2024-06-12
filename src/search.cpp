@@ -812,7 +812,8 @@ namespace stormphrax::search
 
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves
-					&& quietOrLosing)
+					&& quietOrLosing
+					&& (!noisy || !ttpv))
 				{
 					auto r = baseLmr;
 
