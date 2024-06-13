@@ -784,7 +784,11 @@ namespace stormphrax::search
 				if (score < sBeta)
 				{
 					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+					{
 						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+						if (depth <= 8)
+							++depth;
+					}
 					else extension = 1;
 				}
 				else if (sBeta >= beta)
