@@ -85,12 +85,11 @@ namespace stormphrax
 		clear();
 	}
 
-	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> void
+	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool
 	{
 		const auto entry = loadEntry(index(key));
 
-		if (entry.flag() != TtFlag::None
-			&& packEntryKey(key) == entry.key)
+		if (packEntryKey(key) == entry.key)
 		{
 			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
 			dst.staticEval = static_cast<Score>(entry.staticEval);
@@ -98,8 +97,11 @@ namespace stormphrax
 			dst.move = entry.move;
 			dst.wasPv = entry.pv();
 			dst.flag = entry.flag();
+
+			return true;
 		}
-		else dst.flag = TtFlag::None;
+
+		return false;
 	}
 
 	auto TTable::put(u64 key, Score score, Score staticEval,
