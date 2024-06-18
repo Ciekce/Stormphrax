@@ -360,7 +360,7 @@ namespace stormphrax
 
 						const auto piece = newState.boards.pieceAt(square);
 						if (piece != Piece::None && pieceType(piece) == PieceType::King)
-							newState.king(pieceColor(piece)) = square;
+							newState.kings.color(pieceColor(piece)) = square;
 					}
 				}
 
@@ -369,7 +369,7 @@ namespace stormphrax
 					if (flag >= 'a' && flag <= 'h')
 					{
 						const auto file = static_cast<i32>(flag - 'a');
-						const auto kingFile = squareFile(newState.blackKing());
+						const auto kingFile = squareFile(newState.kings.black());
 
 						if (file == kingFile)
 						{
@@ -384,7 +384,7 @@ namespace stormphrax
 					else if (flag >= 'A' && flag <= 'H')
 					{
 						const auto file = static_cast<i32>(flag - 'A');
-						const auto kingFile = squareFile(newState.whiteKing());
+						const auto kingFile = squareFile(newState.kings.white());
 
 						if (file == kingFile)
 						{
@@ -398,7 +398,7 @@ namespace stormphrax
 					}
 					else if (flag == 'k')
 					{
-						for (i32 file = squareFile(newState.blackKing()) + 1; file < 8; ++file)
+						for (i32 file = squareFile(newState.kings.black()) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(7, file);
 							if (newState.boards.pieceAt(square) == Piece::BlackRook)
@@ -410,7 +410,7 @@ namespace stormphrax
 					}
 					else if (flag == 'K')
 					{
-						for (i32 file = squareFile(newState.whiteKing()) + 1; file < 8; ++file)
+						for (i32 file = squareFile(newState.kings.white()) + 1; file < 8; ++file)
 						{
 							const auto square = toSquare(0, file);
 							if (newState.boards.pieceAt(square) == Piece::WhiteRook)
@@ -422,7 +422,7 @@ namespace stormphrax
 					}
 					else if (flag == 'q')
 					{
-						for (i32 file = squareFile(newState.blackKing()) - 1; file >= 0; --file)
+						for (i32 file = squareFile(newState.kings.black()) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(7, file);
 							if (newState.boards.pieceAt(square) == Piece::BlackRook)
@@ -434,7 +434,7 @@ namespace stormphrax
 					}
 					else if (flag == 'Q')
 					{
-						for (i32 file = squareFile(newState.whiteKing()) - 1; file >= 0; --file)
+						for (i32 file = squareFile(newState.kings.white()) - 1; file >= 0; --file)
 						{
 							const auto square = toSquare(0, file);
 							if (newState.boards.pieceAt(square) == Piece::WhiteRook)
@@ -685,6 +685,9 @@ namespace stormphrax
 
 		if (!move)
 		{
+			if constexpr (UpdateNnue)
+				nnueState->pushUpdates<!StateHistory>({}, state.boards.bbs(), state.kings);
+
 			state.pinned = calcPinned();
 			state.threats = calcThreats();
 
@@ -729,8 +732,7 @@ namespace stormphrax
 		assert(pieceTypeOrNone(captured) != PieceType::King);
 
 		if constexpr (UpdateNnue)
-			nnueState->update<StateHistory>(updates,
-				state.boards.bbs(), state.blackKing(), state.whiteKing());
+			nnueState->pushUpdates<!StateHistory>(updates, state.boards.bbs(), state.kings);
 
 		if (movingType == PieceType::Rook)
 			newCastlingRooks.color(stm).unset(moveSrc);
@@ -979,7 +981,7 @@ namespace stormphrax
 		const auto src = move.src();
 		const auto dst = move.dst();
 
-		const auto king = state.king(us);
+		const auto king = state.kings.color(us);
 
 		if (move.type() == MoveType::Castling)
 		{
@@ -1217,7 +1219,7 @@ namespace stormphrax
 		if (pieceType(piece) == PieceType::King)
 		{
 			const auto color = pieceColor(piece);
-			state.king(color) = dst;
+			state.kings.color(color) = dst;
 		}
 
 		if constexpr (UpdateKey)
@@ -1271,11 +1273,11 @@ namespace stormphrax
 
 			if constexpr (UpdateNnue)
 			{
-				if (eval::InputFeatureSet::refreshRequired(color, state.king(color), dst))
+				if (eval::InputFeatureSet::refreshRequired(color, state.kings.color(color), dst))
 					nnueUpdates.setRefresh(color);
 			}
 
-			state.king(color) = dst;
+			state.kings.color(color) = dst;
 		}
 
 		if constexpr (UpdateNnue)
@@ -1468,7 +1470,7 @@ namespace stormphrax
 				if (const auto piece = state.boards.pieceAt(square); piece != Piece::None)
 				{
 					if (pieceType(piece) == PieceType::King)
-						state.king(pieceColor(piece)) = square;
+						state.kings.color(pieceColor(piece)) = square;
 
 					const auto key = keys::pieceSquare(piece, toSquare(rank, file));
 

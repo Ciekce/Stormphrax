@@ -70,6 +70,11 @@ namespace stormphrax::eval
 			refresh[static_cast<i32>(c)] = true;
 		}
 
+		[[nodiscard]] inline auto requiresRefresh(Color c) const
+		{
+			return refresh[static_cast<i32>(c)];
+		}
+
 		inline auto pushSubAdd(Piece piece, Square src, Square dst)
 		{
 			sub.push({piece, src});
@@ -85,21 +90,61 @@ namespace stormphrax::eval
 		{
 			add.push({piece, square});
 		}
+
+		[[nodiscard]] inline auto check() const
+		{
+			assert(!refresh[0] || !refresh[1]);
+			assert(!sub.empty() && !add.empty() || !refresh[0] && !refresh[1]);
+			assert(sub.empty() && add.empty()
+				|| sub.size() == 1 && add.size() == 1
+				|| sub.size() == 2 && add.size() == 1
+				|| sub.size() == 2 && add.size() == 2);
+		}
+	};
+
+	struct UpdateContext
+	{
+		NnueUpdates updates{};
+		BitboardSet bbs{};
+		KingPair kings{};
 	};
 
 	class NnueState
 	{
+	private:
+		struct UpdatableAccumulator
+		{
+			Accumulator acc{};
+			UpdateContext ctx{};
+			std::array<bool, 2> dirty{};
+
+			inline auto setDirty() -> void
+			{
+				dirty[0] = dirty[1] = true;
+			}
+
+			inline auto setUpdated(Color c) -> void
+			{
+				assert(c != Color::None);
+				dirty[static_cast<i32>(c)] = false;
+			}
+
+			[[nodiscard]] inline auto isDirty(Color c) -> bool
+			{
+				assert(c != Color::None);
+				return dirty[static_cast<i32>(c)];
+			}
+		};
+
 	public:
 		NnueState()
 		{
 			m_accumulatorStack.resize(256);
 		}
 
-		inline auto reset(const BitboardSet &bbs, Square blackKing, Square whiteKing)
+		inline auto reset(const BitboardSet &bbs, KingPair kings)
 		{
-			assert(blackKing != Square::None);
-			assert(whiteKing != Square::None);
-			assert(blackKing != whiteKing);
+			assert(kings.isValid());
 
 			m_refreshTable.init(g_network.featureTransformer());
 
@@ -107,80 +152,92 @@ namespace stormphrax::eval
 
 			for (const auto c : { Color::Black, Color::White })
 			{
-				const auto king = c == Color::Black ? blackKing : whiteKing;
+				const auto king = kings.color(c);
 				const auto bucket = InputFeatureSet::getBucket(c, king);
 
 				auto &rtEntry = m_refreshTable.table[bucket];
 				resetAccumulator(rtEntry.accumulator, c, bbs, king);
 
-				m_curr->copyFrom(c, rtEntry.accumulator);
+				m_curr->acc.copyFrom(c, rtEntry.accumulator);
 				rtEntry.colorBbs(c) = bbs;
 			}
 		}
 
-		template <bool Push>
-		inline auto update(const NnueUpdates &updates, const BitboardSet &bbs, Square blackKing, Square whiteKing)
+		template <bool ApplyImmediately>
+		inline auto pushUpdates(const NnueUpdates &updates, const BitboardSet &bbs, KingPair kings)
 		{
-			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
-			assert(!updates.refresh[0] || !updates.refresh[1]);
-
-			auto *next = Push ? m_curr + 1 : m_curr;
-
-			assert(next <= &m_accumulatorStack.back());
-
-			const auto subCount = updates.sub.size();
-			const auto addCount = updates.add.size();
-
-			for (const auto c : { Color::Black, Color::White })
+			if constexpr (ApplyImmediately)
 			{
-				const auto king = c == Color::Black ? blackKing : whiteKing;
-
-				if (updates.refresh[static_cast<i32>(c)])
-				{
-					refreshAccumulator(*next, c, bbs, m_refreshTable, king);
-					continue;
-				}
-
-				if (addCount == 1 && subCount == 1) // regular non-capture
-				{
-					const auto [subPiece, subSquare] = updates.sub[0];
-					const auto [addPiece, addSquare] = updates.add[0];
-
-					const auto sub = featureIndex(c, subPiece, subSquare, king);
-					const auto add = featureIndex(c, addPiece, addSquare, king);
-
-					next->subAddFrom(*m_curr, g_network.featureTransformer(), c, sub, add);
-				}
-				else if (addCount == 1 && subCount == 2) // any capture
-				{
-					const auto [subPiece0, subSquare0] = updates.sub[0];
-					const auto [subPiece1, subSquare1] = updates.sub[1];
-					const auto [addPiece , addSquare ] = updates.add[0];
-
-					const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
-					const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
-					const auto add  = featureIndex(c, addPiece , addSquare , king);
-
-					next->subSubAddFrom(*m_curr, g_network.featureTransformer(), c, sub0, sub1, add);
-				}
-				else if (addCount == 2 && subCount == 2) // castling
-				{
-					const auto [subPiece0, subSquare0] = updates.sub[0];
-					const auto [subPiece1, subSquare1] = updates.sub[1];
-					const auto [addPiece0, addSquare0] = updates.add[0];
-					const auto [addPiece1, addSquare1] = updates.add[1];
-
-					const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
-					const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
-					const auto add0 = featureIndex(c, addPiece0, addSquare0, king);
-					const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
-
-					next->subSubAddAddFrom(*m_curr, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
-				}
-				else assert(false && "Materialising a piece from nowhere?");
+				m_curr->ctx = {updates, bbs, kings};
+				updateBoth(m_curr->acc, *m_curr, m_curr->ctx);
 			}
+			else
+			{
+				++m_curr;
 
-			m_curr = next;
+				m_curr->ctx = {updates, bbs, kings};
+				m_curr->setDirty();
+			}
+		}
+
+		inline auto update(const Accumulator &prev,
+			UpdatableAccumulator &curr, const UpdateContext &ctx, Color c) -> void
+		{
+			assert(!ctx.updates.refresh[static_cast<i32>(c)]);
+
+			const auto subCount = ctx.updates.sub.size();
+			const auto addCount = ctx.updates.add.size();
+
+			if (subCount == 0 && addCount == 0)
+				return;
+
+			const auto king = ctx.kings.color(c);
+
+			if (addCount == 1 && subCount == 1) // regular non-capture
+			{
+				const auto [subPiece, subSquare] = ctx.updates.sub[0];
+				const auto [addPiece, addSquare] = ctx.updates.add[0];
+
+				const auto sub = featureIndex(c, subPiece, subSquare, king);
+				const auto add = featureIndex(c, addPiece, addSquare, king);
+
+				curr.acc.subAddFrom(prev, g_network.featureTransformer(), c, sub, add);
+			}
+			else if (addCount == 1 && subCount == 2) // any capture
+			{
+				const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
+				const auto [subPiece1, subSquare1] = ctx.updates.sub[1];
+				const auto [addPiece , addSquare ] = ctx.updates.add[0];
+
+				const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
+				const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
+				const auto add  = featureIndex(c, addPiece , addSquare , king);
+
+				curr.acc.subSubAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add);
+			}
+			else if (addCount == 2 && subCount == 2) // castling
+			{
+				const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
+				const auto [subPiece1, subSquare1] = ctx.updates.sub[1];
+				const auto [addPiece0, addSquare0] = ctx.updates.add[0];
+				const auto [addPiece1, addSquare1] = ctx.updates.add[1];
+
+				const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
+				const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
+				const auto add0 = featureIndex(c, addPiece0, addSquare0, king);
+				const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
+
+				curr.acc.subSubAddAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
+			}
+			else assert(false && "Materialising a piece from nowhere?");
+
+			curr.setUpdated(c);
+		}
+
+		inline auto updateBoth(const Accumulator &prev, UpdatableAccumulator &curr, const UpdateContext &ctx) -> void
+		{
+			update(prev, curr, ctx, Color::Black);
+			update(prev, curr, ctx, Color::White);
 		}
 
 		inline auto pop()
@@ -189,38 +246,75 @@ namespace stormphrax::eval
 			--m_curr;
 		}
 
-		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, Color stm) const
+		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, KingPair kings, Color stm)
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
 			assert(stm != Color::None);
 
-			return evaluate(*m_curr, bbs, stm);
+			ensureUpToDate(bbs, kings);
+			return evaluate(m_curr->acc, bbs, stm);
 		}
 
-		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs,
-			Square blackKing, Square whiteKing, Color stm)
+		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs, KingPair kings, Color stm)
 		{
-			assert(blackKing != Square::None);
-			assert(whiteKing != Square::None);
-			assert(blackKing != whiteKing);
-
+			assert(kings.isValid());
 			assert(stm != Color::None);
 
 			Accumulator accumulator{};
 
 			accumulator.initBoth(g_network.featureTransformer());
 
-			resetAccumulator(accumulator, Color::Black, bbs, blackKing);
-			resetAccumulator(accumulator, Color::White, bbs, whiteKing);
+			resetAccumulator(accumulator, Color::Black, bbs, kings.black());
+			resetAccumulator(accumulator, Color::White, bbs, kings.white());
 
 			return evaluate(accumulator, bbs, stm);
 		}
 
 	private:
-		std::vector<Accumulator> m_accumulatorStack{};
-		Accumulator *m_curr{};
+		std::vector<UpdatableAccumulator> m_accumulatorStack{};
+		UpdatableAccumulator *m_curr{};
 
 		RefreshTable m_refreshTable{};
+
+		inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void
+		{
+			for (const auto c : { Color::Black, Color::White })
+			{
+				if (!m_curr->isDirty(c))
+					continue;
+
+				// if the current accumulator needs a refresh, just do it
+				if (m_curr->ctx.updates.requiresRefresh(c))
+				{
+					refreshAccumulator(*m_curr, c, bbs, m_refreshTable, kings.color(c));
+					continue;
+				}
+
+				// scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
+				// root accumulator is always up-to-date
+				auto *curr = m_curr - 1;
+				for (; curr->isDirty(c)
+						&& !curr->ctx.updates.requiresRefresh(c);
+					--curr) {}
+
+				assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresRefresh(c));
+
+				// if the found accumulator requires a refresh, just give up and refresh the current one
+				if (curr->ctx.updates.requiresRefresh(c))
+					refreshAccumulator(*m_curr, c, bbs, m_refreshTable, kings.color(c));
+				else // otherwise go forward and incrementally update all accumulators in between
+				{
+					do
+					{
+						const auto &prev = *curr;
+
+						++curr;
+						update(prev.acc, *curr, curr->ctx, c);
+					}
+					while (curr != m_curr);
+				}
+			}
+		}
 
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
 			const BitboardSet &bbs, Color stm) -> i32
@@ -235,7 +329,7 @@ namespace stormphrax::eval
 			return output * Scale / Q;
 		}
 
-		static inline auto refreshAccumulator(Accumulator &accumulator, Color c,
+		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,
 			const BitboardSet &bbs, RefreshTable &refreshTable, Square king) -> void
 		{
 			const auto bucket = InputFeatureSet::getBucket(c, king);
@@ -270,12 +364,14 @@ namespace stormphrax::eval
 				}
 			}
 
-			accumulator.copyFrom(c, rtEntry.accumulator);
+			accumulator.acc.copyFrom(c, rtEntry.accumulator);
 			prevBoards = bbs;
+
+			accumulator.setUpdated(c);
 		}
 
-		static inline auto resetAccumulator(Accumulator &accumulator, Color c,
-			const BitboardSet &bbs, Square king) -> void
+		static inline auto resetAccumulator(Accumulator &accumulator,
+			Color c, const BitboardSet &bbs, Square king) -> void
 		{
 			assert(c != Color::None);
 			assert(king != Square::None);
@@ -295,6 +391,13 @@ namespace stormphrax::eval
 					accumulator.activateFeature(g_network.featureTransformer(), c, feature);
 				}
 			}
+		}
+
+		static inline auto resetAccumulator(UpdatableAccumulator &accumulator,
+			Color c, const BitboardSet &bbs, Square king) -> void
+		{
+			resetAccumulator(accumulator.acc, c, bbs, king);
+			accumulator.setUpdated(c);
 		}
 
 		[[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32

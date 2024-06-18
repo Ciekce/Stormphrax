@@ -143,7 +143,7 @@ namespace stormphrax::search
 
 			thread.rootMoves = rootMoves;
 
-			thread.nnueState.reset(thread.pos.bbs(), thread.pos.blackKing(), thread.pos.whiteKing());
+			thread.nnueState.reset(thread.pos.bbs(), thread.pos.kings());
 		}
 
 		if (tbRoot)
@@ -202,7 +202,7 @@ namespace stormphrax::search
 		thread->pos = pos;
 		thread->maxDepth = depth;
 
-		thread->nnueState.reset(thread->pos.bbs(), thread->pos.blackKing(), thread->pos.whiteKing());
+		thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
 
 		thread->rootMoves.clear();
 		generateLegal(thread->rootMoves, thread->pos);

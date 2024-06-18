@@ -77,8 +77,8 @@ namespace stormphrax::eval::nnue
 			std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
 		}
 
-		inline auto subAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
-			Color c, u32 sub, u32 add)
+		inline auto subAddFrom(const Accumulator<Ft> &src,
+			const Ft &featureTransformer, Color c, u32 sub, u32 add)
 		{
 			assert(sub < InputCount);
 			assert(add < InputCount);
@@ -87,8 +87,8 @@ namespace stormphrax::eval::nnue
 				sub * OutputCount, add * OutputCount);
 		}
 
-		inline auto subSubAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
-			Color c, u32 sub0, u32 sub1, u32 add)
+		inline auto subSubAddFrom(const Accumulator<Ft> &src,
+			const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add)
 		{
 			assert(sub0 < InputCount);
 			assert(sub1 < InputCount);
@@ -98,8 +98,8 @@ namespace stormphrax::eval::nnue
 				sub0 * OutputCount, sub1 * OutputCount, add * OutputCount);
 		}
 
-		inline auto subSubAddAddFrom(Accumulator<Ft> &src, const Ft &featureTransformer,
-			Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
+		inline auto subSubAddAddFrom(const Accumulator<Ft> &src,
+			const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
 		{
 			assert(sub0 < InputCount);
 			assert(sub1 < InputCount);
@@ -137,7 +137,7 @@ namespace stormphrax::eval::nnue
 
 		SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
 
-		static inline auto subAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
+		static inline auto subAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta, u32 subOffset, u32 addOffset) -> void
 		{
 			assert(subOffset + OutputCount <= delta.size());
@@ -151,7 +151,7 @@ namespace stormphrax::eval::nnue
 			}
 		}
 
-		static inline auto subSubAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
+		static inline auto subSubAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta, u32 subOffset0, u32 subOffset1, u32 addOffset) -> void
 		{
 			assert(subOffset0 + OutputCount <= delta.size());
@@ -167,7 +167,7 @@ namespace stormphrax::eval::nnue
 			}
 		}
 
-		static inline auto subSubAddAdd(std::span<Type, OutputCount> src, std::span<Type, OutputCount> dst,
+		static inline auto subSubAddAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
 			std::span<const Type, WeightCount> delta,
 			u32 subOffset0, u32 subOffset1, u32 addOffset0, u32 addOffset1) -> void
 		{
