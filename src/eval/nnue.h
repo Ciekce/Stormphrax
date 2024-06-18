@@ -90,16 +90,6 @@ namespace stormphrax::eval
 		{
 			add.push({piece, square});
 		}
-
-		[[nodiscard]] inline auto check() const
-		{
-			assert(!refresh[0] || !refresh[1]);
-			assert(!sub.empty() && !add.empty() || !refresh[0] && !refresh[1]);
-			assert(sub.empty() && add.empty()
-				|| sub.size() == 1 && add.size() == 1
-				|| sub.size() == 2 && add.size() == 1
-				|| sub.size() == 2 && add.size() == 2);
-		}
 	};
 
 	struct UpdateContext
@@ -180,7 +170,44 @@ namespace stormphrax::eval
 			}
 		}
 
-		inline auto update(const Accumulator &prev,
+		inline auto pop()
+		{
+			assert(m_curr > &m_accumulatorStack[0]);
+			--m_curr;
+		}
+
+		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, KingPair kings, Color stm)
+		{
+			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
+			assert(stm != Color::None);
+
+			ensureUpToDate(bbs, kings);
+
+			return evaluate(m_curr->acc, bbs, stm);
+		}
+
+		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs, KingPair kings, Color stm)
+		{
+			assert(kings.isValid());
+			assert(stm != Color::None);
+
+			Accumulator accumulator{};
+
+			accumulator.initBoth(g_network.featureTransformer());
+
+			resetAccumulator(accumulator, Color::Black, bbs, kings.black());
+			resetAccumulator(accumulator, Color::White, bbs, kings.white());
+
+			return evaluate(accumulator, bbs, stm);
+		}
+
+	private:
+		std::vector<UpdatableAccumulator> m_accumulatorStack{};
+		UpdatableAccumulator *m_curr{};
+
+		RefreshTable m_refreshTable{};
+
+		static inline auto update(const Accumulator &prev,
 			UpdatableAccumulator &curr, const UpdateContext &ctx, Color c) -> void
 		{
 			assert(!ctx.updates.refresh[static_cast<i32>(c)]);
@@ -234,47 +261,12 @@ namespace stormphrax::eval
 			curr.setUpdated(c);
 		}
 
-		inline auto updateBoth(const Accumulator &prev, UpdatableAccumulator &curr, const UpdateContext &ctx) -> void
+		static inline auto updateBoth(const Accumulator &prev,
+			UpdatableAccumulator &curr, const UpdateContext &ctx) -> void
 		{
 			update(prev, curr, ctx, Color::Black);
 			update(prev, curr, ctx, Color::White);
 		}
-
-		inline auto pop()
-		{
-			assert(m_curr > &m_accumulatorStack[0]);
-			--m_curr;
-		}
-
-		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, KingPair kings, Color stm)
-		{
-			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
-			assert(stm != Color::None);
-
-			ensureUpToDate(bbs, kings);
-			return evaluate(m_curr->acc, bbs, stm);
-		}
-
-		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs, KingPair kings, Color stm)
-		{
-			assert(kings.isValid());
-			assert(stm != Color::None);
-
-			Accumulator accumulator{};
-
-			accumulator.initBoth(g_network.featureTransformer());
-
-			resetAccumulator(accumulator, Color::Black, bbs, kings.black());
-			resetAccumulator(accumulator, Color::White, bbs, kings.white());
-
-			return evaluate(accumulator, bbs, stm);
-		}
-
-	private:
-		std::vector<UpdatableAccumulator> m_accumulatorStack{};
-		UpdatableAccumulator *m_curr{};
-
-		RefreshTable m_refreshTable{};
 
 		inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void
 		{
