@@ -53,27 +53,7 @@ namespace stormphrax
 
 		Square enPassant{Square::None};
 
-		std::array<Square, 2> kings{Square::None, Square::None};
-
-		[[nodiscard]] inline auto blackKing() const
-		{
-			return kings[0];
-		}
-
-		[[nodiscard]] inline auto whiteKing() const
-		{
-			return kings[1];
-		}
-
-		[[nodiscard]] inline auto king(Color c) const
-		{
-			return kings[static_cast<i32>(c)];
-		}
-
-		[[nodiscard]] inline auto king(Color c) -> auto &
-		{
-			return kings[static_cast<i32>(c)];
-		}
+		KingPair kings{};
 	};
 
 	static_assert(sizeof(BoardState) == 184);
@@ -327,31 +307,33 @@ namespace stormphrax
 			return false;
 		}
 
-		[[nodiscard]] inline auto blackKing() const { return currState().blackKing(); }
-		[[nodiscard]] inline auto whiteKing() const { return currState().whiteKing(); }
+		[[nodiscard]] inline auto kings() const { return currState().kings; }
+
+		[[nodiscard]] inline auto blackKing() const { return currState().kings.black(); }
+		[[nodiscard]] inline auto whiteKing() const { return currState().kings.white(); }
 
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
-			return currState().king(C);
+			return currState().kings.color(C);
 		}
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
 			assert(c != Color::None);
-			return currState().king(c);
+			return currState().kings.color(c);
 		}
 
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
-			return currState().king(oppColor(C));
+			return currState().kings.color(oppColor(C));
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
 			assert(c != Color::None);
-			return currState().king(oppColor(c));
+			return currState().kings.color(oppColor(c));
 		}
 
 		[[nodiscard]] inline auto isCheck() const
@@ -515,7 +497,7 @@ namespace stormphrax
 			const auto color = toMove();
 			const auto &state = currState();
 
-			return attackersTo(state.king(color), oppColor(color));
+			return attackersTo(state.kings.color(color), oppColor(color));
 		}
 
 		[[nodiscard]] inline auto calcPinned() const
@@ -525,7 +507,7 @@ namespace stormphrax
 
 			Bitboard pinned{};
 
-			const auto king = state.king(color);
+			const auto king = state.kings.color(color);
 			const auto opponent = oppColor(color);
 
 			const auto &bbs = state.boards.bbs();
@@ -591,7 +573,7 @@ namespace stormphrax
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 
-			threats |= attacks::getKingAttacks(state.king(them));
+			threats |= attacks::getKingAttacks(state.kings.color(them));
 
 			return threats;
 		}
