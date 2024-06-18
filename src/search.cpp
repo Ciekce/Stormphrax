@@ -469,10 +469,11 @@ namespace stormphrax::search
 		auto &moveStack = thread.moveStack[moveStackIdx];
 
 		ProbedTTableEntry ttEntry{};
+		bool ttHit = false;
 
 		if (!curr.excluded)
 		{
-			m_ttable.probe(ttEntry, pos.key(), ply);
+			ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
 			if (!PvNode && ttEntry.depth >= depth)
 			{
@@ -485,7 +486,6 @@ namespace stormphrax::search
 			}
 		}
 
-		const bool ttHit = ttEntry.flag != TtFlag::None;
 		const bool ttMoveNoisy = ttEntry.move && pos.isNoisy(ttEntry.move);
 		const bool ttpv = PvNode || ttEntry.wasPv;
 
@@ -568,6 +568,9 @@ namespace stormphrax::search
 			else if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
 			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+
+			if (!ttHit)
+				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
 			curr.staticEval = inCheck ? ScoreNone : thread.correctionHistory.correct(pos, rawStaticEval);
 		}
@@ -973,7 +976,7 @@ namespace stormphrax::search
 			return pos.isCheck() ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
-		m_ttable.probe(ttEntry, pos.key(), ply);
+		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
 		if (!PvNode
 			&& (ttEntry.flag == TtFlag::Exact
@@ -992,16 +995,18 @@ namespace stormphrax::search
 		}
 		else
 		{
-			if (ttEntry.flag != TtFlag::None && ttEntry.staticEval != ScoreNone)
+			if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
 			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
+			if (!ttHit)
+				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
+
 			const auto staticEval = thread.correctionHistory.correct(pos, rawStaticEval);
 
-			if (ttEntry.flag != TtFlag::None
-				&& (ttEntry.flag == TtFlag::Exact
-					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval
-					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > staticEval))
+			if (ttEntry.flag == TtFlag::Exact
+				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval
+				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > staticEval)
 				eval = ttEntry.score;
 			else eval = staticEval;
 
