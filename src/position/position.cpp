@@ -685,9 +685,6 @@ namespace stormphrax
 
 		if (!move)
 		{
-			if constexpr (UpdateNnue)
-				nnueState->pushUpdates<!StateHistory>({}, state.boards.bbs(), state.kings);
-
 			state.pinned = calcPinned();
 			state.threats = calcThreats();
 
