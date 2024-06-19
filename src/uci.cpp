@@ -202,6 +202,8 @@ namespace stormphrax
 				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
 			std::cout << "option name UCI_ShowWDL type check default "
 				<< (defaultOpts.showWdl ? "true" : "false") << '\n';
+			std::cout << "option name ShowCurrMove type check default "
+				<< (defaultOpts.showCurrMove ? "true" : "false") << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
 			std::cout << "option name SyzygyPath type string default <empty>\n";
@@ -552,6 +554,14 @@ namespace stormphrax
 					{
 						if (const auto newShowWdl = util::tryParseBool(valueStr))
 							opts::mutableOpts().showWdl = *newShowWdl;
+					}
+				}
+				else if (nameStr == "showcurrmove")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newShowCurrMove = util::tryParseBool(valueStr))
+							opts::mutableOpts().showCurrMove = *newShowCurrMove;
 					}
 				}
 				else if (nameStr == "move overhead")

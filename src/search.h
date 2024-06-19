@@ -223,6 +223,8 @@ namespace stormphrax::search
 		std::atomic_bool m_quit{};
 		std::atomic_bool m_searching{};
 
+		std::atomic<f64> m_startTime{};
+
 		util::Barrier m_resetBarrier{2};
 		util::Barrier m_idleBarrier{2};
 
@@ -272,6 +274,11 @@ namespace stormphrax::search
 		[[nodiscard]] inline auto checkSoftTimeout(const SearchData &data, bool mainThread)
 		{
 			return checkStop(data, mainThread, true);
+		}
+
+		[[nodiscard]] inline auto elapsed() const
+		{
+			return util::g_timer.time() - m_startTime.load(std::memory_order::relaxed);
 		}
 
 		auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;

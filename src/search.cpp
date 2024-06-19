@@ -34,7 +34,8 @@ namespace stormphrax::search
 
 	namespace
 	{
-		constexpr f64 MinWidenReportDelay = 1.0;
+		constexpr f64 WidenReportDelay = 1.0;
+		constexpr f64 CurrmoveReportDelay = 2.5;
 
 		inline auto drawScore(usize nodes)
 		{
@@ -148,6 +149,8 @@ namespace stormphrax::search
 
 		if (tbRoot)
 			m_threads[0].search.tbhits = 1;
+
+		m_startTime.store(util::g_timer.time(), std::memory_order::relaxed);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
@@ -339,7 +342,7 @@ namespace stormphrax::search
 				if (mainThread)
 				{
 					const auto time = totalTime();
-					if (time >= MinWidenReportDelay)
+					if (time >= WidenReportDelay)
 						report(thread, thread.rootPv, depth, time, newScore, alpha, beta);
 				}
 
@@ -767,6 +770,13 @@ namespace stormphrax::search
 
 			++thread.search.nodes;
 			++legalMoves;
+
+			if (RootNode
+				&& g_opts.showCurrMove
+				&& elapsed() > CurrmoveReportDelay)
+				std::cout << "info depth " << depth
+					<< " currmove " << uci::moveToString(move)
+					<< " currmovenumber " << legalMoves << std::endl;
 
 			i32 extension{};
 

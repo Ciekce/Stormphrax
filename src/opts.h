@@ -32,6 +32,7 @@ namespace stormphrax
 		{
 			bool chess960{false};
 			bool showWdl{true};
+			bool showCurrMove{false};
 
 			bool syzygyEnabled{false};
 			i32 syzygyProbeDepth{1};
