@@ -683,6 +683,12 @@ namespace stormphrax
 			state.enPassant = Square::None;
 		}
 
+		const auto stm = opponent();
+		const auto nstm = oppColor(stm);
+
+		if (stm == Color::Black)
+			++m_fullmove;
+
 		if (!move)
 		{
 			state.pinned = calcPinned();
@@ -695,12 +701,6 @@ namespace stormphrax
 
 		const auto moveSrc = move.src();
 		const auto moveDst = move.dst();
-
-		const auto stm = opponent();
-		const auto nstm = oppColor(stm);
-
-		if (stm == Color::Black)
-			++m_fullmove;
 
 		auto newCastlingRooks = state.castlingRooks;
 
