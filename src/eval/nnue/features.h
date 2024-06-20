@@ -31,6 +31,8 @@ namespace stormphrax::eval::nnue::features
 		static constexpr u32 BucketCount = 1;
 		static constexpr u32 RefreshTableSize = 1;
 
+		static constexpr bool IsMirrored = false;
+
 		static constexpr auto transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq)
 		{
 			return sq;
@@ -64,6 +66,8 @@ namespace stormphrax::eval::nnue::features
 	public:
 		static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
 		static constexpr auto RefreshTableSize = BucketCount;
+
+		static constexpr bool IsMirrored = false;
 
 		static_assert(BucketCount > 1, "use SingleBucket for single-bucket arches");
 
@@ -142,6 +146,8 @@ namespace stormphrax::eval::nnue::features
 	public:
 		static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
 		static constexpr auto RefreshTableSize = BucketCount * 2;
+
+		static constexpr bool IsMirrored = true;
 
 		static constexpr auto transformFeatureSquare(Square sq, Square kingSq)
 		{

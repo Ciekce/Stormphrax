@@ -49,6 +49,7 @@ namespace stormphrax::eval
 		SP_ENUM_FLAGS(u16, NetworkFlags)
 		{
 			None = 0x0000,
+			HorizontallyMirrored = 0x0002,
 		};
 
 		constexpr u16 ExpectedHeaderVersion = 1;
@@ -114,6 +115,15 @@ namespace stormphrax::eval
 			{
 				std::cerr << "wrong network architecture " << archName(header.arch)
 					<< " (expected: " << archName(1) << ")" << std::endl;
+				return false;
+			}
+
+			if (testFlags(header.flags, NetworkFlags::HorizontallyMirrored) != InputFeatureSet::IsMirrored)
+			{
+				if constexpr (InputFeatureSet::IsMirrored)
+					std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
+				else std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
+
 				return false;
 			}
 
