@@ -1053,13 +1053,14 @@ namespace stormphrax::search
 				continue;
 			}
 
+			if (bestScore > -ScoreWin
+				&& legalMoves >= qsearchMaxMoves())
+				break;
+
 			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
 
 			++legalMoves;
-
-			if (bestScore > -ScoreWin && legalMoves > 3)
-				break;
 
 			++thread.search.nodes;
 
