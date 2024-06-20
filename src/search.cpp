@@ -1037,6 +1037,8 @@ namespace stormphrax::search
 		auto generator = MoveGenerator::qsearch(pos,
 			thread.moveStack[moveStackIdx].movegenData, ttEntry.move, thread.history);
 
+		u32 legalMoves = 0;
+
 		while (const auto move = generator.next())
 		{
 			if (!pos.isLegal(move))
@@ -1053,6 +1055,11 @@ namespace stormphrax::search
 
 			if (!see::see(pos, move, qsearchSeeThreshold()))
 				continue;
+
+			++legalMoves;
+
+			if (bestScore > -ScoreWin && legalMoves > 3)
+				break;
 
 			++thread.search.nodes;
 
