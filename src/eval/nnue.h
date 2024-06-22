@@ -32,7 +32,7 @@
 namespace stormphrax::eval
 {
 	using FeatureTransformer = nnue::FeatureTransformer<
-		i16, InputSize, Layer1Size, InputFeatureSet
+		i16, L1Size, InputFeatureSet
 	>;
 
 	using Network = nnue::PerspectiveNetwork<
@@ -40,7 +40,7 @@ namespace stormphrax::eval
 		nnue::DensePerspectiveAffineLayer<
 			i16, i16,
 			L1Activation,
-			Layer1Size, 1,
+			L1Size, 1,
 			OutputBucketing
 		>
 	>;
@@ -411,7 +411,7 @@ namespace stormphrax::eval
 
 			sq = InputFeatureSet::transformFeatureSquare(sq, king);
 
-			const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputSize;
+			const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputFeatureSet::InputSize;
 			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
 		}
 	};

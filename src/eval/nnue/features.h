@@ -28,6 +28,8 @@ namespace stormphrax::eval::nnue::features
 {
 	struct [[maybe_unused]] SingleBucket
 	{
+		static constexpr u32 InputSize = 768;
+
 		static constexpr u32 BucketCount = 1;
 		static constexpr u32 RefreshTableSize = 1;
 
@@ -64,6 +66,8 @@ namespace stormphrax::eval::nnue::features
 		static constexpr auto Buckets = std::array{BucketIndices...};
 
 	public:
+		static constexpr u32 InputSize = 768;
+
 		static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
 		static constexpr auto RefreshTableSize = BucketCount;
 
@@ -144,6 +148,8 @@ namespace stormphrax::eval::nnue::features
 		}();
 
 	public:
+		static constexpr u32 InputSize = 768;
+
 		static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
 		static constexpr auto RefreshTableSize = BucketCount * 2;
 

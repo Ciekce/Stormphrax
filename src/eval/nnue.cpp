@@ -134,10 +134,10 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.hiddenSize != Layer1Size)
+			if (header.hiddenSize != L1Size)
 			{
 				std::cerr << "wrong number of hidden neurons (" << header.hiddenSize
-					<< ", expected: " << Layer1Size << ")" << std::endl;
+					<< ", expected: " << L1Size << ")" << std::endl;
 				return false;
 			}
 

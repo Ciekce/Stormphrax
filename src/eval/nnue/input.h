@@ -236,7 +236,7 @@ namespace stormphrax::eval::nnue
 		}
 	};
 
-	template <typename Type, u32 Inputs, u32 Outputs, typename FeatureSet = features::SingleBucket>
+	template <typename Type, u32 Outputs, typename FeatureSet = features::SingleBucket>
 	struct FeatureTransformer
 	{
 		using WeightType = Type;
@@ -244,11 +244,11 @@ namespace stormphrax::eval::nnue
 
 		using InputFeatureSet = FeatureSet;
 
-		using Accumulator = Accumulator<FeatureTransformer<Type, Inputs, Outputs, FeatureSet>>;
-		using RefreshTable = RefreshTable<FeatureTransformer<Type, Inputs, Outputs, FeatureSet>,
+		using Accumulator = Accumulator<FeatureTransformer<Type, Outputs, FeatureSet>>;
+		using RefreshTable = RefreshTable<FeatureTransformer<Type, Outputs, FeatureSet>,
 		    FeatureSet::RefreshTableSize>;
 
-		static constexpr auto  InputCount = InputFeatureSet::BucketCount * Inputs;
+		static constexpr auto  InputCount = InputFeatureSet::BucketCount * FeatureSet::InputSize;
 		static constexpr auto OutputCount = Outputs;
 
 		static constexpr auto WeightCount =  InputCount * OutputCount;
