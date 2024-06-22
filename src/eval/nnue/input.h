@@ -71,6 +71,14 @@ namespace stormphrax::eval::nnue
 			return m_outputs[static_cast<i32>(c)];
 		}
 
+		inline void init(const Ft &featureTransformer, Color c)
+		{
+			assert(c != Color::None);
+
+			auto &accumulator = m_outputs[static_cast<i32>(c)];
+			std::ranges::copy(featureTransformer.biases, accumulator.begin());
+		}
+
 		inline void initBoth(const Ft &featureTransformer)
 		{
 			std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
