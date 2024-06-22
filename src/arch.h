@@ -29,14 +29,25 @@
 	#else
 		#define SP_HAS_BMI2 0
 	#endif
+	#define SP_HAS_VNNI512 __AVX512VNNI__
 	#define SP_HAS_AVX512 __AVX512F__
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_NEON __neon__
 	#define SP_HAS_BMI1 __BMI__
 	#define SP_HAS_POPCNT __POPCNT__
 	#define SP_HAS_SSE41 __SSE4_1__
+#elif defined(SP_VNNI512)
+	#define SP_HAS_BMI2 1
+	#define SP_HAS_VNNI512 1
+	#define SP_HAS_AVX512 1
+	#define SP_HAS_AVX2 1
+	#define SP_HAS_NEON 0
+	#define SP_HAS_BMI1 1
+	#define SP_HAS_POPCNT 1
+	#define SP_HAS_SSE41 1
 #elif defined(SP_AVX512)
 	#define SP_HAS_BMI2 1
+	#define SP_HAS_VNNI512 0
 	#define SP_HAS_AVX512 1
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_NEON 0
@@ -45,6 +56,7 @@
 	#define SP_HAS_SSE41 1
 #elif defined(SP_AVX2_BMI2)
 	#define SP_HAS_BMI2 1
+	#define SP_HAS_VNNI512 0
 	#define SP_HAS_AVX512 0
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_NEON 0
@@ -53,6 +65,7 @@
 	#define SP_HAS_SSE41 1
 #elif defined(SP_AVX2)
 	#define SP_HAS_BMI2 0
+	#define SP_HAS_VNNI512 0
 	#define SP_HAS_AVX512 0
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_NEON 0
@@ -61,6 +74,7 @@
 	#define SP_HAS_SSE41 1
 #elif defined(SP_SSE41_POPCNT)
 	#define SP_HAS_BMI2 0
+	#define SP_HAS_VNNI512 0
 	#define SP_HAS_AVX512 0
 	#define SP_HAS_AVX2 0
 	#define SP_HAS_NEON 0

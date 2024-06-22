@@ -173,8 +173,7 @@ namespace stormphrax::eval::nnue
 						&Base::weights[weightOffset + inputIdx]
 					);
 
-					const auto products = Activation::activateAndDot(inputVec, weightVec);
-					sum = add<typename Base::OutputType>(sum, products);
+					sum = Activation::activateDotAccumulate(sum, inputVec, weightVec);
 				}
 
 				// nstm perspective
@@ -185,8 +184,7 @@ namespace stormphrax::eval::nnue
 						&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
 					);
 
-					const auto products = Activation::activateAndDot(inputVec, weightVec);
-					sum = add<typename Base::OutputType>(sum, products);
+					sum = Activation::activateDotAccumulate(sum, inputVec, weightVec);
 				}
 
 				const auto output = hsum<typename Base::OutputType>(sum);

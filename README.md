@@ -80,10 +80,13 @@ this project is a continuation of my HCE engine [Polaris]
 `*` This option was added after the current release, and is only available in development builds.
 
 ## Builds
-`avx512`: requires AVX-512 (Zen 4, Skylake-X)  
+`vnni512`: requires BMI2, AVX-512 and VNNI (Zen 4/Cascade Lake-SP/Rocket Lake and up)  
+`avx512`: requires BMI2 and AVX-512 (Skylake-X, Cannon Lake)  
 `avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Bulldozer, Piledriver, Steamroller, Excavator, Zen 1, Zen+ or Zen 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator  
 `sse41-popcnt`: needs SSE 4.1 and `popcnt` - for older x64 CPUs
+
+If in doubt, compare the `avx2-bmi2` and `avx2` binaries and pick the one that's faster. BMI2 will always be faster on Intel CPUs.
 
 Alternatively, build the makefile target `native` for a binary tuned for your specific CPU (see below)  
 
