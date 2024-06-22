@@ -66,12 +66,14 @@ set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_mag
 	src/attacks/black_magic/attacks.cpp)
 
 add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC} ${STORMPHRAX_NON_BMI2_SRC})
+add_executable(stormphrax-vnni512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-sse41-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 target_compile_options(stormphrax-native PUBLIC -march=native)
+target_compile_options(stormphrax-vnni512 PUBLIC -march=znver4)
 target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
 target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 # excavator without amd-specific extensions and bmi2
@@ -80,13 +82,15 @@ target_compile_options(stormphrax-sse41-popcnt PUBLIC -march=nehalem)
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
-	target_compile_options(stormphrax-avx512 PUBLIC -mtune=znver4)
+	target_compile_options(stormphrax-vnni512 PUBLIC -mtune=znver4)
+	target_compile_options(stormphrax-avx512 PUBLIC -mtune=skylake-avx512)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
 	target_compile_options(stormphrax-sse41-popcnt PUBLIC -mtune=sandybridge)
 else() # clang
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
-	target_compile_options(stormphrax-avx512 PUBLIC /tune:znver4)
+	target_compile_options(stormphrax-vnni512 PUBLIC /tune:znver4)
+	target_compile_options(stormphrax-avx512 PUBLIC /tune:skylake-avx512)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
 	target_compile_options(stormphrax-sse41-popcnt PUBLIC /tune:sandybridge)

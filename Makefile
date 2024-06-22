@@ -114,7 +114,7 @@ define build
 endef
 endif
 
-release: avx512 avx2-bmi2 avx2 sse41-popcnt
+release: vnni512 avx512 avx2-bmi2 avx2 sse41-popcnt
 all: native release
 
 .PHONY: all
@@ -128,6 +128,9 @@ native: $(EXE)
 
 tunable: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,TUNABLE,tunable)
+
+vnni512: $(SOURCES_COMMON) $(SOURCES_BMI2)
+	$(call build,VNNI512,vnni512)
 
 avx512: $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX512,avx512)

@@ -395,6 +395,17 @@ namespace stormphrax::util::simd
 			return v;
 #endif
 		}
+
+		// Depends on addI32
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI32 b) -> VectorI16
+		{
+#if SP_HAS_VNNI512
+			return _mm512_dpwssd_epi32(sum, a, b);
+#else
+			const auto products = mulAddAdjI16(a, b);
+			return addI32(sum, products);
+#endif
+		}
 	}
 
 	template <typename T>
@@ -512,6 +523,15 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj<i16>(Vector<i16> a, Vector<i16> b)
 	{
 		return impl::mulAddAdjI16(a, b);
+	}
+
+
+	template <typename T>
+	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc(Vector<T> sum, Vector<T> a, Vector<T> b) = delete;
+	template <>
+	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc<i16>(Vector<i16> sum, Vector<i16> a, Vector<i16> b)
+	{
+		return impl::mulAddAdjAccI16(sum, a, b);
 	}
 
 	template <typename T>

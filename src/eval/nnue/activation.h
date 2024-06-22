@@ -33,7 +33,9 @@ namespace stormphrax::eval::nnue::activation
 	concept Activation = requires(T t)
 	{
 		{ T::Id } -> std::same_as<const u8 &>;
-		{ T::activateAndDot(util::simd::zero<typename T::InputType>(), util::simd::zero<typename T::InputType>()) }
+		{ T::activateDotAccumulate(util::simd::zero<typename T::OutputType>(),
+		        util::simd::zero<typename T::InputType>(),
+	            util::simd::zero<typename T::InputType>()) }
 			-> std::same_as<util::simd::Vector<typename T::OutputType>>;
 		{ T::  output(typename T::OutputType{}) }
 			-> std::same_as<typename T::OutputType>;
@@ -44,18 +46,21 @@ namespace stormphrax::eval::nnue::activation
 	{
 		using InputType = T;
 		using InputVector = util::simd::Vector<InputType>;
+
 		using OutputType = Output;
+		using OutputVector = util::simd::Vector<OutputType>;
 
 		static constexpr u8 Id = 3;
 
-		static inline auto activateAndDot(InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
+			InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
-			return mulAddAdj<InputType>(inputs, weights);
+			return mulAddAdjAcc<InputType>(sum, inputs, weights);
 		}
 
-		static inline auto output(OutputType value)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
 		{
 			return value;
 		}
@@ -66,19 +71,22 @@ namespace stormphrax::eval::nnue::activation
 	{
 		using InputType = T;
 		using InputVector = util::simd::Vector<InputType>;
+
 		using OutputType = Output;
+		using OutputVector = util::simd::Vector<OutputType>;
 
 		static constexpr u8 Id = 2;
 
-		static inline auto activateAndDot(InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
+			InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
 			const auto activated = max<InputType>(inputs, zero<InputType>());
-			return mulAddAdj<InputType>(activated, weights);
+			return mulAddAdjAcc<InputType>(sum, activated, weights);
 		}
 
-		static inline auto output(OutputType value)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
 		{
 			return value;
 		}
@@ -89,21 +97,24 @@ namespace stormphrax::eval::nnue::activation
 	{
 		using InputType = T;
 		using InputVector = util::simd::Vector<InputType>;
+
 		using OutputType = Output;
+		using OutputVector = util::simd::Vector<OutputType>;
 
 		static constexpr u8 Id = 0;
 
-		static inline auto activateAndDot(InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
+			InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
 			static const auto max = set1(Max);
 
 			const auto activated = clamp<InputType>(inputs, zero<InputType>(), max);
-			return mulAddAdj<InputType>(activated, weights);
+			return mulAddAdjAcc<InputType>(sum, activated, weights);
 		}
 
-		static inline auto output(OutputType value)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
 		{
 			return value;
 		}
@@ -114,11 +125,14 @@ namespace stormphrax::eval::nnue::activation
 	{
 		using InputType = T;
 		using InputVector = util::simd::Vector<InputType>;
+
 		using OutputType = Output;
+		using OutputVector = util::simd::Vector<OutputType>;
 
 		static constexpr u8 Id = 1;
 
-		static inline auto activateAndDot(InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
+			InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
@@ -126,10 +140,10 @@ namespace stormphrax::eval::nnue::activation
 
 			const auto clipped = util::simd::clamp<InputType>(inputs, zero<InputType>(), max);
 			const auto crelu = mul<InputType>(clipped, weights);
-			return mulAddAdj<InputType>(crelu, clipped);
+			return mulAddAdjAcc<InputType>(sum, crelu, clipped);
 		}
 
-		static inline auto output(OutputType value)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
 		{
 			return value / static_cast<OutputType>(Max);
 		}
