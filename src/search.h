@@ -75,6 +75,12 @@ namespace stormphrax::search
 			assert(length == 1 || moves[0] != moves[1]);
 		}
 
+		inline auto reset()
+		{
+			moves[0] = NullMove;
+			length = 0;
+		}
+
 		inline auto operator=(const PvList &other) -> auto &
 		{
 			std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
@@ -124,6 +130,11 @@ namespace stormphrax::search
 		SearchData search{};
 
 		PvList rootPv{};
+
+		i32 depthCompleted{};
+
+		PvList lastPv{};
+		Score lastScore{};
 
 		eval::NnueState nnueState{};
 
@@ -296,7 +307,8 @@ namespace stormphrax::search
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
 			f64 time, Score score, Score alpha = -ScoreInf, Score beta = ScoreInf) -> void;
-		auto finalReport(const ThreadData &mainThread, const PvList &pv,
-			i32 depthCompleted, f64 time, Score score) -> void;
+		auto finalReport(f64 time) -> void;
+
+		auto selectThread() -> const ThreadData &;
 	};
 }
