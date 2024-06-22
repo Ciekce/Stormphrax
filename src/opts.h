@@ -34,6 +34,8 @@ namespace stormphrax
 			bool showWdl{true};
 			bool showCurrMove{false};
 
+			bool enableWeirdTcs{false};
+
 			bool syzygyEnabled{false};
 			i32 syzygyProbeDepth{1};
 			i32 syzygyProbeLimit{7};

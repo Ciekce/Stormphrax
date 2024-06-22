@@ -191,6 +191,8 @@ namespace stormphrax
 #endif
 			std::cout << "id author " << Author << '\n';
 
+			std::cout << std::boolalpha;
+
 			std::cout << "option name Hash type spin default " << DefaultTtSize
 			          << " min " << TtSizeRange.min() << " max " << TtSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
@@ -198,14 +200,12 @@ namespace stormphrax
 				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
 			std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt
 				<< " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
-			std::cout << "option name UCI_Chess960 type check default "
-				<< (defaultOpts.chess960 ? "true" : "false") << '\n';
-			std::cout << "option name UCI_ShowWDL type check default "
-				<< (defaultOpts.showWdl ? "true" : "false") << '\n';
-			std::cout << "option name ShowCurrMove type check default "
-				<< (defaultOpts.showCurrMove ? "true" : "false") << '\n';
+			std::cout << "option name UCI_Chess960 type check default " << defaultOpts.chess960 << '\n';
+			std::cout << "option name UCI_ShowWDL type check default " << defaultOpts.showWdl << '\n';
+			std::cout << "option name ShowCurrMove type check default " << defaultOpts.showCurrMove << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
+			std::cout << "option name EnableWeirdTCs type check default " << defaultOpts.enableWeirdTcs << std::endl;
 			std::cout << "option name SyzygyPath type string default <empty>\n";
 			std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth
 				<< " min " << search::SyzygyProbeDepthRange.min()
@@ -440,6 +440,40 @@ namespace stormphrax
 				else if (depth > MaxDepth)
 					depth = MaxDepth;
 
+				if (tournamentTime)
+				{
+					if (toGo != 0)
+					{
+						if (g_opts.enableWeirdTcs)
+							std::cout
+								<< "info string Warning: Stormphrax does not officially"
+									" support cyclic (movestogo) time controls" << std::endl;
+						else
+						{
+							std::cout
+								<< "info string Cyclic (movestogo) time controls"
+								   " not enabled, see the EnableWeirdTCs option" << std::endl;
+							std::cout << "bestmove 0000" << std::endl;
+							return;
+						}
+					}
+					else if (increment == 0)
+					{
+						if (g_opts.enableWeirdTcs)
+							std::cout
+								<< "info string Warning: Stormphrax does not officially"
+								   " support sudden death (0 increment) time controls" << std::endl;
+						else
+						{
+							std::cout
+								<< "info string Sudden death (0 increment) time controls"
+								   " not enabled, see the EnableWeirdTCs option" << std::endl;
+							std::cout << "bestmove 0000" << std::endl;
+							return;
+						}
+					}
+				}
+
 				if (tournamentTime && timeRemaining > 0)
 					limiter = std::make_unique<limit::TimeManager>(startTime,
 						static_cast<f64>(timeRemaining) / 1000.0,
@@ -570,6 +604,14 @@ namespace stormphrax
 					{
 						if (const auto newMoveOverhead = util::tryParseI32(valueStr))
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+					}
+				}
+				else if (nameStr == "enableweirdtcs")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newEnableWeirdTcs = util::tryParseBool(valueStr))
+							opts::mutableOpts().enableWeirdTcs = *newEnableWeirdTcs;
 					}
 				}
 				else if (nameStr == "syzygypath")

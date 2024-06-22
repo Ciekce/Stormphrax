@@ -62,18 +62,22 @@ this project is a continuation of my HCE engine [Polaris]
 - make it stronger uwu
 
 ## UCI options
-| Name             |  Type   | Default value |       Valid values        | Description                                                                          |
-|:-----------------|:-------:|:-------------:|:-------------------------:|:-------------------------------------------------------------------------------------|
-| Hash             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                 |
-| Clear Hash       | button  |      N/A      |            N/A            | Clears the transposition table.                                                      |
-| Threads          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                    |
-| UCI_Chess960     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                         |
-| UCI_ShowWDL      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.     |
-| Move Overhead    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms). |
-| SyzygyPath       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                |
-| SyzygyProbeDepth |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                         |
-| SyzygyProbeLimit |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.               |
-| EvalFile         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                     |
+| Name               |  Type   | Default value |       Valid values        | Description                                                                                                                                                                                                                              |
+|:-------------------|:-------:|:-------------:|:-------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Hash`             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                                                                                                                                                                     |
+| `Clear Hash`       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                                                                                                                                                          |
+| `Threads`          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                                                                                                                                                        |
+| `UCI_Chess960`     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                                                                                                                                             |
+| `UCI_ShowWDL`      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                                                                                                                                                         |
+| `ShowCurrMove`*    |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax starts printint the move currently being searched after a short delay.                                                                                                                                                |
+| `Move Overhead`    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                                                                                                                                                     |
+| `EnableWeirdTCs`*  |  check  |    `false`    |      `false`, `true`      | Whether unusual time controls (movestogo != 0, or increment = 0) are enabled. Enabling this option means you recognise that Stormphrax is neither designed for nor tested with these TCs, and is likely to perform worse than under X+Y. |
+| `SyzygyPath`       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                                                                                                                                                    |
+| `SyzygyProbeDepth` |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                                                                                                                                             |
+| `SyzygyProbeLimit` |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                                                                                                                                                   |
+| `EvalFile`         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                                                                                                                                                         |
+
+`*` This option was added after the current release, and is only available in development builds.
 
 ## Builds
 `avx512`: requires AVX-512 (Zen 4, Skylake-X)  
