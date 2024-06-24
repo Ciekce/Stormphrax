@@ -53,10 +53,15 @@ namespace stormphrax::limit
 	{
 		assert(toGo >= 0);
 
-		const auto limit = std::max(0.001, remaining - overhead);
+		if (toGo == 0)
+			toGo = 40;
 
-		m_maxTime  = limit * 0.3;
-		m_softTime = limit * 0.03;
+		const auto total = std::max(0.001, remaining + (increment - overhead) * toGo);
+
+		const auto base = total / 30.0;
+
+		m_maxTime  = std::min(base * 8.5, remaining * 0.8 - overhead);
+		m_softTime = std::min(base * 1.5, remaining * 0.5 - overhead);
 	}
 
 	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
