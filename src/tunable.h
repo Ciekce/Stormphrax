@@ -84,17 +84,6 @@ namespace stormphrax::tunable
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 #endif
 
-	SP_TUNABLE_PARAM(defaultMovesToGo, 20, 12, 40, 1)
-	SP_TUNABLE_PARAM(incrementScale, 83, 50, 100, 5)
-	SP_TUNABLE_PARAM(softTimeScale, 69, 50, 100, 5)
-	SP_TUNABLE_PARAM(hardTimeScale, 46, 20, 100, 5)
-
-	SP_TUNABLE_PARAM(nodeTimeBase, 148, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScale, 174, 100, 250, 10)
-	SP_TUNABLE_PARAM(nodeTimeScaleMin, 108, 1, 1000, 100)
-
-	SP_TUNABLE_PARAM(timeScaleMin, 126, 1, 1000, 100)
-
 	SP_TUNABLE_PARAM(minAspDepth, 4, 1, 10, 1)
 	SP_TUNABLE_PARAM(initialAspWindow, 12, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)
