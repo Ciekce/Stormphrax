@@ -92,40 +92,15 @@ namespace stormphrax::search
 		m_minRootScore = -ScoreInf;
 		m_maxRootScore =  ScoreInf;
 
-		bool tbRoot = false;
+		const auto status = initRootMoves(pos);
 
-		if (g_opts.syzygyEnabled
-			&& pos.bbs().occupancy().popcount()
-				<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
-		{
-			tbRoot = true;
-			const auto wdl = tb::probeRoot(m_rootMoves, pos);
-
-			switch (wdl)
-			{
-			case tb::ProbeResult::Win:
-				m_minRootScore = ScoreTbWin;
-				break;
-			case tb::ProbeResult::Draw:
-				m_minRootScore = m_maxRootScore = 0;
-				break;
-			case tb::ProbeResult::Loss:
-				m_maxRootScore = -ScoreTbWin;
-				break;
-			default:
-				tbRoot = false;
-				break;
-			}
-		}
-
-		if (m_rootMoves.empty())
-			generateLegal(m_rootMoves, pos);
-
-		if (m_rootMoves.empty())
+		if (status == RootStatus::NoLegalMoves)
 		{
 			std::cout << "info string no legal moves" << std::endl;
 			return;
 		}
+
+		assert(!m_rootMoves.empty());
 
 		m_resetBarrier.arriveAndWait();
 
@@ -146,7 +121,7 @@ namespace stormphrax::search
 			thread.nnueState.reset(thread.pos.bbs(), thread.pos.kings());
 		}
 
-		if (tbRoot)
+		if (status == RootStatus::Tablebase)
 			m_threads[0].search.tbhits = 1;
 
 		m_startTime.store(util::g_timer.time(), std::memory_order::relaxed);
@@ -176,10 +151,7 @@ namespace stormphrax::search
 
 	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
-		m_rootMoves.clear();
-		generateLegal(m_rootMoves, thread.pos);
-
-		if (m_rootMoves.empty())
+		if (initRootMoves(thread.pos) == RootStatus::NoLegalMoves)
 			return {-ScoreMate, -ScoreMate};
 
 		m_infinite = false;
@@ -210,10 +182,7 @@ namespace stormphrax::search
 
 		thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
 
-		m_rootMoves.clear();
-		generateLegal(m_rootMoves, thread->pos);
-
-		if (m_rootMoves.empty())
+		if (initRootMoves(thread->pos) == RootStatus::NoLegalMoves)
 			return;
 
 		m_stop.store(false, std::memory_order::seq_cst);
@@ -260,6 +229,42 @@ namespace stormphrax::search
 				}};
 			}
 		}
+	}
+
+	auto Searcher::initRootMoves(const Position &pos) -> RootStatus
+	{
+		m_rootMoves.clear();
+
+		if (g_opts.syzygyEnabled
+			&& pos.bbs().occupancy().popcount()
+			<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+		{
+			bool success = true;
+
+			switch (tb::probeRoot(m_rootMoves, pos))
+			{
+				case tb::ProbeResult::Win:
+					m_minRootScore = ScoreTbWin;
+					break;
+				case tb::ProbeResult::Draw:
+					m_minRootScore = m_maxRootScore = 0;
+					break;
+				case tb::ProbeResult::Loss:
+					m_maxRootScore = -ScoreTbWin;
+					break;
+				default:
+					success = false;
+					break;
+			}
+
+			if (success)
+				return RootStatus::Tablebase;
+		}
+
+		if (m_rootMoves.empty())
+			generateLegal(m_rootMoves, pos);
+
+		return m_rootMoves.empty() ? RootStatus::NoLegalMoves : RootStatus::Generated;
 	}
 
 	auto Searcher::stopThreads() -> void
