@@ -611,11 +611,11 @@ namespace stormphrax::search
 			return true;
 		}();
 
-		if (!PvNode
-			&& !inCheck
+		if (!inCheck
 			&& !curr.excluded)
 		{
-			if (depth <= maxRfpDepth()
+			if (!PvNode
+				&& depth <= maxRfpDepth()
 				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
 				return curr.staticEval;
 
@@ -629,7 +629,8 @@ namespace stormphrax::search
 					return score;
 			}
 
-			if (depth >= minNmpDepth()
+			if (!PvNode
+				&& depth >= minNmpDepth()
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
