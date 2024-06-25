@@ -131,8 +131,6 @@ namespace stormphrax::search
 		std::vector<MoveStackEntry> moveStack{};
 		std::vector<ContinuationSubtable *> conthist{};
 
-		MoveList rootMoves{};
-
 		HistoryTables history{};
 		CorrectionHistoryTable correctionHistory{};
 
@@ -141,11 +139,6 @@ namespace stormphrax::search
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;
-		}
-
-		[[nodiscard]] inline auto isLegalRootMove(Move move) const
-		{
-			return std::ranges::find(rootMoves, move) != rootMoves.end();
 		}
 
 		inline auto setNullmove(i32 ply)
@@ -238,6 +231,8 @@ namespace stormphrax::search
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
 
+		MoveList m_rootMoves{};
+
 		Score m_minRootScore{};
 		Score m_maxRootScore{};
 
@@ -279,6 +274,11 @@ namespace stormphrax::search
 		[[nodiscard]] inline auto elapsed() const
 		{
 			return util::g_timer.time() - m_startTime.load(std::memory_order::relaxed);
+		}
+
+		[[nodiscard]] inline auto isLegalRootMove(Move move) const
+		{
+			return std::ranges::find(m_rootMoves, move) != m_rootMoves.end();
 		}
 
 		auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;

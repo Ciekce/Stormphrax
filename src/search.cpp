@@ -91,14 +91,13 @@ namespace stormphrax::search
 		m_maxRootScore =  ScoreInf;
 
 		bool tbRoot = false;
-		MoveList rootMoves{};
 
 		if (g_opts.syzygyEnabled
 			&& pos.bbs().occupancy().popcount()
 				<= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
 		{
 			tbRoot = true;
-			const auto wdl = tb::probeRoot(rootMoves, pos);
+			const auto wdl = tb::probeRoot(m_rootMoves, pos);
 
 			switch (wdl)
 			{
@@ -117,10 +116,10 @@ namespace stormphrax::search
 			}
 		}
 
-		if (rootMoves.empty())
-			generateLegal(rootMoves, pos);
+		if (m_rootMoves.empty())
+			generateLegal(m_rootMoves, pos);
 
-		if (rootMoves.empty())
+		if (m_rootMoves.empty())
 		{
 			std::cout << "info string no legal moves" << std::endl;
 			return;
@@ -141,8 +140,6 @@ namespace stormphrax::search
 			thread.maxDepth = maxDepth;
 			thread.search = SearchData{};
 			thread.pos = pos;
-
-			thread.rootMoves = rootMoves;
 
 			thread.nnueState.reset(thread.pos.bbs(), thread.pos.kings());
 		}
@@ -177,10 +174,10 @@ namespace stormphrax::search
 
 	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
-		thread.rootMoves.clear();
-		generateLegal(thread.rootMoves, thread.pos);
+		m_rootMoves.clear();
+		generateLegal(m_rootMoves, thread.pos);
 
-		if (thread.rootMoves.empty())
+		if (m_rootMoves.empty())
 			return {-ScoreMate, -ScoreMate};
 
 		m_stop.store(false, std::memory_order::seq_cst);
@@ -207,10 +204,10 @@ namespace stormphrax::search
 
 		thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
 
-		thread->rootMoves.clear();
-		generateLegal(thread->rootMoves, thread->pos);
+		m_rootMoves.clear();
+		generateLegal(m_rootMoves, thread->pos);
 
-		if (thread->rootMoves.empty())
+		if (m_rootMoves.empty())
 			return;
 
 		m_stop.store(false, std::memory_order::seq_cst);
@@ -705,7 +702,7 @@ namespace stormphrax::search
 
 			if constexpr (RootNode)
 			{
-				if (!thread.isLegalRootMove(move))
+				if (!isLegalRootMove(move))
 					continue;
 
 				assert(pos.isLegal(move));
