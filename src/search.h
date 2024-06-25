@@ -240,6 +240,15 @@ namespace stormphrax::search
 
 		eval::Contempt m_contempt{};
 
+		enum class RootStatus
+		{
+			NoLegalMoves = 0,
+			Tablebase,
+			Generated,
+		};
+
+		auto initRootMoves(const Position &pos) -> RootStatus;
+
 		auto stopThreads() -> void;
 
 		auto run(ThreadData &thread) -> void;
