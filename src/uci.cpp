@@ -39,6 +39,7 @@
 #include "ttable.h"
 #include "limit/trivial.h"
 #include "limit/time.h"
+#include "limit/compound.h"
 #include "perft.h"
 #include "bench.h"
 #include "opts.h"
@@ -312,8 +313,9 @@ namespace stormphrax
 			else
 			{
 				u32 depth = MaxDepth;
-				std::unique_ptr<limit::ISearchLimiter> limiter{};
+				auto limiter = std::make_unique<limit::CompoundLimiter>();
 
+				bool infinite = false;
 				bool tournamentTime = false;
 
 				const auto startTime = util::g_timer.time();
@@ -328,109 +330,72 @@ namespace stormphrax
 					{
 						if (!util::tryParseU32(depth, tokens[i]))
 							std::cerr << "invalid depth " << tokens[i] << std::endl;
+						continue;
 					}
-					else if (!tournamentTime && !limiter)
+
+					if (tokens[i] == "infinite")
 					{
-						if (tokens[i] == "infinite")
-							limiter = std::make_unique<limit::InfiniteLimiter>();
-						else if (tokens[i] == "nodes" && ++i < tokens.size())
-						{
-							usize nodes{};
-							if (!util::tryParseSize(nodes, tokens[i]))
-								std::cerr << "invalid node count " << tokens[i] << std::endl;
-							else
-								limiter = std::make_unique<limit::NodeLimiter>(nodes);
-						}
-						else if (tokens[i] == "movetime" && ++i < tokens.size())
-						{
-							i64 time{};
-							if (!util::tryParseI64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::max<i64>(time, 1);
-								limiter = std::make_unique<limit::MoveTimeLimiter>(time, m_moveOverhead);
-							}
-						}
-						else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
-						{
-							tournamentTime = true;
+						infinite = true;
+						continue;
+					}
 
-							i64 time{};
-							if (!util::tryParseI64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::max<i64>(time, 1);
-								timeRemaining = static_cast<i64>(time);
-							}
-						}
-						else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
+					if (tokens[i] == "nodes" && ++i < tokens.size())
+					{
+						usize nodes{};
+						if (!util::tryParseSize(nodes, tokens[i]))
+							std::cerr << "invalid node count " << tokens[i] << std::endl;
+						else limiter->addLimiter<limit::NodeLimiter>(nodes);
+					}
+					else if (tokens[i] == "movetime" && ++i < tokens.size())
+					{
+						i64 time{};
+						if (!util::tryParseI64(time, tokens[i]))
+							std::cerr << "invalid time " << tokens[i] << std::endl;
+						else
 						{
-							tournamentTime = true;
-
-							i64 time{};
-							if (!util::tryParseI64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::max<i64>(time, 1);
-								increment = static_cast<i64>(time);
-							}
-						}
-						else if (tokens[i] == "movestogo" && ++i < tokens.size())
-						{
-							tournamentTime = true;
-
-							u32 moves{};
-							if (!util::tryParseU32(moves, tokens[i]))
-								std::cerr << "invalid movestogo " << tokens[i] << std::endl;
-							else
-							{
-								moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-								toGo = static_cast<i32>(moves);
-							}
+							time = std::max<i64>(time, 1);
+							limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
 						}
 					}
-					// yeah I hate the duplication too
-					else if (tournamentTime)
+					else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
+						&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
 					{
-						if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
+						tournamentTime = true;
+
+						i64 time{};
+						if (!util::tryParseI64(time, tokens[i]))
+							std::cerr << "invalid time " << tokens[i] << std::endl;
+						else
 						{
-							i64 time{};
-							if (!util::tryParseI64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::max<i64>(time, 1);
-								timeRemaining = static_cast<i64>(time);
-							}
+							time = std::max<i64>(time, 1);
+							timeRemaining = static_cast<i64>(time);
 						}
-						else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-							&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
+					}
+					else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
+						&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
+					{
+						tournamentTime = true;
+
+						i64 time{};
+						if (!util::tryParseI64(time, tokens[i]))
+							std::cerr << "invalid time " << tokens[i] << std::endl;
+						else
 						{
-							i64 time{};
-							if (!util::tryParseI64(time, tokens[i]))
-								std::cerr << "invalid time " << tokens[i] << std::endl;
-							else
-							{
-								time = std::max<i64>(time, 1);
-								increment = static_cast<i64>(time);
-							}
+							time = std::max<i64>(time, 1);
+							increment = static_cast<i64>(time);
 						}
-						else if (tokens[i] == "movestogo" && ++i < tokens.size())
+					}
+					else if (tokens[i] == "movestogo" && ++i < tokens.size())
+					{
+						tournamentTime = true;
+
+						u32 moves{};
+						if (!util::tryParseU32(moves, tokens[i]))
+							std::cerr << "invalid movestogo " << tokens[i] << std::endl;
+						else
 						{
-							u32 moves{};
-							if (!util::tryParseU32(moves, tokens[i]))
-								std::cerr << "invalid movestogo " << tokens[i] << std::endl;
-							else
-							{
-								moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-								toGo = static_cast<i32>(moves);
-							}
+							moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
+							toGo = static_cast<i32>(moves);
 						}
 					}
 				}
@@ -475,14 +440,12 @@ namespace stormphrax
 				}
 
 				if (tournamentTime && timeRemaining > 0)
-					limiter = std::make_unique<limit::TimeManager>(startTime,
+					limiter->addLimiter<limit::TimeManager>(startTime,
 						static_cast<f64>(timeRemaining) / 1000.0,
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
-				else if (!limiter)
-					limiter = std::make_unique<limit::InfiniteLimiter>();
 
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter));
+				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter), infinite);
 			}
 		}
 

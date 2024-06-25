@@ -79,13 +79,15 @@ namespace stormphrax::search
 	}
 
 	auto Searcher::startSearch(const Position &pos, i32 maxDepth,
-		std::unique_ptr<limit::ISearchLimiter> limiter) -> void
+		std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
 	{
 		if (!m_limiter && !limiter)
 		{
 			std::cerr << "missing limiter" << std::endl;
 			return;
 		}
+
+		m_infinite = infinite;
 
 		m_minRootScore = -ScoreInf;
 		m_maxRootScore =  ScoreInf;
@@ -180,6 +182,8 @@ namespace stormphrax::search
 		if (m_rootMoves.empty())
 			return {-ScoreMate, -ScoreMate};
 
+		m_infinite = false;
+
 		m_stop.store(false, std::memory_order::seq_cst);
 
 		const auto score = searchRoot(thread, false);
@@ -193,6 +197,8 @@ namespace stormphrax::search
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
 	{
 		m_limiter = std::make_unique<limit::InfiniteLimiter>();
+		m_infinite = false;
+
 		m_contempt = {};
 
 		// this struct is a small boulder the size of a large boulder
@@ -370,7 +376,11 @@ namespace stormphrax::search
 			pv = thread.rootPv;
 
 			if (depth >= thread.maxDepth)
+			{
+				if (mainThread && m_infinite)
+					report(thread, pv, searchData.depth, totalTime(), score);
 				break;
+			}
 
 			if (mainThread)
 			{
@@ -395,12 +405,27 @@ namespace stormphrax::search
 
 		if (mainThread)
 		{
+			auto time = totalTime();
+
+			if (m_infinite)
+			{
+				// don't print bestmove until stopped when go infinite'ing
+				// this makes handling reports a bit messy, unfortunately
+				while (!hasStopped())
+				{
+					std::this_thread::yield();
+				}
+			}
+
 			const std::unique_lock lock{m_searchMutex};
 
 			m_stop.store(true, std::memory_order::seq_cst);
 			waitForThreads();
 
-			finalReport(thread, pv, depthCompleted, totalTime(), score);
+			if (!m_infinite)
+				time = totalTime();
+
+			finalReport(thread, pv, depthCompleted, time, score);
 
 			m_ttable.age();
 

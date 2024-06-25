@@ -176,7 +176,8 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
-		auto startSearch(const Position &pos, i32 maxDepth, std::unique_ptr<limit::ISearchLimiter> limiter) -> void;
+		auto startSearch(const Position &pos, i32 maxDepth,
+			std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
@@ -230,6 +231,7 @@ namespace stormphrax::search
 		std::atomic_int m_runningThreads{};
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+		bool m_infinite{};
 
 		MoveList m_rootMoves{};
 
