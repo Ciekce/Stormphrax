@@ -18,6 +18,7 @@ this project is a continuation of my HCE engine [Polaris]
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt] | [MCERL] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:-----------------:|:-------:|
+|  5.0.0  |            -            |            -             |               -               |         -         |    -    |
 |  4.1.0  |          3484           |            -             |             3802              |         -         |    -    |
 |  4.0.0  |          3476           |           3566           |             3775              |       3440        |  3542   |
 |  3.0.0  |          3408           |           3491           |             3691              |         -         |  3495   |
@@ -50,7 +51,7 @@ this project is a continuation of my HCE engine [Polaris]
     - various negative extensions
   - Syzygy tablebase support
 - NNUE
-  - (768x8->1024)x2->1x8 architecture
+  - (768x4->1536)x2->1x8 architecture, horizontally mirrored
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
 - BMI2 attacks in the `bmi2` build, otherwise fancy black magic
   - `pext`/`pdep` for rooks
@@ -69,15 +70,13 @@ this project is a continuation of my HCE engine [Polaris]
 | `Threads`          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                                                                                                                                                        |
 | `UCI_Chess960`     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                                                                                                                                             |
 | `UCI_ShowWDL`      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                                                                                                                                                         |
-| `ShowCurrMove`*    |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax starts printing the move currently being searched after a short delay.                                                                                                                                                |
+| `ShowCurrMove`     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax starts printing the move currently being searched after a short delay.                                                                                                                                                |
 | `Move Overhead`    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                                                                                                                                                     |
-| `EnableWeirdTCs`*  |  check  |    `false`    |      `false`, `true`      | Whether unusual time controls (movestogo != 0, or increment = 0) are enabled. Enabling this option means you recognise that Stormphrax is neither designed for nor tested with these TCs, and is likely to perform worse than under X+Y. |
+| `EnableWeirdTCs`   |  check  |    `false`    |      `false`, `true`      | Whether unusual time controls (movestogo != 0, or increment = 0) are enabled. Enabling this option means you recognise that Stormphrax is neither designed for nor tested with these TCs, and is likely to perform worse than under X+Y. |
 | `SyzygyPath`       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                                                                                                                                                    |
 | `SyzygyProbeDepth` |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                                                                                                                                             |
 | `SyzygyProbeLimit` |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                                                                                                                                                   |
 | `EvalFile`         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                                                                                                                                                         |
-
-`*` This option was added after the current release, and is only available in development builds.
 
 ## Builds
 `vnni512`: requires BMI2, AVX-512 and VNNI (Zen 4/Cascade Lake-SP/Rocket Lake and up)  

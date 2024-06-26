@@ -1,5 +1,5 @@
 VERSION := $(file < version.txt)
-EVALFILE = src/eval/net032.nnue
+EVALFILE = src/eval/stonegardens.nnue
 
 ifndef EXE
     EXE = stormphrax-$(VERSION)
