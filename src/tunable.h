@@ -174,7 +174,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(historyPenaltyOffset, 217, 128, 768, 64)
 
 	SP_TUNABLE_PARAM(qsearchFpMargin, 132, 50, 400, 17)
-	SP_TUNABLE_PARAM(qsearchMaxMoves, 3, 1, 5, 0.5)
+	SP_TUNABLE_PARAM(qsearchMaxMoves, 2, 1, 5, 0.5)
 	SP_TUNABLE_PARAM(qsearchSeeThreshold, -122, -2000, 200, 100)
 
 #undef SP_TUNABLE_PARAM
