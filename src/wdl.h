@@ -29,7 +29,7 @@ namespace stormphrax::wdl
 {
 	// Only used for unnormalisation and datagen, as a kind of best effort attempt
 	// Normalisation goes through the wdl model so as to be independent of ply
-	constexpr Score Move32NormalizationK = 250;
+	constexpr Score Move32NormalizationK = 244;
 
 	[[nodiscard]] auto wdlParams(u32 ply) -> std::pair<f64, f64>;
 	[[nodiscard]] auto wdlModel(Score povScore, u32 ply) -> std::pair<i32, i32>; // [win, loss]
