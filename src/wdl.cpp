@@ -26,10 +26,10 @@ namespace stormphrax::wdl
 	auto wdlParams(u32 ply) -> std::pair<f64, f64>
 	{
 		constexpr auto As = std::array {
-			-0.47027148, -4.12612156, 68.81577638, 185.93531106
+			0.32107731, 1.18725265, 60.55221564, 182.5047432
 		};
 		constexpr auto Bs = std::array {
-			-5.80807878, 41.02625126, -76.45793024, 106.33017419
+			-4.74288729, 36.60178664, -76.68914409, 113.30608488
 		};
 
 		static_assert(Move32NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
