@@ -93,7 +93,7 @@ Alternatively, build the makefile target `native` for a binary tuned for your sp
 - If you have an AMD Zen 1 (Ryzen x 1xxx), Zen+ (Ryzen x 2xxx) or Zen 2 (Ryzen x 3xxx) CPU, use the `avx2` build even though your CPU supports BMI2. These CPUs implement the BMI2 instructions `pext` and `pdep` in microcode, which makes them unusably slow for Stormphrax's purposes.
 
 ## Building
-Requires Make and a competent C++20 compiler that optionally supports LTO. GCC is not currently supported, so the usual compiler is Clang.
+Requires Make and a competent C++20 compiler that supports LTO. GCC is not currently supported, so the usual compiler is Clang. MSVC explicitly does not work.
 ```bash
 > make <BUILD> CXX=<COMPILER>
 ```
