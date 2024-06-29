@@ -52,9 +52,6 @@ namespace stormphrax::search
 		f64 time{};
 	};
 
-	constexpr u32 DefaultThreadCount = 1;
-	constexpr auto ThreadCountRange = util::Range<u32>{1,  2048};
-
 	constexpr auto SyzygyProbeDepthRange = util::Range<i32>{1, MaxDepth};
 	constexpr auto SyzygyProbeLimitRange = util::Range<i32>{0, 7};
 

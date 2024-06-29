@@ -27,6 +27,8 @@
 #include <variant>
 #include <cassert>
 
+#include "../../util/cemath.h"
+
 namespace stormphrax::eval::nnue
 {
 	class IParamStream
@@ -134,7 +136,7 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] static constexpr auto calcPadding(usize v) -> usize
 		{
-			return v - ((v + BlockSize - 1) / BlockSize) * BlockSize;
+			return v - util::ceilDiv(v, BlockSize) * BlockSize;
 		}
 	};
 }

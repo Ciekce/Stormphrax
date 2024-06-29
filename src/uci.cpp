@@ -197,8 +197,8 @@ namespace stormphrax
 			std::cout << "option name Hash type spin default " << DefaultTtSize
 			          << " min " << TtSizeRange.min() << " max " << TtSizeRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
-			std::cout << "option name Threads type spin default " << search::DefaultThreadCount
-				<< " min " << search::ThreadCountRange.min() << " max " << search::ThreadCountRange.max() << '\n';
+			std::cout << "option name Threads type spin default " << opts::DefaultThreadCount
+				<< " min " << opts::ThreadCountRange.min() << " max " << opts::ThreadCountRange.max() << '\n';
 			std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt
 				<< " min " << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
 			std::cout << "option name UCI_Chess960 type check default " << defaultOpts.chess960 << '\n';
@@ -525,7 +525,10 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newThreads = util::tryParseU32(valueStr))
-							m_searcher.setThreads(search::ThreadCountRange.clamp(*newThreads));
+						{
+							opts::mutableOpts().threads = *newThreads;
+							m_searcher.setThreads(opts::ThreadCountRange.clamp(*newThreads));
+						}
 					}
 				}
 				else if (nameStr == "contempt")

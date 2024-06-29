@@ -21,8 +21,14 @@
 #include <cstring>
 #include <bit>
 #include <iostream>
+#include <thread>
 
 #include "tunable.h"
+#include "util/cemath.h"
+
+
+
+#include <mutex>
 
 namespace stormphrax
 {
@@ -143,7 +149,22 @@ namespace stormphrax
 
 	auto TTable::clear() -> void
 	{
-		std::memset(m_table.data(), 0, m_table.size() * sizeof(Entry));
+		std::vector<std::jthread> threads{};
+		threads.reserve(g_opts.threads);
+
+		const auto chunkSize = util::ceilDiv<usize>(m_table.size(), g_opts.threads);
+
+		for (u32 i = 0; i < g_opts.threads; ++i)
+		{
+			threads.emplace_back([this, chunkSize, i]
+			{
+				const auto start = chunkSize * i;
+				const auto end = std::min(start + chunkSize, m_table.size());
+
+				std::memset(&m_table[start], 0, end - start);
+			});
+		}
+
 		m_age = 0;
 	}
 

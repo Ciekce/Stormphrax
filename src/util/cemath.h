@@ -35,4 +35,10 @@ namespace stormphrax::util
 	{
 		return (a * (One - t) + b * t) / One;
 	}
+
+	template <std::integral T>
+	constexpr auto ceilDiv(T a, T b)
+	{
+		return (a + b - 1) / b;
+	}
 }

@@ -21,15 +21,21 @@
 #include "types.h"
 
 #include "wdl.h"
+#include "util/range.h"
 
 namespace stormphrax
 {
 	namespace opts
 	{
+		constexpr u32 DefaultThreadCount = 1;
+		constexpr auto ThreadCountRange = util::Range<u32>{1,  2048};
+
 		constexpr i32 DefaultNormalizedContempt = 0;
 
 		struct GlobalOptions
 		{
+			u32 threads{DefaultThreadCount};
+
 			bool chess960{false};
 			bool showWdl{true};
 			bool showCurrMove{false};
