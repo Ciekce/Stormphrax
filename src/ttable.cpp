@@ -149,19 +149,23 @@ namespace stormphrax
 
 	auto TTable::clear() -> void
 	{
+		const auto threadCount = g_opts.threads;
+
 		std::vector<std::jthread> threads{};
-		threads.reserve(g_opts.threads);
+		threads.reserve(threadCount);
 
-		const auto chunkSize = util::ceilDiv<usize>(m_table.size(), g_opts.threads);
+		const auto chunkSize = util::ceilDiv<usize>(m_table.size(), threadCount);
 
-		for (u32 i = 0; i < g_opts.threads; ++i)
+		for (u32 i = 0; i < threadCount; ++i)
 		{
 			threads.emplace_back([this, chunkSize, i]
 			{
 				const auto start = chunkSize * i;
 				const auto end = std::min(start + chunkSize, m_table.size());
 
-				std::memset(&m_table[start], 0, end - start);
+				const auto count = end - start;
+
+				std::memset(&m_table[start], 0, count * sizeof(Entry));
 			});
 		}
 
