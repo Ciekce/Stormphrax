@@ -26,10 +26,6 @@
 #include "tunable.h"
 #include "util/cemath.h"
 
-
-
-#include <mutex>
-
 namespace stormphrax
 {
 	using namespace stormphrax::tunable;
