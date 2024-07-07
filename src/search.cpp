@@ -295,7 +295,7 @@ namespace stormphrax::search
 
 	auto Searcher::searchRoot(ThreadData &thread, bool actualSearch) -> Score
 	{
-		assert(!thread.rootMoves.empty());
+		assert(!m_rootMoves.empty());
 
 		auto &searchData = thread.search;
 
