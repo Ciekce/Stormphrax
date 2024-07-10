@@ -25,7 +25,9 @@
 #include "arch.h"
 #include "nnue/input.h"
 #include "nnue/network.h"
-#include "nnue/layers.h"
+#include "nnue/layers/dense_affine.h"
+#include "nnue/layers/scale.h"
+#include "nnue/layers/dequantize.h"
 #include "nnue/activation.h"
 #include "../util/static_vector.h"
 
@@ -37,12 +39,14 @@ namespace stormphrax::eval
 
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
-		nnue::DensePerspectiveAffineLayer<
+		nnue::layers::DensePerspectiveAffine<
 			i16, i16,
 			L1Activation,
 			L1Size, 1,
 			OutputBucketing
-		>
+		>,
+		nnue::layers::Scale<i32, 1, Scale>,
+		nnue::layers::Dequantize<i32, i32, 1, L1Q * OutputQ>
 	>;
 
 	using Accumulator = FeatureTransformer::Accumulator;
@@ -313,12 +317,9 @@ namespace stormphrax::eval
 		{
 			assert(stm != Color::None);
 
-			constexpr i32 Q = L1Q * OutputQ;
-
-			const auto output = stm == Color::Black
+			return stm == Color::Black
 				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
 				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
-			return output * Scale / Q;
 		}
 
 		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,

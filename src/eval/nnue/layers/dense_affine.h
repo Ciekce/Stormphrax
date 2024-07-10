@@ -25,16 +25,16 @@
 #include <cassert>
 #include <type_traits>
 
-#include "activation.h"
-#include "output.h"
-#include "../../util/simd.h"
-#include "io.h"
+#include "../activation.h"
+#include "../output.h"
+#include "../../../util/simd.h"
+#include "../io.h"
 
-namespace stormphrax::eval::nnue
+namespace stormphrax::eval::nnue::layers
 {
 	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
-	struct BaseAffineLayer
+	struct BaseAffine
 	{
 		using  InputType = Input;
 		using  ParamType = Param;
@@ -76,7 +76,7 @@ namespace stormphrax::eval::nnue
 	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	inline auto operator>>(std::istream &stream,
-		BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
+		BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
 	-> std::istream &
 	{
 		return layer.readFrom(stream);
@@ -85,7 +85,7 @@ namespace stormphrax::eval::nnue
 	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	inline auto operator<<(std::ostream &stream,
-		const BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
+		const BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
 	-> std::ostream &
 	{
 		return layer.writeTo(stream);
@@ -93,9 +93,9 @@ namespace stormphrax::eval::nnue
 
 	template <typename Input, typename Param, activation::Activation Activation,
 	    u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DenseAffineLayer : BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
+	struct DenseAffine : BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffineLayer<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
+		using Base = BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
 
 		inline auto forward(const BitboardSet &bbs,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
@@ -136,10 +136,10 @@ namespace stormphrax::eval::nnue
 
 	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DensePerspectiveAffineLayer
-		: BaseAffineLayer<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>
+	struct DensePerspectiveAffine
+		: BaseAffine<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffineLayer<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>;
+		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>;
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 
