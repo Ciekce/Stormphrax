@@ -860,6 +860,7 @@ namespace stormphrax::search
 					r -= history / lmrHistoryDivisor();
 					r -= improving;
 					r -= pos.isCheck();
+					r += !inCheck && std::abs(alpha) < ScoreWin && curr.staticEval >= beta;
 
 					// can't use std::clamp because newDepth can be <0
 					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
