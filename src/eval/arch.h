@@ -51,5 +51,5 @@ namespace stormphrax::eval
 		8, 8, 8, 8
 	>;
 
-	using OutputBucketing = nnue::output::Single;
+	using OutputBucketing = nnue::output::MaterialCount<8>;
 }
