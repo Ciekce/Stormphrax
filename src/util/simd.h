@@ -45,9 +45,23 @@ namespace stormphrax::util::simd
 	using VectorI16 = __m128i;
 	using VectorI32 = __m128i;
 #else // TODO neon
+	#define SP_AUTOVEC
+	#warning Falling back to autovectorization - expect an extremely slow binary
 	using VectorI16 = i16;
 	using VectorI32 = i32;
 #endif
+
+	template <typename T>
+	struct PromotedVectorImpl {};
+
+	template <>
+	struct PromotedVectorImpl<i16>
+	{
+		using Type = VectorI32;
+	};
+
+	template <typename T>
+	using PromotedVector = typename PromotedVectorImpl<T>::Type;
 
 #if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
 	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
@@ -95,7 +109,9 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void *ptr) -> VectorI16
 		{
+#if !defined(SP_AUTOVEC)
 			assert(isAligned(ptr));
+#endif
 
 #if SP_HAS_AVX512
 			return _mm512_load_si512(ptr);
@@ -110,7 +126,9 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void *ptr, VectorI16 v)
 		{
+#if !defined(SP_AUTOVEC)
 			assert(isAligned(ptr));
+#endif
 
 #if SP_HAS_AVX512
 			_mm512_store_si512(ptr, v);
@@ -240,7 +258,9 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32
 		{
+#if !defined(SP_AUTOVEC)
 			assert(isAligned(ptr));
+#endif
 
 #if SP_HAS_AVX512
 			return _mm512_load_si512(ptr);
@@ -255,7 +275,9 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v)
 		{
+#if !defined(SP_AUTOVEC)
 			assert(isAligned(ptr));
+#endif
 
 #if SP_HAS_AVX512
 			_mm512_store_si512(ptr, v);
@@ -397,7 +419,7 @@ namespace stormphrax::util::simd
 		}
 
 		// Depends on addI32
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI32 b) -> VectorI16
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI32 a, VectorI32 b) -> VectorI32
 		{
 #if SP_HAS_VNNI512
 			return _mm512_dpwssd_epi32(sum, a, b);
@@ -527,9 +549,9 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 
 
 	template <typename T>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc(Vector<T> sum, Vector<T> a, Vector<T> b) = delete;
+	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc(PromotedVector<T> sum, Vector<T> a, Vector<T> b) = delete;
 	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc<i16>(Vector<i16> sum, Vector<i16> a, Vector<i16> b)
+	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc<i16>(PromotedVector<i16> sum, Vector<i16> a, Vector<i16> b)
 	{
 		return impl::mulAddAdjAccI16(sum, a, b);
 	}

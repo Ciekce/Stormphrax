@@ -30,7 +30,7 @@
 		#define SP_HAS_BMI2 0
 	#endif
 	#define SP_HAS_VNNI512 __AVX512VNNI__
-	#define SP_HAS_AVX512 __AVX512F__
+	#define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_NEON __neon__
 	#define SP_HAS_BMI1 __BMI__
