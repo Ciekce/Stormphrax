@@ -26,6 +26,9 @@
 
 #if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
 #include <immintrin.h>
+#elif SP_HAS_NEON
+#include <arm_neon.h>
+#define vmull_low_s16(a, b) vmull_s16(vget_low_s16(a), vget_low_s16(b))
 #else
 #include <cmath>
 #include <algorithm>
@@ -44,7 +47,10 @@ namespace stormphrax::util::simd
 #elif SP_HAS_SSE41
 	using VectorI16 = __m128i;
 	using VectorI32 = __m128i;
-#else // TODO neon
+#elif SP_HAS_NEON
+	using VectorI16 = int16x8_t;
+	using VectorI32 = int32x4_t;
+#else
 	#define SP_AUTOVEC
 	#warning Falling back to autovectorization - expect an extremely slow binary
 	using VectorI16 = i16;
@@ -63,10 +69,10 @@ namespace stormphrax::util::simd
 	template <typename T>
 	using PromotedVector = typename PromotedVectorImpl<T>::Type;
 
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
+#if SP_HAS_SIMD
 	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
-#else // neon
-	constexpr std::uintptr_t Alignment = 16;
+#else
+	constexpr std::uintptr_t Alignment = 8;
 #endif
 
 	constexpr usize ChunkSize = sizeof(VectorI16) / sizeof(i16);
@@ -89,6 +95,8 @@ namespace stormphrax::util::simd
 			return _mm256_setzero_si256();
 #elif SP_HAS_SSE41
 			return _mm_setzero_si128();
+#elif SP_HAS_NEON
+			return vdupq_n_s16(0);
 #else
 			return 0;
 #endif
@@ -102,6 +110,8 @@ namespace stormphrax::util::simd
 			return _mm256_set1_epi16(v);
 #elif SP_HAS_SSE41
 			return _mm_set1_epi16(v);
+#elif SP_HAS_NEON
+			return vdupq_n_s16(v);
 #else
 			return v;
 #endif
@@ -119,6 +129,8 @@ namespace stormphrax::util::simd
 			return _mm256_load_si256(static_cast<const VectorI16 *>(ptr));
 #elif SP_HAS_SSE41
 			return _mm_load_si128(static_cast<const VectorI16 *>(ptr));
+#elif SP_HAS_NEON
+			return vld1q_s16(static_cast<const i16 *>(ptr));
 #else
 			return *static_cast<const VectorI16 *>(ptr);
 #endif
@@ -136,6 +148,8 @@ namespace stormphrax::util::simd
 			_mm256_store_si256(static_cast<VectorI16 *>(ptr), v);
 #elif SP_HAS_SSE41
 			_mm_store_si128(static_cast<VectorI16 *>(ptr), v);
+#elif SP_HAS_NEON
+			vst1q_s16(static_cast<i16 *>(ptr), v);
 #else
 			*static_cast<VectorI16 *>(ptr) = v;
 #endif
@@ -149,6 +163,8 @@ namespace stormphrax::util::simd
 			return _mm256_min_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_min_epi16(a, b);
+#elif SP_HAS_NEON
+			return vminq_s16(a, b);
 #else
 			return std::min(a, b);
 #endif
@@ -162,6 +178,8 @@ namespace stormphrax::util::simd
 			return _mm256_max_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_max_epi16(a, b);
+#elif SP_HAS_NEON
+			return vmaxq_s16(a, b);
 #else
 			return std::max(a, b);
 #endif
@@ -170,7 +188,7 @@ namespace stormphrax::util::simd
 		SP_ALWAYS_INLINE_NDEBUG inline auto clampI16(
 			VectorI16 v, VectorI16 min, VectorI16 max) -> VectorI16
 		{
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
+#if SP_HAS_SIMD
 			return minI16(maxI16(v, min), max);
 #else
 			return std::clamp(v, min, max);
@@ -185,6 +203,8 @@ namespace stormphrax::util::simd
 			return _mm256_add_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_add_epi16(a, b);
+#elif SP_HAS_NEON
+			return vaddq_s16(a, b);
 #else
 			return static_cast<VectorI16>(a + b);
 #endif
@@ -198,6 +218,8 @@ namespace stormphrax::util::simd
 			return _mm256_sub_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_sub_epi16(a, b);
+#elif SP_HAS_NEON
+			return vsubq_s16(a, b);
 #else
 			return static_cast<VectorI16>(a - b);
 #endif
@@ -211,6 +233,8 @@ namespace stormphrax::util::simd
 			return _mm256_mullo_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_mullo_epi16(a, b);
+#elif SP_HAS_NEON
+			return vmulq_s16(a, b);
 #else
 			//TODO is this correct for overflow?
 			return static_cast<VectorI16>(a * b);
@@ -225,6 +249,11 @@ namespace stormphrax::util::simd
 			return _mm256_madd_epi16(a, b);
 #elif SP_HAS_SSE41
 			return _mm_madd_epi16(a, b);
+#elif SP_HAS_NEON
+			const auto low  = vmull_low_s16(a, b);
+			const auto high = vmull_high_s16(a, b);
+
+			return vpaddq_s32(low, high);
 #else
 			return static_cast<VectorI32>(a) * static_cast<VectorI32>(b);
 #endif
@@ -238,6 +267,8 @@ namespace stormphrax::util::simd
 			return _mm256_setzero_si256();
 #elif SP_HAS_SSE41
 			return _mm_setzero_si128();
+#elif SP_HAS_NEON
+			return vdupq_n_s32(0);
 #else
 			return 0;
 #endif
@@ -251,6 +282,8 @@ namespace stormphrax::util::simd
 			return _mm256_set1_epi32(v);
 #elif SP_HAS_SSE41
 			return _mm_set1_epi32(v);
+#elif SP_HAS_NEON
+			return vdupq_n_s32(v);
 #else
 			return v;
 #endif
@@ -268,6 +301,8 @@ namespace stormphrax::util::simd
 			return _mm256_load_si256(static_cast<const VectorI16 *>(ptr));
 #elif SP_HAS_SSE41
 			return _mm_load_si128(static_cast<const VectorI16 *>(ptr));
+#elif SP_HAS_NEON
+			return vld1q_s32(static_cast<const i32 *>(ptr));
 #else
 			return *static_cast<const VectorI32 *>(ptr);
 #endif
@@ -285,6 +320,8 @@ namespace stormphrax::util::simd
 			_mm256_store_si256(static_cast<VectorI32 *>(ptr), v);
 #elif SP_HAS_SSE41
 			_mm_store_si128(static_cast<VectorI32 *>(ptr), v);
+#elif SP_HAS_NEON
+			vst1q_s32(static_cast<i32 *>(ptr), v);
 #else
 			*static_cast<VectorI32 *>(ptr) = v;
 #endif
@@ -298,6 +335,8 @@ namespace stormphrax::util::simd
 			return _mm256_min_epi32(a, b);
 #elif SP_HAS_SSE41
 			return _mm_min_epi32(a, b);
+#elif SP_HAS_NEON
+			return vminq_s32(a, b);
 #else
 			return std::min(a, b);
 #endif
@@ -311,6 +350,8 @@ namespace stormphrax::util::simd
 			return _mm256_max_epi32(a, b);
 #elif SP_HAS_SSE41
 			return _mm_max_epi32(a, b);
+#elif SP_HAS_NEON
+			return vmaxq_s32(a, b);
 #else
 			return std::max(a, b);
 #endif
@@ -319,7 +360,7 @@ namespace stormphrax::util::simd
 		SP_ALWAYS_INLINE_NDEBUG inline auto clampI32(
 			VectorI32 v, VectorI32 min, VectorI32 max) -> VectorI32
 		{
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
+#if SP_HAS_SIMD
 			return minI32(maxI32(v, min), max);
 #else
 			return std::clamp(v, min, max);
@@ -334,6 +375,8 @@ namespace stormphrax::util::simd
 			return _mm256_add_epi32(a, b);
 #elif SP_HAS_SSE41
 			return _mm_add_epi32(a, b);
+#elif SP_HAS_NEON
+			return vaddq_s32(a, b);
 #else
 			return a + b;
 #endif
@@ -347,6 +390,8 @@ namespace stormphrax::util::simd
 			return _mm256_sub_epi32(a, b);
 #elif SP_HAS_SSE41
 			return _mm_sub_epi32(a, b);
+#elif SP_HAS_NEON
+			return vsubq_s32(a, b);
 #else
 			return a - b;
 #endif
@@ -360,6 +405,8 @@ namespace stormphrax::util::simd
 			return _mm256_mullo_epi32(a, b);
 #elif SP_HAS_SSE41
 			return _mm_mullo_epi32(a, b);
+#elif SP_HAS_NEON
+			return vmulq_s32(a, b);
 #else
 			return a * b;
 #endif
@@ -413,6 +460,8 @@ namespace stormphrax::util::simd
 			return internal::hsumI32Avx2(v);
 #elif SP_HAS_SSE41
 			return internal::hsumI32Sse41(v);
+#elif SP_HAS_NEON
+			return vaddvq_s32(v);
 #else
 			return v;
 #endif
@@ -421,7 +470,7 @@ namespace stormphrax::util::simd
 		// Depends on addI32
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI32 a, VectorI32 b) -> VectorI32
 		{
-#if SP_HAS_VNNI512
+#if SP_HAS_AVX512VNNI
 			return _mm512_dpwssd_epi32(sum, a, b);
 #else
 			const auto products = mulAddAdjI16(a, b);
