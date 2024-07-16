@@ -72,7 +72,7 @@ namespace stormphrax::util::simd
 #if SP_HAS_SIMD
 	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
 #else
-	constexpr std::uintptr_t Alignment = 1;
+	constexpr std::uintptr_t Alignment = 8;
 #endif
 
 	constexpr usize ChunkSize = sizeof(VectorI16) / sizeof(i16);
