@@ -140,11 +140,11 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(minSeDepth, 8, 4, 10, 0.5)
 	SP_TUNABLE_PARAM(seTtDepthMargin, 4, 2, 6, 1)
-	SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
+	SP_TUNABLE_PARAM(sBetaMargin, 12, 4, 64, 12)
 
-	SP_TUNABLE_PARAM(multiExtLimit, 8, 4, 24, 4)
+	SP_TUNABLE_PARAM(multiExtLimit, 10, 4, 24, 4)
 
-	SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
+	SP_TUNABLE_PARAM(doubleExtMargin, 4, 0, 32, 5)
 	SP_TUNABLE_PARAM(tripleExtMargin, 106, 10, 150, 7)
 
 	SP_TUNABLE_PARAM(minLmrDepth, 2, 2, 5, 1)
