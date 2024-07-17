@@ -42,10 +42,10 @@ namespace stormphrax::util::simd
 {
 	constexpr usize ChunkSize = sizeof(VectorI16) / sizeof(i16);
 
-	template <std::uintptr_t Alignment = Alignment, typename T = void>
+	template <typename T = void>
 	auto isAligned(const T *ptr)
 	{
-		return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
+		return util::isAligned<Alignment>(ptr);
 	}
 
 	template <typename T>

@@ -21,6 +21,7 @@
 #include "../../types.h"
 
 #include "../../arch.h"
+#include "../align.h"
 
 #if SP_HAS_NEON
 
@@ -47,13 +48,13 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void *ptr) -> VectorI16
 		{
-			assert(isAligned(ptr));
+			assert(isAligned<Alignment>(ptr));
 			return vld1q_s16(static_cast<const i16 *>(ptr));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void *ptr, VectorI16 v)
 		{
-			assert(isAligned(ptr));
+			assert(isAligned<Alignment>(ptr));
 			vst1q_s16(static_cast<i16 *>(ptr), v);
 		}
 
@@ -108,13 +109,13 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32
 		{
-			assert(isAligned(ptr));
+			assert(isAligned<Alignment>(ptr));
 			return vld1q_s32(static_cast<const i32 *>(ptr));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v)
 		{
-			assert(isAligned(ptr));
+			assert(isAligned<Alignment>(ptr));
 			vst1q_s32(static_cast<i32 *>(ptr), v);
 		}
 
