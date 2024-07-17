@@ -60,7 +60,8 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/eval/nnue/features.h src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h
 	src/datagen/marlinformat.cpp src/datagen/viri_binpack.h src/datagen/viri_binpack.cpp src/tb.h src/tb.cpp
 	src/movepick.h src/history.h src/util/multi_array.h src/correction.h src/limit/compound.h
-	src/eval/nnue/layers/scale.h src/eval/nnue/layers/dequantize.h)
+	src/eval/nnue/layers/scale.h src/eval/nnue/layers/dequantize.h src/util/simd/x64common.h src/util/simd/avx512.h
+	src/util/simd/avx2.h src/util/simd/sse41.h src/util/simd/neon.h src/util/simd/none.h)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h

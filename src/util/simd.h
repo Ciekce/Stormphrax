@@ -24,459 +24,28 @@
 
 #include "../arch.h"
 
-#if SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_SSE41
-#include <immintrin.h>
+#if SP_HAS_AVX512
+#include "simd/avx512.h"
+#elif SP_HAS_AVX2
+#include "simd/avx2.h"
+#elif SP_HAS_SSE41
+#include "simd/sse41.h"
 #elif SP_HAS_NEON
-#include <arm_neon.h>
-#define vmull_low_s16(a, b) vmull_s16(vget_low_s16(a), vget_low_s16(b))
+#include "simd/neon.h"
 #else
-#include <cmath>
-#include <algorithm>
+#include "simd/none.h"
 #endif
 
-// Run
+#define SP_SIMD_ALIGNAS alignas(stormphrax::util::simd::Alignment)
 
 namespace stormphrax::util::simd
 {
-#if SP_HAS_AVX512
-	using VectorI16 = __m512i;
-	using VectorI32 = __m512i;
-#elif SP_HAS_AVX2
-	using VectorI16 = __m256i;
-	using VectorI32 = __m256i;
-#elif SP_HAS_SSE41
-	using VectorI16 = __m128i;
-	using VectorI32 = __m128i;
-#elif SP_HAS_NEON
-	using VectorI16 = int16x8_t;
-	using VectorI32 = int32x4_t;
-#else
-	#define SP_AUTOVEC
-	#warning Falling back to autovectorization - expect an extremely slow binary
-	using VectorI16 = i16;
-	using VectorI32 = i32;
-#endif
-
-	template <typename T>
-	struct PromotedVectorImpl {};
-
-	template <>
-	struct PromotedVectorImpl<i16>
-	{
-		using Type = VectorI32;
-	};
-
-	template <typename T>
-	using PromotedVector = typename PromotedVectorImpl<T>::Type;
-
-#if SP_HAS_SIMD
-	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
-#else
-	constexpr std::uintptr_t Alignment = 8;
-#endif
-
 	constexpr usize ChunkSize = sizeof(VectorI16) / sizeof(i16);
-
-#define SP_SIMD_ALIGNAS alignas(stormphrax::util::simd::Alignment)
 
 	template <std::uintptr_t Alignment = Alignment, typename T = void>
 	auto isAligned(const T *ptr)
 	{
 		return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
-	}
-
-	namespace impl
-	{
-		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI16() -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_setzero_si512();
-#elif SP_HAS_AVX2
-			return _mm256_setzero_si256();
-#elif SP_HAS_SSE41
-			return _mm_setzero_si128();
-#elif SP_HAS_NEON
-			return vdupq_n_s16(0);
-#else
-			return 0;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto set1I16(i16 v) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_set1_epi16(v);
-#elif SP_HAS_AVX2
-			return _mm256_set1_epi16(v);
-#elif SP_HAS_SSE41
-			return _mm_set1_epi16(v);
-#elif SP_HAS_NEON
-			return vdupq_n_s16(v);
-#else
-			return v;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void *ptr) -> VectorI16
-		{
-#if !defined(SP_AUTOVEC)
-			assert(isAligned(ptr));
-#endif
-
-#if SP_HAS_AVX512
-			return _mm512_load_si512(ptr);
-#elif SP_HAS_AVX2
-			return _mm256_load_si256(static_cast<const VectorI16 *>(ptr));
-#elif SP_HAS_SSE41
-			return _mm_load_si128(static_cast<const VectorI16 *>(ptr));
-#elif SP_HAS_NEON
-			return vld1q_s16(static_cast<const i16 *>(ptr));
-#else
-			return *static_cast<const VectorI16 *>(ptr);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void *ptr, VectorI16 v)
-		{
-#if !defined(SP_AUTOVEC)
-			assert(isAligned(ptr));
-#endif
-
-#if SP_HAS_AVX512
-			_mm512_store_si512(ptr, v);
-#elif SP_HAS_AVX2
-			_mm256_store_si256(static_cast<VectorI16 *>(ptr), v);
-#elif SP_HAS_SSE41
-			_mm_store_si128(static_cast<VectorI16 *>(ptr), v);
-#elif SP_HAS_NEON
-			vst1q_s16(static_cast<i16 *>(ptr), v);
-#else
-			*static_cast<VectorI16 *>(ptr) = v;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto minI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_min_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_min_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_min_epi16(a, b);
-#elif SP_HAS_NEON
-			return vminq_s16(a, b);
-#else
-			return std::min(a, b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto maxI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_max_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_max_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_max_epi16(a, b);
-#elif SP_HAS_NEON
-			return vmaxq_s16(a, b);
-#else
-			return std::max(a, b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto clampI16(
-			VectorI16 v, VectorI16 min, VectorI16 max) -> VectorI16
-		{
-#if SP_HAS_SIMD
-			return minI16(maxI16(v, min), max);
-#else
-			return std::clamp(v, min, max);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto addI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_add_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_add_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_add_epi16(a, b);
-#elif SP_HAS_NEON
-			return vaddq_s16(a, b);
-#else
-			return static_cast<VectorI16>(a + b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto subI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_sub_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_sub_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_sub_epi16(a, b);
-#elif SP_HAS_NEON
-			return vsubq_s16(a, b);
-#else
-			return static_cast<VectorI16>(a - b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-#if SP_HAS_AVX512
-			return _mm512_mullo_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_mullo_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_mullo_epi16(a, b);
-#elif SP_HAS_NEON
-			return vmulq_s16(a, b);
-#else
-			//TODO is this correct for overflow?
-			return static_cast<VectorI16>(a * b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjI16(VectorI16 a, VectorI16 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_madd_epi16(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_madd_epi16(a, b);
-#elif SP_HAS_SSE41
-			return _mm_madd_epi16(a, b);
-#elif SP_HAS_NEON
-			const auto low  = vmull_low_s16(a, b);
-			const auto high = vmull_high_s16(a, b);
-
-			return vpaddq_s32(low, high);
-#else
-			return static_cast<VectorI32>(a) * static_cast<VectorI32>(b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI32() -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_setzero_si512();
-#elif SP_HAS_AVX2
-			return _mm256_setzero_si256();
-#elif SP_HAS_SSE41
-			return _mm_setzero_si128();
-#elif SP_HAS_NEON
-			return vdupq_n_s32(0);
-#else
-			return 0;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto set1I32(i32 v) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_set1_epi32(v);
-#elif SP_HAS_AVX2
-			return _mm256_set1_epi32(v);
-#elif SP_HAS_SSE41
-			return _mm_set1_epi32(v);
-#elif SP_HAS_NEON
-			return vdupq_n_s32(v);
-#else
-			return v;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32
-		{
-#if !defined(SP_AUTOVEC)
-			assert(isAligned(ptr));
-#endif
-
-#if SP_HAS_AVX512
-			return _mm512_load_si512(ptr);
-#elif SP_HAS_AVX2
-			return _mm256_load_si256(static_cast<const VectorI16 *>(ptr));
-#elif SP_HAS_SSE41
-			return _mm_load_si128(static_cast<const VectorI16 *>(ptr));
-#elif SP_HAS_NEON
-			return vld1q_s32(static_cast<const i32 *>(ptr));
-#else
-			return *static_cast<const VectorI32 *>(ptr);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v)
-		{
-#if !defined(SP_AUTOVEC)
-			assert(isAligned(ptr));
-#endif
-
-#if SP_HAS_AVX512
-			_mm512_store_si512(ptr, v);
-#elif SP_HAS_AVX2
-			_mm256_store_si256(static_cast<VectorI32 *>(ptr), v);
-#elif SP_HAS_SSE41
-			_mm_store_si128(static_cast<VectorI32 *>(ptr), v);
-#elif SP_HAS_NEON
-			vst1q_s32(static_cast<i32 *>(ptr), v);
-#else
-			*static_cast<VectorI32 *>(ptr) = v;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto minI32(VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_min_epi32(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_min_epi32(a, b);
-#elif SP_HAS_SSE41
-			return _mm_min_epi32(a, b);
-#elif SP_HAS_NEON
-			return vminq_s32(a, b);
-#else
-			return std::min(a, b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto maxI32(VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_max_epi32(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_max_epi32(a, b);
-#elif SP_HAS_SSE41
-			return _mm_max_epi32(a, b);
-#elif SP_HAS_NEON
-			return vmaxq_s32(a, b);
-#else
-			return std::max(a, b);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto clampI32(
-			VectorI32 v, VectorI32 min, VectorI32 max) -> VectorI32
-		{
-#if SP_HAS_SIMD
-			return minI32(maxI32(v, min), max);
-#else
-			return std::clamp(v, min, max);
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto addI32(VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_add_epi32(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_add_epi32(a, b);
-#elif SP_HAS_SSE41
-			return _mm_add_epi32(a, b);
-#elif SP_HAS_NEON
-			return vaddq_s32(a, b);
-#else
-			return a + b;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto subI32(VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_sub_epi32(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_sub_epi32(a, b);
-#elif SP_HAS_SSE41
-			return _mm_sub_epi32(a, b);
-#elif SP_HAS_NEON
-			return vsubq_s32(a, b);
-#else
-			return a - b;
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI32(VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512
-			return _mm512_mullo_epi32(a, b);
-#elif SP_HAS_AVX2
-			return _mm256_mullo_epi32(a, b);
-#elif SP_HAS_SSE41
-			return _mm_mullo_epi32(a, b);
-#elif SP_HAS_NEON
-			return vmulq_s32(a, b);
-#else
-			return a * b;
-#endif
-		}
-
-		namespace internal
-		{
-#if SP_HAS_SSE41
-			SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32Sse41(__m128i v) -> i32
-			{
-				const auto high64 = _mm_unpackhi_epi64(v, v);
-				const auto sum64 = _mm_add_epi32(v, high64);
-
-				const auto high32 = _mm_shuffle_epi32(sum64, _MM_SHUFFLE(2, 3, 0, 1));
-				const auto sum32 = _mm_add_epi32(sum64, high32);
-
-				return _mm_cvtsi128_si32(sum32);
-			}
-#endif
-
-#if SP_HAS_AVX2
-			SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32Avx2(__m256i v) -> i32
-			{
-				const auto high128 = _mm256_extracti128_si256(v, 1);
-				const auto low128 = _mm256_castsi256_si128(v);
-
-				const auto sum128 = _mm_add_epi32(high128, low128);
-
-				return hsumI32Sse41(sum128);
-			}
-#endif
-
-#if SP_HAS_AVX512
-			SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32Avx512(__m512i v) -> i32
-			{
-				const auto high256 = _mm512_extracti64x4_epi64(v, 1);
-				const auto low256 = _mm512_castsi512_si256(v);
-
-				const auto sum256 = _mm256_add_epi32(high256, low256);
-
-				return hsumI32Avx2(sum256);
-			}
-#endif
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32(VectorI32 v) -> i32
-		{
-#if SP_HAS_AVX512
-			return internal::hsumI32Avx512(v);
-#elif SP_HAS_AVX2
-			return internal::hsumI32Avx2(v);
-#elif SP_HAS_SSE41
-			return internal::hsumI32Sse41(v);
-#elif SP_HAS_NEON
-			return vaddvq_s32(v);
-#else
-			return v;
-#endif
-		}
-
-		// Depends on addI32
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI32 a, VectorI32 b) -> VectorI32
-		{
-#if SP_HAS_AVX512VNNI
-			return _mm512_dpwssd_epi32(sum, a, b);
-#else
-			const auto products = mulAddAdjI16(a, b);
-			return addI32(sum, products);
-#endif
-		}
 	}
 
 	template <typename T>
@@ -496,6 +65,17 @@ namespace stormphrax::util::simd
 
 	template <typename T>
 	using Vector = typename VectorImpl<T>::Type;
+	template <typename T>
+	struct PromotedVectorImpl {};
+
+	template <>
+	struct PromotedVectorImpl<i16>
+	{
+		using Type = VectorI32;
+	};
+
+	template <typename T>
+	using PromotedVector = typename PromotedVectorImpl<T>::Type;
 
 #define SP_SIMD_OP_0(Name) \
 	template <typename T> \
@@ -595,7 +175,6 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	{
 		return impl::mulAddAdjI16(a, b);
 	}
-
 
 	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAcc(PromotedVector<T> sum, Vector<T> a, Vector<T> b) = delete;
