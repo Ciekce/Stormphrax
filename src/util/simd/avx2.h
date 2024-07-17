@@ -22,7 +22,7 @@
 
 #include "../../arch.h"
 
-#if SP_HAS_AVX2 && !SP_HAS_AVX256
+#if SP_HAS_AVX2 && !SP_HAS_AVX512
 
 #include "x64common.h"
 
