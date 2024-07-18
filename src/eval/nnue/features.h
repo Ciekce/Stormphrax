@@ -189,9 +189,6 @@ namespace stormphrax::eval::nnue::features
 			if (prevFlipped != flipped)
 				return true;
 
-			if (flipped)
-				kingSq = flipSquareFile(kingSq);
-
 			if (c == Color::Black)
 			{
 				prevKingSq = flipSquareRank(prevKingSq);
