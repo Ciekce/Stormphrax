@@ -165,13 +165,24 @@ namespace stormphrax::eval
 
 	auto loadDefaultNetwork() -> void
 	{
+		if (g_defaultNetSize < sizeof(NetworkHeader)
+			|| !validate(*reinterpret_cast<const NetworkHeader *>(g_defaultNetData)))
+		{
+			std::cerr << "Failed to validate default network header" << std::endl;
+			return;
+		}
+
 		const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
 		const auto *end = g_defaultNetData + g_defaultNetSize;
 
 		util::MemoryIstream stream{{begin, end}};
 		nnue::PaddedParamStream<64> paramStream{stream};
 
-		s_network.readFrom(paramStream);
+		if (!s_network.readFrom(paramStream))
+		{
+			std::cerr << "Failed to load default network" << std::endl;
+			return;
+		}
 	}
 
 	auto loadNetwork(const std::string &name) -> void
