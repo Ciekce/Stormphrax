@@ -41,6 +41,7 @@ namespace stormphrax::eval
 
 	// visually flipped upside down, a1 = 0
 	using InputFeatureSet = nnue::features::KingBucketsMirrored<
+	    nnue::features::MirroredKingSide::Abcd,
 		0, 0, 1, 1,
 		2, 2, 2, 2,
 		3, 3, 3, 3,
