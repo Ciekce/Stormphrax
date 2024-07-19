@@ -171,7 +171,8 @@ namespace stormphrax::eval
 		util::MemoryIstream stream{{begin, end}};
 		nnue::PaddedParamStream<64> paramStream{stream};
 
-		s_network.readFrom(paramStream);
+		if (!s_network.readFrom(paramStream))
+			std::cerr << "Failed to load default network" << std::endl;
 	}
 
 	auto loadNetwork(const std::string &name) -> void
