@@ -156,7 +156,7 @@ namespace stormphrax::util::simd
 		}
 
 		// Depends on addI32
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI32 a, VectorI32 b) -> VectorI32
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			const auto products = mulAddAdjI16(a, b);
 			return addI32(sum, products);

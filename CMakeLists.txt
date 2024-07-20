@@ -5,7 +5,7 @@ project(stormphrax VERSION ${SP_VERSION})
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(SP_DEFAULT_NET_NAME stonegardens)
+file(STRINGS network.txt SP_DEFAULT_NET_NAME LIMIT_COUNT 1)
 
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
@@ -61,8 +61,8 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/datagen/marlinformat.cpp src/datagen/viri_binpack.h src/datagen/viri_binpack.cpp src/tb.h src/tb.cpp
 	src/movepick.h src/history.h src/util/multi_array.h src/correction.h src/limit/compound.h
 	src/eval/nnue/layers/scale.h src/eval/nnue/layers/dequantize.h src/util/simd/x64common.h src/util/simd/avx512.h
-	src/util/simd/avx2.h src/util/simd/sse41.h src/util/simd/neon.h src/util/simd/none.h
-	src/util/align.h)
+	src/util/simd/avx2.h src/util/simd/sse41.h src/util/simd/neon.h src/util/simd/none.h src/util/align.h
+	src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h src/eval/nnue/io_impl.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
@@ -111,7 +111,7 @@ foreach(TARGET ${TARGETS})
 	string(TOUPPER ${ARCH_NAME} ARCH_NAME)
 
 	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION}
-		SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/src/eval/${SP_DEFAULT_NET_NAME}.nnue")
+		SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/${SP_DEFAULT_NET_NAME}.nnue")
 
 	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")

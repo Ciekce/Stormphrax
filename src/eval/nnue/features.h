@@ -120,7 +120,13 @@ namespace stormphrax::eval::nnue::features
 		56, 57, 58, 59, 60, 61, 62, 63
 	>;
 
-	template <u32... BucketIndices>
+	enum class MirroredKingSide
+	{
+		Abcd,
+		Efgh,
+	};
+
+	template <MirroredKingSide Side, u32... BucketIndices>
 	struct [[maybe_unused]] KingBucketsMirrored
 	{
 		static_assert(sizeof...(BucketIndices) == 32);
@@ -147,6 +153,13 @@ namespace stormphrax::eval::nnue::features
 			return dst;
 		}();
 
+		static constexpr auto shouldFlip(Square kingSq)
+		{
+			if constexpr (Side == MirroredKingSide::Abcd)
+				return squareFile(kingSq) > 3;
+			else return squareFile(kingSq) <= 3;
+		}
+
 	public:
 		static constexpr u32 InputSize = 768;
 
@@ -157,7 +170,7 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto transformFeatureSquare(Square sq, Square kingSq)
 		{
-			const bool flipped = squareFile(kingSq) > 3;
+			const bool flipped = shouldFlip(kingSq);
 			return flipped ? flipSquareFile(sq) : sq;
 		}
 
@@ -172,7 +185,7 @@ namespace stormphrax::eval::nnue::features
 		{
 			if (c == Color::Black)
 				kingSq = flipSquareRank(kingSq);
-			const bool flipped = squareFile(kingSq) > 3;
+			const bool flipped = shouldFlip(kingSq);
 			return Buckets[static_cast<i32>(kingSq)] * 2 + flipped;
 		}
 
@@ -183,14 +196,11 @@ namespace stormphrax::eval::nnue::features
 			assert(prevKingSq != Square::None);
 			assert(kingSq != Square::None);
 
-			const bool prevFlipped = squareFile(prevKingSq) > 3;
-			const bool     flipped = squareFile(    kingSq) > 3;
+			const bool prevFlipped = shouldFlip(prevKingSq);
+			const bool     flipped = shouldFlip(    kingSq);
 
 			if (prevFlipped != flipped)
 				return true;
-
-			if (flipped)
-				kingSq = flipSquareFile(kingSq);
 
 			if (c == Color::Black)
 			{
@@ -202,7 +212,9 @@ namespace stormphrax::eval::nnue::features
 		}
 	};
 
+	template <MirroredKingSide Side>
 	using HalfKaMirrored [[maybe_unused]] = KingBucketsMirrored<
+	    Side,
 	     0,  1,  2,  3,
 		 4,  5,  6,  7,
 		 8,  9, 10, 11,

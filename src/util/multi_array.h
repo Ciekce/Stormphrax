@@ -21,7 +21,6 @@
 #include "../types.h"
 
 #include <array>
-#include <type_traits>
 
 namespace stormphrax::util
 {

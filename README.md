@@ -106,7 +106,10 @@ Requires Make and a competent C++20 compiler that supports LTO. GCC is not curre
 By default, the makefile builds binaries with profile-guided optimisation (PGO). To disable this, pass `PGO=off`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
 
 ## Credit
-Stormphrax uses [Fathom] for tablebase probing, licensed under the MIT license, and a slightly modified version of [incbin] for embedding neural network files, under the Unlicense.
+Stormphrax makes use of the following libraries:
+- [Fathom] for tablebase probing, licensed under the MIT license
+- a slightly modified version of [incbin] for embedding neural network files, under the Unlicense
+- [Zstandard] for decompressing NNUE files, under GPLv2 (see [COPYING](src/3rdparty/zstd/COPYING))
 
 Stormphrax is tested on [this OpenBench instance][ob] - thanks to all the people there, SP would be much weaker without your support :3
 
@@ -147,6 +150,7 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 
 [fathom]: https://github.com/jdart1/Fathom
 [incbin]: https://github.com/graphitemaster/incbin
+[zstandard]: https://github.com/facebook/zstd
 
 [ob]: https://chess.swehosting.se/index/
 
