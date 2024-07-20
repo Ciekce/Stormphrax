@@ -21,7 +21,7 @@
 #include <fstream>
 
 #include "../util/memstream.h"
-#include "nnue/io.h"
+#include "nnue/io_impl.h"
 
 #ifdef _MSC_VER
 #define SP_MSVC
@@ -49,6 +49,7 @@ namespace stormphrax::eval
 		SP_ENUM_FLAGS(u16, NetworkFlags)
 		{
 			None = 0x0000,
+			ZstdCompressed = 0x0001,
 			HorizontallyMirrored = 0x0002,
 		};
 
@@ -158,6 +159,24 @@ namespace stormphrax::eval
 			return true;
 		}
 
+		auto loadNetworkFrom(Network &network, std::istream &stream, const NetworkHeader &header)
+		{
+			bool success;
+
+			if (testFlags(header.flags, NetworkFlags::ZstdCompressed))
+			{
+				nnue::ZstdParamStream paramStream{stream};
+				success = network.readFrom(paramStream);
+			}
+			else
+			{
+				nnue::PaddedParamStream<64> paramStream{stream};
+				success = network.readFrom(paramStream);
+			}
+
+			return success;
+		}
+
 		Network s_network{};
 	}
 
@@ -165,8 +184,15 @@ namespace stormphrax::eval
 
 	auto loadDefaultNetwork() -> void
 	{
-		if (g_defaultNetSize < sizeof(NetworkHeader)
-			|| !validate(*reinterpret_cast<const NetworkHeader *>(g_defaultNetData)))
+		if (g_defaultNetSize < sizeof(NetworkHeader))
+		{
+			std::cerr << "Missing default network?" << std::endl;
+			return;
+		}
+
+		const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
+
+		if (!validate(header))
 		{
 			std::cerr << "Failed to validate default network header" << std::endl;
 			return;
@@ -176,9 +202,8 @@ namespace stormphrax::eval
 		const auto *end = g_defaultNetData + g_defaultNetSize;
 
 		util::MemoryIstream stream{{begin, end}};
-		nnue::PaddedParamStream<64> paramStream{stream};
 
-		if (!s_network.readFrom(paramStream))
+		if (!loadNetworkFrom(s_network, stream, header))
 		{
 			std::cerr << "Failed to load default network" << std::endl;
 			return;
@@ -207,8 +232,7 @@ namespace stormphrax::eval
 		if (!validate(header))
 			return;
 
-		nnue::PaddedParamStream<64> paramStream{stream};
-		if (!s_network.readFrom(paramStream))
+		if (!loadNetworkFrom(s_network, stream, header))
 		{
 			std::cerr << "failed to read network parameters" << std::endl;
 			return;
