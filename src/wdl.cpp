@@ -32,7 +32,7 @@ namespace stormphrax::wdl
 			-4.74288729, 36.60178664, -76.68914409, 113.30608488
 		};
 
-		static_assert(Move32NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+		static_assert(244 == static_cast<i32>(std::reduce(As.begin(), As.end())));
 
 		const auto m = std::min(240.0, static_cast<f64>(ply)) / 64.0;
 

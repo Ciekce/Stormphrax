@@ -1159,7 +1159,7 @@ namespace stormphrax::search
 		else
 		{
 			// adjust score to 100cp == 50% win probability
-			const auto normScore = wdl::normalizeScore(score, plyFromStartpos);
+			const auto normScore = wdl::normalizeScore(score);
 			std::cout << "cp " << normScore;
 		}
 

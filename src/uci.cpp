@@ -661,7 +661,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
+			const auto staticEval = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
 
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -staticEval : staticEval);
@@ -670,7 +670,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos), m_pos.plyFromStartpos());
+			const auto score = wdl::normalizeScore(eval::staticEvalOnce(m_pos));
 			printScore(std::cout, score);
 			std::cout << std::endl;
 		}
