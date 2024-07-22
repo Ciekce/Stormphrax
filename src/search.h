@@ -42,7 +42,6 @@
 #include "movepick.h"
 #include "util/barrier.h"
 #include "history.h"
-#include "correction.h"
 
 namespace stormphrax::search
 {
@@ -127,7 +126,6 @@ namespace stormphrax::search
 		std::vector<ContinuationSubtable *> conthist{};
 
 		HistoryTables history{};
-		CorrectionHistoryTable correctionHistory{};
 
 		Position pos{};
 
