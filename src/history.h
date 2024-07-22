@@ -24,6 +24,7 @@
 #include <array>
 #include <cstring>
 #include <utility>
+#include <span>
 
 #include "tunable.h"
 #include "move.h"

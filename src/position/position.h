@@ -30,7 +30,7 @@
 #include "../move.h"
 #include "../attacks/attacks.h"
 #include "../ttable.h"
-#include "../eval/nnue.h"
+#include "../eval/material.h"
 #include "../rays.h"
 #include "../keys.h"
 
@@ -47,6 +47,8 @@ namespace stormphrax
 		Bitboard pinned{};
 		Bitboard threats{};
 
+		eval::MaterialScore material{};
+
 		CastlingRooks castlingRooks{};
 
 		u16 halfmove{};
@@ -56,7 +58,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 184);
+	static_assert(sizeof(BoardState) == 192);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -69,18 +71,15 @@ namespace stormphrax
 
 	class Position;
 
-	template <bool UpdateNnue>
 	class HistoryGuard
 	{
 	public:
-		explicit HistoryGuard(Position &pos, eval::NnueState *nnueState)
-			: m_pos{pos},
-			  m_nnueState{nnueState} {}
+		explicit HistoryGuard(Position &pos)
+			: m_pos{pos} {}
 		inline ~HistoryGuard();
 
 	private:
 		Position &m_pos;
-		eval::NnueState *m_nnueState;
 	};
 
 	class Position
@@ -100,28 +99,23 @@ namespace stormphrax
 		auto copyStateFrom(const Position &other) -> void;
 
 		// Moves are assumed to be legal
-		template <bool UpdateNnue = true, bool StateHistory = true>
-		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void;
+		template <bool StateHistory = true>
+		auto applyMoveUnchecked(Move move) -> void;
 
 		// Moves are assumed to be legal
-		template <bool UpdateNnue = true>
-		[[nodiscard]] inline auto applyMove(Move move, eval::NnueState *nnueState)
+		template <bool StateHistory = true>
+		[[nodiscard]] inline auto applyMove(Move move)
 		{
-			if constexpr (UpdateNnue)
-				assert(nnueState != nullptr);
-
-			applyMoveUnchecked<UpdateNnue>(move, nnueState);
-
-			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr};
+			applyMoveUnchecked<StateHistory>(move);
+			return HistoryGuard{*this};
 		}
 
 		[[nodiscard]] inline auto applyNullMove()
 		{
-			return applyMove<false>(NullMove, nullptr);
+			return applyMove(NullMove);
 		}
 
-		template <bool UpdateNnue = true>
-		auto popMove(eval::NnueState *nnueState) -> void;
+		auto popMove() -> void;
 
 		auto clearStateHistory() -> void;
 
@@ -144,6 +138,12 @@ namespace stormphrax
 		[[nodiscard]] inline auto opponent() const
 		{
 			return m_blackToMove ? Color::White : Color::Black;
+		}
+
+		[[nodiscard]] inline auto material() const
+		{
+			const auto material = currState().material.get();
+			return m_blackToMove ? -material : material;
 		}
 
 		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return currState().castlingRooks; }
@@ -482,15 +482,15 @@ namespace stormphrax
 		template <bool UpdateKeys = true>
 		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
 
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		template <bool UpdateKeys = true>
+		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst) -> Piece;
 
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		template <bool UpdateKeys = true>
+		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo) -> Piece;
+		template <bool UpdateKeys = true>
+		auto castle(Piece king, Square kingSrc, Square rookSrc) -> void;
+		template <bool UpdateKeys = true>
+		auto enPassant(Piece pawn, Square src, Square dst) -> Piece;
 
 		[[nodiscard]] inline auto calcCheckers() const
 		{
@@ -586,10 +586,9 @@ namespace stormphrax
 		std::vector<u64> m_keys{};
 	};
 
-	template <bool UpdateNnue>
-	HistoryGuard<UpdateNnue>::~HistoryGuard()
+	HistoryGuard::~HistoryGuard()
 	{
-		m_pos.popMove<UpdateNnue>(m_nnueState);
+		m_pos.popMove();
 	}
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;

@@ -122,8 +122,6 @@ namespace stormphrax::search
 
 		PvList rootPv{};
 
-		eval::NnueState nnueState{};
-
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 		std::vector<ContinuationSubtable *> conthist{};

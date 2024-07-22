@@ -186,7 +186,7 @@ namespace stormphrax::datagen
 					{
 						if (thread->pos.isLegal(move))
 						{
-							thread->pos.applyMoveUnchecked<false>(move, nullptr);
+							thread->pos.applyMoveUnchecked(move);
 							legalFound = true;
 							break;
 						}
@@ -206,7 +206,6 @@ namespace stormphrax::datagen
 				output.start(thread->pos);
 
 				thread->pos.clearStateHistory();
-				thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
 
 				thread->maxDepth = 10;
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
@@ -291,7 +290,7 @@ namespace stormphrax::datagen
 
 					const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
 
-					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
+					thread->pos.applyMoveUnchecked<false>(move);
 
 					if (thread->pos.isDrawn(false))
 					{

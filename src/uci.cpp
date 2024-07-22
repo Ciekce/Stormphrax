@@ -214,7 +214,6 @@ namespace stormphrax
 			std::cout << "option name SyzygyProbeLimit type spin default " << defaultOpts.syzygyProbeLimit
 				<< " min " << search::SyzygyProbeLimitRange.min()
 				<< " max " << search::SyzygyProbeLimitRange.max() << '\n';
-			std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
 #if SP_EXTERNAL_TUNE
 			for (const auto &param : tunableParams())
@@ -300,7 +299,7 @@ namespace stormphrax
 					for (; next < tokens.size(); ++next)
 					{
 						if (const auto move = m_pos.moveFromUci(tokens[next]))
-							m_pos.applyMoveUnchecked<false, false>(move, nullptr);
+							m_pos.applyMoveUnchecked<false>(move);
 					}
 				}
 			}
@@ -613,22 +612,6 @@ namespace stormphrax
 					{
 						if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr))
 							opts::mutableOpts().syzygyProbeLimit = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
-					}
-				}
-				else if (nameStr == "evalfile")
-				{
-					if (m_searcher.searching())
-						std::cerr << "still searching" << std::endl;
-
-					if (!valueEmpty)
-					{
-						if (valueStr == "<internal>")
-						{
-							eval::loadDefaultNetwork();
-							std::cout << "info string loaded embedded network "
-								<< eval::defaultNetworkName() << std::endl;
-						}
-						else eval::loadNetwork(valueStr);
 					}
 				}
 #if SP_EXTERNAL_TUNE

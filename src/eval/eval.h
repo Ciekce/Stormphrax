@@ -22,7 +22,6 @@
 
 #include <array>
 
-#include "nnue.h"
 #include "../position/position.h"
 #include "../core.h"
 
@@ -40,6 +39,9 @@ namespace stormphrax::eval
 	template <bool Scale = true>
 	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
 	{
+		static constexpr Score Tempo = 10;
+
+		eval += Tempo;
 		if constexpr (Scale)
 			eval = scaleEval(pos, eval);
 		eval += contempt[static_cast<i32>(pos.toMove())];
@@ -47,16 +49,16 @@ namespace stormphrax::eval
 	}
 
 	template <bool Scale = true>
-	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
+	inline auto staticEval(const Position &pos, const Contempt &contempt = {})
 	{
-		const auto nnueEval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		const auto materialEval = pos.material();
+		return adjustEval<Scale>(pos, contempt, materialEval);
 	}
 
 	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
-		const auto nnueEval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		const auto materialEval = pos.material();
+		return adjustEval<Scale>(pos, contempt, materialEval);
 	}
 }

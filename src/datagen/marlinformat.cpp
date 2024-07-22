@@ -35,12 +35,12 @@ namespace stormphrax::datagen
 	{
 		if (filtered)
 		{
-			m_curr.applyMoveUnchecked<false, false>(move, nullptr);
+			m_curr.applyMoveUnchecked<false>(move);
 			return;
 		}
 
 		m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
-		m_curr.applyMoveUnchecked<false, false>(move, nullptr);
+		m_curr.applyMoveUnchecked<false>(move);
 	}
 
 	auto Marlinformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize

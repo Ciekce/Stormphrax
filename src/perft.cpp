@@ -49,7 +49,7 @@ namespace stormphrax
 					++total;
 				else
 				{
-					const auto guard = pos.applyMove<false>(move, nullptr);
+					const auto guard = pos.applyMove(move);
 					total += doPerft(pos, depth);
 				}
 			}
@@ -79,7 +79,7 @@ namespace stormphrax
 			if (!pos.isLegal(move))
 				continue;
 
-			const auto guard = pos.applyMove<false>(move, nullptr);
+			const auto guard = pos.applyMove(move);
 
 			const auto value = doPerft(pos, depth);
 

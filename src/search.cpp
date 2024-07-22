@@ -117,8 +117,6 @@ namespace stormphrax::search
 			thread.maxDepth = maxDepth;
 			thread.search = SearchData{};
 			thread.pos = pos;
-
-			thread.nnueState.reset(thread.pos.bbs(), thread.pos.kings());
 		}
 
 		if (status == RootStatus::Tablebase)
@@ -179,8 +177,6 @@ namespace stormphrax::search
 
 		thread->pos = pos;
 		thread->maxDepth = depth;
-
-		thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
 
 		if (initRootMoves(thread->pos) == RootStatus::NoLegalMoves)
 			return;
@@ -484,7 +480,7 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return inCheck ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
+			return inCheck ? 0 : eval::staticEval(pos, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -597,7 +593,7 @@ namespace stormphrax::search
 				rawStaticEval = ScoreNone;
 			else if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
-			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			else rawStaticEval = eval::staticEval(pos, m_contempt);
 
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
@@ -684,7 +680,7 @@ namespace stormphrax::search
 					m_ttable.prefetch(pos.roughKeyAfter(move));
 
 					thread.setMove(ply, move);
-					const auto guard = pos.applyMove(move, &thread.nnueState);
+					const auto guard = pos.applyMove(move);
 
 					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
@@ -840,7 +836,7 @@ namespace stormphrax::search
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			thread.setMove(ply, move);
-			const auto guard = pos.applyMove(move, &thread.nnueState);
+			const auto guard = pos.applyMove(move);
 
 			Score score{};
 
@@ -1011,7 +1007,7 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return pos.isCheck() ? 0 : eval::staticEval(pos, thread.nnueState, m_contempt);
+			return pos.isCheck() ? 0 : eval::staticEval(pos, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
@@ -1035,7 +1031,7 @@ namespace stormphrax::search
 		{
 			if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
-			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			else rawStaticEval = eval::staticEval(pos, m_contempt);
 
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
@@ -1093,7 +1089,7 @@ namespace stormphrax::search
 			++thread.search.nodes;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
-			const auto guard = pos.applyMove(move, &thread.nnueState);
+			const auto guard = pos.applyMove(move);
 
 			const auto score = pos.isDrawn(false)
 				? drawScore(thread.search.nodes)

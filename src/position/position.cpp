@@ -35,6 +35,7 @@
 #include "../opts.h"
 #include "../rays.h"
 #include "../cuckoo.h"
+#include "../eval/material.h"
 
 namespace stormphrax
 {
@@ -116,13 +117,8 @@ namespace stormphrax
 		}
 	}
 
-	template auto Position::applyMoveUnchecked<false, false>(Move, eval::NnueState *) -> void;
-	template auto Position::applyMoveUnchecked<true, false>(Move, eval::NnueState *) -> void;
-	template auto Position::applyMoveUnchecked<false, true>(Move, eval::NnueState *) -> void;
-	template auto Position::applyMoveUnchecked<true, true>(Move, eval::NnueState *) -> void;
-
-	template auto Position::popMove<false>(eval::NnueState *) -> void;
-	template auto Position::popMove<true>(eval::NnueState *) -> void;
+	template auto Position::applyMoveUnchecked<false>(Move) -> void;
+	template auto Position::applyMoveUnchecked<true>(Move) -> void;
 
 	template auto Position::setPiece<false>(Piece, Square) -> void;
 	template auto Position::setPiece<true>(Piece, Square) -> void;
@@ -133,25 +129,17 @@ namespace stormphrax
 	template auto Position::movePieceNoCap<false>(Piece, Square, Square) -> void;
 	template auto Position::movePieceNoCap<true>(Piece, Square, Square) -> void;
 
-	template auto Position::movePiece<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::movePiece<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::movePiece<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::movePiece<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::movePiece<false>(Piece, Square, Square) -> Piece;
+	template auto Position::movePiece<true>(Piece, Square, Square) -> Piece;
 
-	template auto Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
-	template auto Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
-	template auto Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
-	template auto Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueUpdates &) -> Piece;
+	template auto Position::promotePawn<false>(Piece, Square, Square, PieceType) -> Piece;
+	template auto Position::promotePawn<true>(Piece, Square, Square, PieceType) -> Piece;
 
-	template auto Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
-	template auto Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> void;
+	template auto Position::castle<false>(Piece, Square, Square) -> void;
+	template auto Position::castle<true>(Piece, Square, Square) -> void;
 
-	template auto Position::enPassant<false, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
-	template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
+	template auto Position::enPassant<false>(Piece, Square, Square) -> Piece;
+	template auto Position::enPassant<true>(Piece, Square, Square) -> Piece;
 
 	Position::Position()
 	{
@@ -650,12 +638,9 @@ namespace stormphrax
 		m_fullmove = other.m_fullmove;
 	}
 
-	template <bool UpdateNnue, bool StateHistory>
-	auto Position::applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void
+	template <bool StateHistory>
+	auto Position::applyMoveUnchecked(Move move) -> void
 	{
-		if constexpr (UpdateNnue)
-			assert(nnueState != nullptr);
-
 		auto &prevState = currState();
 
 		if constexpr (StateHistory)
@@ -707,29 +692,25 @@ namespace stormphrax
 		const auto moving = state.boards.pieceAt(moveSrc);
 		const auto movingType = pieceType(moving);
 
-		eval::NnueUpdates updates{};
 		auto captured = Piece::None;
 
 		switch (moveType)
 		{
 		case MoveType::Standard:
-			captured = movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			captured = movePiece<true>(moving, moveSrc, moveDst);
 			break;
 		case MoveType::Promotion:
-			captured = promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), updates);
+			captured = promotePawn<true>(moving, moveSrc, moveDst, move.promo());
 			break;
 		case MoveType::Castling:
-			castle<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			castle<true>(moving, moveSrc, moveDst);
 			break;
 		case MoveType::EnPassant:
-			captured = enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			captured = enPassant<true>(moving, moveSrc, moveDst);
 			break;
 		}
 
 		assert(pieceTypeOrNone(captured) != PieceType::King);
-
-		if constexpr (UpdateNnue)
-			nnueState->pushUpdates<!StateHistory>(updates, state.boards.bbs(), state.kings);
 
 		if (movingType == PieceType::Rook)
 			newCastlingRooks.color(stm).unset(moveSrc);
@@ -775,16 +756,9 @@ namespace stormphrax
 		state.threats = calcThreats();
 	}
 
-	template <bool UpdateNnue>
-	auto Position::popMove(eval::NnueState *nnueState) -> void
+	auto Position::popMove() -> void
 	{
 		assert(m_states.size() > 1 && "popMove() with no previous move?");
-
-		if constexpr (UpdateNnue)
-		{
-			assert(nnueState != nullptr);
-			nnueState->pop();
-		}
 
 		m_states.pop_back();
 		m_keys.pop_back();
@@ -1230,8 +1204,8 @@ namespace stormphrax
 		}
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece
+	template <bool UpdateKey>
+	auto Position::movePiece(Piece piece, Square src, Square dst) -> Piece
 	{
 		assert(piece != Piece::None);
 
@@ -1249,7 +1223,7 @@ namespace stormphrax
 
 			state.boards.removePiece(dst, captured);
 
-			// NNUE update done below
+			// material update done below
 
 			if constexpr (UpdateKey)
 			{
@@ -1267,23 +1241,13 @@ namespace stormphrax
 		if (pieceType(piece) == PieceType::King)
 		{
 			const auto color = pieceColor(piece);
-
-			if constexpr (UpdateNnue)
-			{
-				if (eval::InputFeatureSet::refreshRequired(color, state.kings.color(color), dst))
-					nnueUpdates.setRefresh(color);
-			}
-
 			state.kings.color(color) = dst;
 		}
 
-		if constexpr (UpdateNnue)
-		{
-			nnueUpdates.pushSubAdd(piece, src, dst);
+		state.material.subAdd(piece, src, dst);
 
-			if (captured != Piece::None)
-				nnueUpdates.pushSub(captured, dst);
-		}
+		if (captured != Piece::None)
+			state.material.sub(captured, dst);
 
 		if constexpr (UpdateKey)
 		{
@@ -1298,9 +1262,9 @@ namespace stormphrax
 		return captured;
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
+	template <bool UpdateKey>
 	auto Position::promotePawn(Piece pawn, Square src, Square dst,
-		PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece
+		PieceType promo) -> Piece
 	{
 		assert(pawn != Piece::None);
 		assert(pieceType(pawn) == PieceType::Pawn);
@@ -1323,9 +1287,7 @@ namespace stormphrax
 			assert(pieceType(captured) != PieceType::King);
 
 			state.boards.removePiece(dst, captured);
-
-			if constexpr (UpdateNnue)
-				nnueUpdates.pushSub(captured, dst);
+			state.material.sub(captured, dst);
 
 			if constexpr (UpdateKey)
 				state.key ^= keys::pieceSquare(captured, dst);
@@ -1333,30 +1295,24 @@ namespace stormphrax
 
 		state.boards.moveAndChangePiece(src, dst, pawn, promo);
 
-		if constexpr(UpdateNnue || UpdateKey)
+		const auto coloredPromo = copyPieceColor(pawn, promo);
+
+		state.material.sub(pawn, src);
+		state.material.add(coloredPromo, dst);
+
+		if constexpr (UpdateKey)
 		{
-			const auto coloredPromo = copyPieceColor(pawn, promo);
+			const auto srcKey = keys::pieceSquare(pawn, src);
 
-			if constexpr (UpdateNnue)
-			{
-				nnueUpdates.pushSub(pawn, src);
-				nnueUpdates.pushAdd(coloredPromo, dst);
-			}
-
-			if constexpr (UpdateKey)
-			{
-				const auto srcKey = keys::pieceSquare(pawn, src);
-
-				state.key ^= srcKey ^ keys::pieceSquare(coloredPromo, dst);
-				state.pawnKey ^= srcKey;
-			}
+			state.key ^= srcKey ^ keys::pieceSquare(coloredPromo, dst);
+			state.pawnKey ^= srcKey;
 		}
 
 		return captured;
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void
+	template <bool UpdateKey>
+	auto Position::castle(Piece king, Square kingSrc, Square rookSrc) -> void
 	{
 		assert(king != Piece::None);
 		assert(pieceType(king) == PieceType::King);
@@ -1387,20 +1343,14 @@ namespace stormphrax
 		movePieceNoCap<UpdateKey>(king, kingSrc, kingDst);
 		movePieceNoCap<UpdateKey>(rook, rookSrc, rookDst);
 
-		if constexpr (UpdateNnue)
-		{
-			const auto color = pieceColor(king);
+		auto &state = currState();
 
-			if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst))
-				nnueUpdates.setRefresh(color);
-
-			nnueUpdates.pushSubAdd(king, kingSrc, kingDst);
-			nnueUpdates.pushSubAdd(rook, rookSrc, rookDst);
-		}
+		state.material.subAdd(king, kingSrc, kingDst);
+		state.material.subAdd(rook, rookSrc, rookDst);
 	}
 
-	template <bool UpdateKey, bool UpdateNnue>
-	auto Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece
+	template <bool UpdateKey>
+	auto Position::enPassant(Piece pawn, Square src, Square dst) -> Piece
 	{
 		assert(pawn != Piece::None);
 		assert(pieceType(pawn) == PieceType::Pawn);
@@ -1415,8 +1365,7 @@ namespace stormphrax
 
 		state.boards.movePiece(src, dst, pawn);
 
-		if constexpr (UpdateNnue)
-			nnueUpdates.pushSubAdd(pawn, src, dst);
+		state.material.subAdd(pawn, src, dst);
 
 		if constexpr (UpdateKey)
 		{
@@ -1435,9 +1384,7 @@ namespace stormphrax
 		const auto enemyPawn = flipPieceColor(pawn);
 
 		state.boards.removePiece(captureSquare, enemyPawn);
-
-		if constexpr (UpdateNnue)
-			nnueUpdates.pushSub(enemyPawn, captureSquare);
+		state.material.sub(enemyPawn, captureSquare);
 
 		if constexpr (UpdateKey)
 		{
@@ -1459,6 +1406,8 @@ namespace stormphrax
 		state.key = 0;
 		state.pawnKey = 0;
 
+		state.material = eval::MaterialScore{};
+
 		for (u32 rank = 0; rank < 8; ++rank)
 		{
 			for (u32 file = 0; file < 8; ++file)
@@ -1475,6 +1424,8 @@ namespace stormphrax
 
 					if (pieceType(piece) == PieceType::Pawn)
 						state.pawnKey ^= key;
+
+					state.material.add(piece, square);
 				}
 			}
 		}
