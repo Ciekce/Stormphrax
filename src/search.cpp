@@ -484,7 +484,8 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.nnueState, &thread.correctionHistory, m_contempt);
+			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.nnueState,
+				thread.search.nodes, &thread.correctionHistory, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -602,7 +603,8 @@ namespace stormphrax::search
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
-			curr.staticEval = inCheck ? ScoreNone : eval::adjustEval(pos, &thread.correctionHistory, rawStaticEval);
+			curr.staticEval = inCheck ? ScoreNone
+				: eval::adjustEval(pos, thread.search.nodes, &thread.correctionHistory, rawStaticEval);
 		}
 
 		const bool improving = [&]
@@ -1011,8 +1013,8 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return pos.isCheck() ? 0
-				: eval::adjustedStaticEval(pos, thread.nnueState, &thread.correctionHistory, m_contempt);
+			return pos.isCheck() ? 0 : eval::adjustedStaticEval(pos, thread.nnueState,
+					thread.search.nodes, &thread.correctionHistory, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
@@ -1041,7 +1043,7 @@ namespace stormphrax::search
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
-			const auto staticEval = eval::adjustEval(pos, &thread.correctionHistory, rawStaticEval);
+			const auto staticEval = eval::adjustEval(pos, thread.search.nodes, &thread.correctionHistory, rawStaticEval);
 
 			if (ttEntry.flag == TtFlag::Exact
 				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval

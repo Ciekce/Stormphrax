@@ -33,11 +33,11 @@ namespace stormphrax::eval
 	using Contempt = std::array<Score, 2>;
 
 	template <bool RoughenAndCorrect = true>
-	inline auto adjustEval(const Position &pos,
+	inline auto adjustEval(const Position &pos, usize nodes,
 		const CorrectionHistoryTable *correction, i32 eval)
 	{
 		if constexpr (RoughenAndCorrect)
-			eval = eval / 8 * 8 + 2 - static_cast<Score>(pos.key() % 4);
+			eval = eval / 8 * 8 + 2 - static_cast<Score>(nodes % 4);
 
 		eval = eval * (200 - pos.halfmove()) / 200;
 
@@ -56,10 +56,10 @@ namespace stormphrax::eval
 
 	template <bool RoughenAndCorrect = true>
 	inline auto adjustedStaticEval(const Position &pos, NnueState &nnueState,
-		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
+		usize nodes, const CorrectionHistoryTable *correction, const Contempt &contempt = {})
 	{
 		const auto eval = staticEval(pos, nnueState, contempt);
-		return adjustEval<RoughenAndCorrect>(pos, correction, eval);
+		return adjustEval<RoughenAndCorrect>(pos, nodes, correction, eval);
 	}
 
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
