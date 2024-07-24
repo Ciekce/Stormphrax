@@ -396,7 +396,7 @@ namespace stormphrax::search
 
 				report(thread, pv, searchData.depth, totalTime(), score);
 			}
-			else if (checkSoftTimeout(thread.search, false))
+			else if (checkSoftTimeout(thread.search, thread.isMainThread()))
 				break;
 		}
 
