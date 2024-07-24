@@ -25,38 +25,44 @@
 #include "nnue.h"
 #include "../position/position.h"
 #include "../core.h"
+#include "../correction.h"
 
 namespace stormphrax::eval
 {
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
-	inline auto scaleEval(const Position &pos, i32 eval)
+	template <bool Correct = true>
+	inline auto adjustEval(const Position &pos,
+		const CorrectionHistoryTable *correction, i32 eval)
 	{
 		eval = eval * (200 - pos.halfmove()) / 200;
-		return eval;
+
+		if constexpr (Correct)
+			eval = correction->correct(pos, eval);
+
+		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	template <bool Scale = true>
-	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
-		if constexpr (Scale)
-			eval = scaleEval(pos, eval);
+		auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
 		eval += contempt[static_cast<i32>(pos.toMove())];
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	template <bool Scale = true>
-	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
+	template <bool Correct = true>
+	inline auto adjustedStaticEval(const Position &pos, NnueState &nnueState,
+		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
 	{
-		const auto nnueEval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		const auto eval = staticEval(pos, nnueState, contempt);
+		return adjustEval<Correct>(pos, correction, eval);
 	}
 
-	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
-		const auto nnueEval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		return adjustEval<Scale>(pos, contempt, nnueEval);
+		auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
+		eval += contempt[static_cast<i32>(pos.toMove())];
+		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 }
