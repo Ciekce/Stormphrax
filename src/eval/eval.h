@@ -32,13 +32,16 @@ namespace stormphrax::eval
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
-	template <bool Correct = true>
+	template <bool RoughenAndCorrect = true>
 	inline auto adjustEval(const Position &pos,
 		const CorrectionHistoryTable *correction, i32 eval)
 	{
+		if constexpr (RoughenAndCorrect)
+			eval = eval / 8 * 8 + 2 - static_cast<Score>(pos.key() % 4);
+
 		eval = eval * (200 - pos.halfmove()) / 200;
 
-		if constexpr (Correct)
+		if constexpr (RoughenAndCorrect)
 			eval = correction->correct(pos, eval);
 
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
@@ -51,12 +54,12 @@ namespace stormphrax::eval
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	template <bool Correct = true>
+	template <bool RoughenAndCorrect = true>
 	inline auto adjustedStaticEval(const Position &pos, NnueState &nnueState,
 		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
 	{
 		const auto eval = staticEval(pos, nnueState, contempt);
-		return adjustEval<Correct>(pos, correction, eval);
+		return adjustEval<RoughenAndCorrect>(pos, correction, eval);
 	}
 
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
