@@ -753,7 +753,7 @@ namespace stormphrax::search
 				? thread.history.noisyScore(move, captured)
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-			if (!RootNode && bestScore > -ScoreWin)
+			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
 			{
 				const auto lmrDepth = std::max(depth - baseLmr, 0);
 

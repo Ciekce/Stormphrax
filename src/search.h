@@ -120,6 +120,8 @@ namespace stormphrax::search
 		i32 maxDepth{};
 		SearchData search{};
 
+		bool datagen{false};
+
 		PvList rootPv{};
 
 		eval::NnueState nnueState{};
