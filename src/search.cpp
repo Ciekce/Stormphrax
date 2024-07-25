@@ -109,8 +109,8 @@ namespace stormphrax::search
 
 		const auto contempt = g_opts.contempt;
 
-		m_contempt[static_cast<i32>(pos.  toMove())] =  contempt;
-		m_contempt[static_cast<i32>(pos.opponent())] = -contempt;
+		m_contempt[pos.  toMove().idx()] =  contempt;
+		m_contempt[pos.opponent().idx()] = -contempt;
 
 		for (auto &thread : m_threads)
 		{
@@ -162,7 +162,7 @@ namespace stormphrax::search
 
 		m_ttable.age();
 
-		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -score : score;
+		const auto whitePovScore = thread.pos.toMove() == colors::Black ? -score : score;
 		return {whitePovScore, wdl::normalizeScoreMove32(whitePovScore)};
 	}
 
@@ -487,7 +487,7 @@ namespace stormphrax::search
 			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.nnueState, &thread.correctionHistory, m_contempt);
 
 		const auto us = pos.toMove();
-		const auto them = oppColor(us);
+		const auto them = us.opponent();
 
 		assert(!PvNode || !cutnode);
 

@@ -60,24 +60,24 @@ namespace stormphrax::datagen
 					const auto square = occupancy.popLowestSquare();
 					const auto piece = boards.pieceAt(square);
 
-					auto pieceId = static_cast<u8>(pieceType(piece));
+					auto pieceId = piece.type().raw();
 
-					if (pieceType(piece) == PieceType::Rook
+					if (piece.type() == piece_types::Rook
 						&& (square == castlingRooks.black().kingside
 							|| square == castlingRooks.black().queenside
 							|| square == castlingRooks.white().kingside
 							|| square == castlingRooks.white().queenside))
 						pieceId = UnmovedRook;
 
-					const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
+					const u8 colorId = piece.color() == colors::Black ? (1 << 3) : 0;
 
 					board.pieces[i++] = pieceId | colorId;
 				}
 
-				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
+				const u8 stm = pos.toMove() == colors::Black ? (1 << 7) : 0;
 
 				const Square relativeEpSquare = pos.enPassant() == Square::None ? Square::None
-					: toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
+					: toSquare(pos.toMove() == colors::Black ? 2 : 5, squareFile(pos.enPassant()));
 
 				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
 				board.halfmoveClock = pos.halfmove();

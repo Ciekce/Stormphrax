@@ -63,10 +63,10 @@ namespace stormphrax::keys
 
 	inline auto pieceSquare(Piece piece, Square square) -> u64
 	{
-		if (piece == Piece::None || square == Square::None)
+		if (piece == pieces::None || square == Square::None)
 			return 0;
 
-		return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+		return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + piece.idx()];
 	}
 
 	// for flipping
@@ -77,7 +77,7 @@ namespace stormphrax::keys
 
 	inline auto color(Color c)
 	{
-		return c == Color::White ? 0 : color();
+		return c == colors::White ? 0 : color();
 	}
 
 	inline auto castling(const CastlingRooks &castlingRooks)

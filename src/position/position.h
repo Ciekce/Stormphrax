@@ -138,12 +138,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto toMove() const
 		{
-			return m_blackToMove ? Color::Black : Color::White;
+			return m_blackToMove ? colors::Black : colors::White;
 		}
 
 		[[nodiscard]] inline auto opponent() const
 		{
-			return m_blackToMove ? Color::White : Color::Black;
+			return m_blackToMove ? colors::White : colors::Black;
 		}
 
 		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return currState().castlingRooks; }
@@ -163,7 +163,7 @@ namespace stormphrax
 			const auto &state = currState();
 
 			const auto moving = state.boards.pieceAt(move.src());
-			assert(moving != Piece::None);
+			assert(moving != pieces::None);
 
 			const auto captured = state.boards.pieceAt(move.dst());
 
@@ -172,7 +172,7 @@ namespace stormphrax
 			key ^= keys::pieceSquare(moving, move.src());
 			key ^= keys::pieceSquare(moving, move.dst());
 
-			if (captured != Piece::None)
+			if (captured != pieces::None)
 				key ^= keys::pieceSquare(captured, move.dst());
 
 			key ^= keys::color();
@@ -196,8 +196,8 @@ namespace stormphrax
 			const auto bishops = queens | bbs.bishops();
 			attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
-			attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::White);
-			attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
+			attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, colors::White);
+			attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, colors::Black);
 
 			const auto knights = bbs.knights();
 			attackers |= knights & attacks::getKnightAttacks(square);
@@ -227,7 +227,7 @@ namespace stormphrax
 			attackers |= bishops & attacks::getBishopAttacks(square, occ);
 
 			const auto pawns = bbs.pawns(attacker);
-			attackers |= pawns & attacks::getPawnAttacks(square, oppColor(attacker));
+			attackers |= pawns & attacks::getPawnAttacks(square, attacker.opponent());
 
 			const auto knights = bbs.knights(attacker);
 			attackers |= knights & attacks::getKnightAttacks(square);
@@ -242,9 +242,9 @@ namespace stormphrax
 		[[nodiscard]] static inline auto isAttacked(const BoardState &state,
 			Color toMove, Square square, Color attacker)
 		{
-			assert(toMove != Color::None);
+			assert(toMove != colors::None);
 			assert(square != Square::None);
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			if constexpr (ThreatShortcut)
 			{
@@ -261,7 +261,7 @@ namespace stormphrax
 				return true;
 
 			if (const auto pawns = bbs.pawns(attacker);
-				!(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
+				!(pawns & attacks::getPawnAttacks(square, attacker.opponent())).empty())
 				return true;
 
 			if (const auto kings = bbs.kings(attacker);
@@ -285,14 +285,14 @@ namespace stormphrax
 		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
 			assert(square != Square::None);
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);
 		}
 
 		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
 		{
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			if (attacker == opponent())
 				return !(squares & currState().threats).empty();
@@ -312,28 +312,16 @@ namespace stormphrax
 		[[nodiscard]] inline auto blackKing() const { return currState().kings.black(); }
 		[[nodiscard]] inline auto whiteKing() const { return currState().kings.white(); }
 
-		template <Color C>
-		[[nodiscard]] inline auto king() const
-		{
-			return currState().kings.color(C);
-		}
-
 		[[nodiscard]] inline auto king(Color c) const
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return currState().kings.color(c);
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto oppKing() const
-		{
-			return currState().kings.color(oppColor(C));
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
-			assert(c != Color::None);
-			return currState().kings.color(oppColor(c));
+			assert(c != colors::None);
+			return currState().kings.color(c.opponent());
 		}
 
 		[[nodiscard]] inline auto isCheck() const
@@ -397,9 +385,9 @@ namespace stormphrax
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)
-				return Piece::None;
+				return pieces::None;
 			else if (type == MoveType::EnPassant)
-				return flipPieceColor(boards().pieceAt(move.src()));
+				return boards().pieceAt(move.src()).flipColor();
 			else return boards().pieceAt(move.dst());
 		}
 
@@ -411,8 +399,8 @@ namespace stormphrax
 
 			return type != MoveType::Castling
 				&& (type == MoveType::EnPassant
-					|| move.promo() == PieceType::Queen
-					|| boards().pieceAt(move.dst()) != Piece::None);
+					|| move.promo() == piece_types::Queen
+					|| boards().pieceAt(move.dst()) != pieces::None);
 		}
 
 		[[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece>
@@ -422,13 +410,13 @@ namespace stormphrax
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)
-				return {false, Piece::None};
+				return {false, pieces::None};
 			else if (type == MoveType::EnPassant)
-				return {true, colorPiece(PieceType::Pawn, toMove())};
+				return {true, piece_types::Pawn.withColor(toMove())};
 			else
 			{
 				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
+				return {captured != pieces::None || move.promo() == piece_types::Queen, captured};
 			}
 		}
 
@@ -497,7 +485,7 @@ namespace stormphrax
 			const auto color = toMove();
 			const auto &state = currState();
 
-			return attackersTo(state.kings.color(color), oppColor(color));
+			return attackersTo(state.kings.color(color), color.opponent());
 		}
 
 		[[nodiscard]] inline auto calcPinned() const
@@ -508,7 +496,7 @@ namespace stormphrax
 			Bitboard pinned{};
 
 			const auto king = state.kings.color(color);
-			const auto opponent = oppColor(color);
+			const auto opponent = color.opponent();
 
 			const auto &bbs = state.boards.bbs();
 
@@ -536,7 +524,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto calcThreats() const
 		{
 			const auto us = toMove();
-			const auto them = oppColor(us);
+			const auto them = us.opponent();
 
 			const auto &state = currState();
 			const auto &bbs = state.boards.bbs();
@@ -569,7 +557,7 @@ namespace stormphrax
 			}
 
 			const auto pawns = bbs.pawns(them);
-			if (them == Color::Black)
+			if (them == colors::Black)
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 

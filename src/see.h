@@ -56,12 +56,12 @@ namespace stormphrax::see
 
 	constexpr auto value(Piece piece)
 	{
-		return Values[static_cast<i32>(piece)];
+		return Values[piece.idx()];
 	}
 
 	constexpr auto value(PieceType piece)
 	{
-		return Values[static_cast<i32>(piece) * 2];
+		return Values[piece.idx() * 2];
 	}
 
 	inline auto gain(const PositionBoards &boards, Move move)
@@ -86,7 +86,7 @@ namespace stormphrax::see
 	{
 		for (i32 i = 0; i < 6; ++i)
 		{
-			const auto piece = static_cast<PieceType>(i);
+			const auto piece = PieceType::fromRaw(i);
 			auto board = attackers & bbs.forPiece(piece, color);
 
 			if (!board.empty())
@@ -96,7 +96,7 @@ namespace stormphrax::see
 			}
 		}
 
-		return PieceType::None;
+		return piece_types::None;
 	}
 
 	// basically ported from ethereal and weiss (their implementation is the same)
@@ -114,7 +114,7 @@ namespace stormphrax::see
 
 		auto next = move.type() == MoveType::Promotion
 			? move.promo()
-			: pieceType(boards.pieceAt(move.src()));
+			: boards.pieceAt(move.src()).type();
 
 		score -= value(next);
 
@@ -134,7 +134,7 @@ namespace stormphrax::see
 
 		auto attackers = pos.allAttackersTo(square, occupancy);
 
-		auto us = oppColor(color);
+		auto us = color.opponent();
 
 		while (true)
 		{
@@ -145,26 +145,26 @@ namespace stormphrax::see
 
 			next = popLeastValuable(bbs, occupancy, ourAttackers, us);
 
-			if (next == PieceType::Pawn
-				|| next == PieceType::Bishop
-				|| next == PieceType::Queen)
+			if (next == piece_types::Pawn
+				|| next == piece_types::Bishop
+				|| next == piece_types::Queen)
 				attackers |= attacks::getBishopAttacks(square, occupancy) & bishops;
 
-			if (next == PieceType::Rook
-				|| next == PieceType::Queen)
+			if (next == piece_types::Rook
+				|| next == piece_types::Queen)
 				attackers |= attacks::getRookAttacks(square, occupancy) & rooks;
 
 			attackers &= occupancy;
 
 			score = -score - 1 - value(next);
-			us = oppColor(us);
+			us = us.opponent();
 
 			if (score >= 0)
 			{
 				// our only attacker is our king, but the opponent still has defenders
-				if (next == PieceType::King
+				if (next == piece_types::King
 					&& !(attackers & bbs.forColor(us)).empty())
-					us = oppColor(us);
+					us = us.opponent();
 				break;
 			}
 		}

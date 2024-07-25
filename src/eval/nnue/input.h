@@ -51,8 +51,8 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] inline auto forColor(Color c) const -> const auto &
 		{
-			assert(c != Color::None);
-			return m_outputs[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return m_outputs[c.idx()];
 		}
 
 		[[nodiscard]] inline auto black() -> auto &
@@ -67,8 +67,8 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] inline auto forColor(Color c) -> auto &
 		{
-			assert(c != Color::None);
-			return m_outputs[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return m_outputs[c.idx()];
 		}
 
 		inline void initBoth(const Ft &featureTransformer)
@@ -124,7 +124,7 @@ namespace stormphrax::eval::nnue
 
 		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
 		{
-			const auto idx = static_cast<i32>(c);
+			const auto idx = c.idx();
 			std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
 		}
 
@@ -217,7 +217,7 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] auto colorBbs(Color c) -> auto &
 		{
-			return bbs[static_cast<i32>(c)];
+			return bbs[c.idx()];
 		}
 	};
 

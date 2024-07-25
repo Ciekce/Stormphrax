@@ -82,7 +82,7 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto getBucket(Color c, Square kingSq)
 		{
-			if (c == Color::Black)
+			if (c == colors::Black)
 				kingSq = flipSquareRank(kingSq);
 			return Buckets[static_cast<i32>(kingSq)];
 		}
@@ -94,12 +94,12 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 
 			assert(prevKingSq != Square::None);
 			assert(kingSq != Square::None);
 
-			if (c == Color::Black)
+			if (c == colors::Black)
 			{
 				prevKingSq = flipSquareRank(prevKingSq);
 				kingSq = flipSquareRank(kingSq);
@@ -176,14 +176,14 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto getBucket(Color c, Square kingSq)
 		{
-			if (c == Color::Black)
+			if (c == colors::Black)
 				kingSq = flipSquareRank(kingSq);
 			return Buckets[static_cast<i32>(kingSq)];
 		}
 
 		static constexpr auto getRefreshTableEntry(Color c, Square kingSq)
 		{
-			if (c == Color::Black)
+			if (c == colors::Black)
 				kingSq = flipSquareRank(kingSq);
 			const bool flipped = shouldFlip(kingSq);
 			return Buckets[static_cast<i32>(kingSq)] * 2 + flipped;
@@ -191,7 +191,7 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 
 			assert(prevKingSq != Square::None);
 			assert(kingSq != Square::None);
@@ -202,7 +202,7 @@ namespace stormphrax::eval::nnue::features
 			if (prevFlipped != flipped)
 				return true;
 
-			if (c == Color::Black)
+			if (c == colors::Black)
 			{
 				prevKingSq = flipSquareRank(prevKingSq);
 				kingSq = flipSquareRank(kingSq);

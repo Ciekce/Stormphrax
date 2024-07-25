@@ -319,7 +319,7 @@ namespace stormphrax
 			score += see::value(captured);
 
 			if (move.type() == MoveType::Promotion)
-				score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
+				score += see::value(piece_types::Queen) - see::value(piece_types::Pawn);
 		}
 
 		inline auto scoreNoisies() -> void

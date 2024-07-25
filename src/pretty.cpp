@@ -64,7 +64,7 @@ namespace stormphrax
 
 			for (usize file = 0; file < 8; ++file)
 			{
-				out << " | " << pieceToChar(boards.pieceAt(rank, file));
+				out << " | " << boards.pieceAt(rank, file).toChar();
 			}
 
 			out << " | " << (rank + 1) << "\n";
@@ -73,7 +73,7 @@ namespace stormphrax
 		out << " +---+---+---+---+---+---+---+---+\n";
 		out << "   a   b   c   d   e   f   g   h\n\n";
 
-		out << (position.toMove() == Color::White ? "White" : "Black") << " to move\n";
+		out << (position.toMove() == colors::White ? "White" : "Black") << " to move\n";
 	}
 
 	auto printScore(std::ostream &out, Score score) -> void

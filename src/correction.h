@@ -43,12 +43,12 @@ namespace stormphrax
 
 		inline auto update(const Position &pos, i32 depth, Score searchScore, Score staticEval)
 		{
-			m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(depth, searchScore, staticEval);
+			m_table[pos.toMove().idx()][pos.pawnKey() % Entries].update(depth, searchScore, staticEval);
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos, Score score) const
 		{
-			return m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].correct(score);
+			return m_table[pos.toMove().idx()][pos.pawnKey() % Entries].correct(score);
 		}
 
 	private:

@@ -35,56 +35,50 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto forColor(Color color) -> auto &
 		{
-			return m_colors[static_cast<i32>(color)];
+			return m_colors[color.idx()];
 		}
 
 		[[nodiscard]] inline auto forColor(Color color) const
 		{
-			return m_colors[static_cast<i32>(color)];
+			return m_colors[color.idx()];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece) -> Bitboard &
 		{
-			return m_pieces[static_cast<i32>(piece)];
+			return m_pieces[piece.idx()];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece) const
 		{
-			return m_pieces[static_cast<i32>(piece)];
+			return m_pieces[piece.idx()];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece, Color c) const
 		{
-			return m_pieces[static_cast<i32>(piece)] & forColor(c);
+			return m_pieces[piece.idx()] & forColor(c);
 		}
 
 		[[nodiscard]] inline auto forPiece(Piece piece) const
 		{
-			return forPiece(pieceType(piece), pieceColor(piece));
+			return forPiece(piece.type(), piece.color());
 		}
 
 		[[nodiscard]] inline auto blackOccupancy() const { return m_colors[0]; }
 		[[nodiscard]] inline auto whiteOccupancy() const { return m_colors[1]; }
 
-		template <Color C>
-		[[nodiscard]] inline auto occupancy() const
-		{
-			return m_colors[static_cast<i32>(C)];
-		}
-
 		[[nodiscard]] inline auto occupancy(Color c) const
 		{
-			return m_colors[static_cast<i32>(c)];
+			return m_colors[c.idx()];
 		}
 
 		[[nodiscard]] inline auto occupancy() const { return m_colors[0] | m_colors[1]; }
 
-		[[nodiscard]] inline auto pawns() const { return forPiece(PieceType::Pawn); }
-		[[nodiscard]] inline auto knights() const { return forPiece(PieceType::Knight); }
-		[[nodiscard]] inline auto bishops() const { return forPiece(PieceType::Bishop); }
-		[[nodiscard]] inline auto rooks() const { return forPiece(PieceType::Rook); }
-		[[nodiscard]] inline auto queens() const { return forPiece(PieceType::Queen); }
-		[[nodiscard]] inline auto kings() const { return forPiece(PieceType::King); }
+		[[nodiscard]] inline auto pawns() const { return forPiece(piece_types::Pawn); }
+		[[nodiscard]] inline auto knights() const { return forPiece(piece_types::Knight); }
+		[[nodiscard]] inline auto bishops() const { return forPiece(piece_types::Bishop); }
+		[[nodiscard]] inline auto rooks() const { return forPiece(piece_types::Rook); }
+		[[nodiscard]] inline auto queens() const { return forPiece(piece_types::Queen); }
+		[[nodiscard]] inline auto kings() const { return forPiece(piece_types::King); }
 
 		[[nodiscard]] inline auto blackPawns() const { return pawns() & blackOccupancy(); }
 		[[nodiscard]] inline auto whitePawns() const { return pawns() & whiteOccupancy(); }
@@ -149,121 +143,49 @@ namespace stormphrax
 			return whiteOccupancy() ^ (pawns() | kings()) & whiteOccupancy();
 		}
 
-		template <Color C>
-		[[nodiscard]] inline auto pawns() const
-		{
-			if constexpr (C == Color::Black)
-				return blackPawns();
-			else return whitePawns();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto knights() const
-		{
-			if constexpr (C == Color::Black)
-				return blackKnights();
-			else return whiteKnights();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto bishops() const
-		{
-			if constexpr (C == Color::Black)
-				return blackBishops();
-			else return whiteBishops();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto rooks() const
-		{
-			if constexpr (C == Color::Black)
-				return blackRooks();
-			else return whiteRooks();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto queens() const
-		{
-			if constexpr (C == Color::Black)
-				return blackQueens();
-			else return whiteQueens();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto kings() const
-		{
-			if constexpr (C == Color::Black)
-				return blackKings();
-			else return whiteKings();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto minors() const
-		{
-			if constexpr (C == Color::Black)
-				return blackMinors();
-			else return whiteMinors();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto majors() const
-		{
-			if constexpr (C == Color::Black)
-				return blackMajors();
-			else return whiteMajors();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto nonPk() const
-		{
-			if constexpr (C == Color::Black)
-				return blackNonPk();
-			else return whiteNonPk();
-		}
-
 		[[nodiscard]] inline auto pawns(Color color) const
 		{
-			return forPiece(PieceType::Pawn, color);
+			return forPiece(piece_types::Pawn, color);
 		}
 
 		[[nodiscard]] inline auto knights(Color color) const
 		{
-			return forPiece(PieceType::Knight, color);
+			return forPiece(piece_types::Knight, color);
 		}
 
 		[[nodiscard]] inline auto bishops(Color color) const
 		{
-			return forPiece(PieceType::Bishop, color);
+			return forPiece(piece_types::Bishop, color);
 		}
 
 		[[nodiscard]] inline auto rooks(Color color) const
 		{
-			return forPiece(PieceType::Rook, color);
+			return forPiece(piece_types::Rook, color);
 		}
 
 		[[nodiscard]] inline auto queens(Color color) const
 		{
-			return forPiece(PieceType::Queen, color);
+			return forPiece(piece_types::Queen, color);
 		}
 
 		[[nodiscard]] inline auto kings(Color color) const
 		{
-			return forPiece(PieceType::King, color);
+			return forPiece(piece_types::King, color);
 		}
 
 		[[nodiscard]] inline auto minors(Color color) const
 		{
-			return color == Color::Black ? blackMinors() : whiteMinors();
+			return color == colors::Black ? blackMinors() : whiteMinors();
 		}
 
 		[[nodiscard]] inline auto majors(Color color) const
 		{
-			return color == Color::Black ? blackMajors() : whiteMajors();
+			return color == colors::Black ? blackMajors() : whiteMajors();
 		}
 
 		[[nodiscard]] inline auto nonPk(Color color) const
 		{
-			return color == Color::Black ? blackNonPk() : whiteNonPk();
+			return color == colors::Black ? blackNonPk() : whiteNonPk();
 		}
 
 		[[nodiscard]] inline auto operator==(const BitboardSet &other) const -> bool = default;
@@ -278,7 +200,7 @@ namespace stormphrax
 	public:
 		PositionBoards()
 		{
-			m_mailbox.fill(Piece::None);
+			m_mailbox.fill(pieces::None);
 		}
 
 		~PositionBoards() = default;
@@ -298,7 +220,7 @@ namespace stormphrax
 			assert(square != Square::None);
 
 			const auto piece = m_mailbox[static_cast<i32>(square)];
-			return piece == Piece::None ? PieceType::None : pieceType(piece);
+			return piece == pieces::None ? piece_types::None : piece.type();
 		}
 
 		[[nodiscard]] inline auto pieceAt(Square square) const
@@ -315,16 +237,16 @@ namespace stormphrax
 		inline auto setPiece(Square square, Piece piece)
 		{
 			assert(square != Square::None);
-			assert(piece != Piece::None);
+			assert(piece != pieces::None);
 
-			assert(pieceAt(square) == Piece::None);
+			assert(pieceAt(square) == pieces::None);
 
 			slot(square) = piece;
 
 			const auto mask = Bitboard::fromSquare(square);
 
-			m_bbs.forPiece(pieceType(piece)) ^= mask;
-			m_bbs.forColor(pieceColor(piece)) ^= mask;
+			m_bbs.forPiece(piece.type()) ^= mask;
+			m_bbs.forColor(piece.color()) ^= mask;
 		}
 
 		inline auto movePiece(Square src, Square dst, Piece piece)
@@ -333,13 +255,13 @@ namespace stormphrax
 			assert(dst != Square::None);
 
 			if (slot(src) == piece) [[likely]]
-				slot(src) = Piece::None;
+				slot(src) = pieces::None;
 			slot(dst) = piece;
 
 			const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
 
-			m_bbs.forPiece(pieceType(piece)) ^= mask;
-			m_bbs.forColor(pieceColor(piece)) ^= mask;
+			m_bbs.forPiece(piece.type()) ^= mask;
+			m_bbs.forColor(piece.color()) ^= mask;
 		}
 
 		inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo)
@@ -348,48 +270,48 @@ namespace stormphrax
 			assert(dst != Square::None);
 			assert(src != dst);
 
-			assert(moving != Piece::None);
-			assert(promo != PieceType::None);
+			assert(moving != pieces::None);
+			assert(promo != piece_types::None);
 
 			assert(pieceAt(src) == moving);
 			assert(slot(src) == moving);
 
-			slot(src) = Piece::None;
-			slot(dst) = copyPieceColor(moving, promo);
+			slot(src) = pieces::None;
+			slot(dst) = moving.copyColor(promo);
 
-			m_bbs.forPiece(pieceType(moving))[src] = false;
+			m_bbs.forPiece(moving.type())[src] = false;
 			m_bbs.forPiece(promo)[dst] = true;
 
 			const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
-			m_bbs.forColor(pieceColor(moving)) ^= mask;
+			m_bbs.forColor(moving.color()) ^= mask;
 		}
 
 		inline auto removePiece(Square square, Piece piece)
 		{
 			assert(square != Square::None);
-			assert(piece != Piece::None);
+			assert(piece != pieces::None);
 
 			assert(pieceAt(square) == piece);
 
-			slot(square) = Piece::None;
+			slot(square) = pieces::None;
 
-			m_bbs.forPiece(pieceType(piece))[square] = false;
-			m_bbs.forColor(pieceColor(piece))[square] = false;
+			m_bbs.forPiece(piece.type())[square] = false;
+			m_bbs.forColor(piece.color())[square] = false;
 		}
 
 		inline auto regenFromBbs()
 		{
-			m_mailbox.fill(Piece::None);
+			m_mailbox.fill(pieces::None);
 
 			for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx)
 			{
-				const auto piece = static_cast<Piece>(pieceIdx);
+				const auto piece = Piece::fromRaw(pieceIdx);
 
 				auto board = m_bbs.forPiece(piece);
 				while (!board.empty())
 				{
 					const auto sq = board.popLowestSquare();
-					assert(slot(sq) == Piece::None);
+					assert(slot(sq) == pieces::None);
 					slot(sq) = piece;
 				}
 			}

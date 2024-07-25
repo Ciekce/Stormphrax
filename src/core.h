@@ -32,157 +32,307 @@
 
 namespace stormphrax
 {
-	enum class Piece : u8
+	namespace internal::core
 	{
-		BlackPawn = 0,
-		WhitePawn,
-		BlackKnight,
-		WhiteKnight,
-		BlackBishop,
-		WhiteBishop,
-		BlackRook,
-		WhiteRook,
-		BlackQueen,
-		WhiteQueen,
-		BlackKing,
-		WhiteKing,
-		None
+		namespace piece
+		{
+			constexpr u8 BlackPawn = 0;
+			constexpr u8 WhitePawn = 1;
+			constexpr u8 BlackKnight = 2;
+			constexpr u8 WhiteKnight = 3;
+			constexpr u8 BlackBishop = 4;
+			constexpr u8 WhiteBishop = 5;
+			constexpr u8 BlackRook = 6;
+			constexpr u8 WhiteRook = 7;
+			constexpr u8 BlackQueen = 8;
+			constexpr u8 WhiteQueen = 9;
+			constexpr u8 BlackKing = 10;
+			constexpr u8 WhiteKing = 11;
+			constexpr u8 None = 12;
+		}
+
+		namespace piece_type
+		{
+			constexpr u8 Pawn = 0;
+			constexpr u8 Knight = 1;
+			constexpr u8 Bishop = 2;
+			constexpr u8 Rook = 3;
+			constexpr u8 Queen = 4;
+			constexpr u8 King = 5;
+			constexpr u8 None = 6;
+		}
+
+		namespace color
+		{
+			constexpr u8 Black = 0;
+			constexpr u8 White = 1;
+			constexpr u8 None = 2;
+		}
+	}
+
+	class PieceType;
+	class Color;
+
+	class Piece
+	{
+	public:
+		constexpr Piece()
+			: m_id{0} {}
+
+		constexpr Piece(const Piece &) = default;
+		constexpr Piece(Piece &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto type() const -> PieceType;
+		[[nodiscard]] constexpr auto typeOrNone() const -> PieceType;
+
+		[[nodiscard]] constexpr auto color() const -> Color;
+		[[nodiscard]] constexpr auto colorOrNone() const -> Color;
+
+		[[nodiscard]] constexpr auto flipColor() const
+		{
+			assert(m_id != internal::core::piece::None);
+			return Piece{static_cast<u8>(m_id ^ 1)};
+		}
+
+		[[nodiscard]] constexpr auto copyColor(PieceType target) const -> Piece;
+
+		[[nodiscard]] constexpr auto toChar() const
+		{
+			constexpr auto Map = std::array {
+				'p', 'P', 'n', 'N', 'b', 'B', 'r', 'R', 'q', 'Q', 'k', 'K', ' '
+			};
+
+			return Map[idx()];
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return Piece{id};
+		}
+
+		[[nodiscard]] static constexpr auto fromChar(char c) -> Piece;
+
+		constexpr auto operator==(const Piece &) const -> bool = default;
+
+		constexpr auto operator=(const Piece &) -> Piece & = default;
+		constexpr auto operator=(Piece &&) -> Piece & = default;
+
+	private:
+		explicit constexpr Piece(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
 	};
 
-	enum class PieceType
+	class PieceType
 	{
-		Pawn = 0,
-		Knight,
-		Bishop,
-		Rook,
-		Queen,
-		King,
-		None
+	public:
+		constexpr PieceType()
+			: m_id{0} {}
+
+		constexpr PieceType(const PieceType &) = default;
+		constexpr PieceType(PieceType &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto withColor(Color c) const -> Piece;
+
+		[[nodiscard]] constexpr auto toChar() const
+		{
+			constexpr auto Map = std::array {
+				'p', 'n', 'b', 'r', 'q', 'k', ' '
+			};
+
+			return Map[idx()];
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return PieceType{id};
+		}
+
+		[[nodiscard]] static constexpr auto fromChar(char c) -> PieceType;
+
+		constexpr auto operator==(const PieceType &) const -> bool = default;
+
+		constexpr auto operator=(const PieceType &) -> PieceType & = default;
+		constexpr auto operator=(PieceType &&) -> PieceType & = default;
+
+	private:
+		explicit constexpr PieceType(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
 	};
 
-	enum class Color : i8
+	class Color
 	{
-		Black = 0,
-		White,
-		None
+	public:
+		constexpr Color()
+			: m_id{0} {}
+
+		explicit constexpr Color(u8 id)
+			: m_id{id} {}
+
+		constexpr Color(const Color &) = default;
+		constexpr Color(Color &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto opponent() const
+		{
+			assert(m_id != internal::core::color::None);
+			return Color{static_cast<u8>(m_id ^ 1)};
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return Color{id};
+		}
+
+		constexpr auto operator==(const Color &) const -> bool = default;
+
+		constexpr auto operator=(const Color &) -> Color & = default;
+		constexpr auto operator=(Color &&) -> Color & = default;
+
+	private:
+		u8 m_id{};
 	};
 
-	[[nodiscard]] constexpr auto oppColor(Color color)
+	namespace pieces
 	{
-		assert(color != Color::None);
-		return static_cast<Color>(!static_cast<i32>(color));
+		constexpr auto BlackPawn = Piece::fromRaw(internal::core::piece::BlackPawn);
+		constexpr auto WhitePawn = Piece::fromRaw(internal::core::piece::WhitePawn);
+		constexpr auto BlackKnight = Piece::fromRaw(internal::core::piece::BlackKnight);
+		constexpr auto WhiteKnight = Piece::fromRaw(internal::core::piece::WhiteKnight);
+		constexpr auto BlackBishop = Piece::fromRaw(internal::core::piece::BlackBishop);
+		constexpr auto WhiteBishop = Piece::fromRaw(internal::core::piece::WhiteBishop);
+		constexpr auto BlackRook = Piece::fromRaw(internal::core::piece::BlackRook);
+		constexpr auto WhiteRook = Piece::fromRaw(internal::core::piece::WhiteRook);
+		constexpr auto BlackQueen = Piece::fromRaw(internal::core::piece::BlackQueen);
+		constexpr auto WhiteQueen = Piece::fromRaw(internal::core::piece::WhiteQueen);
+		constexpr auto BlackKing = Piece::fromRaw(internal::core::piece::BlackKing);
+		constexpr auto WhiteKing = Piece::fromRaw(internal::core::piece::WhiteKing);
+		constexpr auto None = Piece::fromRaw(internal::core::piece::None);
 	}
 
-	[[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color)
+	namespace piece_types
 	{
-		assert(piece != PieceType::None);
-		assert(color != Color::None);
-
-		return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
+		constexpr auto Pawn = PieceType::fromRaw(internal::core::piece_type::Pawn);
+		constexpr auto Knight = PieceType::fromRaw(internal::core::piece_type::Knight);
+		constexpr auto Bishop = PieceType::fromRaw(internal::core::piece_type::Bishop);
+		constexpr auto Rook = PieceType::fromRaw(internal::core::piece_type::Rook);
+		constexpr auto Queen = PieceType::fromRaw(internal::core::piece_type::Queen);
+		constexpr auto King = PieceType::fromRaw(internal::core::piece_type::King);
+		constexpr auto None = PieceType::fromRaw(internal::core::piece_type::None);
 	}
 
-	[[nodiscard]] constexpr auto pieceType(Piece piece)
+	namespace colors
 	{
-		assert(piece != Piece::None);
-		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+		constexpr auto Black = Color::fromRaw(internal::core::color::Black);
+		constexpr auto White = Color::fromRaw(internal::core::color::White);
+		constexpr auto None = Color::fromRaw(internal::core::color::None);
 	}
 
-	[[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece)
+	constexpr auto Piece::type() const -> PieceType
 	{
-		if (piece == Piece::None)
-			return PieceType::None;
-		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+		return PieceType::fromRaw(m_id >> 1);
 	}
 
-	[[nodiscard]] constexpr auto pieceColor(Piece piece)
+	constexpr auto Piece::typeOrNone() const -> PieceType
 	{
-		assert(piece != Piece::None);
-		return static_cast<Color>(static_cast<i32>(piece) & 1);
+		if (*this == pieces::None)
+			return piece_types::None;
+		return PieceType::fromRaw(m_id >> 1);
 	}
 
-	[[nodiscard]] constexpr auto flipPieceColor(Piece piece)
+	constexpr auto Piece::color() const -> Color
 	{
-		assert(piece != Piece::None);
-		return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
+		return Color{static_cast<u8>(m_id & 1)};
 	}
 
-	[[nodiscard]] constexpr auto copyPieceColor(Piece piece, PieceType target)
+	constexpr auto Piece::colorOrNone() const -> Color
 	{
-		assert(piece != Piece::None);
-		assert(target != PieceType::None);
-
-		return colorPiece(target, pieceColor(piece));
+		if (*this == pieces::None)
+			return colors::None;
+		return Color{static_cast<u8>(m_id & 1)};
 	}
 
-	[[nodiscard]] constexpr auto pieceFromChar(char c)
+	constexpr auto Piece::copyColor(PieceType target) const -> Piece
+	{
+		assert(*this != piece_types::None);
+		return target.withColor(color());
+	}
+
+	constexpr auto Piece::fromChar(char c) -> Piece
 	{
 		switch (c)
 		{
-		case 'p': return Piece::  BlackPawn;
-		case 'P': return Piece::  WhitePawn;
-		case 'n': return Piece::BlackKnight;
-		case 'N': return Piece::WhiteKnight;
-		case 'b': return Piece::BlackBishop;
-		case 'B': return Piece::WhiteBishop;
-		case 'r': return Piece::  BlackRook;
-		case 'R': return Piece::  WhiteRook;
-		case 'q': return Piece:: BlackQueen;
-		case 'Q': return Piece:: WhiteQueen;
-		case 'k': return Piece::  BlackKing;
-		case 'K': return Piece::  WhiteKing;
-		default : return Piece::       None;
+			case 'p': return pieces::  BlackPawn;
+			case 'P': return pieces::  WhitePawn;
+			case 'n': return pieces::BlackKnight;
+			case 'N': return pieces::WhiteKnight;
+			case 'b': return pieces::BlackBishop;
+			case 'B': return pieces::WhiteBishop;
+			case 'r': return pieces::  BlackRook;
+			case 'R': return pieces::  WhiteRook;
+			case 'q': return pieces:: BlackQueen;
+			case 'Q': return pieces:: WhiteQueen;
+			case 'k': return pieces::  BlackKing;
+			case 'K': return pieces::  WhiteKing;
+			default : return pieces::       None;
 		}
 	}
 
-	[[nodiscard]] constexpr auto pieceToChar(Piece piece)
+	constexpr auto PieceType::withColor(Color c) const -> Piece
 	{
-		switch (piece)
-		{
-		case Piece::       None: return ' ';
-		case Piece::  BlackPawn: return 'p';
-		case Piece::  WhitePawn: return 'P';
-		case Piece::BlackKnight: return 'n';
-		case Piece::WhiteKnight: return 'N';
-		case Piece::BlackBishop: return 'b';
-		case Piece::WhiteBishop: return 'B';
-		case Piece::  BlackRook: return 'r';
-		case Piece::  WhiteRook: return 'R';
-		case Piece:: BlackQueen: return 'q';
-		case Piece:: WhiteQueen: return 'Q';
-		case Piece::  BlackKing: return 'k';
-		case Piece::  WhiteKing: return 'K';
-		default: return ' ';
-		}
+		assert(*this != piece_types::None);
+		assert(c != colors::None);
+
+		return Piece::fromRaw((m_id << 1) | c.raw());
 	}
 
-	[[nodiscard]] constexpr auto pieceTypeFromChar(char c)
+	constexpr auto PieceType::fromChar(char c) -> PieceType
 	{
 		switch (c)
 		{
-		case 'p': return PieceType::  Pawn;
-		case 'n': return PieceType::Knight;
-		case 'b': return PieceType::Bishop;
-		case 'r': return PieceType::  Rook;
-		case 'q': return PieceType:: Queen;
-		case 'k': return PieceType::  King;
-		default : return PieceType::  None;
+			case 'p': return piece_types::  Pawn;
+			case 'n': return piece_types::Knight;
+			case 'b': return piece_types::Bishop;
+			case 'r': return piece_types::  Rook;
+			case 'q': return piece_types:: Queen;
+			case 'k': return piece_types::  King;
+			default : return piece_types::  None;
 		}
 	}
 
-	[[nodiscard]] constexpr auto pieceTypeToChar(PieceType piece)
-	{
-		switch (piece)
-		{
-		case PieceType::  None: return ' ';
-		case PieceType::  Pawn: return 'p';
-		case PieceType::Knight: return 'n';
-		case PieceType::Bishop: return 'b';
-		case PieceType::  Rook: return 'r';
-		case PieceType:: Queen: return 'q';
-		case PieceType::  King: return 'k';
-		default: return ' ';
-		}
-	}
+	// =========================================
 
 	// upside down
 	enum class Square : u8
@@ -244,20 +394,10 @@ namespace stormphrax
 		return U64(1) << static_cast<i32>(square);
 	}
 
-	template <Color C>
-	constexpr auto relativeRank(i32 rank)
-	{
-		assert(rank >= 0 && rank < 8);
-
-		if constexpr (C == Color::Black)
-			return 7 - rank;
-		else return rank;
-	}
-
 	constexpr auto relativeRank(Color c, i32 rank)
 	{
 		assert(rank >= 0 && rank < 8);
-		return c == Color::Black ? 7 - rank : rank;
+		return c == colors::Black ? 7 - rank : rank;
 	}
 
 	struct KingPair
@@ -286,14 +426,14 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto color(Color c) const
 		{
-			assert(c != Color::None);
-			return kings[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return kings[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
-			assert(c != Color::None);
-			return kings[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return kings[c.idx()];
 		}
 
 		[[nodiscard]] inline auto operator==(const KingPair &other) const -> bool = default;
@@ -356,14 +496,14 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto color(Color c) const -> const auto &
 		{
-			assert(c != Color::None);
-			return rooks[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return rooks[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
-			assert(c != Color::None);
-			return rooks[static_cast<i32>(c)];
+			assert(c != colors::None);
+			return rooks[c.idx()];
 		}
 
 		[[nodiscard]] inline auto operator==(const CastlingRooks &) const -> bool = default;
