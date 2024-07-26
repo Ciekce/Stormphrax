@@ -44,13 +44,13 @@ namespace stormphrax
 		constexpr ~Move() = default;
 
 		[[nodiscard]] constexpr auto srcIdx() const { return m_move >> 10; }
-		[[nodiscard]] constexpr auto src() const { return static_cast<Square>(srcIdx()); }
+		[[nodiscard]] constexpr auto src() const { return Square::fromRaw(srcIdx()); }
 
 		[[nodiscard]] constexpr auto srcRank() const { return  m_move >> 13; }
 		[[nodiscard]] constexpr auto srcFile() const { return (m_move >> 10) & 0x7; }
 
 		[[nodiscard]] constexpr auto dstIdx() const { return (m_move >> 4) & 0x3F; }
-		[[nodiscard]] constexpr auto dst() const { return static_cast<Square>(dstIdx()); }
+		[[nodiscard]] constexpr auto dst() const { return Square::fromRaw(dstIdx()); }
 
 		[[nodiscard]] constexpr auto dstRank() const { return (m_move >> 7) & 0x7; }
 		[[nodiscard]] constexpr auto dstFile() const { return (m_move >> 4) & 0x7; }
@@ -71,7 +71,7 @@ namespace stormphrax
 		[[nodiscard]] constexpr auto historyDst() const
 		{
 			if (type() == MoveType::Castling && !g_opts.chess960)
-				return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
+				return Square::fromRankFile(srcRank(), srcFile() < dstFile() ? 6 : 2);
 			else return dst();
 		}
 
@@ -82,8 +82,8 @@ namespace stormphrax
 		[[nodiscard]] static constexpr auto standard(Square src, Square dst)
 		{
 			return Move{static_cast<u16>(
-				(static_cast<u16>(src) << 10)
-				| (static_cast<u16>(dst) << 4)
+				(static_cast<u16>(src.idx()) << 10)
+				| (static_cast<u16>(dst.idx()) << 4)
 				| static_cast<u16>(MoveType::Standard)
 			)};
 		}
@@ -91,8 +91,8 @@ namespace stormphrax
 		[[nodiscard]] static constexpr auto promotion(Square src, Square dst, PieceType promo)
 		{
 			return Move{static_cast<u16>(
-				(static_cast<u16>(src) << 10)
-				| (static_cast<u16>(dst) << 4)
+				(static_cast<u16>(src.idx()) << 10)
+				| (static_cast<u16>(dst.idx()) << 4)
 				| ((static_cast<u16>(promo.idx()) - 1) << 2)
 				| static_cast<u16>(MoveType::Promotion)
 			)};
@@ -101,8 +101,8 @@ namespace stormphrax
 		[[nodiscard]] static constexpr auto castling(Square src, Square dst)
 		{
 			return Move{static_cast<u16>(
-				(static_cast<u16>(src) << 10)
-				| (static_cast<u16>(dst) << 4)
+				(static_cast<u16>(src.idx()) << 10)
+				| (static_cast<u16>(dst.idx()) << 4)
 				| static_cast<u16>(MoveType::Castling)
 			)};
 		}
@@ -110,8 +110,8 @@ namespace stormphrax
 		[[nodiscard]] static constexpr auto enPassant(Square src, Square dst)
 		{
 			return Move{static_cast<u16>(
-				(static_cast<u16>(src) << 10)
-				| (static_cast<u16>(dst) << 4)
+				(static_cast<u16>(src.idx()) << 10)
+				| (static_cast<u16>(dst.idx()) << 4)
 				| static_cast<u16>(MoveType::EnPassant)
 			)};
 		}

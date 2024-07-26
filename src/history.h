@@ -84,13 +84,13 @@ namespace stormphrax
 		inline auto operator[](std::pair<Piece, Move> move) const -> HistoryScore
 		{
 			const auto [piece, mv] = move;
-			return m_data[piece.idx()][static_cast<i32>(mv.dst())];
+			return m_data[piece.idx()][mv.dst().idx()];
 		}
 
 		inline auto operator[](std::pair<Piece, Move> move) -> auto &
 		{
 			const auto [piece, mv] = move;
-			return m_data[piece.idx()][static_cast<i32>(mv.dst())];
+			return m_data[piece.idx()][mv.dst().idx()];
 		}
 
 	private:
@@ -113,12 +113,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto &
 		{
-			return m_continuation[moving.idx()][static_cast<i32>(to)];
+			return m_continuation[moving.idx()][to.idx()];
 		}
 
 		[[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto &
 		{
-			return m_continuation[moving.idx()][static_cast<i32>(to)];
+			return m_continuation[moving.idx()][to.idx()];
 		}
 
 		inline auto updateConthist(std::span<ContinuationSubtable *> continuations,

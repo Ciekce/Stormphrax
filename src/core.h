@@ -36,37 +36,63 @@ namespace stormphrax
 	{
 		namespace piece
 		{
-			constexpr u8 BlackPawn = 0;
-			constexpr u8 WhitePawn = 1;
-			constexpr u8 BlackKnight = 2;
-			constexpr u8 WhiteKnight = 3;
-			constexpr u8 BlackBishop = 4;
-			constexpr u8 WhiteBishop = 5;
-			constexpr u8 BlackRook = 6;
-			constexpr u8 WhiteRook = 7;
-			constexpr u8 BlackQueen = 8;
-			constexpr u8 WhiteQueen = 9;
-			constexpr u8 BlackKing = 10;
-			constexpr u8 WhiteKing = 11;
-			constexpr u8 None = 12;
+			enum : u8
+			{
+				BlackPawn = 0,
+				WhitePawn,
+				BlackKnight,
+				WhiteKnight,
+				BlackBishop,
+				WhiteBishop,
+				BlackRook,
+				WhiteRook,
+				BlackQueen,
+				WhiteQueen,
+				BlackKing,
+				WhiteKing,
+				None,
+			};
+
 		}
 
 		namespace piece_type
 		{
-			constexpr u8 Pawn = 0;
-			constexpr u8 Knight = 1;
-			constexpr u8 Bishop = 2;
-			constexpr u8 Rook = 3;
-			constexpr u8 Queen = 4;
-			constexpr u8 King = 5;
-			constexpr u8 None = 6;
+			enum : u8
+			{
+				Pawn = 0,
+				Knight,
+				Bishop,
+				Rook,
+				Queen,
+				King,
+				None,
+			};
 		}
 
 		namespace color
 		{
-			constexpr u8 Black = 0;
-			constexpr u8 White = 1;
-			constexpr u8 None = 2;
+			enum : u8
+			{
+				Black = 0,
+				White,
+				None,
+			};
+		}
+
+		namespace square
+		{
+			enum : u8
+			{
+				A1, B1, C1, D1, E1, F1, G1, H1,
+				A2, B2, C2, D2, E2, F2, G2, H2,
+				A3, B3, C3, D3, E3, F3, G3, H3,
+				A4, B4, C4, D4, E4, F4, G4, H4,
+				A5, B5, C5, D5, E5, F5, G5, H5,
+				A6, B6, C6, D6, E6, F6, G6, H6,
+				A7, B7, C7, D7, E7, F7, G7, H7,
+				A8, B8, C8, D8, E8, F8, G8, H8,
+				None
+			};
 		}
 	}
 
@@ -189,9 +215,6 @@ namespace stormphrax
 		constexpr Color()
 			: m_id{0} {}
 
-		explicit constexpr Color(u8 id)
-			: m_id{id} {}
-
 		constexpr Color(const Color &) = default;
 		constexpr Color(Color &&) = default;
 
@@ -222,6 +245,9 @@ namespace stormphrax
 		constexpr auto operator=(Color &&) -> Color & = default;
 
 	private:
+		explicit constexpr Color(u8 id)
+			: m_id{id} {}
+
 		u8 m_id{};
 	};
 
@@ -274,14 +300,14 @@ namespace stormphrax
 
 	constexpr auto Piece::color() const -> Color
 	{
-		return Color{static_cast<u8>(m_id & 1)};
+		return Color::fromRaw(m_id & 1);
 	}
 
 	constexpr auto Piece::colorOrNone() const -> Color
 	{
 		if (*this == pieces::None)
 			return colors::None;
-		return Color{static_cast<u8>(m_id & 1)};
+		return Color::fromRaw(m_id & 1);
 	}
 
 	constexpr auto Piece::copyColor(PieceType target) const -> Piece
@@ -332,66 +358,154 @@ namespace stormphrax
 		}
 	}
 
-	// =========================================
-
-	// upside down
-	enum class Square : u8
+	class Square
 	{
-		A1, B1, C1, D1, E1, F1, G1, H1,
-		A2, B2, C2, D2, E2, F2, G2, H2,
-		A3, B3, C3, D3, E3, F3, G3, H3,
-		A4, B4, C4, D4, E4, F4, G4, H4,
-		A5, B5, C5, D5, E5, F5, G5, H5,
-		A6, B6, C6, D6, E6, F6, G6, H6,
-		A7, B7, C7, D7, E7, F7, G7, H7,
-		A8, B8, C8, D8, E8, F8, G8, H8,
-		None
+	public:
+		constexpr Square()
+			: m_id{0} {}
+
+		constexpr Square(const Square &) = default;
+		constexpr Square(Square &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto rank() const
+		{
+			assert(m_id != internal::core::square::None);
+			return static_cast<u32>(m_id) >> 3;
+		}
+
+		[[nodiscard]] constexpr auto file() const
+		{
+			assert(m_id != internal::core::square::None);
+			return static_cast<u32>(m_id) & 0x7;
+		}
+
+		[[nodiscard]] constexpr auto flipRank() const
+		{
+			assert(m_id != internal::core::square::None);
+			return fromRaw(m_id ^ 0b111000);
+		}
+
+		[[nodiscard]] constexpr auto flipFile() const
+		{
+			assert(m_id != internal::core::square::None);
+			return fromRaw(m_id ^ 0b000111);
+		}
+
+		[[nodiscard]] constexpr auto bit() const
+		{
+			assert(m_id != internal::core::square::None);
+			return u64{1} << m_id;
+		}
+
+		[[nodiscard]] constexpr auto bitOrZero() const
+		{
+			if (m_id == internal::core::square::None)
+				return u64{0};
+			return bit();
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id) -> Square
+		{
+			return Square{id};
+		}
+
+		[[nodiscard]] static constexpr auto fromRankFile(u32 rank, u32 file)
+		{
+			assert(rank < 8);
+			assert(file < 8);
+
+			return fromRaw((rank << 3) | file);
+		}
+
+		constexpr auto operator==(const Square &) const -> bool = default;
+
+		constexpr auto operator=(const Square &) -> Square & = default;
+		constexpr auto operator=(Square &&) -> Square & = default;
+
+	private:
+		explicit constexpr Square(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
 	};
 
-	[[nodiscard]] constexpr auto toSquare(u32 rank, u32 file)
+	namespace squares
 	{
-		assert(rank < 8);
-		assert(file < 8);
-
-		return static_cast<Square>((rank << 3) | file);
-	}
-
-	[[nodiscard]] constexpr auto squareRank(Square square)
-	{
-		assert(square != Square::None);
-		return static_cast<i32>(square) >> 3;
-	}
-
-	[[nodiscard]] constexpr auto squareFile(Square square)
-	{
-		assert(square != Square::None);
-		return static_cast<i32>(square) & 0x7;
-	}
-
-	[[nodiscard]] constexpr auto flipSquareRank(Square square)
-	{
-		assert(square != Square::None);
-		return static_cast<Square>(static_cast<i32>(square) ^ 0b111000);
-	}
-
-	[[nodiscard]] constexpr auto flipSquareFile(Square square)
-	{
-		assert(square != Square::None);
-		return static_cast<Square>(static_cast<i32>(square) ^ 0b000111);
-	}
-
-	[[nodiscard]] constexpr auto squareBit(Square square)
-	{
-		assert(square != Square::None);
-		return U64(1) << static_cast<i32>(square);
-	}
-
-	[[nodiscard]] constexpr auto squareBitChecked(Square square)
-	{
-		if (square == Square::None)
-			return U64(0);
-
-		return U64(1) << static_cast<i32>(square);
+		constexpr auto A1 = Square::fromRaw(internal::core::square::A1);
+		constexpr auto B1 = Square::fromRaw(internal::core::square::B1);
+		constexpr auto C1 = Square::fromRaw(internal::core::square::C1);
+		constexpr auto D1 = Square::fromRaw(internal::core::square::D1);
+		constexpr auto E1 = Square::fromRaw(internal::core::square::E1);
+		constexpr auto F1 = Square::fromRaw(internal::core::square::F1);
+		constexpr auto G1 = Square::fromRaw(internal::core::square::G1);
+		constexpr auto H1 = Square::fromRaw(internal::core::square::H1);
+		constexpr auto A2 = Square::fromRaw(internal::core::square::A2);
+		constexpr auto B2 = Square::fromRaw(internal::core::square::B2);
+		constexpr auto C2 = Square::fromRaw(internal::core::square::C2);
+		constexpr auto D2 = Square::fromRaw(internal::core::square::D2);
+		constexpr auto E2 = Square::fromRaw(internal::core::square::E2);
+		constexpr auto F2 = Square::fromRaw(internal::core::square::F2);
+		constexpr auto G2 = Square::fromRaw(internal::core::square::G2);
+		constexpr auto H2 = Square::fromRaw(internal::core::square::H2);
+		constexpr auto A3 = Square::fromRaw(internal::core::square::A3);
+		constexpr auto B3 = Square::fromRaw(internal::core::square::B3);
+		constexpr auto C3 = Square::fromRaw(internal::core::square::C3);
+		constexpr auto D3 = Square::fromRaw(internal::core::square::D3);
+		constexpr auto E3 = Square::fromRaw(internal::core::square::E3);
+		constexpr auto F3 = Square::fromRaw(internal::core::square::F3);
+		constexpr auto G3 = Square::fromRaw(internal::core::square::G3);
+		constexpr auto H3 = Square::fromRaw(internal::core::square::H3);
+		constexpr auto A4 = Square::fromRaw(internal::core::square::A4);
+		constexpr auto B4 = Square::fromRaw(internal::core::square::B4);
+		constexpr auto C4 = Square::fromRaw(internal::core::square::C4);
+		constexpr auto D4 = Square::fromRaw(internal::core::square::D4);
+		constexpr auto E4 = Square::fromRaw(internal::core::square::E4);
+		constexpr auto F4 = Square::fromRaw(internal::core::square::F4);
+		constexpr auto G4 = Square::fromRaw(internal::core::square::G4);
+		constexpr auto H4 = Square::fromRaw(internal::core::square::H4);
+		constexpr auto A5 = Square::fromRaw(internal::core::square::A5);
+		constexpr auto B5 = Square::fromRaw(internal::core::square::B5);
+		constexpr auto C5 = Square::fromRaw(internal::core::square::C5);
+		constexpr auto D5 = Square::fromRaw(internal::core::square::D5);
+		constexpr auto E5 = Square::fromRaw(internal::core::square::E5);
+		constexpr auto F5 = Square::fromRaw(internal::core::square::F5);
+		constexpr auto G5 = Square::fromRaw(internal::core::square::G5);
+		constexpr auto H5 = Square::fromRaw(internal::core::square::H5);
+		constexpr auto A6 = Square::fromRaw(internal::core::square::A6);
+		constexpr auto B6 = Square::fromRaw(internal::core::square::B6);
+		constexpr auto C6 = Square::fromRaw(internal::core::square::C6);
+		constexpr auto D6 = Square::fromRaw(internal::core::square::D6);
+		constexpr auto E6 = Square::fromRaw(internal::core::square::E6);
+		constexpr auto F6 = Square::fromRaw(internal::core::square::F6);
+		constexpr auto G6 = Square::fromRaw(internal::core::square::G6);
+		constexpr auto H6 = Square::fromRaw(internal::core::square::H6);
+		constexpr auto A7 = Square::fromRaw(internal::core::square::A7);
+		constexpr auto B7 = Square::fromRaw(internal::core::square::B7);
+		constexpr auto C7 = Square::fromRaw(internal::core::square::C7);
+		constexpr auto D7 = Square::fromRaw(internal::core::square::D7);
+		constexpr auto E7 = Square::fromRaw(internal::core::square::E7);
+		constexpr auto F7 = Square::fromRaw(internal::core::square::F7);
+		constexpr auto G7 = Square::fromRaw(internal::core::square::G7);
+		constexpr auto H7 = Square::fromRaw(internal::core::square::H7);
+		constexpr auto A8 = Square::fromRaw(internal::core::square::A8);
+		constexpr auto B8 = Square::fromRaw(internal::core::square::B8);
+		constexpr auto C8 = Square::fromRaw(internal::core::square::C8);
+		constexpr auto D8 = Square::fromRaw(internal::core::square::D8);
+		constexpr auto E8 = Square::fromRaw(internal::core::square::E8);
+		constexpr auto F8 = Square::fromRaw(internal::core::square::F8);
+		constexpr auto G8 = Square::fromRaw(internal::core::square::G8);
+		constexpr auto H8 = Square::fromRaw(internal::core::square::H8);
+		constexpr auto None = Square::fromRaw(internal::core::square::None);
 	}
 
 	constexpr auto relativeRank(Color c, i32 rank)
@@ -440,8 +554,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto isValid()
 		{
-			return black() != Square::None
-				&& white() != Square::None
+			return black() != squares::None
+				&& white() != squares::None
 				&& black() != white();
 		}
 	};
@@ -450,23 +564,23 @@ namespace stormphrax
 	{
 		struct RookPair
 		{
-			Square kingside{Square::None};
-			Square queenside{Square::None};
+			Square kingside{squares::None};
+			Square queenside{squares::None};
 
 			inline auto clear()
 			{
-				kingside = Square::None;
-				queenside = Square::None;
+				kingside = squares::None;
+				queenside = squares::None;
 			}
 
 			inline auto unset(Square square)
 			{
-				assert(square != Square::None);
+				assert(square != squares::None);
 
 				if (square == kingside)
-					kingside = Square::None;
+					kingside = squares::None;
 				else if (square == queenside)
-					queenside = Square::None;
+					queenside = squares::None;
 			}
 
 			[[nodiscard]] inline auto operator==(const RookPair &) const -> bool = default;

@@ -60,7 +60,7 @@ namespace stormphrax::attacks::bmi2
 
 		for (u32 i = 0; i < 64; ++i)
 		{
-			const auto square = static_cast<Square>(i);
+			const auto square = Square::fromRaw(i);
 
 			for (const auto dir : {
 				offsets::Up,
@@ -88,7 +88,7 @@ namespace stormphrax::attacks::bmi2
 
 		for (u32 i = 0; i < 64; ++i)
 		{
-			const auto square = static_cast<Square>(i);
+			const auto square = Square::fromRaw(i);
 
 			for (const auto dir : {
 				offsets::UpLeft,

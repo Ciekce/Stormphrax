@@ -874,8 +874,8 @@ namespace stormphrax
 			else
 			{
 				const auto dst = move.srcFile() < move.dstFile()
-					? toSquare(move.srcRank(), 6)
-					: toSquare(move.srcRank(), 2);
+					? Square::fromRankFile(move.srcRank(), 6)
+					: Square::fromRankFile(move.srcRank(), 2);
 				str << squareToString(dst);
 			}
 

@@ -76,10 +76,10 @@ namespace stormphrax::datagen
 
 				const u8 stm = pos.toMove() == colors::Black ? (1 << 7) : 0;
 
-				const Square relativeEpSquare = pos.enPassant() == Square::None ? Square::None
-					: toSquare(pos.toMove() == colors::Black ? 2 : 5, squareFile(pos.enPassant()));
+				const Square relativeEpSquare = pos.enPassant() == squares::None ? squares::None
+					: Square::fromRankFile(pos.toMove() == colors::Black ? 2 : 5, pos.enPassant().file());
 
-				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
+				board.stmEpSquare = stm | relativeEpSquare.raw();
 				board.halfmoveClock = pos.halfmove();
 				board.fullmoveNumber = pos.fullmove();
 				board.eval = score;

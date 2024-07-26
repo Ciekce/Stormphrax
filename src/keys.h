@@ -63,10 +63,10 @@ namespace stormphrax::keys
 
 	inline auto pieceSquare(Piece piece, Square square) -> u64
 	{
-		if (piece == pieces::None || square == Square::None)
+		if (piece == pieces::None || square == squares::None)
 			return 0;
 
-		return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + piece.idx()];
+		return Keys[offsets::PieceSquares + square.idx() * 12 + piece.idx()];
 	}
 
 	// for flipping
@@ -89,13 +89,13 @@ namespace stormphrax::keys
 
 		usize flags{};
 
-		if (castlingRooks.black().kingside  != Square::None)
+		if (castlingRooks.black().kingside  != squares::None)
 			flags |= BlackShort;
-		if (castlingRooks.black().queenside != Square::None)
+		if (castlingRooks.black().queenside != squares::None)
 			flags |= BlackLong;
-		if (castlingRooks.white().kingside  != Square::None)
+		if (castlingRooks.white().kingside  != squares::None)
 			flags |= WhiteShort;
-		if (castlingRooks.white().queenside != Square::None)
+		if (castlingRooks.white().queenside != squares::None)
 			flags |= WhiteLong;
 
 		return Keys[offsets::Castling + flags];
@@ -108,9 +108,9 @@ namespace stormphrax::keys
 
 	inline auto enPassant(Square square) -> u64
 	{
-		if (square == Square::None)
+		if (square == squares::None)
 			return 0;
 
-		return Keys[offsets::EnPassant + squareFile(square)];
+		return Keys[offsets::EnPassant + square.file()];
 	}
 }

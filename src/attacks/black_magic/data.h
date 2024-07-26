@@ -107,7 +107,7 @@ namespace stormphrax::attacks::black_magic
 
 		for (u32 i = 0; i < 64; ++i)
 		{
-			const auto square = static_cast<Square>(i);
+			const auto square = Square::fromRaw(i);
 
 			dst.data[i].mask = boards::All;
 
@@ -130,7 +130,7 @@ namespace stormphrax::attacks::black_magic
 
 		for (u32 i = 0; i < 64; ++i)
 		{
-			const auto square = static_cast<Square>(i);
+			const auto square = Square::fromRaw(i);
 
 			dst.data[i].mask = boards::All;
 

@@ -28,7 +28,7 @@ namespace stormphrax
 
 			for (usize file = 0; file < 8; ++file)
 			{
-				out << " | " << (board[toSquare(rank, file)] ? '1' : ' ');
+				out << " | " << (board[Square::fromRankFile(rank, file)] ? '1' : ' ');
 			}
 
 			out << " | " << (rank + 1) << "\n";
@@ -47,7 +47,7 @@ namespace stormphrax
 				if (file > 0)
 					out << ' ';
 
-				out << (board[toSquare(rank, file)] ? '1' : '.');
+				out << (board[Square::fromRankFile(rank, file)] ? '1' : '.');
 			}
 
 			out << "\n";

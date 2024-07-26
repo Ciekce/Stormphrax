@@ -367,7 +367,7 @@ namespace stormphrax::eval
 			Color c, const BitboardSet &bbs, Square king) -> void
 		{
 			assert(c != colors::None);
-			assert(king != Square::None);
+			assert(king != squares::None);
 
 			// loop through each coloured piece, and activate the features
 			// corresponding to that piece on each of the squares it occurs on
@@ -397,8 +397,8 @@ namespace stormphrax::eval
 		{
 			assert(c != colors::None);
 			assert(piece != pieces::None);
-			assert(sq != Square::None);
-			assert(king != Square::None);
+			assert(sq != squares::None);
+			assert(king != squares::None);
 
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
@@ -408,12 +408,12 @@ namespace stormphrax::eval
 			const u32 color = piece.color() == c ? 0 : 1;
 
 			if (c == colors::Black)
-				sq = flipSquareRank(sq);
+				sq = sq.flipRank();
 
 			sq = InputFeatureSet::transformFeatureSquare(sq, king);
 
 			const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputFeatureSet::InputSize;
-			return bucketOffset + color * ColorStride + type * PieceStride + static_cast<u32>(sq);
+			return bucketOffset + color * ColorStride + type * PieceStride + sq.idx();
 		}
 	};
 }

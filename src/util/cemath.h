@@ -30,6 +30,12 @@ namespace stormphrax::util
 		return v < T{0} ? -v : v;
 	}
 
+	template <std::unsigned_integral T>
+	constexpr auto absDiff(T a, T b)
+	{
+		return a < b ? (b - a) : (a - b);
+	}
+
 	template <std::integral auto One>
 	constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t)
 	{

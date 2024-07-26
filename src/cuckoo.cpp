@@ -45,11 +45,11 @@ namespace stormphrax::cuckoo
 
 			for (u32 s0 = 0; s0 < 64; ++s0)
 			{
-				const auto square0 = static_cast<Square>(s0);
+				const auto square0 = Square::fromRaw(s0);
 
 				for (u32 s1 = s0 + 1; s1 < 64; ++s1)
 				{
-					const auto square1 = static_cast<Square>(s1);
+					const auto square1 = Square::fromRaw(s1);
 
 					if (!attacks::getNonPawnPieceAttacks(piece.type(), square0)[square1])
 						continue;

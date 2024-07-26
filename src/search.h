@@ -145,7 +145,7 @@ namespace stormphrax::search
 			assert(ply <= MaxDepth);
 
 			stack[ply].move = NullMove;
-			conthist[ply] = &history.contTable(pieces::WhitePawn, Square::A1);
+			conthist[ply] = &history.contTable(pieces::WhitePawn, squares::A1);
 		}
 
 		inline auto setMove(i32 ply, Move move)

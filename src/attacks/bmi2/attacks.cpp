@@ -42,7 +42,7 @@ namespace stormphrax::attacks
 
 					for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
 					{
-						attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+						attacks |= internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
 					}
 
 					dst[data.offset + i] = static_cast<u16>(util::pext(attacks, data.dstMask));
@@ -69,7 +69,7 @@ namespace stormphrax::attacks
 						: {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight})
 					{
 						dst[data.offset + i]
-							|= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+							|= internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
 					}
 				}
 			}
