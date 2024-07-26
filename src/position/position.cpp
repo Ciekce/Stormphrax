@@ -738,7 +738,7 @@ namespace stormphrax
 			newCastlingRooks.color(stm).clear();
 		else if (moving == pieces::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
-			state.enPassant = Square::fromRankFile(5, move.srcFile());
+			state.enPassant = move.src().withRank(5);
 
 			const auto epKey = keys::enPassant(state.enPassant);
 
@@ -747,7 +747,7 @@ namespace stormphrax
 		}
 		else if (moving == pieces::WhitePawn && move.srcRank() == 1 && move.dstRank() == 3)
 		{
-			state.enPassant = Square::fromRankFile(2, move.srcFile());
+			state.enPassant = move.src().withRank(2);
 
 			const auto epKey = keys::enPassant(state.enPassant);
 
@@ -857,8 +857,8 @@ namespace stormphrax
 				if (dst != state.castlingRooks.color(us).kingside)
 					return false;
 
-				kingDst = Square::fromRankFile(rank, 6);
-				rookDst = Square::fromRankFile(rank, 5);
+				kingDst = src.withFile(6);
+				rookDst = src.withFile(5);
 			}
 			else
 			{
@@ -866,8 +866,8 @@ namespace stormphrax
 				if (dst != state.castlingRooks.color(us).queenside)
 					return false;
 
-				kingDst = Square::fromRankFile(rank, 2);
-				rookDst = Square::fromRankFile(rank, 3);
+				kingDst = src.withFile(2);
+				rookDst = src.withFile(3);
 			}
 
 			// same checks as for movegen
@@ -983,17 +983,12 @@ namespace stormphrax
 
 		if (move.type() == MoveType::Castling)
 		{
-			const auto kingDst = Square::fromRankFile(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
+			const auto kingDst = move.src().withFile(move.srcFile() < move.dstFile() ? 6 : 2);
 			return !state.threats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
 		}
 		else if (move.type() == MoveType::EnPassant)
 		{
-			auto rank = dst.rank();
-			const auto file = dst.file();
-
-			rank = rank == 2 ? 3 : 4;
-
-			const auto captureSquare = Square::fromRankFile(rank, file);
+			const auto captureSquare = dst.withRank(dst.rank() == 2 ? 3 : 4);
 
 			const auto postEpOcc = bbs.occupancy()
 				^ Bitboard::fromSquare(src)
@@ -1366,21 +1361,19 @@ namespace stormphrax
 		assert(rookSrc != squares::None);
 		assert(kingSrc != rookSrc);
 
-		const auto rank = kingSrc.rank();
-
 		Square kingDst, rookDst;
 
 		if (kingSrc.file() < rookSrc.file())
 		{
 			// short
-			kingDst = Square::fromRankFile(rank, 6);
-			rookDst = Square::fromRankFile(rank, 5);
+			kingDst = kingSrc.withFile(6);
+			rookDst = kingSrc.withFile(5);
 		}
 		else
 		{
 			// long
-			kingDst = Square::fromRankFile(rank, 2);
-			rookDst = Square::fromRankFile(rank, 3);
+			kingDst = kingSrc.withFile(2);
+			rookDst = kingSrc.withFile(3);
 		}
 
 		const auto rook = king.copyColor(piece_types::Rook);
@@ -1427,12 +1420,7 @@ namespace stormphrax
 			state.pawnKey ^= key;
 		}
 
-		auto rank = dst.rank();
-		const auto file = dst.file();
-
-		rank = rank == 2 ? 3 : 4;
-
-		const auto captureSquare = Square::fromRankFile(rank, file);
+		const auto captureSquare = dst.withRank(dst.rank() == 2 ? 3 : 4);
 		const auto enemyPawn = pawn.flipColor();
 
 		state.boards.removePiece(captureSquare, enemyPawn);
@@ -1519,7 +1507,7 @@ namespace stormphrax
 				else if (util::absDiff(src.file(), dst.file()) == 2)
 				{
 					const auto rookFile = src.file() < dst.file() ? 7 : 0;
-					return Move::castling(src, Square::fromRankFile(src.rank(), rookFile));
+					return Move::castling(src, src.withFile(rookFile));
 				}
 			}
 

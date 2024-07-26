@@ -401,6 +401,18 @@ namespace stormphrax
 			return fromRaw(m_id ^ 0b000111);
 		}
 
+		[[nodiscard]] constexpr auto withRank(u32 rank) const
+		{
+			assert(m_id != internal::core::square::None);
+			return fromRankFile(rank, file());
+		}
+
+		[[nodiscard]] constexpr auto withFile(u32 file) const
+		{
+			assert(m_id != internal::core::square::None);
+			return fromRankFile(rank(), file);
+		}
+
 		[[nodiscard]] constexpr auto bit() const
 		{
 			assert(m_id != internal::core::square::None);
@@ -419,7 +431,7 @@ namespace stormphrax
 			return Square{id};
 		}
 
-		[[nodiscard]] static constexpr auto fromRankFile(u32 rank, u32 file)
+		[[nodiscard]] static constexpr auto fromRankFile(u32 rank, u32 file) -> Square
 		{
 			assert(rank < 8);
 			assert(file < 8);
