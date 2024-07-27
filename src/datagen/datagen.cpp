@@ -43,6 +43,7 @@
 #include "format.h"
 #include "viri_binpack.h"
 #include "marlinformat.h"
+#include "fen.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
@@ -298,6 +299,8 @@ namespace stormphrax::datagen
 
 					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 
+					assert(eval::staticEvalOnce(thread->pos) == eval::staticEval(thread->pos, thread->nnueState));
+
 					if (thread->pos.isDrawn(false))
 					{
 						outcome = Outcome::Draw;
@@ -343,6 +346,8 @@ namespace stormphrax::datagen
 			threadFunc = runThread<Marlinformat>;
 		else if (format == "viri_binpack")
 			threadFunc = runThread<ViriBinpack>;
+		else if (format == "fen")
+			threadFunc = runThread<Fen>;
 		else
 		{
 			std::cerr << "invalid output format " << format << std::endl;
