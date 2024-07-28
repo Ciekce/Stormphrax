@@ -405,7 +405,12 @@ namespace stormphrax::eval
 
 			const auto type = static_cast<u32>(pieceType(piece));
 
-			const u32 color = pieceColor(piece) == c ? 0 : 1;
+			const auto color = [piece, c]() -> u32
+			{
+				if (InputFeatureSet::MergedKings && pieceType(piece) == PieceType::King)
+					return 0;
+				return pieceColor(piece) == c ? 0 : 1;
+			}();
 
 			if (c == Color::Black)
 				sq = flipSquareRank(sq);
