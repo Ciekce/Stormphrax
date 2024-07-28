@@ -51,6 +51,7 @@ namespace stormphrax::eval
 			None = 0x0000,
 			ZstdCompressed = 0x0001,
 			HorizontallyMirrored = 0x0002,
+			MergedKings = 0x0004,
 		};
 
 		constexpr u16 ExpectedHeaderVersion = 1;
@@ -124,6 +125,15 @@ namespace stormphrax::eval
 				if constexpr (InputFeatureSet::IsMirrored)
 					std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
 				else std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
+
+				return false;
+			}
+
+			if (testFlags(header.flags, NetworkFlags::MergedKings) != InputFeatureSet::MergedKings)
+			{
+				if constexpr (InputFeatureSet::MergedKings)
+					std::cerr << "network does not have merged king planes, expected merged" << std::endl;
+				else std::cerr << "network has merged king planes, expected unmerged" << std::endl;
 
 				return false;
 			}
