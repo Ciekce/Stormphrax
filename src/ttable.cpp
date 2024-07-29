@@ -22,6 +22,7 @@
 #include <bit>
 #include <iostream>
 #include <thread>
+#include <cstdlib>
 
 #include "tunable.h"
 #include "util/cemath.h"
@@ -56,6 +57,27 @@ namespace stormphrax
 		{
 			return static_cast<u16>(key);
 		}
+
+		template <typename T>
+		auto alignedAlloc(usize alignment, usize count)
+		{
+			const auto size = count * sizeof(T);
+
+#ifdef _MSC_VER
+			return static_cast<T *>(_aligned_malloc(size, alignment));
+#else
+			return static_cast<T *>(std::aligned_alloc(alignment, size));
+#endif
+		}
+
+		auto alignedFree(void *ptr)
+		{
+#ifdef _MSC_VER
+			_aligned_free(ptr);
+#else
+			std::free(ptr);
+#endif
+		}
 	}
 
 	TTable::TTable(usize size)
@@ -63,19 +85,24 @@ namespace stormphrax
 		resize(size);
 	}
 
+	TTable::~TTable()
+	{
+		alignedFree(m_table);
+	}
+
 	auto TTable::resize(usize size) -> void
 	{
 		size *= 1024 * 1024;
 
-		const auto capacity = size / sizeof(Entry);
+		const auto capacity = size / sizeof(Cluster);
 
 		// don't bother reallocating if we're already at the right size
-		if (m_table.size() != capacity)
+		if (m_tableSize != capacity)
 		{
 			try
 			{
-				m_table.resize(capacity);
-				m_table.shrink_to_fit();
+				m_table = alignedAlloc<Cluster>(StorageAlignment, capacity);
+				m_tableSize = capacity;
 			}
 			catch (...)
 			{
@@ -89,18 +116,22 @@ namespace stormphrax
 
 	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool
 	{
-		const auto entry = loadEntry(index(key));
+		const auto packedKey = packEntryKey(key);
 
-		if (packEntryKey(key) == entry.key)
+		const auto &cluster = m_table[index(key)];
+		for (const auto entry : cluster.entries)
 		{
-			dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
-			dst.staticEval = static_cast<Score>(entry.staticEval);
-			dst.depth = entry.depth;
-			dst.move = entry.move;
-			dst.wasPv = entry.pv();
-			dst.flag = entry.flag();
+			if (packedKey == entry.key)
+			{
+				dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+				dst.staticEval = static_cast<Score>(entry.staticEval);
+				dst.depth = entry.depth;
+				dst.move = entry.move;
+				dst.wasPv = entry.pv();
+				dst.flag = entry.flag();
 
-			return true;
+				return true;
+			}
 		}
 
 		return false;
@@ -115,20 +146,47 @@ namespace stormphrax
 		assert(staticEval == ScoreNone || staticEval > -ScoreWin);
 		assert(staticEval == ScoreNone || staticEval <  ScoreWin);
 
-		auto entry = loadEntry(index(key));
-
 		const auto newKey = packEntryKey(key);
 
-#ifndef NDEBUG
-		if (std::abs(score) > std::numeric_limits<i16>::max())
-			std::cerr << "trying to put out of bounds score " << score << " into ttable" << std::endl;
-#endif
+		const auto entryValue = [this](const auto &entry)
+		{
+			const i32 relativeAge = (Entry::AgeCycle + m_age - entry.age()) & Entry::AgeMask;
+			return entry.depth - relativeAge * 2;
+		};
+
+		auto &cluster = m_table[index(key)];
+
+		Entry *entryPtr = nullptr;
+		auto minValue = std::numeric_limits<i32>::max();
+
+		for (auto &candidate : cluster.entries)
+		{
+			// always take an empty entry, or one from the same position
+			if (candidate.key == newKey || candidate.flag() == TtFlag::None)
+			{
+				entryPtr = &candidate;
+				break;
+			}
+
+			// otherwise, take the lowest-weighted entry by depth and age
+			const auto value = entryValue(candidate);
+
+			if (value < minValue)
+			{
+				entryPtr = &candidate;
+				minValue = value;
+			}
+		}
+
+		assert(entryPtr != nullptr);
+
+		auto entry = *entryPtr;
 
 		// Roughly the SF replacement scheme
 		if (!(flag == TtFlag::Exact
-				|| newKey != entry.key
-				|| entry.age() != m_age
-				|| depth + ttReplacementDepthOffset() + pv * ttReplacementPvOffset() > entry.depth))
+			|| newKey != entry.key
+			|| entry.age() != m_age
+			|| depth + ttReplacementDepthOffset() + pv * ttReplacementPvOffset() > entry.depth))
 			return;
 
 		if (move || entry.key != newKey)
@@ -140,7 +198,7 @@ namespace stormphrax
 		entry.depth = depth;
 		entry.setAgePvFlag(m_age, pv, flag);
 
-		storeEntry(index(key), entry);
+		*entryPtr = entry;
 	}
 
 	auto TTable::clear() -> void
@@ -150,18 +208,18 @@ namespace stormphrax
 		std::vector<std::jthread> threads{};
 		threads.reserve(threadCount);
 
-		const auto chunkSize = util::ceilDiv<usize>(m_table.size(), threadCount);
+		const auto chunkSize = util::ceilDiv<usize>(m_tableSize, threadCount);
 
 		for (u32 i = 0; i < threadCount; ++i)
 		{
 			threads.emplace_back([this, chunkSize, i]
 			{
 				const auto start = chunkSize * i;
-				const auto end = std::min(start + chunkSize, m_table.size());
+				const auto end = std::min(start + chunkSize, m_tableSize);
 
 				const auto count = end - start;
 
-				std::memset(&m_table[start], 0, count * sizeof(Entry));
+				std::memset(&m_table[start], 0, count * sizeof(Cluster));
 			});
 		}
 
@@ -174,11 +232,14 @@ namespace stormphrax
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			const auto entry = loadEntry(i);
-			if (entry.flag() != TtFlag::None && entry.age() == m_age)
-				++filledEntries;
+			const auto cluster = m_table[i];
+			for (const auto &entry : cluster.entries)
+			{
+				if (entry.flag() != TtFlag::None && entry.age() == m_age)
+					++filledEntries;
+			}
 		}
 
-		return filledEntries;
+		return filledEntries / Cluster::EntriesPerCluster;
 	}
 }
