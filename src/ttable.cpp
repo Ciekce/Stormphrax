@@ -22,10 +22,10 @@
 #include <bit>
 #include <iostream>
 #include <thread>
-#include <cstdlib>
 
 #include "tunable.h"
 #include "util/cemath.h"
+#include "util/align.h"
 
 namespace stormphrax
 {
@@ -57,27 +57,6 @@ namespace stormphrax
 		{
 			return static_cast<u16>(key);
 		}
-
-		template <typename T>
-		auto alignedAlloc(usize alignment, usize count)
-		{
-			const auto size = count * sizeof(T);
-
-#ifdef _MSC_VER
-			return static_cast<T *>(_aligned_malloc(size, alignment));
-#else
-			return static_cast<T *>(std::aligned_alloc(alignment, size));
-#endif
-		}
-
-		auto alignedFree(void *ptr)
-		{
-#ifdef _MSC_VER
-			_aligned_free(ptr);
-#else
-			std::free(ptr);
-#endif
-		}
 	}
 
 	TTable::TTable(usize size)
@@ -87,7 +66,7 @@ namespace stormphrax
 
 	TTable::~TTable()
 	{
-		alignedFree(m_table);
+		util::alignedFree(m_table);
 	}
 
 	auto TTable::resize(usize size) -> void
@@ -99,15 +78,13 @@ namespace stormphrax
 		// don't bother reallocating if we're already at the right size
 		if (m_tableSize != capacity)
 		{
-			try
-			{
-				m_table = alignedAlloc<Cluster>(StorageAlignment, capacity);
-				m_tableSize = capacity;
-			}
-			catch (...)
+			m_table = util::alignedAlloc<Cluster>(StorageAlignment, capacity);
+			m_tableSize = capacity;
+
+			if (!m_table)
 			{
 				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
-				throw;
+				std::terminate();
 			}
 		}
 
