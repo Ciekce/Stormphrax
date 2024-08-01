@@ -510,7 +510,19 @@ namespace stormphrax::search
 				if (ttEntry.flag == TtFlag::Exact
 					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
 					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta)
+				{
+					if (ttEntry.score >= beta
+						&& ttEntry.move
+						&& pos.isPseudolegal(ttEntry.move)
+						&& !pos.isNoisy(ttEntry.move))
+					{
+						const auto bonus = historyBonus(depth);
+						thread.history.updateQuietScore(thread.conthist, ply,
+							pos.threats(), boards.pieceAt(ttEntry.move.src()), ttEntry.move, bonus);
+					}
+
 					return ttEntry.score;
+				}
 				else if (depth <= maxTtNonCutoffExtDepth())
 					++depth;
 			}
