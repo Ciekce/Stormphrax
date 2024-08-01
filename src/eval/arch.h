@@ -52,5 +52,5 @@ namespace stormphrax::eval
 		14, 14, 15, 15
 	>;
 
-	using OutputBucketing = nnue::output::MaterialCount<8>;
+	using OutputBucketing = nnue::output::Combo<nnue::output::MaterialCount<8>, nnue::output::PawnCount<4>>;
 }

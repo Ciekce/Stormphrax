@@ -74,6 +74,21 @@ namespace stormphrax::eval::nnue::output
 		}
 	};
 
+	template <u32 Count>
+	struct [[maybe_unused]] PawnCount
+	{
+		static_assert(Count > 0 && util::resetLsb(Count) == 0);
+		static_assert(Count <= 16);
+
+		static constexpr u32 BucketCount = Count;
+
+		static inline auto getBucket(const BitboardSet &bbs) -> u32
+		{
+			constexpr auto Div = 16 / Count;
+			return std::min(bbs.pawns().popcount() / Div, Count - 1);
+		}
+	};
+
 	template <OutputBucketing L, OutputBucketing R>
 		requires (!std::is_same_v<L, Single> && !std::is_same_v<R, Single>)
 	struct [[maybe_unused]] Combo
