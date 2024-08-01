@@ -513,8 +513,8 @@ namespace stormphrax::search
 				{
 					if (ttEntry.score >= beta
 						&& ttEntry.move
-						&& pos.isPseudolegal(ttEntry.move)
-						&& !pos.isNoisy(ttEntry.move))
+						&& !pos.isNoisy(ttEntry.move)
+						&& pos.isPseudolegal(ttEntry.move))
 					{
 						const auto bonus = historyBonus(depth);
 						thread.history.updateQuietScore(thread.conthist, ply,
