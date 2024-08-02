@@ -78,7 +78,7 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::startSearch(const Position &pos, i32 maxDepth,
+	auto Searcher::startSearch(const Position &pos, f64 startTime, i32 maxDepth,
 		std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
 	{
 		if (!m_limiter && !limiter)
@@ -124,7 +124,7 @@ namespace stormphrax::search
 		if (status == RootStatus::Tablebase)
 			m_threads[0].search.tbhits = 1;
 
-		m_startTime.store(util::g_timer.time(), std::memory_order::relaxed);
+		m_startTime.store(startTime, std::memory_order::relaxed);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
@@ -307,13 +307,6 @@ namespace stormphrax::search
 		auto score = -ScoreInf;
 		PvList pv{};
 
-		const auto startTime = mainThread ? util::g_timer.time() : 0.0;
-
-		const auto totalTime = [&]
-		{
-			return util::g_timer.time() - startTime;
-		};
-
 		searchData.nodes = 1;
 		thread.stack[0].killers.clear();
 
@@ -349,7 +342,7 @@ namespace stormphrax::search
 
 				if (mainThread)
 				{
-					const auto time = totalTime();
+					const auto time = elapsed();
 					if (time >= WidenReportDelay)
 						report(thread, thread.rootPv, depth, time, newScore, alpha, beta);
 				}
@@ -383,7 +376,7 @@ namespace stormphrax::search
 			if (depth >= thread.maxDepth)
 			{
 				if (mainThread && m_infinite)
-					report(thread, pv, searchData.depth, totalTime(), score);
+					report(thread, pv, searchData.depth, elapsed(), score);
 				break;
 			}
 
@@ -394,7 +387,7 @@ namespace stormphrax::search
 				if (checkSoftTimeout(thread.search, true))
 					break;
 
-				report(thread, pv, searchData.depth, totalTime(), score);
+				report(thread, pv, searchData.depth, elapsed(), score);
 			}
 			else if (checkSoftTimeout(thread.search, thread.isMainThread()))
 				break;
@@ -410,7 +403,7 @@ namespace stormphrax::search
 
 		if (mainThread)
 		{
-			auto time = totalTime();
+			auto time = elapsed();
 
 			if (m_infinite)
 			{
@@ -428,7 +421,7 @@ namespace stormphrax::search
 			waitForThreads();
 
 			if (!m_infinite)
-				time = totalTime();
+				time = elapsed();
 
 			finalReport(thread, pv, depthCompleted, time, score);
 

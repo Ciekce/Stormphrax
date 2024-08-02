@@ -175,7 +175,7 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
-		auto startSearch(const Position &pos, i32 maxDepth,
+		auto startSearch(const Position &pos, f64 startTime, i32 maxDepth,
 			std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
 

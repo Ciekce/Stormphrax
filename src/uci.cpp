@@ -95,7 +95,7 @@ namespace stormphrax
 			auto handleUcinewgame() -> void;
 			auto handleIsready() -> void;
 			auto handlePosition(const std::vector<std::string> &tokens) -> void;
-			auto handleGo(const std::vector<std::string> &tokens) -> void;
+			auto handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void;
 			auto handleStop() -> void;
 			auto handleSetoption(const std::vector<std::string> &tokens) -> void;
 			// V ======= NONSTANDARD ======= V
@@ -132,6 +132,8 @@ namespace stormphrax
 		{
 			for (std::string line{}; std::getline(std::cin, line);)
 			{
+				const auto startTime = util::g_timer.time();
+
 				const auto tokens = split::split(line, ' ');
 
 				if (tokens.empty())
@@ -150,7 +152,7 @@ namespace stormphrax
 				else if (command == "position")
 					handlePosition(tokens);
 				else if (command == "go")
-					handleGo(tokens);
+					handleGo(tokens, startTime);
 				else if (command == "stop")
 					handleStop();
 				else if (command == "setoption")
@@ -306,7 +308,7 @@ namespace stormphrax
 			}
 		}
 
-		auto UciHandler::handleGo(const std::vector<std::string> &tokens) -> void
+		auto UciHandler::handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void
 		{
 			if (m_searcher.searching())
 				std::cerr << "already searching" << std::endl;
@@ -317,8 +319,6 @@ namespace stormphrax
 
 				bool infinite = false;
 				bool tournamentTime = false;
-
-				const auto startTime = util::g_timer.time();
 
 				i64 timeRemaining{};
 				i64 increment{};
@@ -445,7 +445,7 @@ namespace stormphrax
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
 
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter), infinite);
+				m_searcher.startSearch(m_pos, startTime, static_cast<i32>(depth), std::move(limiter), infinite);
 			}
 		}
 
