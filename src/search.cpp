@@ -34,7 +34,7 @@ namespace stormphrax::search
 
 	namespace
 	{
-		constexpr f64 WidenReportDelay = 1.0;
+		constexpr f64 WidenReportDelay = 0.0;
 		constexpr f64 CurrmoveReportDelay = 2.5;
 
 		inline auto drawScore(usize nodes)
@@ -337,6 +337,12 @@ namespace stormphrax::search
 				const auto aspDepth = std::max(depth - aspReduction, 1); // paranoia
 				newScore = search<true, true>(thread, thread.rootPv, aspDepth, 0, 0, alpha, beta, false);
 
+				if (newScore > alpha && !hasStopped())
+				{
+					score = newScore;
+					pv = thread.rootPv;
+				}
+
 				if ((newScore > alpha && newScore < beta) || hasStopped())
 					break;
 
@@ -369,9 +375,6 @@ namespace stormphrax::search
 				break;
 
 			depthCompleted = depth;
-
-			score = newScore;
-			pv = thread.rootPv;
 
 			if (depth >= thread.maxDepth)
 			{
