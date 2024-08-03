@@ -234,7 +234,7 @@ namespace stormphrax::eval::nnue::layers
 					const auto input2Vec = load<typename Base::InputType>(&nstmInputs[inputIdx + PairCount]);
 
 					const auto weightVec = load<typename Base::ParamType>(
-						&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
+						&Base::weights[PairCount + weightOffset + inputIdx]
 					);
 
 					sum = Activation::activateDotAccumulatePairwise(sum, input1Vec, input2Vec, weightVec);
