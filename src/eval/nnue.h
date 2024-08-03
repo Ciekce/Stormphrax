@@ -39,7 +39,7 @@ namespace stormphrax::eval
 
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
-		nnue::layers::DensePerspectiveAffine<
+		nnue::layers::DensePerspectiveAffine<PairwiseMul,
 			i16, i16,
 			L1Activation,
 			L1Size, 1,

@@ -33,7 +33,7 @@
 namespace stormphrax::eval::nnue::layers
 {
 	template <typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
+		u32 Inputs, u32 InputWeights, u32 Outputs, output::OutputBucketing OutputBucketing>
 	struct BaseAffine
 	{
 		using  InputType = Input;
@@ -45,7 +45,7 @@ namespace stormphrax::eval::nnue::layers
 
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
 
-		static constexpr auto WeightCount =  InputCount * OutputCount;
+		static constexpr auto WeightCount = InputWeights * Outputs;
 		static constexpr auto   BiasCount = OutputCount;
 
 		static_assert( InputCount > 0);
@@ -74,28 +74,10 @@ namespace stormphrax::eval::nnue::layers
 	};
 
 	template <typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
-	inline auto operator>>(std::istream &stream,
-		BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
-	-> std::istream &
-	{
-		return layer.readFrom(stream);
-	}
-
-	template <typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
-	inline auto operator<<(std::ostream &stream,
-		const BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing> &layer)
-	-> std::ostream &
-	{
-		return layer.writeTo(stream);
-	}
-
-	template <typename Input, typename Param, activation::Activation Activation,
 	    u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DenseAffine : BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
+	struct DenseAffine : BaseAffine<Input, Param, Activation, Inputs, Inputs, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>;
+		using Base = BaseAffine<Input, Param, Activation, Inputs, Inputs, Outputs, OutputBucketing>;
 
 		inline auto forward(const BitboardSet &bbs,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
@@ -136,10 +118,10 @@ namespace stormphrax::eval::nnue::layers
 
 	template <typename Input, typename Param, activation::Activation Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DensePerspectiveAffine
-		: BaseAffine<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>
+	struct DensePerspectiveNoPairwiseMulAffine
+		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Outputs, OutputBucketing>;
+		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>;
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 
@@ -194,4 +176,82 @@ namespace stormphrax::eval::nnue::layers
 			}
 		}
 	};
+
+	template <typename Input, typename Param, activation::Activation Activation,
+		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
+	struct DensePerspectivePairwiseMulAffine
+		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs, Outputs, OutputBucketing>
+	{
+		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Inputs, Outputs, OutputBucketing>;
+
+		static constexpr auto PerspectiveInputCount = Inputs;
+
+		// screlu unimplemented currently
+		static_assert(Activation::Id != 1);
+		static_assert(PerspectiveInputCount % 2 == 0);
+
+		inline auto forward(const BitboardSet &bbs,
+			std::span<const typename Base::InputType, PerspectiveInputCount>  stmInputs,
+			std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
+			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
+		{
+			using namespace util::simd;
+
+			assert(isAligned( stmInputs.data()));
+			assert(isAligned(nstmInputs.data()));
+			assert(isAligned(   outputs.data()));
+
+			static constexpr auto PairCount = PerspectiveInputCount / 2;
+
+			const auto outputBucket = OutputBucketing::getBucket(bbs);
+
+			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
+			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;
+
+			for (u32 outputIdx = 0; outputIdx < Base::OutputCount; ++outputIdx)
+			{
+				const auto weightOffset = bucketWeightOffset + outputIdx * PerspectiveInputCount;
+
+				auto sum = zero<typename Base::OutputType>();
+
+				// stm perspective
+				for (u32 inputIdx = 0; inputIdx < PairCount; inputIdx += ChunkSize)
+				{
+					const auto input1Vec = load<typename Base::InputType>(&stmInputs[inputIdx]);
+					const auto input2Vec = load<typename Base::InputType>(&stmInputs[inputIdx + PairCount]);
+
+					const auto weightVec = load<typename Base::ParamType>(
+						&Base::weights[weightOffset + inputIdx]
+					);
+
+					sum = Activation::activateDotAccumulatePairwise(sum, input1Vec, input2Vec, weightVec);
+				}
+
+				// nstm perspective
+				for (u32 inputIdx = 0; inputIdx < PairCount; inputIdx += ChunkSize)
+				{
+					const auto input1Vec = load<typename Base::InputType>(&nstmInputs[inputIdx]);
+					const auto input2Vec = load<typename Base::InputType>(&nstmInputs[inputIdx + PairCount]);
+
+					const auto weightVec = load<typename Base::ParamType>(
+						&Base::weights[PerspectiveInputCount + weightOffset + inputIdx]
+					);
+
+					sum = Activation::activateDotAccumulatePairwise(sum, input1Vec, input2Vec, weightVec);
+				}
+
+				const auto output = hsum<typename Base::OutputType>(sum);
+
+				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
+				outputs[outputIdx] = bias + Activation::output(output);
+			}
+		}
+	};
+
+	template <bool PairwiseMul, typename Input, typename Param, activation::Activation Activation,
+		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
+	using DensePerspectiveAffine = std::conditional_t<PairwiseMul,
+		DensePerspectivePairwiseMulAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>,
+		DensePerspectiveNoPairwiseMulAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
+	>;
 }
