@@ -32,13 +32,13 @@
 
 namespace stormphrax::eval::nnue::layers
 {
-	template <typename Input, typename Param, activation::Activation Activation,
+	template <typename Input, typename Param, typename Output,
 		u32 Inputs, u32 InputWeights, u32 Outputs, output::OutputBucketing OutputBucketing>
 	struct BaseAffine
 	{
 		using  InputType = Input;
 		using  ParamType = Param;
-		using OutputType = typename Activation::OutputType;
+		using OutputType = Output;
 
 		static constexpr auto  InputCount =  Inputs;
 		static constexpr auto OutputCount = Outputs;
@@ -75,9 +75,12 @@ namespace stormphrax::eval::nnue::layers
 
 	template <typename Input, typename Param, activation::Activation Activation,
 	    u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DenseAffine : BaseAffine<Input, Param, Activation, Inputs, Inputs, Outputs, OutputBucketing>
+	struct DenseAffine
+		: BaseAffine<Input, Param, typename Activation::OutputType, Inputs, Inputs, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffine<Input, Param, Activation, Inputs, Inputs, Outputs, OutputBucketing>;
+		using Base = BaseAffine<
+		    Input, Param, typename Activation::OutputType, Inputs, Inputs, Outputs, OutputBucketing
+		>;
 
 		inline auto forward(const BitboardSet &bbs,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
@@ -116,12 +119,16 @@ namespace stormphrax::eval::nnue::layers
 		}
 	};
 
-	template <typename Input, typename Param, activation::Activation Activation,
+	template <typename Input, typename Param, typename Activation,
 		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
 	struct DensePerspectivePlainAffine
-		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>
+		: BaseAffine<Input, Param, typename Activation::OutputType, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>
 	{
-		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>;
+		using Base = BaseAffine<
+		    Input, Param, typename Activation::OutputType, Inputs * 2, Inputs * 2, Outputs, OutputBucketing
+		>;
+
+		static_assert(activation::Activation<Activation>);
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 
@@ -177,17 +184,17 @@ namespace stormphrax::eval::nnue::layers
 		}
 	};
 
-	template <typename Input, typename Param, activation::PairwiseActivation Activation,
+	template <typename Input, typename Param, typename Activation,
 		u32 Inputs, u32 Outputs, typename Activation::OutputType Q, output::OutputBucketing OutputBucketing>
 	struct DensePerspectivePairwiseMulAffine
 		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs, Outputs, OutputBucketing>
 	{
 		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Inputs, Outputs, OutputBucketing>;
 
+		static_assert(activation::PairwiseActivation<Activation>);
+
 		static constexpr auto PerspectiveInputCount = Inputs;
 
-		// screlu unimplemented currently
-		static_assert(Activation::Id != 1);
 		static_assert(PerspectiveInputCount % 2 == 0);
 
 		inline auto forward(const BitboardSet &bbs,
