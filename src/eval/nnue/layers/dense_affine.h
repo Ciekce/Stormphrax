@@ -117,8 +117,8 @@ namespace stormphrax::eval::nnue::layers
 	};
 
 	template <typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
-	struct DensePerspectiveNoPairwiseMulAffine
+		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing>
+	struct DensePerspectivePlainAffine
 		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>
 	{
 		using Base = BaseAffine<Input, Param, Activation, Inputs * 2, Inputs * 2, Outputs, OutputBucketing>;
@@ -177,8 +177,8 @@ namespace stormphrax::eval::nnue::layers
 		}
 	};
 
-	template <typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
+	template <typename Input, typename Param, activation::PairwiseActivation Activation,
+		u32 Inputs, u32 Outputs, typename Activation::OutputType Q, output::OutputBucketing OutputBucketing>
 	struct DensePerspectivePairwiseMulAffine
 		: BaseAffine<Input, Param, Activation, Inputs * 2, Inputs, Outputs, OutputBucketing>
 	{
@@ -210,7 +210,7 @@ namespace stormphrax::eval::nnue::layers
 
 			for (u32 outputIdx = 0; outputIdx < Base::OutputCount; ++outputIdx)
 			{
-				const auto weightOffset = bucketWeightOffset + outputIdx * PerspectiveInputCount;
+				const auto weightOffset = bucketWeightOffset + outputIdx * PairCount;
 
 				auto sum = zero<typename Base::OutputType>();
 
@@ -224,7 +224,7 @@ namespace stormphrax::eval::nnue::layers
 						&Base::weights[weightOffset + inputIdx]
 					);
 
-					sum = Activation::activateDotAccumulatePairwise(sum, input1Vec, input2Vec, weightVec);
+					sum = Activation::activateDotAccumulate(sum, input1Vec, input2Vec, weightVec);
 				}
 
 				// nstm perspective
@@ -237,10 +237,10 @@ namespace stormphrax::eval::nnue::layers
 						&Base::weights[PairCount + weightOffset + inputIdx]
 					);
 
-					sum = Activation::activateDotAccumulatePairwise(sum, input1Vec, input2Vec, weightVec);
+					sum = Activation::activateDotAccumulate(sum, input1Vec, input2Vec, weightVec);
 				}
 
-				const auto output = hsum<typename Base::OutputType>(sum);
+				const auto output = hsum<typename Base::OutputType>(sum) / Q;
 
 				const auto bias = static_cast<typename Base::OutputType>(Base::biases[bucketBiasOffset + outputIdx]);
 				outputs[outputIdx] = bias + Activation::output(output);
@@ -248,10 +248,10 @@ namespace stormphrax::eval::nnue::layers
 		}
 	};
 
-	template <bool PairwiseMul, typename Input, typename Param, activation::Activation Activation,
-		u32 Inputs, u32 Outputs, output::OutputBucketing OutputBucketing = output::Single>
+	template <bool PairwiseMul, typename Input, typename Param, typename Activation, u32 Inputs, u32 Outputs,
+		typename Activation::OutputType Q, output::OutputBucketing OutputBucketing = output::Single>
 	using DensePerspectiveAffine = std::conditional_t<PairwiseMul,
-		DensePerspectivePairwiseMulAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>,
-		DensePerspectiveNoPairwiseMulAffine<Input, Param, Activation, Inputs, Outputs, OutputBucketing>
+		DensePerspectivePairwiseMulAffine<Input, Param, Activation, Inputs, Outputs, Q, OutputBucketing>,
+		DensePerspectivePlainAffine      <Input, Param, Activation, Inputs, Outputs,    OutputBucketing>
 	>;
 }

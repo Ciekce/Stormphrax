@@ -39,7 +39,15 @@ namespace stormphrax::eval::nnue::activation
 		        util::simd::zero<typename T::InputType>(),
 	            util::simd::zero<typename T::InputType>()) }
 			-> std::same_as<util::simd::Vector<typename T::OutputType>>;
-		{ T::activateDotAccumulatePairwise(
+		{ T::  output(typename T::OutputType{}) }
+			-> std::same_as<typename T::OutputType>;
+	};
+
+	template <typename T>
+	concept PairwiseActivation = requires(T t)
+	{
+		{ T::Id } -> std::same_as<const u8 &>;
+		{ T::activateDotAccumulate(
 				util::simd::zero<typename T::OutputType>(),
 				util::simd::zero<typename T::InputType>(),
 				util::simd::zero<typename T::InputType>(),
@@ -68,7 +76,7 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<InputType>(sum, inputs, weights);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulatePairwise(
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
 			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
 		{
 			using namespace util::simd;
@@ -103,7 +111,7 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<InputType>(sum, activated, weights);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulatePairwise(
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
 			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
 		{
 			using namespace util::simd;
@@ -143,7 +151,7 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<InputType>(sum, clipped, weights);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulatePairwise(
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
 			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
 		{
 			using namespace util::simd;
@@ -184,14 +192,6 @@ namespace stormphrax::eval::nnue::activation
 			const auto clipped = util::simd::clamp<InputType>(inputs, zero<InputType>(), max);
 			const auto crelu = mul<InputType>(clipped, weights);
 			return mulAddAdjAcc<InputType>(sum, crelu, clipped);
-		}
-
-		[[noreturn]] SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulatePairwise(
-			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
-			-> OutputVector
-		{
-			//TODO?
-			std::terminate();
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
