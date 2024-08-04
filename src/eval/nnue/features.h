@@ -216,6 +216,19 @@ namespace stormphrax::eval::nnue::features
 	};
 
 	template <MirroredKingSide Side>
+	using SingleBucketMirrored [[maybe_unused]] = KingBucketsMirrored<
+		Side,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0
+	>;
+
+	template <MirroredKingSide Side>
 	using HalfKaMirrored [[maybe_unused]] = KingBucketsMirrored<
 	    Side,
 	     0,  1,  2,  3,
@@ -228,6 +241,7 @@ namespace stormphrax::eval::nnue::features
 		28, 29, 30, 31
 	>;
 
+	//TODO verify that buckets work for merged kings
 	template <MirroredKingSide Side, u32... BucketIndices>
 	struct [[maybe_unused]] KingBucketsMergedMirrored
 		: public KingBucketsMirrored<Side, BucketIndices...>

@@ -33,9 +33,11 @@ namespace stormphrax::eval
 	constexpr i32 L1Q = 255;
 	constexpr i32 OutputQ = 64;
 
-	using L1Activation = nnue::activation::SquaredClippedReLU<i16, i32, L1Q>;
+	constexpr bool PairwiseMul = false;
 
 	constexpr u32 L1Size = 1280;
+
+	using L1Activation = nnue::activation::SquaredClippedReLU<i16, i32, L1Q>;
 
 	constexpr i32 Scale = 400;
 
