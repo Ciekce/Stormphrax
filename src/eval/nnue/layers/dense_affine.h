@@ -286,7 +286,7 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32  InputCount = L2Size;
 		static constexpr u32 OutputCount = 1;
 
-		inline auto fwd(const BitboardSet &bbs,
+		inline auto forward(const BitboardSet &bbs,
 			std::span<const InputType, InputCount> inputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
