@@ -41,8 +41,9 @@ namespace stormphrax::eval::nnue
 		using LayerStack = std::tuple<Layers...>;
 		using OutputStorage = std::tuple<OutputStorageType<Layers>...>;
 
+		using LastLayer = std::tuple_element_t<sizeof...(Layers) - 1, LayerStack>;
+
 		static_assert(sizeof...(Layers) > 0);
-		static_assert(std::tuple_element_t<sizeof...(Layers) - 1, LayerStack>::OutputCount == 1);
 
 	public:
 		using FeatureTransformer = Ft;
@@ -63,13 +64,14 @@ namespace stormphrax::eval::nnue
 		inline auto propagate(const BitboardSet &bbs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount>  stmInputs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs) const
+			-> std::span<const typename LastLayer::OutputType, LastLayer::OutputCount>
 		{
 			OutputStorage storage{};
 
 			std::get<0>(m_layers).forward(bbs, stmInputs, nstmInputs, std::get<0>(storage));
-			propagate(storage, bbs, std::make_index_sequence<sizeof...(Layers)>());
+			propagate_(storage, bbs, std::make_index_sequence<sizeof...(Layers)>());
 
-			return std::get<sizeof...(Layers) - 1>(storage)[0];
+			return std::get<sizeof...(Layers) - 1>(storage);
 		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
@@ -99,7 +101,7 @@ namespace stormphrax::eval::nnue
 		}
 
 		template <usize... Indices>
-		inline auto propagate(OutputStorage &storage,
+		inline auto propagate_(OutputStorage &storage,
 			const BitboardSet &bbs, std::index_sequence<Indices...>) const
 		{
 			((forward<Indices>(storage, bbs)), ...);
@@ -124,16 +126,4 @@ namespace stormphrax::eval::nnue
 		FeatureTransformer m_featureTransformer{};
 		LayerStack m_layers{};
 	};
-
-	template <typename Ft, typename... Layers>
-	inline auto operator>>(std::istream &stream, PerspectiveNetwork<Ft, Layers...> &network) -> std::istream &
-	{
-		return network.readFrom(stream);
-	}
-
-	template <typename Ft, typename... Layers>
-	inline auto operator<<(std::ostream &stream, PerspectiveNetwork<Ft, Layers...> &network) -> std::ostream &
-	{
-		return network.writeTo(stream);
-	}
 }

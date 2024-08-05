@@ -39,14 +39,14 @@ namespace stormphrax::eval
 
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
-		nnue::layers::DensePerspectiveAffine<PairwiseMul,
+		nnue::layers::DensePerspectiveAffine<
+			PairwiseMul,
 			i16, i16,
 			L1Activation,
-			L1Size, 1, L1Q,
+			L1Size, L2Size, L1Q,
 			OutputBucketing
 		>,
-		nnue::layers::Scale<i32, 1, Scale>,
-		nnue::layers::Dequantize<i32, i32, 1, L1Q * OutputQ>
+		nnue::layers::MakeItWork<L2Size, L3Size, L1Q * OutputQ, Scale, OutputBucketing>
 	>;
 
 	using Accumulator = FeatureTransformer::Accumulator;
@@ -317,9 +317,10 @@ namespace stormphrax::eval
 		{
 			assert(stm != Color::None);
 
-			return stm == Color::Black
-				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
-				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
+			const auto eval = stm == Color::Black
+				? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
+				: g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
+			return eval;
 		}
 
 		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,
