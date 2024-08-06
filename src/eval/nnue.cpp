@@ -39,7 +39,7 @@
 
 namespace
 {
-	INCBIN(std::byte, defaultNet, /*SP_NETWORK_FILE*/"L:/dev/misc/stormphrax/nets/net036_oldcbnf.nnue");
+	INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
 }
 
 namespace stormphrax::eval
