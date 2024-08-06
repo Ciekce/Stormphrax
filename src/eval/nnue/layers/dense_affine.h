@@ -287,55 +287,6 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = 1;
 
-		/*
-		inline auto fwd(const BitboardSet &bbs,
-			std::span<const InputType, InputCount> inputs,
-			std::span<OutputType, OutputCount> outputs) const
-		{
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto l2WeightOffset = outputBucket * L2Size * L3Size;
-			const auto l2BiasOffset   = outputBucket * L3Size;
-
-			util::AlignedArray<util::simd::Alignment, f32, L3Size> l2Out{};
-			std::memcpy(l2Out.data(), &l2Biases[l2BiasOffset], sizeof(l2Out));
-
-			for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
-			{
-				const auto weightsStart = l2WeightOffset + inputIdx * L3Size;
-
-				auto i = static_cast<f32>(inputs[inputIdx]);
-				i /= Qf;
-				i = std::clamp(i, 0.0F, 1.0F);
-				i *= i;
-
-				for (u32 outputIdx = 0; outputIdx < L3Size; ++outputIdx)
-				{
-					l2Out[outputIdx] += i * l2Weights[weightsStart + outputIdx];
-				}
-			}
-
-			auto l3Out = l3Biases[outputBucket];
-
-			const auto l3WeightOffset = outputBucket * L3Size;
-
-		//	std::cout << "asdasdasdasd " << l2Out[0] << l3Weights[l3WeightOffset] << std::endl;
-
-			for (u32 inputIdx = 0; inputIdx < L3Size; ++inputIdx)
-			{
-				const auto weightIdx = l3WeightOffset + inputIdx;
-
-				auto i = static_cast<f32>(l2Out[inputIdx]);
-				i = std::clamp(i, 0.0F, 1.0F);
-				i *= i;
-
-				l3Out += i * l3Weights[weightIdx];
-			}
-
-			outputs[0] = static_cast<i32>(l3Out * ScaleF);
-		}
-		 */
-
 		inline auto forward(const BitboardSet &bbs,
 			std::span<const InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const InputType, PerspectiveInputCount> nstmInputs,
