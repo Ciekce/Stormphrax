@@ -264,14 +264,15 @@ namespace stormphrax::eval::nnue::layers
 		DensePerspectivePlainAffine      <Input, Param, Activation, Inputs, Outputs,    OutputBucketing>
 	>;
 
-	template <u32 L2Size, u32 L3Size, u32 Q, u32 Scale, output::OutputBucketing OutputBucketing>
+	template <u32 L1Size, u32 L2Size, u32 L3Size,
+		u32 L1Q, u32 L2Q, u32 Scale, output::OutputBucketing OutputBucketing>
 	struct MakeItWork
 	{
 	private:
-		static constexpr auto Qf = static_cast<f32>(Q);
-		static constexpr auto ScaleF = static_cast<f32>(Scale);
-
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
+
+		SP_SIMD_ALIGNAS std::array<i16, OutputBucketCount * L1Size * L2Size> l1Weights{};
+		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2Size> l1Biases{};
 
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L2Size * L3Size> l2Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L3Size> l2Biases{};
@@ -280,13 +281,14 @@ namespace stormphrax::eval::nnue::layers
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount>          l3Biases{};
 
 	public:
-		using  InputType = i32;
+		using  InputType = i16;
 		using OutputType = i32;
 
-		static constexpr u32  InputCount = L2Size;
+		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = 1;
 
-		inline auto forward(const BitboardSet &bbs,
+		/*
+		inline auto fwd(const BitboardSet &bbs,
 			std::span<const InputType, InputCount> inputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
@@ -332,10 +334,108 @@ namespace stormphrax::eval::nnue::layers
 
 			outputs[0] = static_cast<i32>(l3Out * ScaleF);
 		}
+		 */
+
+		inline auto forward(const BitboardSet &bbs,
+			std::span<const InputType, PerspectiveInputCount>  stmInputs,
+			std::span<const InputType, PerspectiveInputCount> nstmInputs,
+			std::span<OutputType, OutputCount> outputs) const
+		{
+			static constexpr auto Qf = static_cast<f32>(L1Q * L1Q * L2Q);
+			static constexpr auto Scalef = static_cast<f32>(Scale);
+
+			static constexpr auto L1PairCount = PerspectiveInputCount / 2;
+
+			const auto outputBucket = OutputBucketing::getBucket(bbs);
+
+			const auto l1WeightOffset = outputBucket * L1Size * L2Size;
+			const auto l1BiasOffset   = outputBucket * L2Size;
+
+			const auto l2WeightOffset = outputBucket * L2Size * L3Size;
+			const auto l2BiasOffset   = outputBucket * L3Size;
+
+			const auto l3WeightOffset = outputBucket * L3Size;
+			const auto l3BiasOffset   = outputBucket;
+
+			util::AlignedArray<util::simd::Alignment, f32, L2Size> l1Out{};
+			std::memcpy(l1Out.data(), &l1Biases[l1BiasOffset], sizeof(l1Out));
+
+			// stm perspective
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; ++inputIdx)
+			{
+				const auto weightsStart = l1WeightOffset + inputIdx * L2Size;
+
+				auto i1 = stmInputs[inputIdx              ];
+				auto i2 = stmInputs[inputIdx + L1PairCount];
+
+				i1 = std::clamp<InputType>(i1, 0, L1Q);
+				i2 = std::clamp<InputType>(i2, 0, L1Q);
+
+				const auto i = static_cast<f32>(i1 * i2) / Qf;
+
+				for (u32 outputIdx = 0; outputIdx < L2Size; ++outputIdx)
+				{
+					l1Out[outputIdx] += i * l1Weights[weightsStart + outputIdx];
+				}
+			}
+
+			// nstm perspective
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; ++inputIdx)
+			{
+				const auto weightsStart = l1WeightOffset + (L1PairCount + inputIdx) * L2Size;
+
+				auto i1 = nstmInputs[inputIdx              ];
+				auto i2 = nstmInputs[inputIdx + L1PairCount];
+
+				i1 = std::clamp<InputType>(i1, 0, L1Q);
+				i2 = std::clamp<InputType>(i2, 0, L1Q);
+
+				const auto i = static_cast<f32>(i1 * i2) / Qf;
+
+				for (u32 outputIdx = 0; outputIdx < L2Size; ++outputIdx)
+				{
+					l1Out[outputIdx] += i * l1Weights[weightsStart + outputIdx];
+				}
+			}
+
+			util::AlignedArray<util::simd::Alignment, f32, L3Size> l2Out{};
+			std::memcpy(l2Out.data(), &l2Biases[l2BiasOffset], sizeof(l2Out));
+
+			for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
+			{
+				const auto weightsStart = l2WeightOffset + inputIdx * L3Size;
+
+				auto i = static_cast<f32>(l1Out[inputIdx]);
+				i = std::clamp(i, 0.0F, 1.0F);
+				i *= i;
+
+				for (u32 outputIdx = 0; outputIdx < L3Size; ++outputIdx)
+				{
+					l2Out[outputIdx] += i * l2Weights[weightsStart + outputIdx];
+				}
+			}
+
+			auto l3Out = l3Biases[l3BiasOffset];
+
+			for (u32 inputIdx = 0; inputIdx < L3Size; ++inputIdx)
+			{
+				const auto weightIdx = l3WeightOffset + inputIdx;
+
+				auto i = static_cast<f32>(l2Out[inputIdx]);
+				i = std::clamp(i, 0.0F, 1.0F);
+				i *= i;
+
+				l3Out += i * l3Weights[weightIdx];
+			}
+
+			outputs[0] = static_cast<i32>(l3Out * Scalef);
+		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			return stream.read(l2Weights)
+			return stream.read(l1Weights)
+				&& stream.read(l1Biases)
+				&& stream.read(l2Weights)
 				&& stream.read(l2Biases)
 				&& stream.read(l3Weights)
 				&& stream.read(l3Biases);
@@ -343,7 +443,9 @@ namespace stormphrax::eval::nnue::layers
 
 		inline auto writeTo(IParamStream &stream) const -> bool
 		{
-			return stream.write(l2Weights)
+			return stream.write(l1Weights)
+				&& stream.write(l1Biases)
+				&& stream.write(l2Weights)
 				&& stream.write(l2Biases)
 				&& stream.write(l3Weights)
 				&& stream.write(l3Biases);
