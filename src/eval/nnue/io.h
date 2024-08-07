@@ -34,6 +34,12 @@ namespace stormphrax::eval::nnue
 		inline auto read(std::span<T> dst) -> bool = delete;
 
 		template <>
+		inline auto read<i8>(std::span<i8> dst) -> bool
+		{
+			return readI8s(dst);
+		}
+
+		template <>
 		inline auto read<i16>(std::span<i16> dst) -> bool
 		{
 			return readI16s(dst);
@@ -55,6 +61,12 @@ namespace stormphrax::eval::nnue
 		inline auto write(std::span<T> src) -> bool = delete;
 
 		template <>
+		inline auto write<i8>(std::span<i8> src) -> bool
+		{
+			return writeI8s(src);
+		}
+
+		template <>
 		inline auto write<i16>(std::span<i16> src) -> bool
 		{
 			return writeI16s(src);
@@ -73,6 +85,9 @@ namespace stormphrax::eval::nnue
 		}
 
 	protected:
+		virtual auto readI8s(std::span<i8> dst) -> bool = 0;
+		virtual auto writeI8s(std::span<const i8> src) -> bool = 0;
+
 		virtual auto readI16s(std::span<i16> dst) -> bool = 0;
 		virtual auto writeI16s(std::span<const i16> src) -> bool = 0;
 

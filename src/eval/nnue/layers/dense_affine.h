@@ -271,7 +271,7 @@ namespace stormphrax::eval::nnue::layers
 	private:
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
 
-		SP_SIMD_ALIGNAS std::array<i16, OutputBucketCount * L1Size * L2Size> l1Weights{};
+		SP_SIMD_ALIGNAS std::array<i8, OutputBucketCount * L1Size * L2Size> l1Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2Size> l1Biases{};
 
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L2Size * L3Size> l2Weights{};
@@ -280,6 +280,14 @@ namespace stormphrax::eval::nnue::layers
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount>          l3Biases{};
 
+		template <typename T, usize N>
+		using SimdArray = util::AlignedArray<util::simd::Alignment, T, N>;
+
+		using vepi8 = __m256i;
+		using vepi16 = __m256i;
+		using vepi32 = __m256i;
+		using vps32 = __m256;
+
 	public:
 		using  InputType = i16;
 		using OutputType = i32;
@@ -287,15 +295,52 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = 1;
 
+		// this can produce slightly different results to the equivalent
+		// autovectorised code, because of FP order of operations differences.
+		// in practice this does change bench
 		inline auto forward(const BitboardSet &bbs,
 			std::span<const InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const InputType, PerspectiveInputCount> nstmInputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
-			static constexpr auto Qf = static_cast<f32>(L1Q * L1Q * L2Q);
 			static constexpr auto Scalef = static_cast<f32>(Scale);
 
 			static constexpr auto L1PairCount = PerspectiveInputCount / 2;
+
+			static constexpr auto U8ChunkSize = sizeof(__m256i) / sizeof(u8);
+			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+			static constexpr auto I16ChunkSize = sizeof(__m256i) / sizeof(i16);
+			static constexpr auto I32ChunkSize = sizeof(__m256i) / sizeof(i32);
+			static constexpr auto F32ChunkSize = sizeof(__m256) / sizeof(f32);
+
+			static constexpr auto FtShift = 10;
+
+			const auto loadI = [](const void *ptr) -> __m256i
+			{
+				return _mm256_load_si256(reinterpret_cast<const __m256i *>(ptr));
+			};
+
+			const auto storeI = [](void *ptr, __m256i v)
+			{
+				_mm256_store_si256(reinterpret_cast<__m256i *>(ptr), v);
+			};
+
+			// emulates the VNNI instruction
+			const auto dpbusd_epi32 = [](__m256i sum, __m256i u, __m256i s)
+			{
+				const auto p = _mm256_maddubs_epi16(u, s);
+				const auto w = _mm256_madd_epi16(p, _mm256_set1_epi16(1));
+				return _mm256_add_epi32(sum, w);
+			};
+
+			const auto FtZero = _mm256_setzero_si256();
+			const auto FtOne = _mm256_set1_epi16(L1Q);
+
+			const auto Rqf = static_cast<f32>(1 << FtShift) / static_cast<f32>(L1Q * L1Q * L2Q);
+			const auto Rq = _mm256_set1_ps(Rqf);
+
+			const auto Zero = _mm256_setzero_ps();
+			const auto One = _mm256_set1_ps(1.0F);
 
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
@@ -308,76 +353,239 @@ namespace stormphrax::eval::nnue::layers
 			const auto l3WeightOffset = outputBucket * L3Size;
 			const auto l3BiasOffset   = outputBucket;
 
-			util::AlignedArray<util::simd::Alignment, f32, L2Size> l1Out{};
-			std::memcpy(l1Out.data(), &l1Biases[l1BiasOffset], sizeof(l1Out));
+			SimdArray<u8, L1Size> ftOut{};
 
 			// stm perspective
-			for (u32 inputIdx = 0; inputIdx < L1PairCount; ++inputIdx)
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += I16ChunkSize * 4)
 			{
-				const auto weightsStart = l1WeightOffset + inputIdx * L2Size;
+				auto i1_0 = loadI(&stmInputs[inputIdx + I16ChunkSize * 0]);
+				auto i1_1 = loadI(&stmInputs[inputIdx + I16ChunkSize * 1]);
+				auto i1_2 = loadI(&stmInputs[inputIdx + I16ChunkSize * 2]);
+				auto i1_3 = loadI(&stmInputs[inputIdx + I16ChunkSize * 3]);
 
-				auto i1 = stmInputs[inputIdx              ];
-				auto i2 = stmInputs[inputIdx + L1PairCount];
+				auto i2_0 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 0]);
+				auto i2_1 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 1]);
+				auto i2_2 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 2]);
+				auto i2_3 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 3]);
 
-				i1 = std::clamp<InputType>(i1, 0, L1Q);
-				i2 = std::clamp<InputType>(i2, 0, L1Q);
+				i1_0 = _mm256_min_epi16(i1_0, FtOne);
+				i1_1 = _mm256_min_epi16(i1_1, FtOne);
+				i1_2 = _mm256_min_epi16(i1_2, FtOne);
+				i1_3 = _mm256_min_epi16(i1_3, FtOne);
 
-				const auto i = static_cast<f32>(i1 * i2) / Qf;
+				i2_0 = _mm256_min_epi16(i2_0, FtOne);
+				i2_1 = _mm256_min_epi16(i2_1, FtOne);
+				i2_2 = _mm256_min_epi16(i2_2, FtOne);
+				i2_3 = _mm256_min_epi16(i2_3, FtOne);
 
-				for (u32 outputIdx = 0; outputIdx < L2Size; ++outputIdx)
-				{
-					l1Out[outputIdx] += i * l1Weights[weightsStart + outputIdx];
-				}
+				i1_0 = _mm256_max_epi16(i1_0, FtZero);
+				i1_1 = _mm256_max_epi16(i1_1, FtZero);
+				i1_2 = _mm256_max_epi16(i1_2, FtZero);
+				i1_3 = _mm256_max_epi16(i1_3, FtZero);
+
+				i1_0 = _mm256_slli_epi16(i1_0, 6);
+				i1_1 = _mm256_slli_epi16(i1_1, 6);
+				i1_2 = _mm256_slli_epi16(i1_2, 6);
+				i1_3 = _mm256_slli_epi16(i1_3, 6);
+
+				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
+				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
+				const auto p_2 = _mm256_mulhi_epi16(i1_2, i2_2);
+				const auto p_3 = _mm256_mulhi_epi16(i1_3, i2_3);
+
+				auto packed_0 = _mm256_packus_epi16(p_0, p_1);
+				auto packed_1 = _mm256_packus_epi16(p_2, p_3);
+
+				packed_0 = _mm256_permute4x64_epi64(packed_0, _MM_SHUFFLE(3, 1, 2, 0));
+				packed_1 = _mm256_permute4x64_epi64(packed_1, _MM_SHUFFLE(3, 1, 2, 0));
+
+				storeI(&ftOut[inputIdx + U8ChunkSize * 0], packed_0);
+				storeI(&ftOut[inputIdx + U8ChunkSize * 1], packed_1);
 			}
 
 			// nstm perspective
-			for (u32 inputIdx = 0; inputIdx < L1PairCount; ++inputIdx)
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += I16ChunkSize * 4)
 			{
-				const auto weightsStart = l1WeightOffset + (L1PairCount + inputIdx) * L2Size;
+				auto i1_0 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 0]);
+				auto i1_1 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 1]);
+				auto i1_2 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 2]);
+				auto i1_3 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 3]);
 
-				auto i1 = nstmInputs[inputIdx              ];
-				auto i2 = nstmInputs[inputIdx + L1PairCount];
+				auto i2_0 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 0]);
+				auto i2_1 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 1]);
+				auto i2_2 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 2]);
+				auto i2_3 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 3]);
 
-				i1 = std::clamp<InputType>(i1, 0, L1Q);
-				i2 = std::clamp<InputType>(i2, 0, L1Q);
+				i1_0 = _mm256_min_epi16(i1_0, FtOne);
+				i1_1 = _mm256_min_epi16(i1_1, FtOne);
+				i1_2 = _mm256_min_epi16(i1_2, FtOne);
+				i1_3 = _mm256_min_epi16(i1_3, FtOne);
 
-				const auto i = static_cast<f32>(i1 * i2) / Qf;
+				i2_0 = _mm256_min_epi16(i2_0, FtOne);
+				i2_1 = _mm256_min_epi16(i2_1, FtOne);
+				i2_2 = _mm256_min_epi16(i2_2, FtOne);
+				i2_3 = _mm256_min_epi16(i2_3, FtOne);
 
-				for (u32 outputIdx = 0; outputIdx < L2Size; ++outputIdx)
-				{
-					l1Out[outputIdx] += i * l1Weights[weightsStart + outputIdx];
-				}
+				i1_0 = _mm256_max_epi16(i1_0, FtZero);
+				i1_1 = _mm256_max_epi16(i1_1, FtZero);
+				i1_2 = _mm256_max_epi16(i1_2, FtZero);
+				i1_3 = _mm256_max_epi16(i1_3, FtZero);
+
+				i1_0 = _mm256_slli_epi16(i1_0, 6);
+				i1_1 = _mm256_slli_epi16(i1_1, 6);
+				i1_2 = _mm256_slli_epi16(i1_2, 6);
+				i1_3 = _mm256_slli_epi16(i1_3, 6);
+
+				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
+				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
+				const auto p_2 = _mm256_mulhi_epi16(i1_2, i2_2);
+				const auto p_3 = _mm256_mulhi_epi16(i1_3, i2_3);
+
+				auto packed_0 = _mm256_packus_epi16(p_0, p_1);
+				auto packed_1 = _mm256_packus_epi16(p_2, p_3);
+
+				packed_0 = _mm256_permute4x64_epi64(packed_0, _MM_SHUFFLE(3, 1, 2, 0));
+				packed_1 = _mm256_permute4x64_epi64(packed_1, _MM_SHUFFLE(3, 1, 2, 0));
+
+				storeI(&ftOut[L1PairCount + inputIdx + U8ChunkSize * 0], packed_0);
+				storeI(&ftOut[L1PairCount + inputIdx + U8ChunkSize * 1], packed_1);
 			}
 
-			util::AlignedArray<util::simd::Alignment, f32, L3Size> l2Out{};
+			SimdArray<f32, L2Size> l1Out{};
+
+			// SAFETY: i8 (signed char) can safely be aliased to any type
+			const auto *ftOutI32s = reinterpret_cast<const i32 *>(ftOut.data());
+
+			auto l1Intermediate_0 = _mm256_setzero_si256();
+			auto l1Intermediate_1 = _mm256_setzero_si256();
+			auto l1Intermediate_2 = _mm256_setzero_si256();
+			auto l1Intermediate_3 = _mm256_setzero_si256();
+
+			for (u32 idx = 0; idx < L1Size; idx += I8ChunkSizeI32 * 4)
+			{
+				const auto weightsStart = l1WeightOffset + idx * L2Size;
+
+				const auto i_0 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 0]);
+				const auto i_1 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 1]);
+				const auto i_2 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 2]);
+				const auto i_3 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 3]);
+
+				const auto w_0 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 0]);
+				const auto w_1 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 1]);
+				const auto w_2 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 2]);
+				const auto w_3 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 3]);
+
+				l1Intermediate_0 = dpbusd_epi32(l1Intermediate_0, i_0, w_0);
+				l1Intermediate_1 = dpbusd_epi32(l1Intermediate_1, i_1, w_1);
+				l1Intermediate_2 = dpbusd_epi32(l1Intermediate_2, i_2, w_2);
+				l1Intermediate_3 = dpbusd_epi32(l1Intermediate_3, i_3, w_3);
+			}
+
+			const auto l1HalfSums_0 = _mm256_add_epi32(l1Intermediate_0, l1Intermediate_1);
+			const auto l1HalfSums_1 = _mm256_add_epi32(l1Intermediate_2, l1Intermediate_3);
+
+			const auto l1SumsI32 = _mm256_add_epi32(l1HalfSums_0, l1HalfSums_1);
+
+			const auto l1b = _mm256_load_ps(&l1Biases[l1BiasOffset]);
+
+			auto l1Sums = _mm256_cvtepi32_ps(l1SumsI32);
+
+			l1Sums = _mm256_fmadd_ps(l1Sums, Rq, l1b);
+			l1Sums = _mm256_min_ps(l1Sums, One);
+			l1Sums = _mm256_max_ps(l1Sums, Zero);
+			l1Sums = _mm256_mul_ps(l1Sums, l1Sums);
+
+			_mm256_store_ps(l1Out.data(), l1Sums);
+
+			SimdArray<f32, L3Size> l2Out{};
 			std::memcpy(l2Out.data(), &l2Biases[l2BiasOffset], sizeof(l2Out));
 
-			for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
+			for (u32 inputIdx = 0; inputIdx < L2Size; inputIdx += 1)
 			{
 				const auto weightsStart = l2WeightOffset + inputIdx * L3Size;
 
-				auto i = static_cast<f32>(l1Out[inputIdx]);
-				i = std::clamp(i, 0.0F, 1.0F);
-				i *= i;
+				const auto i = _mm256_set1_ps(l1Out[inputIdx]);
 
-				for (u32 outputIdx = 0; outputIdx < L3Size; ++outputIdx)
+				for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += F32ChunkSize * 4)
 				{
-					l2Out[outputIdx] += i * l2Weights[weightsStart + outputIdx];
+					const auto w_0 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 0]);
+					const auto w_1 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 1]);
+					const auto w_2 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 2]);
+					const auto w_3 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 3]);
+
+					auto out_0 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 0]);
+					auto out_1 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 1]);
+					auto out_2 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 2]);
+					auto out_3 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 3]);
+
+					out_0 = _mm256_fmadd_ps(i, w_0, out_0);
+					out_1 = _mm256_fmadd_ps(i, w_1, out_1);
+					out_2 = _mm256_fmadd_ps(i, w_2, out_2);
+					out_3 = _mm256_fmadd_ps(i, w_3, out_3);
+
+					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 0], out_0);
+					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 1], out_1);
+					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 2], out_2);
+					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 3], out_3);
 				}
 			}
 
-			auto l3Out = l3Biases[l3BiasOffset];
+			auto l3Out_0 = _mm256_setzero_ps();
+			auto l3Out_1 = _mm256_setzero_ps();
+			auto l3Out_2 = _mm256_setzero_ps();
+			auto l3Out_3 = _mm256_setzero_ps();
 
-			for (u32 inputIdx = 0; inputIdx < L3Size; ++inputIdx)
+			for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += F32ChunkSize * 4)
 			{
 				const auto weightIdx = l3WeightOffset + inputIdx;
 
-				auto i = static_cast<f32>(l2Out[inputIdx]);
-				i = std::clamp(i, 0.0F, 1.0F);
-				i *= i;
+				auto i_0 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 0]);
+				auto i_1 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 1]);
+				auto i_2 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 2]);
+				auto i_3 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 3]);
 
-				l3Out += i * l3Weights[weightIdx];
+				const auto w_0 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 0]);
+				const auto w_1 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 1]);
+				const auto w_2 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 2]);
+				const auto w_3 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 3]);
+
+				i_0 = _mm256_min_ps(i_0, One);
+				i_1 = _mm256_min_ps(i_1, One);
+				i_2 = _mm256_min_ps(i_2, One);
+				i_3 = _mm256_min_ps(i_3, One);
+
+				i_0 = _mm256_max_ps(i_0, Zero);
+				i_1 = _mm256_max_ps(i_1, Zero);
+				i_2 = _mm256_max_ps(i_2, Zero);
+				i_3 = _mm256_max_ps(i_3, Zero);
+
+				i_0 = _mm256_mul_ps(i_0, i_0);
+				i_1 = _mm256_mul_ps(i_1, i_1);
+				i_2 = _mm256_mul_ps(i_2, i_2);
+				i_3 = _mm256_mul_ps(i_3, i_3);
+
+				l3Out_0 = _mm256_fmadd_ps(i_0, w_0, l3Out_0);
+				l3Out_1 = _mm256_fmadd_ps(i_1, w_1, l3Out_1);
+				l3Out_2 = _mm256_fmadd_ps(i_2, w_2, l3Out_2);
+				l3Out_3 = _mm256_fmadd_ps(i_3, w_3, l3Out_3);
 			}
+
+			const auto s0 = _mm256_add_ps(l3Out_0, l3Out_1);
+			const auto s1 = _mm256_add_ps(l3Out_2, l3Out_3);
+
+			const auto s = _mm256_add_ps(s0, s1);
+
+			const auto high128 = _mm256_extractf128_ps(s, 1);
+			const auto low128 = _mm256_castps256_ps128(s);
+			const auto sum128 = _mm_add_ps(high128, low128);
+
+			const auto high64 = _mm_movehl_ps(sum128, sum128);
+			const auto sum64 = _mm_add_ps(sum128, high64);
+
+			const auto high32 = _mm_shuffle_ps(sum64, sum64, _MM_SHUFFLE(0, 0, 0, 1));
+			const auto sum32 = _mm_add_ss(sum64, high32);
+
+			const auto l3Out = l3Biases[l3BiasOffset] + _mm_cvtss_f32(sum32);
 
 			outputs[0] = static_cast<i32>(l3Out * Scalef);
 		}

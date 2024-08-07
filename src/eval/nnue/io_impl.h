@@ -47,6 +47,16 @@ namespace stormphrax::eval::nnue
 		~PaddedParamStream() final = default;
 
 	protected:
+		inline auto readI8s(std::span<i8> dst) -> bool final
+		{
+			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
+		}
+
+		inline auto writeI8s(std::span<const i8> src) -> bool final
+		{
+			return write(reinterpret_cast<const std::byte *>(src.data()), src.size_bytes());
+		}
+
 		inline auto readI16s(std::span<i16> dst) -> bool final
 		{
 			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
@@ -122,6 +132,17 @@ namespace stormphrax::eval::nnue
 		~ZstdParamStream() final;
 
 	protected:
+		inline auto readI8s(std::span<i8> dst) -> bool final
+		{
+			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
+		}
+
+		inline auto writeI8s(std::span<const i8> src) -> bool final
+		{
+			std::cerr << "ZstdParamStream::writeI8s" << std::endl;
+			std::terminate();
+		}
+
 		inline auto readI16s(std::span<i16> dst) -> bool final
 		{
 			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
