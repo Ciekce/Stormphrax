@@ -313,7 +313,7 @@ namespace stormphrax::eval::nnue::layers
 			static constexpr auto I32ChunkSize = sizeof(__m256i) / sizeof(i32);
 			static constexpr auto F32ChunkSize = sizeof(__m256) / sizeof(f32);
 
-			static constexpr auto FtShift = 10;
+			static constexpr auto FtShift = 6;
 
 			const auto loadI = [](const void *ptr) -> __m256i
 			{
@@ -336,11 +336,10 @@ namespace stormphrax::eval::nnue::layers
 			const auto FtZero = _mm256_setzero_si256();
 			const auto FtOne = _mm256_set1_epi16(L1Q);
 
-			const auto Rqf = static_cast<f32>(1 << FtShift) / static_cast<f32>(L1Q * L1Q * L2Q);
+			const auto Rqf = static_cast<f32>(1 << (16 - FtShift)) / static_cast<f32>(L1Q * L1Q * L2Q);
 			const auto Rq = _mm256_set1_ps(Rqf);
 
 			const auto Zero = _mm256_setzero_ps();
-			const auto One = _mm256_set1_ps(1.0F);
 
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
@@ -383,10 +382,10 @@ namespace stormphrax::eval::nnue::layers
 				i1_2 = _mm256_max_epi16(i1_2, FtZero);
 				i1_3 = _mm256_max_epi16(i1_3, FtZero);
 
-				i1_0 = _mm256_slli_epi16(i1_0, 6);
-				i1_1 = _mm256_slli_epi16(i1_1, 6);
-				i1_2 = _mm256_slli_epi16(i1_2, 6);
-				i1_3 = _mm256_slli_epi16(i1_3, 6);
+				i1_0 = _mm256_slli_epi16(i1_0, FtShift);
+				i1_1 = _mm256_slli_epi16(i1_1, FtShift);
+				i1_2 = _mm256_slli_epi16(i1_2, FtShift);
+				i1_3 = _mm256_slli_epi16(i1_3, FtShift);
 
 				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
 				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
@@ -431,10 +430,10 @@ namespace stormphrax::eval::nnue::layers
 				i1_2 = _mm256_max_epi16(i1_2, FtZero);
 				i1_3 = _mm256_max_epi16(i1_3, FtZero);
 
-				i1_0 = _mm256_slli_epi16(i1_0, 6);
-				i1_1 = _mm256_slli_epi16(i1_1, 6);
-				i1_2 = _mm256_slli_epi16(i1_2, 6);
-				i1_3 = _mm256_slli_epi16(i1_3, 6);
+				i1_0 = _mm256_slli_epi16(i1_0, FtShift);
+				i1_1 = _mm256_slli_epi16(i1_1, FtShift);
+				i1_2 = _mm256_slli_epi16(i1_2, FtShift);
+				i1_3 = _mm256_slli_epi16(i1_3, FtShift);
 
 				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
 				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
@@ -451,51 +450,58 @@ namespace stormphrax::eval::nnue::layers
 				storeI(&ftOut[L1PairCount + inputIdx + U8ChunkSize * 1], packed_1);
 			}
 
-			SimdArray<f32, L2Size> l1Out{};
-
 			// SAFETY: i8 (signed char) can safely be aliased to any type
 			const auto *ftOutI32s = reinterpret_cast<const i32 *>(ftOut.data());
 
-			auto l1Intermediate_0 = _mm256_setzero_si256();
-			auto l1Intermediate_1 = _mm256_setzero_si256();
-			auto l1Intermediate_2 = _mm256_setzero_si256();
-			auto l1Intermediate_3 = _mm256_setzero_si256();
+			util::MultiArray<__m256i, L2Size / I32ChunkSize, 4> l1Intermediate{};
 
-			for (u32 idx = 0; idx < L1Size; idx += I8ChunkSizeI32 * 4)
+			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8ChunkSizeI32 * 4)
 			{
-				const auto weightsStart = l1WeightOffset + idx * L2Size;
+				const auto weightsStart = l1WeightOffset + inputIdx * L2Size;
 
-				const auto i_0 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 0]);
-				const auto i_1 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 1]);
-				const auto i_2 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 2]);
-				const auto i_3 = _mm256_set1_epi32(ftOutI32s[idx / I8ChunkSizeI32 + 3]);
+				const auto i_0 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 0]);
+				const auto i_1 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 1]);
+				const auto i_2 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 2]);
+				const auto i_3 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 3]);
 
-				const auto w_0 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 0]);
-				const auto w_1 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 1]);
-				const auto w_2 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 2]);
-				const auto w_3 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * L2Size * 3]);
+				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += I32ChunkSize)
+				{
+					auto &intermediate = l1Intermediate[outputIdx / I32ChunkSize];
 
-				l1Intermediate_0 = dpbusd_epi32(l1Intermediate_0, i_0, w_0);
-				l1Intermediate_1 = dpbusd_epi32(l1Intermediate_1, i_1, w_1);
-				l1Intermediate_2 = dpbusd_epi32(l1Intermediate_2, i_2, w_2);
-				l1Intermediate_3 = dpbusd_epi32(l1Intermediate_3, i_3, w_3);
+					const auto w_0 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
+					const auto w_1 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
+					const auto w_2 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
+					const auto w_3 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
+
+					intermediate[0] = dpbusd_epi32(intermediate[0], i_0, w_0);
+					intermediate[1] = dpbusd_epi32(intermediate[1], i_1, w_1);
+					intermediate[2] = dpbusd_epi32(intermediate[2], i_2, w_2);
+					intermediate[3] = dpbusd_epi32(intermediate[3], i_3, w_3);
+				}
 			}
 
-			const auto l1HalfSums_0 = _mm256_add_epi32(l1Intermediate_0, l1Intermediate_1);
-			const auto l1HalfSums_1 = _mm256_add_epi32(l1Intermediate_2, l1Intermediate_3);
+			SimdArray<f32, L2Size> l1Out{};
 
-			const auto l1SumsI32 = _mm256_add_epi32(l1HalfSums_0, l1HalfSums_1);
+			for (u32 idx = 0; idx < L2Size; idx += I32ChunkSize)
+			{
+				const auto &intermediate = l1Intermediate[idx / I32ChunkSize];
 
-			const auto l1b = _mm256_load_ps(&l1Biases[l1BiasOffset]);
+				const auto halfSums_0 = _mm256_add_epi32(intermediate[0], intermediate[1]);
+				const auto halfSums_1 = _mm256_add_epi32(intermediate[2], intermediate[3]);
 
-			auto l1Sums = _mm256_cvtepi32_ps(l1SumsI32);
+				const auto sums = _mm256_add_epi32(halfSums_0, halfSums_1);
 
-			l1Sums = _mm256_fmadd_ps(l1Sums, Rq, l1b);
-			l1Sums = _mm256_min_ps(l1Sums, One);
-			l1Sums = _mm256_max_ps(l1Sums, Zero);
-			l1Sums = _mm256_mul_ps(l1Sums, l1Sums);
+				const auto biases = _mm256_load_ps(&l1Biases[l1BiasOffset + idx]);
 
-			_mm256_store_ps(l1Out.data(), l1Sums);
+				auto out = _mm256_cvtepi32_ps(sums);
+
+				out = _mm256_fmadd_ps(out, Rq, biases);
+
+				out = _mm256_max_ps(out, Zero);
+				out = _mm256_mul_ps(out, out);
+
+				_mm256_store_ps(&l1Out[idx], out);
+			}
 
 			SimdArray<f32, L3Size> l2Out{};
 			std::memcpy(l2Out.data(), &l2Biases[l2BiasOffset], sizeof(l2Out));
@@ -548,11 +554,6 @@ namespace stormphrax::eval::nnue::layers
 				const auto w_1 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 1]);
 				const auto w_2 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 2]);
 				const auto w_3 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 3]);
-
-				i_0 = _mm256_min_ps(i_0, One);
-				i_1 = _mm256_min_ps(i_1, One);
-				i_2 = _mm256_min_ps(i_2, One);
-				i_3 = _mm256_min_ps(i_3, One);
 
 				i_0 = _mm256_max_ps(i_0, Zero);
 				i_1 = _mm256_max_ps(i_1, Zero);
