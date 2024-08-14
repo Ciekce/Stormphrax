@@ -41,7 +41,7 @@ namespace stormphrax
 		PositionBoards boards{};
 
 		u64 key{};
-		u64 pawnKey{};
+		u64 nonPawnKey{};
 
 		Bitboard checkers{};
 		Bitboard pinned{};
@@ -154,7 +154,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return currState().key; }
-		[[nodiscard]] inline auto pawnKey() const { return currState().pawnKey; }
+		[[nodiscard]] inline auto nonPawnKey() const { return currState().nonPawnKey; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{
