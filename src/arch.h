@@ -85,8 +85,6 @@
 #error no arch specified
 #endif
 
-#define SP_HAS_SIMD (SP_HAS_AVX512 || SP_HAS_AVX2 || SP_HAS_NEON || SP_HAS_SSE41)
-
 namespace stormphrax
 {
 #ifdef __cpp_lib_hardware_interference_size

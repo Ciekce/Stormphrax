@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <exception>
 
 namespace stormphrax
 {
@@ -39,6 +40,11 @@ namespace stormphrax
 	using f64 = double;
 
 	using usize = std::size_t;
+
+	[[noreturn]] inline auto unimplemented()
+	{
+		std::terminate();
+	}
 }
 
 #define I64(V) INT64_C(V)

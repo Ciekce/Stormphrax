@@ -29,13 +29,114 @@
 
 namespace stormphrax::util::simd
 {
+	using VectorU8 = __m128i;
+	using VectorU16 = __m128i;
+
+	using VectorI8 = __m128i;
 	using VectorI16 = __m128i;
 	using VectorI32 = __m128i;
 
-	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
+	using VectorF32 = __m128;
+
+	constexpr std::uintptr_t Alignment = sizeof(__m128i);
 
 	namespace impl
 	{
+		// ================================ u8 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroU8() -> VectorU8
+		{
+			return _mm_setzero_si128();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadU8(const void *ptr) -> VectorU8
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm_load_si128(static_cast<const VectorU8 *>(ptr));
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeU8(void *ptr, VectorU8 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm_store_si128(static_cast<VectorU8 *>(ptr), v);
+		}
+
+		// ================================ u16 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroU16() -> VectorU16
+		{
+			return _mm_setzero_si128();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadU16(const void *ptr) -> VectorU16
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm_load_si128(static_cast<const VectorU16 *>(ptr));
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeU16(void *ptr, VectorU16 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm_store_si128(static_cast<VectorU16 *>(ptr), v);
+		}
+
+		// ================================ i8 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI8() -> VectorI8
+		{
+			return _mm_setzero_si128();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto set1I8(i8 v) -> VectorI8
+		{
+			return _mm_set1_epi8(v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadI8(const void *ptr) -> VectorI8
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm_load_si128(static_cast<const VectorI8 *>(ptr));
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeI8(void *ptr, VectorI8 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm_store_si128(static_cast<VectorI8 *>(ptr), v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto minI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm_min_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto maxI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm_max_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto clampI8(
+			VectorI8 v, VectorI8 min, VectorI8 max) -> VectorI8
+		{
+			return minI8(maxI8(v, min), max);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto addI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm_add_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto subI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm_sub_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI8(VectorI8 v, i32 shift) -> VectorI8
+		{
+			unimplemented();
+		}
+
+		// ================================ i16 ================================
+
 		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI16() -> VectorI16
 		{
 			return _mm_setzero_si128();
@@ -84,15 +185,32 @@ namespace stormphrax::util::simd
 			return _mm_sub_epi16(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI16(VectorI16 a, VectorI16 b) -> VectorI16
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulLoI16(VectorI16 a, VectorI16 b) -> VectorI16
 		{
 			return _mm_mullo_epi16(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulHiI16(VectorI16 a, VectorI16 b) -> VectorI16
+		{
+			return _mm_mulhi_epi16(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI16(VectorI16 v, i32 shift) -> VectorI16
+		{
+			return _mm_slli_epi16(v, shift);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjI16(VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			return _mm_madd_epi16(a, b);
 		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI16(VectorI16 a, VectorI16 b) -> VectorI16
+		{
+			return _mm_packus_epi16(a, b);
+		}
+
+		// ================================ i32 ================================
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI32() -> VectorI32
 		{
@@ -107,13 +225,13 @@ namespace stormphrax::util::simd
 		SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32
 		{
 			assert(isAligned<Alignment>(ptr));
-			return _mm_load_si128(static_cast<const VectorI16 *>(ptr));
+			return _mm_load_si128(static_cast<const VectorI32 *>(ptr));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v)
 		{
 			assert(isAligned<Alignment>(ptr));
-			_mm_store_si128(static_cast<VectorI16 *>(ptr), v);
+			_mm_store_si128(static_cast<VectorI32 *>(ptr), v);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto minI32(VectorI32 a, VectorI32 b) -> VectorI32
@@ -142,9 +260,19 @@ namespace stormphrax::util::simd
 			return _mm_sub_epi32(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI32(VectorI32 a, VectorI32 b) -> VectorI32
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulLoI32(VectorI32 a, VectorI32 b) -> VectorI32
 		{
 			return _mm_mullo_epi32(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI32(VectorI32 v, i32 shift) -> VectorI32
+		{
+			return _mm_slli_epi32(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI32(VectorI32 a, VectorI32 b) -> VectorU16
+		{
+			return _mm_packus_epi32(a, b);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32(VectorI32 v) -> i32
@@ -152,11 +280,90 @@ namespace stormphrax::util::simd
 			return x64::hsumI32Sse41(v);
 		}
 
+		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i)
+		{
+			const auto p = _mm_maddubs_epi16(u, i);
+			const auto w = _mm_madd_epi16(p, _mm_set1_epi16(1));
+			return _mm_add_epi32(sum, w);
+		}
+
 		// Depends on addI32
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			const auto products = mulAddAdjI16(a, b);
 			return addI32(sum, products);
+		}
+
+		// ================================ f32 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroF32() -> VectorF32
+		{
+			return _mm_setzero_ps();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto set1F32(f32 v) -> VectorF32
+		{
+			return _mm_set1_ps(v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadF32(const void *ptr) -> VectorF32
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm_load_ps(static_cast<const f32 *>(ptr));
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeF32(void *ptr, VectorF32 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm_store_ps(static_cast<f32 *>(ptr), v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto minF32(VectorF32 a, VectorF32 b) -> VectorF32
+		{
+			return _mm_min_ps(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto maxF32(VectorF32 a, VectorF32 b) -> VectorF32
+		{
+			return _mm_max_ps(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto clampF32(
+			VectorF32 v, VectorF32 min, VectorF32 max) -> VectorF32
+		{
+			return minF32(maxF32(v, min), max);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto addF32(VectorF32 a, VectorF32 b) -> VectorF32
+		{
+			return _mm_add_ps(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto subF32(VectorF32 a, VectorF32 b) -> VectorF32
+		{
+			return _mm_sub_ps(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulF32(VectorF32 a, VectorF32 b) -> VectorF32
+		{
+			return _mm_mul_ps(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto fmaF32(VectorF32 a, VectorF32 b, VectorF32 c) -> VectorF32
+		{
+			// _mm_fmadd_ps requires FMA3
+			// unfortunately we lose accuracy here, but no workers use this arch anyway
+			return _mm_add_ps(_mm_mul_ps(a, b), c);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32(VectorF32 v) -> f32
+		{
+			return x64::hsumF32Sse41(v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto castI32F32(VectorI32 v) -> VectorF32
+		{
+			return _mm_cvtepi32_ps(v);
 		}
 	}
 }

@@ -39,6 +39,17 @@ namespace stormphrax::util::simd::impl::x64
 
 		return _mm_cvtsi128_si32(sum32);
 	}
+
+	SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32Sse41(__m128 v) -> f32
+	{
+		const auto high64 = _mm_movehl_ps(v, v);
+		const auto sum64 = _mm_add_ps(v, high64);
+
+		const auto high32 = _mm_shuffle_ps(sum64, sum64, _MM_SHUFFLE(0, 0, 0, 1));
+		const auto sum32 = _mm_add_ss(sum64, high32);
+
+		return _mm_cvtss_f32(sum32);
+	}
 #endif
 
 #if SP_HAS_AVX2
@@ -51,17 +62,15 @@ namespace stormphrax::util::simd::impl::x64
 
 		return hsumI32Sse41(sum128);
 	}
-#endif
 
-#if SP_HAS_AVX512
-	SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32Avx512(__m512i v) -> i32
+	SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32Avx2(__m256i v) -> f32
 	{
-		const auto high256 = _mm512_extracti64x4_epi64(v, 1);
-		const auto low256 = _mm512_castsi512_si256(v);
+		const auto high128 = _mm256_extractf128_ps(v, 1);
+		const auto low128 = _mm256_castps256_ps128(v);
 
-		const auto sum256 = _mm256_add_epi32(high256, low256);
+		const auto sum128 = _mm_add_ps(high128, low128);
 
-		return hsumI32Avx2(sum256);
+		return hsumF32Sse41(sum128);
 	}
 #endif
 }

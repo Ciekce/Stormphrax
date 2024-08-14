@@ -91,6 +91,8 @@ namespace stormphrax::eval::nnue::layers
 			assert(isAligned( inputs.data()));
 			assert(isAligned(outputs.data()));
 
+			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
+
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
 			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
@@ -142,6 +144,8 @@ namespace stormphrax::eval::nnue::layers
 			assert(isAligned( stmInputs.data()));
 			assert(isAligned(nstmInputs.data()));
 			assert(isAligned(   outputs.data()));
+
+			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
 
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
@@ -210,6 +214,7 @@ namespace stormphrax::eval::nnue::layers
 			assert(isAligned(nstmInputs.data()));
 			assert(isAligned(   outputs.data()));
 
+			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
 			static constexpr auto PairCount = PerspectiveInputCount / 2;
 
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
@@ -283,11 +288,6 @@ namespace stormphrax::eval::nnue::layers
 		template <typename T, usize N>
 		using SimdArray = util::AlignedArray<util::simd::Alignment, T, N>;
 
-		using vepi8 = __m256i;
-		using vepi16 = __m256i;
-		using vepi32 = __m256i;
-		using vps32 = __m256;
-
 	public:
 		using  InputType = i16;
 		using OutputType = i32;
@@ -303,43 +303,27 @@ namespace stormphrax::eval::nnue::layers
 			std::span<const InputType, PerspectiveInputCount> nstmInputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
+			using namespace util::simd;
+
+			assert(isAligned( stmInputs.data()));
+			assert(isAligned(nstmInputs.data()));
+			assert(isAligned(   outputs.data()));
+
 			static constexpr auto Scalef = static_cast<f32>(Scale);
 
 			static constexpr auto L1PairCount = PerspectiveInputCount / 2;
 
-			static constexpr auto U8ChunkSize = sizeof(__m256i) / sizeof(u8);
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
-			static constexpr auto I16ChunkSize = sizeof(__m256i) / sizeof(i16);
-			static constexpr auto I32ChunkSize = sizeof(__m256i) / sizeof(i32);
-			static constexpr auto F32ChunkSize = sizeof(__m256) / sizeof(f32);
 
 			static constexpr auto FtShift = 6;
 
-			const auto loadI = [](const void *ptr) -> __m256i
-			{
-				return _mm256_load_si256(reinterpret_cast<const __m256i *>(ptr));
-			};
-
-			const auto storeI = [](void *ptr, __m256i v)
-			{
-				_mm256_store_si256(reinterpret_cast<__m256i *>(ptr), v);
-			};
-
-			// emulates the VNNI instruction
-			const auto dpbusd_epi32 = [](__m256i sum, __m256i u, __m256i s)
-			{
-				const auto p = _mm256_maddubs_epi16(u, s);
-				const auto w = _mm256_madd_epi16(p, _mm256_set1_epi16(1));
-				return _mm256_add_epi32(sum, w);
-			};
-
-			const auto FtZero = _mm256_setzero_si256();
-			const auto FtOne = _mm256_set1_epi16(L1Q);
+			const auto FtZero = zero<i16>();
+			const auto FtOne = set1<i16>(L1Q);
 
 			const auto Rqf = static_cast<f32>(1 << (16 - FtShift)) / static_cast<f32>(L1Q * L1Q * L2Q);
-			const auto Rq = _mm256_set1_ps(Rqf);
+			const auto Rq = set1<f32>(Rqf);
 
-			const auto Zero = _mm256_setzero_ps();
+			const auto Zero = zero<f32>();
 
 			const auto outputBucket = OutputBucketing::getBucket(bbs);
 
@@ -355,152 +339,162 @@ namespace stormphrax::eval::nnue::layers
 			SimdArray<u8, L1Size> ftOut{};
 
 			// stm perspective
-			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += I16ChunkSize * 4)
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += ChunkSize<i16> * 4)
 			{
-				auto i1_0 = loadI(&stmInputs[inputIdx + I16ChunkSize * 0]);
-				auto i1_1 = loadI(&stmInputs[inputIdx + I16ChunkSize * 1]);
-				auto i1_2 = loadI(&stmInputs[inputIdx + I16ChunkSize * 2]);
-				auto i1_3 = loadI(&stmInputs[inputIdx + I16ChunkSize * 3]);
+				auto i1_0 = load<i16>(&stmInputs[inputIdx + ChunkSize<i16> * 0]);
+				auto i1_1 = load<i16>(&stmInputs[inputIdx + ChunkSize<i16> * 1]);
+				auto i1_2 = load<i16>(&stmInputs[inputIdx + ChunkSize<i16> * 2]);
+				auto i1_3 = load<i16>(&stmInputs[inputIdx + ChunkSize<i16> * 3]);
 
-				auto i2_0 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 0]);
-				auto i2_1 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 1]);
-				auto i2_2 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 2]);
-				auto i2_3 = loadI(&stmInputs[inputIdx + L1PairCount + I16ChunkSize * 3]);
+				auto i2_0 = load<i16>(&stmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 0]);
+				auto i2_1 = load<i16>(&stmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 1]);
+				auto i2_2 = load<i16>(&stmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 2]);
+				auto i2_3 = load<i16>(&stmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 3]);
 
-				i1_0 = _mm256_min_epi16(i1_0, FtOne);
-				i1_1 = _mm256_min_epi16(i1_1, FtOne);
-				i1_2 = _mm256_min_epi16(i1_2, FtOne);
-				i1_3 = _mm256_min_epi16(i1_3, FtOne);
+				i1_0 = min<i16>(i1_0, FtOne);
+				i1_1 = min<i16>(i1_1, FtOne);
+				i1_2 = min<i16>(i1_2, FtOne);
+				i1_3 = min<i16>(i1_3, FtOne);
 
-				i2_0 = _mm256_min_epi16(i2_0, FtOne);
-				i2_1 = _mm256_min_epi16(i2_1, FtOne);
-				i2_2 = _mm256_min_epi16(i2_2, FtOne);
-				i2_3 = _mm256_min_epi16(i2_3, FtOne);
+				i2_0 = min<i16>(i2_0, FtOne);
+				i2_1 = min<i16>(i2_1, FtOne);
+				i2_2 = min<i16>(i2_2, FtOne);
+				i2_3 = min<i16>(i2_3, FtOne);
 
-				i1_0 = _mm256_max_epi16(i1_0, FtZero);
-				i1_1 = _mm256_max_epi16(i1_1, FtZero);
-				i1_2 = _mm256_max_epi16(i1_2, FtZero);
-				i1_3 = _mm256_max_epi16(i1_3, FtZero);
+				i1_0 = max<i16>(i1_0, FtZero);
+				i1_1 = max<i16>(i1_1, FtZero);
+				i1_2 = max<i16>(i1_2, FtZero);
+				i1_3 = max<i16>(i1_3, FtZero);
 
-				i1_0 = _mm256_slli_epi16(i1_0, FtShift);
-				i1_1 = _mm256_slli_epi16(i1_1, FtShift);
-				i1_2 = _mm256_slli_epi16(i1_2, FtShift);
-				i1_3 = _mm256_slli_epi16(i1_3, FtShift);
+				i1_0 = shiftLeft<i16>(i1_0, FtShift);
+				i1_1 = shiftLeft<i16>(i1_1, FtShift);
+				i1_2 = shiftLeft<i16>(i1_2, FtShift);
+				i1_3 = shiftLeft<i16>(i1_3, FtShift);
 
-				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
-				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
-				const auto p_2 = _mm256_mulhi_epi16(i1_2, i2_2);
-				const auto p_3 = _mm256_mulhi_epi16(i1_3, i2_3);
+				const auto p_0 = mulHi<i16>(i1_0, i2_0);
+				const auto p_1 = mulHi<i16>(i1_1, i2_1);
+				const auto p_2 = mulHi<i16>(i1_2, i2_2);
+				const auto p_3 = mulHi<i16>(i1_3, i2_3);
 
-				auto packed_0 = _mm256_packus_epi16(p_0, p_1);
-				auto packed_1 = _mm256_packus_epi16(p_2, p_3);
+				auto packed_0 = packUnsigned<i16>(p_0, p_1);
+				auto packed_1 = packUnsigned<i16>(p_2, p_3);
 
+#if SP_HAS_AVX512
+				packed_0 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_0);
+				packed_1 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_1);
+#elif SP_HAS_AVX2
 				packed_0 = _mm256_permute4x64_epi64(packed_0, _MM_SHUFFLE(3, 1, 2, 0));
 				packed_1 = _mm256_permute4x64_epi64(packed_1, _MM_SHUFFLE(3, 1, 2, 0));
+#endif
 
-				storeI(&ftOut[inputIdx + U8ChunkSize * 0], packed_0);
-				storeI(&ftOut[inputIdx + U8ChunkSize * 1], packed_1);
+				store<u8>(&ftOut[inputIdx + ChunkSize<i8> * 0], packed_0);
+				store<u8>(&ftOut[inputIdx + ChunkSize<i8> * 1], packed_1);
 			}
 
 			// nstm perspective
-			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += I16ChunkSize * 4)
+			for (u32 inputIdx = 0; inputIdx < L1PairCount; inputIdx += ChunkSize<i16> * 4)
 			{
-				auto i1_0 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 0]);
-				auto i1_1 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 1]);
-				auto i1_2 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 2]);
-				auto i1_3 = loadI(&nstmInputs[inputIdx + I16ChunkSize * 3]);
+				auto i1_0 = load<i16>(&nstmInputs[inputIdx + ChunkSize<i16> * 0]);
+				auto i1_1 = load<i16>(&nstmInputs[inputIdx + ChunkSize<i16> * 1]);
+				auto i1_2 = load<i16>(&nstmInputs[inputIdx + ChunkSize<i16> * 2]);
+				auto i1_3 = load<i16>(&nstmInputs[inputIdx + ChunkSize<i16> * 3]);
 
-				auto i2_0 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 0]);
-				auto i2_1 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 1]);
-				auto i2_2 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 2]);
-				auto i2_3 = loadI(&nstmInputs[inputIdx + L1PairCount + I16ChunkSize * 3]);
+				auto i2_0 = load<i16>(&nstmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 0]);
+				auto i2_1 = load<i16>(&nstmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 1]);
+				auto i2_2 = load<i16>(&nstmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 2]);
+				auto i2_3 = load<i16>(&nstmInputs[inputIdx + L1PairCount + ChunkSize<i16> * 3]);
 
-				i1_0 = _mm256_min_epi16(i1_0, FtOne);
-				i1_1 = _mm256_min_epi16(i1_1, FtOne);
-				i1_2 = _mm256_min_epi16(i1_2, FtOne);
-				i1_3 = _mm256_min_epi16(i1_3, FtOne);
+				i1_0 = min<i16>(i1_0, FtOne);
+				i1_1 = min<i16>(i1_1, FtOne);
+				i1_2 = min<i16>(i1_2, FtOne);
+				i1_3 = min<i16>(i1_3, FtOne);
 
-				i2_0 = _mm256_min_epi16(i2_0, FtOne);
-				i2_1 = _mm256_min_epi16(i2_1, FtOne);
-				i2_2 = _mm256_min_epi16(i2_2, FtOne);
-				i2_3 = _mm256_min_epi16(i2_3, FtOne);
+				i2_0 = min<i16>(i2_0, FtOne);
+				i2_1 = min<i16>(i2_1, FtOne);
+				i2_2 = min<i16>(i2_2, FtOne);
+				i2_3 = min<i16>(i2_3, FtOne);
 
-				i1_0 = _mm256_max_epi16(i1_0, FtZero);
-				i1_1 = _mm256_max_epi16(i1_1, FtZero);
-				i1_2 = _mm256_max_epi16(i1_2, FtZero);
-				i1_3 = _mm256_max_epi16(i1_3, FtZero);
+				i1_0 = max<i16>(i1_0, FtZero);
+				i1_1 = max<i16>(i1_1, FtZero);
+				i1_2 = max<i16>(i1_2, FtZero);
+				i1_3 = max<i16>(i1_3, FtZero);
 
-				i1_0 = _mm256_slli_epi16(i1_0, FtShift);
-				i1_1 = _mm256_slli_epi16(i1_1, FtShift);
-				i1_2 = _mm256_slli_epi16(i1_2, FtShift);
-				i1_3 = _mm256_slli_epi16(i1_3, FtShift);
+				i1_0 = shiftLeft<i16>(i1_0, FtShift);
+				i1_1 = shiftLeft<i16>(i1_1, FtShift);
+				i1_2 = shiftLeft<i16>(i1_2, FtShift);
+				i1_3 = shiftLeft<i16>(i1_3, FtShift);
 
-				const auto p_0 = _mm256_mulhi_epi16(i1_0, i2_0);
-				const auto p_1 = _mm256_mulhi_epi16(i1_1, i2_1);
-				const auto p_2 = _mm256_mulhi_epi16(i1_2, i2_2);
-				const auto p_3 = _mm256_mulhi_epi16(i1_3, i2_3);
+				const auto p_0 = mulHi<i16>(i1_0, i2_0);
+				const auto p_1 = mulHi<i16>(i1_1, i2_1);
+				const auto p_2 = mulHi<i16>(i1_2, i2_2);
+				const auto p_3 = mulHi<i16>(i1_3, i2_3);
 
-				auto packed_0 = _mm256_packus_epi16(p_0, p_1);
-				auto packed_1 = _mm256_packus_epi16(p_2, p_3);
+				auto packed_0 = packUnsigned<i16>(p_0, p_1);
+				auto packed_1 = packUnsigned<i16>(p_2, p_3);
 
+#if SP_HAS_AVX512
+				packed_0 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_0);
+				packed_1 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_1);
+#elif SP_HAS_AVX2
 				packed_0 = _mm256_permute4x64_epi64(packed_0, _MM_SHUFFLE(3, 1, 2, 0));
 				packed_1 = _mm256_permute4x64_epi64(packed_1, _MM_SHUFFLE(3, 1, 2, 0));
+#endif
 
-				storeI(&ftOut[L1PairCount + inputIdx + U8ChunkSize * 0], packed_0);
-				storeI(&ftOut[L1PairCount + inputIdx + U8ChunkSize * 1], packed_1);
+				store<u8>(&ftOut[L1PairCount + inputIdx + ChunkSize<i8> * 0], packed_0);
+				store<u8>(&ftOut[L1PairCount + inputIdx + ChunkSize<i8> * 1], packed_1);
 			}
 
 			// SAFETY: i8 (signed char) can safely be aliased to any type
 			const auto *ftOutI32s = reinterpret_cast<const i32 *>(ftOut.data());
 
-			util::MultiArray<__m256i, L2Size / I32ChunkSize, 4> l1Intermediate{};
+			util::MultiArray<Vector<i32>, L2Size / ChunkSize<i32>, 4> l1Intermediate{};
 
 			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8ChunkSizeI32 * 4)
 			{
 				const auto weightsStart = l1WeightOffset + inputIdx * L2Size;
 
-				const auto i_0 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 0]);
-				const auto i_1 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 1]);
-				const auto i_2 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 2]);
-				const auto i_3 = _mm256_set1_epi32(ftOutI32s[inputIdx / I8ChunkSizeI32 + 3]);
+				const auto i_0 = set1<i32>(ftOutI32s[inputIdx / I8ChunkSizeI32 + 0]);
+				const auto i_1 = set1<i32>(ftOutI32s[inputIdx / I8ChunkSizeI32 + 1]);
+				const auto i_2 = set1<i32>(ftOutI32s[inputIdx / I8ChunkSizeI32 + 2]);
+				const auto i_3 = set1<i32>(ftOutI32s[inputIdx / I8ChunkSizeI32 + 3]);
 
-				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += I32ChunkSize)
+				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += ChunkSize<i32>)
 				{
-					auto &intermediate = l1Intermediate[outputIdx / I32ChunkSize];
+					auto &intermediate = l1Intermediate[outputIdx / ChunkSize<i32>];
 
-					const auto w_0 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
-					const auto w_1 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
-					const auto w_2 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
-					const auto w_3 = loadI(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
+					const auto w_0 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
+					const auto w_1 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
+					const auto w_2 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
+					const auto w_3 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
 
-					intermediate[0] = dpbusd_epi32(intermediate[0], i_0, w_0);
-					intermediate[1] = dpbusd_epi32(intermediate[1], i_1, w_1);
-					intermediate[2] = dpbusd_epi32(intermediate[2], i_2, w_2);
-					intermediate[3] = dpbusd_epi32(intermediate[3], i_3, w_3);
+					intermediate[0] = dpbusd<i32>(intermediate[0], i_0, w_0);
+					intermediate[1] = dpbusd<i32>(intermediate[1], i_1, w_1);
+					intermediate[2] = dpbusd<i32>(intermediate[2], i_2, w_2);
+					intermediate[3] = dpbusd<i32>(intermediate[3], i_3, w_3);
 				}
 			}
 
 			SimdArray<f32, L2Size> l1Out{};
 
-			for (u32 idx = 0; idx < L2Size; idx += I32ChunkSize)
+			for (u32 idx = 0; idx < L2Size; idx += ChunkSize<i32>)
 			{
-				const auto &intermediate = l1Intermediate[idx / I32ChunkSize];
+				const auto &intermediate = l1Intermediate[idx / ChunkSize<i32>];
 
-				const auto halfSums_0 = _mm256_add_epi32(intermediate[0], intermediate[1]);
-				const auto halfSums_1 = _mm256_add_epi32(intermediate[2], intermediate[3]);
+				const auto halfSums_0 = add<i32>(intermediate[0], intermediate[1]);
+				const auto halfSums_1 = add<i32>(intermediate[2], intermediate[3]);
 
-				const auto sums = _mm256_add_epi32(halfSums_0, halfSums_1);
+				const auto sums = add<i32>(halfSums_0, halfSums_1);
 
-				const auto biases = _mm256_load_ps(&l1Biases[l1BiasOffset + idx]);
+				const auto biases = load<f32>(&l1Biases[l1BiasOffset + idx]);
 
-				auto out = _mm256_cvtepi32_ps(sums);
+				auto out = cast<i32, f32>(sums);
 
-				out = _mm256_fmadd_ps(out, Rq, biases);
+				out = fma<f32>(out, Rq, biases);
 
-				out = _mm256_max_ps(out, Zero);
-				out = _mm256_mul_ps(out, out);
+				out = max<f32>(out, Zero);
+				out = mul<f32>(out, out);
 
-				_mm256_store_ps(&l1Out[idx], out);
+				store<f32>(&l1Out[idx], out);
 			}
 
 			SimdArray<f32, L3Size> l2Out{};
@@ -510,83 +504,106 @@ namespace stormphrax::eval::nnue::layers
 			{
 				const auto weightsStart = l2WeightOffset + inputIdx * L3Size;
 
-				const auto i = _mm256_set1_ps(l1Out[inputIdx]);
+				const auto i = set1<f32>(l1Out[inputIdx]);
 
-				for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += F32ChunkSize * 4)
+				for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<f32> * 4)
 				{
-					const auto w_0 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 0]);
-					const auto w_1 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 1]);
-					const auto w_2 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 2]);
-					const auto w_3 = _mm256_load_ps(&l2Weights[weightsStart + outputIdx + F32ChunkSize * 3]);
+					const auto w_0 = load<f32>(&l2Weights[weightsStart + outputIdx + ChunkSize<f32> * 0]);
+					const auto w_1 = load<f32>(&l2Weights[weightsStart + outputIdx + ChunkSize<f32> * 1]);
+					const auto w_2 = load<f32>(&l2Weights[weightsStart + outputIdx + ChunkSize<f32> * 2]);
+					const auto w_3 = load<f32>(&l2Weights[weightsStart + outputIdx + ChunkSize<f32> * 3]);
 
-					auto out_0 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 0]);
-					auto out_1 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 1]);
-					auto out_2 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 2]);
-					auto out_3 = _mm256_load_ps(&l2Out[outputIdx + F32ChunkSize * 3]);
+					auto out_0 = load<f32>(&l2Out[outputIdx + ChunkSize<f32> * 0]);
+					auto out_1 = load<f32>(&l2Out[outputIdx + ChunkSize<f32> * 1]);
+					auto out_2 = load<f32>(&l2Out[outputIdx + ChunkSize<f32> * 2]);
+					auto out_3 = load<f32>(&l2Out[outputIdx + ChunkSize<f32> * 3]);
 
-					out_0 = _mm256_fmadd_ps(i, w_0, out_0);
-					out_1 = _mm256_fmadd_ps(i, w_1, out_1);
-					out_2 = _mm256_fmadd_ps(i, w_2, out_2);
-					out_3 = _mm256_fmadd_ps(i, w_3, out_3);
+					out_0 = fma<f32>(i, w_0, out_0);
+					out_1 = fma<f32>(i, w_1, out_1);
+					out_2 = fma<f32>(i, w_2, out_2);
+					out_3 = fma<f32>(i, w_3, out_3);
 
-					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 0], out_0);
-					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 1], out_1);
-					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 2], out_2);
-					_mm256_store_ps(&l2Out[outputIdx + F32ChunkSize * 3], out_3);
+					store<f32>(&l2Out[outputIdx + ChunkSize<f32> * 0], out_0);
+					store<f32>(&l2Out[outputIdx + ChunkSize<f32> * 1], out_1);
+					store<f32>(&l2Out[outputIdx + ChunkSize<f32> * 2], out_2);
+					store<f32>(&l2Out[outputIdx + ChunkSize<f32> * 3], out_3);
 				}
 			}
 
-			auto l3Out_0 = _mm256_setzero_ps();
-			auto l3Out_1 = _mm256_setzero_ps();
-			auto l3Out_2 = _mm256_setzero_ps();
-			auto l3Out_3 = _mm256_setzero_ps();
+			Vector<f32> s;
 
-			for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += F32ChunkSize * 4)
+			// avx512
+			if constexpr (ChunkSize<f32> * 4 > L3Size)
 			{
-				const auto weightIdx = l3WeightOffset + inputIdx;
+				auto l3Out_0 = zero<f32>();
+				auto l3Out_1 = zero<f32>();
 
-				auto i_0 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 0]);
-				auto i_1 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 1]);
-				auto i_2 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 2]);
-				auto i_3 = _mm256_load_ps(&l2Out[inputIdx + F32ChunkSize * 3]);
+				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<f32> * 2)
+				{
+					const auto weightIdx = l3WeightOffset + inputIdx;
 
-				const auto w_0 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 0]);
-				const auto w_1 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 1]);
-				const auto w_2 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 2]);
-				const auto w_3 = _mm256_load_ps(&l3Weights[weightIdx + F32ChunkSize * 3]);
+					auto i_0 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 0]);
+					auto i_1 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 1]);
 
-				i_0 = _mm256_max_ps(i_0, Zero);
-				i_1 = _mm256_max_ps(i_1, Zero);
-				i_2 = _mm256_max_ps(i_2, Zero);
-				i_3 = _mm256_max_ps(i_3, Zero);
+					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
+					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
 
-				i_0 = _mm256_mul_ps(i_0, i_0);
-				i_1 = _mm256_mul_ps(i_1, i_1);
-				i_2 = _mm256_mul_ps(i_2, i_2);
-				i_3 = _mm256_mul_ps(i_3, i_3);
+					i_0 = max<f32>(i_0, Zero);
+					i_1 = max<f32>(i_1, Zero);
 
-				l3Out_0 = _mm256_fmadd_ps(i_0, w_0, l3Out_0);
-				l3Out_1 = _mm256_fmadd_ps(i_1, w_1, l3Out_1);
-				l3Out_2 = _mm256_fmadd_ps(i_2, w_2, l3Out_2);
-				l3Out_3 = _mm256_fmadd_ps(i_3, w_3, l3Out_3);
+					i_0 = mul<f32>(i_0, i_0);
+					i_1 = mul<f32>(i_1, i_1);
+
+					l3Out_0 = fma<f32>(i_0, w_0, l3Out_0);
+					l3Out_1 = fma<f32>(i_1, w_1, l3Out_1);
+				}
+
+				s = add<f32>(l3Out_0, l3Out_1);
+			}
+			else
+			{
+				auto l3Out_0 = zero<f32>();
+				auto l3Out_1 = zero<f32>();
+				auto l3Out_2 = zero<f32>();
+				auto l3Out_3 = zero<f32>();
+
+				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<f32> * 4)
+				{
+					const auto weightIdx = l3WeightOffset + inputIdx;
+
+					auto i_0 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 0]);
+					auto i_1 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 1]);
+					auto i_2 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 2]);
+					auto i_3 = load<f32>(&l2Out[inputIdx + ChunkSize<f32> * 3]);
+
+					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
+					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
+					const auto w_2 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 2]);
+					const auto w_3 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 3]);
+
+					i_0 = max<f32>(i_0, Zero);
+					i_1 = max<f32>(i_1, Zero);
+					i_2 = max<f32>(i_2, Zero);
+					i_3 = max<f32>(i_3, Zero);
+
+					i_0 = mul<f32>(i_0, i_0);
+					i_1 = mul<f32>(i_1, i_1);
+					i_2 = mul<f32>(i_2, i_2);
+					i_3 = mul<f32>(i_3, i_3);
+
+					l3Out_0 = fma<f32>(i_0, w_0, l3Out_0);
+					l3Out_1 = fma<f32>(i_1, w_1, l3Out_1);
+					l3Out_2 = fma<f32>(i_2, w_2, l3Out_2);
+					l3Out_3 = fma<f32>(i_3, w_3, l3Out_3);
+				}
+
+				const auto s0 = add<f32>(l3Out_0, l3Out_1);
+				const auto s1 = add<f32>(l3Out_2, l3Out_3);
+
+				s = add<f32>(s0, s1);
 			}
 
-			const auto s0 = _mm256_add_ps(l3Out_0, l3Out_1);
-			const auto s1 = _mm256_add_ps(l3Out_2, l3Out_3);
-
-			const auto s = _mm256_add_ps(s0, s1);
-
-			const auto high128 = _mm256_extractf128_ps(s, 1);
-			const auto low128 = _mm256_castps256_ps128(s);
-			const auto sum128 = _mm_add_ps(high128, low128);
-
-			const auto high64 = _mm_movehl_ps(sum128, sum128);
-			const auto sum64 = _mm_add_ps(sum128, high64);
-
-			const auto high32 = _mm_shuffle_ps(sum64, sum64, _MM_SHUFFLE(0, 0, 0, 1));
-			const auto sum32 = _mm_add_ss(sum64, high32);
-
-			const auto l3Out = l3Biases[l3BiasOffset] + _mm_cvtss_f32(sum32);
+			const auto l3Out = l3Biases[l3BiasOffset] + hsum<f32>(s);
 
 			outputs[0] = static_cast<i32>(l3Out * Scalef);
 		}
