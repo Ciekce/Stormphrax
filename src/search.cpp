@@ -837,7 +837,18 @@ namespace stormphrax::search
 				else if (cutnode)
 					extension = -2;
 				else if (ttEntry.score >= beta)
+				{
 					extension = -1;
+
+					if (depth >= 11)
+					{
+						curr.excluded = move;
+						const auto s = search(thread, curr.pv, depth / 2, ply, moveStackIdx + 1, beta - 1, beta, cutnode);
+						curr.excluded = NullMove;
+
+						extension -= (s >= beta) * 2;
+					}
+				}
 			}
 
 			curr.multiExtensions += extension >= 2;
