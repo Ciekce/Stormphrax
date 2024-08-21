@@ -841,6 +841,7 @@ namespace stormphrax::search
 			}
 
 			curr.multiExtensions += extension >= 2;
+			cutnode |= extension < 0;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
