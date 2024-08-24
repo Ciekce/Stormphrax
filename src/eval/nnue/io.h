@@ -58,22 +58,22 @@ namespace stormphrax::eval::nnue
 		}
 
 		template <typename T>
-		inline auto write(std::span<T> src) -> bool = delete;
+		inline auto write(std::span<const T> src) -> bool = delete;
 
 		template <>
-		inline auto write<i8>(std::span<i8> src) -> bool
+		inline auto write<i8>(std::span<const i8> src) -> bool
 		{
 			return writeI8s(src);
 		}
 
 		template <>
-		inline auto write<i16>(std::span<i16> src) -> bool
+		inline auto write<i16>(std::span<const i16> src) -> bool
 		{
 			return writeI16s(src);
 		}
 
 		template <>
-		inline auto write<f32>(std::span<f32> src) -> bool
+		inline auto write<f32>(std::span<const f32> src) -> bool
 		{
 			return writeF32s(src);
 		}
@@ -81,7 +81,7 @@ namespace stormphrax::eval::nnue
 		template <typename T, usize Size>
 		inline auto write(const std::array<T, Size> &src)
 		{
-			return write(std::span<T, std::dynamic_extent>{src});
+			return write(std::span<const T, std::dynamic_extent>{src});
 		}
 
 	protected:

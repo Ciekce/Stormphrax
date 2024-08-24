@@ -39,15 +39,10 @@ namespace stormphrax::eval
 
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
-		/*
-		nnue::layers::DensePerspectiveAffine<
-			PairwiseMul,
-			i16, i16,
-			L1Activation,
-			L1Size, L2Size, L1Q,
-			OutputBucketing
-		>,*/
-		nnue::layers::MakeItWork<L1Size, L2Size, L3Size, L1Q, OutputQ, Scale, OutputBucketing>
+		nnue::layers::FtOutClippedReLU<L1Size>,
+		nnue::layers::DenseAffineL1SqrReLU<L1Size, L2Size, L1Q, OutputQ, OutputBucketing>,
+		nnue::layers::DenseAffineNoActivation<L2Size, L3Size, OutputBucketing>,
+		nnue::layers::SqrReLUDenseAffine<L3Size, Scale, OutputBucketing>
 	>;
 
 	using Accumulator = FeatureTransformer::Accumulator;

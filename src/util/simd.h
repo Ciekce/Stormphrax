@@ -24,6 +24,7 @@
 
 #include "../arch.h"
 #include "align.h"
+#include "aligned_array.h"
 
 #if SP_HAS_AVX512
 #include "simd/avx512.h"
@@ -41,6 +42,9 @@
 
 namespace stormphrax::util::simd
 {
+	template <typename T, usize N>
+	using Array = AlignedArray<Alignment, T, N>;
+
 	template <typename T = void>
 	auto isAligned(const T *ptr)
 	{

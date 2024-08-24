@@ -42,6 +42,7 @@ namespace stormphrax::eval::nnue
 		using OutputStorage = std::tuple<OutputStorageType<Layers>...>;
 
 		using LastLayer = std::tuple_element_t<sizeof...(Layers) - 1, LayerStack>;
+		using LastLayerOut = std::tuple_element_t<sizeof...(Layers) - 1, OutputStorage>;
 
 		static_assert(sizeof...(Layers) > 0);
 
@@ -64,12 +65,11 @@ namespace stormphrax::eval::nnue
 		inline auto propagate(const BitboardSet &bbs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount>  stmInputs,
 			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs) const
-			-> std::span<const typename LastLayer::OutputType, LastLayer::OutputCount>
 		{
 			OutputStorage storage{};
 
 			std::get<0>(m_layers).forward(bbs, stmInputs, nstmInputs, std::get<0>(storage));
-			propagate_(storage, bbs, std::make_index_sequence<sizeof...(Layers)>());
+			propagate(storage, bbs, std::make_index_sequence<sizeof...(Layers)>());
 
 			return std::get<sizeof...(Layers) - 1>(storage);
 		}
@@ -95,13 +95,13 @@ namespace stormphrax::eval::nnue
 				static_assert(std::tuple_element_t<I - 1, LayerStack>::OutputCount
 					== std::tuple_element_t<I, LayerStack>::InputCount);
 
-				auto &layer = std::get<I>(m_layers);
+				const auto &layer = std::get<I>(m_layers);
 				layer.forward(bbs, std::get<I - 1>(storage), std::get<I>(storage));
 			}
 		}
 
 		template <usize... Indices>
-		inline auto propagate_(OutputStorage &storage,
+		inline auto propagate(OutputStorage &storage,
 			const BitboardSet &bbs, std::index_sequence<Indices...>) const
 		{
 			((forward<Indices>(storage, bbs)), ...);
