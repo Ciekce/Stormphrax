@@ -82,7 +82,7 @@ namespace stormphrax::eval::nnue::layers
 		    Input, Param, typename Activation::OutputType, Inputs, Inputs, Outputs, OutputBucketing
 		>;
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const typename Base::InputType, Base::InputCount> inputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
 		{
@@ -93,10 +93,8 @@ namespace stormphrax::eval::nnue::layers
 
 			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
-			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;
+			const auto bucketWeightOffset = bucket * Base::WeightCount;
+			const auto   bucketBiasOffset = bucket * Base::  BiasCount;
 
 			for (u32 outputIdx = 0; outputIdx < Base::OutputCount; ++outputIdx)
 			{
@@ -134,7 +132,7 @@ namespace stormphrax::eval::nnue::layers
 
 		static constexpr auto PerspectiveInputCount = Inputs;
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const typename Base::InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
@@ -147,10 +145,8 @@ namespace stormphrax::eval::nnue::layers
 
 			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
-			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;
+			const auto bucketWeightOffset = bucket * Base::WeightCount;
+			const auto   bucketBiasOffset = bucket * Base::  BiasCount;
 
 			for (u32 outputIdx = 0; outputIdx < Base::OutputCount; ++outputIdx)
 			{
@@ -203,7 +199,7 @@ namespace stormphrax::eval::nnue::layers
 
 		static_assert(PerspectiveInputCount % 2 == 0);
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const typename Base::InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
 			std::span<typename Base::OutputType, Base::OutputCount> outputs) const
@@ -217,10 +213,8 @@ namespace stormphrax::eval::nnue::layers
 			static constexpr auto ChunkSize = util::simd::ChunkSize<typename Base::InputType>;
 			static constexpr auto PairCount = PerspectiveInputCount / 2;
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto bucketWeightOffset = outputBucket * Base::WeightCount;
-			const auto   bucketBiasOffset = outputBucket * Base::  BiasCount;
+			const auto bucketWeightOffset = bucket * Base::WeightCount;
+			const auto   bucketBiasOffset = bucket * Base::  BiasCount;
 
 			for (u32 outputIdx = 0; outputIdx < Base::OutputCount; ++outputIdx)
 			{
@@ -278,7 +272,7 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = L1Size;
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const InputType, PerspectiveInputCount>  stmInputs,
 			std::span<const InputType, PerspectiveInputCount> nstmInputs,
 			std::span<OutputType, OutputCount> outputs) const
@@ -386,7 +380,7 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 InputCount = L1Size;
 		static constexpr u32 OutputCount = L2Size;
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const InputType, InputCount> inputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
@@ -404,10 +398,8 @@ namespace stormphrax::eval::nnue::layers
 
 			const auto Zero = zero<f32>();
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto weightOffset = outputBucket * L2Size * L1Size;
-			const auto biasOffset   = outputBucket * L2Size;
+			const auto weightOffset = bucket * L2Size * L1Size;
+			const auto biasOffset   = bucket * L2Size;
 
 			// SAFETY: u8 (unsigned char) can safely be aliased to any type
 			const auto *ftOutI32s = reinterpret_cast<const i32 *>(inputs.data());
@@ -490,7 +482,7 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 InputCount = InputSize;
 		static constexpr u32 OutputCount = OutputSize;
 
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const InputType, InputCount> inputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
@@ -499,10 +491,8 @@ namespace stormphrax::eval::nnue::layers
 			assert(isAligned( inputs.data()));
 			assert(isAligned(outputs.data()));
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto weightOffset = outputBucket * OutputSize * InputSize;
-			const auto biasOffset   = outputBucket * OutputSize;
+			const auto weightOffset = bucket * OutputSize * InputSize;
+			const auto biasOffset   = bucket * OutputSize;
 
 			std::memcpy(outputs.data(), &biases[biasOffset], outputs.size_bytes());
 
@@ -594,10 +584,7 @@ namespace stormphrax::eval::nnue::layers
 		static constexpr u32 InputCount = L3Size;
 		static constexpr u32 OutputCount = 1;
 
-		// this can produce slightly different results to the equivalent
-		// autovectorised code, because of FP order of operations differences.
-		// in practice this does change bench
-		inline auto forward(const BitboardSet &bbs,
+		inline auto forward(u32 bucket,
 			std::span<const InputType, InputCount> inputs,
 			std::span<OutputType, OutputCount> outputs) const
 		{
@@ -610,10 +597,8 @@ namespace stormphrax::eval::nnue::layers
 
 			const auto Zero = zero<f32>();
 
-			const auto outputBucket = OutputBucketing::getBucket(bbs);
-
-			const auto l3WeightOffset = outputBucket * L3Size;
-			const auto l3BiasOffset   = outputBucket;
+			const auto l3WeightOffset = bucket * L3Size;
+			const auto l3BiasOffset   = bucket;
 
 			Vector<f32> s;
 

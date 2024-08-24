@@ -29,7 +29,7 @@
 
 namespace stormphrax::eval::nnue
 {
-	template <typename Ft, typename... Layers>
+	template <typename Ft, typename OutputBucketing, typename... Layers>
 	class PerspectiveNetwork
 	{
 	private:
@@ -40,9 +40,6 @@ namespace stormphrax::eval::nnue
 
 		using LayerStack = std::tuple<Layers...>;
 		using OutputStorage = std::tuple<OutputStorageType<Layers>...>;
-
-		using LastLayer = std::tuple_element_t<sizeof...(Layers) - 1, LayerStack>;
-		using LastLayerOut = std::tuple_element_t<sizeof...(Layers) - 1, OutputStorage>;
 
 		static_assert(sizeof...(Layers) > 0);
 
@@ -68,8 +65,10 @@ namespace stormphrax::eval::nnue
 		{
 			OutputStorage storage{};
 
-			std::get<0>(m_layers).forward(bbs, stmInputs, nstmInputs, std::get<0>(storage));
-			propagate(storage, bbs, std::make_index_sequence<sizeof...(Layers)>());
+			const auto bucket = OutputBucketing::getBucket(bbs);
+
+			std::get<0>(m_layers).forward(bucket, stmInputs, nstmInputs, std::get<0>(storage));
+			propagate(storage, bucket, std::make_index_sequence<sizeof...(Layers)>());
 
 			return std::get<sizeof...(Layers) - 1>(storage);
 		}
@@ -88,7 +87,7 @@ namespace stormphrax::eval::nnue
 
 	private:
 		template <usize I>
-		inline auto forward(OutputStorage &storage, const BitboardSet &bbs) const
+		inline auto forward(OutputStorage &storage, u32 bucket) const
 		{
 			if constexpr (I > 0)
 			{
@@ -96,15 +95,14 @@ namespace stormphrax::eval::nnue
 					== std::tuple_element_t<I, LayerStack>::InputCount);
 
 				const auto &layer = std::get<I>(m_layers);
-				layer.forward(bbs, std::get<I - 1>(storage), std::get<I>(storage));
+				layer.forward(bucket, std::get<I - 1>(storage), std::get<I>(storage));
 			}
 		}
 
 		template <usize... Indices>
-		inline auto propagate(OutputStorage &storage,
-			const BitboardSet &bbs, std::index_sequence<Indices...>) const
+		inline auto propagate(OutputStorage &storage, u32 bucket, std::index_sequence<Indices...>) const
 		{
-			((forward<Indices>(storage, bbs)), ...);
+			((forward<Indices>(storage, bucket)), ...);
 		}
 
 		template <usize... Indices>
