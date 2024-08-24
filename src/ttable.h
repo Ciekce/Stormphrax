@@ -122,7 +122,7 @@ namespace stormphrax
 
 		struct alignas(32) Cluster
 		{
-			static constexpr usize EntriesPerCluster = 4;
+			static constexpr usize EntriesPerCluster = 3;
 
 			std::array<Entry, EntriesPerCluster> entries{};
 
