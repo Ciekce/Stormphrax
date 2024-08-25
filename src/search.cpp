@@ -382,7 +382,7 @@ namespace stormphrax::search
 
 			if (mainThread)
 			{
-				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
+				m_limiter->update(thread.search, score, pv.moves[0], thread.search.nodes);
 
 				if (checkSoftTimeout(thread.search, true))
 					break;

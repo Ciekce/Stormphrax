@@ -39,11 +39,11 @@ namespace stormphrax::limit
 			m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
 		}
 
-		inline auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final
+		inline auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final
 		{
 			for (const auto &limiter : m_limiters)
 			{
-				limiter->update(data, bestMove, totalNodes);
+				limiter->update(data, score, bestMove, totalNodes);
 			}
 		}
 

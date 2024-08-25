@@ -69,7 +69,7 @@ namespace stormphrax::limit
 		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
-	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
+	auto TimeManager::update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void
 	{
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
@@ -81,11 +81,24 @@ namespace stormphrax::limit
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
 
+		auto scale = 1.0;
+
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
+		scale *= std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
 
-		m_scale = std::max(moveNodeScale, minScale);
+		if (m_prevScore)
+		{
+			static constexpr f64 Stretch = 0.72;
+			static constexpr f64 Scale = 0.4;
+
+			const auto scoreChange = static_cast<f64>(score - *m_prevScore) / 250.0;
+			scale *= 1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch);
+		}
+
+		m_prevScore = score;
+
+		m_scale = std::max(scale, minScale);
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
