@@ -21,6 +21,7 @@
 #include "../types.h"
 
 #include <concepts>
+#include <bit>
 
 namespace stormphrax::util
 {
@@ -40,5 +41,17 @@ namespace stormphrax::util
 	constexpr auto ceilDiv(T a, T b)
 	{
 		return (a + b - 1) / b;
+	}
+
+	template <std::unsigned_integral T>
+	constexpr auto floorLog2(T v)
+	{
+		return static_cast<T>(8 * sizeof(T) - std::countl_zero(v) - 1);
+	}
+
+	template <std::unsigned_integral T>
+	constexpr auto ceilLog2(T v)
+	{
+		return static_cast<T>(8 * sizeof(T) - std::countl_zero(v - 1));
 	}
 }

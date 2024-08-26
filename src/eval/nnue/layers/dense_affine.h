@@ -24,6 +24,7 @@
 #include <ostream>
 #include <cassert>
 #include <type_traits>
+#include <bit>
 
 #include "../activation.h"
 #include "../output.h"
@@ -263,11 +264,13 @@ namespace stormphrax::eval::nnue::layers
 		DensePerspectivePlainAffine      <Input, Param, Activation, Inputs, Outputs,    OutputBucketing>
 	>;
 
-	template <u32 L1Size>
+	template <u32 L1Size, u32 FtQ>
 	struct FtOutClippedReLU
 	{
 		using  InputType = i16;
 		using OutputType = u8;
+
+		static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
 
 		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = L1Size;
@@ -287,10 +290,8 @@ namespace stormphrax::eval::nnue::layers
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
-			static constexpr auto Shift = 6;
-
 			const auto Zero = zero<i16>();
-			const auto One = set1<i16>(L1Q);
+			const auto One = set1<i16>(FtQ);
 
 			const auto activatePerspective = [&](
 				std::span<const InputType, PerspectiveInputCount> inputs, u32 outputOffset)
@@ -322,10 +323,10 @@ namespace stormphrax::eval::nnue::layers
 					i1_2 = max<i16>(i1_2, Zero);
 					i1_3 = max<i16>(i1_3, Zero);
 
-					i1_0 = shiftLeft<i16>(i1_0, Shift);
-					i1_1 = shiftLeft<i16>(i1_1, Shift);
-					i1_2 = shiftLeft<i16>(i1_2, Shift);
-					i1_3 = shiftLeft<i16>(i1_3, Shift);
+					i1_0 = shiftLeft<i16>(i1_0, FtScaleBits);
+					i1_1 = shiftLeft<i16>(i1_1, FtScaleBits);
+					i1_2 = shiftLeft<i16>(i1_2, FtScaleBits);
+					i1_3 = shiftLeft<i16>(i1_3, FtScaleBits);
 
 					const auto p_0 = mulHi<i16>(i1_0, i2_0);
 					const auto p_1 = mulHi<i16>(i1_1, i2_1);
@@ -364,11 +365,13 @@ namespace stormphrax::eval::nnue::layers
 		}
 	};
 
-	template <u32 L1Size, u32 L2Size, u32 L1Q, u32 L2Q, output::OutputBucketing OutputBucketing>
+	template <u32 L1Size, u32 L2Size, u32 FtQ, u32 L1Q, output::OutputBucketing OutputBucketing>
 	struct DenseAffineL1SqrReLU
 	{
 	private:
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
+
+		static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
 
 		SP_SIMD_ALIGNAS std::array<i8,  OutputBucketCount * L1Size * L2Size> weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2Size> biases{};
@@ -391,9 +394,7 @@ namespace stormphrax::eval::nnue::layers
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
-			static constexpr auto FtShift = 6;
-
-			const auto Rqf = static_cast<f32>(1 << (16 - FtShift)) / static_cast<f32>(L1Q * L1Q * L2Q);
+			const auto Rqf = static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q);
 			const auto Rq = set1<f32>(Rqf);
 
 			const auto Zero = zero<f32>();

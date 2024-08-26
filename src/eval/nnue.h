@@ -40,8 +40,8 @@ namespace stormphrax::eval
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
 		OutputBucketing,
-		nnue::layers::FtOutClippedReLU<L1Size>,
-		nnue::layers::DenseAffineL1SqrReLU<L1Size, L2Size, L1Q, OutputQ, OutputBucketing>,
+		nnue::layers::FtOutClippedReLU<L1Size, FtQ>,
+		nnue::layers::DenseAffineL1SqrReLU<L1Size, L2Size, FtQ, L1Q, OutputBucketing>,
 		nnue::layers::DenseAffineNoActivation<L2Size, L3Size, OutputBucketing>,
 		nnue::layers::SqrReLUDenseAffine<L3Size, Scale, OutputBucketing>
 	>;
