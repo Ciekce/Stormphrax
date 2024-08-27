@@ -107,6 +107,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
+	SP_TUNABLE_PARAM(iirBadEntryDepthOffset, 4, 2, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(rfpMargin, 68, 25, 150, 5)

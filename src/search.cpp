@@ -591,7 +591,7 @@ namespace stormphrax::search
 		if (depth >= minIirDepth()
 			&& !curr.excluded
 			&& (PvNode || cutnode)
-			&& !ttEntry.move)
+			&& (!ttEntry.move || ttEntry.depth + iirBadEntryDepthOffset() < depth))
 			--depth;
 
 		Score rawStaticEval{};
