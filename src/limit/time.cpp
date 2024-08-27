@@ -22,6 +22,10 @@
 
 #include "../tunable.h"
 
+
+
+#include <iostream>
+
 namespace stormphrax::limit
 {
 	using namespace stormphrax::tunable;
@@ -87,16 +91,27 @@ namespace stormphrax::limit
 			/ static_cast<f64>(totalNodes);
 		scale *= std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
 
-		if (m_prevScore)
+		if (m_avgScore)
 		{
+			static constexpr f64 ScoreScale = 40.0;
 			static constexpr f64 Stretch = 0.72;
 			static constexpr f64 Scale = 0.4;
 
-			const auto scoreChange = static_cast<f64>(score - *m_prevScore) / 250.0;
-			scale *= 1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch);
-		}
+			const auto avgScore = *m_avgScore;
 
-		m_prevScore = score;
+		//	std::cout << "avg score: " << avgScore;
+		//	std::cout << ", new score: " << score;
+
+			const auto scoreChange = static_cast<f64>(score - avgScore) / ScoreScale;
+			scale *= 1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch);
+
+		//	std::cout << ", ssc: " << scoreChange;
+		//	std::cout << ", scale: " << (1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch));
+
+			m_avgScore = util::ilerp<8>(avgScore, score, 1);
+		//	std::cout << ", new avg: " << *m_avgScore << std::endl;
+		}
+		else m_avgScore = score;
 
 		m_scale = std::max(scale, minScale);
 	}

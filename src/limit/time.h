@@ -72,7 +72,7 @@ namespace stormphrax::limit
 
 		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
-		std::optional<Score> m_prevScore{};
+		std::optional<Score> m_avgScore{};
 
 		std::atomic_bool m_stopped{false};
 	};
