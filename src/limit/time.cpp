@@ -93,23 +93,17 @@ namespace stormphrax::limit
 
 		if (m_avgScore)
 		{
-			static constexpr f64 ScoreScale = 40.0;
-			static constexpr f64 Stretch = 0.72;
-			static constexpr f64 Scale = 0.4;
+			const auto stScoreScale = static_cast<f64>(scoreTrendScoreScale()) / 10.0;
+
+			const auto stStretch = static_cast<f64>(scoreTrendStretch()) / 100.0;
+			const auto stScale = static_cast<f64>(scoreTrendScale()) / 100.0;
 
 			const auto avgScore = *m_avgScore;
 
-		//	std::cout << "avg score: " << avgScore;
-		//	std::cout << ", new score: " << score;
-
-			const auto scoreChange = static_cast<f64>(score - avgScore) / ScoreScale;
-			scale *= 1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch);
-
-		//	std::cout << ", ssc: " << scoreChange;
-		//	std::cout << ", scale: " << (1.0 - scoreChange * Scale / (std::abs(scoreChange) + Stretch));
+			const auto scoreChange = static_cast<f64>(score - avgScore) / stScoreScale;
+			scale *= 1.0 - scoreChange * stScale / (std::abs(scoreChange) + stStretch);
 
 			m_avgScore = util::ilerp<8>(avgScore, score, 1);
-		//	std::cout << ", new avg: " << *m_avgScore << std::endl;
 		}
 		else m_avgScore = score;
 
