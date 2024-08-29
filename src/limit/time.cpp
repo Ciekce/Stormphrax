@@ -22,6 +22,10 @@
 
 #include "../tunable.h"
 
+
+
+#include <iostream>
+
 namespace stormphrax::limit
 {
 	using namespace stormphrax::tunable;
@@ -69,7 +73,7 @@ namespace stormphrax::limit
 		m_softTime = std::min(baseTime * softScale, m_maxTime);
 	}
 
-	auto TimeManager::update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void
+	auto TimeManager::update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void
 	{
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
@@ -81,11 +85,29 @@ namespace stormphrax::limit
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
 
+		auto scale = 1.0;
+
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		const auto moveNodeScale = std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
+		scale *= std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
 
-		m_scale = std::max(moveNodeScale, minScale);
+		if (m_avgScore)
+		{
+			const auto stScoreScale = static_cast<f64>(scoreTrendScoreScale()) / 10.0;
+
+			const auto stStretch = static_cast<f64>(scoreTrendStretch()) / 100.0;
+			const auto stScale = static_cast<f64>(scoreTrendScale()) / 100.0;
+
+			const auto avgScore = *m_avgScore;
+
+			const auto scoreChange = static_cast<f64>(score - avgScore) / stScoreScale;
+			scale *= 1.0 - scoreChange * stScale / (std::abs(scoreChange) + stStretch);
+
+			m_avgScore = util::ilerp<8>(avgScore, score, 1);
+		}
+		else m_avgScore = score;
+
+		m_scale = std::max(scale, minScale);
 	}
 
 	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void

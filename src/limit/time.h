@@ -22,6 +22,7 @@
 
 #include <array>
 #include <atomic>
+#include <optional>
 
 #include "limit.h"
 #include "../util/timer.h"
@@ -54,7 +55,7 @@ namespace stormphrax::limit
 		TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
 		~TimeManager() final = default;
 
-		auto update(const search::SearchData &data, Move bestMove, usize totalNodes) -> void final;
+		auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final;
 		auto updateMoveNodes(Move move, usize nodes) -> void final;
 
 		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
@@ -70,6 +71,8 @@ namespace stormphrax::limit
 		f64 m_scale{1.0};
 
 		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
+
+		std::optional<Score> m_avgScore{};
 
 		std::atomic_bool m_stopped{false};
 	};
