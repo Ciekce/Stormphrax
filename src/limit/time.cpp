@@ -86,7 +86,7 @@ namespace stormphrax::limit
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
 
-		if (data.depth >= 10 && bestMoveNodeFraction > 0.95)
+		if (data.nodes > 100000 && bestMoveNodeFraction > 0.97)
 		{
 			m_scale = 0.0;
 			return;
