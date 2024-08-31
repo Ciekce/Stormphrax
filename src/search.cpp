@@ -640,7 +640,7 @@ namespace stormphrax::search
 			}
 
 			if (depth >= minNmpDepth()
-				&& curr.staticEval >= beta
+				&& curr.staticEval >= beta + 350 - 25 * depth
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
 				&& !bbs.nonPk(us).empty())
