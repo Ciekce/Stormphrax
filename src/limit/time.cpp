@@ -22,6 +22,10 @@
 
 #include "../tunable.h"
 
+
+
+#include <iostream>
+
 namespace stormphrax::limit
 {
 	using namespace stormphrax::tunable;
@@ -86,7 +90,9 @@ namespace stormphrax::limit
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
 
-		if (data.nodes > 100000 && bestMoveNodeFraction > 0.97)
+		const auto softElapsed = (util::g_timer.time() - m_startTime) / m_softTime;
+
+		if (softElapsed > 0.1 && bestMoveNodeFraction > 0.97)
 		{
 			m_scale = 0.0;
 			return;
