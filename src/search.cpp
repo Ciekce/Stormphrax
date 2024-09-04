@@ -810,6 +810,8 @@ namespace stormphrax::search
 					<< " currmove " << uci::moveToString(move)
 					<< " currmovenumber " << legalMoves << std::endl;
 
+			auto newDepth = depth - 1;
+
 			i32 extension{};
 
 			if (!RootNode
@@ -829,7 +831,10 @@ namespace stormphrax::search
 				if (score < sBeta)
 				{
 					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+					{
 						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+						++depth;
+					}
 					else extension = 1;
 				}
 				else if (sBeta >= beta)
@@ -843,6 +848,8 @@ namespace stormphrax::search
 			curr.multiExtensions += extension >= 2;
 			cutnode |= extension < 0;
 
+			newDepth += extension;
+
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			thread.setMove(ply, move);
@@ -854,8 +861,6 @@ namespace stormphrax::search
 				score = drawScore(thread.search.nodes);
 			else
 			{
-				auto newDepth = depth + extension - 1;
-
 				if (depth >= minLmrDepth()
 					&& legalMoves >= lmrMinMoves
 					&& quietOrLosing)
