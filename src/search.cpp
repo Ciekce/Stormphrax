@@ -78,7 +78,7 @@ namespace stormphrax::search
 		}
 	}
 
-	auto Searcher::startSearch(const Position &pos, i32 maxDepth,
+	auto Searcher::startSearch(const Position &pos, f64 startTime, i32 maxDepth,
 		std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
 	{
 		if (!m_limiter && !limiter)
@@ -122,7 +122,7 @@ namespace stormphrax::search
 		if (status == RootStatus::Tablebase)
 			m_threads[0].search.tbhits = 1;
 
-		m_startTime.store(util::g_timer.time(), std::memory_order::relaxed);
+		m_startTime.store(startTime, std::memory_order::relaxed);
 
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
@@ -303,13 +303,6 @@ namespace stormphrax::search
 		auto score = -ScoreInf;
 		PvList pv{};
 
-		const auto startTime = mainThread ? util::g_timer.time() : 0.0;
-
-		const auto totalTime = [&]
-		{
-			return util::g_timer.time() - startTime;
-		};
-
 		searchData.nodes = 1;
 		thread.stack[0].killers.clear();
 
@@ -345,7 +338,7 @@ namespace stormphrax::search
 
 				if (mainThread)
 				{
-					const auto time = totalTime();
+					const auto time = elapsed();
 					if (time >= WidenReportDelay)
 						report(thread, thread.rootPv, depth, time, newScore, alpha, beta);
 				}
@@ -379,20 +372,20 @@ namespace stormphrax::search
 			if (depth >= thread.maxDepth)
 			{
 				if (mainThread && m_infinite)
-					report(thread, pv, searchData.depth, totalTime(), score);
+					report(thread, pv, searchData.depth, elapsed(), score);
 				break;
 			}
 
 			if (mainThread)
 			{
-				m_limiter->update(thread.search, pv.moves[0], thread.search.nodes);
+				m_limiter->update(thread.search, score, pv.moves[0], thread.search.nodes);
 
 				if (checkSoftTimeout(thread.search, true))
 					break;
 
-				report(thread, pv, searchData.depth, totalTime(), score);
+				report(thread, pv, searchData.depth, elapsed(), score);
 			}
-			else if (checkSoftTimeout(thread.search, false))
+			else if (checkSoftTimeout(thread.search, thread.isMainThread()))
 				break;
 		}
 
@@ -406,7 +399,7 @@ namespace stormphrax::search
 
 		if (mainThread)
 		{
-			auto time = totalTime();
+			auto time = elapsed();
 
 			if (m_infinite)
 			{
@@ -424,7 +417,7 @@ namespace stormphrax::search
 			waitForThreads();
 
 			if (!m_infinite)
-				time = totalTime();
+				time = elapsed();
 
 			finalReport(thread, pv, depthCompleted, time, score);
 
@@ -480,7 +473,7 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return inCheck ? 0 : eval::staticEval(pos, m_contempt);
+			return inCheck ? 0 : eval::adjustedStaticEval(pos, &thread.correctionHistory, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -506,7 +499,19 @@ namespace stormphrax::search
 				if (ttEntry.flag == TtFlag::Exact
 					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
 					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta)
+				{
+					if (ttEntry.score >= beta
+						&& ttEntry.move
+						&& !pos.isNoisy(ttEntry.move)
+						&& pos.isPseudolegal(ttEntry.move))
+					{
+						const auto bonus = historyBonus(depth);
+						thread.history.updateQuietScore(thread.conthist, ply,
+							pos.threats(), boards.pieceAt(ttEntry.move.src()), ttEntry.move, bonus);
+					}
+
 					return ttEntry.score;
+				}
 				else if (depth <= maxTtNonCutoffExtDepth())
 					++depth;
 			}
@@ -582,7 +587,7 @@ namespace stormphrax::search
 		if (depth >= minIirDepth()
 			&& !curr.excluded
 			&& (PvNode || cutnode)
-			&& !ttEntry.move)
+			&& (!ttEntry.move || ttEntry.depth + iirBadEntryDepthOffset() < depth))
 			--depth;
 
 		Score rawStaticEval{};
@@ -598,7 +603,7 @@ namespace stormphrax::search
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
-			curr.staticEval = inCheck ? ScoreNone : thread.correctionHistory.correct(pos, rawStaticEval);
+			curr.staticEval = inCheck ? ScoreNone : eval::adjustEval(pos, &thread.correctionHistory, rawStaticEval);
 		}
 
 		const bool improving = [&]
@@ -749,7 +754,7 @@ namespace stormphrax::search
 				? thread.history.noisyScore(move, captured)
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-			if (!RootNode && bestScore > -ScoreWin)
+			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
 			{
 				const auto lmrDepth = std::max(depth - baseLmr, 0);
 
@@ -832,6 +837,7 @@ namespace stormphrax::search
 			}
 
 			curr.multiExtensions += extension >= 2;
+			cutnode |= extension < 0;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
@@ -1007,7 +1013,8 @@ namespace stormphrax::search
 			thread.search.seldepth = ply + 1;
 
 		if (ply >= MaxDepth)
-			return pos.isCheck() ? 0 : eval::staticEval(pos, m_contempt);
+			return pos.isCheck() ? 0
+				: eval::adjustedStaticEval(pos, &thread.correctionHistory, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
@@ -1036,7 +1043,7 @@ namespace stormphrax::search
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
-			const auto staticEval = thread.correctionHistory.correct(pos, rawStaticEval);
+			const auto staticEval = eval::adjustEval(pos, &thread.correctionHistory, rawStaticEval);
 
 			if (ttEntry.flag == TtFlag::Exact
 				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < staticEval

@@ -24,41 +24,55 @@
 
 #include "../position/position.h"
 #include "../core.h"
+#include "../correction.h"
 
 namespace stormphrax::eval
 {
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
-	inline auto scaleEval(const Position &pos, i32 eval)
+	namespace internal
 	{
-		eval = eval * (200 - pos.halfmove()) / 200;
-		return eval;
+		inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+		{
+			static constexpr Score Tempo = 10;
+
+			eval += Tempo;
+			eval += contempt[static_cast<i32>(pos.toMove())];
+
+			return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+		}
 	}
 
-	template <bool Scale = true>
-	inline auto adjustEval(const Position &pos, const Contempt &contempt, i32 eval)
+	template <bool Correct = true>
+	inline auto adjustEval(const Position &pos,
+		const CorrectionHistoryTable *correction, i32 eval)
 	{
-		static constexpr Score Tempo = 10;
+		eval = eval * (200 - pos.halfmove()) / 200;
 
-		eval += Tempo;
-		if constexpr (Scale)
-			eval = scaleEval(pos, eval);
-		eval += contempt[static_cast<i32>(pos.toMove())];
+		if constexpr (Correct)
+			eval = correction->correct(pos, eval);
+
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	template <bool Scale = true>
 	inline auto staticEval(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto materialEval = pos.material();
-		return adjustEval<Scale>(pos, contempt, materialEval);
+		return internal::adjustEval(pos, contempt, materialEval);
 	}
 
-	template <bool Scale = true>
+	template <bool Correct = true>
+	inline auto adjustedStaticEval(const Position &pos,
+		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
+	{
+		const auto eval = staticEval(pos, contempt);
+		return adjustEval<Correct>(pos, correction, eval);
+	}
+
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		const auto materialEval = pos.material();
-		return adjustEval<Scale>(pos, contempt, materialEval);
+		return internal::adjustEval(pos, contempt, materialEval);
 	}
 }

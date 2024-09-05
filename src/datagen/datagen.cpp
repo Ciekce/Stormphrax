@@ -145,11 +145,16 @@ namespace stormphrax::datagen
 			searcher.setLimiter(std::move(limiterPtr));
 
 			auto thread = std::make_unique<search::ThreadData>();
+			thread->datagen = true;
 
 			const auto resetSearch = [&searcher, &thread]()
 			{
 				searcher.newGame();
+
 				thread->search = search::SearchData{};
+
+				thread->history.clear();
+				thread->correctionHistory.clear();
 			};
 
 			Format output{};
