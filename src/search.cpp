@@ -639,7 +639,8 @@ namespace stormphrax::search
 					return score;
 			}
 
-			if (depth >= minNmpDepth()
+			if (!ttpv
+				&& depth >= minNmpDepth()
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
