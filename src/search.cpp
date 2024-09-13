@@ -665,8 +665,7 @@ namespace stormphrax::search
 			const auto probcutBeta = beta + probcutMargin();
 			const auto probcutDepth = std::max(depth - probcutReduction(), 1);
 
-			if (!ttpv
-				&& depth >= minProbcutDepth()
+			if (depth >= minProbcutDepth()
 				&& std::abs(beta) < ScoreWin
 				&& (!ttEntry.move || ttMoveNoisy)
 				&& !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
