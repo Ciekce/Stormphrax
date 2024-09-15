@@ -625,7 +625,8 @@ namespace stormphrax::search
 			&& !inCheck
 			&& !curr.excluded)
 		{
-			if (depth <= maxRfpDepth()
+			if (cutnode
+				&& depth <= maxRfpDepth()
 				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
 				return curr.staticEval;
 
