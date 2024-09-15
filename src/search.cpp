@@ -639,7 +639,8 @@ namespace stormphrax::search
 					return score;
 			}
 
-			if (depth >= minNmpDepth()
+			if (cutnode
+				&& depth >= minNmpDepth()
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
@@ -656,7 +657,7 @@ namespace stormphrax::search
 				const auto guard = pos.applyNullMove();
 
 				const auto score = -search(thread, curr.pv, depth - R,
-					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
+					ply + 1, moveStackIdx, -beta, -beta + 1, false);
 
 				if (score >= beta)
 					return score > ScoreWin ? beta : score;
