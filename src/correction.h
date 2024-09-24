@@ -40,6 +40,7 @@ namespace stormphrax
 		{
 			std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
 			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
+			std::memset(&m_minorTable, 0, sizeof(m_minorTable));
 		}
 
 		inline auto update(const Position &pos, i32 depth, Score searchScore, Score staticEval)
@@ -49,14 +50,16 @@ namespace stormphrax
 
 			m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(scaledError, newWeight);
 			m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].update(scaledError, newWeight);
+			m_minorTable[static_cast<i32>(pos.toMove())][pos.minorKey() % Entries].update(scaledError, newWeight);
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos, Score score) const
 		{
 			score = m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].correct(score);
 			score = m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].correct(score);
+			score = m_minorTable[static_cast<i32>(pos.toMove())][pos.minorKey() % Entries].correct(score);
 
-			return score;
+			return std::clamp(score, -ScoreWin + 1, ScoreWin - 1);
 		}
 
 	private:
@@ -84,5 +87,6 @@ namespace stormphrax
 
 		util::MultiArray<Entry, 2, Entries> m_pawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_majorTable{};
+		util::MultiArray<Entry, 2, Entries> m_minorTable{};
 	};
 }
