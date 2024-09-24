@@ -40,12 +40,16 @@ namespace stormphrax
 	{
 		u64 all;
 		u64 pawns;
+		u64 blackNonPawns;
+		u64 whiteNonPawns;
 		u64 majors;
 
 		inline auto clear()
 		{
 			all = 0;
 			pawns = 0;
+			blackNonPawns = 0;
+			whiteNonPawns = 0;
 			majors = 0;
 		}
 
@@ -55,6 +59,8 @@ namespace stormphrax
 
 			all ^= key;
 			pawns ^= key;
+			blackNonPawns ^= key;
+			whiteNonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -66,7 +72,11 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (isMajor(piece))
+			else if (pieceColor(piece) == Color::Black)
+				blackNonPawns ^= key;
+			else whiteNonPawns ^= key;
+
+			if (isMajor(piece))
 				majors ^= key;
 		}
 
@@ -78,7 +88,11 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (isMajor(piece))
+			else if (pieceColor(piece) == Color::Black)
+				blackNonPawns ^= key;
+			else whiteNonPawns ^= key;
+
+			if (isMajor(piece))
 				majors ^= key;
 		}
 
@@ -95,6 +109,8 @@ namespace stormphrax
 			const auto key = keys::castling(rooks);
 
 			all ^= key;
+			blackNonPawns ^= key;
+			whiteNonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -103,6 +119,8 @@ namespace stormphrax
 			const auto key = keys::castling(before) ^ keys::castling(after);
 
 			all ^= key;
+			blackNonPawns ^= key;
+			whiteNonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -128,7 +146,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 192);
+	static_assert(sizeof(BoardState) == 208);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -227,6 +245,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto key() const { return currState().keys.all; }
 		[[nodiscard]] inline auto pawnKey() const { return currState().keys.pawns; }
+		[[nodiscard]] inline auto blackNonPawnKey() const { return currState().keys.blackNonPawns; }
+		[[nodiscard]] inline auto whiteNonPawnKey() const { return currState().keys.whiteNonPawns; }
 		[[nodiscard]] inline auto majorKey() const { return currState().keys.majors; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const

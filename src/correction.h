@@ -39,6 +39,8 @@ namespace stormphrax
 		inline auto clear()
 		{
 			std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
+			std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
+			std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
 			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
 		}
 
@@ -47,14 +49,22 @@ namespace stormphrax
 			const auto scaledError = (searchScore - staticEval) * Grain;
 			const auto newWeight = std::min(depth + 1, 16);
 
-			m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(scaledError, newWeight);
-			m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].update(scaledError, newWeight);
+			const auto stm = static_cast<i32>(pos.toMove());
+
+			m_pawnTable[stm][pos.pawnKey() % Entries].update(scaledError, newWeight);
+			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(scaledError, newWeight);
+			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
+			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos, Score score) const
 		{
-			score = m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].correct(score);
-			score = m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].correct(score);
+			const auto stm = static_cast<i32>(pos.toMove());
+
+			score = m_pawnTable[stm][pos.pawnKey() % Entries].correct(score);
+			score = m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].correct(score);
+			score = m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].correct(score);
+			score = m_majorTable[stm][pos.majorKey() % Entries].correct(score);
 
 			return score;
 		}
@@ -83,6 +93,8 @@ namespace stormphrax
 		};
 
 		util::MultiArray<Entry, 2, Entries> m_pawnTable{};
+		util::MultiArray<Entry, 2, Entries> m_blackNonPawnTable{};
+		util::MultiArray<Entry, 2, Entries> m_whiteNonPawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_majorTable{};
 	};
 }
