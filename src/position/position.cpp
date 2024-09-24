@@ -664,22 +664,17 @@ namespace stormphrax
 			m_states.push_back(prevState);
 		}
 
-		m_keys.push_back(prevState.key);
+		m_keys.push_back(prevState.keys.all);
 
 		auto &state = currState();
 
 		m_blackToMove = !m_blackToMove;
 
-		state.key ^= keys::color();
-		state.pawnKey ^= keys::color();
+		state.keys.flipStm();
 
 		if (state.enPassant != Square::None)
 		{
-			const auto key = keys::enPassant(state.enPassant);
-
-			state.key ^= key;
-			state.pawnKey ^= key;
-
+			state.keys.flipEp(state.enPassant);
 			state.enPassant = Square::None;
 		}
 
@@ -738,20 +733,12 @@ namespace stormphrax
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
 			state.enPassant = toSquare(5, move.srcFile());
-
-			const auto epKey = keys::enPassant(state.enPassant);
-
-			state.key ^= epKey;
-			state.pawnKey ^= epKey;
+			state.keys.flipEp(state.enPassant);
 		}
 		else if (moving == Piece::WhitePawn && move.srcRank() == 1 && move.dstRank() == 3)
 		{
 			state.enPassant = toSquare(2, move.srcFile());
-
-			const auto epKey = keys::enPassant(state.enPassant);
-
-			state.key ^= epKey;
-			state.pawnKey ^= epKey;
+			state.keys.flipEp(state.enPassant);
 		}
 
 		if (captured == Piece::None
@@ -764,9 +751,7 @@ namespace stormphrax
 
 		if (newCastlingRooks != state.castlingRooks)
 		{
-			state.key ^= keys::castling(newCastlingRooks);
-			state.key ^= keys::castling(state.castlingRooks);
-
+			state.keys.switchCastling(state.castlingRooks, newCastlingRooks);
 			state.castlingRooks = newCastlingRooks;
 		}
 
@@ -1045,7 +1030,7 @@ namespace stormphrax
 		};
 
 		const auto occ = state.boards.bbs().occupancy();
-		const auto originalKey = state.key;
+		const auto originalKey = state.keys.all;
 
 		auto other = ~(originalKey ^ S(1));
 
@@ -1165,14 +1150,7 @@ namespace stormphrax
 		state.boards.setPiece(square, piece);
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(piece, square);
-
-			state.key ^= key;
-
-			if (pieceType(piece) == PieceType::Pawn)
-				state.pawnKey ^= key;
-		}
+			state.keys.flipPiece(piece, square);
 	}
 
 	template <bool UpdateKey>
@@ -1188,14 +1166,7 @@ namespace stormphrax
 		state.boards.removePiece(square, piece);
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(piece, square);
-
-			state.key ^= key;
-
-			if (pieceType(piece) == PieceType::Pawn)
-				state.pawnKey ^= key;
-		}
+			state.keys.flipPiece(piece, square);
 	}
 
 	template <bool UpdateKey>
@@ -1220,14 +1191,7 @@ namespace stormphrax
 		}
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(piece, src) ^ keys::pieceSquare(piece, dst);
-
-			state.key ^= key;
-
-			if (pieceType(piece) == PieceType::Pawn)
-				state.pawnKey ^= key;
-		}
+			state.keys.movePiece(piece, src, dst);
 	}
 
 	template <bool UpdateKey, bool UpdateNnue>
@@ -1252,14 +1216,7 @@ namespace stormphrax
 			// NNUE update done below
 
 			if constexpr (UpdateKey)
-			{
-				const auto key = keys::pieceSquare(captured, dst);
-
-				state.key ^= key;
-
-				if (pieceType(captured) == PieceType::Pawn)
-					state.pawnKey ^= key;
-			}
+				state.keys.flipPiece(captured, dst);
 		}
 
 		state.boards.movePiece(src, dst, piece);
@@ -1286,14 +1243,7 @@ namespace stormphrax
 		}
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(piece, src) ^ keys::pieceSquare(piece, dst);
-
-			state.key ^= key;
-
-			if (pieceType(piece) == PieceType::Pawn)
-				state.pawnKey ^= key;
-		}
+			state.keys.movePiece(piece, src, dst);
 
 		return captured;
 	}
@@ -1328,7 +1278,7 @@ namespace stormphrax
 				nnueUpdates.pushSub(captured, dst);
 
 			if constexpr (UpdateKey)
-				state.key ^= keys::pieceSquare(captured, dst);
+				state.keys.flipPiece(captured, dst);
 		}
 
 		state.boards.moveAndChangePiece(src, dst, pawn, promo);
@@ -1345,10 +1295,8 @@ namespace stormphrax
 
 			if constexpr (UpdateKey)
 			{
-				const auto srcKey = keys::pieceSquare(pawn, src);
-
-				state.key ^= srcKey ^ keys::pieceSquare(coloredPromo, dst);
-				state.pawnKey ^= srcKey;
+				state.keys.flipPiece(pawn, src);
+				state.keys.flipPiece(coloredPromo, dst);
 			}
 		}
 
@@ -1419,12 +1367,7 @@ namespace stormphrax
 			nnueUpdates.pushSubAdd(pawn, src, dst);
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(pawn, src) ^ keys::pieceSquare(pawn, dst);
-
-			state.key ^= key;
-			state.pawnKey ^= key;
-		}
+			state.keys.movePiece(pawn, src, dst);
 
 		auto rank = squareRank(dst);
 		const auto file = squareFile(dst);
@@ -1440,12 +1383,7 @@ namespace stormphrax
 			nnueUpdates.pushSub(enemyPawn, captureSquare);
 
 		if constexpr (UpdateKey)
-		{
-			const auto key = keys::pieceSquare(enemyPawn, captureSquare);
-
-			state.key ^= key;
-			state.pawnKey ^= key;
-		}
+			state.keys.flipPiece(enemyPawn, captureSquare);
 
 		return enemyPawn;
 	}
@@ -1456,8 +1394,7 @@ namespace stormphrax
 
 		state.boards.regenFromBbs();
 
-		state.key = 0;
-		state.pawnKey = 0;
+		state.keys.clear();
 
 		for (u32 rank = 0; rank < 8; ++rank)
 		{
@@ -1469,22 +1406,18 @@ namespace stormphrax
 					if (pieceType(piece) == PieceType::King)
 						state.kings.color(pieceColor(piece)) = square;
 
+					state.keys.flipPiece(piece, toSquare(rank, file));
+
 					const auto key = keys::pieceSquare(piece, toSquare(rank, file));
-
-					state.key ^= key;
-
-					if (pieceType(piece) == PieceType::Pawn)
-						state.pawnKey ^= key;
 				}
 			}
 		}
 
-		state.key ^= keys::castling(state.castlingRooks);
+		state.keys.flipCastling(state.castlingRooks);
+		state.keys.flipEp(state.enPassant);
 
-		const auto colorEpKey = keys::color(toMove()) ^ keys::enPassant(state.enPassant);
-
-		state.key ^= colorEpKey;
-		state.pawnKey ^= colorEpKey;
+		if (toMove() == Color::Black)
+			state.keys.flipStm();
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
