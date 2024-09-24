@@ -66,7 +66,7 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (pieceType(piece) == PieceType::Rook || pieceType(piece) == PieceType::Queen)
+			else if (isMajor(piece))
 				majors ^= key;
 		}
 
@@ -78,7 +78,7 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (pieceType(piece) == PieceType::Rook || pieceType(piece) == PieceType::Queen)
+			else if (isMajor(piece))
 				majors ^= key;
 		}
 
