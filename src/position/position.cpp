@@ -1407,8 +1407,6 @@ namespace stormphrax
 						state.kings.color(pieceColor(piece)) = square;
 
 					state.keys.flipPiece(piece, toSquare(rank, file));
-
-					const auto key = keys::pieceSquare(piece, toSquare(rank, file));
 				}
 			}
 		}

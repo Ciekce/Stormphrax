@@ -40,11 +40,13 @@ namespace stormphrax
 	{
 		u64 all;
 		u64 pawns;
+		u64 majors;
 
 		inline auto clear()
 		{
 			all = 0;
 			pawns = 0;
+			majors = 0;
 		}
 
 		inline auto flipStm()
@@ -53,6 +55,7 @@ namespace stormphrax
 
 			all ^= key;
 			pawns ^= key;
+			majors ^= key;
 		}
 
 		inline auto flipPiece(Piece piece, Square square)
@@ -63,6 +66,8 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
+			else if (pieceType(piece) == PieceType::Rook || pieceType(piece) == PieceType::Queen)
+				majors ^= key;
 		}
 
 		inline auto movePiece(Piece piece, Square src, Square dst)
@@ -73,6 +78,8 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
+			else if (pieceType(piece) == PieceType::Rook || pieceType(piece) == PieceType::Queen)
+				majors ^= key;
 		}
 
 		inline auto flipEp(Square epSq)
@@ -88,6 +95,7 @@ namespace stormphrax
 			const auto key = keys::castling(rooks);
 
 			all ^= key;
+			majors ^= key;
 		}
 
 		inline auto switchCastling(const CastlingRooks &before, const CastlingRooks &after)
@@ -95,6 +103,7 @@ namespace stormphrax
 			const auto key = keys::castling(before) ^ keys::castling(after);
 
 			all ^= key;
+			majors ^= key;
 		}
 
 		[[nodiscard]] inline auto operator==(const Keys &other) const -> bool = default;
@@ -119,7 +128,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 184);
+	static_assert(sizeof(BoardState) == 192);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -218,6 +227,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto key() const { return currState().keys.all; }
 		[[nodiscard]] inline auto pawnKey() const { return currState().keys.pawns; }
+		[[nodiscard]] inline auto majorKey() const { return currState().keys.majors; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{

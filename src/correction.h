@@ -38,17 +38,25 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(&m_table, 0, sizeof(m_table));
+			std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
+			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
 		}
 
 		inline auto update(const Position &pos, i32 depth, Score searchScore, Score staticEval)
 		{
-			m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(depth, searchScore, staticEval);
+			const auto scaledError = (searchScore - staticEval) * Grain;
+			const auto newWeight = std::min(depth + 1, 16);
+
+			m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].update(scaledError, newWeight);
+			m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].update(scaledError, newWeight);
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos, Score score) const
 		{
-			return m_table[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].correct(score);
+			score = m_pawnTable[static_cast<i32>(pos.toMove())][pos.pawnKey() % Entries].correct(score);
+			score = m_majorTable[static_cast<i32>(pos.toMove())][pos.majorKey() % Entries].correct(score);
+
+			return score;
 		}
 
 	private:
@@ -62,11 +70,8 @@ namespace stormphrax
 		{
 			i32 value{};
 
-			inline auto update(i32 depth, Score searchScore, Score staticEval) -> void
+			inline auto update(i32 scaledError, i32 newWeight) -> void
 			{
-				const auto scaledError = (searchScore - staticEval) * Grain;
-				const auto newWeight = std::min(depth + 1, 16);
-
 				value = util::ilerp<WeightScale>(value, scaledError, newWeight);
 				value = std::clamp(value, -Max, Max);
 			}
@@ -77,6 +82,7 @@ namespace stormphrax
 			}
 		};
 
-		util::MultiArray<Entry, 2, Entries> m_table{};
+		util::MultiArray<Entry, 2, Entries> m_pawnTable{};
+		util::MultiArray<Entry, 2, Entries> m_majorTable{};
 	};
 }
