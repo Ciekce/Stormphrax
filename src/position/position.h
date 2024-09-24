@@ -40,12 +40,14 @@ namespace stormphrax
 	{
 		u64 all;
 		u64 pawns;
+		u64 nonPawns;
 		u64 majors;
 
 		inline auto clear()
 		{
 			all = 0;
 			pawns = 0;
+			nonPawns = 0;
 			majors = 0;
 		}
 
@@ -55,6 +57,7 @@ namespace stormphrax
 
 			all ^= key;
 			pawns ^= key;
+			nonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -66,7 +69,9 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (isMajor(piece))
+			else nonPawns ^= key;
+
+			if (isMajor(piece))
 				majors ^= key;
 		}
 
@@ -78,7 +83,9 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (isMajor(piece))
+			else nonPawns ^= key;
+
+			if (isMajor(piece))
 				majors ^= key;
 		}
 
@@ -95,6 +102,7 @@ namespace stormphrax
 			const auto key = keys::castling(rooks);
 
 			all ^= key;
+			nonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -103,6 +111,7 @@ namespace stormphrax
 			const auto key = keys::castling(before) ^ keys::castling(after);
 
 			all ^= key;
+			nonPawns ^= key;
 			majors ^= key;
 		}
 
@@ -128,7 +137,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 192);
+	static_assert(sizeof(BoardState) == 200);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -227,6 +236,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto key() const { return currState().keys.all; }
 		[[nodiscard]] inline auto pawnKey() const { return currState().keys.pawns; }
+		[[nodiscard]] inline auto nonPawnKey() const { return currState().keys.nonPawns; }
 		[[nodiscard]] inline auto majorKey() const { return currState().keys.majors; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
