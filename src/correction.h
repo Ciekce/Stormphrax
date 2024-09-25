@@ -90,7 +90,7 @@ namespace stormphrax
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].correct(score);
 			}
 
-			return score;
+			return std::clamp(score, -ScoreWin + 1, ScoreWin - 1);
 		}
 
 	private:
