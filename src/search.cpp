@@ -1017,8 +1017,7 @@ namespace stormphrax::search
 		if (PvNode && ply + 1 > thread.search.seldepth)
 			thread.search.seldepth = ply + 1;
 
-		const auto prevPrevMove = ply >= 2 ? thread.stack[ply - 2].move : NullMove;
-		const auto     prevMove = ply >= 1 ? thread.stack[ply - 1].move : NullMove;
+		thread.clearContMove(ply);
 
 		if (ply >= MaxDepth)
 			return pos.isCheck() ? 0

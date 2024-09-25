@@ -161,6 +161,11 @@ namespace stormphrax::search
 			conthist[ply] = &history.contTable(moving, move.dst());
 			contMoves[ply] = { moving, move.dst() };
 		}
+
+		inline auto clearContMove(i32 ply)
+		{
+			contMoves[ply] = { Piece::None, Square::None };
+		}
 	};
 
 	class Searcher
