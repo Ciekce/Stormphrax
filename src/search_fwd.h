@@ -31,4 +31,10 @@ namespace stormphrax::search
 		usize nodes{};
 		usize tbhits{};
 	};
+
+	struct PlayedMove
+	{
+		Piece moving;
+		Square dst;
+	};
 }
