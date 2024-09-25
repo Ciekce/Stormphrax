@@ -49,6 +49,7 @@ namespace stormphrax
 		inline auto update(const Position &pos, std::span<search::PlayedMove> moves,
 			i32 ply, i32 depth, Score searchScore, Score staticEval)
 		{
+			/*
 			const auto scaledError = static_cast<i32>((searchScore - staticEval) * Grain);
 			const auto newWeight = static_cast<i32>(std::min(depth + 1, 16));
 
@@ -68,11 +69,13 @@ namespace stormphrax
 					m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].update(scaledError, newWeight);
 			}
+			 */
 		}
 
 		[[nodiscard]] inline auto correct(const Position &pos,
 			std::span<search::PlayedMove> moves, i32 ply, Score score) const
 		{
+			/*
 			const auto stm = static_cast<i32>(pos.toMove());
 
 			score = m_pawnTable[stm][pos.pawnKey() % Entries].correct(score);
@@ -89,6 +92,7 @@ namespace stormphrax
 					score = m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].correct(score);
 			}
+			 */
 
 			return score;
 		}
