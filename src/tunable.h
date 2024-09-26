@@ -111,6 +111,8 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxAspFailHighReduction, 3, 1, 5, 1)
 
+	SP_TUNABLE_PARAM(goodNoisySeeOffset, 0, -384, 384, 40)
+
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
 	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
 

@@ -23,6 +23,7 @@
 #include "movegen.h"
 #include "see.h"
 #include "history.h"
+#include "tunable.h"
 
 namespace stormphrax
 {
@@ -83,6 +84,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto next()
 		{
+			using namespace tunable;
+
 			switch (m_stage)
 			{
 			case MovegenStage::TtMove:
@@ -115,7 +118,7 @@ namespace stormphrax
 					if (move == m_ttMove)
 						continue;
 
-					const auto threshold = -score / 4;
+					const auto threshold = -score / 4 + goodNoisySeeOffset();
 
 					if (!see::see(m_pos, move, threshold))
 						m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
