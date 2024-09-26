@@ -99,6 +99,12 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(timeScaleMin, 126, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(pawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(majorCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(contCorrhistWeight, 128, 32, 384, 18)
+
 	SP_TUNABLE_PARAM(minAspDepth, 4, 1, 10, 1)
 	SP_TUNABLE_PARAM(initialAspWindow, 12, 4, 50, 4)
 	SP_TUNABLE_PARAM(aspWideningFactor, 16, 1, 24, 1)

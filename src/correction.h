@@ -28,6 +28,7 @@
 #include "util/multi_array.h"
 #include "util/cemath.h"
 #include "search_fwd.h"
+#include "tunable.h"
 
 namespace stormphrax
 {
@@ -73,12 +74,20 @@ namespace stormphrax
 		[[nodiscard]] inline auto correct(const Position &pos,
 			std::span<search::PlayedMove> moves, i32 ply, Score score) const
 		{
+			using namespace tunable;
+
 			const auto stm = static_cast<i32>(pos.toMove());
 
-			score = m_pawnTable[stm][pos.pawnKey() % Entries].correct(score);
-			score = m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].correct(score);
-			score = m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].correct(score);
-			score = m_majorTable[stm][pos.majorKey() % Entries].correct(score);
+			const auto [blackNpWeight, whiteNpWeight] = pos.toMove() == Color::Black
+				? std::pair{ stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
+				: std::pair{nstmNonPawnCorrhistWeight(),  stmNonPawnCorrhistWeight()};
+
+			i32 correction{};
+
+			correction += pawnCorrhistWeight() * m_pawnTable[stm][pos.pawnKey() % Entries];
+			correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries];
+			correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries];
+			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
 
 			if (ply >= 2)
 			{
@@ -86,9 +95,12 @@ namespace stormphrax
 				const auto [moving1, dst1] = moves[ply - 1];
 
 				if (moving2 != Piece::None && moving1 != Piece::None)
-					score = m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
-						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].correct(score);
+					correction += contCorrhistWeight() * m_contTable[stm]
+						[static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
+						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
 			}
+
+			score += correction / 128;
 
 			return std::clamp(score, -ScoreWin + 1, ScoreWin - 1);
 		}
@@ -110,9 +122,9 @@ namespace stormphrax
 				value = static_cast<i16>(std::clamp(v, -Max, Max));
 			}
 
-			[[nodiscard]] inline auto correct(Score score) const -> Score
+			[[nodiscard]] inline operator i32() const
 			{
-				return score + value / Grain;
+				return value / Grain;
 			}
 		};
 
