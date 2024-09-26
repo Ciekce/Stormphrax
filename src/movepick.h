@@ -110,12 +110,14 @@ namespace stormphrax
 				while (m_idx < m_end)
 				{
 					const auto idx = findNext();
-					const auto move = m_data.moves[idx].move;
+					const auto [move, score] = m_data.moves[idx];
 
 					if (move == m_ttMove)
 						continue;
 
-					if (!see::see(m_pos, move, 0))
+					const auto threshold = -score / 4;
+
+					if (!see::see(m_pos, move, threshold))
 						m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
 					else return move;
 				}
