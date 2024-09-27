@@ -787,6 +787,10 @@ namespace stormphrax::search
 						continue;
 					}
 				}
+				else if (!PvNode
+					&& depth <= 4
+					&& history < -3000 * depth * depth)
+					continue;
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
