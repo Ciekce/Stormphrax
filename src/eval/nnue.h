@@ -174,6 +174,48 @@ namespace stormphrax::eval
 			}
 		}
 
+		inline auto updateCurrent(const BitboardSet &realAndTrue)
+		{
+			const auto bbs = m_curr->ctx.bbs;
+
+			assert(bbs == realAndTrue);
+
+			for (const auto c : { Color::Black, Color::White })
+			{
+				if (!m_curr->isDirty(c))
+					continue;
+
+				const auto king = m_curr->ctx.kings.color(c);
+
+				if (m_curr->ctx.updates.requiresRefresh(c))
+				{
+					refreshAccumulator(*m_curr, c, bbs, m_refreshTable, king);
+					continue;
+				}
+
+				const auto *prev = findUsableAccumulator(c);
+
+				const auto prevBbs = prev->ctx.bbs;
+				const auto prevKing = prev->ctx.kings.color(c);
+
+				if (InputFeatureSet::refreshRequired(c, prevKing, king))
+				{
+					refreshAccumulator(*m_curr, c, bbs, m_refreshTable, king);
+					continue;
+				}
+
+				const auto rtIdx = InputFeatureSet::getRefreshTableEntry(c, king);
+				auto &rtEntry = m_refreshTable.table[rtIdx];
+
+				const auto updateCost = calcUpdateCost(prevBbs, bbs);
+				const auto refreshCost = calcUpdateCost(rtEntry.colorBbs(c), bbs);
+
+				if (updateCost <= refreshCost)
+					diffAccumulator(m_curr->acc, c, prevBbs, bbs, king);
+				else refreshAccumulator(*m_curr, c, bbs, m_refreshTable, king);
+			}
+		}
+
 		inline auto pop()
 		{
 			assert(m_curr > &m_accumulatorStack[0]);
@@ -272,6 +314,20 @@ namespace stormphrax::eval
 			update(prev, curr, ctx, Color::White);
 		}
 
+		inline auto findUsableAccumulator(Color c) -> UpdatableAccumulator  *
+		{
+			// scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
+			// root accumulator is always up-to-date
+			auto *curr = m_curr - 1;
+			for (; curr->isDirty(c)
+					&& !curr->ctx.updates.requiresRefresh(c);
+				--curr) {}
+
+			assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresRefresh(c));
+
+			return curr;
+		}
+
 		inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void
 		{
 			for (const auto c : { Color::Black, Color::White })
@@ -286,14 +342,7 @@ namespace stormphrax::eval
 					continue;
 				}
 
-				// scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
-				// root accumulator is always up-to-date
-				auto *curr = m_curr - 1;
-				for (; curr->isDirty(c)
-						&& !curr->ctx.updates.requiresRefresh(c);
-					--curr) {}
-
-				assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresRefresh(c));
+				auto *curr = findUsableAccumulator(c);
 
 				// if the found accumulator requires a refresh, just give up and refresh the current one
 				if (curr->ctx.updates.requiresRefresh(c))
@@ -320,6 +369,54 @@ namespace stormphrax::eval
 			return stm == Color::Black
 				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
 				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
+		}
+
+		static inline auto calcUpdateCost(const BitboardSet &srcBbs, const BitboardSet &dstBbs) -> u32
+		{
+			u32 cost = 0;
+
+			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
+			{
+				const auto piece = static_cast<Piece>(pieceIdx);
+
+				const auto prev = srcBbs.forPiece(piece);
+				const auto curr = dstBbs.forPiece(piece);
+
+				cost += (curr ^ prev).popcount();
+			}
+
+			return cost;
+		}
+
+		static inline auto diffAccumulator(Accumulator &accumulator, Color c,
+			const BitboardSet &srcBbs, const BitboardSet &dstBbs, Square king) -> void
+		{
+			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
+			{
+				const auto piece = static_cast<Piece>(pieceIdx);
+
+				const auto prev = srcBbs.forPiece(piece);
+				const auto curr = dstBbs.forPiece(piece);
+
+				auto   added = curr & ~prev;
+				auto removed = prev & ~curr;
+
+				while (added)
+				{
+					const auto sq = added.popLowestSquare();
+					const auto feature = featureIndex(c, piece, sq, king);
+
+					accumulator.activateFeature(g_network.featureTransformer(), c, feature);
+				}
+
+				while (removed)
+				{
+					const auto sq = removed.popLowestSquare();
+					const auto feature = featureIndex(c, piece, sq, king);
+
+					accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
+				}
+			}
 		}
 
 		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,

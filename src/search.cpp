@@ -602,7 +602,12 @@ namespace stormphrax::search
 				rawStaticEval = ScoreNone;
 			else if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
-			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			else
+			{
+				if (ttHit)
+					thread.nnueState.updateCurrent(bbs);
+				rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+			}
 
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
@@ -610,6 +615,7 @@ namespace stormphrax::search
 			curr.staticEval = inCheck ? ScoreNone
 				: eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
 		}
+		else thread.nnueState.updateCurrent(bbs);
 
 		const bool improving = [&]
 		{
@@ -705,6 +711,8 @@ namespace stormphrax::search
 						return score;
 					}
 				}
+
+				thread.nnueState.updateCurrent(bbs);
 			}
 		}
 
