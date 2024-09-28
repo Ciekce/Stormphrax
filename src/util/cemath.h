@@ -32,7 +32,7 @@ namespace stormphrax::util
 	}
 
 	template <std::integral auto One>
-	constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t)
+	constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t) -> decltype(One)
 	{
 		return (a * (One - t) + b * t) / One;
 	}

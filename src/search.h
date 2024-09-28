@@ -110,6 +110,7 @@ namespace stormphrax::search
 			stack.resize(MaxDepth + 4);
 			moveStack.resize(MaxDepth * 2);
 			conthist.resize(MaxDepth + 4);
+			contMoves.resize(MaxDepth + 4);
 		}
 
 		u32 id{};
@@ -129,6 +130,7 @@ namespace stormphrax::search
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 		std::vector<ContinuationSubtable *> conthist{};
+		std::vector<PlayedMove> contMoves{};
 
 		HistoryTables history{};
 		CorrectionHistoryTable correctionHistory{};
@@ -146,14 +148,23 @@ namespace stormphrax::search
 
 			stack[ply].move = NullMove;
 			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
+			contMoves[ply] = { Piece::None, Square::None };
 		}
 
 		inline auto setMove(i32 ply, Move move)
 		{
 			assert(ply <= MaxDepth);
 
+			const auto moving = pos.boards().pieceAt(move.src());
+
 			stack[ply].move = move;
-			conthist[ply] = &history.contTable(pos.boards().pieceAt(move.src()), move.dst());
+			conthist[ply] = &history.contTable(moving, move.dst());
+			contMoves[ply] = { moving, move.dst() };
+		}
+
+		inline auto clearContMove(i32 ply)
+		{
+			contMoves[ply] = { Piece::None, Square::None };
 		}
 	};
 
