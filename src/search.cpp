@@ -761,7 +761,8 @@ namespace stormphrax::search
 
 			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
 			{
-				const auto lmrDepth = std::max(depth - baseLmr, 0);
+				const auto lmrDepthNh = std::max(depth - baseLmr, 0);
+				const auto lmrDepth = std::max(depth - baseLmr + history / lmrHistoryDivisor(), 0);
 
 				if (!noisy)
 				{
@@ -790,7 +791,7 @@ namespace stormphrax::search
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
-					: seePruningThresholdQuiet() * lmrDepth * lmrDepth;
+					: seePruningThresholdQuiet() * lmrDepthNh * lmrDepthNh;
 
 				if (quietOrLosing && !see::see(pos, move, seeThreshold))
 					continue;
