@@ -141,6 +141,15 @@ namespace stormphrax
 			noisyEntry(move, captured).update(bonus);
 		}
 
+		inline auto conthistScore(std::span<ContinuationSubtable *const> continuations,
+			i32 ply, Piece moving, Move move, i32 offset) const -> i32
+		{
+			if (offset <= ply)
+				return conthistEntry(continuations, ply, offset)[{moving, move}];
+
+			return 0;
+		}
+
 		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move) const -> i32
 		{
@@ -175,15 +184,6 @@ namespace stormphrax
 		{
 			if (offset <= ply)
 				conthistEntry(continuations, ply, offset)[{moving, move}].update(bonus);
-		}
-
-		static inline auto conthistScore(std::span<ContinuationSubtable *const > continuations,
-			i32 ply, Piece moving, Move move, i32 offset) -> HistoryScore
-		{
-			if (offset <= ply)
-				return conthistEntry(continuations, ply, offset)[{moving, move}];
-
-			return 0;
 		}
 
 		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) const -> const HistoryEntry &

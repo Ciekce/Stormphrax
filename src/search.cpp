@@ -813,32 +813,43 @@ namespace stormphrax::search
 
 			i32 extension{};
 
-			if (!RootNode
-				&& depth >= minSeDepth()
-				&& move == ttEntry.move
-				&& !curr.excluded
-				&& ttEntry.depth >= depth - seTtDepthMargin()
-				&& ttEntry.flag != TtFlag::UpperBound)
+			if (!RootNode)
 			{
-				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
-				const auto sDepth = (depth - 1) / 2;
-
-				curr.excluded = move;
-				const auto score = search(thread, curr.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
-				curr.excluded = NullMove;
-
-				if (score < sBeta)
+				if (depth >= minSeDepth()
+					&& move == ttEntry.move
+					&& !curr.excluded
+					&& ttEntry.depth >= depth - seTtDepthMargin()
+					&& ttEntry.flag != TtFlag::UpperBound)
 				{
-					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
-						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
-					else extension = 1;
+					const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
+					const auto sDepth = (depth - 1) / 2;
+
+					curr.excluded = move;
+					const auto score = search(thread, curr.pv,
+						sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
+					curr.excluded = NullMove;
+
+					if (score < sBeta)
+					{
+						if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+							extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+						else extension = 1;
+					}
+					else if (sBeta >= beta)
+						return sBeta;
+					else if (cutnode)
+						extension = -2;
+					else if (ttEntry.score >= beta)
+						extension = -1;
 				}
-				else if (sBeta >= beta)
-					return sBeta;
-				else if (cutnode)
-					extension = -2;
-				else if (ttEntry.score >= beta)
-					extension = -1;
+				else if (depth <= 5 && !noisy)
+				{
+					const auto conthist1 = thread.history.conthistScore(thread.conthist, ply, moving, move, 1);
+					const auto conthist2 = thread.history.conthistScore(thread.conthist, ply, moving, move, 2);
+
+					if (conthist1 > 4500 && conthist2 > 4500)
+						extension = 1;
+				}
 			}
 
 			curr.multiExtensions += extension >= 2;
