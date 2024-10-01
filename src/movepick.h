@@ -318,7 +318,6 @@ namespace stormphrax
 
 			const auto captured = m_pos.captureTarget(move);
 
-			score += scoreThreats(move);
 			score += m_history.noisyScore(move, captured) / 8;
 			score += see::value(captured);
 
