@@ -293,6 +293,24 @@ namespace stormphrax
 			m_data.moves.clear();
 		}
 
+		inline auto scoreThreats(Move move)
+		{
+			const auto moving = m_pos.boards().pieceTypeAt(move.src());
+
+			const auto srcThreats = m_pos.threatsByWeaker(moving);
+			const auto dstThreats = move.type() == MoveType::Promotion
+				? m_pos.threatsByWeaker(move.promo()) : srcThreats;
+
+			i32 score{};
+
+			if (srcThreats[move.src()])
+				score += 16384;
+			if (dstThreats[move.dst()])
+				score -= 16384;
+
+			return score;
+		}
+
 		inline auto scoreNoisy(ScoredMove &scoredMove)
 		{
 			const auto move = scoredMove.move;
@@ -300,6 +318,7 @@ namespace stormphrax
 
 			const auto captured = m_pos.captureTarget(move);
 
+			score += scoreThreats(move);
 			score += m_history.noisyScore(move, captured) / 8;
 			score += see::value(captured);
 
@@ -315,10 +334,14 @@ namespace stormphrax
 			}
 		}
 
-		inline auto scoreQuiet(ScoredMove &move)
+		inline auto scoreQuiet(ScoredMove &scoredMove)
 		{
-			move.score = m_history.quietScore(m_continuations, m_ply,
-				m_pos.threats(), m_pos.boards().pieceAt(move.move.src()), move.move);
+			const auto move = scoredMove.move;
+			auto &score = scoredMove.score;
+
+			score += scoreThreats(move);
+			score += m_history.quietScore(m_continuations, m_ply,
+				m_pos.threats(), m_pos.boards().pieceAt(move.src()), move);
 		}
 
 		inline auto scoreQuiets() -> void

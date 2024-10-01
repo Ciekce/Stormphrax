@@ -135,7 +135,11 @@ namespace stormphrax
 
 		Bitboard checkers{};
 		Bitboard pinned{};
-		Bitboard threats{};
+		Bitboard allThreats{};
+
+		Bitboard pawnThreats{};
+		Bitboard minorThreats{}; // includes pawn threats
+		Bitboard rookThreats{}; // includes minor and pawn threats
 
 		CastlingRooks castlingRooks{};
 
@@ -146,7 +150,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 208);
+	static_assert(sizeof(BoardState) == 232);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -342,7 +346,7 @@ namespace stormphrax
 			if constexpr (ThreatShortcut)
 			{
 				if (attacker != toMove)
-					return state.threats[square];
+					return state.allThreats[square];
 			}
 
 			const auto &bbs = state.boards.bbs();
@@ -388,7 +392,7 @@ namespace stormphrax
 			assert(attacker != Color::None);
 
 			if (attacker == opponent())
-				return !(squares & currState().threats).empty();
+				return !(squares & currState().allThreats).empty();
 
 			while (squares)
 			{
@@ -436,7 +440,26 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
 		[[nodiscard]] inline auto pinned() const { return currState().pinned; }
-		[[nodiscard]] inline auto threats() const { return currState().threats; }
+		[[nodiscard]] inline auto threats() const { return currState().allThreats; }
+
+		[[nodiscard]] inline auto threatsByWeaker(PieceType piece) const
+		{
+			assert(piece != PieceType::None);
+
+			const auto &state = currState();
+
+			switch (piece)
+			{
+			case PieceType::Pawn: return Bitboard{};
+			case PieceType::Knight: return state.pawnThreats;
+			case PieceType::Bishop: return state.pawnThreats;
+			case PieceType::Rook: return state.minorThreats;
+			case PieceType::Queen: return state.rookThreats;
+			default: Bitboard{};
+			}
+
+			return Bitboard{};
+		}
 
 		[[nodiscard]] auto hasCycle(i32 ply) const -> bool;
 
@@ -546,7 +569,7 @@ namespace stormphrax
 				&& currState().kings == other.m_states.back().kings
 				&& currState().checkers == other.m_states.back().checkers
 				&& currState().pinned == other.m_states.back().pinned
-				&& currState().threats == other.m_states.back().threats
+				&& currState().allThreats == other.m_states.back().allThreats
 				&& currState().keys == other.m_states.back().keys;
 		}
 
@@ -626,49 +649,59 @@ namespace stormphrax
 			return pinned;
 		}
 
-		[[nodiscard]] inline auto calcThreats() const
+		[[nodiscard]] inline auto updateThreats()
 		{
 			const auto us = toMove();
 			const auto them = oppColor(us);
 
-			const auto &state = currState();
+			auto &state = currState();
 			const auto &bbs = state.boards.bbs();
 
-			Bitboard threats{};
+			state.allThreats = Bitboard{};
+			state.pawnThreats = Bitboard{};
+			state.minorThreats = Bitboard{};
+			state.rookThreats = Bitboard{};
 
 			const auto occ = bbs.occupancy();
 
-			const auto queens = bbs.queens(them);
+			auto queens = bbs.queens(them);
+			while (queens)
+			{
+				const auto queen = queens.popLowestSquare();
+				state.allThreats |= attacks::getQueenAttacks(queen, occ);
+			}
 
-			auto rooks = queens | bbs.rooks(them);
+			auto rooks = bbs.rooks(them);
 			while (rooks)
 			{
 				const auto rook = rooks.popLowestSquare();
-				threats |= attacks::getRookAttacks(rook, occ);
+				state.rookThreats |= attacks::getRookAttacks(rook, occ);
 			}
 
-			auto bishops = queens | bbs.bishops(them);
+			auto bishops = bbs.bishops(them);
 			while (bishops)
 			{
 				const auto bishop = bishops.popLowestSquare();
-				threats |= attacks::getBishopAttacks(bishop, occ);
+				state.minorThreats |= attacks::getBishopAttacks(bishop, occ);
 			}
 
 			auto knights = bbs.knights(them);
 			while (knights)
 			{
 				const auto knight = knights.popLowestSquare();
-				threats |= attacks::getKnightAttacks(knight);
+				state.minorThreats |= attacks::getKnightAttacks(knight);
 			}
 
 			const auto pawns = bbs.pawns(them);
 			if (them == Color::Black)
-				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
-			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
+				state.pawnThreats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
+			else state.pawnThreats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 
-			threats |= attacks::getKingAttacks(state.kings.color(them));
+			state.allThreats |= attacks::getKingAttacks(state.kings.color(them));
 
-			return threats;
+			state.minorThreats |= state.pawnThreats;
+			state.rookThreats |= state.minorThreats;
+			state.allThreats |= state.rookThreats;
 		}
 
 		bool m_blackToMove{};

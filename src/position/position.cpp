@@ -687,8 +687,7 @@ namespace stormphrax
 		if (!move)
 		{
 			state.pinned = calcPinned();
-			state.threats = calcThreats();
-
+			updateThreats();
 			return;
 		}
 
@@ -757,7 +756,8 @@ namespace stormphrax
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
-		state.threats = calcThreats();
+
+		updateThreats();
 	}
 
 	template <bool UpdateNnue>
@@ -968,7 +968,7 @@ namespace stormphrax
 		if (move.type() == MoveType::Castling)
 		{
 			const auto kingDst = toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
-			return !state.threats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
+			return !state.allThreats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
 		}
 		else if (move.type() == MoveType::EnPassant)
 		{
@@ -997,7 +997,7 @@ namespace stormphrax
 			const auto kinglessOcc = bbs.occupancy() ^ bbs.kings(us);
 			const auto theirQueens = bbs.queens(them);
 
-			return !state.threats[move.dst()]
+			return !state.allThreats[move.dst()]
 				&& (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | bbs.bishops(them))).empty()
 				&& (attacks::getRookAttacks  (dst, kinglessOcc) & (theirQueens | bbs.  rooks(them))).empty();
 		}
@@ -1419,7 +1419,8 @@ namespace stormphrax
 
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
-		state.threats = calcThreats();
+
+		updateThreats();
 	}
 
 	auto Position::moveFromUci(const std::string &move) const -> Move
