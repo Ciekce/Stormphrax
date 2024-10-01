@@ -779,7 +779,7 @@ namespace stormphrax::search
 					}
 
 					if (!inCheck
-						&& depth <= maxFpDepth()
+						&& lmrDepth <= maxFpDepth()
 						&& std::abs(alpha) < 2000
 						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
 					{
