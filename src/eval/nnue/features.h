@@ -34,6 +34,7 @@ namespace stormphrax::eval::nnue::features
 		static constexpr u32 RefreshTableSize = 1;
 
 		static constexpr bool IsMirrored = false;
+		static constexpr bool MergedKings = false;
 
 		static constexpr auto transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq)
 		{
@@ -72,6 +73,7 @@ namespace stormphrax::eval::nnue::features
 		static constexpr auto RefreshTableSize = BucketCount;
 
 		static constexpr bool IsMirrored = false;
+		static constexpr bool MergedKings = false;
 
 		static_assert(BucketCount > 1, "use SingleBucket for single-bucket arches");
 
@@ -167,6 +169,7 @@ namespace stormphrax::eval::nnue::features
 		static constexpr auto RefreshTableSize = BucketCount * 2;
 
 		static constexpr bool IsMirrored = true;
+		static constexpr bool MergedKings = false;
 
 		static constexpr auto transformFeatureSquare(Square sq, Square kingSq)
 		{
@@ -213,9 +216,44 @@ namespace stormphrax::eval::nnue::features
 	};
 
 	template <MirroredKingSide Side>
+	using SingleBucketMirrored [[maybe_unused]] = KingBucketsMirrored<
+		Side,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0
+	>;
+
+	template <MirroredKingSide Side>
 	using HalfKaMirrored [[maybe_unused]] = KingBucketsMirrored<
 	    Side,
 	     0,  1,  2,  3,
+		 4,  5,  6,  7,
+		 8,  9, 10, 11,
+		12, 13, 14, 15,
+		16, 17, 18, 19,
+		20, 21, 22, 23,
+		24, 25, 26, 27,
+		28, 29, 30, 31
+	>;
+
+	//TODO verify that buckets work for merged kings
+	template <MirroredKingSide Side, u32... BucketIndices>
+	struct [[maybe_unused]] KingBucketsMergedMirrored
+		: public KingBucketsMirrored<Side, BucketIndices...>
+	{
+		static constexpr u32 InputSize = 704;
+		static constexpr bool MergedKings = true;
+	};
+
+	template <MirroredKingSide Side>
+	using HalfKaV2Mirrored [[maybe_unused]] = KingBucketsMergedMirrored<
+		Side,
+		 0,  1,  2,  3,
 		 4,  5,  6,  7,
 		 8,  9, 10, 11,
 		12, 13, 14, 15,

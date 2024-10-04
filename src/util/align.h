@@ -20,11 +20,37 @@
 
 #include "../types.h"
 
+#include <cstdlib>
+
 namespace stormphrax::util
 {
 	template <std::uintptr_t Alignment, typename T = void>
-	auto isAligned(const T *ptr)
+	constexpr auto isAligned(const T *ptr)
 	{
 		return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
+	}
+
+	template <typename T>
+	inline auto alignedAlloc(usize alignment, usize count)
+	{
+		const auto size = count * sizeof(T);
+
+#ifdef _MSC_VER
+		return static_cast<T *>(_aligned_malloc(size, alignment));
+#else
+		return static_cast<T *>(std::aligned_alloc(alignment, size));
+#endif
+	}
+
+	inline auto alignedFree(void *ptr)
+	{
+		if (!ptr)
+			return;
+
+#ifdef _MSC_VER
+		_aligned_free(ptr);
+#else
+		std::free(ptr);
+#endif
 	}
 }

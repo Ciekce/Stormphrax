@@ -114,6 +114,30 @@ namespace stormphrax
 		return colorPiece(target, pieceColor(piece));
 	}
 
+	[[nodiscard]] constexpr auto isMajor(PieceType piece)
+	{
+		assert(piece != PieceType::None);
+		return piece == PieceType::Rook || piece == PieceType::Queen;
+	}
+
+	[[nodiscard]] constexpr auto isMajor(Piece piece)
+	{
+		assert(piece != Piece::None);
+		return isMajor(pieceType(piece));
+	}
+
+	[[nodiscard]] constexpr auto isMinor(PieceType piece)
+	{
+		assert(piece != PieceType::None);
+		return piece == PieceType::Knight || piece == PieceType::Bishop;
+	}
+
+	[[nodiscard]] constexpr auto isMinor(Piece piece)
+	{
+		assert(piece != Piece::None);
+		return isMinor(pieceType(piece));
+	}
+
 	[[nodiscard]] constexpr auto pieceFromChar(char c)
 	{
 		switch (c)

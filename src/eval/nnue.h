@@ -39,10 +39,10 @@ namespace stormphrax::eval
 
 	using Network = nnue::PerspectiveNetwork<
 		FeatureTransformer,
-		nnue::layers::DensePerspectiveAffine<
+		nnue::layers::DensePerspectiveAffine<PairwiseMul,
 			i16, i16,
 			L1Activation,
-			L1Size, 1,
+			L1Size, 1, L1Q,
 			OutputBucketing
 		>,
 		nnue::layers::Scale<i32, 1, Scale>,
@@ -409,7 +409,12 @@ namespace stormphrax::eval
 
 			const auto type = static_cast<u32>(pieceType(piece));
 
-			const u32 color = pieceColor(piece) == c ? 0 : 1;
+			const auto color = [piece, c]() -> u32
+			{
+				if (InputFeatureSet::MergedKings && pieceType(piece) == PieceType::King)
+					return 0;
+				return pieceColor(piece) == c ? 0 : 1;
+			}();
 
 			if (c == Color::Black)
 				sq = flipSquareRank(sq);

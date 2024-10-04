@@ -24,6 +24,7 @@
 #include <cmath>
 #include <type_traits>
 #include <concepts>
+#include <exception>
 
 #include "../../util/simd.h"
 
@@ -33,9 +34,24 @@ namespace stormphrax::eval::nnue::activation
 	concept Activation = requires(T t)
 	{
 		{ T::Id } -> std::same_as<const u8 &>;
-		{ T::activateDotAccumulate(util::simd::zero<typename T::OutputType>(),
+		{ T::activateDotAccumulate(
+				util::simd::zero<typename T::OutputType>(),
 		        util::simd::zero<typename T::InputType>(),
 	            util::simd::zero<typename T::InputType>()) }
+			-> std::same_as<util::simd::Vector<typename T::OutputType>>;
+		{ T::  output(typename T::OutputType{}) }
+			-> std::same_as<typename T::OutputType>;
+	};
+
+	template <typename T>
+	concept PairwiseActivation = requires(T t)
+	{
+		{ T::Id } -> std::same_as<const u8 &>;
+		{ T::activateDotAccumulate(
+				util::simd::zero<typename T::OutputType>(),
+				util::simd::zero<typename T::InputType>(),
+				util::simd::zero<typename T::InputType>(),
+				util::simd::zero<typename T::InputType>()) }
 			-> std::same_as<util::simd::Vector<typename T::OutputType>>;
 		{ T::  output(typename T::OutputType{}) }
 			-> std::same_as<typename T::OutputType>;
@@ -52,12 +68,21 @@ namespace stormphrax::eval::nnue::activation
 
 		static constexpr u8 Id = 3;
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
-			InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
 			return mulAddAdjAcc<InputType>(sum, inputs, weights);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
+		{
+			using namespace util::simd;
+
+			const auto products = mul<InputType>(inputs1, weights);
+			return mulAddAdjAcc<InputType>(sum, products, inputs2);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
@@ -77,13 +102,25 @@ namespace stormphrax::eval::nnue::activation
 
 		static constexpr u8 Id = 2;
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
-			InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
 			const auto activated = max<InputType>(inputs, zero<InputType>());
 			return mulAddAdjAcc<InputType>(sum, activated, weights);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
+		{
+			using namespace util::simd;
+
+			const auto activated1 = max<InputType>(inputs1, zero<InputType>());
+			const auto activated2 = max<InputType>(inputs2, zero<InputType>());
+
+			const auto products = mul<InputType>(activated1, weights);
+			return mulAddAdjAcc<InputType>(sum, products, activated2);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
@@ -103,15 +140,29 @@ namespace stormphrax::eval::nnue::activation
 
 		static constexpr u8 Id = 0;
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
-			InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 
 			static const auto max = set1(Max);
 
-			const auto activated = clamp<InputType>(inputs, zero<InputType>(), max);
-			return mulAddAdjAcc<InputType>(sum, activated, weights);
+			const auto clipped = clamp<InputType>(inputs, zero<InputType>(), max);
+			return mulAddAdjAcc<InputType>(sum, clipped, weights);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs1, InputVector inputs2, InputVector weights)
+		{
+			using namespace util::simd;
+
+			static const auto max = set1(Max);
+
+			const auto clipped1 = clamp<InputType>(inputs1, zero<InputType>(), max);
+			const auto clipped2 = clamp<InputType>(inputs2, zero<InputType>(), max);
+
+			const auto products = mul<InputType>(clipped1, weights);
+			return mulAddAdjAcc<InputType>(sum, clipped2, products);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
@@ -131,8 +182,8 @@ namespace stormphrax::eval::nnue::activation
 
 		static constexpr u8 Id = 1;
 
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(OutputVector sum,
-			InputVector inputs, InputVector weights)
+		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+			OutputVector sum, InputVector inputs, InputVector weights)
 		{
 			using namespace util::simd;
 

@@ -93,7 +93,17 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(nodeTimeScale, 174, 100, 250, 10)
 	SP_TUNABLE_PARAM(nodeTimeScaleMin, 108, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(scoreTrendScoreScale, 400, 10, 1000, 50)
+	SP_TUNABLE_PARAM(scoreTrendStretch, 72, 10, 200, 10)
+	SP_TUNABLE_PARAM(scoreTrendScale, 40, 10, 90, 4)
+
 	SP_TUNABLE_PARAM(timeScaleMin, 126, 1, 1000, 100)
+
+	SP_TUNABLE_PARAM(pawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(majorCorrhistWeight, 128, 32, 384, 18)
+	SP_TUNABLE_PARAM(contCorrhistWeight, 128, 32, 384, 18)
 
 	SP_TUNABLE_PARAM(minAspDepth, 4, 1, 10, 1)
 	SP_TUNABLE_PARAM(initialAspWindow, 12, 4, 50, 4)
@@ -101,12 +111,15 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(maxAspFailHighReduction, 3, 1, 5, 1)
 
+	SP_TUNABLE_PARAM(goodNoisySeeOffset, 0, -384, 384, 40)
+
 	SP_TUNABLE_PARAM(ttReplacementDepthOffset, 4, 0, 6, 0.5)
 	SP_TUNABLE_PARAM(ttReplacementPvOffset, 2, 0, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxTtNonCutoffExtDepth, 6, 0, 12, 0.5)
 
 	SP_TUNABLE_PARAM(minIirDepth, 3, 3, 6, 0.5)
+	SP_TUNABLE_PARAM(iirBadEntryDepthOffset, 4, 2, 6, 0.5)
 
 	SP_TUNABLE_PARAM(maxRfpDepth, 6, 4, 12, 0.5)
 	SP_TUNABLE_PARAM(rfpMargin, 68, 25, 150, 5)

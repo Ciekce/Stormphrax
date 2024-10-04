@@ -40,6 +40,9 @@ namespace stormphrax
 			bool showWdl{true};
 			bool showCurrMove{false};
 
+			bool softNodes{false};
+			i32 softNodeHardLimitMultiplier{1678};
+
 			bool enableWeirdTcs{false};
 
 			bool syzygyEnabled{false};

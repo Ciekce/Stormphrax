@@ -23,27 +23,22 @@
 #include "movegen.h"
 #include "see.h"
 #include "history.h"
+#include "tunable.h"
 
 namespace stormphrax
 {
 	struct KillerTable
 	{
-		Move killer1{};
-		Move killer2{};
+		Move killer{};
 
 		inline auto push(Move move)
 		{
-			if (move != killer1)
-			{
-				killer2 = killer1;
-				killer1 = move;
-			}
+			killer = move;
 		}
 
 		inline auto clear()
 		{
-			killer1 = NullMove;
-			killer2 = NullMove;
+			killer = NullMove;
 		}
 	};
 
@@ -57,8 +52,7 @@ namespace stormphrax
 		TtMove = 0,
 		GenNoisy,
 		GoodNoisy,
-		Killer1,
-		Killer2,
+		Killer,
 		GenQuiet,
 		Quiet,
 		StartBadNoisy,
@@ -90,6 +84,8 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto next()
 		{
+			using namespace tunable;
+
 			switch (m_stage)
 			{
 			case MovegenStage::TtMove:
@@ -117,12 +113,14 @@ namespace stormphrax
 				while (m_idx < m_end)
 				{
 					const auto idx = findNext();
-					const auto move = m_data.moves[idx].move;
+					const auto [move, score] = m_data.moves[idx];
 
 					if (move == m_ttMove)
 						continue;
 
-					if (!see::see(m_pos, move, 0))
+					const auto threshold = -score / 4 + goodNoisySeeOffset();
+
+					if (!see::see(m_pos, move, threshold))
 						m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
 					else return move;
 				}
@@ -131,28 +129,15 @@ namespace stormphrax
 				[[fallthrough]];
 			}
 
-			case MovegenStage::Killer1:
+			case MovegenStage::Killer:
 			{
 				++m_stage;
 
 				if (!m_skipQuiets
-					&& m_killers.killer1
-					&& m_killers.killer1 != m_ttMove
-					&& m_pos.isPseudolegal(m_killers.killer1))
-					return m_killers.killer1;
-
-				[[fallthrough]];
-			}
-
-			case MovegenStage::Killer2:
-			{
-				++m_stage;
-
-				if (!m_skipQuiets
-					&& m_killers.killer2
-					&& m_killers.killer2 != m_ttMove
-					&& m_pos.isPseudolegal(m_killers.killer2))
-					return m_killers.killer2;
+					&& m_killers.killer
+					&& m_killers.killer != m_ttMove
+					&& m_pos.isPseudolegal(m_killers.killer))
+					return m_killers.killer;
 
 				[[fallthrough]];
 			}
@@ -381,8 +366,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto isSpecial(Move move) -> bool
 		{
 			return move == m_ttMove
-				|| move == m_killers.killer1
-				|| move == m_killers.killer2;
+				|| move == m_killers.killer;
 		}
 
 		MovegenStage m_stage;

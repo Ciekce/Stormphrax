@@ -95,7 +95,7 @@ namespace stormphrax
 			auto handleUcinewgame() -> void;
 			auto handleIsready() -> void;
 			auto handlePosition(const std::vector<std::string> &tokens) -> void;
-			auto handleGo(const std::vector<std::string> &tokens) -> void;
+			auto handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void;
 			auto handleStop() -> void;
 			auto handleSetoption(const std::vector<std::string> &tokens) -> void;
 			// V ======= NONSTANDARD ======= V
@@ -132,6 +132,8 @@ namespace stormphrax
 		{
 			for (std::string line{}; std::getline(std::cin, line);)
 			{
+				const auto startTime = util::g_timer.time();
+
 				const auto tokens = split::split(line, ' ');
 
 				if (tokens.empty())
@@ -150,7 +152,7 @@ namespace stormphrax
 				else if (command == "position")
 					handlePosition(tokens);
 				else if (command == "go")
-					handleGo(tokens);
+					handleGo(tokens, startTime);
 				else if (command == "stop")
 					handleStop();
 				else if (command == "setoption")
@@ -206,6 +208,11 @@ namespace stormphrax
 			std::cout << "option name ShowCurrMove type check default " << defaultOpts.showCurrMove << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
+			std::cout << "option name SoftNodes type check default " << defaultOpts.softNodes << std::endl;
+			std::cout << "option name SoftNodeHardLimitMultiplier type spin default "
+				<< defaultOpts.softNodeHardLimitMultiplier
+				<< " min " << limit::SoftNodeHardLimitMultiplierRange.min()
+				<< " max " << limit::SoftNodeHardLimitMultiplierRange.max() << '\n';
 			std::cout << "option name EnableWeirdTCs type check default " << defaultOpts.enableWeirdTcs << std::endl;
 			std::cout << "option name SyzygyPath type string default <empty>\n";
 			std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth
@@ -306,7 +313,7 @@ namespace stormphrax
 			}
 		}
 
-		auto UciHandler::handleGo(const std::vector<std::string> &tokens) -> void
+		auto UciHandler::handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void
 		{
 			if (m_searcher.searching())
 				std::cerr << "already searching" << std::endl;
@@ -317,8 +324,6 @@ namespace stormphrax
 
 				bool infinite = false;
 				bool tournamentTime = false;
-
-				const auto startTime = util::g_timer.time();
 
 				i64 timeRemaining{};
 				i64 increment{};
@@ -445,7 +450,7 @@ namespace stormphrax
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
 
-				m_searcher.startSearch(m_pos, static_cast<i32>(depth), std::move(limiter), infinite);
+				m_searcher.startSearch(m_pos, startTime, static_cast<i32>(depth), std::move(limiter), infinite);
 			}
 		}
 
@@ -572,6 +577,23 @@ namespace stormphrax
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
 					}
 				}
+				else if (nameStr == "softnodes")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSoftNodes = util::tryParseBool(valueStr))
+							opts::mutableOpts().softNodes = *newSoftNodes;
+					}
+				}
+				else if (nameStr == "softnodehardlimitmultiplier")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(valueStr))
+							opts::mutableOpts().softNodeHardLimitMultiplier
+								= limit::SoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
+					}
+				}
 				else if (nameStr == "enableweirdtcs")
 				{
 					if (!valueEmpty)
@@ -678,7 +700,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = eval::adjustEval<false>(m_pos, nullptr, eval::staticEvalOnce(m_pos));
+			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
 			const auto normalized = wdl::normalizeScore(staticEval, m_pos.plyFromStartpos());
 
 			std::cout << "Static eval: ";
@@ -688,7 +710,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto staticEval = eval::adjustEval<false>(m_pos, nullptr, eval::staticEvalOnce(m_pos));
+			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
 			const auto normalized = wdl::normalizeScore(staticEval, m_pos.plyFromStartpos());
 
 			printScore(std::cout, normalized);
