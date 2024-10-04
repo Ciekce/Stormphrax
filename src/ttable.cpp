@@ -147,7 +147,7 @@ namespace stormphrax
 	{
 		const auto threadCount = g_opts.threads;
 
-		std::vector<std::jthread> threads{};
+		std::vector<std::thread> threads{};
 		threads.reserve(threadCount);
 
 		const auto chunkSize = util::ceilDiv<usize>(m_table.size(), threadCount);
@@ -166,6 +166,11 @@ namespace stormphrax
 		}
 
 		m_age = 0;
+
+		for (auto &thread : threads)
+		{
+			thread.join();
+		}
 	}
 
 	auto TTable::full() const -> u32
