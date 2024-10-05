@@ -28,13 +28,13 @@ namespace stormphrax::datagen
 {
 	// Format originally from Viridithas
 	// https://github.com/cosmobobak/viridithas/blob/029672a/src/datagen/dataformat.rs
-	class ViriBinpack
+	class Viriformat
 	{
 	public:
-		ViriBinpack();
-		~ViriBinpack() = default;
+		Viriformat();
+		~Viriformat() = default;
 
-		static constexpr auto Extension = "vbinpack";
+		static constexpr auto Extension = "vf";
 
 		auto start(const Position &initialPosition) -> void;
 		auto push(bool filtered, Move move, Score score) -> void;
@@ -48,5 +48,5 @@ namespace stormphrax::datagen
 		std::vector<ScoredMove> m_moves{};
 	};
 
-	static_assert(OutputFormat<ViriBinpack>);
+	static_assert(OutputFormat<Viriformat>);
 }

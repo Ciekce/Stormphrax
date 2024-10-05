@@ -16,24 +16,24 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "viri_binpack.h"
+#include "viriformat.h"
 
 #include <array>
 
 namespace stormphrax::datagen
 {
-	ViriBinpack::ViriBinpack()
+	Viriformat::Viriformat()
 	{
 		m_moves.reserve(256);
 	}
 
-	auto ViriBinpack::start(const Position &initialPosition) -> void
+	auto Viriformat::start(const Position &initialPosition) -> void
 	{
 		m_initial = marlinformat::PackedBoard::pack(initialPosition, 0);
 		m_moves.clear();
 	}
 
-	auto ViriBinpack::push([[maybe_unused]] bool filtered, Move move, Score score) -> void
+	auto Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) -> void
 	{
 		static constexpr auto MoveTypes = std::array{
 			static_cast<u16>(0x0000), // normal
@@ -52,7 +52,7 @@ namespace stormphrax::datagen
 		m_moves.push_back({viriMove, static_cast<i16>(score)});
 	}
 
-	auto ViriBinpack::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
+	auto Viriformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
 	{
 		static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
 
