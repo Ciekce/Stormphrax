@@ -53,7 +53,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 			const auto printUsage = [&]()
 			{
 				std::cerr << "usage: " << argv[0]
-					<< " datagen <marlinformat/viri_binpack> <standard/dfrc> <path> [threads] [game limit per thread]"
+					<< " datagen <marlinformat/viriformat> <standard/dfrc> <path> [threads] [game limit per thread]"
 					<< std::endl;
 			};
 

@@ -41,7 +41,7 @@
 #include "../opts.h"
 #include "../util/timer.h"
 #include "format.h"
-#include "viri_binpack.h"
+#include "viriformat.h"
 #include "marlinformat.h"
 #include "fen.h"
 
@@ -333,7 +333,7 @@ namespace stormphrax::datagen
 
 		template auto runThread<Marlinformat>(u32 id, bool dfrc,
 			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<ViriBinpack>(u32 id, bool dfrc,
+		template auto runThread<Viriformat>(u32 id, bool dfrc,
 			u32 games, u64 seed, const std::filesystem::path &outDir);
 	}
 
@@ -344,8 +344,8 @@ namespace stormphrax::datagen
 
 		if (format == "marlinformat")
 			threadFunc = runThread<Marlinformat>;
-		else if (format == "viri_binpack")
-			threadFunc = runThread<ViriBinpack>;
+		else if (format == "viriformat")
+			threadFunc = runThread<Viriformat>;
 		else if (format == "fen")
 			threadFunc = runThread<Fen>;
 		else
