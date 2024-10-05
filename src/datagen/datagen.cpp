@@ -335,6 +335,8 @@ namespace stormphrax::datagen
 			u32 games, u64 seed, const std::filesystem::path &outDir);
 		template auto runThread<Viriformat>(u32 id, bool dfrc,
 			u32 games, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<Fen>(u32 id, bool dfrc,
+			u32 games, u64 seed, const std::filesystem::path &outDir);
 	}
 
 	auto run(const std::function<void()> &printUsage, const std::string &format,
