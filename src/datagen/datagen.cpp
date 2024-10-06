@@ -26,14 +26,6 @@
 #include <optional>
 #include <cassert>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#else
-//TODO
-#endif
-
 #include "../limit/limit.h"
 #include "../search.h"
 #include "../movegen.h"
@@ -44,6 +36,7 @@
 #include "viriformat.h"
 #include "marlinformat.h"
 #include "fen.h"
+#include "../util/ctrlc.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
@@ -58,16 +51,10 @@ namespace stormphrax::datagen
 
 		auto initCtrlCHandler()
 		{
-#ifdef _WIN32
-			if (!SetConsoleCtrlHandler([](DWORD dwCtrlType) -> BOOL
-				{
-					s_stop.store(true, std::memory_order::seq_cst);
-					return TRUE;
-				}, TRUE))
-				std::cerr << "failed to set ctrl+c handler" << std::endl;
-#else
-			//TODO
-#endif
+			util::signal::addCtrlCHandler([]
+			{
+				s_stop.store(true, std::memory_order::seq_cst);
+			});
 		}
 
 		class DatagenNodeLimiter final : public limit::ISearchLimiter
