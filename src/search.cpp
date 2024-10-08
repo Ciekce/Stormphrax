@@ -944,9 +944,8 @@ namespace stormphrax::search
 		}
 
 		if (legalMoves == 0)
-			return inCheck ? (-ScoreMate + ply) : 0;
-
-		if (bestMove)
+			bestScore = inCheck ? (-ScoreMate + ply) : 0;
+		else if (bestMove)
 		{
 			const auto historyDepth = depth + (curr.staticEval <= alpha);
 
