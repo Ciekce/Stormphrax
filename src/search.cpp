@@ -983,7 +983,7 @@ namespace stormphrax::search
 				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
 			}
 		}
-		else if (ttEntry.flag == TtFlag::LowerBound && ttMoveTried)
+		else if (ttEntry.flag == TtFlag::LowerBound && ttEntry.score > alpha && ttMoveTried)
 		{
 			const auto penalty = historyPenalty(depth);
 
