@@ -730,6 +730,7 @@ namespace stormphrax::search
 			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
+		bool ttMoveTried = false;
 
 		while (const auto move = generator.next())
 		{
@@ -745,6 +746,9 @@ namespace stormphrax::search
 			}
 			else if (!pos.isLegal(move))
 				continue;
+
+			if (move == ttEntry.move)
+				ttMoveTried = true;
 
 			const bool quietOrLosing = generator.stage() > MovegenStage::GoodNoisy;
 
@@ -978,6 +982,18 @@ namespace stormphrax::search
 				const auto captured = pos.captureTarget(prevNoisy);
 				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
 			}
+		}
+		else if (ttEntry.flag == TtFlag::LowerBound && ttMoveTried)
+		{
+			const auto penalty = historyPenalty(depth);
+
+			if (ttMoveNoisy)
+			{
+				const auto captured = pos.captureTarget(ttEntry.move);
+				thread.history.updateNoisyScore(ttEntry.move, captured, penalty);
+			}
+			else thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
+				pos.boards().pieceAt(ttEntry.move.src()), ttEntry.move, penalty);
 		}
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
