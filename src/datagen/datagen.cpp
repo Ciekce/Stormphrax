@@ -346,8 +346,10 @@ namespace stormphrax::datagen
 
 		opts::mutableOpts().chess960 = dfrc;
 
-		const auto baseSeed = util::rng::generateSeed();
+		const auto baseSeed = util::rng::generateSingleSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
+
+		util::rng::SeedGenerator seedGenerator{baseSeed};
 
 		const std::filesystem::path outDir{output};
 
@@ -362,9 +364,10 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([&, i]()
+			const auto seed = seedGenerator.nextSeed();
+			theThreads.emplace_back([&, i, seed]()
 			{
-				threadFunc(i, dfrc, games, baseSeed + i, outDir);
+				threadFunc(i, dfrc, games, seed, outDir);
 			});
 		}
 
