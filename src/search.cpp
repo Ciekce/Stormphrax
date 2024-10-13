@@ -270,6 +270,7 @@ namespace stormphrax::search
 	auto Searcher::stopThreads() -> void
 	{
 		m_quit.store(true, std::memory_order::release);
+
 		m_resetBarrier.arriveAndWait();
 		m_idleBarrier.arriveAndWait();
 
@@ -301,16 +302,15 @@ namespace stormphrax::search
 
 		const bool mainThread = actualSearch && thread.isMainThread();
 
-		thread.rootPv.moves[0] = NullMove;
-		thread.rootPv.length = 0;
+		thread.rootPv.reset();
 
-		auto score = -ScoreInf;
-		PvList pv{};
+		thread.depthCompleted = 0;
+
+		thread.lastPv.reset();
+		thread.lastScore = -ScoreInf;
 
 		searchData.nodes = 1;
 		thread.stack[0].killers.clear();
-
-		i32 depthCompleted{};
 
 		for (i32 depth = 1;; ++depth)
 		{
@@ -324,8 +324,8 @@ namespace stormphrax::search
 
 			if (depth >= minAspDepth())
 			{
-				alpha = std::max(score - delta, -ScoreInf);
-				beta  = std::min(score + delta,  ScoreInf);
+				alpha = std::max(thread.lastScore - delta, -ScoreInf);
+				beta  = std::min(thread.lastScore + delta,  ScoreInf);
 			}
 
 			Score newScore{};
@@ -368,26 +368,26 @@ namespace stormphrax::search
 			if (hasStopped())
 				break;
 
-			depthCompleted = depth;
+			thread.depthCompleted = depth;
 
-			score = newScore;
-			pv = thread.rootPv;
+			thread.lastScore = newScore;
+			thread.lastPv = thread.rootPv;
 
 			if (depth >= thread.maxDepth)
 			{
 				if (mainThread && m_infinite)
-					report(thread, pv, searchData.depth, elapsed(), score);
+					report(thread, thread.lastPv, searchData.depth, elapsed(), thread.lastScore);
 				break;
 			}
 
 			if (mainThread)
 			{
-				m_limiter->update(thread.search, score, pv.moves[0], thread.search.nodes);
+				m_limiter->update(thread.search, thread.lastScore, thread.lastPv.moves[0], thread.search.nodes);
 
 				if (checkSoftTimeout(thread.search, true))
 					break;
 
-				report(thread, pv, searchData.depth, elapsed(), score);
+				report(thread, thread.lastPv, searchData.depth, elapsed(), thread.lastScore);
 			}
 			else if (checkSoftTimeout(thread.search, thread.isMainThread()))
 				break;
@@ -423,7 +423,7 @@ namespace stormphrax::search
 			if (!m_infinite)
 				time = elapsed();
 
-			finalReport(thread, pv, depthCompleted, time, score);
+			finalReport(time);
 
 			m_ttable.age();
 
@@ -431,7 +431,7 @@ namespace stormphrax::search
 		}
 		else waitForThreads();
 
-		return score;
+		return thread.lastScore;
 	}
 
 	template <bool PvNode, bool RootNode>
@@ -1225,10 +1225,78 @@ namespace stormphrax::search
 		std::cout << std::endl;
 	}
 
-	auto Searcher::finalReport(const ThreadData &mainThread,
-		const PvList &pv, i32 depthCompleted, f64 time, Score score) -> void
+	auto Searcher::finalReport(f64 time) -> void
 	{
-		report(mainThread, pv, depthCompleted, time, score);
-		std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
+		const auto &bestThread = selectThread();
+
+		report(bestThread, bestThread.lastPv, bestThread.depthCompleted, time, bestThread.lastScore);
+		std::cout << "bestmove " << uci::moveToString(bestThread.lastPv.moves[0]) << std::endl;
+	}
+
+	auto Searcher::selectThread() -> const ThreadData &
+	{
+		if (m_threads.size() == 1)
+			return m_threads[0];
+
+		const auto minScore = std::ranges::min_element(m_threads,
+			[](const auto &a, const auto &b)
+			{
+				return a.lastScore < b.lastScore;
+			})->lastScore;
+
+		const auto threadScore = [minScore](const ThreadData &thread)
+		{
+			return (thread.lastScore - minScore + 10) * thread.depthCompleted;
+		};
+
+		// [from][to][promo]
+		util::MultiArray<i32, 64, 64, 4> votes{};
+
+		const auto votesFor = [&votes](Move move) -> auto &
+		{
+			return votes[move.srcIdx()][move.dstIdx()][move.promoIdx()];
+		};
+
+		for (const auto &thread : m_threads)
+		{
+			if (thread.lastPv.length == 0)
+				continue;
+
+			const auto move = thread.lastPv.moves[0];
+			votesFor(move) += threadScore(thread);
+		}
+
+		const auto *bestThread = &m_threads[0];
+		auto bestVotes = votesFor(bestThread->lastPv.moves[0]);
+
+		for (i32 i = 1; i < m_threads.size(); ++i)
+		{
+			const auto &candidate = m_threads[i];
+
+			if (candidate.lastPv.length == 0)
+				continue;
+
+			const auto moveVotes = votesFor(candidate.lastPv.moves[0]);
+
+			if (std::abs(bestThread->lastScore) > ScoreWin)
+			{
+				if (candidate.lastScore > bestThread->lastScore)
+				{
+					bestThread = &candidate;
+					bestVotes = moveVotes;
+				}
+			}
+			else if (moveVotes > bestVotes
+				|| (moveVotes == bestVotes
+				&& threadScore(candidate) > threadScore(*bestThread)))
+			{
+				bestThread = &candidate;
+				bestVotes = moveVotes;
+			}
+		}
+
+		std::cout << "info string selected thread " << bestThread->id << std::endl;
+
+		return *bestThread;
 	}
 }
