@@ -1288,7 +1288,7 @@ namespace stormphrax::search
 			}
 			else if (moveVotes > bestVotes
 				|| (moveVotes == bestVotes
-				&& threadScore(candidate) > threadScore(*bestThread)))
+					&& threadScore(candidate) > threadScore(*bestThread)))
 			{
 				bestThread = &candidate;
 				bestVotes = moveVotes;
