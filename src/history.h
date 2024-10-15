@@ -179,7 +179,7 @@ namespace stormphrax
 		}
 
 	private:
-		static constexpr usize PawnKeyBits = 13;
+		static constexpr usize PawnKeyBits = 9;
 		static constexpr u64 PawnKeyMask = (1 << PawnKeyBits) - 1;
 
 		// [from][to][from attacked][to attacked]
