@@ -108,6 +108,7 @@ namespace stormphrax
 		{
 			std::memset(&m_main        , 0, sizeof(m_main        ));
 			std::memset(&m_continuation, 0, sizeof(m_continuation));
+			std::memset(&m_pawn        , 0, sizeof(m_pawn        ));
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
 
@@ -130,10 +131,11 @@ namespace stormphrax
 		}
 
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
-			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move, HistoryScore bonus)
 		{
 			mainEntry(threats, move).update(bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
+			pawnEntry(pawnKey, moving, move).update(bonus);
 		}
 
 		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
@@ -141,7 +143,23 @@ namespace stormphrax
 			noisyEntry(move, captured).update(bonus);
 		}
 
-		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
+		[[nodiscard]] inline auto quietOrderingScore(std::span<ContinuationSubtable *const> continuations,
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move) const -> i32
+		{
+			i32 score{};
+
+			score += mainEntry(threats, move);
+
+			score += conthistScore(continuations, ply, moving, move, 1);
+			score += conthistScore(continuations, ply, moving, move, 2);
+			score += conthistScore(continuations, ply, moving, move, 4) / 2;
+
+			score += pawnEntry(pawnKey, moving, move);
+
+			return score;
+		}
+
+		[[nodiscard]] inline auto quietPruningScore(std::span<ContinuationSubtable *const> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move) const -> i32
 		{
 			i32 score{};
@@ -161,10 +179,15 @@ namespace stormphrax
 		}
 
 	private:
+		static constexpr usize PawnKeyBits = 13;
+		static constexpr u64 PawnKeyMask = (1 << PawnKeyBits) - 1;
+
 		// [from][to][from attacked][to attacked]
 		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_main{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
+		// [pawn key low bits][piece][to]
+		util::MultiArray<HistoryEntry, 1 << PawnKeyBits, 12, 64> m_pawn{};
 
 		// [from][to][captured]
 		// additional slot for non-capture queen promos
@@ -216,6 +239,16 @@ namespace stormphrax
 		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry &
 		{
 			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Move move) const -> const HistoryEntry &
+		{
+			return m_pawn[pawnKey & PawnKeyMask][static_cast<i32>(moving)][move.dstIdx()];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Move move) -> HistoryEntry &
+		{
+			return m_pawn[pawnKey & PawnKeyMask][static_cast<i32>(moving)][move.dstIdx()];
 		}
 	};
 }
