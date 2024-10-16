@@ -23,6 +23,7 @@
 #include "eval/nnue.h"
 #include "tunable.h"
 #include "cuckoo.h"
+#include "util/ctrlc.h"
 
 #if SP_EXTERNAL_TUNE
 #include "util/split.h"
@@ -32,6 +33,8 @@ using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
 {
+	util::signal::init();
+
 	tunable::init();
 	cuckoo::init();
 
@@ -53,7 +56,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 			const auto printUsage = [&]()
 			{
 				std::cerr << "usage: " << argv[0]
-					<< " datagen <marlinformat/viri_binpack> <standard/dfrc> <path> [threads] [game limit per thread]"
+					<< " datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [game limit per thread]"
 					<< std::endl;
 			};
 

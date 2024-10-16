@@ -78,6 +78,9 @@ namespace stormphrax
 		// don't bother reallocating if we're already at the right size
 		if (m_tableSize != capacity)
 		{
+			if (m_table)
+				util::alignedFree(m_table);
+
 			m_table = util::alignedAlloc<Cluster>(StorageAlignment, capacity);
 			m_tableSize = capacity;
 
