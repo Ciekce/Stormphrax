@@ -159,8 +159,8 @@ namespace stormphrax::eval
 		{
 			if constexpr (ApplyImmediately)
 			{
-				m_curr->ctx = {updates, bbs, kings};
-				updateBoth(m_curr->acc, *m_curr, m_curr->ctx);
+				const UpdateContext ctx{updates, bbs, kings};
+				updateBoth(m_curr->acc, *m_curr, m_refreshTable, ctx);
 			}
 			else
 			{
@@ -208,10 +208,14 @@ namespace stormphrax::eval
 
 		RefreshTable m_refreshTable{};
 
-		static inline auto update(const Accumulator &prev,
-			UpdatableAccumulator &curr, const UpdateContext &ctx, Color c) -> void
+		static inline auto update(const Accumulator &prev, UpdatableAccumulator &curr,
+			RefreshTable &refreshTable, const UpdateContext &ctx, Color c) -> void
 		{
-			assert(!ctx.updates.refresh[static_cast<i32>(c)]);
+			if (ctx.updates.requiresRefresh(c))
+			{
+				refreshAccumulator(curr, c, ctx.bbs, refreshTable, ctx.kings.color(c));
+				return;
+			}
 
 			const auto subCount = ctx.updates.sub.size();
 			const auto addCount = ctx.updates.add.size();
@@ -262,11 +266,11 @@ namespace stormphrax::eval
 			curr.setUpdated(c);
 		}
 
-		static inline auto updateBoth(const Accumulator &prev,
-			UpdatableAccumulator &curr, const UpdateContext &ctx) -> void
+		static inline auto updateBoth(const Accumulator &prev, UpdatableAccumulator &curr,
+			RefreshTable &refreshTable, const UpdateContext &ctx) -> void
 		{
-			update(prev, curr, ctx, Color::Black);
-			update(prev, curr, ctx, Color::White);
+			update(prev, curr, refreshTable, ctx, Color::Black);
+			update(prev, curr, refreshTable, ctx, Color::White);
 		}
 
 		inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void
@@ -302,7 +306,7 @@ namespace stormphrax::eval
 						const auto &prev = *curr;
 
 						++curr;
-						update(prev.acc, *curr, curr->ctx, c);
+						update(prev.acc, *curr, m_refreshTable, curr->ctx, c);
 					}
 					while (curr != m_curr);
 				}

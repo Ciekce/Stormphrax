@@ -78,6 +78,9 @@ namespace stormphrax
 		// don't bother reallocating if we're already at the right size
 		if (m_tableSize != capacity)
 		{
+			if (m_table)
+				util::alignedFree(m_table);
+
 			m_table = util::alignedAlloc<Cluster>(StorageAlignment, capacity);
 			m_tableSize = capacity;
 
@@ -182,7 +185,7 @@ namespace stormphrax
 	{
 		const auto threadCount = g_opts.threads;
 
-		std::vector<std::jthread> threads{};
+		std::vector<std::thread> threads{};
 		threads.reserve(threadCount);
 
 		const auto chunkSize = util::ceilDiv<usize>(m_tableSize, threadCount);
@@ -201,6 +204,11 @@ namespace stormphrax
 		}
 
 		m_age = 0;
+
+		for (auto &thread : threads)
+		{
+			thread.join();
+		}
 	}
 
 	auto TTable::full() const -> u32

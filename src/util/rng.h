@@ -101,9 +101,34 @@ namespace stormphrax::util::rng
 		u64 m_d;
 	};
 
-	inline auto generateSeed()
+	inline auto generateSingleSeed()
 	{
 		std::random_device generator{};
 		return static_cast<u64>(generator()) << 32 | generator();
 	}
+
+	// splitmix64, suitable for seeding jsf64
+	class SeedGenerator
+	{
+	public:
+		explicit SeedGenerator(u64 seed = generateSingleSeed())
+			: m_state{seed} {}
+
+		~SeedGenerator() = default;
+
+		constexpr auto nextSeed()
+		{
+			m_state += U64(0x9E3779B97F4A7C15);
+
+			auto z = m_state;
+
+			z = (z ^ (z >> 30)) * U64(0xBF58476D1CE4E5B9);
+			z = (z ^ (z >> 27)) * U64(0x94D049BB133111EB);
+
+			return z ^ (z >> 31);
+		}
+
+	private:
+		u64 m_state{};
+	};
 }

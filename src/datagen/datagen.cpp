@@ -26,14 +26,6 @@
 #include <optional>
 #include <cassert>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#else
-//TODO
-#endif
-
 #include "../limit/limit.h"
 #include "../search.h"
 #include "../movegen.h"
@@ -41,8 +33,10 @@
 #include "../opts.h"
 #include "../util/timer.h"
 #include "format.h"
-#include "viri_binpack.h"
+#include "viriformat.h"
 #include "marlinformat.h"
+#include "fen.h"
+#include "../util/ctrlc.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
@@ -57,16 +51,10 @@ namespace stormphrax::datagen
 
 		auto initCtrlCHandler()
 		{
-#ifdef _WIN32
-			if (!SetConsoleCtrlHandler([](DWORD dwCtrlType) -> BOOL
-				{
-					s_stop.store(true, std::memory_order::seq_cst);
-					return TRUE;
-				}, TRUE))
-				std::cerr << "failed to set ctrl+c handler" << std::endl;
-#else
-			//TODO
-#endif
+			util::signal::addCtrlCHandler([]
+			{
+				s_stop.store(true, std::memory_order::seq_cst);
+			});
 		}
 
 		class DatagenNodeLimiter final : public limit::ISearchLimiter
@@ -298,6 +286,8 @@ namespace stormphrax::datagen
 
 					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
 
+					assert(eval::staticEvalOnce(thread->pos) == eval::staticEval(thread->pos, thread->nnueState));
+
 					if (thread->pos.isDrawn(false))
 					{
 						outcome = Outcome::Draw;
@@ -330,7 +320,9 @@ namespace stormphrax::datagen
 
 		template auto runThread<Marlinformat>(u32 id, bool dfrc,
 			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<ViriBinpack>(u32 id, bool dfrc,
+		template auto runThread<Viriformat>(u32 id, bool dfrc,
+			u32 games, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<Fen>(u32 id, bool dfrc,
 			u32 games, u64 seed, const std::filesystem::path &outDir);
 	}
 
@@ -341,8 +333,10 @@ namespace stormphrax::datagen
 
 		if (format == "marlinformat")
 			threadFunc = runThread<Marlinformat>;
-		else if (format == "viri_binpack")
-			threadFunc = runThread<ViriBinpack>;
+		else if (format == "viriformat")
+			threadFunc = runThread<Viriformat>;
+		else if (format == "fen")
+			threadFunc = runThread<Fen>;
 		else
 		{
 			std::cerr << "invalid output format " << format << std::endl;
@@ -352,8 +346,10 @@ namespace stormphrax::datagen
 
 		opts::mutableOpts().chess960 = dfrc;
 
-		const auto baseSeed = util::rng::generateSeed();
+		const auto baseSeed = util::rng::generateSingleSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
+
+		util::rng::SeedGenerator seedGenerator{baseSeed};
 
 		const std::filesystem::path outDir{output};
 
@@ -368,9 +364,10 @@ namespace stormphrax::datagen
 
 		for (u32 i = 0; i < threads; ++i)
 		{
-			theThreads.emplace_back([&, i]()
+			const auto seed = seedGenerator.nextSeed();
+			theThreads.emplace_back([&, i, seed]()
 			{
-				threadFunc(i, dfrc, games, baseSeed + i, outDir);
+				threadFunc(i, dfrc, games, seed, outDir);
 			});
 		}
 

@@ -23,6 +23,7 @@
 #include <atomic>
 
 #include "limit.h"
+#include "../opts.h"
 
 namespace stormphrax::limit
 {
@@ -43,6 +44,8 @@ namespace stormphrax::limit
 		}
 	};
 
+	constexpr auto SoftNodeHardLimitMultiplierRange = util::Range<i32>{1,  5000};
+
 	class NodeLimiter final : public ISearchLimiter
 	{
 	public:
@@ -52,7 +55,17 @@ namespace stormphrax::limit
 
 		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
 		{
-			if (data.nodes >= m_maxNodes)
+			// if softLimit is enabled:
+			//   - soft limit: m_maxNodes
+			//   - hard limit: m_maxNodes * softNodeHardLimitMultiplier
+			// otherwise:
+			//   - no soft limit
+			//   - hard limit: m_maxNodes
+
+			const auto hardLimit = m_maxNodes
+				* (g_opts.softNodes ? g_opts.softNodeHardLimitMultiplier : 1);
+
+			if (data.nodes >= hardLimit || (g_opts.softNodes && allowSoftTimeout && data.nodes >= m_maxNodes))
 			{
 				m_stopped.store(true, std::memory_order_release);
 				return true;
@@ -67,7 +80,7 @@ namespace stormphrax::limit
 		}
 
 	private:
-		usize m_maxNodes;
+		usize m_maxNodes; // hard limit when softNodes is disabled, soft limit when enabled
 		std::atomic_bool m_stopped{false};
 	};
 }

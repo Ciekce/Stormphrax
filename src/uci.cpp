@@ -208,6 +208,11 @@ namespace stormphrax
 			std::cout << "option name ShowCurrMove type check default " << defaultOpts.showCurrMove << '\n';
 			std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead
 				<< " min " << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
+			std::cout << "option name SoftNodes type check default " << defaultOpts.softNodes << std::endl;
+			std::cout << "option name SoftNodeHardLimitMultiplier type spin default "
+				<< defaultOpts.softNodeHardLimitMultiplier
+				<< " min " << limit::SoftNodeHardLimitMultiplierRange.min()
+				<< " max " << limit::SoftNodeHardLimitMultiplierRange.max() << '\n';
 			std::cout << "option name EnableWeirdTCs type check default " << defaultOpts.enableWeirdTcs << std::endl;
 			std::cout << "option name SyzygyPath type string default <empty>\n";
 			std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth
@@ -570,6 +575,23 @@ namespace stormphrax
 					{
 						if (const auto newMoveOverhead = util::tryParseI32(valueStr))
 							m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+					}
+				}
+				else if (nameStr == "softnodes")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSoftNodes = util::tryParseBool(valueStr))
+							opts::mutableOpts().softNodes = *newSoftNodes;
+					}
+				}
+				else if (nameStr == "softnodehardlimitmultiplier")
+				{
+					if (!valueEmpty)
+					{
+						if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(valueStr))
+							opts::mutableOpts().softNodeHardLimitMultiplier
+								= limit::SoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
 					}
 				}
 				else if (nameStr == "enableweirdtcs")

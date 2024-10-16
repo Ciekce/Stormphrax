@@ -58,11 +58,12 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/cuckoo.h src/cuckoo.cpp src/eval/nnue/network.h src/eval/nnue/layers/dense_affine.h src/eval/nnue/activation.h
 	src/eval/nnue/output.h src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h
 	src/eval/nnue/features.h src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h
-	src/datagen/marlinformat.cpp src/datagen/viri_binpack.h src/datagen/viri_binpack.cpp src/tb.h src/tb.cpp
+	src/datagen/marlinformat.cpp src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp
 	src/movepick.h src/history.h src/util/multi_array.h src/correction.h src/limit/compound.h
 	src/eval/nnue/layers/scale.h src/eval/nnue/layers/dequantize.h src/util/simd/x64common.h src/util/simd/avx512.h
 	src/util/simd/avx2.h src/util/simd/sse41.h src/util/simd/neon.h src/util/align.h
-	src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h src/eval/nnue/io_impl.cpp)
+	src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h src/eval/nnue/io_impl.cpp src/datagen/fen.h
+	src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
