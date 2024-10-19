@@ -317,13 +317,15 @@ namespace stormphrax::search
 			searchData.depth = depth;
 			searchData.seldepth = 0;
 
-			auto delta = initialAspWindow();
+			auto delta = ScoreInf;
 
 			auto alpha = -ScoreInf;
 			auto beta = ScoreInf;
 
 			if (depth >= minAspDepth())
 			{
+				delta = 8 + 32 / depth;
+
 				alpha = std::max(score - delta, -ScoreInf);
 				beta  = std::min(score + delta,  ScoreInf);
 			}
