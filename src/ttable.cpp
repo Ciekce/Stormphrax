@@ -94,8 +94,6 @@ namespace stormphrax
 		if (!m_pendingInit)
 			return false;
 
-		assert(!m_table);
-
 		m_pendingInit = false;
 		m_table = util::alignedAlloc<Cluster>(StorageAlignment, m_tableSize);
 
