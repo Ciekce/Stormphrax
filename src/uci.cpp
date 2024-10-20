@@ -243,6 +243,7 @@ namespace stormphrax
 
 		auto UciHandler::handleIsready() -> void
 		{
+			m_searcher.ensureReady();
 			std::cout << "readyok" << std::endl;
 		}
 

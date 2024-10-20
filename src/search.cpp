@@ -69,13 +69,20 @@ namespace stormphrax::search
 
 	auto Searcher::newGame() -> void
 	{
-		m_ttable.clear();
+		// Finalisation (init) clears the TT, so don't clear it twice
+		if (!m_ttable.finalize())
+			m_ttable.clear();
 
 		for (auto &thread : m_threads)
 		{
 			thread.history.clear();
 			thread.correctionHistory.clear();
 		}
+	}
+
+	auto Searcher::ensureReady() -> void
+	{
+		m_ttable.finalize();
 	}
 
 	auto Searcher::startSearch(const Position &pos, f64 startTime, i32 maxDepth,
@@ -85,6 +92,19 @@ namespace stormphrax::search
 		{
 			std::cerr << "missing limiter" << std::endl;
 			return;
+		}
+
+		const auto initStart = util::g_timer.time();
+
+		if (m_ttable.finalize())
+		{
+			const auto initTime = util::g_timer.time() - initStart;
+
+			std::cout
+				<< "info string No ucinewgame or isready before go, lost "
+				<< static_cast<u32>(initTime * 1000.0)
+				<< " ms to TT initialization"
+				<< std::endl;
 		}
 
 		m_infinite = infinite;
