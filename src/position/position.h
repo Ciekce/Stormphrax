@@ -43,6 +43,7 @@ namespace stormphrax
 		u64 blackNonPawns;
 		u64 whiteNonPawns;
 		u64 majors;
+		u64 minors;
 
 		inline auto clear()
 		{
@@ -51,6 +52,7 @@ namespace stormphrax
 			blackNonPawns = 0;
 			whiteNonPawns = 0;
 			majors = 0;
+			minors = 0;
 		}
 
 		inline auto flipStm()
@@ -62,6 +64,7 @@ namespace stormphrax
 			blackNonPawns ^= key;
 			whiteNonPawns ^= key;
 			majors ^= key;
+			minors ^= key;
 		}
 
 		inline auto flipPiece(Piece piece, Square square)
@@ -78,6 +81,8 @@ namespace stormphrax
 
 			if (isMajor(piece))
 				majors ^= key;
+			else if (isMinor(piece))
+				minors ^= key;
 		}
 
 		inline auto movePiece(Piece piece, Square src, Square dst)
@@ -94,6 +99,8 @@ namespace stormphrax
 
 			if (isMajor(piece))
 				majors ^= key;
+			else if (isMinor(piece))
+				minors ^= key;
 		}
 
 		inline auto flipEp(Square epSq)
@@ -146,7 +153,7 @@ namespace stormphrax
 		KingPair kings{};
 	};
 
-	static_assert(sizeof(BoardState) == 208);
+	static_assert(sizeof(BoardState) == 216);
 
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
@@ -248,6 +255,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto blackNonPawnKey() const { return currState().keys.blackNonPawns; }
 		[[nodiscard]] inline auto whiteNonPawnKey() const { return currState().keys.whiteNonPawns; }
 		[[nodiscard]] inline auto majorKey() const { return currState().keys.majors; }
+		[[nodiscard]] inline auto minorKey() const { return currState().keys.minors; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{

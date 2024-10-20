@@ -44,6 +44,7 @@ namespace stormphrax
 			std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
 			std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
 			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
+			std::memset(&m_minorTable, 0, sizeof(m_minorTable));
 			std::memset(&m_contTable, 0, sizeof(m_contTable));
 		}
 
@@ -59,6 +60,7 @@ namespace stormphrax
 			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
+			m_minorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
 
 			if (ply >= 2)
 			{
@@ -87,6 +89,7 @@ namespace stormphrax
 			correction += pawnCorrhistWeight() * m_pawnTable[stm][pos.pawnKey() % Entries];
 			correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries];
 			correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries];
+			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
 			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
 
 			if (ply >= 2)
@@ -132,6 +135,7 @@ namespace stormphrax
 		util::MultiArray<Entry, 2, Entries> m_blackNonPawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_whiteNonPawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_majorTable{};
+		util::MultiArray<Entry, 2, Entries> m_minorTable{};
 		util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
 	};
 }
