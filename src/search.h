@@ -180,6 +180,7 @@ namespace stormphrax::search
 		}
 
 		auto newGame() -> void;
+		auto ensureReady() -> void;
 
 		inline auto setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter)
 		{

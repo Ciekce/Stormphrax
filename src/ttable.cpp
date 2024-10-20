@@ -66,7 +66,8 @@ namespace stormphrax
 
 	TTable::~TTable()
 	{
-		util::alignedFree(m_table);
+		if (m_table)
+			util::alignedFree(m_table);
 	}
 
 	auto TTable::resize(usize size) -> void
@@ -81,21 +82,38 @@ namespace stormphrax
 			if (m_table)
 				util::alignedFree(m_table);
 
-			m_table = util::alignedAlloc<Cluster>(StorageAlignment, capacity);
+			m_table = nullptr;
 			m_tableSize = capacity;
+		}
 
-			if (!m_table)
-			{
-				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
-				std::terminate();
-			}
+		m_pendingInit = true;
+	}
+
+	auto TTable::finalize() -> bool
+	{
+		if (!m_pendingInit)
+			return false;
+
+		assert(!m_table);
+
+		m_pendingInit = false;
+		m_table = util::alignedAlloc<Cluster>(StorageAlignment, m_tableSize);
+
+		if (!m_table)
+		{
+			std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+			std::terminate();
 		}
 
 		clear();
+
+		return true;
 	}
 
 	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool
 	{
+		assert(!m_pendingInit);
+
 		const auto packedKey = packEntryKey(key);
 
 		const auto &cluster = m_table[index(key)];
@@ -120,6 +138,8 @@ namespace stormphrax
 	auto TTable::put(u64 key, Score score, Score staticEval,
 		Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void
 	{
+		assert(!m_pendingInit);
+
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
@@ -183,6 +203,8 @@ namespace stormphrax
 
 	auto TTable::clear() -> void
 	{
+		assert(!m_pendingInit);
+
 		const auto threadCount = g_opts.threads;
 
 		std::vector<std::thread> threads{};
@@ -213,6 +235,8 @@ namespace stormphrax
 
 	auto TTable::full() const -> u32
 	{
+		assert(!m_pendingInit);
+
 		u32 filledEntries{};
 
 		for (u64 i = 0; i < 1000; ++i)

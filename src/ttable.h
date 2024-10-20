@@ -60,6 +60,7 @@ namespace stormphrax
 		~TTable();
 
 		auto resize(usize size) -> void;
+		auto finalize() -> bool;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool;
 		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void;
@@ -137,6 +138,9 @@ namespace stormphrax
 			// this emits a single mul on both x64 and arm64
 			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_tableSize)) >> 64);
 		}
+
+		// Only accessed from UCI thread
+		bool m_pendingInit{};
 
 		Cluster *m_table{};
 		usize m_tableSize{};
