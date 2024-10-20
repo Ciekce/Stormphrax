@@ -60,7 +60,7 @@ namespace stormphrax
 			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
-			m_minorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
+			m_minorTable[stm][pos.minorKey() % Entries].update(scaledError, newWeight);
 
 			if (ply >= 2)
 			{
@@ -90,7 +90,7 @@ namespace stormphrax
 			correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries];
 			correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries];
 			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
-			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
+			correction += minorCorrhistWeight() * m_minorTable[stm][pos.minorKey() % Entries];
 
 			if (ply >= 2)
 			{
