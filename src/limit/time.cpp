@@ -84,8 +84,12 @@ namespace stormphrax::limit
 
 		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
 		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
-
 		const auto nodeMin = static_cast<f64>(nodeTimeScaleMin()) / 1000.0;
+
+		const auto bmStabilityMin = static_cast<f64>(bmStabilityTimeMin()) / 100.0;
+		const auto bmStabilityScale = static_cast<f64>(bmStabilityTimeScale()) / 100.0;
+		const auto bmStabilityOffset = static_cast<f64>(bmStabilityTimeOffset()) / 100.0;
+		const auto bmStabilityPower = static_cast<f64>(bmStabilityTimePower()) / 100.0;
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
 
@@ -97,7 +101,8 @@ namespace stormphrax::limit
 
 		if (data.depth >= 6)
 		{
-			const auto stabilityScale = 0.7 + 9.3 * std::pow(static_cast<f64>(m_stability) + 0.78, -2.8);
+			const auto stabilityScale = bmStabilityMin
+				+ bmStabilityScale * std::pow(static_cast<f64>(m_stability) + bmStabilityOffset, bmStabilityPower);
 			scale *= stabilityScale;
 		}
 
