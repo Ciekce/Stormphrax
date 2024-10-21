@@ -74,10 +74,22 @@ namespace stormphrax::limit
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
+		if (bestMove == m_prevBestMove)
+			++m_stability;
+		else
+		{
+			m_stability = 1;
+			m_prevBestMove = bestMove;
+		}
+
 		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
 		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
-
 		const auto nodeMin = static_cast<f64>(nodeTimeScaleMin()) / 1000.0;
+
+		const auto bmStabilityMin = static_cast<f64>(bmStabilityTimeMin()) / 100.0;
+		const auto bmStabilityScale = static_cast<f64>(bmStabilityTimeScale()) / 100.0;
+		const auto bmStabilityOffset = static_cast<f64>(bmStabilityTimeOffset()) / 100.0;
+		const auto bmStabilityPower = static_cast<f64>(bmStabilityTimePower()) / 100.0;
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
 
@@ -86,6 +98,13 @@ namespace stormphrax::limit
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
 		scale *= std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
+
+		if (data.depth >= 6)
+		{
+			const auto stabilityScale = bmStabilityMin
+				+ bmStabilityScale * std::pow(static_cast<f64>(m_stability) + bmStabilityOffset, bmStabilityPower);
+			scale *= stabilityScale;
+		}
 
 		if (m_avgScore)
 		{

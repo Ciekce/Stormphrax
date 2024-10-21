@@ -93,6 +93,11 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(nodeTimeScale, 174, 100, 250, 10)
 	SP_TUNABLE_PARAM(nodeTimeScaleMin, 108, 1, 1000, 100)
 
+	SP_TUNABLE_PARAM(bmStabilityTimeMin, 70, 40, 100, 3)
+	SP_TUNABLE_PARAM(bmStabilityTimeScale, 930, 200, 1500, 65)
+	SP_TUNABLE_PARAM(bmStabilityTimeOffset, 78, 50, 200, 8)
+	SP_TUNABLE_PARAM(bmStabilityTimePower, -280, -400, -150, 13)
+
 	SP_TUNABLE_PARAM(scoreTrendScoreScale, 400, 10, 1000, 50)
 	SP_TUNABLE_PARAM(scoreTrendStretch, 72, 10, 200, 10)
 	SP_TUNABLE_PARAM(scoreTrendScale, 40, 10, 90, 4)
