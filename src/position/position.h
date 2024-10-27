@@ -141,7 +141,7 @@ namespace stormphrax
 
 		u16 halfmove{};
 
-		Square enPassant{Square::None};
+		Square enPassant{squares::None};
 
 		KingPair kings{};
 	};
@@ -153,7 +153,7 @@ namespace stormphrax
 		constexpr auto Files = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 		constexpr auto Ranks = std::array{'1', '2', '3', '4', '5', '6', '7', '8'};
 
-		const auto s = static_cast<u32>(square);
+		const auto s = square.idx();
 		return std::string{Files[s % 8], Ranks[s / 8]};
 	}
 
@@ -275,7 +275,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 
 			const auto &bbs = this->bbs();
 
@@ -303,7 +303,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto attackersTo(Square square, Color attacker) const
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 
 			const auto &bbs = this->bbs();
 
@@ -336,7 +336,7 @@ namespace stormphrax
 			Color toMove, Square square, Color attacker)
 		{
 			assert(toMove != Color::None);
-			assert(square != Square::None);
+			assert(square != squares::None);
 			assert(attacker != Color::None);
 
 			if constexpr (ThreatShortcut)
@@ -377,7 +377,7 @@ namespace stormphrax
 		template <bool ThreatShortcut = true>
 		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 			assert(attacker != Color::None);
 
 			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);

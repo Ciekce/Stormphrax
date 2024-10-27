@@ -295,26 +295,26 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto pieceTypeAt(Square square) const
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 
-			const auto piece = m_mailbox[static_cast<i32>(square)];
+			const auto piece = m_mailbox[square.idx()];
 			return piece == Piece::None ? PieceType::None : pieceType(piece);
 		}
 
 		[[nodiscard]] inline auto pieceAt(Square square) const
 		{
-			assert(square != Square::None);
-			return m_mailbox[static_cast<i32>(square)];
+			assert(square != squares::None);
+			return m_mailbox[square.idx()];
 		}
 
 		[[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const
 		{
-			return pieceAt(toSquare(rank, file));
+			return pieceAt(Square::fromRankFile(rank, file));
 		}
 
 		inline auto setPiece(Square square, Piece piece)
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 			assert(piece != Piece::None);
 
 			assert(pieceAt(square) == Piece::None);
@@ -329,8 +329,8 @@ namespace stormphrax
 
 		inline auto movePiece(Square src, Square dst, Piece piece)
 		{
-			assert(src != Square::None);
-			assert(dst != Square::None);
+			assert(src != squares::None);
+			assert(dst != squares::None);
 
 			if (slot(src) == piece) [[likely]]
 				slot(src) = Piece::None;
@@ -344,8 +344,8 @@ namespace stormphrax
 
 		inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo)
 		{
-			assert(src != Square::None);
-			assert(dst != Square::None);
+			assert(src != squares::None);
+			assert(dst != squares::None);
 			assert(src != dst);
 
 			assert(moving != Piece::None);
@@ -366,7 +366,7 @@ namespace stormphrax
 
 		inline auto removePiece(Square square, Piece piece)
 		{
-			assert(square != Square::None);
+			assert(square != squares::None);
 			assert(piece != Piece::None);
 
 			assert(pieceAt(square) == piece);
@@ -400,7 +400,7 @@ namespace stormphrax
 	private:
 		[[nodiscard]] inline auto slot(Square square) -> Piece &
 		{
-			return m_mailbox[static_cast<i32>(square)];
+			return m_mailbox[square.idx()];
 		}
 
 		BitboardSet m_bbs{};

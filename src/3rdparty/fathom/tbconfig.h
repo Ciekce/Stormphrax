@@ -114,25 +114,25 @@
  * Define TB_KING_ATTACKS(square) to return the king attacks bitboard for a
  * king at `square'.
  */
-#define TB_KING_ATTACKS(square) (stormphrax::attacks::getKingAttacks(static_cast<stormphrax::Square>(square)))
+#define TB_KING_ATTACKS(square) (stormphrax::attacks::getKingAttacks(stormphrax::Square::fromRaw(square)))
 
 /*
  * Define TB_KNIGHT_ATTACKS(square) to return the knight attacks bitboard for
  * a knight at `square'.
  */
-#define TB_KNIGHT_ATTACKS(square) (stormphrax::attacks::getKnightAttacks(static_cast<stormphrax::Square>(square)))
+#define TB_KNIGHT_ATTACKS(square) (stormphrax::attacks::getKnightAttacks(stormphrax::Square::fromRaw(square)))
 
 /*
  * Define TB_ROOK_ATTACKS(square, occ) to return the rook attacks bitboard
  * for a rook at `square' assuming the given `occ' occupancy bitboard.
  */
-#define TB_ROOK_ATTACKS(square, occ) (stormphrax::attacks::getRookAttacks(static_cast<stormphrax::Square>(square), occ))
+#define TB_ROOK_ATTACKS(square, occ) (stormphrax::attacks::getRookAttacks(stormphrax::Square::fromRaw(square), occ))
 
 /*
  * Define TB_BISHOP_ATTACKS(square, occ) to return the bishop attacks bitboard
  * for a bishop at `square' assuming the given `occ' occupancy bitboard.
  */
-#define TB_BISHOP_ATTACKS(square, occ) (stormphrax::attacks::getBishopAttacks(static_cast<stormphrax::Square>(square), occ))
+#define TB_BISHOP_ATTACKS(square, occ) (stormphrax::attacks::getBishopAttacks(stormphrax::Square::fromRaw(square), occ))
 
 /*
  * Define TB_QUEEN_ATTACKS(square, occ) to return the queen attacks bitboard
@@ -140,7 +140,7 @@
  * NOTE: If no definition is provided then tbprobe will use:
  *       TB_ROOK_ATTACKS(square, occ) | TB_BISHOP_ATTACKS(square, occ)
  */
-#define TB_QUEEN_ATTACKS(square, occ) (stormphrax::attacks::getQueenAttacks(static_cast<stormphrax::Square>(square), occ))
+#define TB_QUEEN_ATTACKS(square, occ) (stormphrax::attacks::getQueenAttacks(stormphrax::Square::fromRaw(square), occ))
 
 /*
  * Define TB_PAWN_ATTACKS(square, color) to return the pawn attacks bitboard
@@ -150,6 +150,6 @@
  *       nothing.  Etc.
  * NOTE: This definition must not include en passant captures.
  */
-#define TB_PAWN_ATTACKS(square, color) (stormphrax::attacks::getPawnAttacks(static_cast<stormphrax::Square>(square), static_cast<stormphrax::Color>(color)))
+#define TB_PAWN_ATTACKS(square, color) (stormphrax::attacks::getPawnAttacks(stormphrax::Square::fromRaw(square), static_cast<stormphrax::Color>(color)))
 
 #endif

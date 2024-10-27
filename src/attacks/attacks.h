@@ -42,7 +42,7 @@ namespace stormphrax::attacks
 
 		for (usize i = 0; i < dst.size(); ++i)
 		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+			const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
 			auto &attacks = dst[i];
 
@@ -65,7 +65,7 @@ namespace stormphrax::attacks
 
 		for (usize i = 0; i < dst.size(); ++i)
 		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+			const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
 			auto &attacks = dst[i];
 
@@ -89,7 +89,7 @@ namespace stormphrax::attacks
 
 		for (usize i = 0; i < dst.size(); ++i)
 		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+			const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
 			dst[i] |= bit.shiftUpLeftRelative<Us>();
 			dst[i] |= bit.shiftUpRightRelative<Us>();
@@ -103,18 +103,18 @@ namespace stormphrax::attacks
 
 	constexpr auto getKnightAttacks(Square src)
 	{
-		return KnightAttacks[static_cast<usize>(src)];
+		return KnightAttacks[src.idx()];
 	}
 
 	constexpr auto getKingAttacks(Square src)
 	{
-		return KingAttacks[static_cast<usize>(src)];
+		return KingAttacks[src.idx()];
 	}
 
 	constexpr auto getPawnAttacks(Square src, Color color)
 	{
 		const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
-		return attacks[static_cast<usize>(src)];
+		return attacks[src.idx()];
 	}
 
 	inline auto getQueenAttacks(Square src, Bitboard occupancy)

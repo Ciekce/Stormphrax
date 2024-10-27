@@ -147,8 +147,8 @@ namespace stormphrax::search
 			assert(ply <= MaxDepth);
 
 			stack[ply].move = NullMove;
-			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
-			contMoves[ply] = { Piece::None, Square::None };
+			conthist[ply] = &history.contTable(Piece::WhitePawn, squares::A1);
+			contMoves[ply] = { Piece::None, squares::None };
 		}
 
 		inline auto setMove(i32 ply, Move move)
@@ -164,7 +164,7 @@ namespace stormphrax::search
 
 		inline auto clearContMove(i32 ply)
 		{
-			contMoves[ply] = { Piece::None, Square::None };
+			contMoves[ply] = { Piece::None, squares::None };
 		}
 	};
 

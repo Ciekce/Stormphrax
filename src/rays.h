@@ -35,8 +35,8 @@ namespace stormphrax
 
 		for (i32 from = 0; from < 64; ++from)
 		{
-			const auto srcSquare = static_cast<Square>(from);
-			const auto srcMask = squareBit(srcSquare);
+			const auto srcSquare = Square::fromRaw(from);
+			const auto srcMask = srcSquare.bit();
 
 			const auto   rookAttacks = attacks::EmptyBoardRooks  [from];
 			const auto bishopAttacks = attacks::EmptyBoardBishops[from];
@@ -46,8 +46,8 @@ namespace stormphrax
 				if (from == to)
 					continue;
 
-				const auto dstSquare = static_cast<Square>(to);
-				const auto dstMask = squareBit(dstSquare);
+				const auto dstSquare = Square::fromRaw(to);
+				const auto dstMask = dstSquare.bit();
 
 				if (rookAttacks[dstSquare])
 					dst[from][to]
@@ -69,8 +69,8 @@ namespace stormphrax
 
 		for (i32 from = 0; from < 64; ++from)
 		{
-			const auto srcSquare = static_cast<Square>(from);
-			const auto srcMask = squareBit(srcSquare);
+			const auto srcSquare = Square::fromRaw(from);
+			const auto srcMask = srcSquare.bit();
 
 			const auto   rookAttacks = attacks::EmptyBoardRooks  [from];
 			const auto bishopAttacks = attacks::EmptyBoardBishops[from];
@@ -80,8 +80,8 @@ namespace stormphrax
 				if (from == to)
 					continue;
 
-				const auto dstSquare = static_cast<Square>(to);
-				const auto dstMask = squareBit(dstSquare);
+				const auto dstSquare = Square::fromRaw(to);
+				const auto dstMask = dstSquare.bit();
 
 				if (rookAttacks[dstSquare])
 					dst[from][to]
@@ -102,11 +102,11 @@ namespace stormphrax
 
 	constexpr auto rayBetween(Square src, Square dst)
 	{
-		return BetweenRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+		return BetweenRays[src.idx()][dst.idx()];
 	}
 
 	constexpr auto rayIntersecting(Square src, Square dst)
 	{
-		return IntersectingRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+		return IntersectingRays[src.idx()][dst.idx()];
 	}
 }

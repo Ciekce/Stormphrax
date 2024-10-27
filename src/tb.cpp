@@ -35,8 +35,8 @@ namespace stormphrax::tb
 				PieceType::Knight
 			};
 
-			const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
-			const auto dst = static_cast<Square>(TB_MOVE_TO  (tbMove));
+			const auto src = Square::fromRaw(TB_MOVE_FROM(tbMove));
+			const auto dst = Square::fromRaw(TB_MOVE_TO  (tbMove));
 			const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
 			if (promo != PieceType::None)
@@ -63,7 +63,7 @@ namespace stormphrax::tb
 			bbs.knights(),
 			bbs.pawns(),
 			pos.halfmove(), 0,
-			epSq == Square::None ? 0 : static_cast<i32>(epSq),
+			epSq == squares::None ? 0 : epSq.idx(),
 			pos.toMove() == Color::White,
 			false /*TODO*/, true, &tbRootMoves
 		);
@@ -79,7 +79,7 @@ namespace stormphrax::tb
 				bbs.knights(),
 				bbs.pawns(),
 				pos.halfmove(), 0,
-				epSq == Square::None ? 0 : static_cast<i32>(epSq),
+				epSq == squares::None ? 0 : epSq.idx(),
 				pos.toMove() == Color::White,
 				true, &tbRootMoves
 			);
@@ -132,7 +132,7 @@ namespace stormphrax::tb
 			bbs.knights(),
 			bbs.pawns(),
 			0, 0,
-			epSq == Square::None ? 0 : static_cast<i32>(epSq),
+			epSq == squares::None ? 0 : epSq.idx(),
 			pos.toMove() == Color::White
 		);
 

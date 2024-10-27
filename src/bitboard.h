@@ -119,7 +119,7 @@ namespace stormphrax
 		}
 
 	private:
-		constexpr BitboardSlot(u64 &board, i32 n)
+		constexpr BitboardSlot(u64 &board, usize n)
 			: m_board{board},
 			  m_mask{u64{1} << n} {}
 
@@ -193,8 +193,8 @@ namespace stormphrax
 		constexpr auto operator<<=(i32 rhs) -> auto & { m_board <<= rhs; return *this; }
 		constexpr auto operator>>=(i32 rhs) -> auto & { m_board >>= rhs; return *this; }
 
-		[[nodiscard]] constexpr auto operator[](Square s) const -> bool { return m_board & (U64(1) << static_cast<i32>(s)); }
-		[[nodiscard]] constexpr auto operator[](Square s) { return BitboardSlot{m_board, static_cast<i32>(s)}; }
+		[[nodiscard]] constexpr auto operator[](Square s) const -> bool { return m_board & s.bit(); }
+		[[nodiscard]] constexpr auto operator[](Square s) { return BitboardSlot{m_board, s.idx()}; }
 
 		[[nodiscard]] constexpr auto popcount() const { return util::popcnt(m_board); }
 
@@ -204,7 +204,7 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr auto lowestSquare() const
 		{
-			return static_cast<Square>(util::ctz(m_board));
+			return Square::fromRaw(util::ctz(m_board));
 		}
 
 		[[nodiscard]] constexpr auto lowestBit() const -> Bitboard
@@ -425,12 +425,12 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr static auto fromSquare(Square square) -> Bitboard
 		{
-			return squareBit(square);
+			return square.bit();
 		}
 
-		[[nodiscard]] constexpr static auto fromSquareChecked(Square square) -> Bitboard
+		[[nodiscard]] constexpr static auto fromSquareOrZero(Square square) -> Bitboard
 		{
-			return squareBitChecked(square);
+			return square.bitOrZero();
 		}
 
 	private:
