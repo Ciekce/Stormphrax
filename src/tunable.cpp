@@ -28,7 +28,7 @@ namespace stormphrax::tunable
 		{
 			const auto lnDepth = std::log(static_cast<f64>(depth));
 			const auto lnMoves = std::log(static_cast<f64>(moves));
-			return static_cast<i32>(base + lnDepth * lnMoves / divisor);
+			return static_cast<i32>(128.0 * (base + lnDepth * lnMoves / divisor));
 		}
 
 		inline auto lmpMoveCount(i32 base, bool improving, i32 depth)
