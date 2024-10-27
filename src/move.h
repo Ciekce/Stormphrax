@@ -71,7 +71,7 @@ namespace stormphrax
 		[[nodiscard]] constexpr auto historyDst() const
 		{
 			if (type() == MoveType::Castling && !g_opts.chess960)
-				return Square::fromRankFile(srcRank(), srcFile() < dstFile() ? 6 : 2);
+				return src().withFile(srcFile() < dstFile() ? 6 : 2);
 			else return dst();
 		}
 

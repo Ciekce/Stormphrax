@@ -77,7 +77,7 @@ namespace stormphrax::datagen
 				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
 
 				const Square relativeEpSquare = pos.enPassant() == squares::None ? squares::None
-					: Square::fromRankFile(pos.toMove() == Color::Black ? 2 : 5, pos.enPassant().file());
+					: pos.enPassant().withRank(pos.toMove() == Color::Black ? 2 : 5);
 
 				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare.idx());
 				board.halfmoveClock = pos.halfmove();

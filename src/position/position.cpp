@@ -732,12 +732,12 @@ namespace stormphrax
 			newCastlingRooks.color(stm).clear();
 		else if (moving == Piece::BlackPawn && move.srcRank() == 6 && move.dstRank() == 4)
 		{
-			state.enPassant = Square::fromRankFile(5, move.srcFile());
+			state.enPassant = move.src().withRank(5);
 			state.keys.flipEp(state.enPassant);
 		}
 		else if (moving == Piece::WhitePawn && move.srcRank() == 1 && move.dstRank() == 3)
 		{
-			state.enPassant = Square::fromRankFile(2, move.srcFile());
+			state.enPassant = move.src().withRank(2);
 			state.keys.flipEp(state.enPassant);
 		}
 
@@ -967,17 +967,12 @@ namespace stormphrax
 
 		if (move.type() == MoveType::Castling)
 		{
-			const auto kingDst = Square::fromRankFile(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
+			const auto kingDst = move.src().withFile(move.srcFile() < move.dstFile() ? 6 : 2);
 			return !state.threats[kingDst] && !(g_opts.chess960 && state.pinned[dst]);
 		}
 		else if (move.type() == MoveType::EnPassant)
 		{
-			auto rank = dst.rank();
-			const auto file = dst.file();
-
-			rank = rank == 2 ? 3 : 4;
-
-			const auto captureSquare = Square::fromRankFile(rank, file);
+			const auto captureSquare = dst.withRank(dst.rank() ? 3 : 4);
 
 			const auto postEpOcc = bbs.occupancy()
 				^ Bitboard::fromSquare(src)
@@ -1369,12 +1364,7 @@ namespace stormphrax
 		if constexpr (UpdateKey)
 			state.keys.movePiece(pawn, src, dst);
 
-		auto rank = dst.rank();
-		const auto file = dst.file();
-
-		rank = rank == 2 ? 3 : 4;
-
-		const auto captureSquare = Square::fromRankFile(rank, file);
+		const auto captureSquare = dst.withRank(dst.rank() == 2 ? 3 : 4);
 		const auto enemyPawn = flipPieceColor(pawn);
 
 		state.boards.removePiece(captureSquare, enemyPawn);
@@ -1406,7 +1396,7 @@ namespace stormphrax
 					if (pieceType(piece) == PieceType::King)
 						state.kings.color(pieceColor(piece)) = square;
 
-					state.keys.flipPiece(piece, Square::fromRankFile(rank, file));
+					state.keys.flipPiece(piece, square);
 				}
 			}
 		}
@@ -1449,7 +1439,7 @@ namespace stormphrax
 				else if (std::abs(static_cast<i32>(src.file()) - static_cast<i32>(dst.file())) == 2)
 				{
 					const auto rookFile = src.file() < dst.file() ? 7 : 0;
-					return Move::castling(src, Square::fromRankFile(src.rank(), rookFile));
+					return Move::castling(src, src.withFile(rookFile));
 				}
 			}
 
