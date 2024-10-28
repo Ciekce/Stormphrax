@@ -70,13 +70,13 @@ namespace stormphrax
 
 			all ^= key;
 
-			if (pieceType(piece) == PieceType::Pawn)
+			if (piece.type() == piece_types::Pawn)
 				pawns ^= key;
-			else if (pieceColor(piece) == colors::Black)
+			else if (piece.color() == colors::Black)
 				blackNonPawns ^= key;
 			else whiteNonPawns ^= key;
 
-			if (isMajor(piece))
+			if (piece.isMajor())
 				majors ^= key;
 		}
 
@@ -86,13 +86,13 @@ namespace stormphrax
 
 			all ^= key;
 
-			if (pieceType(piece) == PieceType::Pawn)
+			if (piece.type() == piece_types::Pawn)
 				pawns ^= key;
-			else if (pieceColor(piece) == colors::Black)
+			else if (piece.color() == colors::Black)
 				blackNonPawns ^= key;
 			else whiteNonPawns ^= key;
 
-			if (isMajor(piece))
+			if (piece.isMajor())
 				majors ^= key;
 		}
 
@@ -256,7 +256,7 @@ namespace stormphrax
 			const auto &state = currState();
 
 			const auto moving = state.boards.pieceAt(move.src());
-			assert(moving != Piece::None);
+			assert(moving != pieces::None);
 
 			const auto captured = state.boards.pieceAt(move.dst());
 
@@ -265,7 +265,7 @@ namespace stormphrax
 			key ^= keys::pieceSquare(moving, move.src());
 			key ^= keys::pieceSquare(moving, move.dst());
 
-			if (captured != Piece::None)
+			if (captured != pieces::None)
 				key ^= keys::pieceSquare(captured, move.dst());
 
 			key ^= keys::color();
@@ -478,9 +478,9 @@ namespace stormphrax
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)
-				return Piece::None;
+				return pieces::None;
 			else if (type == MoveType::EnPassant)
-				return flipPieceColor(boards().pieceAt(move.src()));
+				return boards().pieceAt(move.src()).flipColor();
 			else return boards().pieceAt(move.dst());
 		}
 
@@ -492,8 +492,8 @@ namespace stormphrax
 
 			return type != MoveType::Castling
 				&& (type == MoveType::EnPassant
-					|| move.promo() == PieceType::Queen
-					|| boards().pieceAt(move.dst()) != Piece::None);
+					|| move.promo() == piece_types::Queen
+					|| boards().pieceAt(move.dst()) != pieces::None);
 		}
 
 		[[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece>
@@ -503,13 +503,13 @@ namespace stormphrax
 			const auto type = move.type();
 
 			if (type == MoveType::Castling)
-				return {false, Piece::None};
+				return {false, pieces::None};
 			else if (type == MoveType::EnPassant)
-				return {true, colorPiece(PieceType::Pawn, toMove())};
+				return {true, piece_types::Pawn.withColor(toMove())};
 			else
 			{
 				const auto captured = boards().pieceAt(move.dst());
-				return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
+				return {captured != pieces::None || move.promo() == piece_types::Queen, captured};
 			}
 		}
 

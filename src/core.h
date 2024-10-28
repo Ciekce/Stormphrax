@@ -44,6 +44,40 @@ namespace stormphrax
 			};
 		}
 
+		namespace piece_type
+		{
+			enum : u8
+			{
+				Pawn = 0,
+				Knight,
+				Bishop,
+				Rook,
+				Queen,
+				King,
+				None,
+			};
+		}
+
+		namespace piece
+		{
+			enum : u8
+			{
+				BlackPawn = 0,
+				WhitePawn,
+				BlackKnight,
+				WhiteKnight,
+				BlackBishop,
+				WhiteBishop,
+				BlackRook,
+				WhiteRook,
+				BlackQueen,
+				WhiteQueen,
+				BlackKing,
+				WhiteKing,
+				None,
+			};
+		}
+
 		namespace square
 		{
 			enum : u8
@@ -111,167 +145,234 @@ namespace stormphrax
 		constexpr auto None = Color::fromRaw(internal::core::color::None);
 	}
 
-	enum class Piece : u8
+	class Piece;
+
+	class PieceType
 	{
-		BlackPawn = 0,
-		WhitePawn,
-		BlackKnight,
-		WhiteKnight,
-		BlackBishop,
-		WhiteBishop,
-		BlackRook,
-		WhiteRook,
-		BlackQueen,
-		WhiteQueen,
-		BlackKing,
-		WhiteKing,
-		None
+	public:
+		constexpr PieceType()
+			: m_id{0} {}
+
+		constexpr PieceType(const PieceType &) = default;
+		constexpr PieceType(PieceType &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto withColor(Color c) const -> Piece;
+
+		[[nodiscard]] constexpr auto isMajor() const
+		{
+			assert(m_id != internal::core::piece_type::None);
+			return m_id == internal::core::piece_type::Rook
+				|| m_id == internal::core::piece_type::Queen;
+		}
+
+		[[nodiscard]] constexpr auto isMinor() const
+		{
+			assert(m_id != internal::core::piece_type::None);
+			return m_id == internal::core::piece_type::Knight
+				|| m_id == internal::core::piece_type::Bishop;
+		}
+
+		[[nodiscard]] constexpr auto toChar() const
+		{
+			constexpr auto Map = std::array {
+				'p', 'n', 'b', 'r', 'q', 'k', ' '
+			};
+
+			return Map[idx()];
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return PieceType{id};
+		}
+
+		[[nodiscard]] static constexpr auto fromChar(char c) -> PieceType;
+
+		constexpr auto operator==(const PieceType &) const -> bool = default;
+
+		constexpr auto operator=(const PieceType &) -> PieceType & = default;
+		constexpr auto operator=(PieceType &&) -> PieceType & = default;
+
+	private:
+		explicit constexpr PieceType(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
 	};
 
-	enum class PieceType
+	namespace piece_types
 	{
-		Pawn = 0,
-		Knight,
-		Bishop,
-		Rook,
-		Queen,
-		King,
-		None
-	};
-
-	[[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color)
-	{
-		assert(piece != PieceType::None);
-		assert(color != colors::None);
-
-		return static_cast<Piece>((static_cast<i32>(piece) << 1) + color.idx());
+		constexpr auto Pawn = PieceType::fromRaw(internal::core::piece_type::Pawn);
+		constexpr auto Knight = PieceType::fromRaw(internal::core::piece_type::Knight);
+		constexpr auto Bishop = PieceType::fromRaw(internal::core::piece_type::Bishop);
+		constexpr auto Rook = PieceType::fromRaw(internal::core::piece_type::Rook);
+		constexpr auto Queen = PieceType::fromRaw(internal::core::piece_type::Queen);
+		constexpr auto King = PieceType::fromRaw(internal::core::piece_type::King);
+		constexpr auto None = PieceType::fromRaw(internal::core::piece_type::None);
 	}
 
-	[[nodiscard]] constexpr auto pieceType(Piece piece)
-	{
-		assert(piece != Piece::None);
-		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
-	}
-
-	[[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece)
-	{
-		if (piece == Piece::None)
-			return PieceType::None;
-		return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
-	}
-
-	[[nodiscard]] constexpr auto pieceColor(Piece piece)
-	{
-		assert(piece != Piece::None);
-		return Color::fromRaw(static_cast<i32>(piece) & 1);
-	}
-
-	[[nodiscard]] constexpr auto flipPieceColor(Piece piece)
-	{
-		assert(piece != Piece::None);
-		return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
-	}
-
-	[[nodiscard]] constexpr auto copyPieceColor(Piece piece, PieceType target)
-	{
-		assert(piece != Piece::None);
-		assert(target != PieceType::None);
-
-		return colorPiece(target, pieceColor(piece));
-	}
-
-	[[nodiscard]] constexpr auto isMajor(PieceType piece)
-	{
-		assert(piece != PieceType::None);
-		return piece == PieceType::Rook || piece == PieceType::Queen;
-	}
-
-	[[nodiscard]] constexpr auto isMajor(Piece piece)
-	{
-		assert(piece != Piece::None);
-		return isMajor(pieceType(piece));
-	}
-
-	[[nodiscard]] constexpr auto isMinor(PieceType piece)
-	{
-		assert(piece != PieceType::None);
-		return piece == PieceType::Knight || piece == PieceType::Bishop;
-	}
-
-	[[nodiscard]] constexpr auto isMinor(Piece piece)
-	{
-		assert(piece != Piece::None);
-		return isMinor(pieceType(piece));
-	}
-
-	[[nodiscard]] constexpr auto pieceFromChar(char c)
+	constexpr auto PieceType::fromChar(char c) -> PieceType
 	{
 		switch (c)
 		{
-		case 'p': return Piece::  BlackPawn;
-		case 'P': return Piece::  WhitePawn;
-		case 'n': return Piece::BlackKnight;
-		case 'N': return Piece::WhiteKnight;
-		case 'b': return Piece::BlackBishop;
-		case 'B': return Piece::WhiteBishop;
-		case 'r': return Piece::  BlackRook;
-		case 'R': return Piece::  WhiteRook;
-		case 'q': return Piece:: BlackQueen;
-		case 'Q': return Piece:: WhiteQueen;
-		case 'k': return Piece::  BlackKing;
-		case 'K': return Piece::  WhiteKing;
-		default : return Piece::       None;
+		case 'p': return piece_types::  Pawn;
+		case 'n': return piece_types::Knight;
+		case 'b': return piece_types::Bishop;
+		case 'r': return piece_types::  Rook;
+		case 'q': return piece_types:: Queen;
+		case 'k': return piece_types::  King;
+		default : return piece_types::  None;
 		}
 	}
 
-	[[nodiscard]] constexpr auto pieceToChar(Piece piece)
+	class Piece
 	{
-		switch (piece)
+	public:
+		constexpr Piece()
+			: m_id{0} {}
+
+		constexpr Piece(const Piece &) = default;
+		constexpr Piece(Piece &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
 		{
-		case Piece::       None: return ' ';
-		case Piece::  BlackPawn: return 'p';
-		case Piece::  WhitePawn: return 'P';
-		case Piece::BlackKnight: return 'n';
-		case Piece::WhiteKnight: return 'N';
-		case Piece::BlackBishop: return 'b';
-		case Piece::WhiteBishop: return 'B';
-		case Piece::  BlackRook: return 'r';
-		case Piece::  WhiteRook: return 'R';
-		case Piece:: BlackQueen: return 'q';
-		case Piece:: WhiteQueen: return 'Q';
-		case Piece::  BlackKing: return 'k';
-		case Piece::  WhiteKing: return 'K';
-		default: return ' ';
+			return m_id;
 		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto type() const -> PieceType
+		{
+			return PieceType::fromRaw(m_id >> 1);
+		}
+
+		[[nodiscard]] constexpr auto typeOrNone() const -> PieceType
+		{
+			if (m_id == internal::core::piece::None)
+				return piece_types::None;
+			return PieceType::fromRaw(m_id >> 1);
+		}
+
+		[[nodiscard]] constexpr auto color() const -> Color
+		{
+			return Color::fromRaw(m_id & 1);
+		}
+
+		[[nodiscard]] constexpr auto colorOrNone() const -> Color
+		{
+			if (m_id == internal::core::piece::None)
+				return colors::None;
+			return Color::fromRaw(m_id & 1);
+		}
+
+		[[nodiscard]] constexpr auto flipColor() const
+		{
+			assert(m_id != internal::core::piece::None);
+			return Piece{static_cast<u8>(m_id ^ 1)};
+		}
+
+		[[nodiscard]] constexpr auto copyColorTo(PieceType target) const -> Piece
+		{
+			assert(m_id != internal::core::piece::None);
+			return target.withColor(color());
+		}
+
+		[[nodiscard]] constexpr auto isMajor() const
+		{
+			assert(m_id != internal::core::piece::None);
+			return type().isMajor();
+		}
+
+		[[nodiscard]] constexpr auto isMinor() const
+		{
+			assert(m_id != internal::core::piece::None);
+			return type().isMinor();
+		}
+
+		[[nodiscard]] constexpr auto toChar() const
+		{
+			constexpr auto Map = std::array {
+				'p', 'P', 'n', 'N', 'b', 'B', 'r', 'R', 'q', 'Q', 'k', 'K', ' '
+			};
+
+			return Map[idx()];
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return Piece{id};
+		}
+
+		[[nodiscard]] static constexpr auto fromChar(char c) -> Piece;
+
+		constexpr auto operator==(const Piece &) const -> bool = default;
+
+		constexpr auto operator=(const Piece &) -> Piece & = default;
+		constexpr auto operator=(Piece &&) -> Piece & = default;
+
+	private:
+		explicit constexpr Piece(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
+	};
+
+	namespace pieces
+	{
+		constexpr auto BlackPawn = Piece::fromRaw(internal::core::piece::BlackPawn);
+		constexpr auto WhitePawn = Piece::fromRaw(internal::core::piece::WhitePawn);
+		constexpr auto BlackKnight = Piece::fromRaw(internal::core::piece::BlackKnight);
+		constexpr auto WhiteKnight = Piece::fromRaw(internal::core::piece::WhiteKnight);
+		constexpr auto BlackBishop = Piece::fromRaw(internal::core::piece::BlackBishop);
+		constexpr auto WhiteBishop = Piece::fromRaw(internal::core::piece::WhiteBishop);
+		constexpr auto BlackRook = Piece::fromRaw(internal::core::piece::BlackRook);
+		constexpr auto WhiteRook = Piece::fromRaw(internal::core::piece::WhiteRook);
+		constexpr auto BlackQueen = Piece::fromRaw(internal::core::piece::BlackQueen);
+		constexpr auto WhiteQueen = Piece::fromRaw(internal::core::piece::WhiteQueen);
+		constexpr auto BlackKing = Piece::fromRaw(internal::core::piece::BlackKing);
+		constexpr auto WhiteKing = Piece::fromRaw(internal::core::piece::WhiteKing);
+		constexpr auto None = Piece::fromRaw(internal::core::piece::None);
 	}
 
-	[[nodiscard]] constexpr auto pieceTypeFromChar(char c)
+	constexpr auto Piece::fromChar(char c) -> Piece
 	{
 		switch (c)
 		{
-		case 'p': return PieceType::  Pawn;
-		case 'n': return PieceType::Knight;
-		case 'b': return PieceType::Bishop;
-		case 'r': return PieceType::  Rook;
-		case 'q': return PieceType:: Queen;
-		case 'k': return PieceType::  King;
-		default : return PieceType::  None;
+		case 'p': return pieces::  BlackPawn;
+		case 'P': return pieces::  WhitePawn;
+		case 'n': return pieces::BlackKnight;
+		case 'N': return pieces::WhiteKnight;
+		case 'b': return pieces::BlackBishop;
+		case 'B': return pieces::WhiteBishop;
+		case 'r': return pieces::  BlackRook;
+		case 'R': return pieces::  WhiteRook;
+		case 'q': return pieces:: BlackQueen;
+		case 'Q': return pieces:: WhiteQueen;
+		case 'k': return pieces::  BlackKing;
+		case 'K': return pieces::  WhiteKing;
+		default : return pieces::       None;
 		}
 	}
 
-	[[nodiscard]] constexpr auto pieceTypeToChar(PieceType piece)
+	constexpr auto PieceType::withColor(Color c) const -> Piece
 	{
-		switch (piece)
-		{
-		case PieceType::  None: return ' ';
-		case PieceType::  Pawn: return 'p';
-		case PieceType::Knight: return 'n';
-		case PieceType::Bishop: return 'b';
-		case PieceType::  Rook: return 'r';
-		case PieceType:: Queen: return 'q';
-		case PieceType::  King: return 'k';
-		default: return ' ';
-		}
+		assert(*this != piece_types::None);
+		assert(c != colors::None);
+
+		return Piece::fromRaw((m_id << 1) | c.raw());
 	}
 
 	class Square

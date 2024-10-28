@@ -124,16 +124,16 @@ namespace stormphrax::attacks
 
 	inline auto getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{})
 	{
-		assert(piece != PieceType::None);
-		assert(piece != PieceType::Pawn);
+		assert(piece != piece_types::None);
+		assert(piece != piece_types::Pawn);
 
-		switch (piece)
+		switch (piece.raw())
 		{
-		case PieceType::Knight: return getKnightAttacks(src);
-		case PieceType::Bishop: return getBishopAttacks(src, occupancy);
-		case PieceType::Rook: return getRookAttacks(src, occupancy);
-		case PieceType::Queen: return getQueenAttacks(src, occupancy);
-		case PieceType::King: return getKingAttacks(src);
+		case piece_types::Knight.raw(): return getKnightAttacks(src);
+		case piece_types::Bishop.raw(): return getBishopAttacks(src, occupancy);
+		case piece_types::Rook.raw(): return getRookAttacks(src, occupancy);
+		case piece_types::Queen.raw(): return getQueenAttacks(src, occupancy);
+		case piece_types::King.raw(): return getKingAttacks(src);
 		default: __builtin_unreachable();
 		}
 	}

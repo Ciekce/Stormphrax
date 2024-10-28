@@ -64,7 +64,7 @@ namespace stormphrax
 
 			for (usize file = 0; file < 8; ++file)
 			{
-				out << " | " << pieceToChar(boards.pieceAt(rank, file));
+				out << " | " << boards.pieceAt(rank, file).toChar();
 			}
 
 			out << " | " << (rank + 1) << "\n";

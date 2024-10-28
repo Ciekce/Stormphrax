@@ -243,7 +243,7 @@ namespace stormphrax::datagen
 						break;
 					}
 
-					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
+					assert(thread->pos.boards().pieceAt(move.src()) != pieces::None);
 
 					if (std::abs(score) > ScoreWin)
 						outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;

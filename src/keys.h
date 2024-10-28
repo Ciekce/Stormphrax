@@ -63,10 +63,10 @@ namespace stormphrax::keys
 
 	inline auto pieceSquare(Piece piece, Square square) -> u64
 	{
-		if (piece == Piece::None || square == squares::None)
+		if (piece == pieces::None || square == squares::None)
 			return 0;
 
-		return Keys[offsets::PieceSquares + square.idx() * 12 + static_cast<usize>(piece)];
+		return Keys[offsets::PieceSquares + square.idx() * 12 + piece.idx()];
 	}
 
 	// for flipping

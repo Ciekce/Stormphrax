@@ -65,9 +65,9 @@ namespace stormphrax
 				const auto [moving2, dst2] = moves[ply - 2];
 				const auto [moving1, dst1] = moves[ply - 1];
 
-				if (moving2 != Piece::None && moving1 != Piece::None)
-					m_contTable[stm][static_cast<i32>(pieceType(moving2))][dst2.idx()]
-						[static_cast<i32>(pieceType(moving1))][dst1.idx()].update(scaledError, newWeight);
+				if (moving2 != pieces::None && moving1 != pieces::None)
+					m_contTable[stm][moving2.type().idx()][dst2.idx()]
+						[moving1.type().idx()][dst1.idx()].update(scaledError, newWeight);
 			}
 		}
 
@@ -94,10 +94,10 @@ namespace stormphrax
 				const auto [moving2, dst2] = moves[ply - 2];
 				const auto [moving1, dst1] = moves[ply - 1];
 
-				if (moving2 != Piece::None && moving1 != Piece::None)
+				if (moving2 != pieces::None && moving1 != pieces::None)
 					correction += contCorrhistWeight() * m_contTable[stm]
-						[static_cast<i32>(pieceType(moving2))][dst2.idx()]
-						[static_cast<i32>(pieceType(moving1))][dst1.idx()];
+						[moving2.type().idx()][dst2.idx()]
+						[moving1.type().idx()][dst1.idx()];
 			}
 
 			score += correction / 128;

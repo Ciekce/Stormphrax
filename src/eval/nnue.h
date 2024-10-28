@@ -334,9 +334,9 @@ namespace stormphrax::eval
 			auto &rtEntry = refreshTable.table[tableIdx];
 			auto &prevBoards = rtEntry.colorBbs(c);
 
-			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
+			for (u32 pieceIdx = 0; pieceIdx < pieces::None.idx(); ++pieceIdx)
 			{
-				const auto piece = static_cast<Piece>(pieceIdx);
+				const auto piece = Piece::fromRaw(pieceIdx);
 
 				const auto prev = prevBoards.forPiece(piece);
 				const auto curr =     bbs.forPiece(piece);
@@ -377,7 +377,7 @@ namespace stormphrax::eval
 			// corresponding to that piece on each of the squares it occurs on
 			for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx)
 			{
-				const auto piece = static_cast<Piece>(pieceIdx);
+				const auto piece = Piece::fromRaw(pieceIdx);
 
 				auto board = bbs.forPiece(piece);
 				while (!board.empty())
@@ -400,20 +400,20 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32
 		{
 			assert(c != colors::None);
-			assert(piece != Piece::None);
+			assert(piece != pieces::None);
 			assert(sq != squares::None);
 			assert(king != squares::None);
 
 			constexpr u32 ColorStride = 64 * 6;
 			constexpr u32 PieceStride = 64;
 
-			const auto type = static_cast<u32>(pieceType(piece));
+			const auto type = static_cast<u32>(piece.type().idx());
 
 			const auto color = [piece, c]() -> u32
 			{
-				if (InputFeatureSet::MergedKings && pieceType(piece) == PieceType::King)
+				if (InputFeatureSet::MergedKings && piece.type() == piece_types::King)
 					return 0;
-				return pieceColor(piece) == c ? 0 : 1;
+				return piece.color() == c ? 0 : 1;
 			}();
 
 			if (c == colors::Black)

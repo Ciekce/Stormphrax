@@ -84,13 +84,13 @@ namespace stormphrax
 		inline auto operator[](std::pair<Piece, Move> move) const -> HistoryScore
 		{
 			const auto [piece, mv] = move;
-			return m_data[static_cast<i32>(piece)][mv.dst().idx()];
+			return m_data[piece.idx()][mv.dst().idx()];
 		}
 
 		inline auto operator[](std::pair<Piece, Move> move) -> auto &
 		{
 			const auto [piece, mv] = move;
-			return m_data[static_cast<i32>(piece)][mv.dst().idx()];
+			return m_data[piece.idx()][mv.dst().idx()];
 		}
 
 	private:
@@ -113,12 +113,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto &
 		{
-			return m_continuation[static_cast<i32>(moving)][to.idx()];
+			return m_continuation[moving.idx()][to.idx()];
 		}
 
 		[[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto &
 		{
-			return m_continuation[static_cast<i32>(moving)][to.idx()];
+			return m_continuation[moving.idx()][to.idx()];
 		}
 
 		inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
@@ -210,12 +210,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) const -> const HistoryEntry &
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return m_noisy[move.srcIdx()][move.dstIdx()][captured.idx()];
 		}
 
 		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry &
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return m_noisy[move.srcIdx()][move.dstIdx()][captured.idx()];
 		}
 	};
 }

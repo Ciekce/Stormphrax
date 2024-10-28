@@ -28,21 +28,21 @@ namespace stormphrax::tb
 		const auto moveFromTb = [&pos](auto tbMove)
 		{
 			static constexpr auto PromoPieces = std::array {
-				PieceType::None,
-				PieceType::Queen,
-				PieceType::Rook,
-				PieceType::Bishop,
-				PieceType::Knight
+				piece_types::None,
+				piece_types::Queen,
+				piece_types::Rook,
+				piece_types::Bishop,
+				piece_types::Knight
 			};
 
 			const auto src = Square::fromRaw(TB_MOVE_FROM(tbMove));
 			const auto dst = Square::fromRaw(TB_MOVE_TO  (tbMove));
 			const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
-			if (promo != PieceType::None)
+			if (promo != piece_types::None)
 				return Move::promotion(src, dst, promo);
 			else if (dst == pos.enPassant()
-				&& pos.boards().pieceTypeAt(src) == PieceType::Pawn)
+				&& pos.boards().pieceTypeAt(src) == piece_types::Pawn)
 				return Move::enPassant(src, dst);
 				// Syzygy TBs do not encode positions with castling rights
 			else return Move::standard(src, dst);

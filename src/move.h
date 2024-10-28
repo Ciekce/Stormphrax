@@ -56,7 +56,7 @@ namespace stormphrax
 		[[nodiscard]] constexpr auto dstFile() const { return (m_move >> 4) & 0x7; }
 
 		[[nodiscard]] constexpr auto promoIdx() const { return (m_move >> 2) & 0x3; }
-		[[nodiscard]] constexpr auto promo() const { return static_cast<PieceType>(promoIdx() + 1); }
+		[[nodiscard]] constexpr auto promo() const { return PieceType::fromRaw(promoIdx() + 1); }
 
 		[[nodiscard]] constexpr auto type() const { return static_cast<MoveType>(m_move & 0x3); }
 
@@ -93,7 +93,7 @@ namespace stormphrax
 			return Move{static_cast<u16>(
 				(static_cast<u16>(src.idx()) << 10)
 				| (static_cast<u16>(dst.idx()) << 4)
-				| ((static_cast<u16>(promo) - 1) << 2)
+				| ((static_cast<u16>(promo.idx()) - 1) << 2)
 				| static_cast<u16>(MoveType::Promotion)
 			)};
 		}

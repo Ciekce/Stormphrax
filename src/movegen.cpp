@@ -57,7 +57,7 @@ namespace stormphrax
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
-				noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::Queen), 0});
+				noisy.push({Move::promotion(srcSquare, dstSquare, piece_types::Queen), 0});
 			}
 		}
 
@@ -68,9 +68,9 @@ namespace stormphrax
 				const auto dstSquare = board.popLowestSquare();
 				const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Knight), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Rook), 0});
-				quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Bishop), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, piece_types::Knight), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, piece_types::Rook), 0});
+				quiet.push({Move::promotion(srcSquare, dstSquare, piece_types::Bishop), 0});
 			}
 		}
 
@@ -185,12 +185,14 @@ namespace stormphrax
 			else generatePawnsQuiet_<colors::White.raw()>(quiet, pos.bbs(), dstMask, occ);
 		}
 
-		template <PieceType Piece, const std::array<Bitboard, 64> &Attacks>
+		template <u8 PieceRaw, const std::array<Bitboard, 64> &Attacks>
 		inline auto precalculated(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
+			constexpr auto P = PieceType::fromRaw(PieceRaw);
+
 			const auto us = pos.toMove();
 
-			auto pieces = pos.bbs().forPiece(Piece, us);
+			auto pieces = pos.bbs().forPiece(P, us);
 			while (!pieces.empty())
 			{
 				const auto srcSquare = pieces.popLowestSquare();
@@ -202,7 +204,7 @@ namespace stormphrax
 
 		auto generateKnights(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			precalculated<PieceType::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
+			precalculated<piece_types::Knight.raw(), attacks::KnightAttacks>(dst, pos, dstMask);
 		}
 
 		inline auto generateFrcCastling(ScoredMoveList &dst, const Position &pos, Bitboard occupancy,
@@ -221,7 +223,7 @@ namespace stormphrax
 		template <bool Castling>
 		auto generateKings(ScoredMoveList &dst, const Position &pos, Bitboard dstMask)
 		{
-			precalculated<PieceType::King, attacks::KingAttacks>(dst, pos, dstMask);
+			precalculated<piece_types::King.raw(), attacks::KingAttacks>(dst, pos, dstMask);
 
 			if constexpr (Castling)
 			{
