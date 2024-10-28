@@ -37,11 +37,11 @@ namespace stormphrax::wdl
 	inline auto normalizeScore(Score score, u32 ply)
 	{
 		// don't normalise wins/losses, or zeroes that are pointless to normalise
-		if (score == 0 || std::abs(score) > ScoreWin)
+	//	if (score == 0 || std::abs(score) > ScoreWin)
 			return score;
 
-		const auto [a, b] = wdlParams(ply);
-		return static_cast<Score>(std::round(100.0 * static_cast<f64>(score) / a));
+	//	const auto [a, b] = wdlParams(ply);
+	//	return static_cast<Score>(std::round(100.0 * static_cast<f64>(score) / a));
 	}
 
 	// for datagen only - only gives a 50% winrate at move 32
