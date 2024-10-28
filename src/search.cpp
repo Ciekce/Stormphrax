@@ -86,7 +86,7 @@ namespace stormphrax::search
 	}
 
 	auto Searcher::startSearch(const Position &pos, f64 startTime, i32 maxDepth,
-		std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
+		std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
 	{
 		if (!m_limiter && !limiter)
 		{
@@ -112,12 +112,24 @@ namespace stormphrax::search
 		m_minRootScore = -ScoreInf;
 		m_maxRootScore =  ScoreInf;
 
-		const auto status = initRootMoves(pos);
+		RootStatus status;
 
-		if (status == RootStatus::NoLegalMoves)
+		if (!moves.empty())
 		{
-			std::cout << "info string no legal moves" << std::endl;
-			return;
+			m_rootMoves.resize(moves.size());
+			std::ranges::copy(moves, m_rootMoves.begin());
+
+			status = RootStatus::Searchmoves;
+		}
+		else
+		{
+			status = initRootMoves(pos);
+
+			if (status == RootStatus::NoLegalMoves)
+			{
+				std::cout << "info string no legal moves" << std::endl;
+				return;
+			}
 		}
 
 		assert(!m_rootMoves.empty());

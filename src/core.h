@@ -138,6 +138,14 @@ namespace stormphrax
 		return isMinor(pieceType(piece));
 	}
 
+	[[nodiscard]] constexpr auto isValidPromotion(PieceType piece)
+	{
+		return piece == PieceType::Knight
+			|| piece == PieceType::Bishop
+			|| piece == PieceType::Rook
+			|| piece == PieceType::Queen;
+	}
+
 	[[nodiscard]] constexpr auto pieceFromChar(char c)
 	{
 		switch (c)

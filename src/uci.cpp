@@ -323,6 +323,8 @@ namespace stormphrax
 				u32 depth = MaxDepth;
 				auto limiter = std::make_unique<limit::CompoundLimiter>();
 
+				MoveList movesToSearch{};
+
 				bool infinite = false;
 				bool tournamentTime = false;
 
@@ -404,6 +406,45 @@ namespace stormphrax
 							toGo = static_cast<i32>(moves);
 						}
 					}
+					else if (tokens[i] == "searchmoves" && i + 1 < tokens.size())
+					{
+						while (i + 1 < tokens.size())
+						{
+							const auto &candidate = tokens[i + 1];
+
+							if (candidate.length() >= 4 && candidate.length() <= 5
+								&& candidate[0] >= 'a' && candidate[0] <= 'h'
+								&& candidate[1] >= '1' && candidate[1] <= '8'
+								&& candidate[2] >= 'a' && candidate[2] <= 'h'
+								&& candidate[3] >= '1' && candidate[3] <= '8'
+								&& (candidate.length() < 5 || isValidPromotion(pieceTypeFromChar(candidate[4]))))
+							{
+								const auto move = m_pos.moveFromUci(candidate);
+
+								if (std::ranges::find(movesToSearch, move) == movesToSearch.end())
+								{
+									if (m_pos.isPseudolegal(move) && m_pos.isLegal(move))
+										movesToSearch.push(move);
+									else std::cout << "info string ignoring illegal move " << candidate << std::endl;
+								}
+
+								++i;
+							}
+							else break;
+						}
+					}
+				}
+
+				if (!movesToSearch.empty())
+				{
+					std::cout << "info string searching moves:";
+
+					for (const auto move : movesToSearch)
+					{
+						std::cout << " " << moveToString(move);
+					}
+
+					std::cout << std::endl;
 				}
 
 				if (depth == 0)
@@ -451,7 +492,8 @@ namespace stormphrax
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
 
-				m_searcher.startSearch(m_pos, startTime, static_cast<i32>(depth), std::move(limiter), infinite);
+				m_searcher.startSearch(m_pos, startTime,
+					static_cast<i32>(depth), movesToSearch, std::move(limiter), infinite);
 			}
 		}
 

@@ -188,7 +188,7 @@ namespace stormphrax::search
 		}
 
 		auto startSearch(const Position &pos, f64 startTime, i32 maxDepth,
-			std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
+			std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
@@ -256,6 +256,7 @@ namespace stormphrax::search
 			NoLegalMoves = 0,
 			Tablebase,
 			Generated,
+			Searchmoves,
 		};
 
 		auto initRootMoves(const Position &pos) -> RootStatus;
