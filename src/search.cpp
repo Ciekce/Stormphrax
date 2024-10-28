@@ -107,6 +107,8 @@ namespace stormphrax::search
 				<< std::endl;
 		}
 
+		m_resetBarrier.arriveAndWait();
+
 		m_infinite = infinite;
 
 		m_minRootScore = -ScoreInf;
@@ -133,8 +135,6 @@ namespace stormphrax::search
 		}
 
 		assert(!m_rootMoves.empty());
-
-		m_resetBarrier.arriveAndWait();
 
 		if (limiter)
 			m_limiter = std::move(limiter);
