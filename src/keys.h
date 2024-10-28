@@ -77,7 +77,7 @@ namespace stormphrax::keys
 
 	inline auto color(Color c)
 	{
-		return c == Color::White ? 0 : color();
+		return c == colors::White ? 0 : color();
 	}
 
 	inline auto castling(const CastlingRooks &castlingRooks)

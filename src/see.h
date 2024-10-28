@@ -134,7 +134,7 @@ namespace stormphrax::see
 
 		auto attackers = pos.allAttackersTo(square, occupancy);
 
-		auto us = oppColor(color);
+		auto us = color.opponent();
 
 		while (true)
 		{
@@ -157,14 +157,14 @@ namespace stormphrax::see
 			attackers &= occupancy;
 
 			score = -score - 1 - value(next);
-			us = oppColor(us);
+			us = us.opponent();
 
 			if (score >= 0)
 			{
 				// our only attacker is our king, but the opponent still has defenders
 				if (next == PieceType::King
 					&& !(attackers & bbs.forColor(us)).empty())
-					us = oppColor(us);
+					us = us.opponent();
 				break;
 			}
 		}

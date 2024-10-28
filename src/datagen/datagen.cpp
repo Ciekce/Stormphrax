@@ -235,7 +235,7 @@ namespace stormphrax::datagen
 					if (!move)
 					{
 						if (thread->pos.isCheck())
-							outcome = thread->pos.toMove() == Color::Black
+							outcome = thread->pos.toMove() == colors::Black
 								? Outcome::WhiteWin
 								: Outcome::WhiteLoss;
 						else outcome = Outcome::Draw; // stalemate

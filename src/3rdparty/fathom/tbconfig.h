@@ -150,6 +150,6 @@
  *       nothing.  Etc.
  * NOTE: This definition must not include en passant captures.
  */
-#define TB_PAWN_ATTACKS(square, color) (stormphrax::attacks::getPawnAttacks(stormphrax::Square::fromRaw(square), static_cast<stormphrax::Color>(color)))
+#define TB_PAWN_ATTACKS(square, color) (stormphrax::attacks::getPawnAttacks(stormphrax::Square::fromRaw(square), stormphrax::Color::fromRaw(color)))
 
 #endif

@@ -39,52 +39,46 @@ namespace stormphrax
 		constexpr auto DownLeft = Down + Left;
 		constexpr auto DownRight = Down + Right;
 
-		template <Color C>
-		constexpr auto up()
+		constexpr auto up(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return Down;
-			else return Up;
+			return c == colors::Black
+				? Down
+				: Up;
 		}
 
-		template <Color C>
-		constexpr auto upLeft()
+		constexpr auto upLeft(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return DownLeft;
-			else return UpLeft;
+			return c == colors::Black
+				? DownLeft
+				: UpLeft;
 		}
 
-		template <Color C>
-		constexpr auto upRight()
+		constexpr auto upRight(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return DownRight;
-			else return UpRight;
+			return c == colors::Black
+				? DownRight
+				: UpRight;
 		}
 
-		template <Color C>
-		constexpr auto down()
+		constexpr auto down(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return Up;
-			else return Down;
+			return c == colors::Black
+				? Up
+				: Down;
 		}
 
-		template <Color C>
-		constexpr auto downLeft()
+		constexpr auto downLeft(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return UpLeft;
-			else return DownLeft;
+			return c == colors::Black
+				? UpLeft
+				: DownLeft;
 		}
 
-		template <Color C>
-		constexpr auto downRight()
+		constexpr auto downRight(Color c)
 		{
-			if constexpr (C == Color::Black)
-				return UpRight;
-			else return DownRight;
+			return c == colors::Black
+				? UpRight
+				: DownRight;
 		}
 	}
 
@@ -321,52 +315,46 @@ namespace stormphrax
 			return (m_board >> shifts::Diagonal12LR) & ~FileA;
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftUpRelative() const
+		[[nodiscard]] constexpr auto shiftUpRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftDown();
-			else return shiftUp();
+			return c == colors::Black
+				? shiftDown()
+				: shiftUp();
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftUpLeftRelative() const
+		[[nodiscard]] constexpr auto shiftUpLeftRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftDownLeft();
-			else return shiftUpLeft();
+			return c == colors::Black
+				? shiftDownLeft()
+				: shiftUpLeft();
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftUpRightRelative() const
+		[[nodiscard]] constexpr auto shiftUpRightRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftDownRight();
-			else return shiftUpRight();
+			return c == colors::Black
+				? shiftDownRight()
+				: shiftUpRight();
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftDownRelative() const
+		[[nodiscard]] constexpr auto shiftDownRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftUp();
-			else return shiftDown();
+			return c == colors::Black
+				? shiftUp()
+				: shiftDown();
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftDownLeftRelative() const
+		[[nodiscard]] constexpr auto shiftDownLeftRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftUpLeft();
-			else return shiftDownLeft();
+			return c == colors::Black
+				? shiftUpLeft()
+				: shiftDownLeft();
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto shiftDownRightRelative() const
+		[[nodiscard]] constexpr auto shiftDownRightRelative(Color c) const
 		{
-			if constexpr (C == Color::Black)
-				return shiftUpRight();
-			else return shiftDownRight();
+			return c == colors::Black
+				? shiftUpRight()
+				: shiftDownRight();
 		}
 
 		[[nodiscard]] constexpr auto fillUp() const -> Bitboard
@@ -385,22 +373,6 @@ namespace stormphrax
 			b |= b >> 16;
 			b |= b >> 32;
 			return b;
-		}
-
-		template <Color C>
-		[[nodiscard]] constexpr auto fillUpRelative() const
-		{
-			if constexpr (C == Color::Black)
-				return fillDown();
-			else return fillUp();
-		}
-
-		template <Color C>
-		[[nodiscard]] constexpr auto fillDownRelative() const
-		{
-			if constexpr (C == Color::Black)
-				return fillUp();
-			else return fillDown();
 		}
 
 		[[nodiscard]] constexpr auto fillFile() const
@@ -467,23 +439,14 @@ namespace stormphrax
 
 		constexpr Bitboard All{Bitboard::All};
 
-		template <Color C>
-		[[nodiscard]] constexpr auto promotionRank()
-		{
-			if constexpr (C == Color::Black)
-				return Rank1;
-			else return Rank8;
-		}
-
 		[[nodiscard]] constexpr auto promotionRank(Color c)
 		{
-			return c == Color::Black ? Rank1 : Rank8;
+			return c == colors::Black ? Rank1 : Rank8;
 		}
 
-		template <Color C>
-		[[nodiscard]] constexpr auto rank(i32 idx)
+		[[nodiscard]] constexpr auto rank(Color c, i32 idx)
 		{
-			return Ranks[relativeRank<C>(idx)];
+			return Ranks[relativeRank(c, idx)];
 		}
 	}
 }

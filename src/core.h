@@ -34,6 +34,16 @@ namespace stormphrax
 {
 	namespace internal::core
 	{
+		namespace color
+		{
+			enum : u8
+			{
+				Black = 0,
+				White,
+				None,
+			};
+		}
+
 		namespace square
 		{
 			enum : u8
@@ -49,6 +59,55 @@ namespace stormphrax
 				None
 			};
 		}
+	}
+
+	class Color
+	{
+	public:
+		constexpr Color()
+			: m_id{0} {}
+
+		constexpr Color(const Color &) = default;
+		constexpr Color(Color &&) = default;
+
+		[[nodiscard]] constexpr auto raw() const
+		{
+			return m_id;
+		}
+
+		[[nodiscard]] constexpr auto idx() const
+		{
+			return static_cast<usize>(m_id);
+		}
+
+		[[nodiscard]] constexpr auto opponent() const
+		{
+			assert(m_id != internal::core::color::None);
+			return Color{static_cast<u8>(m_id ^ 1)};
+		}
+
+		[[nodiscard]] static constexpr auto fromRaw(u8 id)
+		{
+			return Color{id};
+		}
+
+		constexpr auto operator==(const Color &) const -> bool = default;
+
+		constexpr auto operator=(const Color &) -> Color & = default;
+		constexpr auto operator=(Color &&) -> Color & = default;
+
+	private:
+		explicit constexpr Color(u8 id)
+			: m_id{id} {}
+
+		u8 m_id{};
+	};
+
+	namespace colors
+	{
+		constexpr auto Black = Color::fromRaw(internal::core::color::Black);
+		constexpr auto White = Color::fromRaw(internal::core::color::White);
+		constexpr auto None = Color::fromRaw(internal::core::color::None);
 	}
 
 	enum class Piece : u8
@@ -79,25 +138,12 @@ namespace stormphrax
 		None
 	};
 
-	enum class Color : i8
-	{
-		Black = 0,
-		White,
-		None
-	};
-
-	[[nodiscard]] constexpr auto oppColor(Color color)
-	{
-		assert(color != Color::None);
-		return static_cast<Color>(!static_cast<i32>(color));
-	}
-
 	[[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color)
 	{
 		assert(piece != PieceType::None);
 		assert(color != Color::None);
 
-		return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
+		return static_cast<Piece>((static_cast<i32>(piece) << 1) + color.idx());
 	}
 
 	[[nodiscard]] constexpr auto pieceType(Piece piece)
@@ -116,7 +162,7 @@ namespace stormphrax
 	[[nodiscard]] constexpr auto pieceColor(Piece piece)
 	{
 		assert(piece != Piece::None);
-		return static_cast<Color>(static_cast<i32>(piece) & 1);
+		return Color::fromRaw(static_cast<i32>(piece) & 1);
 	}
 
 	[[nodiscard]] constexpr auto flipPieceColor(Piece piece)
@@ -389,20 +435,10 @@ namespace stormphrax
 		constexpr auto None = Square::fromRaw(internal::core::square::None);
 	}
 
-	template <Color C>
-	constexpr auto relativeRank(i32 rank)
-	{
-		assert(rank >= 0 && rank < 8);
-
-		if constexpr (C == Color::Black)
-			return 7 - rank;
-		else return rank;
-	}
-
 	constexpr auto relativeRank(Color c, i32 rank)
 	{
 		assert(rank >= 0 && rank < 8);
-		return c == Color::Black ? 7 - rank : rank;
+		return c == colors::Black ? 7 - rank : rank;
 	}
 
 	struct KingPair
@@ -432,13 +468,13 @@ namespace stormphrax
 		[[nodiscard]] inline auto color(Color c) const
 		{
 			assert(c != Color::None);
-			return kings[static_cast<i32>(c)];
+			return kings[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
 			assert(c != Color::None);
-			return kings[static_cast<i32>(c)];
+			return kings[c.idx()];
 		}
 
 		[[nodiscard]] inline auto operator==(const KingPair &other) const -> bool = default;
@@ -502,13 +538,13 @@ namespace stormphrax
 		[[nodiscard]] inline auto color(Color c) const -> const auto &
 		{
 			assert(c != Color::None);
-			return rooks[static_cast<i32>(c)];
+			return rooks[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
 			assert(c != Color::None);
-			return rooks[static_cast<i32>(c)];
+			return rooks[c.idx()];
 		}
 
 		[[nodiscard]] inline auto operator==(const CastlingRooks &) const -> bool = default;

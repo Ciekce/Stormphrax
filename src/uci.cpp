@@ -364,7 +364,7 @@ namespace stormphrax
 						}
 					}
 					else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-						&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
+						&& tokens[i - 1] == (m_pos.toMove() == colors::Black ? "btime" : "wtime"))
 					{
 						tournamentTime = true;
 
@@ -378,7 +378,7 @@ namespace stormphrax
 						}
 					}
 					else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-						&& tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
+						&& tokens[i - 1] == (m_pos.toMove() == colors::Black ? "binc" : "winc"))
 					{
 						tournamentTime = true;
 
@@ -705,7 +705,7 @@ namespace stormphrax
 			const auto normalized = wdl::normalizeScore(staticEval, m_pos.plyFromStartpos());
 
 			std::cout << "Static eval: ";
-			printScore(std::cout, m_pos.toMove() == Color::Black ? -normalized : normalized);
+			printScore(std::cout, m_pos.toMove() == colors::Black ? -normalized : normalized);
 			std::cout << std::endl;
 		}
 

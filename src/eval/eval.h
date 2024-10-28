@@ -47,7 +47,7 @@ namespace stormphrax::eval
 	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
 		auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
+		eval += contempt[pos.toMove().idx()];
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
@@ -63,7 +63,7 @@ namespace stormphrax::eval
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
+		eval += contempt[pos.toMove().idx()];
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 }

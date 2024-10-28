@@ -35,12 +35,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto forColor(Color color) -> auto &
 		{
-			return m_colors[static_cast<i32>(color)];
+			return m_colors[color.idx()];
 		}
 
 		[[nodiscard]] inline auto forColor(Color color) const
 		{
-			return m_colors[static_cast<i32>(color)];
+			return m_colors[color.idx()];
 		}
 
 		[[nodiscard]] inline auto forPiece(PieceType piece) -> Bitboard &
@@ -66,15 +66,9 @@ namespace stormphrax
 		[[nodiscard]] inline auto blackOccupancy() const { return m_colors[0]; }
 		[[nodiscard]] inline auto whiteOccupancy() const { return m_colors[1]; }
 
-		template <Color C>
-		[[nodiscard]] inline auto occupancy() const
-		{
-			return m_colors[static_cast<i32>(C)];
-		}
-
 		[[nodiscard]] inline auto occupancy(Color c) const
 		{
-			return m_colors[static_cast<i32>(c)];
+			return m_colors[c.idx()];
 		}
 
 		[[nodiscard]] inline auto occupancy() const { return m_colors[0] | m_colors[1]; }
@@ -149,78 +143,6 @@ namespace stormphrax
 			return whiteOccupancy() ^ (pawns() | kings()) & whiteOccupancy();
 		}
 
-		template <Color C>
-		[[nodiscard]] inline auto pawns() const
-		{
-			if constexpr (C == Color::Black)
-				return blackPawns();
-			else return whitePawns();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto knights() const
-		{
-			if constexpr (C == Color::Black)
-				return blackKnights();
-			else return whiteKnights();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto bishops() const
-		{
-			if constexpr (C == Color::Black)
-				return blackBishops();
-			else return whiteBishops();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto rooks() const
-		{
-			if constexpr (C == Color::Black)
-				return blackRooks();
-			else return whiteRooks();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto queens() const
-		{
-			if constexpr (C == Color::Black)
-				return blackQueens();
-			else return whiteQueens();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto kings() const
-		{
-			if constexpr (C == Color::Black)
-				return blackKings();
-			else return whiteKings();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto minors() const
-		{
-			if constexpr (C == Color::Black)
-				return blackMinors();
-			else return whiteMinors();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto majors() const
-		{
-			if constexpr (C == Color::Black)
-				return blackMajors();
-			else return whiteMajors();
-		}
-
-		template <Color C>
-		[[nodiscard]] inline auto nonPk() const
-		{
-			if constexpr (C == Color::Black)
-				return blackNonPk();
-			else return whiteNonPk();
-		}
-
 		[[nodiscard]] inline auto pawns(Color color) const
 		{
 			return forPiece(PieceType::Pawn, color);
@@ -253,17 +175,17 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto minors(Color color) const
 		{
-			return color == Color::Black ? blackMinors() : whiteMinors();
+			return color == colors::Black ? blackMinors() : whiteMinors();
 		}
 
 		[[nodiscard]] inline auto majors(Color color) const
 		{
-			return color == Color::Black ? blackMajors() : whiteMajors();
+			return color == colors::Black ? blackMajors() : whiteMajors();
 		}
 
 		[[nodiscard]] inline auto nonPk(Color color) const
 		{
-			return color == Color::Black ? blackNonPk() : whiteNonPk();
+			return color == colors::Black ? blackNonPk() : whiteNonPk();
 		}
 
 		[[nodiscard]] inline auto operator==(const BitboardSet &other) const -> bool = default;

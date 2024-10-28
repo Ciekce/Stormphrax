@@ -64,7 +64,7 @@ namespace stormphrax::tb
 			bbs.pawns(),
 			pos.halfmove(), 0,
 			epSq == squares::None ? 0 : epSq.idx(),
-			pos.toMove() == Color::White,
+			pos.toMove() == colors::White,
 			false /*TODO*/, true, &tbRootMoves
 		);
 
@@ -80,7 +80,7 @@ namespace stormphrax::tb
 				bbs.pawns(),
 				pos.halfmove(), 0,
 				epSq == squares::None ? 0 : epSq.idx(),
-				pos.toMove() == Color::White,
+				pos.toMove() == colors::White,
 				true, &tbRootMoves
 			);
 
@@ -133,7 +133,7 @@ namespace stormphrax::tb
 			bbs.pawns(),
 			0, 0,
 			epSq == squares::None ? 0 : epSq.idx(),
-			pos.toMove() == Color::White
+			pos.toMove() == colors::White
 		);
 
 		if (wdl == TB_RESULT_FAILED)

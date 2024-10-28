@@ -82,8 +82,7 @@ namespace stormphrax::attacks
 		return dst;
 	}();
 
-	template <Color Us>
-	consteval auto generatePawnAttacks()
+	consteval auto generatePawnAttacks(Color us)
 	{
 		std::array<Bitboard, 64> dst{};
 
@@ -91,15 +90,15 @@ namespace stormphrax::attacks
 		{
 			const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
-			dst[i] |= bit.shiftUpLeftRelative<Us>();
-			dst[i] |= bit.shiftUpRightRelative<Us>();
+			dst[i] |= bit.shiftUpLeftRelative(us);
+			dst[i] |= bit.shiftUpRightRelative(us);
 		}
 
 		return dst;
 	}
 
-	constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
-	constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
+	constexpr auto BlackPawnAttacks = generatePawnAttacks(colors::Black);
+	constexpr auto WhitePawnAttacks = generatePawnAttacks(colors::White);
 
 	constexpr auto getKnightAttacks(Square src)
 	{
@@ -113,7 +112,7 @@ namespace stormphrax::attacks
 
 	constexpr auto getPawnAttacks(Square src, Color color)
 	{
-		const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
+		const auto &attacks = color == colors::White ? WhitePawnAttacks : BlackPawnAttacks;
 		return attacks[src.idx()];
 	}
 

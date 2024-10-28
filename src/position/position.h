@@ -72,7 +72,7 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (pieceColor(piece) == Color::Black)
+			else if (pieceColor(piece) == colors::Black)
 				blackNonPawns ^= key;
 			else whiteNonPawns ^= key;
 
@@ -88,7 +88,7 @@ namespace stormphrax
 
 			if (pieceType(piece) == PieceType::Pawn)
 				pawns ^= key;
-			else if (pieceColor(piece) == Color::Black)
+			else if (pieceColor(piece) == colors::Black)
 				blackNonPawns ^= key;
 			else whiteNonPawns ^= key;
 
@@ -228,12 +228,12 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto toMove() const
 		{
-			return m_blackToMove ? Color::Black : Color::White;
+			return m_blackToMove ? colors::Black : colors::White;
 		}
 
 		[[nodiscard]] inline auto opponent() const
 		{
-			return m_blackToMove ? Color::White : Color::Black;
+			return m_blackToMove ? colors::White : colors::Black;
 		}
 
 		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return currState().castlingRooks; }
@@ -289,8 +289,8 @@ namespace stormphrax
 			const auto bishops = queens | bbs.bishops();
 			attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
-			attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::White);
-			attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
+			attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, colors::White);
+			attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, colors::Black);
 
 			const auto knights = bbs.knights();
 			attackers |= knights & attacks::getKnightAttacks(square);
@@ -320,7 +320,7 @@ namespace stormphrax
 			attackers |= bishops & attacks::getBishopAttacks(square, occ);
 
 			const auto pawns = bbs.pawns(attacker);
-			attackers |= pawns & attacks::getPawnAttacks(square, oppColor(attacker));
+			attackers |= pawns & attacks::getPawnAttacks(square, attacker.opponent());
 
 			const auto knights = bbs.knights(attacker);
 			attackers |= knights & attacks::getKnightAttacks(square);
@@ -354,7 +354,7 @@ namespace stormphrax
 				return true;
 
 			if (const auto pawns = bbs.pawns(attacker);
-				!(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
+				!(pawns & attacks::getPawnAttacks(square, attacker.opponent())).empty())
 				return true;
 
 			if (const auto kings = bbs.kings(attacker);
@@ -405,28 +405,16 @@ namespace stormphrax
 		[[nodiscard]] inline auto blackKing() const { return currState().kings.black(); }
 		[[nodiscard]] inline auto whiteKing() const { return currState().kings.white(); }
 
-		template <Color C>
-		[[nodiscard]] inline auto king() const
-		{
-			return currState().kings.color(C);
-		}
-
 		[[nodiscard]] inline auto king(Color c) const
 		{
 			assert(c != Color::None);
 			return currState().kings.color(c);
 		}
 
-		template <Color C>
-		[[nodiscard]] inline auto oppKing() const
-		{
-			return currState().kings.color(oppColor(C));
-		}
-
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
 			assert(c != Color::None);
-			return currState().kings.color(oppColor(c));
+			return currState().kings.color(c.opponent());
 		}
 
 		[[nodiscard]] inline auto isCheck() const
@@ -590,7 +578,7 @@ namespace stormphrax
 			const auto color = toMove();
 			const auto &state = currState();
 
-			return attackersTo(state.kings.color(color), oppColor(color));
+			return attackersTo(state.kings.color(color), color.opponent());
 		}
 
 		[[nodiscard]] inline auto calcPinned() const
@@ -601,7 +589,7 @@ namespace stormphrax
 			Bitboard pinned{};
 
 			const auto king = state.kings.color(color);
-			const auto opponent = oppColor(color);
+			const auto opponent = color.opponent();
 
 			const auto &bbs = state.boards.bbs();
 
@@ -629,7 +617,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto calcThreats() const
 		{
 			const auto us = toMove();
-			const auto them = oppColor(us);
+			const auto them = us.opponent();
 
 			const auto &state = currState();
 			const auto &bbs = state.boards.bbs();
@@ -662,7 +650,7 @@ namespace stormphrax
 			}
 
 			const auto pawns = bbs.pawns(them);
-			if (them == Color::Black)
+			if (them == colors::Black)
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 

@@ -90,32 +90,33 @@ namespace stormphrax
 			}
 		}
 
-		template <Color Us>
+		template <u8 UsRaw>
 		auto generatePawnsNoisy_(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
 		{
-			constexpr auto Them = oppColor(Us);
+			constexpr auto Us = Color::fromRaw(UsRaw);
+			constexpr auto Them = Us.opponent();
 
-			constexpr auto PromotionRank = boards::promotionRank<Us>();
+			constexpr auto PromotionRank = boards::promotionRank(Us);
 
-			constexpr auto ForwardOffset = offsets::up<Us>();
-			constexpr auto LeftOffset = offsets::upLeft<Us>();
-			constexpr auto RightOffset = offsets::upRight<Us>();
+			constexpr auto ForwardOffset = offsets::up(Us);
+			constexpr auto LeftOffset = offsets::upLeft(Us);
+			constexpr auto RightOffset = offsets::upRight(Us);
 
 			const auto &bbs = pos.bbs();
 
-			const auto theirs = bbs.occupancy<Them>();
+			const auto theirs = bbs.occupancy(Them);
 
 			const auto forwardDstMask = dstMask & PromotionRank & ~theirs;
 
-			const auto pawns = bbs.pawns<Us>();
+			const auto pawns = bbs.pawns(Us);
 
-			const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
-			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
+			const auto leftAttacks = pawns.shiftUpLeftRelative(Us) & dstMask;
+			const auto rightAttacks = pawns.shiftUpRightRelative(Us) & dstMask;
 
 			pushQueenPromotions(noisy, LeftOffset,   leftAttacks & theirs & PromotionRank);
 			pushQueenPromotions(noisy, RightOffset, rightAttacks & theirs & PromotionRank);
 
-			const auto forwards = pawns.template shiftUpRelative<Us>() & forwardDstMask;
+			const auto forwards = pawns.shiftUpRelative(Us) & forwardDstMask;
 			pushQueenPromotions(noisy, ForwardOffset, forwards);
 
 			pushStandards(noisy,  LeftOffset,  leftAttacks & theirs & ~PromotionRank);
@@ -132,45 +133,46 @@ namespace stormphrax
 
 		inline auto generatePawnsNoisy(ScoredMoveList &noisy, const Position &pos, Bitboard dstMask)
 		{
-			if (pos.toMove() == Color::Black)
-				generatePawnsNoisy_<Color::Black>(noisy, pos, dstMask);
-			else generatePawnsNoisy_<Color::White>(noisy, pos, dstMask);
+			if (pos.toMove() == colors::Black)
+				generatePawnsNoisy_<colors::Black.raw()>(noisy, pos, dstMask);
+			else generatePawnsNoisy_<colors::White.raw()>(noisy, pos, dstMask);
 		}
 
-		template <Color Us>
+		template <u8 UsRaw>
 		auto generatePawnsQuiet_(ScoredMoveList &quiet, const BitboardSet &bbs, Bitboard dstMask, Bitboard occ)
 		{
-			constexpr auto Them = oppColor(Us);
+			constexpr auto Us = Color::fromRaw(UsRaw);
+			constexpr auto Them = Us.opponent();
 
-			constexpr auto PromotionRank = boards::promotionRank<Us>();
-			constexpr auto ThirdRank = boards::rank<Us>(2);
+			constexpr auto PromotionRank = boards::promotionRank(Us);
+			constexpr auto ThirdRank = boards::rank(Us, 2);
 
-			const auto ForwardOffset = offsets::up<Us>();
+			const auto ForwardOffset = offsets::up(Us);
 			const auto DoubleOffset = ForwardOffset * 2;
 
-			constexpr auto  LeftOffset = offsets::upLeft <Us>();
-			constexpr auto RightOffset = offsets::upRight<Us>();
+			constexpr auto  LeftOffset = offsets::upLeft (Us);
+			constexpr auto RightOffset = offsets::upRight(Us);
 
-			const auto theirs = bbs.occupancy<Them>();
+			const auto theirs = bbs.occupancy(Them);
 
 			const auto forwardDstMask = dstMask & ~theirs;
 
-			const auto pawns = bbs.pawns<Us>();
+			const auto pawns = bbs.pawns(Us);
 
-			const auto  leftAttacks = pawns.template shiftUpLeftRelative <Us>() & dstMask;
-			const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
+			const auto  leftAttacks = pawns.shiftUpLeftRelative (Us) & dstMask;
+			const auto rightAttacks = pawns.shiftUpRightRelative(Us) & dstMask;
 
 			pushUnderpromotions(quiet,  LeftOffset,  leftAttacks & theirs & PromotionRank);
 			pushUnderpromotions(quiet, RightOffset, rightAttacks & theirs & PromotionRank);
 
-			auto forwards = pawns.template shiftUpRelative<Us>() & ~occ;
+			auto forwards = pawns.shiftUpRelative(Us) & ~occ;
 
 			auto singles = forwards & forwardDstMask;
 			pushUnderpromotions(quiet, ForwardOffset, singles & PromotionRank);
 			singles &= ~PromotionRank;
 
 			forwards &= ThirdRank;
-			const auto doubles = forwards.template shiftUpRelative<Us>() & forwardDstMask;
+			const auto doubles = forwards.shiftUpRelative(Us) & forwardDstMask;
 
 			pushStandards(quiet,  DoubleOffset, doubles);
 			pushStandards(quiet, ForwardOffset, singles);
@@ -178,9 +180,9 @@ namespace stormphrax
 
 		inline auto generatePawnsQuiet(ScoredMoveList &quiet, const Position &pos, Bitboard dstMask, Bitboard occ)
 		{
-			if (pos.toMove() == Color::Black)
-				generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
-			else generatePawnsQuiet_<Color::White>(quiet, pos.bbs(), dstMask, occ);
+			if (pos.toMove() == colors::Black)
+				generatePawnsQuiet_<colors::Black.raw()>(quiet, pos.bbs(), dstMask, occ);
+			else generatePawnsQuiet_<colors::White.raw()>(quiet, pos.bbs(), dstMask, occ);
 		}
 
 		template <PieceType Piece, const std::array<Bitboard, 64> &Attacks>
@@ -231,7 +233,7 @@ namespace stormphrax
 					// this branch is cheaper than the extra checks the chess960 castling movegen does
 					if (g_opts.chess960)
 					{
-						if (pos.toMove() == Color::Black)
+						if (pos.toMove() == colors::Black)
 						{
 							if (castlingRooks.black().kingside != squares::None)
 								generateFrcCastling(dst, pos, occupancy,
@@ -256,28 +258,28 @@ namespace stormphrax
 					}
 					else
 					{
-						if (pos.toMove() == Color::Black)
+						if (pos.toMove() == colors::Black)
 						{
 							if (castlingRooks.black().kingside != squares::None
 								&& (occupancy & U64(0x6000000000000000)).empty()
-								&& !pos.isAttacked(squares::F8, Color::White))
+								&& !pos.isAttacked(squares::F8, colors::White))
 								pushCastling(dst, pos.blackKing(), squares::H8);
 
 							if (castlingRooks.black().queenside != squares::None
 								&& (occupancy & U64(0x0E00000000000000)).empty()
-								&& !pos.isAttacked(squares::D8, Color::White))
+								&& !pos.isAttacked(squares::D8, colors::White))
 								pushCastling(dst, pos.blackKing(), squares::A8);
 						}
 						else
 						{
 							if (castlingRooks.white().kingside != squares::None
 								&& (occupancy & U64(0x0000000000000060)).empty()
-								&& !pos.isAttacked(squares::F1, Color::Black))
+								&& !pos.isAttacked(squares::F1, colors::Black))
 								pushCastling(dst, pos.whiteKing(), squares::H1);
 
 							if (castlingRooks.white().queenside != squares::None
 								&& (occupancy & U64(0x000000000000000E)).empty()
-								&& !pos.isAttacked(squares::D1, Color::Black))
+								&& !pos.isAttacked(squares::D1, colors::Black))
 								pushCastling(dst, pos.whiteKing(), squares::A1);
 						}
 					}
@@ -290,7 +292,7 @@ namespace stormphrax
 			const auto &bbs = pos.bbs();
 
 			const auto us = pos.toMove();
-			const auto them = oppColor(us);
+			const auto them = us.opponent();
 
 			const auto ours = bbs.forColor(us);
 			const auto theirs = bbs.forColor(them);
@@ -325,7 +327,7 @@ namespace stormphrax
 		const auto &bbs = pos.bbs();
 
 		const auto us = pos.toMove();
-		const auto them = oppColor(us);
+		const auto them = us.opponent();
 
 		const auto ours = bbs.forColor(us);
 
@@ -339,11 +341,11 @@ namespace stormphrax
 		if (pos.enPassant() != squares::None)
 		{
 			epMask = Bitboard::fromSquare(pos.enPassant());
-			epPawn = us == Color::Black ? epMask.shiftUp() : epMask.shiftDown();
+			epPawn = us == colors::Black ? epMask.shiftUp() : epMask.shiftDown();
 		}
 
 		// queen promotions are noisy
-		const auto promos = ~ours & (us == Color::Black ? boards::Rank1 : boards::Rank8);
+		const auto promos = ~ours & (us == colors::Black ? boards::Rank1 : boards::Rank8);
 
 		auto pawnDstMask = kingDstMask | epMask | promos;
 
@@ -375,7 +377,7 @@ namespace stormphrax
 		const auto &bbs = pos.bbs();
 
 		const auto us = pos.toMove();
-		const auto them = oppColor(us);
+		const auto them = us.opponent();
 
 		const auto ours = bbs.forColor(us);
 		const auto theirs = bbs.forColor(them);
@@ -422,7 +424,7 @@ namespace stormphrax
 		if (pos.enPassant() != squares::None)
 		{
 			epMask = Bitboard::fromSquare(pos.enPassant());
-			epPawn = pos.toMove() == Color::Black ? epMask.shiftUp() : epMask.shiftDown();
+			epPawn = pos.toMove() == colors::Black ? epMask.shiftUp() : epMask.shiftDown();
 		}
 
 		auto pawnDstMask = kingDstMask;

@@ -53,7 +53,7 @@ namespace stormphrax
 			const auto scaledError = static_cast<i32>((searchScore - staticEval) * Grain);
 			const auto newWeight = static_cast<i32>(std::min(depth + 1, 16));
 
-			const auto stm = static_cast<i32>(pos.toMove());
+			const auto stm = pos.toMove().idx();
 
 			m_pawnTable[stm][pos.pawnKey() % Entries].update(scaledError, newWeight);
 			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(scaledError, newWeight);
@@ -76,9 +76,9 @@ namespace stormphrax
 		{
 			using namespace tunable;
 
-			const auto stm = static_cast<i32>(pos.toMove());
+			const auto stm = pos.toMove().idx();
 
-			const auto [blackNpWeight, whiteNpWeight] = pos.toMove() == Color::Black
+			const auto [blackNpWeight, whiteNpWeight] = pos.toMove() == colors::Black
 				? std::pair{ stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
 				: std::pair{nstmNonPawnCorrhistWeight(),  stmNonPawnCorrhistWeight()};
 

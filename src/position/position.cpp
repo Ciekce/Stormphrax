@@ -178,8 +178,8 @@ namespace stormphrax
 		bbs.forPiece(PieceType:: Queen) = U64(0x0800000000000008);
 		bbs.forPiece(PieceType::  King) = U64(0x1000000000000010);
 
-		bbs.forColor(Color::Black) = U64(0xFFFF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FFFF);
+		bbs.forColor(colors::Black) = U64(0xFFFF000000000000);
+		bbs.forColor(colors::White) = U64(0x000000000000FFFF);
 
 		state.castlingRooks.black().kingside  = squares::H8;
 		state.castlingRooks.black().queenside = squares::A8;
@@ -331,9 +331,9 @@ namespace stormphrax
 			return false;
 		}
 
-		if (const auto stm = newBlackToMove ? Color::Black : Color::White;
+		if (const auto stm = newBlackToMove ? colors::Black : colors::White;
 			isAttacked<false>(newState, stm,
-				newBbs.forPiece(PieceType::King, oppColor(stm)).lowestSquare(),
+				newBbs.forPiece(PieceType::King, stm.opponent()).lowestSquare(),
 				stm))
 		{
 			std::cerr << "opponent must not be in check" << std::endl;
@@ -535,8 +535,8 @@ namespace stormphrax
 
 		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
 
-		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FF00);
+		bbs.forColor(colors::Black) = U64(0x00FF000000000000);
+		bbs.forColor(colors::White) = U64(0x000000000000FF00);
 
 		const auto backrank = scharnaglToBackrank(n);
 
@@ -547,8 +547,8 @@ namespace stormphrax
 			const auto blackSquare = Square::fromRankFile(7, i);
 			const auto whiteSquare = Square::fromRankFile(0, i);
 
-			state.boards.setPiece(blackSquare, colorPiece(backrank[i], Color::Black));
-			state.boards.setPiece(whiteSquare, colorPiece(backrank[i], Color::White));
+			state.boards.setPiece(blackSquare, colorPiece(backrank[i], colors::Black));
+			state.boards.setPiece(whiteSquare, colorPiece(backrank[i], colors::White));
 
 			if (backrank[i] == PieceType::Rook)
 			{
@@ -595,8 +595,8 @@ namespace stormphrax
 
 		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
 
-		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FF00);
+		bbs.forColor(colors::Black) = U64(0x00FF000000000000);
+		bbs.forColor(colors::White) = U64(0x000000000000FF00);
 
 		const auto blackBackrank = scharnaglToBackrank(n / 960);
 		const auto whiteBackrank = scharnaglToBackrank(n % 960);
@@ -609,8 +609,8 @@ namespace stormphrax
 			const auto blackSquare = Square::fromRankFile(7, i);
 			const auto whiteSquare = Square::fromRankFile(0, i);
 
-			state.boards.setPiece(blackSquare, colorPiece(blackBackrank[i], Color::Black));
-			state.boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], Color::White));
+			state.boards.setPiece(blackSquare, colorPiece(blackBackrank[i], colors::Black));
+			state.boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], colors::White));
 
 			if (blackBackrank[i] == PieceType::Rook)
 			{
@@ -679,9 +679,9 @@ namespace stormphrax
 		}
 
 		const auto stm = opponent();
-		const auto nstm = oppColor(stm);
+		const auto nstm = stm.opponent();
 
-		if (stm == Color::Black)
+		if (stm == colors::Black)
 			++m_fullmove;
 
 		if (!move)
@@ -776,7 +776,7 @@ namespace stormphrax
 
 		m_blackToMove = !m_blackToMove;
 
-		if (toMove() == Color::Black)
+		if (toMove() == colors::Black)
 			--m_fullmove;
 	}
 
@@ -817,7 +817,7 @@ namespace stormphrax
 			return false;
 
 		const auto srcPieceType = pieceType(srcPiece);
-		const auto them = oppColor(us);
+		const auto them = us.opponent();
 		const auto occ = state.boards.bbs().occupancy();
 
 		if (type == MoveType::Castling)
@@ -869,15 +869,15 @@ namespace stormphrax
 			{
 				if (dst == state.castlingRooks.black().kingside)
 					return (occ & U64(0x6000000000000000)).empty()
-						&& !isAttacked(squares::F8, Color::White);
+						&& !isAttacked(squares::F8, colors::White);
 				else if (dst == state.castlingRooks.black().queenside)
 					return (occ & U64(0x0E00000000000000)).empty()
-						&& !isAttacked(squares::D8, Color::White);
+						&& !isAttacked(squares::D8, colors::White);
 				else if (dst == state.castlingRooks.white().kingside)
 					return (occ & U64(0x0000000000000060)).empty()
-						&& !isAttacked(squares::F1, Color::Black);
+						&& !isAttacked(squares::F1, colors::Black);
 				else return (occ & U64(0x000000000000000E)).empty()
-						&& !isAttacked(squares::D1, Color::Black);
+						&& !isAttacked(squares::D1, colors::Black);
 			}
 		}
 
@@ -890,8 +890,8 @@ namespace stormphrax
 			const auto dstRank = move.dstRank();
 
 			// backwards move
-			if ((us == Color::Black && dstRank >= srcRank)
-				|| (us == Color::White && dstRank <= srcRank))
+			if ((us == colors::Black && dstRank >= srcRank)
+				|| (us == colors::White && dstRank <= srcRank))
 				return false;
 
 			const auto promoRank = relativeRank(us, 7);
@@ -914,7 +914,7 @@ namespace stormphrax
 			const auto delta = std::abs(dstRank - srcRank);
 
 			i32 maxDelta;
-			if (us == Color::Black)
+			if (us == colors::Black)
 				maxDelta = srcRank == 6 ? 2 : 1;
 			else maxDelta = srcRank == 1 ? 2 : 1;
 
@@ -922,7 +922,7 @@ namespace stormphrax
 				return false;
 
 			if (delta == 2
-				&& occ[Square::fromRaw(dst.idx() + (us == Color::White ? offsets::Down : offsets::Up))])
+				&& occ[Square::fromRaw(dst.idx() + (us == colors::White ? offsets::Down : offsets::Up))])
 				return false;
 		}
 		else
@@ -955,7 +955,7 @@ namespace stormphrax
 		assert(move != NullMove);
 
 		const auto us = toMove();
-		const auto them = oppColor(us);
+		const auto them = us.opponent();
 
 		const auto &state = currState();
 		const auto &bbs = state.boards.bbs();
@@ -1092,7 +1092,7 @@ namespace stormphrax
 				fen << '/';
 		}
 
-		fen << (toMove() == Color::White ? " w " : " b ");
+		fen << (toMove() == colors::White ? " w " : " b ");
 
 		if (state.castlingRooks == CastlingRooks{})
 			fen << '-';
@@ -1404,7 +1404,7 @@ namespace stormphrax
 		state.keys.flipCastling(state.castlingRooks);
 		state.keys.flipEp(state.enPassant);
 
-		if (toMove() == Color::Black)
+		if (toMove() == colors::Black)
 			state.keys.flipStm();
 
 		state.checkers = calcCheckers();

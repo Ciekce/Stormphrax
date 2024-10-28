@@ -71,12 +71,12 @@ namespace stormphrax::eval
 
 		inline auto setRefresh(Color c)
 		{
-			refresh[static_cast<i32>(c)] = true;
+			refresh[c.idx()] = true;
 		}
 
 		[[nodiscard]] inline auto requiresRefresh(Color c) const
 		{
-			return refresh[static_cast<i32>(c)];
+			return refresh[c.idx()];
 		}
 
 		inline auto pushSubAdd(Piece piece, Square src, Square dst)
@@ -120,13 +120,13 @@ namespace stormphrax::eval
 			inline auto setUpdated(Color c) -> void
 			{
 				assert(c != Color::None);
-				dirty[static_cast<i32>(c)] = false;
+				dirty[c.idx()] = false;
 			}
 
 			[[nodiscard]] inline auto isDirty(Color c) -> bool
 			{
 				assert(c != Color::None);
-				return dirty[static_cast<i32>(c)];
+				return dirty[c.idx()];
 			}
 		};
 
@@ -144,7 +144,7 @@ namespace stormphrax::eval
 
 			m_curr = &m_accumulatorStack[0];
 
-			for (const auto c : { Color::Black, Color::White })
+			for (const auto c : { colors::Black, colors::White })
 			{
 				const auto king = kings.color(c);
 				const auto entry = InputFeatureSet::getRefreshTableEntry(c, king);
@@ -199,8 +199,8 @@ namespace stormphrax::eval
 
 			accumulator.initBoth(g_network.featureTransformer());
 
-			resetAccumulator(accumulator, Color::Black, bbs, kings.black());
-			resetAccumulator(accumulator, Color::White, bbs, kings.white());
+			resetAccumulator(accumulator, colors::Black, bbs, kings.black());
+			resetAccumulator(accumulator, colors::White, bbs, kings.white());
 
 			return evaluate(accumulator, bbs, stm);
 		}
@@ -272,13 +272,13 @@ namespace stormphrax::eval
 		static inline auto updateBoth(const Accumulator &prev, UpdatableAccumulator &curr,
 			RefreshTable &refreshTable, const UpdateContext &ctx) -> void
 		{
-			update(prev, curr, refreshTable, ctx, Color::Black);
-			update(prev, curr, refreshTable, ctx, Color::White);
+			update(prev, curr, refreshTable, ctx, colors::Black);
+			update(prev, curr, refreshTable, ctx, colors::White);
 		}
 
 		inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void
 		{
-			for (const auto c : { Color::Black, Color::White })
+			for (const auto c : { colors::Black, colors::White })
 			{
 				if (!m_curr->isDirty(c))
 					continue;
@@ -321,7 +321,7 @@ namespace stormphrax::eval
 		{
 			assert(stm != Color::None);
 
-			return stm == Color::Black
+			return stm == colors::Black
 				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
 				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
 		}
@@ -416,7 +416,7 @@ namespace stormphrax::eval
 				return pieceColor(piece) == c ? 0 : 1;
 			}();
 
-			if (c == Color::Black)
+			if (c == colors::Black)
 				sq = sq.flipRank();
 
 			sq = InputFeatureSet::transformFeatureSquare(sq, king);

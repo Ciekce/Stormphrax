@@ -69,15 +69,15 @@ namespace stormphrax::datagen
 							|| square == castlingRooks.white().queenside))
 						pieceId = UnmovedRook;
 
-					const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
+					const u8 colorId = pieceColor(piece) == colors::Black ? (1 << 3) : 0;
 
 					board.pieces[i++] = pieceId | colorId;
 				}
 
-				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
+				const u8 stm = pos.toMove() == colors::Black ? (1 << 7) : 0;
 
 				const Square relativeEpSquare = pos.enPassant() == squares::None ? squares::None
-					: pos.enPassant().withRank(pos.toMove() == Color::Black ? 2 : 5);
+					: pos.enPassant().withRank(pos.toMove() == colors::Black ? 2 : 5);
 
 				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare.idx());
 				board.halfmoveClock = pos.halfmove();
