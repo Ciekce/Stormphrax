@@ -51,7 +51,7 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] inline auto forColor(Color c) const -> const auto &
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return m_outputs[c.idx()];
 		}
 
@@ -67,7 +67,7 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] inline auto forColor(Color c) -> auto &
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return m_outputs[c.idx()];
 		}
 

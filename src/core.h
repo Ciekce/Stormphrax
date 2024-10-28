@@ -88,6 +88,7 @@ namespace stormphrax
 
 		[[nodiscard]] static constexpr auto fromRaw(u8 id)
 		{
+			assert(id <= internal::core::color::None);
 			return Color{id};
 		}
 
@@ -141,7 +142,7 @@ namespace stormphrax
 	[[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color)
 	{
 		assert(piece != PieceType::None);
-		assert(color != Color::None);
+		assert(color != colors::None);
 
 		return static_cast<Piece>((static_cast<i32>(piece) << 1) + color.idx());
 	}
@@ -467,13 +468,13 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto color(Color c) const
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return kings[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return kings[c.idx()];
 		}
 
@@ -537,13 +538,13 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto color(Color c) const -> const auto &
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return rooks[c.idx()];
 		}
 
 		[[nodiscard]] inline auto color(Color c) -> auto &
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return rooks[c.idx()];
 		}
 

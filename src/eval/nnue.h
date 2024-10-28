@@ -119,13 +119,13 @@ namespace stormphrax::eval
 
 			inline auto setUpdated(Color c) -> void
 			{
-				assert(c != Color::None);
+				assert(c != colors::None);
 				dirty[c.idx()] = false;
 			}
 
 			[[nodiscard]] inline auto isDirty(Color c) -> bool
 			{
-				assert(c != Color::None);
+				assert(c != colors::None);
 				return dirty[c.idx()];
 			}
 		};
@@ -183,7 +183,7 @@ namespace stormphrax::eval
 		[[nodiscard]] inline auto evaluate(const BitboardSet &bbs, KingPair kings, Color stm)
 		{
 			assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
-			assert(stm != Color::None);
+			assert(stm != colors::None);
 
 			ensureUpToDate(bbs, kings);
 
@@ -193,7 +193,7 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto evaluateOnce(const BitboardSet &bbs, KingPair kings, Color stm)
 		{
 			assert(kings.isValid());
-			assert(stm != Color::None);
+			assert(stm != colors::None);
 
 			Accumulator accumulator{};
 
@@ -319,7 +319,7 @@ namespace stormphrax::eval
 		[[nodiscard]] static inline auto evaluate(const Accumulator &accumulator,
 			const BitboardSet &bbs, Color stm) -> i32
 		{
-			assert(stm != Color::None);
+			assert(stm != colors::None);
 
 			return stm == colors::Black
 				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
@@ -370,7 +370,7 @@ namespace stormphrax::eval
 		static inline auto resetAccumulator(Accumulator &accumulator,
 			Color c, const BitboardSet &bbs, Square king) -> void
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			assert(king != squares::None);
 
 			// loop through each coloured piece, and activate the features
@@ -399,7 +399,7 @@ namespace stormphrax::eval
 
 		[[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			assert(piece != Piece::None);
 			assert(sq != squares::None);
 			assert(king != squares::None);

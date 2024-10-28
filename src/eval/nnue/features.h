@@ -96,7 +96,7 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 
 			assert(prevKingSq != squares::None);
 			assert(kingSq != squares::None);
@@ -194,7 +194,7 @@ namespace stormphrax::eval::nnue::features
 
 		static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq)
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 
 			assert(prevKingSq != squares::None);
 			assert(kingSq != squares::None);

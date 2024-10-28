@@ -335,9 +335,9 @@ namespace stormphrax
 		[[nodiscard]] static inline auto isAttacked(const BoardState &state,
 			Color toMove, Square square, Color attacker)
 		{
-			assert(toMove != Color::None);
+			assert(toMove != colors::None);
 			assert(square != squares::None);
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			if constexpr (ThreatShortcut)
 			{
@@ -378,14 +378,14 @@ namespace stormphrax
 		[[nodiscard]] inline auto isAttacked(Square square, Color attacker) const
 		{
 			assert(square != squares::None);
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);
 		}
 
 		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
 		{
-			assert(attacker != Color::None);
+			assert(attacker != colors::None);
 
 			if (attacker == opponent())
 				return !(squares & currState().threats).empty();
@@ -407,13 +407,13 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return currState().kings.color(c);
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
-			assert(c != Color::None);
+			assert(c != colors::None);
 			return currState().kings.color(c.opponent());
 		}
 
