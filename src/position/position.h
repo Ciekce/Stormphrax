@@ -559,6 +559,17 @@ namespace stormphrax
 			return m_fullmove * 2 - (m_blackToMove ? 0 : 1) - 1;
 		}
 
+		[[nodiscard]] inline auto classicalMaterial() const -> i32
+		{
+			const auto &bbs = currState().boards.bbs();
+
+			return 1 * bbs.pawns().popcount()
+				 + 3 * bbs.knights().popcount()
+				 + 3 * bbs.bishops().popcount()
+				 + 5 * bbs.rooks().popcount()
+				 + 9 * bbs.queens().popcount();
+		}
+
 		auto operator=(const Position &) -> Position & = default;
 		auto operator=(Position &&) -> Position & = default;
 

@@ -195,7 +195,7 @@ namespace stormphrax::search
 		m_ttable.age();
 
 		const auto whitePovScore = thread.pos.toMove() == Color::Black ? -score : score;
-		return {whitePovScore, wdl::normalizeScoreMove32(whitePovScore)};
+		return {whitePovScore, wdl::normalizeScore(whitePovScore, thread.pos.classicalMaterial())};
 	}
 
 	auto Searcher::runBench(BenchData &data, const Position &pos, i32 depth) -> void
@@ -1200,7 +1200,7 @@ namespace stormphrax::search
 		score = std::clamp(score, alpha, beta);
 		score = std::clamp(score, m_minRootScore, m_maxRootScore);
 
-		const auto plyFromStartpos = mainThread.pos.plyFromStartpos();
+		const auto material = mainThread.pos.classicalMaterial();
 
 		// mates
 		if (std::abs(score) >= ScoreMaxMate)
@@ -1212,7 +1212,7 @@ namespace stormphrax::search
 		else
 		{
 			// adjust score to 100cp == 50% win probability
-			const auto normScore = wdl::normalizeScore(score, plyFromStartpos);
+			const auto normScore = wdl::normalizeScore(score, material);
 			std::cout << "cp " << normScore;
 		}
 
@@ -1230,7 +1230,7 @@ namespace stormphrax::search
 				std::cout << " wdl 0 0 1000";
 			else
 			{
-				const auto [wdlWin, wdlLoss] = wdl::wdlModel(score, plyFromStartpos);
+				const auto [wdlWin, wdlLoss] = wdl::wdlModel(score, material);
 				const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
 				std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;

@@ -584,7 +584,7 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newContempt = util::tryParseI32(valueStr))
-							opts::mutableOpts().contempt = wdl::unnormalizeScoreMove32(
+							opts::mutableOpts().contempt = wdl::unnormalizeScoreMaterial58(
 								ContemptRange.clamp(*newContempt));
 					}
 				}
@@ -744,7 +744,7 @@ namespace stormphrax
 			std::cout << std::endl;
 
 			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
-			const auto normalized = wdl::normalizeScore(staticEval, m_pos.plyFromStartpos());
+			const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -normalized : normalized);
@@ -754,7 +754,7 @@ namespace stormphrax
 		auto UciHandler::handleEval() -> void
 		{
 			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
-			const auto normalized = wdl::normalizeScore(staticEval, m_pos.plyFromStartpos());
+			const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
 			printScore(std::cout, normalized);
 			std::cout << std::endl;

@@ -49,7 +49,7 @@ namespace stormphrax
 			i32 syzygyProbeDepth{1};
 			i32 syzygyProbeLimit{7};
 
-			i32 contempt{wdl::unnormalizeScoreMove32(DefaultNormalizedContempt)};
+			i32 contempt{wdl::unnormalizeScoreMaterial58(DefaultNormalizedContempt)};
 		};
 
 		auto mutableOpts() -> GlobalOptions &;
