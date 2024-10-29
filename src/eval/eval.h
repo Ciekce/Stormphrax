@@ -22,48 +22,54 @@
 
 #include <array>
 
-#include "nnue.h"
-#include "../position/position.h"
 #include "../core.h"
 #include "../correction.h"
+#include "../position/position.h"
+#include "nnue.h"
 
-namespace stormphrax::eval
-{
-	// black, white
-	using Contempt = std::array<Score, 2>;
+namespace stormphrax::eval {
+    // black, white
+    using Contempt = std::array<Score, 2>;
 
-	template <bool Correct = true>
-	inline auto adjustEval(const Position &pos, std::span<search::PlayedMove> moves,
-		i32 ply, const CorrectionHistoryTable *correction, i32 eval)
-	{
-		eval = eval * (200 - pos.halfmove()) / 200;
+    template<bool Correct = true>
+    inline auto adjustEval(
+        const Position &pos,
+        std::span<search::PlayedMove> moves,
+        i32 ply,
+        const CorrectionHistoryTable *correction,
+        i32 eval
+    ) {
+        eval = eval * (200 - pos.halfmove()) / 200;
 
-		if constexpr (Correct)
-			eval = correction->correct(pos, moves, ply, eval);
+        if constexpr (Correct)
+            eval = correction->correct(pos, moves, ply, eval);
 
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
-	}
+        return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+    }
 
-	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
-	{
-		auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
-	}
+    inline auto
+    staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {}) {
+        auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
+        eval += contempt[static_cast<i32>(pos.toMove())];
+        return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+    }
 
-	template <bool Correct = true>
-	inline auto adjustedStaticEval(const Position &pos,
-		std::span<search::PlayedMove> moves, i32 ply, NnueState &nnueState,
-		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
-	{
-		const auto eval = staticEval(pos, nnueState, contempt);
-		return adjustEval<Correct>(pos, moves, ply, correction, eval);
-	}
+    template<bool Correct = true>
+    inline auto adjustedStaticEval(
+        const Position &pos,
+        std::span<search::PlayedMove> moves,
+        i32 ply,
+        NnueState &nnueState,
+        const CorrectionHistoryTable *correction,
+        const Contempt &contempt = {}
+    ) {
+        const auto eval = staticEval(pos, nnueState, contempt);
+        return adjustEval<Correct>(pos, moves, ply, correction, eval);
+    }
 
-	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
-	{
-		auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
-	}
-}
+    inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {}) {
+        auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
+        eval += contempt[static_cast<i32>(pos.toMove())];
+        return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+    }
+} // namespace stormphrax::eval

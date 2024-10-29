@@ -22,37 +22,34 @@
 
 #include <span>
 
-#include "../io.h"
 #include "../../../position/boards.h"
+#include "../io.h"
 
-namespace stormphrax::eval::nnue::layers
-{
-	template <typename Type, u32 Count, Type K>
-	struct Scale
-	{
-		using  InputType = Type;
-		using OutputType = Type;
+namespace stormphrax::eval::nnue::layers {
+    template<typename Type, u32 Count, Type K>
+    struct Scale {
+        using InputType = Type;
+        using OutputType = Type;
 
-		static constexpr auto  InputCount = Count;
-		static constexpr auto OutputCount = Count;
+        static constexpr auto InputCount = Count;
+        static constexpr auto OutputCount = Count;
 
-		inline auto forward([[maybe_unused]] const BitboardSet &bbs,
-			std::span<const Type, Count> inputs, std::span<Type, Count> outputs) const
-		{
-			for (u32 i = 0; i < Count; ++i)
-			{
-				outputs[i] = inputs[i] * K;
-			}
-		}
+        inline auto forward(
+            [[maybe_unused]] const BitboardSet &bbs,
+            std::span<const Type, Count> inputs,
+            std::span<Type, Count> outputs
+        ) const {
+            for (u32 i = 0; i < Count; ++i) {
+                outputs[i] = inputs[i] * K;
+            }
+        }
 
-		inline auto readFrom([[maybe_unused]] IParamStream &stream) -> bool
-		{
-			return true;
-		}
+        inline auto readFrom([[maybe_unused]] IParamStream &stream) -> bool {
+            return true;
+        }
 
-		inline auto writeTo([[maybe_unused]] IParamStream &stream) const -> bool
-		{
-			return true;
-		}
-	};
-}
+        inline auto writeTo([[maybe_unused]] IParamStream &stream) const -> bool {
+            return true;
+        }
+    };
+} // namespace stormphrax::eval::nnue::layers

@@ -20,48 +20,46 @@
 
 #include <array>
 
-namespace stormphrax::datagen
-{
-	Viriformat::Viriformat()
-	{
-		m_moves.reserve(256);
-	}
+namespace stormphrax::datagen {
+    Viriformat::Viriformat() {
+        m_moves.reserve(256);
+    }
 
-	auto Viriformat::start(const Position &initialPosition) -> void
-	{
-		m_initial = marlinformat::PackedBoard::pack(initialPosition, 0);
-		m_moves.clear();
-	}
+    auto Viriformat::start(const Position &initialPosition) -> void {
+        m_initial = marlinformat::PackedBoard::pack(initialPosition, 0);
+        m_moves.clear();
+    }
 
-	auto Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) -> void
-	{
-		static constexpr auto MoveTypes = std::array{
-			static_cast<u16>(0x0000), // normal
-			static_cast<u16>(0xC000), // promo
-			static_cast<u16>(0x8000), // castling
-			static_cast<u16>(0x4000)  // ep
-		};
+    auto Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) -> void {
+        static constexpr auto MoveTypes = std::array{
+            static_cast<u16>(0x0000), // normal
+            static_cast<u16>(0xC000), // promo
+            static_cast<u16>(0x8000), // castling
+            static_cast<u16>(0x4000)  // ep
+        };
 
-		u16 viriMove{};
+        u16 viriMove{};
 
-		viriMove |= move.srcIdx();
-		viriMove |= move.dstIdx() << 6;
-		viriMove |= move.promoIdx() << 12;
-		viriMove |= MoveTypes[static_cast<i32>(move.type())];
+        viriMove |= move.srcIdx();
+        viriMove |= move.dstIdx() << 6;
+        viriMove |= move.promoIdx() << 12;
+        viriMove |= MoveTypes[static_cast<i32>(move.type())];
 
-		m_moves.push_back({viriMove, static_cast<i16>(score)});
-	}
+        m_moves.push_back({viriMove, static_cast<i16>(score)});
+    }
 
-	auto Viriformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
-	{
-		static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
+    auto Viriformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize {
+        static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
 
-		m_initial.wdl = outcome;
+        m_initial.wdl = outcome;
 
-		stream.write(reinterpret_cast<const char *>(&m_initial), sizeof(marlinformat::PackedBoard));
-		stream.write(reinterpret_cast<const char *>(m_moves.data()), sizeof(ScoredMove) * m_moves.size());
-		stream.write(reinterpret_cast<const char *>(NullTerminator.data()), sizeof(ScoredMove));
+        stream.write(reinterpret_cast<const char *>(&m_initial), sizeof(marlinformat::PackedBoard));
+        stream.write(
+            reinterpret_cast<const char *>(m_moves.data()),
+            sizeof(ScoredMove) * m_moves.size()
+        );
+        stream.write(reinterpret_cast<const char *>(NullTerminator.data()), sizeof(ScoredMove));
 
-		return m_moves.size() + 1;
-	}
-}
+        return m_moves.size() + 1;
+    }
+} // namespace stormphrax::datagen

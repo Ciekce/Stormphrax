@@ -25,92 +25,88 @@
 #include "core.h"
 #include "util/rng.h"
 
-namespace stormphrax::keys
-{
-	namespace sizes
-	{
-		constexpr usize PieceSquares = 12 * 64;
-		constexpr usize Color = 1;
-		constexpr usize Castling = 16;
-		constexpr usize EnPassant = 8;
+namespace stormphrax::keys {
+    namespace sizes {
+        constexpr usize PieceSquares = 12 * 64;
+        constexpr usize Color = 1;
+        constexpr usize Castling = 16;
+        constexpr usize EnPassant = 8;
 
-		constexpr auto Total = PieceSquares + Color + Castling + EnPassant;
-	}
+        constexpr auto Total = PieceSquares + Color + Castling + EnPassant;
+    } // namespace sizes
 
-	namespace offsets
-	{
-		constexpr usize PieceSquares = 0;
-		constexpr auto Color = PieceSquares + sizes::PieceSquares;
-		constexpr auto Castling = Color + sizes::Color;
-		constexpr auto EnPassant = Castling + sizes::Castling;
-	}
+    namespace offsets {
+        constexpr usize PieceSquares = 0;
+        constexpr auto Color = PieceSquares + sizes::PieceSquares;
+        constexpr auto Castling = Color + sizes::Color;
+        constexpr auto EnPassant = Castling + sizes::Castling;
+    } // namespace offsets
 
-	constexpr auto Keys = []
-	{
-		constexpr auto Seed = U64(0xD06C659954EC904A);
+    constexpr auto Keys = [] {
+        constexpr auto Seed = U64(0xD06C659954EC904A);
 
-		std::array<u64, sizes::Total> keys{};
+        std::array<u64, sizes::Total> keys{};
 
-		util::rng::Jsf64Rng rng{Seed};
+        util::rng::Jsf64Rng rng{Seed};
 
-		for (auto &key : keys)
-		{
-			key = rng.nextU64();
-		}
+        for (auto &key: keys) {
+            key = rng.nextU64();
+        }
 
-		return keys;
-	}();
+        return keys;
+    }();
 
-	inline auto pieceSquare(Piece piece, Square square) -> u64
-	{
-		if (piece == Piece::None || square == Square::None)
-			return 0;
+    inline auto pieceSquare(Piece piece, Square square) -> u64 {
+        if (piece == Piece::None || square == Square::None) {
+            return 0;
+        }
 
-		return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
-	}
+        return Keys
+            [offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+    }
 
-	// for flipping
-	inline auto color()
-	{
-		return Keys[offsets::Color];
-	}
+    // for flipping
+    inline auto color() {
+        return Keys[offsets::Color];
+    }
 
-	inline auto color(Color c)
-	{
-		return c == Color::White ? 0 : color();
-	}
+    inline auto color(Color c) {
+        return c == Color::White ? 0 : color();
+    }
 
-	inline auto castling(const CastlingRooks &castlingRooks)
-	{
-		constexpr usize BlackShort = 0x01;
-		constexpr usize BlackLong  = 0x02;
-		constexpr usize WhiteShort = 0x04;
-		constexpr usize WhiteLong  = 0x08;
+    inline auto castling(const CastlingRooks &castlingRooks) {
+        constexpr usize BlackShort = 0x01;
+        constexpr usize BlackLong = 0x02;
+        constexpr usize WhiteShort = 0x04;
+        constexpr usize WhiteLong = 0x08;
 
-		usize flags{};
+        usize flags{};
 
-		if (castlingRooks.black().kingside  != Square::None)
-			flags |= BlackShort;
-		if (castlingRooks.black().queenside != Square::None)
-			flags |= BlackLong;
-		if (castlingRooks.white().kingside  != Square::None)
-			flags |= WhiteShort;
-		if (castlingRooks.white().queenside != Square::None)
-			flags |= WhiteLong;
+        if (castlingRooks.black().kingside != Square::None) {
+            flags |= BlackShort;
+        }
+        if (castlingRooks.black().queenside != Square::None) {
+            flags |= BlackLong;
+        }
+        if (castlingRooks.white().kingside != Square::None) {
+            flags |= WhiteShort;
+        }
+        if (castlingRooks.white().queenside != Square::None) {
+            flags |= WhiteLong;
+        }
 
-		return Keys[offsets::Castling + flags];
-	}
+        return Keys[offsets::Castling + flags];
+    }
 
-	inline auto enPassant(u32 file)
-	{
-		return Keys[offsets::EnPassant + file];
-	}
+    inline auto enPassant(u32 file) {
+        return Keys[offsets::EnPassant + file];
+    }
 
-	inline auto enPassant(Square square) -> u64
-	{
-		if (square == Square::None)
-			return 0;
+    inline auto enPassant(Square square) -> u64 {
+        if (square == Square::None) {
+            return 0;
+        }
 
-		return Keys[offsets::EnPassant + squareFile(square)];
-	}
-}
+        return Keys[offsets::EnPassant + squareFile(square)];
+    }
+} // namespace stormphrax::keys

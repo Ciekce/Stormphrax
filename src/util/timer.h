@@ -20,26 +20,24 @@
 
 #include "../types.h"
 
-namespace stormphrax::util
-{
-	class Timer
-	{
-	public:
-		Timer();
-		~Timer() = default;
+namespace stormphrax::util {
+    class Timer {
+    public:
+        Timer();
+        ~Timer() = default;
 
-		[[nodiscard]] auto time() const -> f64;
+        [[nodiscard]] auto time() const -> f64;
 
-		[[nodiscard]] static auto roughTimeMs() -> i64;
+        [[nodiscard]] static auto roughTimeMs() -> i64;
 
-	private:
+    private:
 #ifdef _WIN32
-		u64 m_initTime{};
-		f64 m_frequency;
+        u64 m_initTime{};
+        f64 m_frequency;
 #else
-		f64 m_initTime;
+        f64 m_initTime;
 #endif
-	};
+    };
 
-	inline const Timer g_timer{};
-}
+    inline const Timer g_timer{};
+} // namespace stormphrax::util

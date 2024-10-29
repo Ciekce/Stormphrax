@@ -20,48 +20,42 @@
 
 #include "../../types.h"
 
-#include <span>
 #include <array>
+#include <span>
 
-namespace stormphrax::eval::nnue
-{
-	class IParamStream
-	{
-	public:
-		virtual ~IParamStream() = default;
+namespace stormphrax::eval::nnue {
+    class IParamStream {
+    public:
+        virtual ~IParamStream() = default;
 
-		template <typename T>
-		inline auto read(std::span<T> dst) -> bool = delete;
+        template<typename T>
+        inline auto read(std::span<T> dst) -> bool = delete;
 
-		template <>
-		inline auto read<i16>(std::span<i16> dst) -> bool
-		{
-			return readI16s(dst);
-		}
+        template<>
+        inline auto read<i16>(std::span<i16> dst) -> bool {
+            return readI16s(dst);
+        }
 
-		template <typename T, usize Size>
-		inline auto read(std::array<T, Size> &dst)
-		{
-			return read(std::span<T, std::dynamic_extent>{dst});
-		}
+        template<typename T, usize Size>
+        inline auto read(std::array<T, Size> &dst) {
+            return read(std::span<T, std::dynamic_extent>{dst});
+        }
 
-		template <typename T>
-		inline auto write(std::span<T> src) -> bool = delete;
+        template<typename T>
+        inline auto write(std::span<T> src) -> bool = delete;
 
-		template <>
-		inline auto write<i16>(std::span<i16> src) -> bool
-		{
-			return writeI16s(src);
-		}
+        template<>
+        inline auto write<i16>(std::span<i16> src) -> bool {
+            return writeI16s(src);
+        }
 
-		template <typename T, usize Size>
-		inline auto write(const std::array<T, Size> &src)
-		{
-			return write(std::span<T, std::dynamic_extent>{src});
-		}
+        template<typename T, usize Size>
+        inline auto write(const std::array<T, Size> &src) {
+            return write(std::span<T, std::dynamic_extent>{src});
+        }
 
-	protected:
-		virtual auto readI16s(std::span<i16> dst) -> bool = 0;
-		virtual auto writeI16s(std::span<const i16> src) -> bool = 0;
-	};
-}
+    protected:
+        virtual auto readI16s(std::span<i16> dst) -> bool = 0;
+        virtual auto writeI16s(std::span<const i16> src) -> bool = 0;
+    };
+} // namespace stormphrax::eval::nnue

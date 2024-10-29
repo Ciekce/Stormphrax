@@ -21,23 +21,32 @@
 #include "../types.h"
 
 #include <concepts>
-#include <string>
 #include <ostream>
+#include <string>
 
-#include "common.h"
 #include "../core.h"
-#include "../position/position.h"
 #include "../move.h"
+#include "../position/position.h"
+#include "common.h"
 
-namespace stormphrax::datagen
-{
-	template <typename T>
-	concept OutputFormat = requires (T t, const Position &initialPosition,
-		bool filtered, Move move, Score score, Outcome outcome, std::ostream &stream)
-	{
-		{ T::Extension } -> std::convertible_to<const std::string &>;
-		t.start(initialPosition);
-		t.push(filtered, move, score);
-		{ t.writeAllWithOutcome(stream, outcome) } -> std::same_as<usize>;
-	};
-}
+namespace stormphrax::datagen {
+    template<typename T>
+    concept OutputFormat = requires(
+        T t,
+        const Position &initialPosition,
+        bool filtered,
+        Move move,
+        Score score,
+        Outcome outcome,
+        std::ostream &stream
+    ) {
+        {
+            T::Extension
+        } -> std::convertible_to<const std::string &>;
+        t.start(initialPosition);
+        t.push(filtered, move, score);
+        {
+            t.writeAllWithOutcome(stream, outcome)
+        } -> std::same_as<usize>;
+    };
+} // namespace stormphrax::datagen

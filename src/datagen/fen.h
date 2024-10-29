@@ -22,28 +22,26 @@
 
 #include <vector>
 
-#include "format.h"
 #include "../position/position.h"
 #include "../util/u4array.h"
+#include "format.h"
 
-namespace stormphrax::datagen
-{
-	class Fen
-	{
-	public:
-		Fen();
-		~Fen() = default;
+namespace stormphrax::datagen {
+    class Fen {
+    public:
+        Fen();
+        ~Fen() = default;
 
-		static constexpr auto Extension = "txt";
+        static constexpr auto Extension = "txt";
 
-		auto start(const Position &initialPosition) -> void;
-		auto push(bool filtered, Move move, Score score) -> void;
-		auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+        auto start(const Position &initialPosition) -> void;
+        auto push(bool filtered, Move move, Score score) -> void;
+        auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
 
-	private:
-		std::vector<std::string> m_positions{};
-		Position m_curr;
-	};
+    private:
+        std::vector<std::string> m_positions{};
+        Position m_curr;
+    };
 
-	static_assert(OutputFormat<Fen>);
-}
+    static_assert(OutputFormat<Fen>);
+} // namespace stormphrax::datagen

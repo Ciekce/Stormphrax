@@ -22,36 +22,33 @@
 
 #include <array>
 
-#include "../../core.h"
 #include "../../bitboard.h"
+#include "../../core.h"
+#include "../../util/bits.h"
 #include "../util.h"
 #include "data.h"
-#include "../../util/bits.h"
 
-namespace stormphrax::attacks
-{
-	extern const std::array<     u16, bmi2::  RookData.tableSize>   RookAttacks;
-	extern const std::array<Bitboard, bmi2::BishopData.tableSize> BishopAttacks;
+namespace stormphrax::attacks {
+    extern const std::array<u16, bmi2::RookData.tableSize> RookAttacks;
+    extern const std::array<Bitboard, bmi2::BishopData.tableSize> BishopAttacks;
 
-	inline auto getRookAttacks(Square src, Bitboard occupancy) -> Bitboard
-	{
-		const auto s = static_cast<i32>(src);
+    inline auto getRookAttacks(Square src, Bitboard occupancy) -> Bitboard {
+        const auto s = static_cast<i32>(src);
 
-		const auto &data = bmi2::RookData.data[s];
+        const auto &data = bmi2::RookData.data[s];
 
-		const auto idx = util::pext(occupancy, data.srcMask);
-		const auto attacks = util::pdep(RookAttacks[data.offset + idx], data.dstMask);
+        const auto idx = util::pext(occupancy, data.srcMask);
+        const auto attacks = util::pdep(RookAttacks[data.offset + idx], data.dstMask);
 
-		return attacks;
-	}
+        return attacks;
+    }
 
-	inline auto getBishopAttacks(Square src, Bitboard occupancy)
-	{
-		const auto s = static_cast<i32>(src);
+    inline auto getBishopAttacks(Square src, Bitboard occupancy) {
+        const auto s = static_cast<i32>(src);
 
-		const auto &data = bmi2::BishopData.data[s];
-		const auto idx = util::pext(occupancy, data.mask);
+        const auto &data = bmi2::BishopData.data[s];
+        const auto idx = util::pext(occupancy, data.mask);
 
-		return BishopAttacks[data.offset + idx];
-	}
-}
+        return BishopAttacks[data.offset + idx];
+    }
+} // namespace stormphrax::attacks

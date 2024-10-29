@@ -24,247 +24,226 @@
 #include "nnue/io_impl.h"
 
 #ifdef _MSC_VER
-#define SP_MSVC
-#pragma push_macro("_MSC_VER")
-#undef _MSC_VER
+    #define SP_MSVC
+    #pragma push_macro("_MSC_VER")
+    #undef _MSC_VER
 #endif
 
 #define INCBIN_PREFIX g_
 #include "../3rdparty/incbin.h"
 
 #ifdef SP_MSVC
-#pragma pop_macro("_MSC_VER")
-#undef SP_MSVC
+    #pragma pop_macro("_MSC_VER")
+    #undef SP_MSVC
 #endif
 
-namespace
-{
-	INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
+namespace {
+    INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
 }
 
-namespace stormphrax::eval
-{
-	namespace
-	{
-		SP_ENUM_FLAGS(u16, NetworkFlags)
-		{
-			None = 0x0000,
-			ZstdCompressed = 0x0001,
-			HorizontallyMirrored = 0x0002,
-			MergedKings = 0x0004,
-			PairwiseMul = 0x0008,
-		};
+namespace stormphrax::eval {
+    namespace {
+        SP_ENUM_FLAGS(u16, NetworkFlags){
+            None = 0x0000,
+            ZstdCompressed = 0x0001,
+            HorizontallyMirrored = 0x0002,
+            MergedKings = 0x0004,
+            PairwiseMul = 0x0008,
+        };
 
-		constexpr u16 ExpectedHeaderVersion = 1;
+        constexpr u16 ExpectedHeaderVersion = 1;
 
-		struct __attribute__((packed)) NetworkHeader
-		{
-			std::array<char, 4> magic{};
-			u16 version{};
-			NetworkFlags flags{};
-			[[maybe_unused]] u8 padding{};
-			u8 arch{};
-			u8 activation{};
-			u16 hiddenSize{};
-			u8 inputBuckets{};
-			u8 outputBuckets{};
-			u8 nameLen{};
-			std::array<char, 48> name{};
-		};
+        struct __attribute__((packed)) NetworkHeader {
+            std::array<char, 4> magic{};
+            u16 version{};
+            NetworkFlags flags{};
+            [[maybe_unused]] u8 padding{};
+            u8 arch{};
+            u8 activation{};
+            u16 hiddenSize{};
+            u8 inputBuckets{};
+            u8 outputBuckets{};
+            u8 nameLen{};
+            std::array<char, 48> name{};
+        };
 
-		static_assert(sizeof(NetworkHeader) == 64);
+        static_assert(sizeof(NetworkHeader) == 64);
 
-		inline auto archName(u8 arch)
-		{
-			static constexpr auto NetworkArchNames = std::array {
-				"basic", "perspective"
-			};
+        inline auto archName(u8 arch) {
+            static constexpr auto NetworkArchNames = std::array{"basic", "perspective"};
 
-			if (arch < NetworkArchNames.size())
-				return NetworkArchNames[arch];
+            if (arch < NetworkArchNames.size())
+                return NetworkArchNames[arch];
 
-			return "<unknown>";
-		}
+            return "<unknown>";
+        }
 
-		inline auto activationFuncName(u8 func)
-		{
-			static constexpr auto ActivationFunctionNames = std::array {
-				"crelu", "screlu", "relu"
-			};
+        inline auto activationFuncName(u8 func) {
+            static constexpr auto ActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
 
-			if (func < ActivationFunctionNames.size())
-				return ActivationFunctionNames[func];
+            if (func < ActivationFunctionNames.size())
+                return ActivationFunctionNames[func];
 
-			return "<unknown>";
-		}
+            return "<unknown>";
+        }
 
-		//TODO better error messages
-		auto validate(const NetworkHeader &header)
-		{
-			if (header.magic != std::array{'C', 'B', 'N', 'F'})
-			{
-				std::cerr << "invalid magic bytes in network header" << std::endl;
-				return false;
-			}
+        //TODO better error messages
+        auto validate(const NetworkHeader &header) {
+            if (header.magic != std::array{'C', 'B', 'N', 'F'}) {
+                std::cerr << "invalid magic bytes in network header" << std::endl;
+                return false;
+            }
 
-			if (header.version != ExpectedHeaderVersion)
-			{
-				std::cerr << "unsupported network format version " << header.version
-					<< " (expected: " << ExpectedHeaderVersion << ")" << std::endl;
-				return false;
-			}
+            if (header.version != ExpectedHeaderVersion) {
+                std::cerr << "unsupported network format version " << header.version
+                          << " (expected: " << ExpectedHeaderVersion << ")" << std::endl;
+                return false;
+            }
 
-			if (header.arch != 1 /* perspective */)
-			{
-				std::cerr << "wrong network architecture " << archName(header.arch)
-					<< " (expected: " << archName(1) << ")" << std::endl;
-				return false;
-			}
+            if (header.arch != 1 /* perspective */) {
+                std::cerr << "wrong network architecture " << archName(header.arch)
+                          << " (expected: " << archName(1) << ")" << std::endl;
+                return false;
+            }
 
-			if (testFlags(header.flags, NetworkFlags::HorizontallyMirrored) != InputFeatureSet::IsMirrored)
-			{
-				if constexpr (InputFeatureSet::IsMirrored)
-					std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
-				else std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
+            if (testFlags(header.flags, NetworkFlags::HorizontallyMirrored)
+                != InputFeatureSet::IsMirrored)
+            {
+                if constexpr (InputFeatureSet::IsMirrored)
+                    std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
+                else
+                    std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
 
-				return false;
-			}
+                return false;
+            }
 
-			if (testFlags(header.flags, NetworkFlags::MergedKings) != InputFeatureSet::MergedKings)
-			{
-				if constexpr (InputFeatureSet::MergedKings)
-					std::cerr << "network does not have merged king planes, expected merged" << std::endl;
-				else std::cerr << "network has merged king planes, expected unmerged" << std::endl;
+            if (testFlags(header.flags, NetworkFlags::MergedKings) != InputFeatureSet::MergedKings)
+            {
+                if constexpr (InputFeatureSet::MergedKings)
+                    std::cerr << "network does not have merged king planes, expected merged"
+                              << std::endl;
+                else
+                    std::cerr << "network has merged king planes, expected unmerged" << std::endl;
 
-				return false;
-			}
+                return false;
+            }
 
-			if (testFlags(header.flags, NetworkFlags::PairwiseMul) != PairwiseMul)
-			{
-				if constexpr (PairwiseMul)
-					std::cerr << "network L1 does not require pairwise multiplication, expected paired" << std::endl;
-				else std::cerr << "network L1 requires pairwise multiplication, expected unpaired" << std::endl;
+            if (testFlags(header.flags, NetworkFlags::PairwiseMul) != PairwiseMul) {
+                if constexpr (PairwiseMul)
+                    std::cerr
+                        << "network L1 does not require pairwise multiplication, expected paired"
+                        << std::endl;
+                else
+                    std::cerr << "network L1 requires pairwise multiplication, expected unpaired"
+                              << std::endl;
 
-				return false;
-			}
+                return false;
+            }
 
-			if (header.activation != L1Activation::Id)
-			{
-				std::cerr << "wrong network l1 activation function (" << activationFuncName(header.activation)
-					<< ", expected: " << activationFuncName(L1Activation::Id) << ")" << std::endl;
-				return false;
-			}
+            if (header.activation != L1Activation::Id) {
+                std::cerr << "wrong network l1 activation function ("
+                          << activationFuncName(header.activation)
+                          << ", expected: " << activationFuncName(L1Activation::Id) << ")"
+                          << std::endl;
+                return false;
+            }
 
-			if (header.hiddenSize != L1Size)
-			{
-				std::cerr << "wrong number of hidden neurons (" << header.hiddenSize
-					<< ", expected: " << L1Size << ")" << std::endl;
-				return false;
-			}
+            if (header.hiddenSize != L1Size) {
+                std::cerr << "wrong number of hidden neurons (" << header.hiddenSize
+                          << ", expected: " << L1Size << ")" << std::endl;
+                return false;
+            }
 
-			if (header.inputBuckets != InputFeatureSet::BucketCount)
-			{
-				std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
-					<< ", expected: " << InputFeatureSet::BucketCount << ")" << std::endl;
-				return false;
-			}
+            if (header.inputBuckets != InputFeatureSet::BucketCount) {
+                std::cerr << "wrong number of input buckets ("
+                          << static_cast<u32>(header.inputBuckets)
+                          << ", expected: " << InputFeatureSet::BucketCount << ")" << std::endl;
+                return false;
+            }
 
-			if (header.outputBuckets != OutputBucketing::BucketCount)
-			{
-				std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
-					<< ", expected: " << OutputBucketing::BucketCount << ")" << std::endl;
-				return false;
-			}
+            if (header.outputBuckets != OutputBucketing::BucketCount) {
+                std::cerr << "wrong number of output buckets ("
+                          << static_cast<u32>(header.outputBuckets)
+                          << ", expected: " << OutputBucketing::BucketCount << ")" << std::endl;
+                return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		auto loadNetworkFrom(Network &network, std::istream &stream, const NetworkHeader &header)
-		{
-			bool success;
+        auto loadNetworkFrom(Network &network, std::istream &stream, const NetworkHeader &header) {
+            bool success;
 
-			if (testFlags(header.flags, NetworkFlags::ZstdCompressed))
-			{
-				nnue::ZstdParamStream paramStream{stream};
-				success = network.readFrom(paramStream);
-			}
-			else
-			{
-				nnue::PaddedParamStream<64> paramStream{stream};
-				success = network.readFrom(paramStream);
-			}
+            if (testFlags(header.flags, NetworkFlags::ZstdCompressed)) {
+                nnue::ZstdParamStream paramStream{stream};
+                success = network.readFrom(paramStream);
+            } else {
+                nnue::PaddedParamStream<64> paramStream{stream};
+                success = network.readFrom(paramStream);
+            }
 
-			return success;
-		}
+            return success;
+        }
 
-		Network s_network{};
-	}
+        Network s_network{};
+    } // namespace
 
-	const Network &g_network = s_network;
+    const Network &g_network = s_network;
 
-	auto loadDefaultNetwork() -> void
-	{
-		if (g_defaultNetSize < sizeof(NetworkHeader))
-		{
-			std::cerr << "Missing default network?" << std::endl;
-			return;
-		}
+    auto loadDefaultNetwork() -> void {
+        if (g_defaultNetSize < sizeof(NetworkHeader)) {
+            std::cerr << "Missing default network?" << std::endl;
+            return;
+        }
 
-		const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
+        const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
 
-		if (!validate(header))
-		{
-			std::cerr << "Failed to validate default network header" << std::endl;
-			return;
-		}
+        if (!validate(header)) {
+            std::cerr << "Failed to validate default network header" << std::endl;
+            return;
+        }
 
-		const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
-		const auto *end = g_defaultNetData + g_defaultNetSize;
+        const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
+        const auto *end = g_defaultNetData + g_defaultNetSize;
 
-		util::MemoryIstream stream{{begin, end}};
+        util::MemoryIstream stream{{begin, end}};
 
-		if (!loadNetworkFrom(s_network, stream, header))
-		{
-			std::cerr << "Failed to load default network" << std::endl;
-			return;
-		}
-	}
+        if (!loadNetworkFrom(s_network, stream, header)) {
+            std::cerr << "Failed to load default network" << std::endl;
+            return;
+        }
+    }
 
-	auto loadNetwork(const std::string &name) -> void
-	{
-		std::ifstream stream{name, std::ios::binary};
+    auto loadNetwork(const std::string &name) -> void {
+        std::ifstream stream{name, std::ios::binary};
 
-		if (!stream)
-		{
-			std::cerr << "failed to open network file \"" << name << "\"" << std::endl;
-			return;
-		}
+        if (!stream) {
+            std::cerr << "failed to open network file \"" << name << "\"" << std::endl;
+            return;
+        }
 
-		NetworkHeader header{};
-		stream.read(reinterpret_cast<char *>(&header), sizeof(NetworkHeader));
+        NetworkHeader header{};
+        stream.read(reinterpret_cast<char *>(&header), sizeof(NetworkHeader));
 
-		if (!stream)
-		{
-			std::cerr << "failed to read network file header" << std::endl;
-			return;
-		}
+        if (!stream) {
+            std::cerr << "failed to read network file header" << std::endl;
+            return;
+        }
 
-		if (!validate(header))
-			return;
+        if (!validate(header))
+            return;
 
-		if (!loadNetworkFrom(s_network, stream, header))
-		{
-			std::cerr << "failed to read network parameters" << std::endl;
-			return;
-		}
+        if (!loadNetworkFrom(s_network, stream, header)) {
+            std::cerr << "failed to read network parameters" << std::endl;
+            return;
+        }
 
-		const std::string_view netName{header.name.data(), header.nameLen};
-		std::cout << "info string loaded network " << netName << std::endl;
-	}
+        const std::string_view netName{header.name.data(), header.nameLen};
+        std::cout << "info string loaded network " << netName << std::endl;
+    }
 
-	auto defaultNetworkName() -> std::string_view
-	{
-		const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
-		return {header.name.data(), header.nameLen};
-	}
-}
+    auto defaultNetworkName() -> std::string_view {
+        const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
+        return {header.name.data(), header.nameLen};
+    }
+} // namespace stormphrax::eval

@@ -25,53 +25,45 @@
 
 #include "limit.h"
 
-namespace stormphrax::limit
-{
-	class CompoundLimiter final : public ISearchLimiter
-	{
-	public:
-		CompoundLimiter() = default;
-		~CompoundLimiter() final = default;
+namespace stormphrax::limit {
+    class CompoundLimiter final : public ISearchLimiter {
+    public:
+        CompoundLimiter() = default;
+        ~CompoundLimiter() final = default;
 
-		template <typename T, typename... Args>
-		inline auto addLimiter(Args &&...args)
-		{
-			m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-		}
+        template<typename T, typename... Args>
+        inline auto addLimiter(Args &&...args) {
+            m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+        }
 
-		inline auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final
-		{
-			for (const auto &limiter : m_limiters)
-			{
-				limiter->update(data, score, bestMove, totalNodes);
-			}
-		}
+        inline auto
+        update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes)
+            -> void final {
+            for (const auto &limiter: m_limiters) {
+                limiter->update(data, score, bestMove, totalNodes);
+            }
+        }
 
-		inline auto updateMoveNodes(Move move, usize nodes) -> void final
-		{
-			for (const auto &limiter : m_limiters)
-			{
-				limiter->updateMoveNodes(move, nodes);
-			}
-		}
+        inline auto updateMoveNodes(Move move, usize nodes) -> void final {
+            for (const auto &limiter: m_limiters) {
+                limiter->updateMoveNodes(move, nodes);
+            }
+        }
 
-		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
-		{
-			return std::ranges::any_of(m_limiters, [&](const auto &limiter)
-			{
-				return limiter->stop(data, allowSoftTimeout);
-			});
-		}
+        [[nodiscard]] inline auto
+        stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final {
+            return std::ranges::any_of(m_limiters, [&](const auto &limiter) {
+                return limiter->stop(data, allowSoftTimeout);
+            });
+        }
 
-		[[nodiscard]] inline auto stopped() const -> bool final
-		{
-			return std::ranges::any_of(m_limiters, [&](const auto &limiter)
-			{
-				return limiter->stopped();
-			});
-		}
+        [[nodiscard]] inline auto stopped() const -> bool final {
+            return std::ranges::any_of(m_limiters, [&](const auto &limiter) {
+                return limiter->stopped();
+            });
+        }
 
-	private:
-		std::vector<std::unique_ptr<ISearchLimiter>> m_limiters{};
-	};
-}
+    private:
+        std::vector<std::unique_ptr<ISearchLimiter>> m_limiters{};
+    };
+} // namespace stormphrax::limit

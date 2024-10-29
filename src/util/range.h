@@ -22,30 +22,30 @@
 
 #include <algorithm>
 
-namespace stormphrax::util
-{
-	template<typename T>
-	class Range
-	{
-	public:
-		constexpr Range(T min, T max)
-			: m_min{min}, m_max{max} {}
+namespace stormphrax::util {
+    template<typename T>
+    class Range {
+    public:
+        constexpr Range(T min, T max) :
+                m_min{min}, m_max{max} {}
 
-		[[nodiscard]] constexpr auto contains(T v) const
-		{
-			return m_min <= v && v <= m_max;
-		}
+        [[nodiscard]] constexpr auto contains(T v) const {
+            return m_min <= v && v <= m_max;
+        }
 
-		[[nodiscard]] constexpr auto clamp(T v) const
-		{
-			return std::clamp(v, m_min, m_max);
-		}
+        [[nodiscard]] constexpr auto clamp(T v) const {
+            return std::clamp(v, m_min, m_max);
+        }
 
-		[[nodiscard]] constexpr auto min() const { return m_min; }
-		[[nodiscard]] constexpr auto max() const { return m_max; }
+        [[nodiscard]] constexpr auto min() const {
+            return m_min;
+        }
+        [[nodiscard]] constexpr auto max() const {
+            return m_max;
+        }
 
-	private:
-		T m_min;
-		T m_max;
-	};
-}
+    private:
+        T m_min;
+        T m_max;
+    };
+} // namespace stormphrax::util

@@ -22,15 +22,14 @@
 
 #include "search.h"
 
-namespace stormphrax::bench
-{
+namespace stormphrax::bench {
 #ifdef SP_PGO_PROFILE
-	constexpr i32 DefaultBenchDepth = 10;
+    constexpr i32 DefaultBenchDepth = 10;
 #else
-	constexpr i32 DefaultBenchDepth = 14;
+    constexpr i32 DefaultBenchDepth = 14;
 #endif
 
-	constexpr usize DefaultBenchTtSize = 16;
+    constexpr usize DefaultBenchTtSize = 16;
 
-	auto run(search::Searcher &searcher, i32 depth = DefaultBenchDepth) -> void;
-}
+    auto run(search::Searcher &searcher, i32 depth = DefaultBenchDepth) -> void;
+} // namespace stormphrax::bench

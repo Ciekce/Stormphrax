@@ -21,62 +21,55 @@
 #include <algorithm>
 #include <cassert>
 
-#include "keys.h"
 #include "attacks/attacks.h"
+#include "keys.h"
 
-namespace stormphrax::cuckoo
-{
-	// https://web.archive.org/web/20201107002606/https://marcelk.net/2013-04-06/paper/upcoming-rep-v2.pdf
-	// Implementation based on Stockfish's
+namespace stormphrax::cuckoo {
+    // https://web.archive.org/web/20201107002606/https://marcelk.net/2013-04-06/paper/upcoming-rep-v2.pdf
+    // Implementation based on Stockfish's
 
-	std::array<u64, 8192> keys{};
-	std::array<Move, 8192> moves{};
+    std::array<u64, 8192> keys{};
+    std::array<Move, 8192> moves{};
 
-	void init()
-	{
-		u32 count = 0;
+    void init() {
+        u32 count = 0;
 
-		// skip pawns
-		for (u32 p = static_cast<u32>(Piece::BlackKnight);
-			p < static_cast<u32>(Piece::None);
-			++p)
-		{
-			const auto piece = static_cast<Piece>(p);
+        // skip pawns
+        for (u32 p = static_cast<u32>(Piece::BlackKnight); p < static_cast<u32>(Piece::None); ++p) {
+            const auto piece = static_cast<Piece>(p);
 
-			for (u32 s0 = 0; s0 < 64; ++s0)
-			{
-				const auto square0 = static_cast<Square>(s0);
+            for (u32 s0 = 0; s0 < 64; ++s0) {
+                const auto square0 = static_cast<Square>(s0);
 
-				for (u32 s1 = s0 + 1; s1 < 64; ++s1)
-				{
-					const auto square1 = static_cast<Square>(s1);
+                for (u32 s1 = s0 + 1; s1 < 64; ++s1) {
+                    const auto square1 = static_cast<Square>(s1);
 
-					if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1])
-						continue;
+                    if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1]) {
+                        continue;
+                    }
 
-					auto move = Move::standard(square0, square1);
-					auto key = keys::pieceSquare(piece, square0)
-						^ keys::pieceSquare(piece, square1)
-						^ keys::color();
+                    auto move = Move::standard(square0, square1);
+                    auto key = keys::pieceSquare(piece, square0) ^ keys::pieceSquare(piece, square1)
+                             ^ keys::color();
 
-					u32 slot = h1(key);
+                    u32 slot = h1(key);
 
-					while (true)
-					{
-						std::swap(keys[slot], key);
-						std::swap(moves[slot], move);
+                    while (true) {
+                        std::swap(keys[slot], key);
+                        std::swap(moves[slot], move);
 
-						if (move == NullMove)
-							break;
+                        if (move == NullMove) {
+                            break;
+                        }
 
-						slot = slot == h1(key) ? h2(key) : h1(key);
-					}
+                        slot = slot == h1(key) ? h2(key) : h1(key);
+                    }
 
-					++count;
-				}
-			}
-		}
+                    ++count;
+                }
+            }
+        }
 
-		assert(count == 3668);
-	}
-}
+        assert(count == 3668);
+    }
+} // namespace stormphrax::cuckoo

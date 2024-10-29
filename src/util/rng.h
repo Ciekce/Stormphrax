@@ -20,115 +20,108 @@
 
 #include "../types.h"
 
-#include <limits>
 #include <bit>
+#include <limits>
 #include <random>
 
-namespace stormphrax::util::rng
-{
-	class Jsf64Rng
-	{
-	public:
-		using result_type = u64;
+namespace stormphrax::util::rng {
+    class Jsf64Rng {
+    public:
+        using result_type = u64;
 
-		explicit constexpr Jsf64Rng(u64 seed)
-			: m_b{seed}, m_c{seed}, m_d{seed}
-		{
-			for (usize i = 0; i < 20; ++i)
-			{
-				nextU64();
-			}
-		}
+        explicit constexpr Jsf64Rng(u64 seed) :
+                m_b{seed}, m_c{seed}, m_d{seed} {
+            for (usize i = 0; i < 20; ++i) {
+                nextU64();
+            }
+        }
 
-		~Jsf64Rng() = default;
+        ~Jsf64Rng() = default;
 
-		constexpr auto nextU64() -> u64
-		{
-			const auto e = m_a - std::rotl(m_b, 7);
-			m_a = m_b ^ std::rotl(m_c, 13);
-			m_b = m_c + std::rotl(m_d, 37);
-			m_c = m_d + e;
-			m_d = e + m_a;
-			return m_d;
-		}
+        constexpr auto nextU64() -> u64 {
+            const auto e = m_a - std::rotl(m_b, 7);
+            m_a = m_b ^ std::rotl(m_c, 13);
+            m_b = m_c + std::rotl(m_d, 37);
+            m_c = m_d + e;
+            m_d = e + m_a;
+            return m_d;
+        }
 
-		constexpr auto nextU32()
-		{
-			return static_cast<u32>(nextU64() >> 32);
-		}
+        constexpr auto nextU32() {
+            return static_cast<u32>(nextU64() >> 32);
+        }
 
-		constexpr auto nextU32(u32 bound) -> u32
-		{
-			if (bound == 0)
-				return 0;
+        constexpr auto nextU32(u32 bound) -> u32 {
+            if (bound == 0)
+                return 0;
 
-			auto x = nextU32();
-			auto m = static_cast<u64>(x) * static_cast<u64>(bound);
-			auto l = static_cast<u32>(m);
+            auto x = nextU32();
+            auto m = static_cast<u64>(x) * static_cast<u64>(bound);
+            auto l = static_cast<u32>(m);
 
-			if (l < bound)
-			{
-				auto t = -bound;
+            if (l < bound) {
+                auto t = -bound;
 
-				if (t >= bound)
-				{
-					t -= bound;
+                if (t >= bound) {
+                    t -= bound;
 
-					if (t >= bound)
-						t %= bound;
-				}
+                    if (t >= bound)
+                        t %= bound;
+                }
 
-				while (l < t)
-				{
-					x = nextU32();
-					m = static_cast<u64>(x) * static_cast<u64>(bound);
-					l = static_cast<u32>(m);
-				}
-			}
+                while (l < t) {
+                    x = nextU32();
+                    m = static_cast<u64>(x) * static_cast<u64>(bound);
+                    l = static_cast<u32>(m);
+                }
+            }
 
-			return static_cast<u32>(m >> 32);
-		}
+            return static_cast<u32>(m >> 32);
+        }
 
-		constexpr auto operator()() { return nextU64(); }
+        constexpr auto operator()() {
+            return nextU64();
+        }
 
-		static constexpr auto min() { return std::numeric_limits<u64>::min(); }
-		static constexpr auto max() { return std::numeric_limits<u64>::max(); }
+        static constexpr auto min() {
+            return std::numeric_limits<u64>::min();
+        }
+        static constexpr auto max() {
+            return std::numeric_limits<u64>::max();
+        }
 
-	private:
-		u64 m_a{0xF1EA5EED};
-		u64 m_b;
-		u64 m_c;
-		u64 m_d;
-	};
+    private:
+        u64 m_a{0xF1EA5EED};
+        u64 m_b;
+        u64 m_c;
+        u64 m_d;
+    };
 
-	inline auto generateSingleSeed()
-	{
-		std::random_device generator{};
-		return static_cast<u64>(generator()) << 32 | generator();
-	}
+    inline auto generateSingleSeed() {
+        std::random_device generator{};
+        return static_cast<u64>(generator()) << 32 | generator();
+    }
 
-	// splitmix64, suitable for seeding jsf64
-	class SeedGenerator
-	{
-	public:
-		explicit SeedGenerator(u64 seed = generateSingleSeed())
-			: m_state{seed} {}
+    // splitmix64, suitable for seeding jsf64
+    class SeedGenerator {
+    public:
+        explicit SeedGenerator(u64 seed = generateSingleSeed()) :
+                m_state{seed} {}
 
-		~SeedGenerator() = default;
+        ~SeedGenerator() = default;
 
-		constexpr auto nextSeed()
-		{
-			m_state += U64(0x9E3779B97F4A7C15);
+        constexpr auto nextSeed() {
+            m_state += U64(0x9E3779B97F4A7C15);
 
-			auto z = m_state;
+            auto z = m_state;
 
-			z = (z ^ (z >> 30)) * U64(0xBF58476D1CE4E5B9);
-			z = (z ^ (z >> 27)) * U64(0x94D049BB133111EB);
+            z = (z ^ (z >> 30)) * U64(0xBF58476D1CE4E5B9);
+            z = (z ^ (z >> 27)) * U64(0x94D049BB133111EB);
 
-			return z ^ (z >> 31);
-		}
+            return z ^ (z >> 31);
+        }
 
-	private:
-		u64 m_state{};
-	};
-}
+    private:
+        u64 m_state{};
+    };
+} // namespace stormphrax::util::rng

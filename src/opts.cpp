@@ -18,20 +18,16 @@
 
 #include "opts.h"
 
-namespace stormphrax
-{
-	namespace
-	{
-		opts::GlobalOptions s_opts{};
-	}
+namespace stormphrax {
+    namespace {
+        opts::GlobalOptions s_opts{};
+    }
 
-	namespace opts
-	{
-		auto mutableOpts() -> GlobalOptions &
-		{
-			return s_opts;
-		}
-	}
+    namespace opts {
+        auto mutableOpts() -> GlobalOptions & {
+            return s_opts;
+        }
+    } // namespace opts
 
-	const opts::GlobalOptions &g_opts = s_opts;
-}
+    const opts::GlobalOptions &g_opts = s_opts;
+} // namespace stormphrax

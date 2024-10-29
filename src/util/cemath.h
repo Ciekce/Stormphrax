@@ -22,23 +22,19 @@
 
 #include <concepts>
 
-namespace stormphrax::util
-{
-	template <typename T>
-	constexpr auto abs(T v)
-	{
-		return v < T{0} ? -v : v;
-	}
+namespace stormphrax::util {
+    template<typename T>
+    constexpr auto abs(T v) {
+        return v < T{0} ? -v : v;
+    }
 
-	template <std::integral auto One>
-	constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t) -> decltype(One)
-	{
-		return (a * (One - t) + b * t) / One;
-	}
+    template<std::integral auto One>
+    constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t) -> decltype(One) {
+        return (a * (One - t) + b * t) / One;
+    }
 
-	template <std::integral T>
-	constexpr auto ceilDiv(T a, T b)
-	{
-		return (a + b - 1) / b;
-	}
-}
+    template<std::integral T>
+    constexpr auto ceilDiv(T a, T b) {
+        return (a + b - 1) / b;
+    }
+} // namespace stormphrax::util

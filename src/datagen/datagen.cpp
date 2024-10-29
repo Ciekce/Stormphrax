@@ -18,366 +18,349 @@
 
 #include "datagen.h"
 
-#include <fstream>
-#include <thread>
-#include <chrono>
 #include <atomic>
-#include <filesystem>
-#include <optional>
 #include <cassert>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <optional>
+#include <thread>
 
 #include "../limit/limit.h"
-#include "../search.h"
 #include "../movegen.h"
-#include "../util/rng.h"
 #include "../opts.h"
-#include "../util/timer.h"
-#include "format.h"
-#include "viriformat.h"
-#include "marlinformat.h"
-#include "fen.h"
+#include "../search.h"
 #include "../util/ctrlc.h"
+#include "../util/rng.h"
+#include "../util/timer.h"
+#include "fen.h"
+#include "format.h"
+#include "marlinformat.h"
+#include "viriformat.h"
 
 // abandon hope all ye who enter here
 // my search was not written with this in mind
 
 //TODO refactor search so this can be less horrible
 
-namespace stormphrax::datagen
-{
-	namespace
-	{
-		std::atomic_bool s_stop{false};
-
-		auto initCtrlCHandler()
-		{
-			util::signal::addCtrlCHandler([]
-			{
-				s_stop.store(true, std::memory_order::seq_cst);
-			});
-		}
-
-		class DatagenNodeLimiter final : public limit::ISearchLimiter
-		{
-		public:
-			explicit DatagenNodeLimiter(u32 threadId) : m_threadId{threadId} {}
-			~DatagenNodeLimiter() final = default;
-
-			[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
-			{
-				if (data.nodes >= m_hardNodeLimit)
-				{
-					std::cout << "thread " << m_threadId << ": stopping search after "
-						<< data.nodes << " nodes (limit: " << m_hardNodeLimit << ")" << std::endl;
-					return true;
-				}
+namespace stormphrax::datagen {
+    namespace {
+        std::atomic_bool s_stop{false};
 
-				return allowSoftTimeout && data.nodes >= m_softNodeLimit;
-			}
+        auto initCtrlCHandler() {
+            util::signal::addCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
+        }
 
-			[[nodiscard]] auto stopped() const -> bool final
-			{
-				// doesn't matter
-				return false;
-			}
-
-			inline auto setSoftNodeLimit(usize nodes)
-			{
-				m_softNodeLimit = nodes;
-			}
-
-			inline auto setHardNodeLimit(usize nodes)
-			{
-				m_hardNodeLimit = nodes;
-			}
-
-		private:
-			u32 m_threadId;
-			usize m_softNodeLimit{};
-			usize m_hardNodeLimit{};
-		};
-
-		constexpr usize VerificationHardNodeLimit = 25165814;
-
-		constexpr usize DatagenSoftNodeLimit = 5000;
-		constexpr usize DatagenHardNodeLimit = 8388608;
-
-		constexpr Score VerificationScoreLimit = 1000;
-
-		constexpr Score WinAdjMinScore = 2500;
-		constexpr Score DrawAdjMaxScore = 10;
-
-		constexpr u32 WinAdjMaxPlies = 5;
-		constexpr u32 DrawAdjMaxPlies = 10;
-
-		constexpr i32 ReportInterval = 1024;
+        class DatagenNodeLimiter final : public limit::ISearchLimiter {
+        public:
+            explicit DatagenNodeLimiter(u32 threadId) :
+                    m_threadId{threadId} {}
+            ~DatagenNodeLimiter() final = default;
 
-		template <OutputFormat Format>
-		auto runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir)
-		{
-			const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
-			std::ofstream out{outFile, std::ios::binary | std::ios::app};
-
-			if (!out)
-			{
-				std::cerr << "failed to open output file " << outFile << std::endl;
-				return;
-			}
+            [[nodiscard]] auto
+            stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final {
+                if (data.nodes >= m_hardNodeLimit) {
+                    std::cout << "thread " << m_threadId << ": stopping search after " << data.nodes
+                              << " nodes (limit: " << m_hardNodeLimit << ")" << std::endl;
+                    return true;
+                }
 
-			util::rng::Jsf64Rng rng{seed};
+                return allowSoftTimeout && data.nodes >= m_softNodeLimit;
+            }
 
-			auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
-			auto &limiter = *limiterPtr;
-
-			search::Searcher searcher{};
-			searcher.setLimiter(std::move(limiterPtr));
+            [[nodiscard]] auto stopped() const -> bool final {
+                // doesn't matter
+                return false;
+            }
 
-			auto thread = std::make_unique<search::ThreadData>();
-			thread->datagen = true;
+            inline auto setSoftNodeLimit(usize nodes) {
+                m_softNodeLimit = nodes;
+            }
 
-			const auto resetSearch = [&searcher, &thread]()
-			{
-				searcher.newGame();
-
-				thread->search = search::SearchData{};
-
-				thread->history.clear();
-				thread->correctionHistory.clear();
-			};
+            inline auto setHardNodeLimit(usize nodes) {
+                m_hardNodeLimit = nodes;
+            }
 
-			Format output{};
+        private:
+            u32 m_threadId;
+            usize m_softNodeLimit{};
+            usize m_hardNodeLimit{};
+        };
 
-			const auto startTime = util::g_timer.time();
+        constexpr usize VerificationHardNodeLimit = 25165814;
 
-			usize totalPositions{};
+        constexpr usize DatagenSoftNodeLimit = 5000;
+        constexpr usize DatagenHardNodeLimit = 8388608;
 
-			for (i32 game = 0; game < games && !s_stop.load(std::memory_order::seq_cst); ++game)
-			{
-				resetSearch();
+        constexpr Score VerificationScoreLimit = 1000;
 
-				if (dfrc)
-				{
-					const auto dfrcIndex = rng.nextU32(960 * 960);
-					thread->pos.resetFromDfrcIndex(dfrcIndex);
-				}
-				else thread->pos.resetToStarting();
-
-				const auto moveCount = 8 + (rng.nextU32() >> 31);
-
-				bool legalFound = false;
-
-				for (i32 i = 0; i < moveCount; ++i)
-				{
-					ScoredMoveList moves{};
-					generateAll(moves, thread->pos);
-
-					std::shuffle(moves.begin(), moves.end(), rng);
-
-					legalFound = false;
-
-					for (const auto [move, score] : moves)
-					{
-						if (thread->pos.isLegal(move))
-						{
-							thread->pos.applyMoveUnchecked<false>(move, nullptr);
-							legalFound = true;
-							break;
-						}
-					}
-
-					if (!legalFound)
-						break;
-				}
-
-				if (!legalFound)
-				{
-					// this game was useless, don't count it
-					--game;
-					continue;
-				}
-
-				output.start(thread->pos);
-
-				thread->pos.clearStateHistory();
-				thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
-
-				thread->maxDepth = 10;
-				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
-				limiter.setHardNodeLimit(VerificationHardNodeLimit);
-
-				const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
-
-				thread->maxDepth = MaxDepth;
-				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
-				limiter.setHardNodeLimit(DatagenHardNodeLimit);
-
-				if (std::abs(normFirstScore) > VerificationScoreLimit)
-				{
-					--game;
-					continue;
-				}
-
-				resetSearch();
-
-				u32 winPlies{};
-				u32 lossPlies{};
-				u32 drawPlies{};
-
-				std::optional<Outcome> outcome{};
-
-				while (true)
-				{
-					const auto [score, normScore] = searcher.runDatagenSearch(*thread);
-					thread->search = search::SearchData{};
-
-					const auto move = thread->rootPv.moves[0];
-
-					if (!move)
-					{
-						if (thread->pos.isCheck())
-							outcome = thread->pos.toMove() == Color::Black
-								? Outcome::WhiteWin
-								: Outcome::WhiteLoss;
-						else outcome = Outcome::Draw; // stalemate
-
-						break;
-					}
-
-					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
-
-					if (std::abs(score) > ScoreWin)
-						outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
-					else
-					{
-						if (normScore > WinAdjMinScore)
-						{
-							++winPlies;
-							lossPlies = 0;
-							drawPlies = 0;
-						}
-						else if (normScore < -WinAdjMinScore)
-						{
-							winPlies = 0;
-							++lossPlies;
-							drawPlies = 0;
-						}
-						else if (std::abs(normScore) < DrawAdjMaxScore)
-						{
-							winPlies = 0;
-							lossPlies = 0;
-							++drawPlies;
-						}
-						else
-						{
-							winPlies = 0;
-							lossPlies = 0;
-							drawPlies = 0;
-						}
-
-						if (winPlies >= WinAdjMaxPlies)
-							outcome = Outcome::WhiteWin;
-						else if (lossPlies >= WinAdjMaxPlies)
-							outcome = Outcome::WhiteLoss;
-						else if (drawPlies >= DrawAdjMaxPlies)
-							outcome = Outcome::Draw;
-					}
-
-					const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
-
-					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
-
-					assert(eval::staticEvalOnce(thread->pos) == eval::staticEval(thread->pos, thread->nnueState));
-
-					if (thread->pos.isDrawn(false))
-					{
-						outcome = Outcome::Draw;
-						output.push(true, move, 0);
-						break;
-					}
-
-					output.push(filtered, move, score);
-
-					if (outcome)
-						break;
-				}
-
-				assert(outcome.has_value());
-
-				const auto positions = output.writeAllWithOutcome(out, *outcome);
-				totalPositions += positions;
-
-				if (game == games - 1
-					|| ((game + 1) % ReportInterval) == 0
-					|| s_stop.load(std::memory_order::seq_cst))
-				{
-					const auto time = util::g_timer.time() - startTime;
-					std::cout << "thread " << id << ": wrote " << totalPositions << " positions from "
-						<< (game + 1) << " games in " << time << " sec ("
-						<< (static_cast<f64>(totalPositions) / time) << " positions/sec)" << std::endl;
-				}
-			}
-		}
-
-		template auto runThread<Marlinformat>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<Viriformat>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<Fen>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
-	}
-
-	auto run(const std::function<void()> &printUsage, const std::string &format,
-		bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
-	{
-		std::function<decltype(runThread<Marlinformat>)> threadFunc{};
-
-		if (format == "marlinformat")
-			threadFunc = runThread<Marlinformat>;
-		else if (format == "viriformat")
-			threadFunc = runThread<Viriformat>;
-		else if (format == "fen")
-			threadFunc = runThread<Fen>;
-		else
-		{
-			std::cerr << "invalid output format " << format << std::endl;
-			printUsage();
-			return 1;
-		}
-
-		opts::mutableOpts().chess960 = dfrc;
-
-		const auto baseSeed = util::rng::generateSingleSeed();
-		std::cout << "base seed: " << baseSeed << std::endl;
-
-		util::rng::SeedGenerator seedGenerator{baseSeed};
-
-		const std::filesystem::path outDir{output};
-
-		initCtrlCHandler();
-
-		std::vector<std::thread> theThreads{};
-		theThreads.reserve(threads);
-
-		if (games == UnlimitedGames)
-			std::cout << "generating on " << threads << " threads" << std::endl;
-		else std::cout << "generating " << games << " games each on " << threads << " threads" << std::endl;
-
-		for (u32 i = 0; i < threads; ++i)
-		{
-			const auto seed = seedGenerator.nextSeed();
-			theThreads.emplace_back([&, i, seed]()
-			{
-				threadFunc(i, dfrc, games, seed, outDir);
-			});
-		}
-
-		for (auto &thread : theThreads)
-		{
-			thread.join();
-		}
-
-		std::cout << "done" << std::endl;
-
-		return 0;
-	}
-}
+        constexpr Score WinAdjMinScore = 2500;
+        constexpr Score DrawAdjMaxScore = 10;
+
+        constexpr u32 WinAdjMaxPlies = 5;
+        constexpr u32 DrawAdjMaxPlies = 10;
+
+        constexpr i32 ReportInterval = 1024;
+
+        template<OutputFormat Format>
+        auto
+        runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir) {
+            const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
+            std::ofstream out{outFile, std::ios::binary | std::ios::app};
+
+            if (!out) {
+                std::cerr << "failed to open output file " << outFile << std::endl;
+                return;
+            }
+
+            util::rng::Jsf64Rng rng{seed};
+
+            auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
+            auto &limiter = *limiterPtr;
+
+            search::Searcher searcher{};
+            searcher.setLimiter(std::move(limiterPtr));
+
+            auto thread = std::make_unique<search::ThreadData>();
+            thread->datagen = true;
+
+            const auto resetSearch = [&searcher, &thread]() {
+                searcher.newGame();
+
+                thread->search = search::SearchData{};
+
+                thread->history.clear();
+                thread->correctionHistory.clear();
+            };
+
+            Format output{};
+
+            const auto startTime = util::g_timer.time();
+
+            usize totalPositions{};
+
+            for (i32 game = 0; game < games && !s_stop.load(std::memory_order::seq_cst); ++game) {
+                resetSearch();
+
+                if (dfrc) {
+                    const auto dfrcIndex = rng.nextU32(960 * 960);
+                    thread->pos.resetFromDfrcIndex(dfrcIndex);
+                } else
+                    thread->pos.resetToStarting();
+
+                const auto moveCount = 8 + (rng.nextU32() >> 31);
+
+                bool legalFound = false;
+
+                for (i32 i = 0; i < moveCount; ++i) {
+                    ScoredMoveList moves{};
+                    generateAll(moves, thread->pos);
+
+                    std::shuffle(moves.begin(), moves.end(), rng);
+
+                    legalFound = false;
+
+                    for (const auto [move, score]: moves) {
+                        if (thread->pos.isLegal(move)) {
+                            thread->pos.applyMoveUnchecked<false>(move, nullptr);
+                            legalFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!legalFound)
+                        break;
+                }
+
+                if (!legalFound) {
+                    // this game was useless, don't count it
+                    --game;
+                    continue;
+                }
+
+                output.start(thread->pos);
+
+                thread->pos.clearStateHistory();
+                thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
+
+                thread->maxDepth = 10;
+                limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
+                limiter.setHardNodeLimit(VerificationHardNodeLimit);
+
+                const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
+
+                thread->maxDepth = MaxDepth;
+                limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
+                limiter.setHardNodeLimit(DatagenHardNodeLimit);
+
+                if (std::abs(normFirstScore) > VerificationScoreLimit) {
+                    --game;
+                    continue;
+                }
+
+                resetSearch();
+
+                u32 winPlies{};
+                u32 lossPlies{};
+                u32 drawPlies{};
+
+                std::optional<Outcome> outcome{};
+
+                while (true) {
+                    const auto [score, normScore] = searcher.runDatagenSearch(*thread);
+                    thread->search = search::SearchData{};
+
+                    const auto move = thread->rootPv.moves[0];
+
+                    if (!move) {
+                        if (thread->pos.isCheck())
+                            outcome = thread->pos.toMove() == Color::Black ? Outcome::WhiteWin
+                                                                           : Outcome::WhiteLoss;
+                        else
+                            outcome = Outcome::Draw; // stalemate
+
+                        break;
+                    }
+
+                    assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
+
+                    if (std::abs(score) > ScoreWin)
+                        outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
+                    else {
+                        if (normScore > WinAdjMinScore) {
+                            ++winPlies;
+                            lossPlies = 0;
+                            drawPlies = 0;
+                        } else if (normScore < -WinAdjMinScore) {
+                            winPlies = 0;
+                            ++lossPlies;
+                            drawPlies = 0;
+                        } else if (std::abs(normScore) < DrawAdjMaxScore) {
+                            winPlies = 0;
+                            lossPlies = 0;
+                            ++drawPlies;
+                        } else {
+                            winPlies = 0;
+                            lossPlies = 0;
+                            drawPlies = 0;
+                        }
+
+                        if (winPlies >= WinAdjMaxPlies)
+                            outcome = Outcome::WhiteWin;
+                        else if (lossPlies >= WinAdjMaxPlies)
+                            outcome = Outcome::WhiteLoss;
+                        else if (drawPlies >= DrawAdjMaxPlies)
+                            outcome = Outcome::Draw;
+                    }
+
+                    const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
+
+                    thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
+
+                    assert(
+                        eval::staticEvalOnce(thread->pos)
+                        == eval::staticEval(thread->pos, thread->nnueState)
+                    );
+
+                    if (thread->pos.isDrawn(false)) {
+                        outcome = Outcome::Draw;
+                        output.push(true, move, 0);
+                        break;
+                    }
+
+                    output.push(filtered, move, score);
+
+                    if (outcome)
+                        break;
+                }
+
+                assert(outcome.has_value());
+
+                const auto positions = output.writeAllWithOutcome(out, *outcome);
+                totalPositions += positions;
+
+                if (game == games - 1 || ((game + 1) % ReportInterval) == 0
+                    || s_stop.load(std::memory_order::seq_cst))
+                {
+                    const auto time = util::g_timer.time() - startTime;
+                    std::cout << "thread " << id << ": wrote " << totalPositions
+                              << " positions from " << (game + 1) << " games in " << time
+                              << " sec (" << (static_cast<f64>(totalPositions) / time)
+                              << " positions/sec)" << std::endl;
+                }
+            }
+        }
+
+        template auto runThread<Marlinformat>(
+            u32 id,
+            bool dfrc,
+            u32 games,
+            u64 seed,
+            const std::filesystem::path &outDir
+        );
+        template auto runThread<Viriformat>(
+            u32 id,
+            bool dfrc,
+            u32 games,
+            u64 seed,
+            const std::filesystem::path &outDir
+        );
+        template auto
+        runThread<Fen>(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir);
+    } // namespace
+
+    auto
+    run(const std::function<void()> &printUsage,
+        const std::string &format,
+        bool dfrc,
+        const std::string &output,
+        i32 threads,
+        u32 games) -> i32 {
+        std::function<decltype(runThread<Marlinformat>)> threadFunc{};
+
+        if (format == "marlinformat")
+            threadFunc = runThread<Marlinformat>;
+        else if (format == "viriformat")
+            threadFunc = runThread<Viriformat>;
+        else if (format == "fen")
+            threadFunc = runThread<Fen>;
+        else {
+            std::cerr << "invalid output format " << format << std::endl;
+            printUsage();
+            return 1;
+        }
+
+        opts::mutableOpts().chess960 = dfrc;
+
+        const auto baseSeed = util::rng::generateSingleSeed();
+        std::cout << "base seed: " << baseSeed << std::endl;
+
+        util::rng::SeedGenerator seedGenerator{baseSeed};
+
+        const std::filesystem::path outDir{output};
+
+        initCtrlCHandler();
+
+        std::vector<std::thread> theThreads{};
+        theThreads.reserve(threads);
+
+        if (games == UnlimitedGames)
+            std::cout << "generating on " << threads << " threads" << std::endl;
+        else
+            std::cout << "generating " << games << " games each on " << threads << " threads"
+                      << std::endl;
+
+        for (u32 i = 0; i < threads; ++i) {
+            const auto seed = seedGenerator.nextSeed();
+            theThreads.emplace_back([&, i, seed]() { threadFunc(i, dfrc, games, seed, outDir); });
+        }
+
+        for (auto &thread: theThreads) {
+            thread.join();
+        }
+
+        std::cout << "done" << std::endl;
+
+        return 0;
+    }
+} // namespace stormphrax::datagen

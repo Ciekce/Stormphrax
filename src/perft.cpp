@@ -24,73 +24,68 @@
 #include "uci.h"
 #include "util/timer.h"
 
-namespace stormphrax
-{
-	namespace
-	{
-		auto doPerft(Position &pos, i32 depth) -> usize
-		{
-			if (depth == 0)
-				return 1;
+namespace stormphrax {
+    namespace {
+        auto doPerft(Position &pos, i32 depth) -> usize {
+            if (depth == 0) {
+                return 1;
+            }
 
-			--depth;
+            --depth;
 
-			ScoredMoveList moves{};
-			generateAll(moves, pos);
+            ScoredMoveList moves{};
+            generateAll(moves, pos);
 
-			usize total{};
+            usize total{};
 
-			for (const auto [move, score] : moves)
-			{
-				if (!pos.isLegal(move))
-					continue;
+            for (const auto [move, score]: moves) {
+                if (!pos.isLegal(move)) {
+                    continue;
+                }
 
-				if (depth == 0)
-					++total;
-				else
-				{
-					const auto guard = pos.applyMove<false>(move, nullptr);
-					total += doPerft(pos, depth);
-				}
-			}
+                if (depth == 0) {
+                    ++total;
+                } else {
+                    const auto guard = pos.applyMove<false>(move, nullptr);
+                    total += doPerft(pos, depth);
+                }
+            }
 
-			return total;
-		}
-	}
+            return total;
+        }
+    } // namespace
 
-	auto perft(Position &pos, i32 depth) -> void
-	{
-		std::cout << doPerft(pos, depth) << std::endl;
-	}
+    auto perft(Position &pos, i32 depth) -> void {
+        std::cout << doPerft(pos, depth) << std::endl;
+    }
 
-	auto splitPerft(Position &pos, i32 depth) -> void
-	{
-		--depth;
+    auto splitPerft(Position &pos, i32 depth) -> void {
+        --depth;
 
-		const auto start = util::g_timer.time();
+        const auto start = util::g_timer.time();
 
-		ScoredMoveList moves{};
-		generateAll(moves, pos);
+        ScoredMoveList moves{};
+        generateAll(moves, pos);
 
-		usize total{};
+        usize total{};
 
-		for (const auto [move, score] : moves)
-		{
-			if (!pos.isLegal(move))
-				continue;
+        for (const auto [move, score]: moves) {
+            if (!pos.isLegal(move)) {
+                continue;
+            }
 
-			const auto guard = pos.applyMove<false>(move, nullptr);
+            const auto guard = pos.applyMove<false>(move, nullptr);
 
-			const auto value = doPerft(pos, depth);
+            const auto value = doPerft(pos, depth);
 
-			total += value;
-			std::cout << uci::moveToString(move) << '\t' << value << '\n';
-		}
+            total += value;
+            std::cout << uci::moveToString(move) << '\t' << value << '\n';
+        }
 
-		const auto time = util::g_timer.time() - start;
-		const auto nps = static_cast<usize>(static_cast<f64>(total) / time);
+        const auto time = util::g_timer.time() - start;
+        const auto nps = static_cast<usize>(static_cast<f64>(total) / time);
 
-		std::cout << "\ntotal " << total << '\n';
-		std::cout << nps << " nps" << std::endl;
-	}
-}
+        std::cout << "\ntotal " << total << '\n';
+        std::cout << nps << " nps" << std::endl;
+    }
+} // namespace stormphrax

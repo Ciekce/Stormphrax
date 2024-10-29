@@ -20,24 +20,23 @@
 
 #include "types.h"
 
-#include <string>
 #include <span>
+#include <string>
 
 #include "core.h"
 #include "move.h"
 #include "tunable.h"
 
-namespace stormphrax::uci
-{
-	constexpr auto ContemptRange = util::Range<i32>{-1000, 1000};
+namespace stormphrax::uci {
+    constexpr auto ContemptRange = util::Range<i32>{-1000, 1000};
 
-	auto run() -> i32;
+    auto run() -> i32;
 
-	[[nodiscard]] auto moveToString(Move move) -> std::string;
+    [[nodiscard]] auto moveToString(Move move) -> std::string;
 
 #if SP_EXTERNAL_TUNE
-	auto printWfTuningParams(std::span<const std::string> params) -> void;
-	auto printCttTuningParams(std::span<const std::string> params) -> void;
-	auto printObTuningParams(std::span<const std::string> params) -> void;
+    auto printWfTuningParams(std::span<const std::string> params) -> void;
+    auto printCttTuningParams(std::span<const std::string> params) -> void;
+    auto printObTuningParams(std::span<const std::string> params) -> void;
 #endif
-}
+} // namespace stormphrax::uci

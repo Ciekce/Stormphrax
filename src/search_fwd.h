@@ -22,19 +22,16 @@
 
 #include "move.h"
 
-namespace stormphrax::search
-{
-	struct SearchData
-	{
-		i32 depth{};
-		i32 seldepth{};
-		usize nodes{};
-		usize tbhits{};
-	};
+namespace stormphrax::search {
+    struct SearchData {
+        i32 depth{};
+        i32 seldepth{};
+        usize nodes{};
+        usize tbhits{};
+    };
 
-	struct PlayedMove
-	{
-		Piece moving;
-		Square dst;
-	};
-}
+    struct PlayedMove {
+        Piece moving;
+        Square dst;
+    };
+} // namespace stormphrax::search
