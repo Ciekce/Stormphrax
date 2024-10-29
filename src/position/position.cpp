@@ -364,7 +364,7 @@ namespace stormphrax
 					}
 				}
 
-				for (char flag : castlingFlags)
+				for (const auto flag : castlingFlags)
 				{
 					if (flag >= 'a' && flag <= 'h')
 					{
@@ -453,7 +453,7 @@ namespace stormphrax
 			}
 			else
 			{
-				for (char flag : castlingFlags)
+				for (const auto flag : castlingFlags)
 				{
 					switch (flag)
 					{
@@ -1358,8 +1358,6 @@ namespace stormphrax
 		assert(src != dst);
 
 		auto &state = currState();
-
-		const auto color = pieceColor(pawn);
 
 		state.boards.movePiece(src, dst, pawn);
 

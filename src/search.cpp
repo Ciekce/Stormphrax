@@ -302,6 +302,7 @@ namespace stormphrax::search
 	auto Searcher::stopThreads() -> void
 	{
 		m_quit.store(true, std::memory_order::release);
+
 		m_resetBarrier.arriveAndWait();
 		m_idleBarrier.arriveAndWait();
 
