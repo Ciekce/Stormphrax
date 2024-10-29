@@ -18,12 +18,13 @@ this project is a continuation of my HCE engine [Polaris]
 ## Strength
 | Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
 |:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-|  5.0.0  |          3506           |           3623           |             3866              |         3501          |          3461           |    -    |
-|  4.1.0  |          3490           |           3587           |             3808              |           -           |          3432           |    -    |
-|  4.0.0  |          3477           |           3567           |             3778              |         3440          |          3419           |  3542   |
-|  3.0.0  |          3409           |           3492           |             3693              |           -           |          3354           |  3495   |
-|  2.0.0  |          3399           |           3483           |             3673              |         3339          |            -            |  3482   |
-|  1.0.0  |          3319           |           3376           |             3521              |         3235          |            -            |  3346   |
+|  6.0.0  |            -            |            -             |               -               |           -           |            -            |    -    |
+|  5.0.0  |          3507           |           3624           |             3865              |         3501          |          3461           |    -    |
+|  4.1.0  |          3490           |           3588           |             3808              |           -           |          3432           |    -    |
+|  4.0.0  |          3476           |           3568           |             3778              |         3440          |          3419           |  3542   |
+|  3.0.0  |          3408           |           3494           |             3693              |           -           |          3354           |  3495   |
+|  2.0.0  |          3398           |           3485           |             3673              |         3339          |            -            |  3482   |
+|  1.0.0  |          3318           |           3377           |             3520              |         3235          |            -            |  3346   |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -34,9 +35,14 @@ this project is a continuation of my HCE engine [Polaris]
     - 1-ply continuation history (countermove history)
     - 2-ply continuation history (follow-up history)
     - 4-ply continuation history
+  - correction history
+    - pawn
+    - non-pawn
+    - major
+    - continuation
   - history pruning
   - internal iterative reduction
-  - killers (2 per ply)
+  - killers (1 per ply)
   - late move reductions
   - late move pruning
   - mate distance pruning
@@ -51,9 +57,9 @@ this project is a continuation of my HCE engine [Polaris]
     - various negative extensions
   - Syzygy tablebase support
 - NNUE
-  - (768x4->1536)x2->1x8 architecture, horizontally mirrored
+  - (768x16->1280)x2->1x8 architecture, horizontally mirrored
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
-- BMI2 attacks in the `bmi2` build, otherwise fancy black magic
+- BMI2 attacks in the `bmi2` build and up, otherwise fancy black magic
   - `pext`/`pdep` for rooks
   - `pext` for bishops
 - lazy SMP
@@ -63,20 +69,22 @@ this project is a continuation of my HCE engine [Polaris]
 - make it stronger uwu
 
 ## UCI options
-| Name               |  Type   | Default value |       Valid values        | Description                                                                                                                                                                                                                              |
-|:-------------------|:-------:|:-------------:|:-------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Hash`             | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                                                                                                                                                                     |
-| `Clear Hash`       | button  |      N/A      |            N/A            | Clears the transposition table.                                                                                                                                                                                                          |
-| `Threads`          | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                                                                                                                                                        |
-| `UCI_Chess960`     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                                                                                                                                             |
-| `UCI_ShowWDL`      |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                                                                                                                                                         |
-| `ShowCurrMove`     |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax starts printing the move currently being searched after a short delay.                                                                                                                                                |
-| `Move Overhead`    | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                                                                                                                                                     |
-| `EnableWeirdTCs`   |  check  |    `false`    |      `false`, `true`      | Whether unusual time controls (movestogo != 0, or increment = 0) are enabled. Enabling this option means you recognise that Stormphrax is neither designed for nor tested with these TCs, and is likely to perform worse than under X+Y. |
-| `SyzygyPath`       | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                                                                                                                                                    |
-| `SyzygyProbeDepth` |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                                                                                                                                             |
-| `SyzygyProbeLimit` |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                                                                                                                                                   |
-| `EvalFile`         | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                                                                                                                                                         |
+| Name                          |  Type   | Default value |       Valid values        | Description                                                                                                                                                                                                                              |
+|:------------------------------|:-------:|:-------------:|:-------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Hash`                        | integer |      64       |        [1, 131072]        | Memory allocated to the transposition table (in MB).                                                                                                                                                                                     |
+| `Clear Hash`                  | button  |      N/A      |            N/A            | Clears the transposition table.                                                                                                                                                                                                          |
+| `Threads`                     | integer |       1       |         [1, 2048]         | Number of threads used to search.                                                                                                                                                                                                        |
+| `UCI_Chess960`                |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax plays Chess960 instead of standard chess.                                                                                                                                                                             |
+| `UCI_ShowWDL`                 |  check  |    `true`     |      `false`, `true`      | Whether Stormphrax displays predicted win/draw/loss probabilities in UCI output.                                                                                                                                                         |
+| `ShowCurrMove`                |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax starts printing the move currently being searched after a short delay.                                                                                                                                                |
+| `Move Overhead`               | integer |      10       |        [0, 50000]         | Amount of time Stormphrax assumes to be lost to overhead when making a move (in ms).                                                                                                                                                     |
+| `SoftNodes`                   |  check  |    `false`    |      `false`, `true`      | Whether Stormphrax will finish the current depth after hitting the node limit when sent `go nodes`.                                                                                                                                      |
+| `SoftNodeHardLimitMultiplier` | integer |     1678      |         [1, 5000]         | With `SoftNodes` enabled, the multiplier applied to the `go nodes` limit after which Stormphrax will abort the search anyway.                                                                                                            |
+| `EnableWeirdTCs`              |  check  |    `false`    |      `false`, `true`      | Whether unusual time controls (movestogo != 0, or increment = 0) are enabled. Enabling this option means you recognise that Stormphrax is neither designed for nor tested with these TCs, and is likely to perform worse than under X+Y. |
+| `SyzygyPath`                  | string  |   `<empty>`   |  any path, or `<empty>`   | Location of Syzygy tablebases to probe during search.                                                                                                                                                                                    |
+| `SyzygyProbeDepth`            |  spin   |       1       |         [1, 255]          | Minimum depth to probe Syzygy tablebases at.                                                                                                                                                                                             |
+| `SyzygyProbeLimit`            |  spin   |       7       |          [0, 7]           | Maximum number of pieces on the board to probe Syzygy tablebases with.                                                                                                                                                                   |
+| `EvalFile`                    | string  | `<internal>`  | any path, or `<internal>` | NNUE file to use for evaluation.                                                                                                                                                                                                         |
 
 ## Builds
 `vnni512`: requires BMI2, AVX-512 and VNNI (Zen 4/Cascade Lake-SP/Rocket Lake and up)  
