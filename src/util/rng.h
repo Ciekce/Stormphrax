@@ -86,6 +86,7 @@ namespace stormphrax::util::rng {
         static constexpr auto min() {
             return std::numeric_limits<u64>::min();
         }
+
         static constexpr auto max() {
             return std::numeric_limits<u64>::max();
         }

@@ -34,6 +34,7 @@ namespace stormphrax {
     class CorrectionHistoryTable {
     public:
         CorrectionHistoryTable() = default;
+
         ~CorrectionHistoryTable() = default;
 
         inline auto clear() {
@@ -45,7 +46,7 @@ namespace stormphrax {
         }
 
         inline auto update(
-            const Position &pos,
+            const Position& pos,
             std::span<search::PlayedMove> moves,
             i32 ply,
             i32 depth,
@@ -81,7 +82,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline auto
-        correct(const Position &pos, std::span<search::PlayedMove> moves, i32 ply, Score score)
+        correct(const Position& pos, std::span<search::PlayedMove> moves, i32 ply, Score score)
             const {
             using namespace tunable;
 

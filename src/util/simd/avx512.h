@@ -42,12 +42,12 @@ namespace stormphrax::util::simd {
             return _mm512_set1_epi16(v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void *ptr) -> VectorI16 {
+        SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void* ptr) -> VectorI16 {
             assert(isAligned<Alignment>(ptr));
             return _mm512_load_si512(ptr);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void *ptr, VectorI16 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void* ptr, VectorI16 v) {
             assert(isAligned<Alignment>(ptr));
             _mm512_store_si512(ptr, v);
         }
@@ -89,12 +89,12 @@ namespace stormphrax::util::simd {
             return _mm512_set1_epi32(v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32 {
+        SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void* ptr) -> VectorI32 {
             assert(isAligned<Alignment>(ptr));
             return _mm512_load_si512(ptr);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void* ptr, VectorI32 v) {
             assert(isAligned<Alignment>(ptr));
             _mm512_store_si512(ptr, v);
         }

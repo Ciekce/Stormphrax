@@ -51,10 +51,11 @@ namespace stormphrax::eval {
     using Accumulator = FeatureTransformer::Accumulator;
     using RefreshTable = FeatureTransformer::RefreshTable;
 
-    extern const Network &g_network;
+    extern const Network& g_network;
 
     auto loadDefaultNetwork() -> void;
-    auto loadNetwork(const std::string &name) -> void;
+
+    auto loadNetwork(const std::string& name) -> void;
 
     [[nodiscard]] auto defaultNetworkName() -> std::string_view;
 
@@ -122,7 +123,7 @@ namespace stormphrax::eval {
             m_accumulatorStack.resize(256);
         }
 
-        inline auto reset(const BitboardSet &bbs, KingPair kings) {
+        inline auto reset(const BitboardSet& bbs, KingPair kings) {
             assert(kings.isValid());
 
             m_refreshTable.init(g_network.featureTransformer());
@@ -133,7 +134,7 @@ namespace stormphrax::eval {
                 const auto king = kings.color(c);
                 const auto entry = InputFeatureSet::getRefreshTableEntry(c, king);
 
-                auto &rtEntry = m_refreshTable.table[entry];
+                auto& rtEntry = m_refreshTable.table[entry];
                 resetAccumulator(rtEntry.accumulator, c, bbs, king);
 
                 m_curr->acc.copyFrom(c, rtEntry.accumulator);
@@ -143,7 +144,7 @@ namespace stormphrax::eval {
 
         template<bool ApplyImmediately>
         inline auto
-        pushUpdates(const NnueUpdates &updates, const BitboardSet &bbs, KingPair kings) {
+        pushUpdates(const NnueUpdates& updates, const BitboardSet& bbs, KingPair kings) {
             if constexpr (ApplyImmediately) {
                 const UpdateContext ctx{updates, bbs, kings};
                 updateBoth(m_curr->acc, *m_curr, m_refreshTable, ctx);
@@ -160,7 +161,7 @@ namespace stormphrax::eval {
             --m_curr;
         }
 
-        [[nodiscard]] inline auto evaluate(const BitboardSet &bbs, KingPair kings, Color stm) {
+        [[nodiscard]] inline auto evaluate(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
             assert(stm != Color::None);
 
@@ -170,7 +171,7 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] static inline auto
-        evaluateOnce(const BitboardSet &bbs, KingPair kings, Color stm) {
+        evaluateOnce(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(kings.isValid());
             assert(stm != Color::None);
 
@@ -186,15 +187,15 @@ namespace stormphrax::eval {
 
     private:
         std::vector<UpdatableAccumulator> m_accumulatorStack{};
-        UpdatableAccumulator *m_curr{};
+        UpdatableAccumulator* m_curr{};
 
         RefreshTable m_refreshTable{};
 
         static inline auto update(
-            const Accumulator &prev,
-            UpdatableAccumulator &curr,
-            RefreshTable &refreshTable,
-            const UpdateContext &ctx,
+            const Accumulator& prev,
+            UpdatableAccumulator& curr,
+            RefreshTable& refreshTable,
+            const UpdateContext& ctx,
             Color c
         ) -> void {
             if (ctx.updates.requiresRefresh(c)) {
@@ -258,16 +259,16 @@ namespace stormphrax::eval {
         }
 
         static inline auto updateBoth(
-            const Accumulator &prev,
-            UpdatableAccumulator &curr,
-            RefreshTable &refreshTable,
-            const UpdateContext &ctx
+            const Accumulator& prev,
+            UpdatableAccumulator& curr,
+            RefreshTable& refreshTable,
+            const UpdateContext& ctx
         ) -> void {
             update(prev, curr, refreshTable, ctx, Color::Black);
             update(prev, curr, refreshTable, ctx, Color::White);
         }
 
-        inline auto ensureUpToDate(const BitboardSet &bbs, KingPair kings) -> void {
+        inline auto ensureUpToDate(const BitboardSet& bbs, KingPair kings) -> void {
             for (const auto c: {Color::Black, Color::White}) {
                 if (!m_curr->isDirty(c))
                     continue;
@@ -280,7 +281,7 @@ namespace stormphrax::eval {
 
                 // scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
                 // root accumulator is always up-to-date
-                auto *curr = m_curr - 1;
+                auto* curr = m_curr - 1;
                 for (; curr->isDirty(c) && !curr->ctx.updates.requiresRefresh(c); --curr) {
                 }
 
@@ -292,7 +293,7 @@ namespace stormphrax::eval {
                 else // otherwise go forward and incrementally update all accumulators in between
                 {
                     do {
-                        const auto &prev = *curr;
+                        const auto& prev = *curr;
 
                         ++curr;
                         update(prev.acc, *curr, m_refreshTable, curr->ctx, c);
@@ -302,7 +303,7 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] static inline auto
-        evaluate(const Accumulator &accumulator, const BitboardSet &bbs, Color stm) -> i32 {
+        evaluate(const Accumulator& accumulator, const BitboardSet& bbs, Color stm) -> i32 {
             assert(stm != Color::None);
 
             return stm == Color::Black
@@ -311,16 +312,16 @@ namespace stormphrax::eval {
         }
 
         static inline auto refreshAccumulator(
-            UpdatableAccumulator &accumulator,
+            UpdatableAccumulator& accumulator,
             Color c,
-            const BitboardSet &bbs,
-            RefreshTable &refreshTable,
+            const BitboardSet& bbs,
+            RefreshTable& refreshTable,
             Square king
         ) -> void {
             const auto tableIdx = InputFeatureSet::getRefreshTableEntry(c, king);
 
-            auto &rtEntry = refreshTable.table[tableIdx];
-            auto &prevBoards = rtEntry.colorBbs(c);
+            auto& rtEntry = refreshTable.table[tableIdx];
+            auto& prevBoards = rtEntry.colorBbs(c);
 
             for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx) {
                 const auto piece = static_cast<Piece>(pieceIdx);
@@ -354,7 +355,7 @@ namespace stormphrax::eval {
         }
 
         static inline auto
-        resetAccumulator(Accumulator &accumulator, Color c, const BitboardSet &bbs, Square king)
+        resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king)
             -> void {
             assert(c != Color::None);
             assert(king != Square::None);
@@ -375,9 +376,9 @@ namespace stormphrax::eval {
         }
 
         static inline auto resetAccumulator(
-            UpdatableAccumulator &accumulator,
+            UpdatableAccumulator& accumulator,
             Color c,
-            const BitboardSet &bbs,
+            const BitboardSet& bbs,
             Square king
         ) -> void {
             resetAccumulator(accumulator.acc, c, bbs, king);

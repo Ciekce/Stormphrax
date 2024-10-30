@@ -37,40 +37,40 @@ namespace stormphrax::eval::nnue {
     template<typename Ft>
     class Accumulator {
     public:
-        [[nodiscard]] inline auto black() const -> const auto & {
+        [[nodiscard]] inline auto black() const -> const auto& {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline auto white() const -> const auto & {
+        [[nodiscard]] inline auto white() const -> const auto& {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline auto forColor(Color c) const -> const auto & {
+        [[nodiscard]] inline auto forColor(Color c) const -> const auto& {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto black() -> auto & {
+        [[nodiscard]] inline auto black() -> auto& {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto & {
+        [[nodiscard]] inline auto white() -> auto& {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline auto forColor(Color c) -> auto & {
+        [[nodiscard]] inline auto forColor(Color c) -> auto& {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
 
-        inline void initBoth(const Ft &featureTransformer) {
+        inline void initBoth(const Ft& featureTransformer) {
             std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
             std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
         }
 
         inline auto subAddFrom(
-            const Accumulator<Ft> &src,
-            const Ft &featureTransformer,
+            const Accumulator<Ft>& src,
+            const Ft& featureTransformer,
             Color c,
             u32 sub,
             u32 add
@@ -88,8 +88,8 @@ namespace stormphrax::eval::nnue {
         }
 
         inline auto subSubAddFrom(
-            const Accumulator<Ft> &src,
-            const Ft &featureTransformer,
+            const Accumulator<Ft>& src,
+            const Ft& featureTransformer,
             Color c,
             u32 sub0,
             u32 sub1,
@@ -110,8 +110,8 @@ namespace stormphrax::eval::nnue {
         }
 
         inline auto subSubAddAddFrom(
-            const Accumulator<Ft> &src,
-            const Ft &featureTransformer,
+            const Accumulator<Ft>& src,
+            const Ft& featureTransformer,
             Color c,
             u32 sub0,
             u32 sub1,
@@ -134,17 +134,17 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline auto activateFeature(const Ft &featureTransformer, Color c, u32 feature) {
+        inline auto activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < InputCount);
             add(forColor(c), featureTransformer.weights, feature * OutputCount);
         }
 
-        inline auto deactivateFeature(const Ft &featureTransformer, Color c, u32 feature) {
+        inline auto deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < InputCount);
             sub(forColor(c), featureTransformer.weights, feature * OutputCount);
         }
 
-        inline auto copyFrom(Color c, const Accumulator<Ft> &other) {
+        inline auto copyFrom(Color c, const Accumulator<Ft>& other) {
             const auto idx = static_cast<i32>(c);
             std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
         }
@@ -239,7 +239,7 @@ namespace stormphrax::eval::nnue {
         Acc accumulator{};
         std::array<BitboardSet, 2> bbs{};
 
-        [[nodiscard]] auto colorBbs(Color c) -> auto & {
+        [[nodiscard]] auto colorBbs(Color c) -> auto& {
             return bbs[static_cast<i32>(c)];
         }
     };
@@ -248,8 +248,8 @@ namespace stormphrax::eval::nnue {
     struct RefreshTable {
         std::array<RefreshTableEntry<Accumulator<Ft>>, Size> table{};
 
-        inline void init(const Ft &featureTransformer) {
-            for (auto &entry: table) {
+        inline void init(const Ft& featureTransformer) {
+            for (auto& entry: table) {
                 entry.accumulator.initBoth(featureTransformer);
                 entry.bbs.fill(BitboardSet{});
             }
@@ -280,11 +280,11 @@ namespace stormphrax::eval::nnue {
         SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
         SP_SIMD_ALIGNAS std::array<OutputType, BiasCount> biases;
 
-        inline auto readFrom(IParamStream &stream) -> bool {
+        inline auto readFrom(IParamStream& stream) -> bool {
             return stream.read(weights) && stream.read(biases);
         }
 
-        inline auto writeTo(IParamStream &stream) const -> bool {
+        inline auto writeTo(IParamStream& stream) const -> bool {
             return stream.write(weights) && stream.write(biases);
         }
     };

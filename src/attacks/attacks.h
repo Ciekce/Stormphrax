@@ -29,7 +29,9 @@
 #include "util.h"
 
 #if SP_HAS_BMI2
+
     #include "bmi2/attacks.h"
+
 #else
     #include "black_magic/attacks.h"
 #endif
@@ -41,7 +43,7 @@ namespace stormphrax::attacks {
         for (usize i = 0; i < dst.size(); ++i) {
             const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
-            auto &attacks = dst[i];
+            auto& attacks = dst[i];
 
             attacks |= bit.shiftUpUpLeft();
             attacks |= bit.shiftUpUpRight();
@@ -62,7 +64,7 @@ namespace stormphrax::attacks {
         for (usize i = 0; i < dst.size(); ++i) {
             const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
-            auto &attacks = dst[i];
+            auto& attacks = dst[i];
 
             attacks |= bit.shiftUp();
             attacks |= bit.shiftDown();
@@ -103,7 +105,7 @@ namespace stormphrax::attacks {
     }
 
     constexpr auto getPawnAttacks(Square src, Color color) {
-        const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
+        const auto& attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
         return attacks[static_cast<usize>(src)];
     }
 

@@ -33,7 +33,7 @@ namespace stormphrax::eval::nnue::activation {
     concept Activation = requires(T t) {
         {
             T::Id
-        } -> std::same_as<const u8 &>;
+        } -> std::same_as<const u8&>;
         {
             T::activateDotAccumulate(
                 util::simd::zero<typename T::OutputType>(),
@@ -50,7 +50,7 @@ namespace stormphrax::eval::nnue::activation {
     concept PairwiseActivation = requires(T t) {
         {
             T::Id
-        } -> std::same_as<const u8 &>;
+        } -> std::same_as<const u8&>;
         {
             T::activateDotAccumulate(
                 util::simd::zero<typename T::OutputType>(),

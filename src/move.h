@@ -33,11 +33,13 @@ namespace stormphrax {
     class Move {
     public:
         constexpr Move() = default;
+
         constexpr ~Move() = default;
 
         [[nodiscard]] constexpr auto srcIdx() const {
             return m_move >> 10;
         }
+
         [[nodiscard]] constexpr auto src() const {
             return static_cast<Square>(srcIdx());
         }
@@ -45,6 +47,7 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto srcRank() const {
             return m_move >> 13;
         }
+
         [[nodiscard]] constexpr auto srcFile() const {
             return (m_move >> 10) & 0x7;
         }
@@ -52,6 +55,7 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto dstIdx() const {
             return (m_move >> 4) & 0x3F;
         }
+
         [[nodiscard]] constexpr auto dst() const {
             return static_cast<Square>(dstIdx());
         }
@@ -59,6 +63,7 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto dstRank() const {
             return (m_move >> 7) & 0x7;
         }
+
         [[nodiscard]] constexpr auto dstFile() const {
             return (m_move >> 4) & 0x7;
         }
@@ -66,6 +71,7 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto promoIdx() const {
             return (m_move >> 2) & 0x3;
         }
+
         [[nodiscard]] constexpr auto promo() const {
             return static_cast<PieceType>(promoIdx() + 1);
         }

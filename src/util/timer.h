@@ -24,6 +24,7 @@ namespace stormphrax::util {
     class Timer {
     public:
         Timer();
+
         ~Timer() = default;
 
         [[nodiscard]] auto time() const -> f64;

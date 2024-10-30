@@ -57,7 +57,7 @@ namespace stormphrax::search {
         std::array<Move, MaxDepth> moves{};
         u32 length{};
 
-        inline auto update(Move move, const PvList &child) {
+        inline auto update(Move move, const PvList& child) {
             moves[0] = move;
             std::copy(child.moves.begin(), child.moves.begin() + child.length, moves.begin() + 1);
 
@@ -66,7 +66,7 @@ namespace stormphrax::search {
             assert(length == 1 || moves[0] != moves[1]);
         }
 
-        inline auto operator=(const PvList &other) -> auto & {
+        inline auto operator=(const PvList& other) -> auto& {
             std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
             length = other.length;
 
@@ -118,7 +118,7 @@ namespace stormphrax::search {
 
         std::vector<SearchStackEntry> stack{};
         std::vector<MoveStackEntry> moveStack{};
-        std::vector<ContinuationSubtable *> conthist{};
+        std::vector<ContinuationSubtable*> conthist{};
         std::vector<PlayedMove> contMoves{};
 
         HistoryTables history{};
@@ -164,6 +164,7 @@ namespace stormphrax::search {
         }
 
         auto newGame() -> void;
+
         auto ensureReady() -> void;
 
         inline auto setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter) {
@@ -171,19 +172,20 @@ namespace stormphrax::search {
         }
 
         auto startSearch(
-            const Position &pos,
+            const Position& pos,
             f64 startTime,
             i32 maxDepth,
             std::span<Move> moves,
             std::unique_ptr<limit::ISearchLimiter> limiter,
             bool infinite
         ) -> void;
+
         auto stop() -> void;
 
         // -> [move, unnormalised, normalised]
-        auto runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>;
+        auto runDatagenSearch(ThreadData& thread) -> std::pair<Score, Score>;
 
-        auto runBench(BenchData &data, const Position &pos, i32 depth) -> void;
+        auto runBench(BenchData& data, const Position& pos, i32 depth) -> void;
 
         [[nodiscard]] inline auto searching() const {
             const std::unique_lock lock{m_searchMutex};
@@ -244,18 +246,18 @@ namespace stormphrax::search {
             Searchmoves,
         };
 
-        auto initRootMoves(const Position &pos) -> RootStatus;
+        auto initRootMoves(const Position& pos) -> RootStatus;
 
         auto stopThreads() -> void;
 
-        auto run(ThreadData &thread) -> void;
+        auto run(ThreadData& thread) -> void;
 
         [[nodiscard]] inline auto hasStopped() const {
             return m_stop.load(std::memory_order::relaxed) != 0;
         }
 
         [[nodiscard]] inline auto
-        checkStop(const SearchData &data, bool mainThread, bool allowSoft) {
+        checkStop(const SearchData& data, bool mainThread, bool allowSoft) {
             if (hasStopped())
                 return true;
 
@@ -268,11 +270,11 @@ namespace stormphrax::search {
         }
 
         [[nodiscard]] inline auto
-        checkHardTimeout(const SearchData &data, bool mainThread) -> bool {
+        checkHardTimeout(const SearchData& data, bool mainThread) -> bool {
             return checkStop(data, mainThread, false);
         }
 
-        [[nodiscard]] inline auto checkSoftTimeout(const SearchData &data, bool mainThread) {
+        [[nodiscard]] inline auto checkSoftTimeout(const SearchData& data, bool mainThread) {
             return checkStop(data, mainThread, true);
         }
 
@@ -284,12 +286,12 @@ namespace stormphrax::search {
             return std::ranges::find(m_rootMoves, move) != m_rootMoves.end();
         }
 
-        auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;
+        auto searchRoot(ThreadData& thread, bool actualSearch) -> Score;
 
         template<bool PvNode = false, bool RootNode = false>
         auto search(
-            ThreadData &thread,
-            PvList &pv,
+            ThreadData& thread,
+            PvList& pv,
             i32 depth,
             i32 ply,
             u32 moveStackIdx,
@@ -300,8 +302,8 @@ namespace stormphrax::search {
 
         template<>
         auto search<false, true>(
-            ThreadData &thread,
-            PvList &pv,
+            ThreadData& thread,
+            PvList& pv,
             i32 depth,
             i32 ply,
             u32 moveStackIdx,
@@ -312,20 +314,21 @@ namespace stormphrax::search {
 
         template<bool PvNode = false>
         auto
-        qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
+        qsearch(ThreadData& thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
         auto report(
-            const ThreadData &mainThread,
-            const PvList &pv,
+            const ThreadData& mainThread,
+            const PvList& pv,
             i32 depth,
             f64 time,
             Score score,
             Score alpha = -ScoreInf,
             Score beta = ScoreInf
         ) -> void;
+
         auto finalReport(
-            const ThreadData &mainThread,
-            const PvList &pv,
+            const ThreadData& mainThread,
+            const PvList& pv,
             i32 depthCompleted,
             f64 time,
             Score score

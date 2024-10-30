@@ -23,7 +23,7 @@
 #include "position/position.h"
 
 namespace stormphrax::bench {
-    auto run(search::Searcher &searcher, i32 depth) -> void {
+    auto run(search::Searcher& searcher, i32 depth) -> void {
         const auto Fens =
             std::array{// fens from alexandria, ultimately from bitgenie
                        "r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",
@@ -85,7 +85,7 @@ namespace stormphrax::bench {
 
         Position pos{};
 
-        for (const auto &fen: Fens) {
+        for (const auto& fen: Fens) {
             if (!pos.resetFromFen(fen)) {
                 return;
             }

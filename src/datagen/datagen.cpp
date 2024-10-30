@@ -55,10 +55,11 @@ namespace stormphrax::datagen {
         public:
             explicit DatagenNodeLimiter(u32 threadId) :
                     m_threadId{threadId} {}
+
             ~DatagenNodeLimiter() final = default;
 
             [[nodiscard]] auto
-            stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final {
+            stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final {
                 if (data.nodes >= m_hardNodeLimit) {
                     std::cout << "thread " << m_threadId << ": stopping search after " << data.nodes
                               << " nodes (limit: " << m_hardNodeLimit << ")" << std::endl;
@@ -104,7 +105,7 @@ namespace stormphrax::datagen {
 
         template<OutputFormat Format>
         auto
-        runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir) {
+        runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path& outDir) {
             const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
@@ -116,7 +117,7 @@ namespace stormphrax::datagen {
             util::rng::Jsf64Rng rng{seed};
 
             auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
-            auto &limiter = *limiterPtr;
+            auto& limiter = *limiterPtr;
 
             search::Searcher searcher{};
             searcher.setLimiter(std::move(limiterPtr));
@@ -296,24 +297,26 @@ namespace stormphrax::datagen {
             bool dfrc,
             u32 games,
             u64 seed,
-            const std::filesystem::path &outDir
+            const std::filesystem::path& outDir
         );
+
         template auto runThread<Viriformat>(
             u32 id,
             bool dfrc,
             u32 games,
             u64 seed,
-            const std::filesystem::path &outDir
+            const std::filesystem::path& outDir
         );
+
         template auto
-        runThread<Fen>(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir);
+        runThread<Fen>(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path& outDir);
     } // namespace
 
     auto
-    run(const std::function<void()> &printUsage,
-        const std::string &format,
+    run(const std::function<void()>& printUsage,
+        const std::string& format,
         bool dfrc,
-        const std::string &output,
+        const std::string& output,
         i32 threads,
         u32 games) -> i32 {
         std::function<decltype(runThread<Marlinformat>)> threadFunc{};
@@ -355,7 +358,7 @@ namespace stormphrax::datagen {
             theThreads.emplace_back([&, i, seed]() { threadFunc(i, dfrc, games, seed, outDir); });
         }
 
-        for (auto &thread: theThreads) {
+        for (auto& thread: theThreads) {
             thread.join();
         }
 

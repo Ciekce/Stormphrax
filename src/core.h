@@ -357,11 +357,11 @@ namespace stormphrax {
             return kings[1];
         }
 
-        [[nodiscard]] inline auto black() -> auto & {
+        [[nodiscard]] inline auto black() -> auto& {
             return kings[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto & {
+        [[nodiscard]] inline auto white() -> auto& {
             return kings[1];
         }
 
@@ -370,12 +370,12 @@ namespace stormphrax {
             return kings[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto color(Color c) -> auto & {
+        [[nodiscard]] inline auto color(Color c) -> auto& {
             assert(c != Color::None);
             return kings[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto operator==(const KingPair &other) const -> bool = default;
+        [[nodiscard]] inline auto operator==(const KingPair& other) const -> bool = default;
 
         [[nodiscard]] inline auto isValid() {
             return black() != Square::None && white() != Square::None && black() != white();
@@ -402,38 +402,38 @@ namespace stormphrax {
                 }
             }
 
-            [[nodiscard]] inline auto operator==(const RookPair &) const -> bool = default;
+            [[nodiscard]] inline auto operator==(const RookPair&) const -> bool = default;
         };
 
         std::array<RookPair, 2> rooks;
 
-        [[nodiscard]] inline auto black() const -> const auto & {
+        [[nodiscard]] inline auto black() const -> const auto& {
             return rooks[0];
         }
 
-        [[nodiscard]] inline auto white() const -> const auto & {
+        [[nodiscard]] inline auto white() const -> const auto& {
             return rooks[1];
         }
 
-        [[nodiscard]] inline auto black() -> auto & {
+        [[nodiscard]] inline auto black() -> auto& {
             return rooks[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto & {
+        [[nodiscard]] inline auto white() -> auto& {
             return rooks[1];
         }
 
-        [[nodiscard]] inline auto color(Color c) const -> const auto & {
+        [[nodiscard]] inline auto color(Color c) const -> const auto& {
             assert(c != Color::None);
             return rooks[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto color(Color c) -> auto & {
+        [[nodiscard]] inline auto color(Color c) -> auto& {
             assert(c != Color::None);
             return rooks[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto operator==(const CastlingRooks &) const -> bool = default;
+        [[nodiscard]] inline auto operator==(const CastlingRooks&) const -> bool = default;
     };
 
     using Score = i32;

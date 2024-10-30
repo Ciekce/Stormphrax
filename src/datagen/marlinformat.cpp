@@ -23,7 +23,7 @@ namespace stormphrax::datagen {
         m_positions.reserve(256);
     }
 
-    auto Marlinformat::start(const Position &initialPosition) -> void {
+    auto Marlinformat::start(const Position& initialPosition) -> void {
         m_positions.clear();
         m_curr.copyStateFrom(initialPosition);
     }
@@ -34,13 +34,13 @@ namespace stormphrax::datagen {
         m_curr.applyMoveUnchecked<false, false>(move, nullptr);
     }
 
-    auto Marlinformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize {
-        for (auto &board: m_positions) {
+    auto Marlinformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize {
+        for (auto& board: m_positions) {
             board.wdl = outcome;
         }
 
         stream.write(
-            reinterpret_cast<const char *>(m_positions.data()),
+            reinterpret_cast<const char*>(m_positions.data()),
             static_cast<std::streamsize>(m_positions.size() * sizeof(marlinformat::PackedBoard))
         );
 

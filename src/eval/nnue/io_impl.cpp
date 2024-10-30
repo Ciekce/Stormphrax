@@ -23,7 +23,7 @@
 #include "../../3rdparty/zstd/zstd_errors.h"
 
 namespace stormphrax::eval::nnue {
-    ZstdParamStream::ZstdParamStream(std::istream &in) :
+    ZstdParamStream::ZstdParamStream(std::istream& in) :
             m_stream{in} {
         m_inBuf.resize(ZSTD_DStreamInSize());
         m_outBuf.resize(ZSTD_DStreamOutSize());
@@ -47,7 +47,7 @@ namespace stormphrax::eval::nnue {
                 }
 
                 m_stream.read(
-                    reinterpret_cast<char *>(m_inBuf.data()),
+                    reinterpret_cast<char*>(m_inBuf.data()),
                     static_cast<std::streamsize>(m_inBuf.size())
                 );
 
@@ -78,7 +78,7 @@ namespace stormphrax::eval::nnue {
         return m_pos < m_end;
     }
 
-    auto ZstdParamStream::read(std::byte *dst, usize n) -> bool {
+    auto ZstdParamStream::read(std::byte* dst, usize n) -> bool {
         if (m_fail)
             return false;
 

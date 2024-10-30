@@ -49,17 +49,17 @@ namespace stormphrax::eval::nnue {
             == std::tuple_element_t<0, LayerStack>::PerspectiveInputCount
         );
 
-        [[nodiscard]] inline auto featureTransformer() const -> const auto & {
+        [[nodiscard]] inline auto featureTransformer() const -> const auto& {
             return m_featureTransformer;
         }
 
         template<usize I>
-        [[nodiscard]] inline auto layer() const -> const auto & {
+        [[nodiscard]] inline auto layer() const -> const auto& {
             return std::get<I>(m_layers);
         }
 
         inline auto propagate(
-            const BitboardSet &bbs,
+            const BitboardSet& bbs,
             std::span<
                 const typename FeatureTransformer::OutputType,
                 FeatureTransformer::OutputCount> stmInputs,
@@ -75,39 +75,39 @@ namespace stormphrax::eval::nnue {
             return std::get<sizeof...(Layers) - 1>(storage)[0];
         }
 
-        inline auto readFrom(IParamStream &stream) -> bool {
+        inline auto readFrom(IParamStream& stream) -> bool {
             return m_featureTransformer.readFrom(stream)
                 && readLayersFrom(std::make_index_sequence<sizeof...(Layers)>(), stream);
         }
 
-        inline auto writeTo(IParamStream &stream) const -> bool {
+        inline auto writeTo(IParamStream& stream) const -> bool {
             return m_featureTransformer.writeTo(stream)
                 && writeLayersTo(std::make_index_sequence<sizeof...(Layers)>(), stream);
         }
 
     private:
         template<usize I>
-        inline auto forward(OutputStorage &storage, const BitboardSet &bbs) const {
+        inline auto forward(OutputStorage& storage, const BitboardSet& bbs) const {
             if constexpr (I > 0) {
                 static_assert(
                     std::tuple_element_t<I - 1, LayerStack>::OutputCount
                     == std::tuple_element_t<I, LayerStack>::InputCount
                 );
 
-                auto &layer = std::get<I>(m_layers);
+                auto& layer = std::get<I>(m_layers);
                 layer.forward(bbs, std::get<I - 1>(storage), std::get<I>(storage));
             }
         }
 
         template<usize... Indices>
         inline auto
-        propagate(OutputStorage &storage, const BitboardSet &bbs, std::index_sequence<Indices...>)
+        propagate(OutputStorage& storage, const BitboardSet& bbs, std::index_sequence<Indices...>)
             const {
             ((forward<Indices>(storage, bbs)), ...);
         }
 
         template<usize... Indices>
-        inline auto readLayersFrom(std::index_sequence<Indices...>, IParamStream &stream) -> bool {
+        inline auto readLayersFrom(std::index_sequence<Indices...>, IParamStream& stream) -> bool {
             bool success = true;
             ((success &= std::get<Indices>(m_layers).readFrom(stream)), ...);
             return success;
@@ -115,7 +115,7 @@ namespace stormphrax::eval::nnue {
 
         template<usize... Indices>
         inline auto
-        writeLayersTo(std::index_sequence<Indices...>, IParamStream &stream) const -> bool {
+        writeLayersTo(std::index_sequence<Indices...>, IParamStream& stream) const -> bool {
             bool success = true;
             ((success &= std::get<Indices>(m_layers).writeTo(stream)), ...);
             return success;
@@ -127,13 +127,13 @@ namespace stormphrax::eval::nnue {
 
     template<typename Ft, typename... Layers>
     inline auto
-    operator>>(std::istream &stream, PerspectiveNetwork<Ft, Layers...> &network) -> std::istream & {
+    operator>>(std::istream& stream, PerspectiveNetwork<Ft, Layers...>& network) -> std::istream& {
         return network.readFrom(stream);
     }
 
     template<typename Ft, typename... Layers>
     inline auto
-    operator<<(std::ostream &stream, PerspectiveNetwork<Ft, Layers...> &network) -> std::ostream & {
+    operator<<(std::ostream& stream, PerspectiveNetwork<Ft, Layers...>& network) -> std::ostream& {
         return network.writeTo(stream);
     }
 } // namespace stormphrax::eval::nnue

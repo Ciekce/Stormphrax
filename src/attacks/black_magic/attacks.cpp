@@ -27,7 +27,7 @@ namespace stormphrax::attacks {
             std::array<Bitboard, RookData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto &data = RookData.data[square];
+                const auto& data = RookData.data[square];
 
                 const auto invMask = ~data.mask;
                 const auto maxEntries = 1 << invMask.popcount();
@@ -58,7 +58,7 @@ namespace stormphrax::attacks {
             std::array<Bitboard, BishopData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto &data = BishopData.data[square];
+                const auto& data = BishopData.data[square];
 
                 const auto invMask = ~data.mask;
                 const auto maxEntries = 1 << invMask.popcount();

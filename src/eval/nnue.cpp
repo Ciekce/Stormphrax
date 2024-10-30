@@ -30,6 +30,7 @@
 #endif
 
 #define INCBIN_PREFIX g_
+
 #include "../3rdparty/incbin.h"
 
 #ifdef SP_MSVC
@@ -88,7 +89,7 @@ namespace stormphrax::eval {
         }
 
         //TODO better error messages
-        auto validate(const NetworkHeader &header) {
+        auto validate(const NetworkHeader& header) {
             if (header.magic != std::array{'C', 'B', 'N', 'F'}) {
                 std::cerr << "invalid magic bytes in network header" << std::endl;
                 return false;
@@ -171,7 +172,7 @@ namespace stormphrax::eval {
             return true;
         }
 
-        auto loadNetworkFrom(Network &network, std::istream &stream, const NetworkHeader &header) {
+        auto loadNetworkFrom(Network& network, std::istream& stream, const NetworkHeader& header) {
             bool success;
 
             if (testFlags(header.flags, NetworkFlags::ZstdCompressed)) {
@@ -188,7 +189,7 @@ namespace stormphrax::eval {
         Network s_network{};
     } // namespace
 
-    const Network &g_network = s_network;
+    const Network& g_network = s_network;
 
     auto loadDefaultNetwork() -> void {
         if (g_defaultNetSize < sizeof(NetworkHeader)) {
@@ -196,15 +197,15 @@ namespace stormphrax::eval {
             return;
         }
 
-        const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
+        const auto& header = *reinterpret_cast<const NetworkHeader*>(g_defaultNetData);
 
         if (!validate(header)) {
             std::cerr << "Failed to validate default network header" << std::endl;
             return;
         }
 
-        const auto *begin = g_defaultNetData + sizeof(NetworkHeader);
-        const auto *end = g_defaultNetData + g_defaultNetSize;
+        const auto* begin = g_defaultNetData + sizeof(NetworkHeader);
+        const auto* end = g_defaultNetData + g_defaultNetSize;
 
         util::MemoryIstream stream{{begin, end}};
 
@@ -214,7 +215,7 @@ namespace stormphrax::eval {
         }
     }
 
-    auto loadNetwork(const std::string &name) -> void {
+    auto loadNetwork(const std::string& name) -> void {
         std::ifstream stream{name, std::ios::binary};
 
         if (!stream) {
@@ -223,7 +224,7 @@ namespace stormphrax::eval {
         }
 
         NetworkHeader header{};
-        stream.read(reinterpret_cast<char *>(&header), sizeof(NetworkHeader));
+        stream.read(reinterpret_cast<char*>(&header), sizeof(NetworkHeader));
 
         if (!stream) {
             std::cerr << "failed to read network file header" << std::endl;
@@ -243,7 +244,7 @@ namespace stormphrax::eval {
     }
 
     auto defaultNetworkName() -> std::string_view {
-        const auto &header = *reinterpret_cast<const NetworkHeader *>(g_defaultNetData);
+        const auto& header = *reinterpret_cast<const NetworkHeader*>(g_defaultNetData);
         return {header.name.data(), header.nameLen};
     }
 } // namespace stormphrax::eval

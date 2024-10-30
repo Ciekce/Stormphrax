@@ -37,6 +37,7 @@ namespace stormphrax {
         i16 value{};
 
         HistoryEntry() = default;
+
         HistoryEntry(HistoryScore v) :
                 value{v} {}
 
@@ -44,7 +45,7 @@ namespace stormphrax {
             return value;
         }
 
-        [[nodiscard]] inline auto operator=(HistoryScore v) -> auto & {
+        [[nodiscard]] inline auto operator=(HistoryScore v) -> auto& {
             value = v;
             return *this;
         }
@@ -73,6 +74,7 @@ namespace stormphrax {
     class ContinuationSubtable {
     public:
         ContinuationSubtable() = default;
+
         ~ContinuationSubtable() = default;
 
         //TODO take two args when c++23 is usable
@@ -81,7 +83,7 @@ namespace stormphrax {
             return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
         }
 
-        inline auto operator[](std::pair<Piece, Move> move) -> auto & {
+        inline auto operator[](std::pair<Piece, Move> move) -> auto& {
             const auto [piece, mv] = move;
             return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
         }
@@ -94,6 +96,7 @@ namespace stormphrax {
     class HistoryTables {
     public:
         HistoryTables() = default;
+
         ~HistoryTables() = default;
 
         inline auto clear() {
@@ -102,16 +105,16 @@ namespace stormphrax {
             std::memset(&m_noisy, 0, sizeof(m_noisy));
         }
 
-        [[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto & {
+        [[nodiscard]] inline auto contTable(Piece moving, Square to) const -> const auto& {
             return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
         }
 
-        [[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto & {
+        [[nodiscard]] inline auto contTable(Piece moving, Square to) -> auto& {
             return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
         }
 
         inline auto updateConthist(
-            std::span<ContinuationSubtable *> continuations,
+            std::span<ContinuationSubtable*> continuations,
             i32 ply,
             Piece moving,
             Move move,
@@ -123,7 +126,7 @@ namespace stormphrax {
         }
 
         inline auto updateQuietScore(
-            std::span<ContinuationSubtable *> continuations,
+            std::span<ContinuationSubtable*> continuations,
             i32 ply,
             Bitboard threats,
             Piece moving,
@@ -139,7 +142,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline auto quietScore(
-            std::span<ContinuationSubtable *const> continuations,
+            std::span<ContinuationSubtable* const> continuations,
             i32 ply,
             Bitboard threats,
             Piece moving,
@@ -171,7 +174,7 @@ namespace stormphrax {
         util::MultiArray<HistoryEntry, 64, 64, 13> m_noisy{};
 
         static inline auto updateConthist(
-            std::span<ContinuationSubtable *> continuations,
+            std::span<ContinuationSubtable*> continuations,
             i32 ply,
             Piece moving,
             Move move,
@@ -184,7 +187,7 @@ namespace stormphrax {
         }
 
         static inline auto conthistScore(
-            std::span<ContinuationSubtable *const> continuations,
+            std::span<ContinuationSubtable* const> continuations,
             i32 ply,
             Piece moving,
             Move move,
@@ -198,32 +201,32 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline auto
-        mainEntry(Bitboard threats, Move move) const -> const HistoryEntry & {
+        mainEntry(Bitboard threats, Move move) const -> const HistoryEntry& {
             return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
         }
 
-        [[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) -> HistoryEntry & {
+        [[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) -> HistoryEntry& {
             return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
         }
 
         [[nodiscard]] static inline auto
-        conthistEntry(std::span<ContinuationSubtable *const> continuations, i32 ply, i32 offset)
-            -> const ContinuationSubtable & {
+        conthistEntry(std::span<ContinuationSubtable* const> continuations, i32 ply, i32 offset)
+            -> const ContinuationSubtable& {
             return *continuations[ply - offset];
         }
 
         [[nodiscard]] static inline auto
-        conthistEntry(std::span<ContinuationSubtable *> continuations, i32 ply, i32 offset)
-            -> ContinuationSubtable & {
+        conthistEntry(std::span<ContinuationSubtable*> continuations, i32 ply, i32 offset)
+            -> ContinuationSubtable& {
             return *continuations[ply - offset];
         }
 
         [[nodiscard]] inline auto
-        noisyEntry(Move move, Piece captured) const -> const HistoryEntry & {
+        noisyEntry(Move move, Piece captured) const -> const HistoryEntry& {
             return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
         }
 
-        [[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry & {
+        [[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry& {
             return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
         }
     };

@@ -20,21 +20,22 @@
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
+
     #include <Windows.h>
 
 namespace stormphrax::util {
     Timer::Timer() {
         u64 freq{};
-        QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER *>(&freq));
+        QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER*>(&freq));
 
         m_frequency = static_cast<f64>(freq);
 
-        QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&m_initTime));
+        QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&m_initTime));
     }
 
     auto Timer::time() const -> f64 {
         u64 time{};
-        QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&time));
+        QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&time));
 
         return static_cast<f64>(time - m_initTime) / m_frequency;
     }

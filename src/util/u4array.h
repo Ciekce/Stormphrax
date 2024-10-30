@@ -31,7 +31,7 @@ namespace stormphrax::util {
             return m_high ? (m_value >> 4) : (m_value & 0xF);
         }
 
-        constexpr inline auto operator=(u8 v) -> IndexedU4 & {
+        constexpr inline auto operator=(u8 v) -> IndexedU4& {
             assert(v <= 0xF);
 
             if (m_high)
@@ -43,10 +43,10 @@ namespace stormphrax::util {
         }
 
     private:
-        constexpr IndexedU4(u8 &value, bool high) :
+        constexpr IndexedU4(u8& value, bool high) :
                 m_value{value}, m_high{high} {}
 
-        u8 &m_value;
+        u8& m_value;
         bool m_high;
 
         template<usize Size>
@@ -59,6 +59,7 @@ namespace stormphrax::util {
 
     public:
         U4Array() = default;
+
         ~U4Array() = default;
 
         constexpr auto operator[](usize i) const {

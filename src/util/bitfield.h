@@ -24,7 +24,7 @@
     [[maybe_unused]] inline constexpr auto operator O(T lhs, T rhs) { \
         return static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
     } \
-    [[maybe_unused]] inline constexpr auto operator O##=(T &lhs, T rhs) { \
+    [[maybe_unused]] inline constexpr auto operator O##=(T& lhs, T rhs) { \
         return lhs = static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
     }
 

@@ -27,35 +27,35 @@ namespace stormphrax::util {
     template<usize Alignment, typename T, usize Count>
     class AlignedArray {
     public:
-        [[nodiscard]] constexpr auto at(usize idx) -> auto & {
+        [[nodiscard]] constexpr auto at(usize idx) -> auto& {
             return m_array.at(idx);
         }
 
-        [[nodiscard]] constexpr auto at(usize idx) const -> const auto & {
+        [[nodiscard]] constexpr auto at(usize idx) const -> const auto& {
             return m_array.at(idx);
         }
 
-        [[nodiscard]] constexpr auto operator[](usize idx) -> auto & {
+        [[nodiscard]] constexpr auto operator[](usize idx) -> auto& {
             return m_array[idx];
         }
 
-        [[nodiscard]] constexpr auto operator[](usize idx) const -> const auto & {
+        [[nodiscard]] constexpr auto operator[](usize idx) const -> const auto& {
             return m_array[idx];
         }
 
-        [[nodiscard]] constexpr auto front() -> auto & {
+        [[nodiscard]] constexpr auto front() -> auto& {
             return m_array.front();
         }
 
-        [[nodiscard]] constexpr auto front() const -> const auto & {
+        [[nodiscard]] constexpr auto front() const -> const auto& {
             return m_array.front();
         }
 
-        [[nodiscard]] constexpr auto back() -> auto & {
+        [[nodiscard]] constexpr auto back() -> auto& {
             return m_array.back();
         }
 
-        [[nodiscard]] constexpr auto back() const -> const auto & {
+        [[nodiscard]] constexpr auto back() const -> const auto& {
             return m_array.back();
         }
 
@@ -127,27 +127,27 @@ namespace stormphrax::util {
             return m_array.max_size();
         }
 
-        constexpr auto fill(const T &value) {
+        constexpr auto fill(const T& value) {
             m_array.fill(value);
         }
 
-        constexpr auto swap(AlignedArray &other) {
+        constexpr auto swap(AlignedArray& other) {
             m_array.swap(other.m_array);
         }
 
-        [[nodiscard]] constexpr auto array() -> auto & {
+        [[nodiscard]] constexpr auto array() -> auto& {
             return m_array;
         }
 
-        [[nodiscard]] constexpr auto array() const -> const auto & {
+        [[nodiscard]] constexpr auto array() const -> const auto& {
             return m_array;
         }
 
-        constexpr operator std::array<T, Count> &() {
+        constexpr operator std::array<T, Count>&() {
             return m_array;
         }
 
-        constexpr operator const std::array<T, Count> &() const {
+        constexpr operator const std::array<T, Count>&() const {
             return m_array;
         }
 
@@ -164,7 +164,7 @@ namespace stormphrax::util {
     };
 
     template<usize Alignment, typename T, usize Count>
-    auto swap(AlignedArray<Alignment, T, Count> &a, AlignedArray<Alignment, T, Count> &b) {
+    auto swap(AlignedArray<Alignment, T, Count>& a, AlignedArray<Alignment, T, Count>& b) {
         a.swap(b);
     }
 } // namespace stormphrax::util

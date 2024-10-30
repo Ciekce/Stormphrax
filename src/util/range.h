@@ -40,6 +40,7 @@ namespace stormphrax::util {
         [[nodiscard]] constexpr auto min() const {
             return m_min;
         }
+
         [[nodiscard]] constexpr auto max() const {
             return m_max;
         }

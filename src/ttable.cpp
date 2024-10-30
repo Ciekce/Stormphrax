@@ -102,12 +102,12 @@ namespace stormphrax {
         return true;
     }
 
-    auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool {
+    auto TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply) const -> bool {
         assert(!m_pendingInit);
 
         const auto packedKey = packEntryKey(key);
 
-        const auto &cluster = m_table[index(key)];
+        const auto& cluster = m_table[index(key)];
         for (const auto entry: cluster.entries) {
             if (packedKey == entry.key) {
                 dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
@@ -144,17 +144,17 @@ namespace stormphrax {
 
         const auto newKey = packEntryKey(key);
 
-        const auto entryValue = [this](const auto &entry) {
+        const auto entryValue = [this](const auto& entry) {
             const i32 relativeAge = (Entry::AgeCycle + m_age - entry.age()) & Entry::AgeMask;
             return entry.depth - relativeAge * 2;
         };
 
-        auto &cluster = m_table[index(key)];
+        auto& cluster = m_table[index(key)];
 
-        Entry *entryPtr = nullptr;
+        Entry* entryPtr = nullptr;
         auto minValue = std::numeric_limits<i32>::max();
 
-        for (auto &candidate: cluster.entries) {
+        for (auto& candidate: cluster.entries) {
             // always take an empty entry, or one from the same position
             if (candidate.key == newKey || candidate.flag() == TtFlag::None) {
                 entryPtr = &candidate;
@@ -217,7 +217,7 @@ namespace stormphrax {
 
         m_age = 0;
 
-        for (auto &thread: threads) {
+        for (auto& thread: threads) {
             thread.join();
         }
     }
@@ -229,7 +229,7 @@ namespace stormphrax {
 
         for (u64 i = 0; i < 1000; ++i) {
             const auto cluster = m_table[i];
-            for (const auto &entry: cluster.entries) {
+            for (const auto& entry: cluster.entries) {
                 if (entry.flag() != TtFlag::None && entry.age() == m_age) {
                     ++filledEntries;
                 }

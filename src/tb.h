@@ -27,6 +27,7 @@
 namespace stormphrax::tb {
     enum class ProbeResult { Failed, Win, Draw, Loss };
 
-    auto probeRoot(MoveList &rootMoves, const Position &pos) -> ProbeResult;
-    auto probe(const Position &pos) -> ProbeResult;
+    auto probeRoot(MoveList& rootMoves, const Position& pos) -> ProbeResult;
+
+    auto probe(const Position& pos) -> ProbeResult;
 } // namespace stormphrax::tb

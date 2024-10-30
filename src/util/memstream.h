@@ -30,7 +30,7 @@ namespace stormphrax::util {
     class MemoryBuffer : public std::streambuf {
     public:
         explicit MemoryBuffer(std::span<const std::byte> data) :
-                m_begin{reinterpret_cast<char *>(const_cast<std::byte *>(data.data()))},
+                m_begin{reinterpret_cast<char*>(const_cast<std::byte*>(data.data()))},
                 m_end{m_begin + data.size_bytes()} {
             setg(m_begin, m_begin, m_end);
         }
@@ -61,8 +61,8 @@ namespace stormphrax::util {
         }
 
     private:
-        char *m_begin;
-        char *m_end;
+        char* m_begin;
+        char* m_end;
     };
 
     class MemoryIstream : public std::istream {

@@ -37,55 +37,56 @@ namespace stormphrax::eval::nnue {
     template<usize BlockSize>
     class PaddedParamStream final : public IParamStream {
     public:
-        explicit PaddedParamStream(std::istream &in) :
+        explicit PaddedParamStream(std::istream& in) :
                 m_stream{&in} {}
-        explicit PaddedParamStream(std::ostream &out) :
+
+        explicit PaddedParamStream(std::ostream& out) :
                 m_stream{&out} {}
 
         ~PaddedParamStream() final = default;
 
     protected:
         inline auto readI16s(std::span<i16> dst) -> bool final {
-            return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
+            return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
         inline auto writeI16s(std::span<const i16> src) -> bool final {
-            return write(reinterpret_cast<const std::byte *>(src.data()), src.size_bytes());
+            return write(reinterpret_cast<const std::byte*>(src.data()), src.size_bytes());
         }
 
     private:
-        std::variant<std::istream *, std::ostream *> m_stream;
+        std::variant<std::istream*, std::ostream*> m_stream;
 
-        inline auto read(std::byte *dst, usize n) -> bool {
-            if (!std::holds_alternative<std::istream *>(m_stream)) {
+        inline auto read(std::byte* dst, usize n) -> bool {
+            if (!std::holds_alternative<std::istream*>(m_stream)) {
                 assert(false);
                 return false;
             }
 
-            auto &stream = *std::get<std::istream *>(m_stream);
+            auto& stream = *std::get<std::istream*>(m_stream);
 
             const auto padding = calcPadding(n);
 
-            stream.read(reinterpret_cast<char *>(dst), static_cast<std::streamsize>(n));
+            stream.read(reinterpret_cast<char*>(dst), static_cast<std::streamsize>(n));
             stream.ignore(static_cast<std::streamsize>(padding));
 
             return !stream.fail();
         }
 
-        inline auto write(const std::byte *src, usize n) -> bool {
-            if (!std::holds_alternative<std::ostream *>(m_stream)) {
+        inline auto write(const std::byte* src, usize n) -> bool {
+            if (!std::holds_alternative<std::ostream*>(m_stream)) {
                 assert(false);
                 return false;
             }
 
             static constexpr std::array<std::byte, BlockSize> Empty{};
 
-            auto &stream = *std::get<std::ostream *>(m_stream);
+            auto& stream = *std::get<std::ostream*>(m_stream);
 
             const auto padding = calcPadding(n);
 
-            stream.write(reinterpret_cast<const char *>(src), static_cast<std::streamsize>(n));
-            stream.write(reinterpret_cast<const char *>(Empty.data()), padding);
+            stream.write(reinterpret_cast<const char*>(src), static_cast<std::streamsize>(n));
+            stream.write(reinterpret_cast<const char*>(Empty.data()), padding);
 
             return !stream.fail();
         }
@@ -97,13 +98,13 @@ namespace stormphrax::eval::nnue {
 
     class ZstdParamStream final : public IParamStream {
     public:
-        explicit ZstdParamStream(std::istream &in);
+        explicit ZstdParamStream(std::istream& in);
 
         ~ZstdParamStream() final;
 
     protected:
         inline auto readI16s(std::span<i16> dst) -> bool final {
-            return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
+            return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
         inline auto writeI16s(std::span<const i16> src) -> bool final {
@@ -112,7 +113,7 @@ namespace stormphrax::eval::nnue {
         }
 
     private:
-        std::istream &m_stream;
+        std::istream& m_stream;
 
         std::vector<std::byte> m_inBuf{};
         std::vector<std::byte> m_outBuf{};
@@ -122,7 +123,7 @@ namespace stormphrax::eval::nnue {
 
         usize m_result{};
 
-        ZSTD_DStream *m_dStream;
+        ZSTD_DStream* m_dStream;
 
         ZSTD_inBuffer m_input{};
         ZSTD_outBuffer m_output{};
@@ -130,6 +131,7 @@ namespace stormphrax::eval::nnue {
         bool m_fail{false};
 
         auto fillBuffer() -> bool;
-        auto read(std::byte *dst, usize n) -> bool;
+
+        auto read(std::byte* dst, usize n) -> bool;
     };
 } // namespace stormphrax::eval::nnue

@@ -33,10 +33,10 @@ namespace stormphrax::eval {
 
     template<bool Correct = true>
     inline auto adjustEval(
-        const Position &pos,
+        const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
-        const CorrectionHistoryTable *correction,
+        const CorrectionHistoryTable* correction,
         i32 eval
     ) {
         eval = eval * (200 - pos.halfmove()) / 200;
@@ -48,7 +48,7 @@ namespace stormphrax::eval {
     }
 
     inline auto
-    staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {}) {
+    staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
         auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
         eval += contempt[static_cast<i32>(pos.toMove())];
         return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
@@ -56,18 +56,18 @@ namespace stormphrax::eval {
 
     template<bool Correct = true>
     inline auto adjustedStaticEval(
-        const Position &pos,
+        const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
-        NnueState &nnueState,
-        const CorrectionHistoryTable *correction,
-        const Contempt &contempt = {}
+        NnueState& nnueState,
+        const CorrectionHistoryTable* correction,
+        const Contempt& contempt = {}
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
         return adjustEval<Correct>(pos, moves, ply, correction, eval);
     }
 
-    inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {}) {
+    inline auto staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
         auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
         eval += contempt[static_cast<i32>(pos.toMove())];
         return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);

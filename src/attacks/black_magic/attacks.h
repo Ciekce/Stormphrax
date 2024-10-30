@@ -35,7 +35,7 @@ namespace stormphrax::attacks {
     [[nodiscard]] inline auto getRookIdx(Bitboard occupancy, Square src) {
         const auto s = static_cast<i32>(src);
 
-        const auto &data = black_magic::RookData.data[s];
+        const auto& data = black_magic::RookData.data[s];
 
         const auto magic = black_magic::RookMagics[s];
         const auto shift = black_magic::RookShifts[s];
@@ -46,7 +46,7 @@ namespace stormphrax::attacks {
     [[nodiscard]] inline auto getBishopIdx(Bitboard occupancy, Square src) {
         const auto s = static_cast<i32>(src);
 
-        const auto &data = black_magic::BishopData.data[s];
+        const auto& data = black_magic::BishopData.data[s];
 
         const auto magic = black_magic::BishopMagics[s];
         const auto shift = black_magic::BishopShifts[s];
@@ -57,7 +57,7 @@ namespace stormphrax::attacks {
     [[nodiscard]] inline auto getRookAttacks(Square src, Bitboard occupancy) {
         const auto s = static_cast<i32>(src);
 
-        const auto &data = black_magic::RookData.data[s];
+        const auto& data = black_magic::RookData.data[s];
         const auto idx = getRookIdx(occupancy, src);
 
         return RookAttacks[data.offset + idx];
@@ -66,7 +66,7 @@ namespace stormphrax::attacks {
     [[nodiscard]] inline auto getBishopAttacks(Square src, Bitboard occupancy) {
         const auto s = static_cast<i32>(src);
 
-        const auto &data = black_magic::BishopData.data[s];
+        const auto& data = black_magic::BishopData.data[s];
         const auto idx = getBishopIdx(occupancy, src);
 
         return BishopAttacks[data.offset + idx];

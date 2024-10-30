@@ -25,7 +25,9 @@
 #include "../arch.h"
 
 #if SP_HAS_AVX512
+
     #include "simd/avx512.h"
+
 #elif SP_HAS_AVX2
     #include "simd/avx2.h"
 #elif SP_HAS_SSE41
@@ -42,7 +44,7 @@ namespace stormphrax::util::simd {
     constexpr usize ChunkSize = sizeof(VectorI16) / sizeof(i16);
 
     template<typename T = void>
-    auto isAligned(const T *ptr) {
+    auto isAligned(const T* ptr) {
         return util::isAligned<Alignment>(ptr);
     }
 
@@ -130,38 +132,50 @@ namespace stormphrax::util::simd {
     }
 
     SP_SIMD_OP_0(zero)
+
     SP_SIMD_OP_1_VALUE(set1, v)
+
     SP_SIMD_OP_2_VECTORS(add, a, b)
+
     SP_SIMD_OP_2_VECTORS(sub, a, b)
+
     SP_SIMD_OP_2_VECTORS(mul, a, b)
+
     SP_SIMD_OP_2_VECTORS(min, a, b)
+
     SP_SIMD_OP_2_VECTORS(max, a, b)
+
     SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 
     template<typename T>
-    SP_ALWAYS_INLINE_NDEBUG inline auto load(const void *ptr) = delete;
+    SP_ALWAYS_INLINE_NDEBUG inline auto load(const void* ptr) = delete;
+
     template<>
-    SP_ALWAYS_INLINE_NDEBUG inline auto load<i16>(const void *ptr) {
+    SP_ALWAYS_INLINE_NDEBUG inline auto load<i16>(const void* ptr) {
         return impl::loadI16(ptr);
     }
+
     template<>
-    SP_ALWAYS_INLINE_NDEBUG inline auto load<i32>(const void *ptr) {
+    SP_ALWAYS_INLINE_NDEBUG inline auto load<i32>(const void* ptr) {
         return impl::loadI32(ptr);
     }
 
     template<typename T>
-    SP_ALWAYS_INLINE_NDEBUG inline auto store(void *ptr, Vector<T> v) = delete;
+    SP_ALWAYS_INLINE_NDEBUG inline auto store(void* ptr, Vector<T> v) = delete;
+
     template<>
-    SP_ALWAYS_INLINE_NDEBUG inline auto store<i16>(void *ptr, Vector<i16> v) {
+    SP_ALWAYS_INLINE_NDEBUG inline auto store<i16>(void* ptr, Vector<i16> v) {
         impl::storeI16(ptr, v);
     }
+
     template<>
-    SP_ALWAYS_INLINE_NDEBUG inline auto store<i32>(void *ptr, Vector<i32> v) {
+    SP_ALWAYS_INLINE_NDEBUG inline auto store<i32>(void* ptr, Vector<i32> v) {
         impl::storeI32(ptr, v);
     }
 
     template<typename T>
     SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj(Vector<T> a, Vector<T> b) = delete;
+
     template<>
     SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj<i16>(Vector<i16> a, Vector<i16> b) {
         return impl::mulAddAdjI16(a, b);
@@ -170,6 +184,7 @@ namespace stormphrax::util::simd {
     template<typename T>
     SP_ALWAYS_INLINE_NDEBUG inline auto
     mulAddAdjAcc(PromotedVector<T> sum, Vector<T> a, Vector<T> b) = delete;
+
     template<>
     SP_ALWAYS_INLINE_NDEBUG inline auto
     mulAddAdjAcc<i16>(PromotedVector<i16> sum, Vector<i16> a, Vector<i16> b) {
@@ -178,6 +193,7 @@ namespace stormphrax::util::simd {
 
     template<typename T>
     SP_ALWAYS_INLINE_NDEBUG inline auto hsum(Vector<T> v) = delete;
+
     template<>
     SP_ALWAYS_INLINE_NDEBUG inline auto hsum<i32>(Vector<i32> v) {
         return impl::hsumI32(v);

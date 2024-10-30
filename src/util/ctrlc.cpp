@@ -23,7 +23,9 @@
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #define NOMINMAX
+
     #include <Windows.h>
+
 #else
     #include <signal.h>
 #endif
@@ -44,7 +46,7 @@ namespace stormphrax::util::signal {
                 if (dwCtrlType == CTRL_BREAK_EVENT)
                     return FALSE;
 
-                for (auto &handler: s_handlers) {
+                for (auto& handler: s_handlers) {
                     handler();
                 }
 
@@ -60,7 +62,7 @@ namespace stormphrax::util::signal {
 
         // on some platforms this is a union, and C++ doesn't support nested designated initialisers
         action.sa_handler = [](int signal) {
-            for (auto &handler: s_handlers) {
+            for (auto& handler: s_handlers) {
                 handler();
             }
         };

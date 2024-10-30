@@ -19,7 +19,7 @@
 #include "pretty.h"
 
 namespace stormphrax {
-    auto printBitboard(std::ostream &out, Bitboard board) -> void {
+    auto printBitboard(std::ostream& out, Bitboard board) -> void {
         for (i32 rank = 7; rank >= 0; --rank) {
             out << " +---+---+---+---+---+---+---+---+\n";
 
@@ -34,7 +34,7 @@ namespace stormphrax {
         out << "   a   b   c   d   e   f   g   h\n\n";
     }
 
-    auto printBitboardCompact(std::ostream &out, Bitboard board) -> void {
+    auto printBitboardCompact(std::ostream& out, Bitboard board) -> void {
         for (i32 rank = 7; rank >= 0; --rank) {
             for (usize file = 0; file < 8; ++file) {
                 if (file > 0) {
@@ -48,8 +48,8 @@ namespace stormphrax {
         }
     }
 
-    auto printBoard(std::ostream &out, const Position &position) -> void {
-        const auto &boards = position.boards();
+    auto printBoard(std::ostream& out, const Position& position) -> void {
+        const auto& boards = position.boards();
 
         for (i32 rank = 7; rank >= 0; --rank) {
             out << " +---+---+---+---+---+---+---+---+\n";
@@ -67,7 +67,7 @@ namespace stormphrax {
         out << (position.toMove() == Color::White ? "White" : "Black") << " to move\n";
     }
 
-    auto printScore(std::ostream &out, Score score) -> void {
+    auto printScore(std::ostream& out, Score score) -> void {
         if (score == 0) {
             out << "0.00";
             return;

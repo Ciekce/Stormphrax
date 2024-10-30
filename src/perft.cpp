@@ -26,7 +26,7 @@
 
 namespace stormphrax {
     namespace {
-        auto doPerft(Position &pos, i32 depth) -> usize {
+        auto doPerft(Position& pos, i32 depth) -> usize {
             if (depth == 0) {
                 return 1;
             }
@@ -55,11 +55,11 @@ namespace stormphrax {
         }
     } // namespace
 
-    auto perft(Position &pos, i32 depth) -> void {
+    auto perft(Position& pos, i32 depth) -> void {
         std::cout << doPerft(pos, depth) << std::endl;
     }
 
-    auto splitPerft(Position &pos, i32 depth) -> void {
+    auto splitPerft(Position& pos, i32 depth) -> void {
         --depth;
 
         const auto start = util::g_timer.time();

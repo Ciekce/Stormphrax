@@ -49,7 +49,7 @@ namespace stormphrax::keys {
 
         util::rng::Jsf64Rng rng{Seed};
 
-        for (auto &key: keys) {
+        for (auto& key: keys) {
             key = rng.nextU64();
         }
 
@@ -74,7 +74,7 @@ namespace stormphrax::keys {
         return c == Color::White ? 0 : color();
     }
 
-    inline auto castling(const CastlingRooks &castlingRooks) {
+    inline auto castling(const CastlingRooks& castlingRooks) {
         constexpr usize BlackShort = 0x01;
         constexpr usize BlackLong = 0x02;
         constexpr usize WhiteShort = 0x04;

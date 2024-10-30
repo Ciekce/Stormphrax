@@ -44,12 +44,12 @@ namespace stormphrax::util::simd {
             return v;
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void *ptr) -> VectorI16 {
-            return *static_cast<const VectorI16 *>(ptr);
+        SP_ALWAYS_INLINE_NDEBUG inline auto loadI16(const void* ptr) -> VectorI16 {
+            return *static_cast<const VectorI16*>(ptr);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void *ptr, VectorI16 v) {
-            *static_cast<VectorI16 *>(ptr) = v;
+        SP_ALWAYS_INLINE_NDEBUG inline auto storeI16(void* ptr, VectorI16 v) {
+            *static_cast<VectorI16*>(ptr) = v;
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline auto minI16(VectorI16 a, VectorI16 b) -> VectorI16 {
@@ -90,12 +90,12 @@ namespace stormphrax::util::simd {
             return v;
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void *ptr) -> VectorI32 {
-            return *static_cast<const VectorI32 *>(ptr);
+        SP_ALWAYS_INLINE_NDEBUG inline auto loadI32(const void* ptr) -> VectorI32 {
+            return *static_cast<const VectorI32*>(ptr);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void *ptr, VectorI32 v) {
-            *static_cast<VectorI32 *>(ptr) = v;
+        SP_ALWAYS_INLINE_NDEBUG inline auto storeI32(void* ptr, VectorI32 v) {
+            *static_cast<VectorI32*>(ptr) = v;
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline auto minI32(VectorI32 a, VectorI32 b) -> VectorI32 {

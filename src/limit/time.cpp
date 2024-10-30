@@ -30,7 +30,7 @@ namespace stormphrax::limit {
                 util::g_timer.time() + static_cast<f64>(std::max(I64(1), time - overhead)) / 1000.0
             } {}
 
-    auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool {
+    auto MoveTimeLimiter::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
         if (data.depth > 2 && data.nodes > 0 && (data.nodes % 1024) == 0
             && util::g_timer.time() >= m_maxTime)
         {
@@ -66,7 +66,7 @@ namespace stormphrax::limit {
     }
 
     auto TimeManager::update(
-        const search::SearchData &data,
+        const search::SearchData& data,
         Score score,
         Move bestMove,
         usize totalNodes
@@ -138,7 +138,7 @@ namespace stormphrax::limit {
         m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
     }
 
-    auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool {
+    auto TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
         if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0))
             return false;
 

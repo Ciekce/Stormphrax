@@ -31,6 +31,7 @@ namespace stormphrax::wdl {
     constexpr Score Material58NormalizationK = 259;
 
     [[nodiscard]] auto wdlParams(i32 material) -> std::pair<f64, f64>;
+
     [[nodiscard]] auto wdlModel(Score povScore, i32 material) -> std::pair<i32, i32>; // [win, loss]
 
     inline auto normalizeScore(Score score, i32 material) {

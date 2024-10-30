@@ -23,7 +23,7 @@ namespace stormphrax::datagen {
         m_positions.reserve(256);
     }
 
-    auto Fen::start(const Position &initialPosition) -> void {
+    auto Fen::start(const Position& initialPosition) -> void {
         m_positions.clear();
         m_curr.copyStateFrom(initialPosition);
     }
@@ -34,8 +34,8 @@ namespace stormphrax::datagen {
         m_curr.applyMoveUnchecked<false, false>(move, nullptr);
     }
 
-    auto Fen::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize {
-        for (auto &fen: m_positions) {
+    auto Fen::writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize {
+        for (auto& fen: m_positions) {
             stream << fen << " | ";
 
             switch (outcome) {

@@ -36,10 +36,11 @@ namespace stormphrax::limit {
     class MoveTimeLimiter final : public ISearchLimiter {
     public:
         explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
+
         ~MoveTimeLimiter() final = default;
 
         [[nodiscard]] auto
-        stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+        stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final;
 
         [[nodiscard]] auto stopped() const -> bool final;
 
@@ -51,14 +52,16 @@ namespace stormphrax::limit {
     class TimeManager final : public ISearchLimiter {
     public:
         TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
+
         ~TimeManager() final = default;
 
-        auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes)
+        auto update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes)
             -> void final;
+
         auto updateMoveNodes(Move move, usize nodes) -> void final;
 
         [[nodiscard]] auto
-        stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+        stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final;
 
         [[nodiscard]] auto stopped() const -> bool final;
 

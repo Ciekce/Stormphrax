@@ -68,11 +68,11 @@ namespace stormphrax::eval::nnue::layers {
         SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount * WeightCount> weights;
         SP_SIMD_ALIGNAS std::array<ParamType, OutputBucketCount * BiasCount> biases;
 
-        inline auto readFrom(IParamStream &stream) -> bool {
+        inline auto readFrom(IParamStream& stream) -> bool {
             return stream.read(weights) && stream.read(biases);
         }
 
-        inline auto writeTo(IParamStream &stream) const -> bool {
+        inline auto writeTo(IParamStream& stream) const -> bool {
             return stream.write(weights) && stream.write(biases);
         }
     };
@@ -103,7 +103,7 @@ namespace stormphrax::eval::nnue::layers {
             OutputBucketing>;
 
         inline auto forward(
-            const BitboardSet &bbs,
+            const BitboardSet& bbs,
             std::span<const typename Base::InputType, Base::InputCount> inputs,
             std::span<typename Base::OutputType, Base::OutputCount> outputs
         ) const {
@@ -171,7 +171,7 @@ namespace stormphrax::eval::nnue::layers {
         static constexpr auto PerspectiveInputCount = Inputs;
 
         inline auto forward(
-            const BitboardSet &bbs,
+            const BitboardSet& bbs,
             std::span<const typename Base::InputType, PerspectiveInputCount> stmInputs,
             std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
             std::span<typename Base::OutputType, Base::OutputCount> outputs
@@ -241,7 +241,7 @@ namespace stormphrax::eval::nnue::layers {
         static_assert(PerspectiveInputCount % 2 == 0);
 
         inline auto forward(
-            const BitboardSet &bbs,
+            const BitboardSet& bbs,
             std::span<const typename Base::InputType, PerspectiveInputCount> stmInputs,
             std::span<const typename Base::InputType, PerspectiveInputCount> nstmInputs,
             std::span<typename Base::OutputType, Base::OutputCount> outputs

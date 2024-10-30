@@ -35,7 +35,7 @@ namespace stormphrax::eval::nnue::layers {
         static constexpr auto OutputCount = Count;
 
         inline auto forward(
-            [[maybe_unused]] const BitboardSet &bbs,
+            [[maybe_unused]] const BitboardSet& bbs,
             std::span<const Type, Count> inputs,
             std::span<Type, Count> outputs
         ) const {
@@ -44,11 +44,11 @@ namespace stormphrax::eval::nnue::layers {
             }
         }
 
-        inline auto readFrom([[maybe_unused]] IParamStream &stream) -> bool {
+        inline auto readFrom([[maybe_unused]] IParamStream& stream) -> bool {
             return true;
         }
 
-        inline auto writeTo([[maybe_unused]] IParamStream &stream) const -> bool {
+        inline auto writeTo([[maybe_unused]] IParamStream& stream) const -> bool {
             return true;
         }
     };

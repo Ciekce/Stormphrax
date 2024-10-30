@@ -30,13 +30,16 @@ namespace stormphrax::datagen {
     class Viriformat {
     public:
         Viriformat();
+
         ~Viriformat() = default;
 
         static constexpr auto Extension = "vf";
 
-        auto start(const Position &initialPosition) -> void;
+        auto start(const Position& initialPosition) -> void;
+
         auto push(bool filtered, Move move, Score score) -> void;
-        auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+
+        auto writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize;
 
     private:
         using ScoredMove = std::pair<u16, i16>;

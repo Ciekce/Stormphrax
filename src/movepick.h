@@ -60,7 +60,7 @@ namespace stormphrax {
         End,
     };
 
-    inline auto operator++(MovegenStage &v) -> auto & {
+    inline auto operator++(MovegenStage& v) -> auto& {
         v = static_cast<MovegenStage>(static_cast<i32>(v) + 1);
         return v;
     }
@@ -247,12 +247,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static inline auto main(
-            const Position &pos,
-            MovegenData &data,
+            const Position& pos,
+            MovegenData& data,
             Move ttMove,
-            const KillerTable &killers,
-            const HistoryTables &history,
-            std::span<ContinuationSubtable *const> continuations,
+            const KillerTable& killers,
+            const HistoryTables& history,
+            std::span<ContinuationSubtable* const> continuations,
             i32 ply
         ) {
             return MoveGenerator(
@@ -268,7 +268,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static inline auto
-        qsearch(const Position &pos, MovegenData &data, Move ttMove, const HistoryTables &history) {
+        qsearch(const Position& pos, MovegenData& data, Move ttMove, const HistoryTables& history) {
             return MoveGenerator(
                 MovegenStage::QsearchTtMove,
                 pos,
@@ -282,7 +282,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static inline auto
-        probcut(const Position &pos, Move ttMove, MovegenData &data, const HistoryTables &history) {
+        probcut(const Position& pos, Move ttMove, MovegenData& data, const HistoryTables& history) {
             return MoveGenerator(
                 MovegenStage::ProbcutTtMove,
                 pos,
@@ -298,12 +298,12 @@ namespace stormphrax {
     private:
         MoveGenerator(
             MovegenStage initialStage,
-            const Position &pos,
-            MovegenData &data,
+            const Position& pos,
+            MovegenData& data,
             Move ttMove,
-            const KillerTable *killers,
-            const HistoryTables &history,
-            std::span<ContinuationSubtable *const> continuations,
+            const KillerTable* killers,
+            const HistoryTables& history,
+            std::span<ContinuationSubtable* const> continuations,
             i32 ply
         ) :
                 m_stage{initialStage},
@@ -319,9 +319,9 @@ namespace stormphrax {
             m_data.moves.clear();
         }
 
-        inline auto scoreNoisy(ScoredMove &scoredMove) {
+        inline auto scoreNoisy(ScoredMove& scoredMove) {
             const auto move = scoredMove.move;
-            auto &score = scoredMove.score;
+            auto& score = scoredMove.score;
 
             const auto captured = m_pos.captureTarget(move);
 
@@ -339,7 +339,7 @@ namespace stormphrax {
             }
         }
 
-        inline auto scoreQuiet(ScoredMove &move) {
+        inline auto scoreQuiet(ScoredMove& move) {
             move.score = m_history.quietScore(
                 m_continuations,
                 m_ply,
@@ -392,15 +392,15 @@ namespace stormphrax {
 
         MovegenStage m_stage;
 
-        const Position &m_pos;
-        MovegenData &m_data;
+        const Position& m_pos;
+        MovegenData& m_data;
 
         Move m_ttMove;
 
         KillerTable m_killers{};
-        const HistoryTables &m_history;
+        const HistoryTables& m_history;
 
-        std::span<ContinuationSubtable *const> m_continuations;
+        std::span<ContinuationSubtable* const> m_continuations;
         i32 m_ply{};
 
         bool m_skipQuiets{false};

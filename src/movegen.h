@@ -31,8 +31,9 @@ namespace stormphrax {
 
     using ScoredMoveList = StaticVector<ScoredMove, DefaultMoveListCapacity>;
 
-    auto generateNoisy(ScoredMoveList &noisy, const Position &pos) -> void;
-    auto generateQuiet(ScoredMoveList &quiet, const Position &pos) -> void;
+    auto generateNoisy(ScoredMoveList& noisy, const Position& pos) -> void;
 
-    auto generateAll(ScoredMoveList &dst, const Position &pos) -> void;
+    auto generateQuiet(ScoredMoveList& quiet, const Position& pos) -> void;
+
+    auto generateAll(ScoredMoveList& dst, const Position& pos) -> void;
 } // namespace stormphrax

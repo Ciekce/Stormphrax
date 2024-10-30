@@ -24,6 +24,7 @@
 #include "position/position.h"
 
 namespace stormphrax {
-    auto perft(Position &pos, i32 depth) -> void;
-    auto splitPerft(Position &pos, i32 depth) -> void;
+    auto perft(Position& pos, i32 depth) -> void;
+
+    auto splitPerft(Position& pos, i32 depth) -> void;
 } // namespace stormphrax

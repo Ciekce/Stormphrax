@@ -30,13 +30,16 @@ namespace stormphrax::datagen {
     class Fen {
     public:
         Fen();
+
         ~Fen() = default;
 
         static constexpr auto Extension = "txt";
 
-        auto start(const Position &initialPosition) -> void;
+        auto start(const Position& initialPosition) -> void;
+
         auto push(bool filtered, Move move, Score score) -> void;
-        auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+
+        auto writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize;
 
     private:
         std::vector<std::string> m_positions{};

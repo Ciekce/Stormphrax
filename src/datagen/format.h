@@ -33,16 +33,16 @@ namespace stormphrax::datagen {
     template<typename T>
     concept OutputFormat = requires(
         T t,
-        const Position &initialPosition,
+        const Position& initialPosition,
         bool filtered,
         Move move,
         Score score,
         Outcome outcome,
-        std::ostream &stream
+        std::ostream& stream
     ) {
         {
             T::Extension
-        } -> std::convertible_to<const std::string &>;
+        } -> std::convertible_to<const std::string&>;
         t.start(initialPosition);
         t.push(filtered, move, score);
         {

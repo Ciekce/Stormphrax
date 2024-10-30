@@ -31,7 +31,7 @@
 
 using namespace stormphrax;
 
-auto main(i32 argc, const char *argv[]) -> i32 {
+auto main(i32 argc, const char* argv[]) -> i32 {
     util::signal::init();
 
     tunable::init();

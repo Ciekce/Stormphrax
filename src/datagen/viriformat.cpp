@@ -25,7 +25,7 @@ namespace stormphrax::datagen {
         m_moves.reserve(256);
     }
 
-    auto Viriformat::start(const Position &initialPosition) -> void {
+    auto Viriformat::start(const Position& initialPosition) -> void {
         m_initial = marlinformat::PackedBoard::pack(initialPosition, 0);
         m_moves.clear();
     }
@@ -48,17 +48,17 @@ namespace stormphrax::datagen {
         m_moves.push_back({viriMove, static_cast<i16>(score)});
     }
 
-    auto Viriformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize {
+    auto Viriformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize {
         static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
 
         m_initial.wdl = outcome;
 
-        stream.write(reinterpret_cast<const char *>(&m_initial), sizeof(marlinformat::PackedBoard));
+        stream.write(reinterpret_cast<const char*>(&m_initial), sizeof(marlinformat::PackedBoard));
         stream.write(
-            reinterpret_cast<const char *>(m_moves.data()),
+            reinterpret_cast<const char*>(m_moves.data()),
             sizeof(ScoredMove) * m_moves.size()
         );
-        stream.write(reinterpret_cast<const char *>(NullTerminator.data()), sizeof(ScoredMove));
+        stream.write(reinterpret_cast<const char*>(NullTerminator.data()), sizeof(ScoredMove));
 
         return m_moves.size() + 1;
     }

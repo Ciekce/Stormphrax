@@ -48,12 +48,15 @@ namespace stormphrax {
     class TTable {
     public:
         explicit TTable(usize size = DefaultTtSize);
+
         ~TTable();
 
         auto resize(usize size) -> void;
+
         auto finalize() -> bool;
 
-        auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool;
+        auto probe(ProbedTTableEntry& dst, u64 key, i32 ply) const -> bool;
+
         auto
         put(u64 key,
             Score score,
@@ -135,7 +138,7 @@ namespace stormphrax {
         // Only accessed from UCI thread
         bool m_pendingInit{};
 
-        Cluster *m_table{};
+        Cluster* m_table{};
         usize m_tableSize{};
 
         u32 m_age{};

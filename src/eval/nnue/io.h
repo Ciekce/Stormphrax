@@ -37,7 +37,7 @@ namespace stormphrax::eval::nnue {
         }
 
         template<typename T, usize Size>
-        inline auto read(std::array<T, Size> &dst) {
+        inline auto read(std::array<T, Size>& dst) {
             return read(std::span<T, std::dynamic_extent>{dst});
         }
 
@@ -50,12 +50,13 @@ namespace stormphrax::eval::nnue {
         }
 
         template<typename T, usize Size>
-        inline auto write(const std::array<T, Size> &src) {
+        inline auto write(const std::array<T, Size>& src) {
             return write(std::span<T, std::dynamic_extent>{src});
         }
 
     protected:
         virtual auto readI16s(std::span<i16> dst) -> bool = 0;
+
         virtual auto writeI16s(std::span<const i16> src) -> bool = 0;
     };
 } // namespace stormphrax::eval::nnue

@@ -39,13 +39,13 @@ namespace stormphrax::datagen {
             Outcome wdl;
             [[maybe_unused]] u8 extra;
 
-            [[nodiscard]] static auto pack(const Position &pos, i16 score) {
+            [[nodiscard]] static auto pack(const Position& pos, i16 score) {
                 static constexpr u8 UnmovedRook = 6;
 
                 PackedBoard board{};
 
                 const auto castlingRooks = pos.castlingRooks();
-                const auto &boards = pos.boards();
+                const auto& boards = pos.boards();
 
                 auto occupancy = boards.bbs().occupancy();
                 board.occupancy = occupancy;
@@ -91,13 +91,16 @@ namespace stormphrax::datagen {
     class Marlinformat {
     public:
         Marlinformat();
+
         ~Marlinformat() = default;
 
         static constexpr auto Extension = "bin";
 
-        auto start(const Position &initialPosition) -> void;
+        auto start(const Position& initialPosition) -> void;
+
         auto push(bool filtered, Move move, Score score) -> void;
-        auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+
+        auto writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize;
 
     private:
         std::vector<marlinformat::PackedBoard> m_positions{};

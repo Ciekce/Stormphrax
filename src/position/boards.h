@@ -29,9 +29,10 @@ namespace stormphrax {
     class BitboardSet {
     public:
         BitboardSet() = default;
+
         ~BitboardSet() = default;
 
-        [[nodiscard]] inline auto forColor(Color color) -> auto & {
+        [[nodiscard]] inline auto forColor(Color color) -> auto& {
             return m_colors[static_cast<i32>(color)];
         }
 
@@ -39,7 +40,7 @@ namespace stormphrax {
             return m_colors[static_cast<i32>(color)];
         }
 
-        [[nodiscard]] inline auto forPiece(PieceType piece) -> Bitboard & {
+        [[nodiscard]] inline auto forPiece(PieceType piece) -> Bitboard& {
             return m_pieces[static_cast<i32>(piece)];
         }
 
@@ -58,6 +59,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackOccupancy() const {
             return m_colors[0];
         }
+
         [[nodiscard]] inline auto whiteOccupancy() const {
             return m_colors[1];
         }
@@ -78,18 +80,23 @@ namespace stormphrax {
         [[nodiscard]] inline auto pawns() const {
             return forPiece(PieceType::Pawn);
         }
+
         [[nodiscard]] inline auto knights() const {
             return forPiece(PieceType::Knight);
         }
+
         [[nodiscard]] inline auto bishops() const {
             return forPiece(PieceType::Bishop);
         }
+
         [[nodiscard]] inline auto rooks() const {
             return forPiece(PieceType::Rook);
         }
+
         [[nodiscard]] inline auto queens() const {
             return forPiece(PieceType::Queen);
         }
+
         [[nodiscard]] inline auto kings() const {
             return forPiece(PieceType::King);
         }
@@ -97,6 +104,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackPawns() const {
             return pawns() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whitePawns() const {
             return pawns() & whiteOccupancy();
         }
@@ -104,6 +112,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackKnights() const {
             return knights() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whiteKnights() const {
             return knights() & whiteOccupancy();
         }
@@ -111,6 +120,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackBishops() const {
             return bishops() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whiteBishops() const {
             return bishops() & whiteOccupancy();
         }
@@ -118,6 +128,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackRooks() const {
             return rooks() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whiteRooks() const {
             return rooks() & whiteOccupancy();
         }
@@ -125,6 +136,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackQueens() const {
             return queens() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whiteQueens() const {
             return queens() & whiteOccupancy();
         }
@@ -132,6 +144,7 @@ namespace stormphrax {
         [[nodiscard]] inline auto blackKings() const {
             return kings() & blackOccupancy();
         }
+
         [[nodiscard]] inline auto whiteKings() const {
             return kings() & whiteOccupancy();
         }
@@ -280,7 +293,7 @@ namespace stormphrax {
             return color == Color::Black ? blackNonPk() : whiteNonPk();
         }
 
-        [[nodiscard]] inline auto operator==(const BitboardSet &other) const -> bool = default;
+        [[nodiscard]] inline auto operator==(const BitboardSet& other) const -> bool = default;
 
     private:
         std::array<Bitboard, 2> m_colors{};
@@ -295,11 +308,11 @@ namespace stormphrax {
 
         ~PositionBoards() = default;
 
-        [[nodiscard]] inline auto bbs() const -> const auto & {
+        [[nodiscard]] inline auto bbs() const -> const auto& {
             return m_bbs;
         }
 
-        [[nodiscard]] inline auto bbs() -> auto & {
+        [[nodiscard]] inline auto bbs() -> auto& {
             return m_bbs;
         }
 
@@ -395,10 +408,10 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] inline auto operator==(const PositionBoards &other) const -> bool = default;
+        [[nodiscard]] inline auto operator==(const PositionBoards& other) const -> bool = default;
 
     private:
-        [[nodiscard]] inline auto slot(Square square) -> Piece & {
+        [[nodiscard]] inline auto slot(Square square) -> Piece& {
             return m_mailbox[static_cast<i32>(square)];
         }
 

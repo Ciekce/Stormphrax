@@ -21,7 +21,7 @@
 #include <sstream>
 
 namespace stormphrax::split {
-    auto split(const std::string &str, char delim) -> std::vector<std::string> {
+    auto split(const std::string& str, char delim) -> std::vector<std::string> {
         std::vector<std::string> result{};
 
         std::istringstream stream{str};

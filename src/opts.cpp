@@ -24,10 +24,10 @@ namespace stormphrax {
     }
 
     namespace opts {
-        auto mutableOpts() -> GlobalOptions & {
+        auto mutableOpts() -> GlobalOptions& {
             return s_opts;
         }
     } // namespace opts
 
-    const opts::GlobalOptions &g_opts = s_opts;
+    const opts::GlobalOptions& g_opts = s_opts;
 } // namespace stormphrax

@@ -107,7 +107,7 @@ namespace stormphrax {
             return (m_board & m_mask) != 0;
         }
 
-        constexpr auto operator=(bool rhs) -> auto & {
+        constexpr auto operator=(bool rhs) -> auto& {
             if (rhs)
                 m_board |= m_mask;
             else
@@ -117,10 +117,10 @@ namespace stormphrax {
         }
 
     private:
-        constexpr BitboardSlot(u64 &board, i32 n) :
+        constexpr BitboardSlot(u64& board, i32 n) :
                 m_board{board}, m_mask{u64{1} << n} {}
 
-        u64 &m_board;
+        u64& m_board;
         u64 m_mask;
 
         friend class Bitboard;
@@ -163,22 +163,26 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto operator&(Bitboard rhs) const -> Bitboard {
             return m_board & rhs;
         }
+
         [[nodiscard]] constexpr auto operator|(Bitboard rhs) const -> Bitboard {
             return m_board | rhs;
         }
+
         [[nodiscard]] constexpr auto operator^(Bitboard rhs) const -> Bitboard {
             return m_board ^ rhs;
         }
 
-        constexpr auto operator&=(Bitboard rhs) -> auto & {
+        constexpr auto operator&=(Bitboard rhs) -> auto& {
             m_board &= rhs;
             return *this;
         }
-        constexpr auto operator|=(Bitboard rhs) -> auto & {
+
+        constexpr auto operator|=(Bitboard rhs) -> auto& {
             m_board |= rhs;
             return *this;
         }
-        constexpr auto operator^=(Bitboard rhs) -> auto & {
+
+        constexpr auto operator^=(Bitboard rhs) -> auto& {
             m_board ^= rhs;
             return *this;
         }
@@ -186,22 +190,26 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto operator&(u64 rhs) const -> Bitboard {
             return m_board & rhs;
         }
+
         [[nodiscard]] constexpr auto operator|(u64 rhs) const -> Bitboard {
             return m_board | rhs;
         }
+
         [[nodiscard]] constexpr auto operator^(u64 rhs) const -> Bitboard {
             return m_board ^ rhs;
         }
 
-        constexpr auto operator&=(u64 rhs) -> auto & {
+        constexpr auto operator&=(u64 rhs) -> auto& {
             m_board &= rhs;
             return *this;
         }
-        constexpr auto operator|=(u64 rhs) -> auto & {
+
+        constexpr auto operator|=(u64 rhs) -> auto& {
             m_board |= rhs;
             return *this;
         }
-        constexpr auto operator^=(u64 rhs) -> auto & {
+
+        constexpr auto operator^=(u64 rhs) -> auto& {
             m_board ^= rhs;
             return *this;
         }
@@ -209,22 +217,26 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto operator&(i32 rhs) const -> Bitboard {
             return m_board & static_cast<u64>(rhs);
         }
+
         [[nodiscard]] constexpr auto operator|(i32 rhs) const -> Bitboard {
             return m_board | static_cast<u64>(rhs);
         }
+
         [[nodiscard]] constexpr auto operator^(i32 rhs) const -> Bitboard {
             return m_board ^ static_cast<u64>(rhs);
         }
 
-        constexpr auto operator&=(i32 rhs) -> auto & {
+        constexpr auto operator&=(i32 rhs) -> auto& {
             m_board &= static_cast<u64>(rhs);
             return *this;
         }
-        constexpr auto operator|=(i32 rhs) -> auto & {
+
+        constexpr auto operator|=(i32 rhs) -> auto& {
             m_board |= static_cast<u64>(rhs);
             return *this;
         }
-        constexpr auto operator^=(i32 rhs) -> auto & {
+
+        constexpr auto operator^=(i32 rhs) -> auto& {
             m_board ^= static_cast<u64>(rhs);
             return *this;
         }
@@ -236,15 +248,17 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto operator<<(i32 rhs) const -> Bitboard {
             return m_board << rhs;
         }
+
         [[nodiscard]] constexpr auto operator>>(i32 rhs) const -> Bitboard {
             return m_board >> rhs;
         }
 
-        constexpr auto operator<<=(i32 rhs) -> auto & {
+        constexpr auto operator<<=(i32 rhs) -> auto& {
             m_board <<= rhs;
             return *this;
         }
-        constexpr auto operator>>=(i32 rhs) -> auto & {
+
+        constexpr auto operator>>=(i32 rhs) -> auto& {
             m_board >>= rhs;
             return *this;
         }
@@ -252,6 +266,7 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto operator[](Square s) const -> bool {
             return m_board & (U64(1) << static_cast<i32>(s));
         }
+
         [[nodiscard]] constexpr auto operator[](Square s) {
             return BitboardSlot{m_board, static_cast<i32>(s)};
         }
@@ -263,9 +278,11 @@ namespace stormphrax {
         [[nodiscard]] constexpr auto empty() const {
             return m_board == 0;
         }
+
         [[nodiscard]] constexpr auto multiple() const {
             return util::resetLsb(m_board) != 0;
         }
+
         [[nodiscard]] constexpr auto one() const {
             return !empty() && !multiple();
         }
@@ -458,7 +475,7 @@ namespace stormphrax {
             return fillUp() | fillDown();
         }
 
-        [[nodiscard]] constexpr auto operator==(const Bitboard &other) const {
+        [[nodiscard]] constexpr auto operator==(const Bitboard& other) const {
             return m_board == other.m_board;
         }
 

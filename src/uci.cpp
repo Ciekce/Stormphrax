@@ -56,7 +56,7 @@ namespace stormphrax {
         constexpr auto Author = "Ciekce";
 
 #if SP_EXTERNAL_TUNE
-        auto tunableParams() -> auto & {
+        auto tunableParams() -> auto& {
             static auto params = [] {
                 std::vector<tunable::TunableParam> params{};
                 params.reserve(128);
@@ -66,8 +66,8 @@ namespace stormphrax {
             return params;
         }
 
-        inline auto lookupTunableParam(const std::string &name) -> tunable::TunableParam * {
-            for (auto &param: tunableParams()) {
+        inline auto lookupTunableParam(const std::string& name) -> tunable::TunableParam* {
+            for (auto& param: tunableParams()) {
                 if (param.lowerName == name) {
                     return &param;
                 }
@@ -80,29 +80,46 @@ namespace stormphrax {
         class UciHandler {
         public:
             UciHandler() = default;
+
             ~UciHandler();
 
             auto run() -> i32;
 
         private:
             auto handleUci() -> void;
+
             auto handleUcinewgame() -> void;
+
             auto handleIsready() -> void;
-            auto handlePosition(const std::vector<std::string> &tokens) -> void;
-            auto handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void;
+
+            auto handlePosition(const std::vector<std::string>& tokens) -> void;
+
+            auto handleGo(const std::vector<std::string>& tokens, f64 startTime) -> void;
+
             auto handleStop() -> void;
-            auto handleSetoption(const std::vector<std::string> &tokens) -> void;
+
+            auto handleSetoption(const std::vector<std::string>& tokens) -> void;
+
             // V ======= NONSTANDARD ======= V
             auto handleD() -> void;
+
             auto handleCheckers() -> void;
+
             auto handleThreats() -> void;
+
             auto handleEval() -> void;
+
             auto handleRawEval() -> void;
+
             auto handleRegen() -> void;
+
             auto handleMoves() -> void;
-            auto handlePerft(const std::vector<std::string> &tokens) -> void;
-            auto handleSplitperft(const std::vector<std::string> &tokens) -> void;
-            auto handleBench(const std::vector<std::string> &tokens) -> void;
+
+            auto handlePerft(const std::vector<std::string>& tokens) -> void;
+
+            auto handleSplitperft(const std::vector<std::string>& tokens) -> void;
+
+            auto handleBench(const std::vector<std::string>& tokens) -> void;
 
             bool m_fathomInitialized{false};
 
@@ -132,7 +149,7 @@ namespace stormphrax {
                     continue;
                 }
 
-                const auto &command = tokens[0];
+                const auto& command = tokens[0];
 
                 if (command == "quit") {
                     return 0;
@@ -228,7 +245,7 @@ namespace stormphrax {
             std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
 #if SP_EXTERNAL_TUNE
-            for (const auto &param: tunableParams()) {
+            for (const auto& param: tunableParams()) {
                 std::cout << "option name " << param.name << " type spin default "
                           << param.defaultValue << " min " << param.range.min() << " max "
                           << param.range.max() << std::endl;
@@ -251,11 +268,11 @@ namespace stormphrax {
             std::cout << "readyok" << std::endl;
         }
 
-        auto UciHandler::handlePosition(const std::vector<std::string> &tokens) -> void {
+        auto UciHandler::handlePosition(const std::vector<std::string>& tokens) -> void {
             if (m_searcher.searching()) {
                 std::cerr << "still searching" << std::endl;
             } else if (tokens.size() > 1) {
-                const auto &position = tokens[1];
+                const auto& position = tokens[1];
 
                 usize next = 2;
 
@@ -311,7 +328,7 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void {
+        auto UciHandler::handleGo(const std::vector<std::string>& tokens, f64 startTime) -> void {
             if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
             } else {
@@ -396,7 +413,7 @@ namespace stormphrax {
                         }
                     } else if (tokens[i] == "searchmoves" && i + 1 < tokens.size()) {
                         while (i + 1 < tokens.size()) {
-                            const auto &candidate = tokens[i + 1];
+                            const auto& candidate = tokens[i + 1];
 
                             if (candidate.length() >= 4 && candidate.length() <= 5
                                 && candidate[0] >= 'a' && candidate[0] <= 'h' && candidate[1] >= '1'
@@ -498,7 +515,7 @@ namespace stormphrax {
         }
 
         //TODO refactor
-        auto UciHandler::handleSetoption(const std::vector<std::string> &tokens) -> void {
+        auto UciHandler::handleSetoption(const std::vector<std::string>& tokens) -> void {
             usize i = 1;
 
             for (; i < tokens.size() - 1 && tokens[i] != "name"; ++i) {
@@ -669,7 +686,7 @@ namespace stormphrax {
                     }
                 }
 #if SP_EXTERNAL_TUNE
-                else if (auto *param = lookupTunableParam(nameStr))
+                else if (auto* param = lookupTunableParam(nameStr))
                 {
                     if (!valueEmpty && util::tryParseI32(param->value, valueStr) && param->callback)
                     {
@@ -763,7 +780,7 @@ namespace stormphrax {
             std::cout << std::endl;
         }
 
-        auto UciHandler::handlePerft(const std::vector<std::string> &tokens) -> void {
+        auto UciHandler::handlePerft(const std::vector<std::string>& tokens) -> void {
             u32 depth = 6;
 
             if (tokens.size() > 1) {
@@ -776,7 +793,7 @@ namespace stormphrax {
             perft(m_pos, static_cast<i32>(depth));
         }
 
-        auto UciHandler::handleSplitperft(const std::vector<std::string> &tokens) -> void {
+        auto UciHandler::handleSplitperft(const std::vector<std::string>& tokens) -> void {
             u32 depth = 6;
 
             if (tokens.size() > 1) {
@@ -789,7 +806,7 @@ namespace stormphrax {
             splitPerft(m_pos, static_cast<i32>(depth));
         }
 
-        auto UciHandler::handleBench(const std::vector<std::string> &tokens) -> void {
+        auto UciHandler::handleBench(const std::vector<std::string>& tokens) -> void {
             if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
                 return;
@@ -843,14 +860,14 @@ namespace stormphrax {
 #if SP_EXTERNAL_TUNE
     namespace tunable {
         auto addTunableParam(
-            const std::string &name,
+            const std::string& name,
             i32 value,
             i32 min,
             i32 max,
             f64 step,
             std::function<void()> callback
-        ) -> TunableParam & {
-            auto &params = tunableParams();
+        ) -> TunableParam& {
+            auto& params = tunableParams();
 
             if (params.size() == params.capacity()) {
                 std::cerr << "Tunable vector full, cannot reallocate" << std::endl;
@@ -910,10 +927,10 @@ namespace stormphrax {
         namespace {
             auto printParams(
                 std::span<const std::string> params,
-                const std::function<void(const tunable::TunableParam &)> &printParam
+                const std::function<void(const tunable::TunableParam&)>& printParam
             ) {
                 if (std::ranges::find(params, "<all>") != params.end()) {
-                    for (const auto &param: tunableParams()) {
+                    for (const auto& param: tunableParams()) {
                         printParam(param);
                     }
 
@@ -928,7 +945,7 @@ namespace stormphrax {
                         [](auto c) { return std::tolower(c); }
                     );
 
-                    if (const auto *param = lookupTunableParam(paramName))
+                    if (const auto* param = lookupTunableParam(paramName))
                         printParam(*param);
                     else {
                         std::cerr << "unknown parameter " << paramName << std::endl;
@@ -942,7 +959,7 @@ namespace stormphrax {
             std::cout << "{\n";
 
             bool first = true;
-            const auto printParam = [&first](const auto &param) {
+            const auto printParam = [&first](const auto& param) {
                 if (!first)
                     std::cout << ",\n";
 
@@ -963,7 +980,7 @@ namespace stormphrax {
 
         auto printCttTuningParams(std::span<const std::string> params) -> void {
             bool first = true;
-            const auto printParam = [&first](const auto &param) {
+            const auto printParam = [&first](const auto& param) {
                 if (!first)
                     std::cout << ",\n";
 
@@ -979,7 +996,7 @@ namespace stormphrax {
         }
 
         auto printObTuningParams(std::span<const std::string> params) -> void {
-            const auto printParam = [](const auto &param) {
+            const auto printParam = [](const auto& param) {
                 std::cout << param.name << ", int, " << param.value << ".0, " << param.range.min()
                           << ".0, " << param.range.max() << ".0, " << param.step << ", 0.002"
                           << std::endl;
