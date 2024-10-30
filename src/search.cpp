@@ -520,12 +520,17 @@ namespace stormphrax::search {
         if (!curr.excluded) {
             ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
-            if (!PvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)) {
-                if (ttEntry.flag == TtFlag::Exact
-                    || ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha
+            if (!PvNode //
+                && ttEntry.depth >= depth //
+                && (ttEntry.score <= alpha || cutnode))
+            {
+                if (ttEntry.flag == TtFlag::Exact //
+                    || ttEntry.flag == TtFlag::UpperBound && ttEntry.score <= alpha //
                     || ttEntry.flag == TtFlag::LowerBound && ttEntry.score >= beta)
                 {
-                    if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
+                    if (ttEntry.score >= beta //
+                        && ttEntry.move //
+                        && !pos.isNoisy(ttEntry.move) //
                         && pos.isPseudolegal(ttEntry.move))
                     {
                         const auto bonus = historyBonus(depth);
@@ -559,9 +564,13 @@ namespace stormphrax::search {
 
         // Probe the Syzygy tablebases for a WDL result
         // if there are few enough pieces left on the board
-        if (!RootNode && !curr.excluded && g_opts.syzygyEnabled && pieceCount <= syzygyPieceLimit
-            && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
-            && pos.halfmove() == 0 && pos.castlingRooks() == CastlingRooks{})
+        if (!RootNode //
+            && !curr.excluded //
+            && g_opts.syzygyEnabled //
+            && pieceCount <= syzygyPieceLimit //
+            && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth) //
+            && pos.halfmove() == 0 //
+            && pos.castlingRooks() == CastlingRooks{})
         {
             const auto result = tb::probe(pos);
 
@@ -582,7 +591,8 @@ namespace stormphrax::search {
                     flag = TtFlag::Exact;
                 }
 
-                if (flag == TtFlag::Exact || flag == TtFlag::UpperBound && score <= alpha
+                if (flag == TtFlag::Exact //
+                    || flag == TtFlag::UpperBound && score <= alpha //
                     || flag == TtFlag::LowerBound && score >= beta)
                 {
                     m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag, ttpv);
@@ -648,13 +658,14 @@ namespace stormphrax::search {
         }();
 
         if (!PvNode && !inCheck && !curr.excluded) {
-            if (depth <= maxRfpDepth()
+            if (depth <= maxRfpDepth() //
                 && curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
             {
                 return curr.staticEval;
             }
 
-            if (depth <= maxRazoringDepth() && std::abs(alpha) < 2000
+            if (depth <= maxRazoringDepth() //
+                && std::abs(alpha) < 2000 //
                 && curr.staticEval + razoringMargin() * depth <= alpha)
             {
                 const auto score = qsearch(thread, ply, moveStackIdx, alpha, alpha + 1);
@@ -664,8 +675,10 @@ namespace stormphrax::search {
                 }
             }
 
-            if (depth >= minNmpDepth() && curr.staticEval >= beta && !parent->move.isNull()
-                && !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
+            if (depth >= minNmpDepth() //
+                && curr.staticEval >= beta //
+                && !parent->move.isNull() //
+                && !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta) //
                 && !bbs.nonPk(us).empty())
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
@@ -699,8 +712,10 @@ namespace stormphrax::search {
             const auto probcutBeta = beta + probcutMargin();
             const auto probcutDepth = std::max(depth - probcutReduction(), 1);
 
-            if (!ttpv && depth >= minProbcutDepth() && std::abs(beta) < ScoreWin
-                && (!ttEntry.move || ttMoveNoisy)
+            if (!ttpv //
+                && depth >= minProbcutDepth() //
+                && std::abs(beta) < ScoreWin //
+                && (!ttEntry.move || ttMoveNoisy) //
                 && !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
             {
                 const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
@@ -830,14 +845,16 @@ namespace stormphrax::search {
                         continue;
                     }
 
-                    if (lmrDepth <= maxHistoryPruningDepth()
+                    if (lmrDepth <= maxHistoryPruningDepth() //
                         && history < historyPruningMargin() * depth + historyPruningOffset())
                     {
                         generator.skipQuiets();
                         continue;
                     }
 
-                    if (!inCheck && lmrDepth <= maxFpDepth() && std::abs(alpha) < 2000
+                    if (!inCheck //
+                        && lmrDepth <= maxFpDepth() //
+                        && std::abs(alpha) < 2000 //
                         && curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
                     {
                         generator.skipQuiets();
@@ -869,8 +886,12 @@ namespace stormphrax::search {
 
             i32 extension{};
 
-            if (!RootNode && depth >= minSeDepth() && move == ttEntry.move && !curr.excluded
-                && ttEntry.depth >= depth - seTtDepthMargin() && ttEntry.flag != TtFlag::UpperBound)
+            if (!RootNode //
+                && depth >= minSeDepth() //
+                && move == ttEntry.move //
+                && !curr.excluded //
+                && ttEntry.depth >= depth - seTtDepthMargin() //
+                && ttEntry.flag != TtFlag::UpperBound)
             {
                 const auto sBeta =
                     std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
@@ -1218,14 +1239,19 @@ namespace stormphrax::search {
                 continue;
             }
 
-            if (!pos.isCheck() && futility <= alpha && !see::see(pos, move, 1)) {
+            if (!pos.isCheck() //
+                && futility <= alpha //
+                && !see::see(pos, move, 1))
+            {
                 if (bestScore < futility) {
                     bestScore = futility;
                 }
                 continue;
             }
 
-            if (bestScore > -ScoreWin && legalMoves >= qsearchMaxMoves()) {
+            if (bestScore > -ScoreWin //
+                && legalMoves >= qsearchMaxMoves())
+            {
                 break;
             }
 
