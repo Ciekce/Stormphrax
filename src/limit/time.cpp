@@ -19,6 +19,8 @@
 #include "time.h"
 
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 
 #include "../tunable.h"
 
@@ -130,6 +132,14 @@ namespace stormphrax::limit
 			m_avgScore = util::ilerp<8>(avgScore, score, 1);
 		}
 		else m_avgScore = score;
+
+		static constexpr f64 Stretch = 0.06;
+		static constexpr f64 Scale = 0.067;
+
+		const auto scaledScore = std::abs(score) / 260.0;
+		const auto clamped = std::clamp(scaledScore, 1.0 - Stretch * std::numbers::pi, 1.0 + Stretch * std::numbers::pi);
+
+		m_scale *= 1.0 + Scale / 2.2 + Scale * std::cos((1.0 - clamped) / Stretch);
 
 		m_scale = std::max(scale, minScale);
 	}
