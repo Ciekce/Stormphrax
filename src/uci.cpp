@@ -196,8 +196,8 @@ namespace stormphrax
 
 			std::cout << std::boolalpha;
 
-			std::cout << "option name Hash type spin default " << DefaultTtSize
-			          << " min " << TtSizeRange.min() << " max " << TtSizeRange.max() << '\n';
+			std::cout << "option name Hash type spin default " << DefaultTtSizeMib
+			          << " min " << TtSizeMibRange.min() << " max " << TtSizeMibRange.max() << '\n';
 			std::cout << "option name Clear Hash type button\n";
 			std::cout << "option name Threads type spin default " << opts::DefaultThreadCount
 				<< " min " << opts::ThreadCountRange.min() << " max " << opts::ThreadCountRange.max() << '\n';
@@ -555,7 +555,7 @@ namespace stormphrax
 					if (!valueEmpty)
 					{
 						if (const auto newTtSize = util::tryParseSize(valueStr))
-							m_searcher.setTtSize(TtSizeRange.clamp(*newTtSize));
+							m_searcher.setTtSize(TtSizeMibRange.clamp(*newTtSize));
 					}
 				}
 				else if (nameStr == "clear hash")

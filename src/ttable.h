@@ -32,8 +32,8 @@
 
 namespace stormphrax
 {
-	constexpr usize DefaultTtSize = 64;
-	constexpr util::Range<usize> TtSizeRange{1, 131072};
+	constexpr usize DefaultTtSizeMib = 64;
+	constexpr util::Range<usize> TtSizeMibRange{1, 131072};
 
 	enum class TtFlag : u8
 	{
@@ -56,10 +56,10 @@ namespace stormphrax
 	class TTable
 	{
 	public:
-		explicit TTable(usize size = DefaultTtSize);
+		explicit TTable(usize mib = DefaultTtSizeMib);
 		~TTable();
 
-		auto resize(usize size) -> void;
+		auto resize(usize mib) -> void;
 		auto finalize() -> bool;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool;
@@ -76,7 +76,7 @@ namespace stormphrax
 
 		inline auto prefetch(u64 key)
 		{
-			__builtin_prefetch(&m_table[index(key)]);
+			__builtin_prefetch(&m_clusters[index(key)]);
 		}
 
 	private:
@@ -136,14 +136,14 @@ namespace stormphrax
 		[[nodiscard]] inline auto index(u64 key) const -> u64
 		{
 			// this emits a single mul on both x64 and arm64
-			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_tableSize)) >> 64);
+			return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_clusterCount)) >> 64);
 		}
 
 		// Only accessed from UCI thread
 		bool m_pendingInit{};
 
-		Cluster *m_table{};
-		usize m_tableSize{};
+		Cluster *m_clusters{};
+		usize m_clusterCount{};
 
 		u32 m_age{};
 	};

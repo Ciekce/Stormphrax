@@ -55,12 +55,12 @@ namespace stormphrax::search
 		}
 	}
 
-	Searcher::Searcher(usize ttSize)
-		: m_ttable{ttSize}
+	Searcher::Searcher(usize ttSizeMib)
+		: m_ttable{ttSizeMib}
 	{
 		auto &thread = m_threads.emplace_back();
 
-		thread.id = m_nextThreadId++;
+		thread.id = 0;
 		thread.thread = std::thread{[this, &thread]
 		{
 			run(thread);
@@ -231,35 +231,33 @@ namespace stormphrax::search
 		data.time = time;
 	}
 
-	auto Searcher::setThreads(u32 threads) -> void
+	auto Searcher::setThreads(u32 threadCount) -> void
 	{
-		if (threads != m_threads.size())
+		if (threadCount == m_threads.size())
+			return;
+
+		stopThreads();
+
+		m_quit.store(false, std::memory_order::seq_cst);
+
+		m_threads.clear();
+		m_threads.shrink_to_fit();
+		m_threads.reserve(threadCount);
+
+		m_resetBarrier.reset(threadCount + 1);
+		m_idleBarrier.reset(threadCount + 1);
+
+		m_searchEndBarrier.reset(threadCount);
+
+		for (u32 threadId = 0; threadId < threadCount; ++threadId)
 		{
-			stopThreads();
+			auto &thread = m_threads.emplace_back();
 
-			m_quit.store(false, std::memory_order::seq_cst);
-
-			m_threads.clear();
-			m_threads.shrink_to_fit();
-			m_threads.reserve(threads);
-
-			m_nextThreadId = 0;
-
-			m_resetBarrier.reset(threads + 1);
-			m_idleBarrier.reset(threads + 1);
-
-			m_searchEndBarrier.reset(threads);
-
-			for (i32 i = 0; i < threads; ++i)
+			thread.id = threadId;
+			thread.thread = std::thread{[this, &thread]
 			{
-				auto &thread = m_threads.emplace_back();
-
-				thread.id = m_nextThreadId++;
-				thread.thread = std::thread{[this, &thread]
-				{
-					run(thread);
-				}};
-			}
+				run(thread);
+			}};
 		}
 	}
 
@@ -613,7 +611,7 @@ namespace stormphrax::search
 				{
 					if (flag == TtFlag::UpperBound)
 						syzygyMax = score;
-					else if (flag == TtFlag::LowerBound)
+					else // lower bound (win)
 					{
 						if (score > alpha)
 							alpha = score;
