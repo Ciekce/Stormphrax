@@ -762,7 +762,7 @@ namespace stormphrax
 
 		auto UciHandler::handleRawEval() -> void
 		{
-			const auto score = eval::staticEvalOnce(m_pos);
+			const auto score = eval::staticEvalOnce<false>(m_pos);
 			std::cout << score << std::endl;
 		}
 
