@@ -55,7 +55,7 @@ namespace stormphrax::eval
 			+ see::values::Rook   * bbs.rooks  ().popcount()
 			+ see::values::Queen  * bbs.queens ().popcount();
 
-		eval = eval * (26500 + npMaterial) / 32768;
+		eval = eval * (13250 + npMaterial) / 16384;
 
 		eval += contempt[static_cast<i32>(pos.toMove())];
 
