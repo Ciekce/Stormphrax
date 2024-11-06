@@ -642,6 +642,14 @@ namespace stormphrax::search
 
 			curr.staticEval = inCheck ? ScoreNone
 				: eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
+
+			if (inCheck)
+				curr.eval = ScoreNone;
+			else if (ttEntry.flag == TtFlag::Exact
+				|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < curr.staticEval
+				|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > curr.staticEval)
+				curr.eval = ttEntry.score;
+			else curr.eval = curr.staticEval;
 		}
 
 		const bool improving = [&]
@@ -660,8 +668,8 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= maxRfpDepth()
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
-				return curr.staticEval;
+				&& curr.eval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				return curr.eval;
 
 			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
