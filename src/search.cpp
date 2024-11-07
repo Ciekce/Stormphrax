@@ -820,6 +820,8 @@ namespace stormphrax::search
 						continue;
 					}
 				}
+				else if (depth <= 4 && history < -1000 * depth * depth - 1000)
+					continue;
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
