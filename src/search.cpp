@@ -804,13 +804,6 @@ namespace stormphrax::search
 						continue;
 					}
 
-					if (lmrDepth <= maxHistoryPruningDepth()
-						&& history < historyPruningMargin() * depth + historyPruningOffset())
-					{
-						generator.skipQuiets();
-						continue;
-					}
-
 					if (!inCheck
 						&& lmrDepth <= maxFpDepth()
 						&& std::abs(alpha) < 2000
