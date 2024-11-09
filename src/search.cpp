@@ -820,9 +820,17 @@ namespace stormphrax::search
 						continue;
 					}
 				}
-				else if (depth <= maxNoisyHistPruningDepth()
-					&& history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
-					continue;
+				else
+				{
+					if (depth <= maxNoisyHistPruningDepth()
+						&& history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
+						continue;
+
+					const auto gain = see::gain(boards, move);
+
+					if (curr.staticEval + gain * 36 / 16 <= alpha)
+						continue;
+				}
 
 				const auto seeThreshold = noisy
 					? seePruningThresholdNoisy() * depth
