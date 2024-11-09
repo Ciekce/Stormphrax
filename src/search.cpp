@@ -828,7 +828,7 @@ namespace stormphrax::search
 
 					const auto gain = see::gain(boards, move);
 
-					if (depth <= 5 && curr.staticEval + 60 * depth + gain * 36 / 16 <= alpha)
+					if (!inCheck && depth <= 5 && curr.staticEval + 60 * depth + gain * 36 / 16 <= alpha)
 						continue;
 				}
 
