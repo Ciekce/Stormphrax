@@ -804,8 +804,8 @@ namespace stormphrax::search
 						continue;
 					}
 
-					if (lmrDepth <= maxHistoryPruningDepth()
-						&& history < historyPruningMargin() * depth + historyPruningOffset())
+					if (lmrDepth <= maxQuietHistPruningDepth()
+						&& history < quietHistPruningMargin() * depth + quietHistPruningOffset())
 					{
 						generator.skipQuiets();
 						continue;
@@ -820,7 +820,8 @@ namespace stormphrax::search
 						continue;
 					}
 				}
-				else if (depth <= 4 && history < -1000 * depth * depth - 1000)
+				else if (depth <= maxNoisyHistPruningDepth()
+					&& history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
 					continue;
 
 				const auto seeThreshold = noisy
