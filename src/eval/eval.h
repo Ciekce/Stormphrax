@@ -40,7 +40,12 @@ namespace stormphrax::eval
 		eval = eval * (200 - pos.halfmove()) / 200;
 
 		if constexpr (Correct)
-			eval = correction->correct(pos, moves, ply, eval);
+		{
+			const auto corrected = correction->correct(pos, moves, ply, eval);
+			const auto delta = std::abs(eval - corrected);
+
+			eval = corrected - corrected * delta / 16384;
+		}
 
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
