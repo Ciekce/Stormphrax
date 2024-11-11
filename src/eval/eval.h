@@ -44,7 +44,7 @@ namespace stormphrax::eval
 			const auto corrected = correction->correct(pos, moves, ply, eval);
 			const auto delta = std::abs(eval - corrected);
 
-			eval = corrected - corrected * delta / 16384;
+			eval = corrected - corrected * delta / 32768;
 		}
 
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
