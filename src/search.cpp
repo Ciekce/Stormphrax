@@ -1113,8 +1113,8 @@ namespace stormphrax::search
 
 		auto ttFlag = TtFlag::UpperBound;
 
-		auto generator = MoveGenerator::qsearch(pos,
-			thread.moveStack[moveStackIdx].movegenData, ttEntry.move, thread.history);
+		auto generator = MoveGenerator::qsearch(pos, thread.moveStack[moveStackIdx].movegenData,
+			ttEntry.move, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -1123,32 +1123,39 @@ namespace stormphrax::search
 			if (!pos.isLegal(move))
 				continue;
 
-			if (!pos.isCheck()
-				&& futility <= alpha
-				&& !see::see(pos, move, 1))
+			if (bestScore > -ScoreWin)
 			{
-				if (bestScore < futility)
-					bestScore = futility;
-				continue;
+				if (!pos.isCheck()
+					&& futility <= alpha
+					&& !see::see(pos, move, 1))
+				{
+					if (bestScore < futility)
+						bestScore = futility;
+					continue;
+				}
+
+				if (legalMoves >= qsearchMaxMoves())
+					break;
+
+				if (!see::see(pos, move, qsearchSeeThreshold()))
+					continue;
 			}
-
-			if (bestScore > -ScoreWin
-				&& legalMoves >= qsearchMaxMoves())
-				break;
-
-			if (!see::see(pos, move, qsearchSeeThreshold()))
-				continue;
 
 			++legalMoves;
 
 			++thread.search.nodes;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
+
+			thread.setMove(ply, move);
 			const auto guard = pos.applyMove(move, &thread.nnueState);
 
 			const auto score = pos.isDrawn(false)
 				? drawScore(thread.search.nodes)
 				: -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
+
+			if (score > -ScoreWin)
+				generator.skipQuiets();
 
 			if (score > bestScore)
 				bestScore = score;
