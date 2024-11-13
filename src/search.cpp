@@ -1053,13 +1053,15 @@ namespace stormphrax::search
 				return alpha;
 		}
 
+		const bool inCheck = pos.isCheck();
+
 		if (PvNode && ply + 1 > thread.search.seldepth)
 			thread.search.seldepth = ply + 1;
 
 		thread.clearContMove(ply);
 
 		if (ply >= MaxDepth)
-			return pos.isCheck() ? 0
+			return inCheck ? 0
 				: eval::adjustedStaticEval(pos, thread.contMoves, ply,
 					thread.nnueState, &thread.correctionHistory, m_contempt);
 
@@ -1076,7 +1078,7 @@ namespace stormphrax::search
 
 		Score rawStaticEval, eval;
 
-		if (pos.isCheck())
+		if (inCheck)
 		{
 			rawStaticEval = ScoreNone;
 			eval = -ScoreMate + ply;
@@ -1125,7 +1127,7 @@ namespace stormphrax::search
 
 			if (bestScore > -ScoreWin)
 			{
-				if (!pos.isCheck()
+				if (!inCheck
 					&& futility <= alpha
 					&& !see::see(pos, move, 1))
 				{
@@ -1174,6 +1176,10 @@ namespace stormphrax::search
 				break;
 			}
 		}
+
+		// stalemate not handled
+		if (inCheck && legalMoves == 0)
+			return -ScoreMate + ply;
 
 		if (!hasStopped())
 			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
