@@ -16,15 +16,18 @@ a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained
 this project is a continuation of my HCE engine [Polaris]
 
 ## Strength
-| Version | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
-|:-------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-|  6.0.0  |            -            |            -             |               -               |           -           |            -            |    -    |
-|  5.0.0  |          3507           |           3624           |             3865              |         3501          |          3461           |    -    |
-|  4.1.0  |          3490           |           3588           |             3808              |           -           |          3432           |    -    |
-|  4.0.0  |          3476           |           3568           |             3778              |         3440          |          3419           |  3542   |
-|  3.0.0  |          3408           |           3494           |             3693              |           -           |          3354           |  3495   |
-|  2.0.0  |          3398           |           3485           |             3673              |         3339          |            -            |  3482   |
-|  1.0.0  |          3318           |           3377           |             3520              |         3235          |            -            |  3346   |
+At the time of writing, Stormphrax is the second strongest standard chess engine in the UK (to [Viridithas]), and the strongest in England.  
+In Chess960, it is the strongest in the UK, and the 7th strongest in the world.
+
+| Version | [SP-CC UHO-Top15][spcc] | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
+|:-------:|:-----------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
+|  6.0.0  |          3621           |            -            |            -             |             3965              |           -           |            -            |    -    |
+|  5.0.0  |            -            |          3507           |           3624           |             3865              |         3501          |          3461           |    -    |
+|  4.1.0  |            -            |          3490           |           3588           |             3808              |           -           |          3432           |    -    |
+|  4.0.0  |            -            |          3476           |           3568           |             3778              |         3440          |          3419           |  3542   |
+|  3.0.0  |            -            |          3408           |           3494           |             3693              |           -           |          3354           |  3495   |
+|  2.0.0  |            -            |          3398           |           3485           |             3673              |         3339          |            -            |  3482   |
+|  1.0.0  |            -            |          3318           |           3377           |             3520              |         3235          |            -            |  3346   |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -149,6 +152,7 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 
 [polaris]: https://github.com/Ciekce/Polaris
 
+[spcc]: https://www.sp-cc.de/
 [ccrl-4015]: https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [ccrl-blitz]: https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [ccrl-402-frc]: https://www.computerchess.org.uk/ccrl/404FRC/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
