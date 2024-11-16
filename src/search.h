@@ -123,6 +123,8 @@ namespace stormphrax::search
 
 		bool datagen{false};
 
+		i32 minNmpPly{};
+
 		PvList rootPv{};
 
 		eval::NnueState nnueState{};
