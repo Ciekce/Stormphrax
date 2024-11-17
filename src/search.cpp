@@ -674,6 +674,7 @@ namespace stormphrax::search
 			}
 
 			if (depth >= minNmpDepth()
+				&& ply >= thread.minNmpPly
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
@@ -686,14 +687,28 @@ namespace stormphrax::search
 					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), maxNmpEvalReduction())
 					+ improving;
 
-				thread.setNullmove(ply);
-				const auto guard = pos.applyNullMove();
+				const auto score = [&]
+				{
+					thread.setNullmove(ply);
+					const auto guard = pos.applyNullMove();
 
-				const auto score = -search(thread, curr.pv, depth - R,
-					ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
+					return -search(thread, curr.pv, depth - R, ply + 1, moveStackIdx, -beta, -beta + 1, !cutnode);
+				}();
 
 				if (score >= beta)
-					return score > ScoreWin ? beta : score;
+				{
+					if (depth <= 14 || thread.minNmpPly > 0)
+						return score > ScoreWin ? beta : score;
+
+					thread.minNmpPly = ply + (depth - R) * 3 / 4;
+
+					const auto verifScore = search(thread, curr.pv, depth - R, ply, moveStackIdx + 1, beta - 1, beta, true);
+
+					thread.minNmpPly = 0;
+
+					if (verifScore >= beta)
+						return verifScore;
+				}
 			}
 
 			const auto probcutBeta = beta + probcutMargin();
