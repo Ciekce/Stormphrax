@@ -26,6 +26,7 @@
 #include "../position/position.h"
 #include "../core.h"
 #include "../correction.h"
+#include "../see.h"
 
 namespace stormphrax::eval
 {
@@ -44,11 +45,32 @@ namespace stormphrax::eval
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
+	template <bool Scale>
+	inline auto adjustStatic(const Position &pos, const Contempt &contempt, Score eval)
+	{
+		if constexpr (Scale)
+		{
+			const auto bbs = pos.bbs();
+
+			const auto npMaterial
+				= see::values::Knight * bbs.knights().popcount()
+				+ see::values::Bishop * bbs.bishops().popcount()
+				+ see::values::Rook   * bbs.rooks  ().popcount()
+				+ see::values::Queen  * bbs.queens ().popcount();
+
+			eval = eval * (26500 + npMaterial) / 32768;
+		}
+
+		eval += contempt[static_cast<i32>(pos.toMove())];
+
+		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+	}
+
+	template <bool Scale = true>
 	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
 	{
 		auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+		return adjustStatic<Scale>(pos, contempt, eval);
 	}
 
 	template <bool Correct = true>
@@ -60,10 +82,10 @@ namespace stormphrax::eval
 		return adjustEval<Correct>(pos, moves, ply, correction, eval);
 	}
 
+	template <bool Scale = true>
 	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
 	{
 		auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		eval += contempt[static_cast<i32>(pos.toMove())];
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+		return adjustStatic<Scale>(pos, contempt, eval);
 	}
 }

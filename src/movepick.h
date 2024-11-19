@@ -60,6 +60,11 @@ namespace stormphrax
 		QsearchTtMove,
 		QsearchGenNoisy,
 		QsearchNoisy,
+		QsearchEvasionsTtMove,
+		QsearchEvasionsGenNoisy,
+		QsearchEvasionsNoisy,
+		QsearchEvasionsGenQuiet,
+		QsearchEvasionsQuiet,
 		ProbcutTtMove,
 		ProbcutGenNoisy,
 		ProbcutNoisy,
@@ -214,6 +219,60 @@ namespace stormphrax
 				return NullMove;
 			}
 
+			case MovegenStage::QsearchEvasionsTtMove:
+			{
+				++m_stage;
+
+				if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+					return m_ttMove;
+
+				[[fallthrough]];
+			}
+
+			case MovegenStage::QsearchEvasionsGenNoisy:
+			{
+				generateNoisy(m_data.moves, m_pos);
+				m_end = m_data.moves.size();
+				scoreNoisies();
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::QsearchEvasionsNoisy:
+			{
+				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+					return move;
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::QsearchEvasionsGenQuiet:
+			{
+				if (!m_skipQuiets)
+				{
+					generateQuiet(m_data.moves, m_pos);
+					m_end = m_data.moves.size();
+					scoreQuiets();
+				}
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::QsearchEvasionsQuiet:
+			{
+				if (!m_skipQuiets)
+				{
+					if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+						return move;
+				}
+
+				m_stage = MovegenStage::End;
+				return NullMove;
+			}
+
 			case MovegenStage::ProbcutTtMove:
 			{
 				++m_stage;
@@ -265,9 +324,11 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] static inline auto qsearch(const Position &pos,
-			MovegenData &data, Move ttMove, const HistoryTables &history)
+			MovegenData &data, Move ttMove, const HistoryTables &history,
+			std::span<ContinuationSubtable *const> continuations, i32 ply)
 		{
-			return MoveGenerator(MovegenStage::QsearchTtMove, pos, data, ttMove, nullptr, history, {}, 0);
+			const auto stage = pos.isCheck() ? MovegenStage::QsearchEvasionsTtMove : MovegenStage::QsearchTtMove;
+			return MoveGenerator(stage, pos, data, ttMove, nullptr, history, continuations, ply);
 		}
 
 		[[nodiscard]] static inline auto probcut(const Position &pos,
