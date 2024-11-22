@@ -28,7 +28,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768x16->1280)x2->1x8, mirrored, SquaredClippedReLU
+	// current arch: (768x16->1536)x2->1x8, mirrored, SquaredClippedReLU
 
 	constexpr i32 L1Q = 255;
 	constexpr i32 OutputQ = 64;
