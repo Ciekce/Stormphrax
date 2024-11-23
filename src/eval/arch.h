@@ -28,15 +28,15 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768x16->1280)x2->1x8, mirrored, SquaredClippedReLU
+	// current arch: (768x16->1536)x2->1x8, mirrored, SquaredClippedReLU
 
 	constexpr i32 FtQ = 255;
 	constexpr i32 L1Q = 64;
 
 	constexpr bool PairwiseMul = true;
 
-	constexpr u32 L1Size = 1280;
-	constexpr u32 L2Size = 16;
+	constexpr u32 L1Size = 1536;
+	constexpr u32 L2Size = 8;
 	constexpr u32 L3Size = 32;
 
 	using L1Activation = nnue::activation::ClippedReLU<i16, i32, FtQ>;

@@ -123,6 +123,8 @@ namespace stormphrax::search
 
 		bool datagen{false};
 
+		i32 minNmpPly{};
+
 		PvList rootPv{};
 
 		eval::NnueState nnueState{};
@@ -171,7 +173,7 @@ namespace stormphrax::search
 	class Searcher
 	{
 	public:
-		explicit Searcher(usize ttSize = DefaultTtSize);
+		explicit Searcher(usize ttSize = DefaultTtSizeMib);
 
 		~Searcher()
 		{
@@ -180,6 +182,7 @@ namespace stormphrax::search
 		}
 
 		auto newGame() -> void;
+		auto ensureReady() -> void;
 
 		inline auto setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter)
 		{
@@ -187,7 +190,7 @@ namespace stormphrax::search
 		}
 
 		auto startSearch(const Position &pos, f64 startTime, i32 maxDepth,
-			std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
+			std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
@@ -201,11 +204,11 @@ namespace stormphrax::search
 			return m_searching.load(std::memory_order::relaxed);
 		}
 
-		auto setThreads(u32 threads) -> void;
+		auto setThreads(u32 threadCount) -> void;
 
-		inline auto setTtSize(usize size)
+		inline auto setTtSize(usize mib)
 		{
-			m_ttable.resize(size);
+			m_ttable.resize(mib);
 		}
 
 		inline auto quit() -> void
@@ -219,7 +222,6 @@ namespace stormphrax::search
 	private:
 		TTable m_ttable;
 
-		u32 m_nextThreadId{};
 		std::vector<ThreadData> m_threads{};
 
 		mutable std::mutex m_searchMutex{};
@@ -255,6 +257,7 @@ namespace stormphrax::search
 			NoLegalMoves = 0,
 			Tablebase,
 			Generated,
+			Searchmoves,
 		};
 
 		auto initRootMoves(const Position &pos) -> RootStatus;

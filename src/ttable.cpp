@@ -66,39 +66,54 @@ namespace stormphrax
 
 	TTable::~TTable()
 	{
-		util::alignedFree(m_table);
+		if (m_clusters)
+			util::alignedFree(m_clusters);
 	}
 
-	auto TTable::resize(usize size) -> void
+	auto TTable::resize(usize mib) -> void
 	{
-		size *= 1024 * 1024;
-
-		const auto capacity = size / sizeof(Cluster);
+		const auto clusters = mib * 1024 * 1024;
+		const auto capacity = clusters / sizeof(Cluster);
 
 		// don't bother reallocating if we're already at the right size
-		if (m_tableSize != capacity)
+		if (m_clusterCount != capacity)
 		{
-			if (m_table)
-				util::alignedFree(m_table);
+			if (m_clusters)
+				util::alignedFree(m_clusters);
 
-			m_table = util::alignedAlloc<Cluster>(StorageAlignment, capacity);
-			m_tableSize = capacity;
+			m_clusters = nullptr;
+			m_clusterCount = capacity;
+		}
 
-			if (!m_table)
-			{
-				std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
-				std::terminate();
-			}
+		m_pendingInit = true;
+	}
+
+	auto TTable::finalize() -> bool
+	{
+		if (!m_pendingInit)
+			return false;
+
+		m_pendingInit = false;
+		m_clusters = util::alignedAlloc<Cluster>(StorageAlignment, m_clusterCount);
+
+		if (!m_clusters)
+		{
+			std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+			std::terminate();
 		}
 
 		clear();
+
+		return true;
 	}
 
 	auto TTable::probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool
 	{
+		assert(!m_pendingInit);
+
 		const auto packedKey = packEntryKey(key);
 
-		const auto &cluster = m_table[index(key)];
+		const auto &cluster = m_clusters[index(key)];
 		for (const auto entry : cluster.entries)
 		{
 			if (packedKey == entry.key)
@@ -120,6 +135,8 @@ namespace stormphrax
 	auto TTable::put(u64 key, Score score, Score staticEval,
 		Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void
 	{
+		assert(!m_pendingInit);
+
 		assert(depth >= 0);
 		assert(depth <= MaxDepth);
 
@@ -134,7 +151,7 @@ namespace stormphrax
 			return entry.depth - relativeAge * 2;
 		};
 
-		auto &cluster = m_table[index(key)];
+		auto &cluster = m_clusters[index(key)];
 
 		Entry *entryPtr = nullptr;
 		auto minValue = std::numeric_limits<i32>::max();
@@ -183,23 +200,25 @@ namespace stormphrax
 
 	auto TTable::clear() -> void
 	{
+		assert(!m_pendingInit);
+
 		const auto threadCount = g_opts.threads;
 
 		std::vector<std::thread> threads{};
 		threads.reserve(threadCount);
 
-		const auto chunkSize = util::ceilDiv<usize>(m_tableSize, threadCount);
+		const auto chunkSize = util::ceilDiv<usize>(m_clusterCount, threadCount);
 
 		for (u32 i = 0; i < threadCount; ++i)
 		{
 			threads.emplace_back([this, chunkSize, i]
 			{
 				const auto start = chunkSize * i;
-				const auto end = std::min(start + chunkSize, m_tableSize);
+				const auto end = std::min(start + chunkSize, m_clusterCount);
 
 				const auto count = end - start;
 
-				std::memset(&m_table[start], 0, count * sizeof(Cluster));
+				std::memset(&m_clusters[start], 0, count * sizeof(Cluster));
 			});
 		}
 
@@ -213,11 +232,13 @@ namespace stormphrax
 
 	auto TTable::full() const -> u32
 	{
+		assert(!m_pendingInit);
+
 		u32 filledEntries{};
 
 		for (u64 i = 0; i < 1000; ++i)
 		{
-			const auto cluster = m_table[i];
+			const auto cluster = m_clusters[i];
 			for (const auto &entry : cluster.entries)
 			{
 				if (entry.flag() != TtFlag::None && entry.age() == m_age)

@@ -74,30 +74,58 @@ namespace stormphrax::limit
 		assert(bestMove != NullMove);
 		assert(totalNodes > 0);
 
-		const auto nodeBase = static_cast<f64>(nodeTimeBase()) / 100.0;
-		const auto nodeScale = static_cast<f64>(nodeTimeScale()) / 100.0;
+		const auto nodeBase = static_cast<f64>(nodeTmBase()) / 100.0;
+		const auto nodeScale = static_cast<f64>(nodeTmScale()) / 100.0;
+		const auto nodeMin = static_cast<f64>(nodeTmScaleMin()) / 1000.0;
 
-		const auto nodeMin = static_cast<f64>(nodeTimeScaleMin()) / 1000.0;
+		const auto bmStabilityMin = static_cast<f64>(bmStabilityTmMin()) / 100.0;
+		const auto bmStabilityMax = static_cast<f64>(bmStabilityTmMax()) / 100.0;
+		const auto bmStabilityScale = static_cast<f64>(bmStabilityTmScale()) / 100.0;
+		const auto bmStabilityOffset = static_cast<f64>(bmStabilityTmOffset()) / 100.0;
+		const auto bmStabilityPower = static_cast<f64>(bmStabilityTmPower()) / 100.0;
+
+		const auto stMin = static_cast<f64>(scoreTrendTmMin()) / 100.0;
+		const auto stMax = static_cast<f64>(scoreTrendTmMax()) / 100.0;
+		const auto stScoreScale = static_cast<f64>(scoreTrendTmScoreScale()) / 10.0;
+		const auto stStretch = static_cast<f64>(scoreTrendTmStretch()) / 100.0;
+		const auto stScale = static_cast<f64>(scoreTrendTmScale()) / 100.0;
+		const auto stPositiveScale = static_cast<f64>(scoreTrendTmPositiveScale()) / 100.0;
+		const auto stNegativeScale = static_cast<f64>(scoreTrendTmNegativeScale()) / 100.0;
 
 		const auto minScale = static_cast<f64>(timeScaleMin()) / 1000.0;
+
+		if (bestMove == m_prevBestMove)
+			++m_stability;
+		else
+		{
+			m_stability = 1;
+			m_prevBestMove = bestMove;
+		}
 
 		auto scale = 1.0;
 
 		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
 			/ static_cast<f64>(totalNodes);
-		scale *= std::max((nodeBase - bestMoveNodeFraction) * nodeScale, nodeMin);
+		scale *= std::max(nodeBase - bestMoveNodeFraction * nodeScale, nodeMin);
+
+		if (data.depth >= 6)
+		{
+			const auto stability = static_cast<f64>(m_stability);
+			scale *= std::min(
+				bmStabilityMax,
+				bmStabilityMin + bmStabilityScale * std::pow(stability + bmStabilityOffset, bmStabilityPower)
+			);
+		}
 
 		if (m_avgScore)
 		{
-			const auto stScoreScale = static_cast<f64>(scoreTrendScoreScale()) / 10.0;
-
-			const auto stStretch = static_cast<f64>(scoreTrendStretch()) / 100.0;
-			const auto stScale = static_cast<f64>(scoreTrendScale()) / 100.0;
-
 			const auto avgScore = *m_avgScore;
 
 			const auto scoreChange = static_cast<f64>(score - avgScore) / stScoreScale;
-			scale *= 1.0 - scoreChange * stScale / (std::abs(scoreChange) + stStretch);
+			const auto invScale = scoreChange * stScale / (std::abs(scoreChange) + stStretch)
+				* (scoreChange > 0 ? stPositiveScale : stNegativeScale);
+
+			scale *= std::clamp(1.0 - invScale, stMin, stMax);
 
 			m_avgScore = util::ilerp<8>(avgScore, score, 1);
 		}
