@@ -909,7 +909,7 @@ namespace stormphrax::search
 				auto newDepth = depth + extension - 1;
 
 				if (depth >= minLmrDepth()
-					&& legalMoves >= lmrMinMoves
+					&& legalMoves >= 2
 					&& quietOrLosing)
 				{
 					auto r = baseLmr;
