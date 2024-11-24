@@ -661,7 +661,7 @@ namespace stormphrax::search
 		{
 			if (depth <= maxRfpDepth()
 				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
-				return curr.staticEval;
+				return (curr.staticEval + beta) / 2;
 
 			if (depth <= maxRazoringDepth()
 				&& std::abs(alpha) < 2000
