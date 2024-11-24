@@ -804,7 +804,7 @@ namespace stormphrax::search
 			const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
 			const auto history = noisy
-				? thread.history.noisyScore(move, captured)
+				? thread.history.noisyScore(move, captured, pos.threats())
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
 			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
@@ -1023,14 +1023,14 @@ namespace stormphrax::search
 			else
 			{
 				const auto captured = pos.captureTarget(bestMove);
-				thread.history.updateNoisyScore(bestMove, captured, bonus);
+				thread.history.updateNoisyScore(bestMove, captured, pos.threats(), bonus);
 			}
 
 			// unconditionally update capthist
 			for (const auto prevNoisy : moveStack.failLowNoisies)
 			{
 				const auto captured = pos.captureTarget(prevNoisy);
-				thread.history.updateNoisyScore(prevNoisy, captured, penalty);
+				thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), penalty);
 			}
 		}
 
