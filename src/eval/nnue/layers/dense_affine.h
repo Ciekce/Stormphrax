@@ -264,13 +264,15 @@ namespace stormphrax::eval::nnue::layers
 		DensePerspectivePlainAffine      <Input, Param, Activation, Inputs, Outputs,    OutputBucketing>
 	>;
 
+	constexpr u32 FtScaleBits = 8;
+
 	template <u32 L1Size, u32 FtQ>
 	struct FtOutClippedReLU
 	{
 		using  InputType = i16;
 		using OutputType = u8;
 
-		static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
+	//	static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
 
 		static constexpr u32 PerspectiveInputCount = L1Size;
 		static constexpr u32 OutputCount = L1Size;
@@ -371,7 +373,7 @@ namespace stormphrax::eval::nnue::layers
 	private:
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
 
-		static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
+	//	static constexpr auto FtScaleBits = util::ceilLog2(127 * (1 << 16) / (FtQ * FtQ));
 
 		SP_SIMD_ALIGNAS std::array<i8,  OutputBucketCount * L1Size * L2Size> weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2Size> biases{};

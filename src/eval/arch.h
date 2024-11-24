@@ -30,8 +30,8 @@ namespace stormphrax::eval
 {
 	// current arch: (768x16->1536)x2->1x8, mirrored, SquaredClippedReLU
 
-	constexpr i32 FtQ = 255;
-	constexpr i32 L1Q = 64;
+	constexpr i32 FtQ = 127;
+	constexpr i32 L1Q = 127;
 
 	constexpr bool PairwiseMul = true;
 
