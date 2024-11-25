@@ -29,8 +29,8 @@
 	#else
 		#define SP_HAS_BMI2 0
 	#endif
-	#define SP_HAS_AVX512VNNI __AVX512VNNI__
-	#define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
+	#define SP_HAS_AVX512VNNI 0//__AVX512VNNI__
+	#define SP_HAS_AVX512 0//(__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_BMI1 __BMI__
 	#define SP_HAS_POPCNT __POPCNT__
