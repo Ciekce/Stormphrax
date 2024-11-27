@@ -25,26 +25,14 @@
 #include "arch.h"
 #include "nnue/input.h"
 #include "nnue/network.h"
-#include "nnue/layers/dense_affine.h"
-#include "nnue/layers/scale.h"
-#include "nnue/layers/dequantize.h"
+#include "nnue/arch/multilayer.h"
 #include "nnue/activation.h"
 #include "../util/static_vector.h"
 
 namespace stormphrax::eval
 {
-	using FeatureTransformer = nnue::FeatureTransformer<
-		i16, L1Size, InputFeatureSet
-	>;
-
-	using Network = nnue::PerspectiveNetwork<
-		FeatureTransformer,
-		OutputBucketing,
-		nnue::layers::FtOutClippedReLU<L1Size, FtQ>,
-		nnue::layers::DenseAffineL1SqrReLU<L1Size, L2Size, FtQ, L1Q, OutputBucketing>,
-		nnue::layers::DenseAffineNoActivation<L2Size, L3Size, OutputBucketing>,
-		nnue::layers::SqrReLUDenseAffine<L3Size, Scale, OutputBucketing>
-	>;
+	using FeatureTransformer = nnue::FeatureTransformer<i16, L1Size, InputFeatureSet>;
+	using Network = nnue::PerspectiveNetwork<FeatureTransformer, OutputBucketing, LayeredArch>;
 
 	using Accumulator = FeatureTransformer::Accumulator;
 	using RefreshTable = FeatureTransformer::RefreshTable;

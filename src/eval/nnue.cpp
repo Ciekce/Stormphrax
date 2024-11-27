@@ -139,9 +139,9 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (testFlags(header.flags, NetworkFlags::PairwiseMul) != PairwiseMul)
+			if (testFlags(header.flags, NetworkFlags::PairwiseMul) != LayeredArch::Pairwise)
 			{
-				if constexpr (PairwiseMul)
+				if constexpr (LayeredArch::Pairwise)
 					std::cerr << "network L1 does not require pairwise multiplication, expected paired" << std::endl;
 				else std::cerr << "network L1 requires pairwise multiplication, expected unpaired" << std::endl;
 

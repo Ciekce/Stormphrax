@@ -25,15 +25,18 @@
 #include "nnue/activation.h"
 #include "nnue/output.h"
 #include "nnue/features.h"
+#include "nnue/arch/singlelayer.h"
+#include "nnue/arch/multilayer.h"
 
 namespace stormphrax::eval
 {
-	// current arch: (768x16->1536)x2->1x8, mirrored, SquaredClippedReLU
+	// current arch: (768x16->1792)x2->(8->32->1)x8, mirrored
+	// pairwise clipped ReLU -> squared ReLU -> squared ReLU
 
 	constexpr i32 FtQ = 255;
 	constexpr i32 L1Q = 64;
 
-	constexpr bool PairwiseMul = true;
+	constexpr u32 FtScaleBits = 7;
 
 	constexpr u32 L1Size = 1792;
 	constexpr u32 L2Size = 8;
@@ -57,4 +60,7 @@ namespace stormphrax::eval
 	>;
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
+
+	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSqrReLUSqrReLU<
+	    L1Size, L2Size, L3Size, FtScaleBits, FtQ, L1Q, OutputBucketing, Scale>;
 }

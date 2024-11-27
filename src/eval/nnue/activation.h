@@ -81,7 +81,7 @@ namespace stormphrax::eval::nnue::activation
 		{
 			using namespace util::simd;
 
-			const auto products = mul<InputType>(inputs1, weights);
+			const auto products = mulLo<InputType>(inputs1, weights);
 			return mulAddAdjAcc<InputType>(sum, products, inputs2);
 		}
 
@@ -119,7 +119,7 @@ namespace stormphrax::eval::nnue::activation
 			const auto activated1 = max<InputType>(inputs1, zero<InputType>());
 			const auto activated2 = max<InputType>(inputs2, zero<InputType>());
 
-			const auto products = mul<InputType>(activated1, weights);
+			const auto products = mulLo<InputType>(activated1, weights);
 			return mulAddAdjAcc<InputType>(sum, products, activated2);
 		}
 
@@ -161,7 +161,7 @@ namespace stormphrax::eval::nnue::activation
 			const auto clipped1 = clamp<InputType>(inputs1, zero<InputType>(), max);
 			const auto clipped2 = clamp<InputType>(inputs2, zero<InputType>(), max);
 
-			const auto products = mul<InputType>(clipped1, weights);
+			const auto products = mulLo<InputType>(clipped1, weights);
 			return mulAddAdjAcc<InputType>(sum, clipped2, products);
 		}
 
@@ -190,7 +190,7 @@ namespace stormphrax::eval::nnue::activation
 			static const auto max = set1(Max);
 
 			const auto clipped = util::simd::clamp<InputType>(inputs, zero<InputType>(), max);
-			const auto crelu = mul<InputType>(clipped, weights);
+			const auto crelu = mulLo<InputType>(clipped, weights);
 			return mulAddAdjAcc<InputType>(sum, crelu, clipped);
 		}
 
