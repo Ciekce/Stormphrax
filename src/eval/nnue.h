@@ -305,11 +305,9 @@ namespace stormphrax::eval
 			const BitboardSet &bbs, Color stm) -> i32
 		{
 			assert(stm != Color::None);
-
-			const auto eval = stm == Color::Black
+			return stm == Color::Black
 				? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
 				: g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
-			return eval;
 		}
 
 		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,
