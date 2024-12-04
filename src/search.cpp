@@ -496,16 +496,13 @@ namespace stormphrax::search
 			}
 		}
 
-		const bool inCheck = pos.isCheck();
-
-		if (depth <= 0 && !inCheck)
+		if (depth <= 0)
 			return qsearch<PvNode>(thread, ply, moveStackIdx, alpha, beta);
-
-		if (depth < 0)
-			depth = 0;
 
 		if (ply + 1 > thread.search.seldepth)
 			thread.search.seldepth = ply + 1;
+
+		const bool inCheck = pos.isCheck();
 
 		if (ply >= MaxDepth)
 			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.contMoves, ply, thread.nnueState, &thread.correctionHistory, m_contempt);
