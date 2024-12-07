@@ -19,15 +19,15 @@ this project is a continuation of my HCE engine [Polaris]
 At the time of writing, Stormphrax is the second strongest standard chess engine in the UK (to [Viridithas]), and the strongest in England.  
 In Chess960, it is the strongest in the UK, and the 7th strongest in the world.
 
-| Version | [SP-CC UHO-Top15][spcc] | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
-|:-------:|:-----------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-|  6.0.0  |          3621           |            -            |            -             |             3965              |           -           |            -            |    -    |
-|  5.0.0  |            -            |          3507           |           3624           |             3865              |         3501          |          3461           |    -    |
-|  4.1.0  |            -            |          3490           |           3588           |             3808              |           -           |          3432           |    -    |
-|  4.0.0  |            -            |          3476           |           3568           |             3778              |         3440          |          3419           |  3542   |
-|  3.0.0  |            -            |          3408           |           3494           |             3693              |           -           |          3354           |  3495   |
-|  2.0.0  |            -            |          3398           |           3485           |             3673              |         3339          |            -            |  3482   |
-|  1.0.0  |            -            |          3318           |           3377           |             3520              |         3235          |            -            |  3346   |
+|    Version    |      [SP-CC UHO-Top15][spcc]       | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
+|:-------------:|:----------------------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
+| [6.0.0][sp6]  | 3621 (kicked off by [Lizard] 11.1) | ~3567 (testing ongoing) |           3678           |             3969              |           -           |            -            |    -    |
+| [5.0.0][sp5]  |                 -                  |          3507           |           3625           |             3867              |         3501          |          3461           |    -    |
+| [4.1.0][sp41] |                 -                  |          3490           |           3589           |             3809              |           -           |          3432           |    -    |
+| [4.0.0][sp4]  |                 -                  |          3476           |           3570           |             3780              |         3440          |          3419           |  3542   |
+| [3.0.0][sp3]  |                 -                  |          3408           |           3496           |             3695              |           -           |          3354           |  3495   |
+| [2.0.0][sp2]  |                 -                  |          3399           |           3486           |             3674              |         3339          |            -            |  3482   |
+| [1.0.0][sp1]  |                 -                  |          3319           |           3378           |             3522              |         3235          |            -            |  3346   |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
@@ -152,6 +152,14 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 
 [polaris]: https://github.com/Ciekce/Polaris
 
+[sp1]: https://github.com/Ciekce/Stormphrax/releases/tag/v1.0.0
+[sp2]: https://github.com/Ciekce/Stormphrax/releases/tag/v2.0.0
+[sp3]: https://github.com/Ciekce/Stormphrax/releases/tag/v3.0.0
+[sp4]: https://github.com/Ciekce/Stormphrax/releases/tag/v4.0.0
+[sp41]: https://github.com/Ciekce/Stormphrax/releases/tag/v4.1.0
+[sp5]: https://github.com/Ciekce/Stormphrax/releases/tag/v5.0.0
+[sp6]: https://github.com/Ciekce/Stormphrax/releases/tag/v6.0.0
+
 [spcc]: https://www.sp-cc.de/
 [ccrl-4015]: https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
 [ccrl-blitz]: https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list
@@ -173,6 +181,8 @@ The name "Stormphrax" is a reference to the excellent [Edge Chronicles][edge-chr
 [berserk]: https://github.com/jhonnold/Berserk
 [weiss]: https://github.com/TerjeKir/weiss
 [koivisto]: https://github.com/Luecx/Koivisto
+
+[lizard]: https://github.com/liamt19/Lizard
 
 [bullet]: https://github.com/jw1912/bullet
 [marlinflow]: https://github.com/jnlt3/marlinflow

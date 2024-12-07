@@ -136,9 +136,9 @@ namespace stormphrax
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
-		inline auto updateNoisyScore(Move move, Piece captured, HistoryScore bonus)
+		inline auto updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus)
 		{
-			noisyEntry(move, captured).update(bonus);
+			noisyEntry(move, captured, threats[move.dst()]).update(bonus);
 		}
 
 		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
@@ -155,9 +155,9 @@ namespace stormphrax
 			return score;
 		}
 
-		[[nodiscard]] inline auto noisyScore(Move move, Piece captured) const -> i32
+		[[nodiscard]] inline auto noisyScore(Move move, Piece captured, Bitboard threats) const -> i32
 		{
-			return noisyEntry(move, captured);
+			return noisyEntry(move, captured, threats[move.dst()]);
 		}
 
 	private:
@@ -166,9 +166,9 @@ namespace stormphrax
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
-		// [from][to][captured]
+		// [from][to][captured][defended]
 		// additional slot for non-capture queen promos
-		util::MultiArray<HistoryEntry, 64, 64, 13> m_noisy{};
+		util::MultiArray<HistoryEntry, 64, 64, 13, 2> m_noisy{};
 
 		static inline auto updateConthist(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Piece moving, Move move, HistoryScore bonus, i32 offset) -> void
@@ -208,14 +208,14 @@ namespace stormphrax
 			return *continuations[ply - offset];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) const -> const HistoryEntry &
+		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured, bool defended) const -> const HistoryEntry &
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)][defended];
 		}
 
-		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured) -> HistoryEntry &
+		[[nodiscard]] inline auto noisyEntry(Move move, Piece captured, bool defended) -> HistoryEntry &
 		{
-			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)];
+			return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)][defended];
 		}
 	};
 }
