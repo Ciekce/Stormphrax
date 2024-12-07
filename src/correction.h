@@ -44,7 +44,8 @@ namespace stormphrax
 			std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
 			std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
 			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
-			std::memset(&m_contTable, 0, sizeof(m_contTable));
+			std::memset(&m_cont12Table, 0, sizeof(m_cont12Table));
+			std::memset(&m_cont14Table, 0, sizeof(m_cont14Table));
 		}
 
 		inline auto update(const Position &pos, std::span<search::PlayedMove> moves,
@@ -60,13 +61,24 @@ namespace stormphrax
 			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
 
-			if (ply >= 2)
-			{
-				const auto [moving2, dst2] = moves[ply - 2];
-				const auto [moving1, dst1] = moves[ply - 1];
+			if (ply < 2)
+				return;
 
-				if (moving2 != Piece::None && moving1 != Piece::None)
-					m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
+			const auto [moving1, dst1] = moves[ply - 1];
+
+			if (moving1 == Piece::None)
+				return;
+
+			const auto [moving2, dst2] = moves[ply - 2];
+			if (moving2 != Piece::None)
+				m_cont12Table[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
+					[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].update(scaledError, newWeight);
+
+			if (ply >= 4)
+			{
+				const auto [moving4, dst4] = moves[ply - 4];
+				if (moving4 != Piece::None)
+					m_cont14Table[stm][static_cast<i32>(pieceType(moving4))][static_cast<i32>(dst4)]
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].update(scaledError, newWeight);
 			}
 		}
@@ -91,13 +103,22 @@ namespace stormphrax
 
 			if (ply >= 2)
 			{
-				const auto [moving2, dst2] = moves[ply - 2];
 				const auto [moving1, dst1] = moves[ply - 1];
 
-				if (moving2 != Piece::None && moving1 != Piece::None)
-					correction += contCorrhistWeight() * m_contTable[stm]
+				const auto [moving2, dst2] = moves[ply - 2];
+				if (moving1 != Piece::None && moving2 != Piece::None)
+					correction += contCorrhistWeight() * m_cont12Table[stm]
 						[static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+
+				if (ply >= 4)
+				{
+					const auto [moving4, dst4] = moves[ply - 4];
+					if (moving1 != Piece::None && moving4 != Piece::None)
+						correction += 128 * m_cont14Table[stm]
+							[static_cast<i32>(pieceType(moving4))][static_cast<i32>(dst4)]
+							[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+				}
 			}
 
 			score += correction / 128;
@@ -128,10 +149,14 @@ namespace stormphrax
 			}
 		};
 
-		util::MultiArray<Entry, 2, Entries> m_pawnTable{};
-		util::MultiArray<Entry, 2, Entries> m_blackNonPawnTable{};
-		util::MultiArray<Entry, 2, Entries> m_whiteNonPawnTable{};
-		util::MultiArray<Entry, 2, Entries> m_majorTable{};
-		util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
+		using HashTable = util::MultiArray<Entry, 2, Entries>;
+		using ContTable = util::MultiArray<Entry, 2, 6, 64, 6, 64>;
+
+		HashTable m_pawnTable{};
+		HashTable m_blackNonPawnTable{};
+		HashTable m_whiteNonPawnTable{};
+		HashTable m_majorTable{};
+		ContTable m_cont12Table{};
+		ContTable m_cont14Table{};
 	};
 }
