@@ -72,6 +72,8 @@ namespace stormphrax::eval::nnue::arch
 			const auto activatePerspective = [&](
 				std::span<const i16, L1Size> inputs, u32 outputOffset)
 			{
+				static_assert((PairCount % (ChunkSize<i16> * 4)) == 0);
+
 				for (u32 inputIdx = 0; inputIdx < PairCount; inputIdx += ChunkSize<i16> * 4)
 				{
 					auto i1_0 = load<i16>(&inputs[inputIdx + ChunkSize<i16> * 0]);

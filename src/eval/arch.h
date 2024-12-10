@@ -38,7 +38,7 @@ namespace stormphrax::eval
 
 	constexpr u32 FtScaleBits = 7;
 
-	constexpr u32 L1Size = 1792;
+	constexpr u32 L1Size = 128;
 	constexpr u32 L2Size = 8;
 	constexpr u32 L3Size = 32;
 
