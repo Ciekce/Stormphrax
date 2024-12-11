@@ -1471,21 +1471,22 @@ namespace stormphrax
 		}
 
 		// also handle the annoying case where capturing en passant would cause discovered check
-		const auto oppRooks = bbs.rooks(moved) | bbs.queens(moved);
 
 		const auto movedPawn = toSquare(squareRank(state.enPassant)
 			+ (moved == Color::White ? 1 : -1), squareFile(state.enPassant));
 		const auto capturingPawn = candidates.lowestSquare();
 
 		const auto rank = rayIntersecting(movedPawn, capturingPawn);
+		const auto oppRookCandidates = rank & (bbs.rooks(moved) | bbs.queens(moved));
 
 		// not possible :3
-		if (!rank[king] || !(rank & oppRooks))
+		if (!rank[king] || !oppRookCandidates)
 			return;
 
-		const auto pawnlessAttacks = attacks::getRookAttacks(king, bbs.occupancy(moved) ^ squareBit(movedPawn));
+		const auto pawnlessOcc = bbs.occupancy() ^ squareBit(movedPawn) ^ squareBit(capturingPawn);
+		const auto attacks = attacks::getRookAttacks(king, pawnlessOcc);
 
-		if (pawnlessAttacks & oppRooks)
+		if (attacks & oppRookCandidates)
 			unset();
 	}
 
