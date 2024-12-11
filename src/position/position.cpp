@@ -512,8 +512,6 @@ namespace stormphrax
 
 		regen();
 
-		filterEp(currState(), opponent());
-
 		return true;
 	}
 
@@ -1422,6 +1420,8 @@ namespace stormphrax
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
 		state.threats = calcThreats();
+
+		filterEp(state, toMove());
 	}
 
 	void Position::filterEp(BoardState &state, Color capturing)
