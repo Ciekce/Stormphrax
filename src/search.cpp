@@ -739,6 +739,9 @@ namespace stormphrax::search
 
 					auto score = -qsearch(thread, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
+					if (hasStopped())
+						return 0;
+
 					if (score >= probcutBeta)
 						score = -search(thread, curr.pv, probcutDepth - 1, ply + 1,
 							moveStackIdx + 1, -probcutBeta, -probcutBeta + 1, !cutnode);
@@ -957,6 +960,9 @@ namespace stormphrax::search
 						ply + 1, moveStackIdx + 1, -beta, -alpha, false);
 			}
 
+			if (hasStopped())
+				return 0;
+
 			if constexpr (RootNode)
 			{
 				if (thread.isMainThread())
@@ -1033,7 +1039,7 @@ namespace stormphrax::search
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
-		if (!curr.excluded && !hasStopped())
+		if (!curr.excluded)
 		{
 			if (!inCheck
 				&& (bestMove.isNull() || !pos.isNoisy(bestMove))
@@ -1168,6 +1174,9 @@ namespace stormphrax::search
 				? drawScore(thread.search.nodes)
 				: -qsearch<PvNode>(thread, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
+			if (hasStopped())
+				return 0;
+
 			if (score > -ScoreWin)
 				generator.skipQuiets();
 
@@ -1193,8 +1202,7 @@ namespace stormphrax::search
 		if (inCheck && legalMoves == 0)
 			return -ScoreMate + ply;
 
-		if (!hasStopped())
-			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
+		m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
 
 		return bestScore;
 	}
