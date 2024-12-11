@@ -1452,9 +1452,12 @@ namespace stormphrax
 			return;
 		}
 
+		if (candidates.multiple())
+			return;
+
 		const auto diagPinned = pawns & state.pinned;
 
-		if (diagPinned && !(pawns ^ diagPinned))
+		if (diagPinned)
 		{
 			const auto pinnedPawn = diagPinned.lowestSquare();
 			const auto pinRay = attacks::getBishopAttacks(king, bbs.occupancy(moved))
@@ -1466,9 +1469,6 @@ namespace stormphrax
 				return;
 			}
 		}
-
-		if (candidates.multiple())
-			return;
 
 		// also handle the annoying case where capturing en passant would cause discovered check
 		const auto oppRooks = bbs.rooks(moved) | bbs.queens(moved);
