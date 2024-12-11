@@ -1444,6 +1444,7 @@ namespace stormphrax
 		const auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(state.enPassant, moved);
 		const auto vertPinned = state.pinned & boards::Files[squareFile(king)];
 
+		// vertically pinned pawns cannot capture at all
 		const auto pawns = candidates & ~vertPinned;
 
 		if (!pawns)
@@ -1452,11 +1453,15 @@ namespace stormphrax
 			return;
 		}
 
+		// if there are multiple pawns available, they can't both be
+		// pinned and neither capture can result in a discovered check
 		if (candidates.multiple())
 			return;
 
 		const auto diagPinned = pawns & state.pinned;
 
+		// if the capturing pawn is pinned, it has to be pinned
+		// along the same diagonal that the capture would occur
 		if (diagPinned)
 		{
 			const auto pinnedPawn = diagPinned.lowestSquare();
@@ -1471,7 +1476,6 @@ namespace stormphrax
 		}
 
 		// also handle the annoying case where capturing en passant would cause discovered check
-
 		const auto movedPawn = toSquare(squareRank(state.enPassant)
 			+ (moved == Color::White ? 1 : -1), squareFile(state.enPassant));
 		const auto capturingPawn = candidates.lowestSquare();
