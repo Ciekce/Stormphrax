@@ -758,6 +758,8 @@ namespace stormphrax
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
 		state.threats = calcThreats();
+
+		filterEp(state, nstm);
 	}
 
 	template <bool UpdateNnue>
@@ -1418,6 +1420,78 @@ namespace stormphrax
 		state.checkers = calcCheckers();
 		state.pinned = calcPinned();
 		state.threats = calcThreats();
+
+		filterEp(state, toMove());
+	}
+
+	void Position::filterEp(BoardState &state, Color capturing)
+	{
+		if (state.enPassant == Square::None)
+			return;
+
+		const auto unset = [&]
+		{
+			state.keys.flipEp(state.enPassant);
+			state.enPassant = Square::None;
+		};
+
+		const auto &bbs = state.boards.bbs();
+
+		const auto moved = oppColor(capturing);
+
+		const auto king = state.kings.color(capturing);
+
+		const auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(state.enPassant, moved);
+		const auto vertPinned = state.pinned & boards::Files[squareFile(king)];
+
+		// vertically pinned pawns cannot capture at all
+		const auto pawns = candidates & ~vertPinned;
+
+		if (!pawns)
+		{
+			unset();
+			return;
+		}
+
+		// if there are multiple pawns available, they can't both be
+		// pinned and neither capture can result in a discovered check
+		if (candidates.multiple())
+			return;
+
+		const auto diagPinned = pawns & state.pinned;
+
+		// if the capturing pawn is pinned, it has to be pinned
+		// along the same diagonal that the capture would occur
+		if (diagPinned)
+		{
+			const auto pinnedPawn = diagPinned.lowestSquare();
+			const auto pinRay = attacks::getBishopAttacks(king, bbs.occupancy(moved))
+				& rayIntersecting(king, pinnedPawn);
+
+			if (!pinRay[state.enPassant])
+			{
+				unset();
+				return;
+			}
+		}
+
+		// also handle the annoying case where capturing en passant would cause discovered check
+		const auto movedPawn = toSquare(squareRank(state.enPassant)
+			+ (moved == Color::White ? 1 : -1), squareFile(state.enPassant));
+		const auto capturingPawn = candidates.lowestSquare();
+
+		const auto rank = rayIntersecting(movedPawn, capturingPawn);
+		const auto oppRookCandidates = rank & (bbs.rooks(moved) | bbs.queens(moved));
+
+		// not possible :3
+		if (!rank[king] || !oppRookCandidates)
+			return;
+
+		const auto pawnlessOcc = bbs.occupancy() ^ squareBit(movedPawn) ^ squareBit(capturingPawn);
+		const auto attacks = attacks::getRookAttacks(king, pawnlessOcc);
+
+		if (attacks & oppRookCandidates)
+			unset();
 	}
 
 	auto Position::moveFromUci(const std::string &move) const -> Move
@@ -1429,7 +1503,7 @@ namespace stormphrax
 		const auto dst = squareFromString(move.substr(2, 2));
 
 		if (move.length() == 5)
-			return Move::promotion(src, dst, pieceTypeFromChar(move[ 4 ]));
+			return Move::promotion(src, dst, pieceTypeFromChar(move[4]));
 		else
 		{
 			const auto &state = currState();

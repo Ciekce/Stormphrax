@@ -193,7 +193,7 @@ namespace stormphrax
 		constexpr auto operator<<=(i32 rhs) -> auto & { m_board <<= rhs; return *this; }
 		constexpr auto operator>>=(i32 rhs) -> auto & { m_board >>= rhs; return *this; }
 
-		[[nodiscard]] constexpr auto operator[](Square s) const -> bool { return m_board & (U64(1) << static_cast<i32>(s)); }
+		[[nodiscard]] constexpr auto operator[](Square s) const -> bool { return m_board & squareBit(s); }
 		[[nodiscard]] constexpr auto operator[](Square s) { return BitboardSlot{m_board, static_cast<i32>(s)}; }
 
 		[[nodiscard]] constexpr auto popcount() const { return util::popcnt(m_board); }
