@@ -682,6 +682,9 @@ namespace stormphrax
 			return threats;
 		}
 
+		// Unsets ep squares if they are invalid (no pawn is able to capture)
+		static void filterEp(BoardState &state, Color capturing);
+
 		bool m_blackToMove{};
 
 		u32 m_fullmove{1};
