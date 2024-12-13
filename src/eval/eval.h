@@ -35,12 +35,19 @@ namespace stormphrax::eval
 
 	template <bool Correct = true>
 	inline auto adjustEval(const Position &pos, std::span<search::PlayedMove> moves,
-		i32 ply, const CorrectionHistoryTable *correction, i32 eval)
+		i32 ply, const CorrectionHistoryTable *correction, i32 eval, i32 *corrDelta = nullptr)
 	{
 		eval = eval * (200 - pos.halfmove()) / 200;
 
 		if constexpr (Correct)
-			eval = correction->correct(pos, moves, ply, eval);
+		{
+			const auto corrected = correction->correct(pos, moves, ply, eval);
+
+			if (corrDelta)
+				*corrDelta = std::abs(eval - corrected);
+
+			eval = corrected;
+		}
 
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
