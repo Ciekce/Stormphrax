@@ -930,7 +930,7 @@ namespace stormphrax::search
 					r += cutnode * lmrCutnodeReductionScale();
 
 					if (complexity)
-						r += 128 * (*complexity < 35);
+						r -= 128 * (*complexity > 70);
 
 					r /= 128;
 
