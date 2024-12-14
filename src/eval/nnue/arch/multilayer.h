@@ -36,8 +36,9 @@ namespace stormphrax::eval::nnue::arch
 	// implements an (inputs->L1)x2->(L2->L3->1)xN network, with
 	// pairwise clipped ReLU on L1 and squared ReLU on later layers
 	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits,
-	    u32 FtQ, u32 L1Q, output::OutputBucketing OutputBucketing, i32 Scale>
-	struct PairwiseMultilayerCReLUSqrReLUSqrReLU
+	    u32 FtQ, u32 L1Q, typename L2Activation, typename L3Activation,
+		output::OutputBucketing OutputBucketing, i32 Scale>
+	struct PairwiseMultilayerCReLU
 	{
 		using OutputType = i32;
 		static constexpr u32 OutputCount = 1;
@@ -139,8 +140,6 @@ namespace stormphrax::eval::nnue::arch
 			const auto oneOverQuant = set1<f32>(
 				static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q));
 
-			const auto zero_ = zero<f32>();
-
 			const auto weightOffset = bucket * L2Size * L1Size;
 			const auto biasOffset   = bucket * L2Size;
 
@@ -188,9 +187,7 @@ namespace stormphrax::eval::nnue::arch
 				auto out = cast<i32, f32>(sums);
 
 				out = fma<f32>(out, oneOverQuant, biases);
-
-				out = max<f32>(out, zero_);
-				out = mul<f32>(out, out);
+				out = L2Activation::template activate<f32>(out);
 
 				store<f32>(&outputs[idx], out);
 			}
@@ -293,11 +290,8 @@ namespace stormphrax::eval::nnue::arch
 					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
 					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
 
-					i_0 = max<f32>(i_0, zero_);
-					i_1 = max<f32>(i_1, zero_);
-
-					i_0 = mul<f32>(i_0, i_0);
-					i_1 = mul<f32>(i_1, i_1);
+					i_0 = L3Activation::template activate<f32>(i_0);
+					i_1 = L3Activation::template activate<f32>(i_1);
 
 					out_0 = fma<f32>(i_0, w_0, out_0);
 					out_1 = fma<f32>(i_1, w_1, out_1);

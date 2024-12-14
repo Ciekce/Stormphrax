@@ -42,7 +42,9 @@ namespace stormphrax::eval
 	constexpr u32 L2Size = 8;
 	constexpr u32 L3Size = 32;
 
-	using L1Activation = nnue::activation::ClippedReLU<i16, i32, FtQ>;
+	using L1Activation = nnue::activation::ClippedReLU;
+	using L2Activation = nnue::activation::SquaredReLU;
+	using L3Activation = nnue::activation::SquaredReLU;
 
 	constexpr i32 Scale = 400;
 
@@ -61,6 +63,6 @@ namespace stormphrax::eval
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 
-	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSqrReLUSqrReLU<
-	    L1Size, L2Size, L3Size, FtScaleBits, FtQ, L1Q, OutputBucketing, Scale>;
+	using LayeredArch = nnue::arch::PairwiseMultilayerCReLU<
+		L1Size, L2Size, L3Size, FtScaleBits, FtQ, L1Q, L2Activation, L3Activation, OutputBucketing, Scale>;
 }

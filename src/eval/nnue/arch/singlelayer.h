@@ -35,7 +35,7 @@
 namespace stormphrax::eval::nnue::arch
 {
 	// implements an (inputs->L1)x2->1xN network, with configurable activation
-	template <u32 L1Size, u32 FtQ, u32 L1Q, activation::Activation Activation,
+	template <u32 L1Size, u32 FtQ, u32 L1Q, typename Activation,
 	    output::OutputBucketing OutputBucketing, i32 Scale>
 	struct SingleLayer
 	{
@@ -75,7 +75,7 @@ namespace stormphrax::eval::nnue::arch
 				const auto  inputs = load<i16>(&stmInputs[inputIdx]);
 				const auto weights = load<i16>(&l1Weights[weightOffset + inputIdx]);
 
-				sum = Activation::activateDotAccumulate(sum, inputs, weights);
+				sum = Activation::template activateDotAccumulate<i16, FtQ>(sum, inputs, weights);
 			}
 
 			// nstm perspective
@@ -84,13 +84,13 @@ namespace stormphrax::eval::nnue::arch
 				const auto  inputs = load<i16>(&nstmInputs[inputIdx]);
 				const auto weights = load<i16>(&l1Weights[L1Size + weightOffset + inputIdx]);
 
-				sum = Activation::activateDotAccumulate(sum, inputs, weights);
+				sum = Activation::template activateDotAccumulate<i16, FtQ>(sum, inputs, weights);
 			}
 
 			const auto output = hsum<i32>(sum);
 
 			const auto bias = static_cast<i32>(l1Biases[biasOffset]);
-			const auto out = bias + Activation::output(output);
+			const auto out = bias + Activation::template output<i32, FtQ>(output);
 
 			outputs[0] = out * Scale / Q;
 		}
