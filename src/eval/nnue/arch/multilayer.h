@@ -142,6 +142,8 @@ namespace stormphrax::eval::nnue::arch
 		inline auto propagateL1Avx2
 			(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
 		{
+			static_assert(L2Activation::Id == activation::SquaredReLU::Id);
+
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 			static constexpr auto ChunkSizeI32 = sizeof(__m256i) / sizeof(i32);
 
