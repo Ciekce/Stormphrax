@@ -40,6 +40,10 @@ namespace stormphrax::eval::nnue::arch
 		output::OutputBucketing OutputBucketing, i32 Scale>
 	struct PairwiseMultilayerCReLU
 	{
+		static_assert(L1Size % (util::simd::ChunkSize<i16>) == 0);
+		static_assert(L2Size % 16 == 0 || L2Size == 8);
+		static_assert(L3Size % 16 == 0);
+
 		using OutputType = i32;
 		static constexpr u32 OutputCount = 1;
 
@@ -130,9 +134,103 @@ namespace stormphrax::eval::nnue::arch
 			activatePerspective(nstmInputs, PairCount);
 		}
 
+		// Extremely dirty hack to allow 8-neuron L2 with AVX512
+		// Hardcoded to squared ReLU
+		//TODO: literally anything but this
+#if SP_HAS_AVX512
+	private:
+		inline auto propagateL1Avx2
+			(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
+		{
+			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+			static constexpr auto ChunkSizeI32 = sizeof(__m256i) / sizeof(i32);
+
+			const auto dpbusd = [](__m256i sum, __m256i u, __m256i i)
+			{
+#if SP_HAS_AVX512VNNI && __AVX512VL__
+				return _mm256_dpbusd_epi32(sum, u, i);
+#else
+				const auto p = _mm256_maddubs_epi16(u, i);
+				const auto w = _mm256_madd_epi16(p, _mm256_set1_epi16(1));
+				return _mm256_add_epi32(sum, w);
+#endif
+			};
+
+			const auto oneOverQuant = _mm256_set1_ps(
+				static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q));
+
+			const auto weightOffset = bucket * L2Size * L1Size;
+			const auto biasOffset   = bucket * L2Size;
+
+			// SAFETY: u8 (unsigned char) can safely be aliased to any type
+			const auto *inI32s = reinterpret_cast<const i32 *>(inputs.data());
+
+			SP_SIMD_ALIGNAS util::MultiArray<__m256i, L2Size / ChunkSizeI32, 4> intermediate{};
+
+			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8ChunkSizeI32 * 4)
+			{
+				const auto weightsStart = weightOffset + inputIdx * L2Size;
+
+				const auto i_0 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 0]);
+				const auto i_1 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 1]);
+				const auto i_2 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 2]);
+				const auto i_3 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 3]);
+
+				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += ChunkSizeI32)
+				{
+					auto &v = intermediate[outputIdx / ChunkSizeI32];
+
+					const auto w_0 = _mm256_load_epi32
+						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
+					const auto w_1 = _mm256_load_epi32
+						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
+					const auto w_2 = _mm256_load_epi32
+						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
+					const auto w_3 = _mm256_load_epi32
+						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
+
+					v[0] = dpbusd(v[0], i_0, w_0);
+					v[1] = dpbusd(v[1], i_1, w_1);
+					v[2] = dpbusd(v[2], i_2, w_2);
+					v[3] = dpbusd(v[3], i_3, w_3);
+				}
+			}
+
+			for (u32 idx = 0; idx < L2Size; idx += ChunkSizeI32)
+			{
+				const auto &v = intermediate[idx / ChunkSizeI32];
+
+				const auto halfSums_0 = _mm256_add_epi32(v[0], v[1]);
+				const auto halfSums_1 = _mm256_add_epi32(v[2], v[3]);
+
+				const auto sums = _mm256_add_epi32(halfSums_0, halfSums_1);
+
+				const auto biases = _mm256_load_ps(&l1Biases[biasOffset + idx]);
+
+				auto out = _mm256_cvtepi32_ps(sums);
+
+				out = _mm256_fmadd_ps(out, oneOverQuant, biases);
+				out = _mm256_max_ps(out, _mm256_setzero_ps());
+				out = _mm256_mul_ps(out, out);
+
+				_mm256_store_ps(&outputs[idx], out);
+			}
+		}
+
+	public:
+#endif
+
 		// Take activated feature transformer outputs, propagate L1, dequantise and activate
 		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
 		{
+#if SP_HAS_AVX512
+			if constexpr (L2Size == 8)
+			{
+				propagateL1Avx2(bucket, inputs, outputs);
+				return;
+			}
+#endif
+
 			using namespace util::simd;
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
@@ -267,8 +365,6 @@ namespace stormphrax::eval::nnue::arch
 		{
 			using namespace util::simd;
 
-			const auto zero_ = zero<f32>();
-
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
 
@@ -320,10 +416,10 @@ namespace stormphrax::eval::nnue::arch
 					const auto w_2 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 2]);
 					const auto w_3 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 3]);
 
-					i_0 = max<f32>(i_0, zero_);
-					i_1 = max<f32>(i_1, zero_);
-					i_2 = max<f32>(i_2, zero_);
-					i_3 = max<f32>(i_3, zero_);
+					i_0 = max<f32>(i_0, zero<f32>());
+					i_1 = max<f32>(i_1, zero<f32>());
+					i_2 = max<f32>(i_2, zero<f32>());
+					i_3 = max<f32>(i_3, zero<f32>());
 
 					i_0 = mul<f32>(i_0, i_0);
 					i_1 = mul<f32>(i_1, i_1);
