@@ -933,6 +933,9 @@ namespace stormphrax::search
 					{
 						const bool highComplexity = *complexity > lmrHighComplexityThreshold();
 						r -= lmrHighComplexityReductionScale() * highComplexity;
+
+						const bool lowComplexity = *complexity < 15;
+						r += 128 * lowComplexity;
 					}
 
 					r /= 128;
