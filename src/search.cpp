@@ -625,6 +625,7 @@ namespace stormphrax::search
 			--depth;
 
 		Score rawStaticEval{};
+		std::optional<Score> complexity{};
 
 		if (!curr.excluded)
 		{
@@ -637,8 +638,15 @@ namespace stormphrax::search
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
-			curr.staticEval = inCheck ? ScoreNone
-				: eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
+			if (inCheck)
+				curr.staticEval = ScoreNone;
+			else
+			{
+				Score corrDelta{};
+				curr.staticEval = eval::adjustEval(pos, thread.contMoves,
+					ply, &thread.correctionHistory, rawStaticEval, &corrDelta);
+				complexity = corrDelta;
+			}
 		}
 
 		const bool improving = [&]
@@ -920,6 +928,12 @@ namespace stormphrax::search
 					r -= improving * lmrImprovingReductionScale();
 					r -= pos.isCheck() * lmrCheckReductionScale();
 					r += cutnode * lmrCutnodeReductionScale();
+
+					if (complexity)
+					{
+						const bool highComplexity = *complexity > lmrHighComplexityThreshold();
+						r -= lmrHighComplexityReductionScale() * highComplexity;
+					}
 
 					r /= 128;
 
