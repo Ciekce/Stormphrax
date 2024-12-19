@@ -338,7 +338,7 @@ namespace stormphrax::search
 		auto score = -ScoreInf;
 		PvList pv{};
 
-		searchData.nodes = 1;
+		searchData.nodes = 0;
 		thread.stack[0].killers.clear();
 
 		i32 depthCompleted{};
@@ -347,6 +347,9 @@ namespace stormphrax::search
 		{
 			searchData.depth = depth;
 			searchData.seldepth = 0;
+
+			// count the root node
+			++searchData.nodes;
 
 			auto delta = initialAspWindow();
 
