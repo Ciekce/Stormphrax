@@ -1075,6 +1075,61 @@ namespace stormphrax
 		return false;
 	}
 
+	auto Position::isDrawn(bool threefold) const -> bool
+	{
+		const auto halfmove = currState().halfmove;
+
+		if (halfmove >= 100)
+		{
+			if (!isCheck())
+				return true;
+
+			//TODO there's a speedup possible here, but
+			// it requires a lot of movegen refactoring
+			ScoredMoveList moves{};
+			generateAll(moves, *this);
+
+			return std::ranges::any_of(moves, [this](const auto move)
+			{
+				return isLegal(move.move);
+			});
+		}
+
+		const auto currKey = currState().keys.all;
+		const auto limit = std::max(0, static_cast<i32>(m_keys.size()) - halfmove - 2);
+
+		i32 repetitionsLeft = threefold ? 2 : 1;
+
+		for (auto i = static_cast<i32>(m_keys.size()) - 4; i >= limit; i -= 2)
+		{
+			if (m_keys[i] == currKey
+				&& --repetitionsLeft == 0)
+				return true;
+		}
+
+		const auto &bbs = this->bbs();
+
+		if (!bbs.pawns().empty() || !bbs.majors().empty())
+			return false;
+
+		// KK
+		if (bbs.nonPk().empty())
+			return true;
+
+		// KNK or KBK
+		if ((bbs.blackNonPk().empty() && bbs.whiteNonPk() == bbs.whiteMinors() && !bbs.whiteMinors().multiple())
+			|| (bbs.whiteNonPk().empty() && bbs.blackNonPk() == bbs.blackMinors() && !bbs.blackMinors().multiple()))
+			return true;
+
+		// KBKB OCB
+		if ((bbs.blackNonPk() == bbs.blackBishops() && bbs.whiteNonPk() == bbs.whiteBishops())
+			&& !bbs.blackBishops().multiple() && !bbs.whiteBishops().multiple()
+			&& (bbs.blackBishops() & boards::LightSquares).empty() != (bbs.whiteBishops() & boards::LightSquares).empty())
+			return true;
+
+		return false;
+	}
+
 	auto Position::toFen() const -> std::string
 	{
 		const auto &state = currState();
