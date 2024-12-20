@@ -20,16 +20,68 @@
 
 #include "types.h"
 
+#include <atomic>
+
 #include "move.h"
 
 namespace stormphrax::search
 {
 	struct SearchData
 	{
-		i32 depth{};
-		i32 seldepth{};
-		usize nodes{};
-		usize tbhits{};
+		i32 rootDepth{};
+
+		std::atomic<i32> seldepth{};
+		std::atomic<usize> nodes{};
+		std::atomic<usize> tbhits{};
+
+		SearchData() = default;
+
+		SearchData(const SearchData &other)
+		{
+			*this = other;
+		}
+
+		[[nodiscard]] inline auto loadSeldepth() const
+		{
+			return seldepth.load(std::memory_order::relaxed);
+		}
+
+		inline auto updateSeldepth(i32 v)
+		{
+			if (v > loadSeldepth())
+				seldepth.store(v, std::memory_order::relaxed);
+		}
+
+		[[nodiscard]] inline auto loadNodes() const
+		{
+			return nodes.load(std::memory_order::relaxed);
+		}
+
+		inline auto incNodes()
+		{
+			nodes.fetch_add(1, std::memory_order::relaxed);
+		}
+
+		[[nodiscard]] inline auto loadTbHits() const
+		{
+			return tbhits.load(std::memory_order::relaxed);
+		}
+
+		inline auto incTbHits()
+		{
+			tbhits.fetch_add(1, std::memory_order::relaxed);
+		}
+
+		auto operator=(const SearchData &other) -> SearchData &
+		{
+			rootDepth = other.rootDepth;
+
+			seldepth.store(other.seldepth.load());
+			nodes.store(other.nodes.load());
+			tbhits.store(other.tbhits.load());
+
+			return *this;
+		}
 	};
 
 	struct PlayedMove

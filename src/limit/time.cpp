@@ -31,7 +31,7 @@ namespace stormphrax::limit
 
 	auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
 	{
-		if (data.depth > 2
+		if (data.rootDepth > 2
 			&& data.nodes > 0
 			&& (data.nodes % 1024) == 0
 			&& util::g_timer.time() >= m_maxTime)
@@ -108,7 +108,7 @@ namespace stormphrax::limit
 			/ static_cast<f64>(totalNodes);
 		scale *= std::max(nodeBase - bestMoveNodeFraction * nodeScale, nodeMin);
 
-		if (data.depth >= 6)
+		if (data.rootDepth >= 6)
 		{
 			const auto stability = static_cast<f64>(m_stability);
 			scale *= std::min(
