@@ -100,6 +100,10 @@ namespace stormphrax::limit
 		{
 			m_stability = 1;
 			m_prevBestMove = bestMove;
+
+			// don't soft timeout when the bestmove changes
+			m_scale = 10000.0;
+			return;
 		}
 
 		auto scale = 1.0;
