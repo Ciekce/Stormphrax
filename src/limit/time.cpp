@@ -77,17 +77,22 @@ namespace stormphrax::limit
 			m_prevBestMove = bestMove;
 		}
 
-		const auto scoreDeviation =
-			(1.0 - (score > m_prevScore
-				? static_cast<f64>(m_prevScore) / static_cast<f64>(score)
-				: static_cast<f64>(score) / static_cast<f64>(m_prevScore)))
-			/ 140.0 * static_cast<f64>(std::abs(score));
-
-		if (scoreDeviation < 0.12)
+		if (score == m_prevScore)
 			++m_scoreStability;
-		else m_scoreStability = 1;
+		else
+		{
+			const auto scoreDeviation =
+				(1.0 - (score > m_prevScore
+					? (score == 0 ? 0 : static_cast<f64>(m_prevScore) / static_cast<f64>(score))
+					: (m_prevScore == 0 ? 0 : static_cast<f64>(score) / static_cast<f64>(m_prevScore))))
+				/ 140.0 * (static_cast<f64>(std::max(std::abs(score), std::abs(m_prevScore))));
 
-		m_prevScore = score;
+			if (scoreDeviation < 0.12)
+				++m_scoreStability;
+			else m_scoreStability = 1;
+
+			m_prevScore = score;
+		}
 
 		auto scale = 1.0;
 
