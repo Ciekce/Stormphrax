@@ -70,12 +70,24 @@ namespace stormphrax::limit
 		assert(totalNodes > 0);
 
 		if (bestMove == m_prevBestMove)
-			++m_stability;
+			++m_moveStability;
 		else
 		{
-			m_stability = 1;
+			m_moveStability = 1;
 			m_prevBestMove = bestMove;
 		}
+
+		const auto scoreDeviation =
+			(1.0 - (score > m_prevScore
+				? static_cast<f64>(m_prevScore) / static_cast<f64>(score)
+				: static_cast<f64>(score) / static_cast<f64>(m_prevScore)))
+			/ 140.0 * static_cast<f64>(std::abs(score));
+
+		if (scoreDeviation < 0.12)
+			++m_scoreStability;
+		else m_scoreStability = 1;
+
+		m_prevScore = score;
 
 		auto scale = 1.0;
 
@@ -85,12 +97,18 @@ namespace stormphrax::limit
 
 		if (data.rootDepth >= 6)
 		{
-			const auto stability = static_cast<f64>(m_stability);
+			const auto moveStability = static_cast<f64>(m_moveStability);
 			scale *= std::min(
 				bmStabilityTmMax(),
 				bmStabilityTmMin() + bmStabilityTmScale()
-					* std::pow(stability + bmStabilityTmOffset(), bmStabilityTmPower())
+					* std::pow(moveStability + bmStabilityTmOffset(), bmStabilityTmPower())
 			);
+		}
+
+		if (data.rootDepth >= 8)
+		{
+			const auto scoreStability = static_cast<f64>(m_scoreStability);
+			scale *= std::clamp(-0.24 * std::log(scoreStability / 213.0), 0.85, 1.3);
 		}
 
 		if (m_avgScore)

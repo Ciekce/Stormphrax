@@ -73,7 +73,10 @@ namespace stormphrax::limit
 		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
 		Move m_prevBestMove{};
-		u32 m_stability{};
+		u32 m_moveStability{};
+
+		Score m_prevScore{};
+		u32 m_scoreStability{};
 
 		std::optional<Score> m_avgScore{};
 
