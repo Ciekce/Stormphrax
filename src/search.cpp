@@ -666,7 +666,22 @@ namespace stormphrax::search
 			&& !inCheck
 			&& !curr.excluded)
 		{
+			const auto ttMoveHistory = !ttEntry.move ? 0 : [&]
+			{
+				if (ttMoveNoisy)
+				{
+					const auto captured = pos.captureTarget(ttEntry.move);
+					return thread.history.noisyScore(ttEntry.move, captured, pos.threats());
+				}
+				else
+				{
+					const auto moving = boards.pieceAt(ttEntry.move.src());
+					return thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, ttEntry.move);
+				}
+			}();
+
 			if (depth <= maxRfpDepth()
+				&& (!ttEntry.move || ttMoveHistory > 10000)
 				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
 				return (curr.staticEval + beta) / 2;
 
