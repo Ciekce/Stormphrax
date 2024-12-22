@@ -30,11 +30,6 @@ namespace stormphrax::tunable
 			const auto lnMoves = std::log(static_cast<f64>(moves));
 			return static_cast<i32>(128.0 * (base + lnDepth * lnMoves / divisor));
 		}
-
-		inline auto lmpMoveCount(i32 base, bool improving, i32 depth)
-		{
-			return (base + depth * depth) / (2 - improving);
-		}
 	}
 
 	util::MultiArray<i32, 2, 256, 256> g_lmrTable{};
@@ -67,26 +62,9 @@ namespace stormphrax::tunable
 		}
 	}
 
-	util::MultiArray<i32, 2, 16> g_lmpTable{};
-
-	auto updateLmpTable() -> void
-	{
-		const auto base = lmpBaseMoves();
-
-		for (i32 improving = 0; improving < 2; ++improving)
-		{
-			for (i32 depth = 0; depth < 16; ++depth)
-			{
-				g_lmpTable[improving][depth] = lmpMoveCount(base, improving, depth);
-			}
-		}
-	}
-
 	auto init() -> void
 	{
 		updateQuietLmrTable();
 		updateNoisyLmrTable();
-
-		updateLmpTable();
 	}
 }

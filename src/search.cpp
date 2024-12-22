@@ -37,6 +37,22 @@ namespace stormphrax::search
 		constexpr f64 WidenReportDelay = 1.0;
 		constexpr f64 CurrmoveReportDelay = 2.5;
 
+		// [improving][clamped depth]
+		constexpr auto LmpTable = []
+		{
+			util::MultiArray<i32, 2, 16> result{};
+
+			for (i32 improving = 0; improving < 2; ++improving)
+			{
+				for (i32 depth = 0; depth < 16; ++depth)
+				{
+					result[improving][depth] = (3 + depth * depth) / (2 - improving);
+				}
+			}
+
+			return result;
+		}();
+
 		inline auto drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -356,7 +372,7 @@ namespace stormphrax::search
 			auto alpha = -ScoreInf;
 			auto beta = ScoreInf;
 
-			if (depth >= minAspDepth())
+			if (depth >= 3)
 			{
 				alpha = std::max(score - delta, -ScoreInf);
 				beta  = std::min(score + delta,  ScoreInf);
@@ -390,7 +406,7 @@ namespace stormphrax::search
 				}
 				else
 				{
-					aspReduction = std::min(aspReduction + 1, maxAspFailHighReduction());
+					aspReduction = std::min(aspReduction + 1, 3);
 					beta = std::min(newScore + delta, ScoreInf);
 				}
 
@@ -548,7 +564,7 @@ namespace stormphrax::search
 
 					return ttEntry.score;
 				}
-				else if (depth <= maxTtNonCutoffExtDepth())
+				else if (depth <= 6)
 					++depth;
 			}
 		}
@@ -620,10 +636,10 @@ namespace stormphrax::search
 			}
 		}
 
-		if (depth >= minIirDepth()
+		if (depth >= 3
 			&& !curr.excluded
 			&& (PvNode || cutnode)
-			&& (!ttEntry.move || ttEntry.depth + iirBadEntryDepthOffset() < depth))
+			&& (!ttEntry.move || ttEntry.depth + 3 < depth))
 			--depth;
 
 		Score rawStaticEval{};
@@ -666,21 +682,20 @@ namespace stormphrax::search
 			&& !inCheck
 			&& !curr.excluded)
 		{
-			if (depth <= maxRfpDepth()
+			if (depth <= 6
 				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
 				return (curr.staticEval + beta) / 2;
 
-			if (depth <= maxRazoringDepth()
+			if (depth <= 4
 				&& std::abs(alpha) < 2000
 				&& curr.staticEval + razoringMargin() * depth <= alpha)
 			{
 				const auto score = qsearch(thread, ply, moveStackIdx, alpha, alpha + 1);
-
 				if (score <= alpha)
 					return score;
 			}
 
-			if (depth >= minNmpDepth()
+			if (depth >= 4
 				&& ply >= thread.minNmpPly
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
@@ -689,9 +704,9 @@ namespace stormphrax::search
 			{
 				m_ttable.prefetch(pos.key() ^ keys::color());
 
-				const auto R = nmpBaseReduction()
-					+ depth / nmpDepthReductionDiv()
-					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), maxNmpEvalReduction())
+				const auto R = 4
+					+ depth / 5
+					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), 2)
 					+ improving;
 
 				const auto score = [&]
@@ -719,10 +734,10 @@ namespace stormphrax::search
 			}
 
 			const auto probcutBeta = beta + probcutMargin();
-			const auto probcutDepth = std::max(depth - probcutReduction(), 1);
+			const auto probcutDepth = std::max(depth - 3, 1);
 
 			if (!ttpv
-				&& depth >= minProbcutDepth()
+				&& depth >= 7
 				&& std::abs(beta) < ScoreWin
 				&& (!ttEntry.move || ttMoveNoisy)
 				&& !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
@@ -775,9 +790,9 @@ namespace stormphrax::search
 		moveStack.failLowNoisies.clear();
 
 		const auto lmrMinMoves
-			= RootNode ? lmrMinMovesRoot()
-			:   PvNode ? lmrMinMovesPv()
-			           : lmrMinMovesNonPv();
+			= RootNode ? 5
+			:   PvNode ? 4
+			           : 2;
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
@@ -823,13 +838,13 @@ namespace stormphrax::search
 
 				if (!noisy)
 				{
-					if (legalMoves >= g_lmpTable[improving][std::min(depth, 15)])
+					if (legalMoves >= LmpTable[improving][std::min(depth, 15)])
 					{
 						generator.skipQuiets();
 						continue;
 					}
 
-					if (lmrDepth <= maxQuietHistPruningDepth()
+					if (lmrDepth <= 5
 						&& history < quietHistPruningMargin() * depth + quietHistPruningOffset())
 					{
 						generator.skipQuiets();
@@ -837,7 +852,7 @@ namespace stormphrax::search
 					}
 
 					if (!inCheck
-						&& lmrDepth <= maxFpDepth()
+						&& lmrDepth <= 8
 						&& std::abs(alpha) < 2000
 						&& curr.staticEval + fpMargin() + depth * fpScale() <= alpha)
 					{
@@ -845,7 +860,7 @@ namespace stormphrax::search
 						continue;
 					}
 				}
-				else if (depth <= maxNoisyHistPruningDepth()
+				else if (depth <= 4
 					&& history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
 					continue;
 
@@ -875,10 +890,10 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
-				&& depth >= minSeDepth()
+				&& depth >= 8
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - seTtDepthMargin()
+				&& ttEntry.depth >= depth - 5
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
 				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
@@ -918,7 +933,7 @@ namespace stormphrax::search
 			{
 				auto newDepth = depth + extension - 1;
 
-				if (depth >= minLmrDepth()
+				if (depth >= 2
 					&& legalMoves >= lmrMinMoves
 					&& quietOrLosing)
 				{
@@ -1170,7 +1185,7 @@ namespace stormphrax::search
 					continue;
 				}
 
-				if (legalMoves >= qsearchMaxMoves())
+				if (legalMoves >= 2)
 					break;
 
 				if (!see::see(pos, move, qsearchSeeThreshold()))

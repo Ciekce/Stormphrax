@@ -23,14 +23,11 @@
 #include <iostream>
 #include <thread>
 
-#include "tunable.h"
 #include "util/cemath.h"
 #include "util/align.h"
 
 namespace stormphrax
 {
-	using namespace stormphrax::tunable;
-
 	namespace
 	{
 		// for a long time, these were backwards
@@ -183,7 +180,7 @@ namespace stormphrax
 		if (!(flag == TtFlag::Exact
 			|| newKey != entry.key
 			|| entry.age() != m_age
-			|| depth + ttReplacementDepthOffset() + pv * ttReplacementPvOffset() > entry.depth))
+			|| depth + 4 + pv * 2 > entry.depth))
 			return;
 
 		if (move || entry.key != newKey)
