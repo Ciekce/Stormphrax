@@ -439,49 +439,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto threats() const { return currState().threats; }
 
 		[[nodiscard]] auto hasCycle(i32 ply) const -> bool;
-
-		[[nodiscard]] inline auto isDrawn(bool threefold) const
-		{
-			const auto halfmove = currState().halfmove;
-
-			// TODO handle mate
-			if (halfmove >= 100)
-				return true;
-
-			const auto currKey = currState().keys.all;
-			const auto limit = std::max(0, static_cast<i32>(m_keys.size()) - halfmove - 2);
-
-			i32 repetitionsLeft = threefold ? 2 : 1;
-
-			for (auto i = static_cast<i32>(m_keys.size()) - 4; i >= limit; i -= 2)
-			{
-				if (m_keys[i] == currKey
-					&& --repetitionsLeft == 0)
-					return true;
-			}
-
-			const auto &bbs = this->bbs();
-
-			if (!bbs.pawns().empty() || !bbs.majors().empty())
-				return false;
-
-			// KK
-			if (bbs.nonPk().empty())
-				return true;
-
-			// KNK or KBK
-			if ((bbs.blackNonPk().empty() && bbs.whiteNonPk() == bbs.whiteMinors() && !bbs.whiteMinors().multiple())
-				|| (bbs.whiteNonPk().empty() && bbs.blackNonPk() == bbs.blackMinors() && !bbs.blackMinors().multiple()))
-				return true;
-
-			// KBKB OCB
-			if ((bbs.blackNonPk() == bbs.blackBishops() && bbs.whiteNonPk() == bbs.whiteBishops())
-				&& !bbs.blackBishops().multiple() && !bbs.whiteBishops().multiple()
-				&& (bbs.blackBishops() & boards::LightSquares).empty() != (bbs.whiteBishops() & boards::LightSquares).empty())
-				return true;
-
-			return false;
-		}
+		[[nodiscard]] auto isDrawn(bool threefold) const -> bool;
 
 		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
