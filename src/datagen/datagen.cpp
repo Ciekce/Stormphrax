@@ -45,6 +45,8 @@
 
 namespace stormphrax::datagen
 {
+	using util::Instant;
+
 	namespace
 	{
 		std::atomic_bool s_stop{false};
@@ -147,7 +149,7 @@ namespace stormphrax::datagen
 
 			Format output{};
 
-			const auto startTime = util::g_timer.time();
+			const auto startTime = Instant::now();
 
 			usize totalPositions{};
 
@@ -310,7 +312,7 @@ namespace stormphrax::datagen
 					|| ((game + 1) % ReportInterval) == 0
 					|| s_stop.load(std::memory_order::seq_cst))
 				{
-					const auto time = util::g_timer.time() - startTime;
+					const auto time = startTime.elapsed();
 					std::cout << "thread " << id << ": wrote " << totalPositions << " positions from "
 						<< (game + 1) << " games in " << time << " sec ("
 						<< (static_cast<f64>(totalPositions) / time) << " positions/sec)" << std::endl;

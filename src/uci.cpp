@@ -31,6 +31,7 @@
 
 #include "util/split.h"
 #include "util/parse.h"
+#include "util/timer.h"
 #include "position/position.h"
 #include "search.h"
 #include "movegen.h"
@@ -50,6 +51,8 @@
 namespace stormphrax
 {
 	using namespace uci;
+
+	using util::Instant;
 
 	namespace
 	{
@@ -95,7 +98,7 @@ namespace stormphrax
 			auto handleUcinewgame() -> void;
 			auto handleIsready() -> void;
 			auto handlePosition(const std::vector<std::string> &tokens) -> void;
-			auto handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void;
+			auto handleGo(const std::vector<std::string> &tokens, Instant startTime) -> void;
 			auto handleStop() -> void;
 			auto handleSetoption(const std::vector<std::string> &tokens) -> void;
 			// V ======= NONSTANDARD ======= V
@@ -132,7 +135,7 @@ namespace stormphrax
 		{
 			for (std::string line{}; std::getline(std::cin, line);)
 			{
-				const auto startTime = util::g_timer.time();
+				const auto startTime = Instant::now();
 
 				const auto tokens = split::split(line, ' ');
 
@@ -314,7 +317,7 @@ namespace stormphrax
 			}
 		}
 
-		auto UciHandler::handleGo(const std::vector<std::string> &tokens, f64 startTime) -> void
+		auto UciHandler::handleGo(const std::vector<std::string> &tokens, Instant startTime) -> void
 		{
 			if (m_searcher.searching())
 				std::cerr << "already searching" << std::endl;

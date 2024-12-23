@@ -45,14 +45,14 @@ namespace stormphrax::limit
 		[[nodiscard]] auto stopped() const -> bool final;
 
 	private:
-		f64 m_maxTime;
+		util::Instant m_endTime;
 		std::atomic_bool m_stopped{false};
 	};
 
 	class TimeManager final : public ISearchLimiter
 	{
 	public:
-		TimeManager(f64 start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
+		TimeManager(util::Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
 		~TimeManager() final = default;
 
 		auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final;
@@ -63,7 +63,7 @@ namespace stormphrax::limit
 		[[nodiscard]] auto stopped() const -> bool final;
 
 	private:
-		f64 m_startTime;
+		util::Instant m_startTime;
 
 		f64 m_softTime{};
 		f64 m_maxTime{};

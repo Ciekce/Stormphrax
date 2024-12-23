@@ -26,6 +26,8 @@
 
 namespace stormphrax
 {
+	using util::Instant;
+
 	namespace
 	{
 		auto doPerft(Position &pos, i32 depth) -> usize
@@ -67,7 +69,7 @@ namespace stormphrax
 	{
 		--depth;
 
-		const auto start = util::g_timer.time();
+		const auto start = Instant::now();
 
 		ScoredMoveList moves{};
 		generateAll(moves, pos);
@@ -87,8 +89,7 @@ namespace stormphrax
 			std::cout << uci::moveToString(move) << '\t' << value << '\n';
 		}
 
-		const auto time = util::g_timer.time() - start;
-		const auto nps = static_cast<usize>(static_cast<f64>(total) / time);
+		const auto nps = static_cast<usize>(static_cast<f64>(total) / start.elapsed());
 
 		std::cout << "\ntotal " << total << '\n';
 		std::cout << nps << " nps" << std::endl;

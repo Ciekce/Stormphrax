@@ -32,6 +32,8 @@ namespace stormphrax::search
 {
 	using namespace stormphrax::tunable;
 
+	using util::Instant;
+
 	namespace
 	{
 		constexpr f64 WidenReportDelay = 1.0;
@@ -72,7 +74,8 @@ namespace stormphrax::search
 	}
 
 	Searcher::Searcher(usize ttSizeMib)
-		: m_ttable{ttSizeMib}
+		: m_ttable{ttSizeMib},
+		  m_startTime{Instant::now()}
 	{
 		auto &thread = m_threads.emplace_back();
 
@@ -101,7 +104,7 @@ namespace stormphrax::search
 		m_ttable.finalize();
 	}
 
-	auto Searcher::startSearch(const Position &pos, f64 startTime, i32 maxDepth,
+	auto Searcher::startSearch(const Position &pos, Instant startTime, i32 maxDepth,
 		std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void
 	{
 		if (!m_limiter && !limiter)
@@ -110,11 +113,11 @@ namespace stormphrax::search
 			return;
 		}
 
-		const auto initStart = util::g_timer.time();
+		const auto initStart = Instant::now();
 
 		if (m_ttable.finalize())
 		{
-			const auto initTime = util::g_timer.time() - initStart;
+			const auto initTime = initStart.elapsed();
 
 			std::cout
 				<< "info string No ucinewgame or isready before go, lost "
@@ -172,7 +175,7 @@ namespace stormphrax::search
 		if (status == RootStatus::Tablebase)
 			m_threads[0].search.tbhits = 1;
 
-		m_startTime.store(startTime, std::memory_order::relaxed);
+		m_startTime = startTime;
 
 		m_stop.store(false, std::memory_order::seq_cst);
 		m_runningThreads.store(static_cast<i32>(m_threads.size()));
@@ -235,16 +238,14 @@ namespace stormphrax::search
 
 		m_stop.store(false, std::memory_order::seq_cst);
 
-		const auto start = util::g_timer.time();
+		const auto start = Instant::now();
 
 		searchRoot(*thread, false);
 
 		m_ttable.age();
 
-		const auto time = util::g_timer.time() - start;
-
 		data.search = thread->search;
-		data.time = time;
+		data.time = start.elapsed();
 	}
 
 	auto Searcher::setThreads(u32 threadCount) -> void
