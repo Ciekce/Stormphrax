@@ -707,7 +707,7 @@ namespace stormphrax::search
 
 				const auto R = 4
 					+ depth / 5
-					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), 2)
+					+ std::min((curr.staticEval - beta) / nmpEvalReductionScale(), 5)
 					+ improving;
 
 				const auto score = [&]
