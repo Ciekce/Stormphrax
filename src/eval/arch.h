@@ -42,7 +42,7 @@ namespace stormphrax::eval
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::HalfKa;
+	using InputFeatureSet = nnue::features::HalfKaV2;
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 }
