@@ -33,8 +33,8 @@ namespace stormphrax::eval
 	// current arch: (768x16->1792)x2->(8->32->1)x8, mirrored
 	// pairwise clipped ReLU -> squared ReLU -> squared ReLU
 
-	constexpr i32 FtQ = 255;
-	constexpr i32 L1Q = 64;
+	constexpr i32 FtQ = 127;
+	constexpr i32 L1Q = 127;
 
 	constexpr u32 FtScaleBits = 7;
 
