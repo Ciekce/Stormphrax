@@ -35,7 +35,7 @@ namespace stormphrax::util
 	{
 		const auto size = count * sizeof(T);
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 		return static_cast<T *>(_aligned_malloc(size, alignment));
 #else
 		return static_cast<T *>(std::aligned_alloc(alignment, size));
@@ -47,7 +47,7 @@ namespace stormphrax::util
 		if (!ptr)
 			return;
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 		_aligned_free(ptr);
 #else
 		std::free(ptr);
