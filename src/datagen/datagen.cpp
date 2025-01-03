@@ -137,6 +137,11 @@ namespace stormphrax::datagen
 			auto thread = std::make_unique<search::ThreadData>();
 			thread->datagen = true;
 
+			auto &pos = thread->rootPos;
+
+			std::vector<u64> keys{};
+			keys.reserve(1024);
+
 			const auto resetSearch = [&searcher, &thread]()
 			{
 				searcher.newGame();
@@ -160,9 +165,9 @@ namespace stormphrax::datagen
 				if (dfrc)
 				{
 					const auto dfrcIndex = rng.nextU32(960 * 960);
-					thread->pos.resetFromDfrcIndex(dfrcIndex);
+					pos.resetFromDfrcIndex(dfrcIndex);
 				}
-				else thread->pos.resetToStarting();
+				else pos.resetToStarting();
 
 				const auto moveCount = 8 + (rng.nextU32() >> 31);
 
@@ -171,7 +176,7 @@ namespace stormphrax::datagen
 				for (i32 i = 0; i < moveCount; ++i)
 				{
 					ScoredMoveList moves{};
-					generateAll(moves, thread->pos);
+					generateAll(moves, pos);
 
 					std::shuffle(moves.begin(), moves.end(), rng);
 
@@ -179,9 +184,11 @@ namespace stormphrax::datagen
 
 					for (const auto [move, score] : moves)
 					{
-						if (thread->pos.isLegal(move))
+						if (pos.isLegal(move))
 						{
-							thread->pos.applyMoveUnchecked<false>(move, nullptr);
+							keys.push_back(pos.key());
+							pos = pos.applyMove<NnueUpdateAction::None>(move, nullptr);
+
 							legalFound = true;
 							break;
 						}
@@ -198,10 +205,9 @@ namespace stormphrax::datagen
 					continue;
 				}
 
-				output.start(thread->pos);
+				output.start(pos);
 
-				thread->pos.clearStateHistory();
-				thread->nnueState.reset(thread->pos.bbs(), thread->pos.kings());
+				thread->nnueState.reset(pos.bbs(), pos.kings());
 
 				thread->maxDepth = 10;
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
@@ -236,8 +242,8 @@ namespace stormphrax::datagen
 
 					if (!move)
 					{
-						if (thread->pos.isCheck())
-							outcome = thread->pos.toMove() == Color::Black
+						if (pos.isCheck())
+							outcome = pos.toMove() == Color::Black
 								? Outcome::WhiteWin
 								: Outcome::WhiteLoss;
 						else outcome = Outcome::Draw; // stalemate
@@ -245,7 +251,7 @@ namespace stormphrax::datagen
 						break;
 					}
 
-					assert(thread->pos.boards().pieceAt(move.src()) != Piece::None);
+					assert(pos.boards().pieceAt(move.src()) != Piece::None);
 
 					if (std::abs(score) > ScoreWin)
 						outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
@@ -284,13 +290,14 @@ namespace stormphrax::datagen
 							outcome = Outcome::Draw;
 					}
 
-					const bool filtered = thread->pos.isCheck() || thread->pos.isNoisy(move);
+					const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
-					thread->pos.applyMoveUnchecked<true, false>(move, &thread->nnueState);
+					keys.push_back(pos.key());
+					pos = pos.applyMove<NnueUpdateAction::Apply>(move, &thread->nnueState);
 
-					assert(eval::staticEvalOnce(thread->pos) == eval::staticEval(thread->pos, thread->nnueState));
+					assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
 
-					if (thread->pos.isDrawn(false))
+					if (pos.isDrawn(false, keys))
 					{
 						outcome = Outcome::Draw;
 						output.push(true, move, 0);

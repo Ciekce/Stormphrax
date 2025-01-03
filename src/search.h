@@ -103,6 +103,39 @@ namespace stormphrax::search
 		StaticVector<Move, 32> failLowNoisies{};
 	};
 
+	template <bool UpdateNnue>
+	class ThreadPosGuard
+	{
+	public:
+		explicit ThreadPosGuard(std::vector<u64> &keyHistory, eval::NnueState &nnueState)
+			: m_keyHistory{keyHistory},
+			  m_nnueState{nnueState} {}
+
+		ThreadPosGuard(ThreadPosGuard &&other) noexcept
+			: m_keyHistory{other.m_keyHistory},
+			  m_nnueState{other.m_nnueState}
+		{
+			// ech
+			other.m_moved = true;
+		}
+
+		inline ~ThreadPosGuard()
+		{
+			if (m_moved)
+				return;
+
+			m_keyHistory.pop_back();
+
+			if constexpr (UpdateNnue)
+				m_nnueState.pop();
+		}
+
+	private:
+		bool m_moved{false};
+		std::vector<u64> &m_keyHistory;
+		eval::NnueState &m_nnueState;
+	};
+
 	struct alignas(CacheLineSize) ThreadData
 	{
 		ThreadData()
@@ -111,6 +144,8 @@ namespace stormphrax::search
 			moveStack.resize(MaxDepth * 2);
 			conthist.resize(MaxDepth + 4);
 			contMoves.resize(MaxDepth + 4);
+
+			keyHistory.reserve(1024);
 		}
 
 		u32 id{};
@@ -137,23 +172,32 @@ namespace stormphrax::search
 		HistoryTables history{};
 		CorrectionHistoryTable correctionHistory{};
 
-		Position pos{};
+		Position rootPos{};
+
+		std::vector<u64> keyHistory{};
 
 		[[nodiscard]] inline auto isMainThread() const
 		{
 			return id == 0;
 		}
 
-		inline auto setNullmove(i32 ply)
+		inline auto applyNullmove(const Position &pos, i32 ply) -> std::pair<Position, ThreadPosGuard<false>>
 		{
 			assert(ply <= MaxDepth);
 
 			stack[ply].move = NullMove;
 			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
 			contMoves[ply] = { Piece::None, Square::None };
+
+			keyHistory.push_back(pos.key());
+
+			return {
+				pos.applyNullMove(),
+				ThreadPosGuard<false>{keyHistory, nnueState}
+			};
 		}
 
-		inline auto setMove(i32 ply, Move move)
+		inline auto applyMove(const Position &pos, i32 ply, Move move) -> std::pair<Position, ThreadPosGuard<true>>
 		{
 			assert(ply <= MaxDepth);
 
@@ -162,6 +206,13 @@ namespace stormphrax::search
 			stack[ply].move = move;
 			conthist[ply] = &history.contTable(moving, move.dst());
 			contMoves[ply] = { moving, move.dst() };
+
+			keyHistory.push_back(pos.key());
+
+			return {
+				pos.applyMove<NnueUpdateAction::Queue>(move, &nnueState),
+				ThreadPosGuard<true>{keyHistory, nnueState}
+			};
 		}
 
 		inline auto clearContMove(i32 ply)
@@ -189,8 +240,8 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
-		auto startSearch(const Position &pos, util::Instant startTime, i32 maxDepth,
-			std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
+		auto startSearch(const Position &pos, std::span<const u64> keyHistory, util::Instant startTime,
+			i32 maxDepth, std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
 
 		// -> [move, unnormalised, normalised]
@@ -308,15 +359,16 @@ namespace stormphrax::search
 		auto searchRoot(ThreadData &thread, bool actualSearch) -> Score;
 
 		template <bool PvNode = false, bool RootNode = false>
-		auto search(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
-			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
+		auto search(ThreadData &thread, const Position &pos, PvList &pv, i32 depth,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score;
 
 		template <>
-		auto search<false, true>(ThreadData &thread, PvList &pv, i32 depth, i32 ply,
-			u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
+		auto search<false, true>(ThreadData &thread, const Position &pos, PvList &pv, i32 depth,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta, bool cutnode) -> Score = delete;
 
 		template <bool PvNode = false>
-		auto qsearch(ThreadData &thread, i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
+		auto qsearch(ThreadData &thread, const Position &pos,
+			i32 ply, u32 moveStackIdx, Score alpha, Score beta) -> Score;
 
 		auto report(const ThreadData &mainThread, const PvList &pv, i32 depth,
 			f64 time, Score score, Score alpha = -ScoreInf, Score beta = ScoreInf) -> void;

@@ -28,14 +28,14 @@ namespace stormphrax::datagen
 	auto Marlinformat::start(const Position &initialPosition) -> void
 	{
 		m_positions.clear();
-		m_curr.copyStateFrom(initialPosition);
+		m_curr = initialPosition;
 	}
 
 	auto Marlinformat::push(bool filtered, Move move, Score score) -> void
 	{
 		if (!filtered)
 			m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
-		m_curr.applyMoveUnchecked<false, false>(move, nullptr);
+		m_curr = m_curr.applyMove<NnueUpdateAction::None>(move, nullptr);
 	}
 
 	auto Marlinformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
