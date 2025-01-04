@@ -84,12 +84,9 @@ namespace stormphrax::bench
 		usize nodes{};
 		f64 time{};
 
-		Position pos{};
-
 		for (const auto &fen : Fens)
 		{
-			if (!pos.resetFromFen(fen))
-				return;
+			const auto pos = *Position::fromFen(fen);
 
 			search::BenchData data{};
 			searcher.runBench(data, pos, depth);

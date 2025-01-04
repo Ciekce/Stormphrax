@@ -165,9 +165,9 @@ namespace stormphrax::datagen
 				if (dfrc)
 				{
 					const auto dfrcIndex = rng.nextU32(960 * 960);
-					pos.resetFromDfrcIndex(dfrcIndex);
+					pos = * Position::fromDfrcIndex(dfrcIndex);
 				}
-				else pos.resetToStarting();
+				else pos = Position::starting();
 
 				const auto moveCount = 8 + (rng.nextU32() >> 31);
 

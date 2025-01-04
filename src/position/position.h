@@ -146,11 +146,6 @@ namespace stormphrax
 	class Position
 	{
 	public:
-		auto resetToStarting() -> void;
-		auto resetFromFen(const std::string &fen) -> bool;
-		auto resetFromFrcIndex(u32 n) -> bool;
-		auto resetFromDfrcIndex(u32 n) -> bool;
-
 		// Moves are assumed to be legal
 		template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
 		[[nodiscard]] auto applyMove(Move move, eval::NnueState *nnueState = nullptr) const -> Position;

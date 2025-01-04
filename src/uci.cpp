@@ -263,7 +263,7 @@ namespace stormphrax
 
 				if (position == "startpos")
 				{
-					m_pos.resetToStarting();
+					m_pos = Position::starting();
 					m_keyHistory.clear();
 				}
 				else if (position == "fen")
@@ -275,9 +275,12 @@ namespace stormphrax
 						fen << tokens[next] << ' ';
 					}
 
-					if (!m_pos.resetFromFen(fen.str()))
-						return;
-					else m_keyHistory.clear();
+					if (const auto newPos = Position::fromFen(fen.str()))
+					{
+						m_pos = *newPos;
+						m_keyHistory.clear();;
+					}
+					else return;
 				}
 				else if (position == "frc")
 				{
@@ -289,10 +292,16 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto frcIndex = util::tryParseU32(tokens[next++]);
-							frcIndex && !m_pos.resetFromFrcIndex(*frcIndex))
-							return;
-						else m_keyHistory.clear();
+						if (const auto frcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (const auto newPos = Position::fromFrcIndex(*frcIndex))
+							{
+								m_pos = *newPos;
+								m_keyHistory.clear();
+							}
+							else return;
+						}
+						else return;
 					}
 				}
 				else if (position == "dfrc")
@@ -305,10 +314,16 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]);
-							dfrcIndex && !m_pos.resetFromDfrcIndex(*dfrcIndex))
-							return;
-						else m_keyHistory.clear();
+						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (const auto newPos = Position::fromDfrcIndex(*dfrcIndex))
+							{
+								m_pos = *newPos;
+								m_keyHistory.clear();
+							}
+							else return;
+						}
+						else return;
 					}
 				}
 				else return;

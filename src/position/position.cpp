@@ -149,461 +149,6 @@ namespace stormphrax
 	template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 	template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates &) -> Piece;
 
-	auto Position::resetToStarting() -> void
-	{
-		*this = Position{};
-
-		auto &bbs = m_boards.bbs();
-
-		bbs.forPiece(PieceType::  Pawn) = U64(0x00FF00000000FF00);
-		bbs.forPiece(PieceType::Knight) = U64(0x4200000000000042);
-		bbs.forPiece(PieceType::Bishop) = U64(0x2400000000000024);
-		bbs.forPiece(PieceType::  Rook) = U64(0x8100000000000081);
-		bbs.forPiece(PieceType:: Queen) = U64(0x0800000000000008);
-		bbs.forPiece(PieceType::  King) = U64(0x1000000000000010);
-
-		bbs.forColor(Color::Black) = U64(0xFFFF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FFFF);
-
-		m_castlingRooks.black().kingside  = Square::H8;
-		m_castlingRooks.black().queenside = Square::A8;
-		m_castlingRooks.white().kingside  = Square::H1;
-		m_castlingRooks.white().queenside = Square::A1;
-
-		m_blackToMove = false;
-		m_fullmove = 1;
-
-		regen();
-	}
-
-	auto Position::resetFromFen(const std::string &fen) -> bool
-	{
-		const auto tokens = split::split(fen, ' ');
-
-		if (tokens.size() > 6)
-		{
-			std::cerr << "excess tokens after fullmove number in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.size() == 5)
-		{
-			std::cerr << "missing fullmove number in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.size() == 4)
-		{
-			std::cerr << "missing halfmove clock in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.size() == 3)
-		{
-			std::cerr << "missing en passant square in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.size() == 2)
-		{
-			std::cerr << "missing castling availability in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.size() == 1)
-		{
-			std::cerr << "missing next move color in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (tokens.empty())
-		{
-			std::cerr << "missing ranks in fen " << fen << std::endl;
-			return false;
-		}
-
-		Position newPos{};
-		auto &newBbs = newPos.bbs();
-
-		u32 rankIdx = 0;
-
-		const auto ranks = split::split(tokens[0], '/');
-		for (const auto &rank : ranks)
-		{
-			if (rankIdx >= 8)
-			{
-				std::cerr << "too many ranks in fen " << fen << std::endl;
-				return false;
-			}
-
-			u32 fileIdx = 0;
-
-			for (const auto c : rank)
-			{
-				if (fileIdx >= 8)
-				{
-					std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
-					return false;
-				}
-
-				if (const auto emptySquares = util::tryParseDigit(c))
-					fileIdx += *emptySquares;
-				else if (const auto piece = pieceFromChar(c); piece != Piece::None)
-				{
-					newPos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
-					++fileIdx;
-				}
-				else
-				{
-					std::cerr << "invalid piece character " << c << " in fen " << fen << std::endl;
-					return false;
-				}
-			}
-
-			// last character was a digit
-			if (fileIdx > 8)
-			{
-				std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
-				return false;
-			}
-
-			if (fileIdx < 8)
-			{
-				std::cerr << "not enough files in rank " << rankIdx << " in fen " << fen << std::endl;
-				return false;
-			}
-
-			++rankIdx;
-		}
-
-		if (const auto blackKingCount = newBbs.forPiece(Piece::BlackKing).popcount();
-			blackKingCount != 1)
-		{
-			std::cerr << "black must have exactly 1 king, " << blackKingCount << " in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (const auto whiteKingCount = newBbs.forPiece(Piece::WhiteKing).popcount();
-			whiteKingCount != 1)
-		{
-			std::cerr << "white must have exactly 1 king, " << whiteKingCount << " in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (newBbs.occupancy().popcount() > 32)
-		{
-			std::cerr << "too many pieces in fen " << fen << std::endl;
-			return false;
-		}
-
-		const auto &color = tokens[1];
-
-		if (color.length() != 1)
-		{
-			std::cerr << "invalid next move color in fen " << fen << std::endl;
-			return false;
-		}
-
-		switch (color[0])
-		{
-		case 'b': newPos.m_blackToMove = true; break;
-		case 'w': newPos.m_blackToMove = false; break;
-		default:
-			std::cerr << "invalid next move color in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (const auto stm = newPos.toMove();
-			newPos.isAttacked<false>(stm,
-				newBbs.forPiece(PieceType::King, oppColor(stm)).lowestSquare(),
-				stm))
-		{
-			std::cerr << "opponent must not be in check" << std::endl;
-			return false;
-		}
-
-		const auto &castlingFlags = tokens[2];
-
-		if (castlingFlags.length() > 4)
-		{
-			std::cerr << "invalid castling availability in fen " << fen << std::endl;
-			return false;
-		}
-
-		if (castlingFlags.length() != 1 || castlingFlags[0] != '-')
-		{
-			if (g_opts.chess960)
-			{
-				for (i32 rank = 0; rank < 8; ++rank)
-				{
-					for (i32 file = 0; file < 8; ++file)
-					{
-						const auto square = toSquare(rank, file);
-
-						const auto piece = newPos.m_boards.pieceAt(square);
-						if (piece != Piece::None && pieceType(piece) == PieceType::King)
-							newPos.m_kings.color(pieceColor(piece)) = square;
-					}
-				}
-
-				for (const auto flag : castlingFlags)
-				{
-					if (flag >= 'a' && flag <= 'h')
-					{
-						const auto file = static_cast<i32>(flag - 'a');
-						const auto kingFile = squareFile(newPos.m_kings.black());
-
-						if (file == kingFile)
-						{
-							std::cerr << "invalid castling availability in fen " << fen << std::endl;
-							return false;
-						}
-
-						if (file < kingFile)
-							newPos.m_castlingRooks.black().queenside = toSquare(7, file);
-						else newPos.m_castlingRooks.black().kingside = toSquare(7, file);
-					}
-					else if (flag >= 'A' && flag <= 'H')
-					{
-						const auto file = static_cast<i32>(flag - 'A');
-						const auto kingFile = squareFile(newPos.m_kings.white());
-
-						if (file == kingFile)
-						{
-							std::cerr << "invalid castling availability in fen " << fen << std::endl;
-							return false;
-						}
-
-						if (file < kingFile)
-							newPos.m_castlingRooks.white().queenside = toSquare(0, file);
-						else newPos.m_castlingRooks.white().kingside = toSquare(0, file);
-					}
-					else if (flag == 'k')
-					{
-						for (i32 file = squareFile(newPos.m_kings.black()) + 1; file < 8; ++file)
-						{
-							const auto square = toSquare(7, file);
-							if (newPos.m_boards.pieceAt(square) == Piece::BlackRook)
-							{
-								newPos.m_castlingRooks.black().kingside = square;
-								break;
-							}
-						}
-					}
-					else if (flag == 'K')
-					{
-						for (i32 file = squareFile(newPos.m_kings.white()) + 1; file < 8; ++file)
-						{
-							const auto square = toSquare(0, file);
-							if (newPos.m_boards.pieceAt(square) == Piece::WhiteRook)
-							{
-								newPos.m_castlingRooks.white().kingside = square;
-								break;
-							}
-						}
-					}
-					else if (flag == 'q')
-					{
-						for (i32 file = squareFile(newPos.m_kings.black()) - 1; file >= 0; --file)
-						{
-							const auto square = toSquare(7, file);
-							if (newPos.m_boards.pieceAt(square) == Piece::BlackRook)
-							{
-								newPos.m_castlingRooks.black().queenside = square;
-								break;
-							}
-						}
-					}
-					else if (flag == 'Q')
-					{
-						for (i32 file = squareFile(newPos.m_kings.white()) - 1; file >= 0; --file)
-						{
-							const auto square = toSquare(0, file);
-							if (newPos.m_boards.pieceAt(square) == Piece::WhiteRook)
-							{
-								newPos.m_castlingRooks.white().queenside = square;
-								break;
-							}
-						}
-					}
-					else
-					{
-						std::cerr << "invalid castling availability in fen " << fen << std::endl;
-						return false;
-					}
-				}
-			}
-			else
-			{
-				for (const auto flag : castlingFlags)
-				{
-					switch (flag)
-					{
-					case 'k': newPos.m_castlingRooks.black().kingside  = Square::H8; break;
-					case 'q': newPos.m_castlingRooks.black().queenside = Square::A8; break;
-					case 'K': newPos.m_castlingRooks.white().kingside  = Square::H1; break;
-					case 'Q': newPos.m_castlingRooks.white().queenside = Square::A1; break;
-					default:
-						std::cerr << "invalid castling availability in fen " << fen << std::endl;
-						return false;
-					}
-				}
-			}
-		}
-
-		const auto &enPassant = tokens[3];
-
-		if (enPassant != "-")
-		{
-			if (newPos.m_enPassant = squareFromString(enPassant); newPos.m_enPassant == Square::None)
-			{
-				std::cerr << "invalid en passant square in fen " << fen << std::endl;
-				return false;
-			}
-		}
-
-		const auto &halfmoveStr = tokens[4];
-
-		if (const auto halfmove = util::tryParseU32(halfmoveStr))
-			newPos.m_halfmove = *halfmove;
-		else
-		{
-			std::cerr << "invalid halfmove clock in fen " << fen << std::endl;
-			return false;
-		}
-
-		const auto &fullmoveStr = tokens[5];
-
-		if (const auto fullmove = util::tryParseU32(fullmoveStr))
-			newPos.m_fullmove = *fullmove;
-		else
-		{
-			std::cerr << "invalid fullmove number in fen " << fen << std::endl;
-			return false;
-		}
-
-		*this = newPos;
-		regen();
-
-		return true;
-	}
-
-	auto Position::resetFromFrcIndex(u32 n) -> bool
-	{
-		assert(g_opts.chess960);
-
-		if (n >= 960)
-		{
-			std::cerr << "invalid frc position index " << n << std::endl;
-			return false;
-		}
-
-		*this = Position{};
-
-		auto &bbs = m_boards.bbs();
-
-		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
-
-		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FF00);
-
-		const auto backrank = scharnaglToBackrank(n);
-
-		bool firstRook = true;
-
-		for (i32 i = 0; i < 8; ++i)
-		{
-			const auto blackSquare = toSquare(7, i);
-			const auto whiteSquare = toSquare(0, i);
-
-			m_boards.setPiece(blackSquare, colorPiece(backrank[i], Color::Black));
-			m_boards.setPiece(whiteSquare, colorPiece(backrank[i], Color::White));
-
-			if (backrank[i] == PieceType::Rook)
-			{
-				if (firstRook)
-				{
-					m_castlingRooks.black().queenside = blackSquare;
-					m_castlingRooks.white().queenside = whiteSquare;
-				}
-				else
-				{
-					m_castlingRooks.black().kingside  = blackSquare;
-					m_castlingRooks.white().kingside  = whiteSquare;
-				}
-
-				firstRook = false;
-			}
-		}
-
-		m_blackToMove = false;
-		m_fullmove = 1;
-
-		regen();
-
-		return true;
-	}
-
-	auto Position::resetFromDfrcIndex(u32 n) -> bool
-	{
-		assert(g_opts.chess960);
-
-		if (n >= 960 * 960)
-		{
-			std::cerr << "invalid dfrc position index " << n << std::endl;
-			return false;
-		}
-
-		*this = Position{};
-
-		auto &bbs = m_boards.bbs();
-
-		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
-
-		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
-		bbs.forColor(Color::White) = U64(0x000000000000FF00);
-
-		const auto blackBackrank = scharnaglToBackrank(n / 960);
-		const auto whiteBackrank = scharnaglToBackrank(n % 960);
-
-		bool firstBlackRook = true;
-		bool firstWhiteRook = true;
-
-		for (i32 i = 0; i < 8; ++i)
-		{
-			const auto blackSquare = toSquare(7, i);
-			const auto whiteSquare = toSquare(0, i);
-
-			m_boards.setPiece(blackSquare, colorPiece(blackBackrank[i], Color::Black));
-			m_boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], Color::White));
-
-			if (blackBackrank[i] == PieceType::Rook)
-			{
-				if (firstBlackRook)
-					m_castlingRooks.black().queenside = blackSquare;
-				else m_castlingRooks.black().kingside = blackSquare;
-
-				firstBlackRook = false;
-			}
-
-			if (whiteBackrank[i] == PieceType::Rook)
-			{
-				if (firstWhiteRook)
-					m_castlingRooks.white().queenside = whiteSquare;
-				else m_castlingRooks.white().kingside = whiteSquare;
-
-				firstWhiteRook = false;
-			}
-		}
-
-		m_blackToMove = false;
-		m_fullmove = 1;
-
-		regen();
-
-		return true;
-	}
-
 	template <NnueUpdateAction NnueAction>
 	auto Position::applyMove(Move move, eval::NnueState *nnueState) const -> Position
 	{
@@ -1485,19 +1030,342 @@ namespace stormphrax
 
 	auto Position::starting() -> Position
 	{
-		Position position{};
-		position.resetToStarting();
-		return position;
+		Position pos{};
+
+		auto &bbs = pos.m_boards.bbs();
+
+		bbs.forPiece(PieceType::  Pawn) = U64(0x00FF00000000FF00);
+		bbs.forPiece(PieceType::Knight) = U64(0x4200000000000042);
+		bbs.forPiece(PieceType::Bishop) = U64(0x2400000000000024);
+		bbs.forPiece(PieceType::  Rook) = U64(0x8100000000000081);
+		bbs.forPiece(PieceType:: Queen) = U64(0x0800000000000008);
+		bbs.forPiece(PieceType::  King) = U64(0x1000000000000010);
+
+		bbs.forColor(Color::Black) = U64(0xFFFF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FFFF);
+
+		pos.m_castlingRooks.black().kingside  = Square::H8;
+		pos.m_castlingRooks.black().queenside = Square::A8;
+		pos.m_castlingRooks.white().kingside  = Square::H1;
+		pos.m_castlingRooks.white().queenside = Square::A1;
+
+		pos.m_blackToMove = false;
+		pos.m_fullmove = 1;
+
+		pos.regen();
+
+		return pos;
 	}
 
 	auto Position::fromFen(const std::string &fen) -> std::optional<Position>
 	{
-		Position position{};
+		const auto tokens = split::split(fen, ' ');
 
-		if (position.resetFromFen(fen))
-			return position;
+		if (tokens.size() > 6)
+		{
+			std::cerr << "excess tokens after fullmove number in fen " << fen << std::endl;
+			return {};
+		}
 
-		return {};
+		if (tokens.size() == 5)
+		{
+			std::cerr << "missing fullmove number in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (tokens.size() == 4)
+		{
+			std::cerr << "missing halfmove clock in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (tokens.size() == 3)
+		{
+			std::cerr << "missing en passant square in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (tokens.size() == 2)
+		{
+			std::cerr << "missing castling availability in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (tokens.size() == 1)
+		{
+			std::cerr << "missing next move color in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (tokens.empty())
+		{
+			std::cerr << "missing ranks in fen " << fen << std::endl;
+			return {};
+		}
+
+		Position pos{};
+		auto &bbs = pos.bbs();
+
+		u32 rankIdx = 0;
+
+		const auto ranks = split::split(tokens[0], '/');
+		for (const auto &rank : ranks)
+		{
+			if (rankIdx >= 8)
+			{
+				std::cerr << "too many ranks in fen " << fen << std::endl;
+				return {};
+			}
+
+			u32 fileIdx = 0;
+
+			for (const auto c : rank)
+			{
+				if (fileIdx >= 8)
+				{
+					std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
+					return {};
+				}
+
+				if (const auto emptySquares = util::tryParseDigit(c))
+					fileIdx += *emptySquares;
+				else if (const auto piece = pieceFromChar(c); piece != Piece::None)
+				{
+					pos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
+					++fileIdx;
+				}
+				else
+				{
+					std::cerr << "invalid piece character " << c << " in fen " << fen << std::endl;
+					return {};
+				}
+			}
+
+			// last character was a digit
+			if (fileIdx > 8)
+			{
+				std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
+				return {};
+			}
+
+			if (fileIdx < 8)
+			{
+				std::cerr << "not enough files in rank " << rankIdx << " in fen " << fen << std::endl;
+				return {};
+			}
+
+			++rankIdx;
+		}
+
+		if (const auto blackKingCount = bbs.forPiece(Piece::BlackKing).popcount();
+			blackKingCount != 1)
+		{
+			std::cerr << "black must have exactly 1 king, " << blackKingCount << " in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (const auto whiteKingCount = bbs.forPiece(Piece::WhiteKing).popcount();
+			whiteKingCount != 1)
+		{
+			std::cerr << "white must have exactly 1 king, " << whiteKingCount << " in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (bbs.occupancy().popcount() > 32)
+		{
+			std::cerr << "too many pieces in fen " << fen << std::endl;
+			return {};
+		}
+
+		const auto &color = tokens[1];
+
+		if (color.length() != 1)
+		{
+			std::cerr << "invalid next move color in fen " << fen << std::endl;
+			return {};
+		}
+
+		switch (color[0])
+		{
+			case 'b': pos.m_blackToMove = true; break;
+			case 'w': pos.m_blackToMove = false; break;
+			default:
+				std::cerr << "invalid next move color in fen " << fen << std::endl;
+				return {};
+		}
+
+		if (const auto stm = pos.toMove();
+			pos.isAttacked<false>(stm,
+				bbs.forPiece(PieceType::King, oppColor(stm)).lowestSquare(),
+				stm))
+		{
+			std::cerr << "opponent must not be in check" << std::endl;
+			return {};
+		}
+
+		const auto &castlingFlags = tokens[2];
+
+		if (castlingFlags.length() > 4)
+		{
+			std::cerr << "invalid castling availability in fen " << fen << std::endl;
+			return {};
+		}
+
+		if (castlingFlags.length() != 1 || castlingFlags[0] != '-')
+		{
+			if (g_opts.chess960)
+			{
+				for (i32 rank = 0; rank < 8; ++rank)
+				{
+					for (i32 file = 0; file < 8; ++file)
+					{
+						const auto square = toSquare(rank, file);
+
+						const auto piece = pos.m_boards.pieceAt(square);
+						if (piece != Piece::None && pieceType(piece) == PieceType::King)
+							pos.m_kings.color(pieceColor(piece)) = square;
+					}
+				}
+
+				for (const auto flag : castlingFlags)
+				{
+					if (flag >= 'a' && flag <= 'h')
+					{
+						const auto file = static_cast<i32>(flag - 'a');
+						const auto kingFile = squareFile(pos.m_kings.black());
+
+						if (file == kingFile)
+						{
+							std::cerr << "invalid castling availability in fen " << fen << std::endl;
+							return {};
+						}
+
+						if (file < kingFile)
+							pos.m_castlingRooks.black().queenside = toSquare(7, file);
+						else pos.m_castlingRooks.black().kingside = toSquare(7, file);
+					}
+					else if (flag >= 'A' && flag <= 'H')
+					{
+						const auto file = static_cast<i32>(flag - 'A');
+						const auto kingFile = squareFile(pos.m_kings.white());
+
+						if (file == kingFile)
+						{
+							std::cerr << "invalid castling availability in fen " << fen << std::endl;
+							return {};
+						}
+
+						if (file < kingFile)
+							pos.m_castlingRooks.white().queenside = toSquare(0, file);
+						else pos.m_castlingRooks.white().kingside = toSquare(0, file);
+					}
+					else if (flag == 'k')
+					{
+						for (i32 file = squareFile(pos.m_kings.black()) + 1; file < 8; ++file)
+						{
+							const auto square = toSquare(7, file);
+							if (pos.m_boards.pieceAt(square) == Piece::BlackRook)
+							{
+								pos.m_castlingRooks.black().kingside = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'K')
+					{
+						for (i32 file = squareFile(pos.m_kings.white()) + 1; file < 8; ++file)
+						{
+							const auto square = toSquare(0, file);
+							if (pos.m_boards.pieceAt(square) == Piece::WhiteRook)
+							{
+								pos.m_castlingRooks.white().kingside = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'q')
+					{
+						for (i32 file = squareFile(pos.m_kings.black()) - 1; file >= 0; --file)
+						{
+							const auto square = toSquare(7, file);
+							if (pos.m_boards.pieceAt(square) == Piece::BlackRook)
+							{
+								pos.m_castlingRooks.black().queenside = square;
+								break;
+							}
+						}
+					}
+					else if (flag == 'Q')
+					{
+						for (i32 file = squareFile(pos.m_kings.white()) - 1; file >= 0; --file)
+						{
+							const auto square = toSquare(0, file);
+							if (pos.m_boards.pieceAt(square) == Piece::WhiteRook)
+							{
+								pos.m_castlingRooks.white().queenside = square;
+								break;
+							}
+						}
+					}
+					else
+					{
+						std::cerr << "invalid castling availability in fen " << fen << std::endl;
+						return {};
+					}
+				}
+			}
+			else
+			{
+				for (const auto flag : castlingFlags)
+				{
+					switch (flag)
+					{
+						case 'k': pos.m_castlingRooks.black().kingside  = Square::H8; break;
+						case 'q': pos.m_castlingRooks.black().queenside = Square::A8; break;
+						case 'K': pos.m_castlingRooks.white().kingside  = Square::H1; break;
+						case 'Q': pos.m_castlingRooks.white().queenside = Square::A1; break;
+						default:
+							std::cerr << "invalid castling availability in fen " << fen << std::endl;
+							return {};
+					}
+				}
+			}
+		}
+
+		const auto &enPassant = tokens[3];
+
+		if (enPassant != "-")
+		{
+			if (pos.m_enPassant = squareFromString(enPassant); pos.m_enPassant == Square::None)
+			{
+				std::cerr << "invalid en passant square in fen " << fen << std::endl;
+				return {};
+			}
+		}
+
+		const auto &halfmoveStr = tokens[4];
+
+		if (const auto halfmove = util::tryParseU32(halfmoveStr))
+			pos.m_halfmove = *halfmove;
+		else
+		{
+			std::cerr << "invalid halfmove clock in fen " << fen << std::endl;
+			return {};
+		}
+
+		const auto &fullmoveStr = tokens[5];
+
+		if (const auto fullmove = util::tryParseU32(fullmoveStr))
+			pos.m_fullmove = *fullmove;
+		else
+		{
+			std::cerr << "invalid fullmove number in fen " << fen << std::endl;
+			return {};
+		}
+
+		pos.regen();
+
+		return pos;
 	}
 
 	auto Position::fromFrcIndex(u32 n) -> std::optional<Position>
@@ -1510,10 +1378,50 @@ namespace stormphrax
 			return {};
 		}
 
-		Position position{};
-		position.resetFromFrcIndex(n);
+		Position pos{};
 
-		return position;
+		auto &bbs = pos.m_boards.bbs();
+
+		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+
+		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FF00);
+
+		const auto backrank = scharnaglToBackrank(n);
+
+		bool firstRook = true;
+
+		for (i32 i = 0; i < 8; ++i)
+		{
+			const auto blackSquare = toSquare(7, i);
+			const auto whiteSquare = toSquare(0, i);
+
+			pos.m_boards.setPiece(blackSquare, colorPiece(backrank[i], Color::Black));
+			pos.m_boards.setPiece(whiteSquare, colorPiece(backrank[i], Color::White));
+
+			if (backrank[i] == PieceType::Rook)
+			{
+				if (firstRook)
+				{
+					pos.m_castlingRooks.black().queenside = blackSquare;
+					pos.m_castlingRooks.white().queenside = whiteSquare;
+				}
+				else
+				{
+					pos.m_castlingRooks.black().kingside  = blackSquare;
+					pos.m_castlingRooks.white().kingside  = whiteSquare;
+				}
+
+				firstRook = false;
+			}
+		}
+
+		pos.m_blackToMove = false;
+		pos.m_fullmove = 1;
+
+		pos.regen();
+
+		return pos;
 	}
 
 	auto Position::fromDfrcIndex(u32 n) -> std::optional<Position>
@@ -1526,10 +1434,54 @@ namespace stormphrax
 			return {};
 		}
 
-		Position position{};
-		position.resetFromDfrcIndex(n);
+		Position pos{};
 
-		return position;
+		auto &bbs = pos.m_boards.bbs();
+
+		bbs.forPiece(PieceType::Pawn) = U64(0x00FF00000000FF00);
+
+		bbs.forColor(Color::Black) = U64(0x00FF000000000000);
+		bbs.forColor(Color::White) = U64(0x000000000000FF00);
+
+		const auto blackBackrank = scharnaglToBackrank(n / 960);
+		const auto whiteBackrank = scharnaglToBackrank(n % 960);
+
+		bool firstBlackRook = true;
+		bool firstWhiteRook = true;
+
+		for (i32 i = 0; i < 8; ++i)
+		{
+			const auto blackSquare = toSquare(7, i);
+			const auto whiteSquare = toSquare(0, i);
+
+			pos.m_boards.setPiece(blackSquare, colorPiece(blackBackrank[i], Color::Black));
+			pos.m_boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], Color::White));
+
+			if (blackBackrank[i] == PieceType::Rook)
+			{
+				if (firstBlackRook)
+					pos.m_castlingRooks.black().queenside = blackSquare;
+				else pos.m_castlingRooks.black().kingside = blackSquare;
+
+				firstBlackRook = false;
+			}
+
+			if (whiteBackrank[i] == PieceType::Rook)
+			{
+				if (firstWhiteRook)
+					pos.m_castlingRooks.white().queenside = whiteSquare;
+				else pos.m_castlingRooks.white().kingside = whiteSquare;
+
+				firstWhiteRook = false;
+			}
+		}
+
+		pos.m_blackToMove = false;
+		pos.m_fullmove = 1;
+
+		pos.regen();
+
+		return pos;
 	}
 
 	auto squareFromString(const std::string &str) -> Square
