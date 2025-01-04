@@ -139,9 +139,6 @@ namespace stormphrax::datagen
 
 			auto &pos = thread->rootPos;
 
-			std::vector<u64> keys{};
-			keys.reserve(1024);
-
 			const auto resetSearch = [&searcher, &thread]()
 			{
 				searcher.newGame();
@@ -150,6 +147,8 @@ namespace stormphrax::datagen
 
 				thread->history.clear();
 				thread->correctionHistory.clear();
+
+				thread->keyHistory.clear();
 			};
 
 			Format output{};
@@ -186,7 +185,7 @@ namespace stormphrax::datagen
 					{
 						if (pos.isLegal(move))
 						{
-							keys.push_back(pos.key());
+							thread->keyHistory.push_back(pos.key());
 							pos = pos.applyMove(move);
 
 							legalFound = true;
@@ -292,12 +291,12 @@ namespace stormphrax::datagen
 
 					const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
-					keys.push_back(pos.key());
+					thread->keyHistory.push_back(pos.key());
 					pos = pos.applyMove<NnueUpdateAction::Apply>(move, &thread->nnueState);
 
 					assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
 
-					if (pos.isDrawn(false, keys))
+					if (pos.isDrawn(false, thread->keyHistory))
 					{
 						outcome = Outcome::Draw;
 						output.push(true, move, 0);
