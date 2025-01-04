@@ -187,7 +187,7 @@ namespace stormphrax::datagen
 						if (pos.isLegal(move))
 						{
 							keys.push_back(pos.key());
-							pos = pos.applyMove<NnueUpdateAction::None>(move, nullptr);
+							pos = pos.applyMove(move);
 
 							legalFound = true;
 							break;

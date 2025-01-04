@@ -152,12 +152,12 @@ namespace stormphrax
 		auto resetFromDfrcIndex(u32 n) -> bool;
 
 		// Moves are assumed to be legal
-		template <NnueUpdateAction NnueAction>
-		[[nodiscard]] auto applyMove(Move move, eval::NnueState *nnueState) const -> Position;
+		template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
+		[[nodiscard]] auto applyMove(Move move, eval::NnueState *nnueState = nullptr) const -> Position;
 
 		[[nodiscard]] inline auto applyNullMove() const
 		{
-			return applyMove<NnueUpdateAction::None>(NullMove, nullptr);
+			return applyMove(NullMove);
 		}
 
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;

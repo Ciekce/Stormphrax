@@ -35,7 +35,7 @@ namespace stormphrax::datagen
 	{
 		if (!filtered)
 			m_positions.push_back(m_curr.toFen() + " | " + std::to_string(score));
-		m_curr = m_curr.applyMove<NnueUpdateAction::None>(move, nullptr);
+		m_curr = m_curr.applyMove(move);
 	}
 
 	auto Fen::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize

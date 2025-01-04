@@ -320,7 +320,7 @@ namespace stormphrax
 						if (const auto move = m_pos.moveFromUci(tokens[next]))
 						{
 							m_keyHistory.push_back(m_pos.key());
-							m_pos = m_pos.applyMove<NnueUpdateAction::None>(move, nullptr);
+							m_pos = m_pos.applyMove(move);
 						}
 					}
 				}

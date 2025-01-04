@@ -35,7 +35,7 @@ namespace stormphrax::datagen
 	{
 		if (!filtered)
 			m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
-		m_curr = m_curr.applyMove<NnueUpdateAction::None>(move, nullptr);
+		m_curr = m_curr.applyMove(move);
 	}
 
 	auto Marlinformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize

@@ -51,7 +51,7 @@ namespace stormphrax
 					++total;
 				else
 				{
-					const auto newPos = pos.applyMove<NnueUpdateAction::None>(move, nullptr);
+					const auto newPos = pos.applyMove(move);
 					total += doPerft(newPos, depth);
 				}
 			}
@@ -81,7 +81,7 @@ namespace stormphrax
 			if (!pos.isLegal(move))
 				continue;
 
-			const auto newPos = pos.applyMove<NnueUpdateAction::None>(move, nullptr);
+			const auto newPos = pos.applyMove(move);
 			const auto value = doPerft(newPos, depth);
 
 			total += value;
