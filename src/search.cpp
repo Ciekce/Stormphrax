@@ -768,7 +768,6 @@ namespace stormphrax::search
 					m_ttable.prefetch(pos.roughKeyAfter(move));
 
 					const auto [newPos, guard] = thread.applyMove(pos, ply, move);
-					assert(thread.keyHistory.back() == pos.key());
 
 					auto score = -qsearch(thread, newPos, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
@@ -934,7 +933,6 @@ namespace stormphrax::search
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
-			assert(thread.keyHistory.back() == pos.key());
 
 			const bool givesCheck = newPos.isCheck();
 
@@ -1212,7 +1210,6 @@ namespace stormphrax::search
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
-			assert(thread.keyHistory.back() == pos.key());
 
 			const auto score = newPos.isDrawn(false, thread.keyHistory)
 				? drawScore(thread.search.loadNodes())
