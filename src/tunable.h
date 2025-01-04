@@ -50,7 +50,7 @@ namespace stormphrax::tunable
 
 #define SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
 	SP_TUNABLE_ASSERTS(static_cast<i32>((Default) * (Q)), static_cast<i32>((Min) * (Q)), \
-		static_cast<i32>((Max) * (Q)), static_cast<i32>((Step) * (Q))) \
+	static_cast<i32>((Max) * (Q)), static_cast<i32>((Step) * (Q))) \
     static_assert((Q) > 0); \
     static_assert(static_cast<f64>(static_cast<i32>(Q)) == Q);
 
@@ -70,18 +70,18 @@ namespace stormphrax::tunable
 		i32 min, i32 max, f64 step, std::function<void()> callback) -> TunableParam &;
 
 	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
-	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
+		SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 		inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step, nullptr); \
 		inline auto Name() { return param_##Name.value; }
 
 	#define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
-	    SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
+		SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 		inline TunableParam &param_##Name = addTunableParam(#Name, Default, Min, Max, Step, Callback); \
 		inline auto Name() { return param_##Name.value; }
 
 	//TODO tune these as actual floating-point values
 	#define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
-	    SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
+		SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
 		inline TunableParam &param_##Name = addTunableParam(#Name, \
 			(Default) * (Q), (Min) * (Q), (Max) * (Q), (Step) * (Q), nullptr); \
 		inline auto Name() { return static_cast<f64>(param_##Name.value) / (Q); }
@@ -92,7 +92,7 @@ namespace stormphrax::tunable
 	#define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 
-#define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
+	#define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
 		SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
 		constexpr auto Name() -> f64 { return Default; }
 #endif
