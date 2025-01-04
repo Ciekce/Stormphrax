@@ -28,19 +28,19 @@ namespace stormphrax::datagen
 	auto Fen::start(const Position &initialPosition) -> void
 	{
 		m_positions.clear();
-		m_curr.copyStateFrom(initialPosition);
+		m_curr = initialPosition;
 	}
 
 	auto Fen::push(bool filtered, Move move, Score score) -> void
 	{
 		if (!filtered)
 			m_positions.push_back(m_curr.toFen() + " | " + std::to_string(score));
-		m_curr.applyMoveUnchecked<false, false>(move, nullptr);
+		m_curr = m_curr.applyMove(move);
 	}
 
 	auto Fen::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
 	{
-		for (auto &fen : m_positions)
+		for (const auto &fen : m_positions)
 		{
 			stream << fen << " | ";
 

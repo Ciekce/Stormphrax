@@ -117,6 +117,7 @@ namespace stormphrax
 
 			search::Searcher m_searcher{};
 
+			std::vector<u64> m_keyHistory{};
 			Position m_pos{Position::starting()};
 
 			i32 m_moveOverhead{limit::DefaultMoveOverhead};
@@ -261,7 +262,10 @@ namespace stormphrax
 				usize next = 2;
 
 				if (position == "startpos")
-					m_pos.resetToStarting();
+				{
+					m_pos = Position::starting();
+					m_keyHistory.clear();
+				}
 				else if (position == "fen")
 				{
 					std::ostringstream fen{};
@@ -271,8 +275,12 @@ namespace stormphrax
 						fen << tokens[next] << ' ';
 					}
 
-					if (!m_pos.resetFromFen(fen.str()))
-						return;
+					if (const auto newPos = Position::fromFen(fen.str()))
+					{
+						m_pos = *newPos;
+						m_keyHistory.clear();;
+					}
+					else return;
 				}
 				else if (position == "frc")
 				{
@@ -284,9 +292,16 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto frcIndex = util::tryParseU32(tokens[next++]);
-							frcIndex && !m_pos.resetFromFrcIndex(*frcIndex))
-							return;
+						if (const auto frcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (const auto newPos = Position::fromFrcIndex(*frcIndex))
+							{
+								m_pos = *newPos;
+								m_keyHistory.clear();
+							}
+							else return;
+						}
+						else return;
 					}
 				}
 				else if (position == "dfrc")
@@ -299,9 +314,16 @@ namespace stormphrax
 
 					if (next < tokens.size())
 					{
-						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]);
-							dfrcIndex && !m_pos.resetFromDfrcIndex(*dfrcIndex))
-							return;
+						if (const auto dfrcIndex = util::tryParseU32(tokens[next++]))
+						{
+							if (const auto newPos = Position::fromDfrcIndex(*dfrcIndex))
+							{
+								m_pos = *newPos;
+								m_keyHistory.clear();
+							}
+							else return;
+						}
+						else return;
 					}
 				}
 				else return;
@@ -311,7 +333,10 @@ namespace stormphrax
 					for (; next < tokens.size(); ++next)
 					{
 						if (const auto move = m_pos.moveFromUci(tokens[next]))
-							m_pos.applyMoveUnchecked<false, false>(move, nullptr);
+						{
+							m_keyHistory.push_back(m_pos.key());
+							m_pos = m_pos.applyMove(move);
+						}
 					}
 				}
 			}
@@ -495,7 +520,7 @@ namespace stormphrax
 						static_cast<f64>(increment) / 1000.0,
 						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
 
-				m_searcher.startSearch(m_pos, startTime,
+				m_searcher.startSearch(m_pos, m_keyHistory, startTime,
 					static_cast<i32>(depth), movesToSearch, std::move(limiter), infinite);
 			}
 		}
