@@ -924,7 +924,7 @@ namespace stormphrax::search
 				else if (cutnode)
 					extension = -2;
 				else if (ttEntry.score >= beta)
-					extension = -1;
+					extension = -2;
 			}
 
 			curr.multiExtensions += extension >= 2;
