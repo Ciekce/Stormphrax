@@ -100,7 +100,7 @@ namespace stormphrax::eval::nnue
 
 		[[nodiscard]] static constexpr auto calcPadding(usize v) -> usize
 		{
-			return v - util::ceilDiv(v, BlockSize) * BlockSize;
+			return v - util::pad<BlockSize>(v);
 		}
 	};
 

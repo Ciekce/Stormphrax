@@ -45,6 +45,6 @@ namespace stormphrax::util
 	template <std::unsigned_integral auto Block>
 	[[nodiscard]] inline auto pad(decltype(Block) v)
 	{
-		return ((v + Block - 1) / Block) * Block;
+		return ceilDiv(v, Block) * Block;
 	}
 }
