@@ -172,7 +172,7 @@ namespace stormphrax::search
 			return id == 0;
 		}
 
-		inline auto applyNullmove(const Position &pos, i32 ply)
+		[[nodiscard]] inline auto applyNullmove(const Position &pos, i32 ply)
 		{
 			assert(ply <= MaxDepth);
 
@@ -189,7 +189,7 @@ namespace stormphrax::search
 			};
 		}
 
-		inline auto applyMove(const Position &pos, i32 ply, Move move)
+		[[nodiscard]] inline auto applyMove(const Position &pos, i32 ply, Move move)
 		{
 			assert(ply <= MaxDepth);
 
