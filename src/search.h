@@ -111,19 +111,11 @@ namespace stormphrax::search
 			: m_keyHistory{keyHistory},
 			  m_nnueState{nnueState} {}
 
-		ThreadPosGuard(ThreadPosGuard &&other) noexcept
-			: m_keyHistory{other.m_keyHistory},
-			  m_nnueState{other.m_nnueState}
-		{
-			// ech
-			other.m_moved = true;
-		}
+		ThreadPosGuard(const ThreadPosGuard &) = delete;
+		ThreadPosGuard(ThreadPosGuard &&) = delete;
 
 		inline ~ThreadPosGuard()
 		{
-			if (m_moved)
-				return;
-
 			m_keyHistory.pop_back();
 
 			if constexpr (UpdateNnue)
@@ -131,7 +123,6 @@ namespace stormphrax::search
 		}
 
 	private:
-		bool m_moved{false};
 		std::vector<u64> &m_keyHistory;
 		eval::NnueState &m_nnueState;
 	};
@@ -181,7 +172,7 @@ namespace stormphrax::search
 			return id == 0;
 		}
 
-		inline auto applyNullmove(const Position &pos, i32 ply) -> std::pair<Position, ThreadPosGuard<false>>
+		inline auto applyNullmove(const Position &pos, i32 ply)
 		{
 			assert(ply <= MaxDepth);
 
@@ -191,13 +182,14 @@ namespace stormphrax::search
 
 			keyHistory.push_back(pos.key());
 
-			return {
-				pos.applyNullMove(),
-				ThreadPosGuard<false>{keyHistory, nnueState}
+			return std::pair<Position, ThreadPosGuard<false>>{
+				std::piecewise_construct,
+				std::forward_as_tuple(pos.applyNullMove()),
+				std::forward_as_tuple(keyHistory, nnueState)
 			};
 		}
 
-		inline auto applyMove(const Position &pos, i32 ply, Move move) -> std::pair<Position, ThreadPosGuard<true>>
+		inline auto applyMove(const Position &pos, i32 ply, Move move)
 		{
 			assert(ply <= MaxDepth);
 
@@ -209,9 +201,10 @@ namespace stormphrax::search
 
 			keyHistory.push_back(pos.key());
 
-			return {
-				pos.applyMove<NnueUpdateAction::Queue>(move, &nnueState),
-				ThreadPosGuard<true>{keyHistory, nnueState}
+			return std::pair<Position, ThreadPosGuard<true>>{
+				std::piecewise_construct,
+				std::forward_as_tuple(pos.applyMove<NnueUpdateAction::Queue>(move, &nnueState)),
+				std::forward_as_tuple(keyHistory, nnueState)
 			};
 		}
 
