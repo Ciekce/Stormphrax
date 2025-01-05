@@ -20,26 +20,35 @@
 
 #include "../types.h"
 
+#include <compare>
+
 namespace stormphrax::util
 {
-	class Timer
+	class Instant
 	{
 	public:
-		Timer();
-		~Timer() = default;
+		[[nodiscard]] auto elapsed() const -> f64;
 
-		[[nodiscard]] auto time() const -> f64;
+		inline auto operator+(f64 time) const
+		{
+			return Instant{m_time + time};
+		}
 
-		[[nodiscard]] static auto roughTimeMs() -> i64;
+		inline auto operator-(f64 time) const
+		{
+			return Instant{m_time - time};
+		}
+
+		[[nodiscard]] inline auto operator<=>(const Instant &other) const
+		{
+			return m_time <=> other.m_time;
+		}
+
+		[[nodiscard]] static auto now() -> Instant;
 
 	private:
-#ifdef _WIN32
-		u64 m_initTime{};
-		f64 m_frequency;
-#else
-		f64 m_initTime;
-#endif
-	};
+		explicit Instant(f64 time) : m_time{time} {}
 
-	inline const Timer g_timer{};
+		f64 m_time;
+	};
 }

@@ -43,6 +43,12 @@ namespace stormphrax::util
 		return (a + b - 1) / b;
 	}
 
+	template <std::unsigned_integral auto Block>
+	[[nodiscard]] inline auto pad(decltype(Block) v)
+	{
+		return ceilDiv(v, Block) * Block;
+	}
+
 	template <std::unsigned_integral T>
 	constexpr auto floorLog2(T v)
 	{

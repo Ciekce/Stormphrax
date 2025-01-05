@@ -21,51 +21,79 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
-namespace stormphrax::util
-{
-	Timer::Timer()
-	{
-		u64 freq{};
-		QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER *>(&freq));
-
-		m_frequency = static_cast<f64>(freq);
-
-		QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&m_initTime));
-	}
-
-	auto Timer::time() const -> f64
-	{
-		u64 time{};
-		QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&time));
-
-		return static_cast<f64>(time - m_initTime) / m_frequency;
-	}
-
-	auto Timer::roughTimeMs() -> i64
-	{
-		return static_cast<i64>(GetTickCount64());
-	}
-}
-#else // assume posix
+#else // posix
 #include <time.h>
+#endif
 
 namespace stormphrax::util
 {
-	Timer::Timer()
+	namespace
 	{
-		struct timespec time;
-		clock_gettime(CLOCK_MONOTONIC, &time);
+		class Timer
+		{
+		public:
+			Timer();
+			~Timer() = default;
 
-		m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
+			[[nodiscard]] auto time() const -> f64;
+
+		private:
+#ifdef _WIN32
+			u64 m_initTime{};
+			f64 m_frequency;
+#else
+			f64 m_initTime;
+#endif
+		};
+
+#ifdef _WIN32
+		Timer::Timer()
+		{
+			LARGE_INTEGER freq{};
+			QueryPerformanceFrequency(&freq);
+
+			LARGE_INTEGER initTime{};
+			QueryPerformanceCounter(&initTime);
+
+			m_frequency = static_cast<f64>(freq.QuadPart);
+			m_initTime = initTime.QuadPart;
+		}
+
+		auto Timer::time() const -> f64
+		{
+			LARGE_INTEGER time{};
+			QueryPerformanceCounter(&time);
+
+			return static_cast<f64>(time.QuadPart - m_initTime) / m_frequency;
+		}
+#else
+		Timer::Timer()
+		{
+			struct timespec time;
+			clock_gettime(CLOCK_MONOTONIC, &time);
+
+			m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
+		}
+
+		auto Timer::time() const -> f64
+		{
+			struct timespec time{};
+			clock_gettime(CLOCK_MONOTONIC, &time);
+
+			return (static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0) - m_initTime;
+		}
+#endif
+
+		const Timer s_timer{};
 	}
 
-	auto Timer::time() const -> f64
+	auto Instant::elapsed() const -> f64
 	{
-		struct timespec time{};
-		clock_gettime(CLOCK_MONOTONIC, &time);
+		return s_timer.time() - m_time;
+	}
 
-		return (static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0) - m_initTime;
+	auto Instant::now() -> Instant
+	{
+		return Instant{s_timer.time()};
 	}
 }
-#endif

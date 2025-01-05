@@ -127,27 +127,6 @@ namespace stormphrax
 		[[nodiscard]] inline auto operator==(const Keys &other) const -> bool = default;
 	};
 
-	struct BoardState
-	{
-		PositionBoards boards{};
-
-		Keys keys{};
-
-		Bitboard checkers{};
-		Bitboard pinned{};
-		Bitboard threats{};
-
-		CastlingRooks castlingRooks{};
-
-		u16 halfmove{};
-
-		Square enPassant{Square::None};
-
-		KingPair kings{};
-	};
-
-	static_assert(sizeof(BoardState) == 208);
-
 	[[nodiscard]] inline auto squareToString(Square square)
 	{
 		constexpr auto Files = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
@@ -157,74 +136,30 @@ namespace stormphrax
 		return std::string{Files[s % 8], Ranks[s / 8]};
 	}
 
-	class Position;
-
-	template <bool UpdateNnue>
-	class HistoryGuard
+	enum class NnueUpdateAction
 	{
-	public:
-		explicit HistoryGuard(Position &pos, eval::NnueState *nnueState)
-			: m_pos{pos},
-			  m_nnueState{nnueState} {}
-		inline ~HistoryGuard();
-
-	private:
-		Position &m_pos;
-		eval::NnueState *m_nnueState;
+		None = 0,
+		Queue,
+		Apply,
 	};
 
 	class Position
 	{
 	public:
-		Position();
-		~Position() = default;
-
-		Position(const Position &) = default;
-		Position(Position &&) = default;
-
-		auto resetToStarting() -> void;
-		auto resetFromFen(const std::string &fen) -> bool;
-		auto resetFromFrcIndex(u32 n) -> bool;
-		auto resetFromDfrcIndex(u32 n) -> bool;
-
-		auto copyStateFrom(const Position &other) -> void;
-
 		// Moves are assumed to be legal
-		template <bool UpdateNnue = true, bool StateHistory = true>
-		auto applyMoveUnchecked(Move move, eval::NnueState *nnueState) -> void;
+		template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
+		[[nodiscard]] auto applyMove(Move move, eval::NnueState *nnueState = nullptr) const -> Position;
 
-		// Moves are assumed to be legal
-		template <bool UpdateNnue = true>
-		[[nodiscard]] inline auto applyMove(Move move, eval::NnueState *nnueState)
+		[[nodiscard]] inline auto applyNullMove() const
 		{
-			if constexpr (UpdateNnue)
-				assert(nnueState != nullptr);
-
-			applyMoveUnchecked<UpdateNnue>(move, nnueState);
-
-			return HistoryGuard<UpdateNnue>{*this, UpdateNnue ? nnueState : nullptr};
+			return applyMove(NullMove);
 		}
-
-		[[nodiscard]] inline auto applyNullMove()
-		{
-			return applyMove<false>(NullMove, nullptr);
-		}
-
-		template <bool UpdateNnue = true>
-		auto popMove(eval::NnueState *nnueState) -> void;
-
-		auto clearStateHistory() -> void;
 
 		[[nodiscard]] auto isPseudolegal(Move move) const -> bool;
 		[[nodiscard]] auto isLegal(Move move) const -> bool;
 
-	private:
-		[[nodiscard]] inline auto currState() -> auto & { return m_states.back(); }
-		[[nodiscard]] inline auto currState() const -> const auto & { return m_states.back(); }
-
-	public:
-		[[nodiscard]] inline auto boards() const -> const auto & { return currState().boards; }
-		[[nodiscard]] inline auto bbs() const -> const auto & { return currState().boards.bbs(); }
+		[[nodiscard]] inline auto boards() const -> const auto & { return m_boards; }
+		[[nodiscard]] inline auto bbs() const -> const auto & { return m_boards.bbs(); }
 
 		[[nodiscard]] inline auto toMove() const
 		{
@@ -236,31 +171,29 @@ namespace stormphrax
 			return m_blackToMove ? Color::White : Color::Black;
 		}
 
-		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return currState().castlingRooks; }
+		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return m_castlingRooks; }
 
-		[[nodiscard]] inline auto enPassant() const { return currState().enPassant; }
+		[[nodiscard]] inline auto enPassant() const { return m_enPassant; }
 
-		[[nodiscard]] inline auto halfmove() const { return currState().halfmove; }
+		[[nodiscard]] inline auto halfmove() const { return m_halfmove; }
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
-		[[nodiscard]] inline auto key() const { return currState().keys.all; }
-		[[nodiscard]] inline auto pawnKey() const { return currState().keys.pawns; }
-		[[nodiscard]] inline auto blackNonPawnKey() const { return currState().keys.blackNonPawns; }
-		[[nodiscard]] inline auto whiteNonPawnKey() const { return currState().keys.whiteNonPawns; }
-		[[nodiscard]] inline auto majorKey() const { return currState().keys.majors; }
+		[[nodiscard]] inline auto key() const { return m_keys.all; }
+		[[nodiscard]] inline auto pawnKey() const { return m_keys.pawns; }
+		[[nodiscard]] inline auto blackNonPawnKey() const { return m_keys.blackNonPawns; }
+		[[nodiscard]] inline auto whiteNonPawnKey() const { return m_keys.whiteNonPawns; }
+		[[nodiscard]] inline auto majorKey() const { return m_keys.majors; }
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{
 			assert(move);
 
-			const auto &state = currState();
-
-			const auto moving = state.boards.pieceAt(move.src());
+			const auto moving = m_boards.pieceAt(move.src());
 			assert(moving != Piece::None);
 
-			const auto captured = state.boards.pieceAt(move.dst());
+			const auto captured = m_boards.pieceAt(move.dst());
 
-			auto key = state.keys.all;
+			auto key = m_keys.all;
 
 			key ^= keys::pieceSquare(moving, move.src());
 			key ^= keys::pieceSquare(moving, move.dst());
@@ -332,8 +265,7 @@ namespace stormphrax
 		}
 
 		template <bool ThreatShortcut = true>
-		[[nodiscard]] static inline auto isAttacked(const BoardState &state,
-			Color toMove, Square square, Color attacker)
+		[[nodiscard]] inline auto isAttacked(Color toMove, Square square, Color attacker) const
 		{
 			assert(toMove != Color::None);
 			assert(square != Square::None);
@@ -342,10 +274,10 @@ namespace stormphrax
 			if constexpr (ThreatShortcut)
 			{
 				if (attacker != toMove)
-					return state.threats[square];
+					return m_threats[square];
 			}
 
-			const auto &bbs = state.boards.bbs();
+			const auto &bbs = m_boards.bbs();
 
 			const auto occ = bbs.occupancy();
 
@@ -380,7 +312,7 @@ namespace stormphrax
 			assert(square != Square::None);
 			assert(attacker != Color::None);
 
-			return isAttacked<ThreatShortcut>(currState(), toMove(), square, attacker);
+			return isAttacked<ThreatShortcut>(toMove(), square, attacker);
 		}
 
 		[[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const
@@ -388,7 +320,7 @@ namespace stormphrax
 			assert(attacker != Color::None);
 
 			if (attacker == opponent())
-				return !(squares & currState().threats).empty();
+				return !(squares & m_threats).empty();
 
 			while (squares)
 			{
@@ -400,46 +332,46 @@ namespace stormphrax
 			return false;
 		}
 
-		[[nodiscard]] inline auto kings() const { return currState().kings; }
+		[[nodiscard]] inline auto kings() const { return m_kings; }
 
-		[[nodiscard]] inline auto blackKing() const { return currState().kings.black(); }
-		[[nodiscard]] inline auto whiteKing() const { return currState().kings.white(); }
+		[[nodiscard]] inline auto blackKing() const { return m_kings.black(); }
+		[[nodiscard]] inline auto whiteKing() const { return m_kings.white(); }
 
 		template <Color C>
 		[[nodiscard]] inline auto king() const
 		{
-			return currState().kings.color(C);
+			return m_kings.color(C);
 		}
 
 		[[nodiscard]] inline auto king(Color c) const
 		{
 			assert(c != Color::None);
-			return currState().kings.color(c);
+			return m_kings.color(c);
 		}
 
 		template <Color C>
 		[[nodiscard]] inline auto oppKing() const
 		{
-			return currState().kings.color(oppColor(C));
+			return m_kings.color(oppColor(C));
 		}
 
 		[[nodiscard]] inline auto oppKing(Color c) const
 		{
 			assert(c != Color::None);
-			return currState().kings.color(oppColor(c));
+			return m_kings.color(oppColor(c));
 		}
 
 		[[nodiscard]] inline auto isCheck() const
 		{
-			return !currState().checkers.empty();
+			return !m_checkers.empty();
 		}
 
-		[[nodiscard]] inline auto checkers() const { return currState().checkers; }
-		[[nodiscard]] inline auto pinned() const { return currState().pinned; }
-		[[nodiscard]] inline auto threats() const { return currState().threats; }
+		[[nodiscard]] inline auto checkers() const { return m_checkers; }
+		[[nodiscard]] inline auto pinned() const { return m_pinned; }
+		[[nodiscard]] inline auto threats() const { return m_threats; }
 
-		[[nodiscard]] auto hasCycle(i32 ply) const -> bool;
-		[[nodiscard]] auto isDrawn(bool threefold) const -> bool;
+		[[nodiscard]] auto hasCycle(i32 ply, std::span<const u64> keys) const -> bool;
+		[[nodiscard]] auto isDrawn(bool threefold, std::span<const u64> keys) const -> bool;
 
 		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
@@ -485,28 +417,7 @@ namespace stormphrax
 
 		[[nodiscard]] auto toFen() const -> std::string;
 
-		[[nodiscard]] inline auto operator==(const Position &other) const
-		{
-			const auto &ourState = currState();
-			const auto &theirState = other.m_states.back();
-
-			// every other field is a function of these
-			return ourState.boards == theirState.boards
-				&& ourState.castlingRooks == theirState.castlingRooks
-				&& ourState.enPassant == theirState.enPassant
-				&& ourState.halfmove == theirState.halfmove
-				&& m_fullmove == other.m_fullmove;
-		}
-
-		[[nodiscard]] inline auto deepEquals(const Position &other) const
-		{
-			return *this == other
-				&& currState().kings == other.m_states.back().kings
-				&& currState().checkers == other.m_states.back().checkers
-				&& currState().pinned == other.m_states.back().pinned
-				&& currState().threats == other.m_states.back().threats
-				&& currState().keys == other.m_states.back().keys;
-		}
+		[[nodiscard]] inline auto operator==(const Position &other) const -> bool = default;
 
 		auto regen() -> void;
 
@@ -519,7 +430,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto classicalMaterial() const -> i32
 		{
-			const auto &bbs = currState().boards.bbs();
+			const auto &bbs = m_boards.bbs();
 
 			return 1 * bbs.pawns().popcount()
 				 + 3 * bbs.knights().popcount()
@@ -527,9 +438,6 @@ namespace stormphrax
 				 + 5 * bbs.rooks().popcount()
 				 + 9 * bbs.queens().popcount();
 		}
-
-		auto operator=(const Position &) -> Position & = default;
-		auto operator=(Position &&) -> Position & = default;
 
 		[[nodiscard]] static auto starting() -> Position;
 		[[nodiscard]] static auto fromFen(const std::string &fen) -> std::optional<Position>;
@@ -557,22 +465,19 @@ namespace stormphrax
 		[[nodiscard]] inline auto calcCheckers() const
 		{
 			const auto color = toMove();
-			const auto &state = currState();
-
-			return attackersTo(state.kings.color(color), oppColor(color));
+			return attackersTo(m_kings.color(color), oppColor(color));
 		}
 
 		[[nodiscard]] inline auto calcPinned() const
 		{
 			const auto color = toMove();
-			const auto &state = currState();
 
 			Bitboard pinned{};
 
-			const auto king = state.kings.color(color);
+			const auto king = m_kings.color(color);
 			const auto opponent = oppColor(color);
 
-			const auto &bbs = state.boards.bbs();
+			const auto &bbs = m_boards.bbs();
 
 			const auto ourOcc = bbs.occupancy(color);
 			const auto oppOcc = bbs.occupancy(opponent);
@@ -600,8 +505,7 @@ namespace stormphrax
 			const auto us = toMove();
 			const auto them = oppColor(us);
 
-			const auto &state = currState();
-			const auto &bbs = state.boards.bbs();
+			const auto &bbs = m_boards.bbs();
 
 			Bitboard threats{};
 
@@ -635,27 +539,35 @@ namespace stormphrax
 				threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
 			else threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
 
-			threats |= attacks::getKingAttacks(state.kings.color(them));
+			threats |= attacks::getKingAttacks(m_kings.color(them));
 
 			return threats;
 		}
 
 		// Unsets ep squares if they are invalid (no pawn is able to capture)
-		static void filterEp(BoardState &state, Color capturing);
+		void filterEp(Color capturing);
 
-		bool m_blackToMove{};
+		PositionBoards m_boards{};
 
+		Keys m_keys{};
+
+		Bitboard m_checkers{};
+		Bitboard m_pinned{};
+		Bitboard m_threats{};
+
+		CastlingRooks m_castlingRooks{};
+
+		u16 m_halfmove{};
 		u32 m_fullmove{1};
 
-		std::vector<BoardState> m_states{};
-		std::vector<u64> m_keys{};
+		Square m_enPassant{Square::None};
+
+		KingPair m_kings{};
+
+		bool m_blackToMove{};
 	};
 
-	template <bool UpdateNnue>
-	HistoryGuard<UpdateNnue>::~HistoryGuard()
-	{
-		m_pos.popMove<UpdateNnue>(m_nnueState);
-	}
+	static_assert(sizeof(Position) == 208);
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;
 }
