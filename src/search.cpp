@@ -936,13 +936,14 @@ namespace stormphrax::search
 
 			const bool givesCheck = newPos.isCheck();
 
-			Score score{};
-
-			if (newPos.isDrawn(true, thread.keyHistory))
-				score = drawScore(thread.search.loadNodes());
-			else
+			const auto score = [&]
 			{
+				if (newPos.isDrawn(true, thread.keyHistory))
+					return drawScore(thread.search.loadNodes());
+
 				auto newDepth = depth + extension - 1;
+
+				Score score{};
 
 				if (depth >= 2
 					&& legalMoves >= lmrMinMoves
@@ -1001,7 +1002,9 @@ namespace stormphrax::search
 				if (PvNode && (legalMoves == 1 || score > alpha))
 					score = -search<true>(thread, newPos, curr.pv,
 						newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
-			}
+
+				return score;
+			}();
 
 			if (hasStopped())
 				return 0;
