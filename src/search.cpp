@@ -693,7 +693,7 @@ namespace stormphrax::search
 			if (depth <= 6
 				&& curr.staticEval
 						- rfpMargin() * std::max(depth - improving, 0)
-						- parent->history / 250
+						- parent->history / 400
 					>= beta)
 				return (curr.staticEval + beta) / 2;
 
