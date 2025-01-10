@@ -691,7 +691,10 @@ namespace stormphrax::search
 			&& !curr.excluded)
 		{
 			if (depth <= 6
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				&& curr.staticEval
+						- rfpMargin() * std::max(depth - improving, 0)
+						- parent->history / 250
+					>= beta)
 				return (curr.staticEval + beta) / 2;
 
 			if (depth <= 4
@@ -835,7 +838,7 @@ namespace stormphrax::search
 
 			const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-			const auto history = noisy
+			curr.history = noisy
 				? thread.history.noisyScore(move, captured, pos.threats())
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
@@ -852,7 +855,7 @@ namespace stormphrax::search
 					}
 
 					if (lmrDepth <= 5
-						&& history < quietHistPruningMargin() * depth + quietHistPruningOffset())
+						&& curr.history < quietHistPruningMargin() * depth + quietHistPruningOffset())
 					{
 						generator.skipQuiets();
 						continue;
@@ -868,7 +871,7 @@ namespace stormphrax::search
 					}
 				}
 				else if (depth <= 4
-					&& history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
+					&& curr.history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
 					continue;
 
 				const auto seeThreshold = noisy
@@ -952,7 +955,7 @@ namespace stormphrax::search
 
 					r += !PvNode * lmrNonPvReductionScale();
 					r -= ttpv * lmrTtpvReductionScale();
-					r -= history * 128 / lmrHistoryDivisor();
+					r -= curr.history * 128 / lmrHistoryDivisor();
 					r -= improving * lmrImprovingReductionScale();
 					r -= givesCheck * lmrCheckReductionScale();
 					r += cutnode * lmrCutnodeReductionScale();

@@ -94,6 +94,8 @@ namespace stormphrax::search
 
 		Move excluded{};
 		i32 multiExtensions{};
+
+		i32 history{};
 	};
 
 	struct MoveStackEntry
