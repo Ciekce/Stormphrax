@@ -796,11 +796,6 @@ namespace stormphrax::search
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
-		const auto lmrMinMoves
-			= RootNode ? 5
-			:   PvNode ? 4
-			           : 2;
-
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
 
@@ -945,7 +940,7 @@ namespace stormphrax::search
 				auto newDepth = depth + extension - 1;
 
 				if (depth >= 2
-					&& legalMoves >= lmrMinMoves
+					&& legalMoves >= 2 + RootNode
 					&& quietOrLosing)
 				{
 					auto r = baseLmr;
