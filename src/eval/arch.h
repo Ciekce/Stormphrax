@@ -33,13 +33,13 @@ namespace stormphrax::eval
 	// current arch: (768x16->1792)x2->(8->32->1)x8, mirrored
 	// pairwise clipped ReLU -> squared ReLU -> squared ReLU
 
-	constexpr i32 FtQ = 255;
-	constexpr i32 L1Q = 64;
+	constexpr i32 FtQ = 127;
+	constexpr i32 L1Q = 128;
 
 	constexpr u32 FtScaleBits = 7;
 
 	constexpr u32 L1Size = 1792;
-	constexpr u32 L2Size = 8;
+	constexpr u32 L2Size = 16;
 	constexpr u32 L3Size = 32;
 
 	using L1Activation = nnue::activation::ClippedReLU;
@@ -49,7 +49,7 @@ namespace stormphrax::eval
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::KingBucketsMirrored<
+	using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
 		nnue::features::MirroredKingSide::Abcd,
 		 0,  1,  2,  3,
 		 4,  5,  6,  7,
