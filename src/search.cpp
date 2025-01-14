@@ -565,6 +565,8 @@ namespace stormphrax::search
 						&& !pos.isNoisy(ttEntry.move)
 						&& pos.isPseudolegal(ttEntry.move))
 					{
+						curr.killers.push(ttEntry.move);
+
 						const auto bonus = historyBonus(depth);
 						thread.history.updateQuietScore(thread.conthist, ply,
 							pos.threats(), boards.pieceAt(ttEntry.move.src()), ttEntry.move, bonus);
