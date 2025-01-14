@@ -788,9 +788,6 @@ namespace stormphrax::search
 			}
 		}
 
-		if constexpr (!RootNode)
-			curr.multiExtensions = parent->multiExtensions;
-
 		thread.stack[ply + 1].killers.clear();
 
 		moveStack.failLowQuiets .clear();
@@ -892,10 +889,11 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
-				&& depth >= 8
+				&& ply < thread.search.rootDepth * 2
+				&& depth >= 6
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - 5
+				&& ttEntry.depth >= depth - 3
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
 				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
@@ -910,7 +908,7 @@ namespace stormphrax::search
 
 				if (score < sBeta)
 				{
-					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+					if (!PvNode)
 						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
 					else extension = 1;
 				}
@@ -922,7 +920,6 @@ namespace stormphrax::search
 					extension = -1;
 			}
 
-			curr.multiExtensions += extension >= 2;
 			cutnode |= extension < 0;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
