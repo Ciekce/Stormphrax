@@ -68,7 +68,8 @@ namespace stormphrax::limit
 		f64 m_softTime{};
 		f64 m_maxTime{};
 
-		f64 m_scale;
+		f64 m_baseScale;
+		f64 m_scale{};
 
 		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
