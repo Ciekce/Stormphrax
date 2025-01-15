@@ -120,6 +120,8 @@ namespace stormphrax
 			std::vector<u64> m_keyHistory{};
 			Position m_pos{Position::starting()};
 
+			u32 m_moveNumber{};
+
 			i32 m_moveOverhead{limit::DefaultMoveOverhead};
 		};
 
@@ -241,8 +243,13 @@ namespace stormphrax
 		auto UciHandler::handleUcinewgame() -> void
 		{
 			if (m_searcher.searching())
+			{
 				std::cerr << "still searching" << std::endl;
-			else m_searcher.newGame();
+				return;
+			}
+
+			m_searcher.newGame();
+			m_moveNumber = 0;
 		}
 
 		auto UciHandler::handleIsready() -> void
@@ -348,6 +355,8 @@ namespace stormphrax
 				std::cerr << "already searching" << std::endl;
 			else
 			{
+				++m_moveNumber;
+
 				u32 depth = MaxDepth;
 				auto limiter = std::make_unique<limit::CompoundLimiter>();
 
@@ -518,7 +527,8 @@ namespace stormphrax
 					limiter->addLimiter<limit::TimeManager>(startTime,
 						static_cast<f64>(timeRemaining) / 1000.0,
 						static_cast<f64>(increment) / 1000.0,
-						toGo, static_cast<f64>(m_moveOverhead) / 1000.0);
+						toGo, static_cast<f64>(m_moveOverhead) / 1000.0,
+						m_moveNumber);
 
 				m_searcher.startSearch(m_pos, m_keyHistory, startTime,
 					static_cast<i32>(depth), movesToSearch, std::move(limiter), infinite);

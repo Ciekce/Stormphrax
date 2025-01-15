@@ -50,7 +50,7 @@ namespace stormphrax::limit
 		return m_stopped.load(std::memory_order_acquire);
 	}
 
-	TimeManager::TimeManager(Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
+	TimeManager::TimeManager(Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead, u32 moveNumber)
 		: m_startTime{start}
 	{
 		assert(toGo >= 0);
@@ -64,6 +64,9 @@ namespace stormphrax::limit
 
 		m_maxTime  = limit * hardTimeScale();
 		m_softTime = std::min(baseTime * softTimeScale(), m_maxTime);
+
+		assert(moveNumber >= 1);
+		m_scale = 0.95 + 1.0 / static_cast<f64>(moveNumber);
 	}
 
 	auto TimeManager::update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void
