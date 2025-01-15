@@ -890,10 +890,10 @@ namespace stormphrax::search
 
 			if (!RootNode
 				&& ply < thread.search.rootDepth * 2
-				&& depth >= 6
+				&& depth >= 7
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - 3
+				&& ttEntry.depth >= depth - 4
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
 				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
