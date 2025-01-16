@@ -133,7 +133,7 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
 
-	SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
+	SP_TUNABLE_PARAM(rfpMargin, 60, 25, 150, 5)
 
 	SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
 

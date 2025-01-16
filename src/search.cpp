@@ -690,8 +690,8 @@ namespace stormphrax::search
 			&& !inCheck
 			&& !curr.excluded)
 		{
-			if (depth <= 6
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+			if (depth <= 9
+				&& curr.staticEval - rfpMargin() * (depth - improving) >= beta)
 				return (curr.staticEval + beta) / 2;
 
 			if (depth <= 4
