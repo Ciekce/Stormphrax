@@ -910,7 +910,7 @@ namespace stormphrax::search
 					extension = 1
 						+ (!PvNode && score < sBeta - doubleExtMargin())
 						+ (!PvNode && !ttMoveNoisy && score < sBeta - tripleExtMargin())
-						+ (PvNode && !ttMoveNoisy && score < sBeta - 50);
+						+ ( PvNode && !ttMoveNoisy && score < sBeta - 45);
 				else if (sBeta >= beta)
 					return sBeta;
 				else if (cutnode)
