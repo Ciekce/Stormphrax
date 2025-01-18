@@ -907,11 +907,10 @@ namespace stormphrax::search
 				curr.excluded = NullMove;
 
 				if (score < sBeta)
-				{
-					if (!PvNode && score < sBeta - doubleExtMargin())
-						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
-					else extension = 1;
-				}
+					extension = 1
+						+ (!PvNode && score < sBeta - doubleExtMargin())
+						+ (!PvNode && !ttMoveNoisy && score < sBeta - tripleExtMargin())
+						+ (PvNode && !ttMoveNoisy && score < sBeta - 50);
 				else if (sBeta >= beta)
 					return sBeta;
 				else if (cutnode)
