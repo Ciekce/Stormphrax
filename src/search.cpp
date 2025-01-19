@@ -890,11 +890,11 @@ namespace stormphrax::search
 			i32 extension{};
 
 			if (!RootNode
-				&& depth >= 8
+				&& depth >= 7
 				&& ply < thread.search.rootDepth * 2
 				&& move == ttEntry.move
 				&& !curr.excluded
-				&& ttEntry.depth >= depth - 5
+				&& ttEntry.depth >= depth - 4
 				&& ttEntry.flag != TtFlag::UpperBound)
 			{
 				const auto sBeta = std::max(-ScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
