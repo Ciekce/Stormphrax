@@ -833,7 +833,7 @@ namespace stormphrax::search
 
 			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
 			{
-				const auto lmrDepth = std::max(depth - baseLmr / 128, 0);
+				const auto lmrDepth = std::max(depth - baseLmr / 128 - !improving, 0);
 
 				if (!noisy)
 				{
