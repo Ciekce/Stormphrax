@@ -28,7 +28,7 @@
 #include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
-#define SP_EXTERNAL_TUNE 0
+	#define SP_EXTERNAL_TUNE 0
 #endif
 
 namespace stormphrax::tunable
@@ -86,13 +86,13 @@ namespace stormphrax::tunable
 			(Default) * (Q), (Min) * (Q), (Max) * (Q), (Step) * (Q), nullptr); \
 		inline auto Name() { return static_cast<f64>(param_##Name.value) / (Q); }
 #else
-#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
+	#define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
 		SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 		constexpr auto Name() -> i32 { return Default; }
-#define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
+	#define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
 		SP_TUNABLE_PARAM(Name, Default, Min, Max, Step)
 
-#define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
+	#define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
 		SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
 		constexpr auto Name() -> f64 { return Default; }
 #endif

@@ -778,9 +778,6 @@ namespace stormphrax::search
 					if (hasStopped())
 						return 0;
 
-					if (hasStopped())
-						return 0;
-
 					if (score >= probcutBeta)
 					{
 						m_ttable.put(keyBefore, score, curr.staticEval,
@@ -791,18 +788,10 @@ namespace stormphrax::search
 			}
 		}
 
-		if constexpr (!RootNode)
-			curr.multiExtensions = parent->multiExtensions;
-
 		thread.stack[ply + 1].killers.clear();
 
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
-
-		const auto lmrMinMoves
-			= RootNode ? 5
-			:   PvNode ? 4
-			           : 2;
 
 		auto bestMove = NullMove;
 		auto bestScore = -ScoreInf;
@@ -842,7 +831,8 @@ namespace stormphrax::search
 				? thread.history.noisyScore(move, captured, pos.threats())
 				: thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-			if (!RootNode && bestScore > -ScoreWin && (!PvNode || !thread.datagen))
+			if ((!RootNode || thread.search.rootDepth == 1)
+				&& bestScore > -ScoreWin && (!PvNode || !thread.datagen))
 			{
 				const auto lmrDepth = std::max(depth - baseLmr / 128, 0);
 
@@ -901,6 +891,7 @@ namespace stormphrax::search
 
 			if (!RootNode
 				&& depth >= 8
+				&& ply < thread.search.rootDepth * 2
 				&& move == ttEntry.move
 				&& !curr.excluded
 				&& ttEntry.depth >= depth - 5
@@ -918,7 +909,7 @@ namespace stormphrax::search
 
 				if (score < sBeta)
 				{
-					if (!PvNode && curr.multiExtensions <= multiExtLimit() && score < sBeta - doubleExtMargin())
+					if (!PvNode && score < sBeta - doubleExtMargin())
 						extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
 					else extension = 1;
 				}
@@ -930,7 +921,6 @@ namespace stormphrax::search
 					extension = -1;
 			}
 
-			curr.multiExtensions += extension >= 2;
 			cutnode |= extension < 0;
 
 			m_ttable.prefetch(pos.roughKeyAfter(move));
@@ -948,7 +938,7 @@ namespace stormphrax::search
 				auto newDepth = depth + extension - 1;
 
 				if (depth >= 2
-					&& legalMoves >= lmrMinMoves
+					&& legalMoves >= 2 + RootNode
 					&& quietOrLosing)
 				{
 					auto r = baseLmr;

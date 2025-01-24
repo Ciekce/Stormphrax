@@ -195,18 +195,18 @@ namespace stormphrax
 
 		switch (moveType)
 		{
-			case MoveType::Standard:
-				captured = newPos.movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
-				break;
-			case MoveType::Promotion:
-				captured = newPos.promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), updates);
-				break;
-			case MoveType::Castling:
-				newPos.castle<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
-				break;
-			case MoveType::EnPassant:
-				captured = newPos.enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
-				break;
+		case MoveType::Standard:
+			captured = newPos.movePiece<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			break;
+		case MoveType::Promotion:
+			captured = newPos.promotePawn<true, UpdateNnue>(moving, moveSrc, moveDst, move.promo(), updates);
+			break;
+		case MoveType::Castling:
+			newPos.castle<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			break;
+		case MoveType::EnPassant:
+			captured = newPos.enPassant<true, UpdateNnue>(moving, moveSrc, moveDst, updates);
+			break;
 		}
 
 		assert(pieceTypeOrNone(captured) != PieceType::King);
@@ -273,10 +273,10 @@ namespace stormphrax
 		if (dstPiece != Piece::None
 			// we're capturing our own piece    and either not castling
 			&& ((pieceColor(dstPiece) == us && (type != MoveType::Castling
-			// or trying to castle with a non-rook
-			|| dstPiece != colorPiece(PieceType::Rook, us)))
-			// or trying to capture a king
-			|| pieceType(dstPiece) == PieceType::King))
+					// or trying to castle with a non-rook
+					|| dstPiece != colorPiece(PieceType::Rook, us)))
+				// or trying to capture a king
+				|| pieceType(dstPiece) == PieceType::King))
 			return false;
 
 		const auto srcPieceType = pieceType(srcPiece);
@@ -370,7 +370,7 @@ namespace stormphrax
 				if (!(attacks::getPawnAttacks(src, us) & m_boards.bbs().forColor(them))[dst])
 					return false;
 			}
-				// forward move onto a piece
+			// forward move onto a piece
 			else if (dstPiece != Piece::None)
 				return false;
 
@@ -397,12 +397,12 @@ namespace stormphrax
 
 			switch (srcPieceType)
 			{
-				case PieceType::Knight: attacks = attacks::getKnightAttacks(src); break;
-				case PieceType::Bishop: attacks = attacks::getBishopAttacks(src, occ); break;
-				case PieceType::  Rook: attacks = attacks::getRookAttacks(src, occ); break;
-				case PieceType:: Queen: attacks = attacks::getQueenAttacks(src, occ); break;
-				case PieceType::  King: attacks = attacks::getKingAttacks(src); break;
-				default: __builtin_unreachable();
+			case PieceType::Knight: attacks = attacks::getKnightAttacks(src); break;
+			case PieceType::Bishop: attacks = attacks::getBishopAttacks(src, occ); break;
+			case PieceType::  Rook: attacks = attacks::getRookAttacks(src, occ); break;
+			case PieceType:: Queen: attacks = attacks::getQueenAttacks(src, occ); break;
+			case PieceType::  King: attacks = attacks::getKingAttacks(src); break;
+			default: __builtin_unreachable();
 			}
 
 			if (!attacks[dst])
