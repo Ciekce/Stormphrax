@@ -34,7 +34,7 @@ namespace stormphrax::eval
 	// pairwise clipped ReLU -> squared ReLU -> squared ReLU
 
 	constexpr i32 FtQ = 255;
-	constexpr i32 L1Q = 64;
+	constexpr i32 L1Q = 128;
 
 	constexpr u32 FtScaleBits = 7;
 
