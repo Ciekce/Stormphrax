@@ -60,6 +60,28 @@ namespace stormphrax
 			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
 			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
 
+			const auto kingKey = pos.pieceTypeKey(PieceType::King);
+			const auto updateTriplet = [&](i32 i, PieceType x, PieceType y)
+			{
+				const auto xKey = pos.pieceTypeKey(x);
+				const auto yKey = pos.pieceTypeKey(y);
+
+				const auto key = kingKey ^ xKey ^ yKey;
+
+				m_tripletTable[stm][i][key % Entries].update(scaledError, newWeight);
+			};
+
+			updateTriplet(0, PieceType::Pawn  , PieceType::Knight);
+			updateTriplet(1, PieceType::Pawn  , PieceType::Bishop);
+			updateTriplet(2, PieceType::Pawn  , PieceType::Rook  );
+			updateTriplet(3, PieceType::Pawn  , PieceType::Queen );
+			updateTriplet(4, PieceType::Knight, PieceType::Bishop);
+			updateTriplet(5, PieceType::Knight, PieceType::Rook  );
+			updateTriplet(6, PieceType::Knight, PieceType::Queen );
+			updateTriplet(7, PieceType::Bishop, PieceType::Rook  );
+			updateTriplet(8, PieceType::Bishop, PieceType::Queen );
+			updateTriplet(9, PieceType::Rook  , PieceType::Queen );
+
 			if (ply >= 2)
 			{
 				const auto [moving2, dst2] = moves[ply - 2];
@@ -88,6 +110,28 @@ namespace stormphrax
 			correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries];
 			correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries];
 			correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
+
+			const auto kingKey = pos.pieceTypeKey(PieceType::King);
+			const auto addTriplet = [&](i32 i, PieceType x, PieceType y)
+			{
+				const auto xKey = pos.pieceTypeKey(x);
+				const auto yKey = pos.pieceTypeKey(y);
+
+				const auto key = kingKey ^ xKey ^ yKey;
+
+				correction += 128 * m_tripletTable[stm][i][key % Entries];
+			};
+
+			addTriplet(0, PieceType::Pawn  , PieceType::Knight);
+			addTriplet(1, PieceType::Pawn  , PieceType::Bishop);
+			addTriplet(2, PieceType::Pawn  , PieceType::Rook  );
+			addTriplet(3, PieceType::Pawn  , PieceType::Queen );
+			addTriplet(4, PieceType::Knight, PieceType::Bishop);
+			addTriplet(5, PieceType::Knight, PieceType::Rook  );
+			addTriplet(6, PieceType::Knight, PieceType::Queen );
+			addTriplet(7, PieceType::Bishop, PieceType::Rook  );
+			addTriplet(8, PieceType::Bishop, PieceType::Queen );
+			addTriplet(9, PieceType::Rook  , PieceType::Queen );
 
 			if (ply >= 2)
 			{
@@ -132,6 +176,7 @@ namespace stormphrax
 		util::MultiArray<Entry, 2, Entries> m_blackNonPawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_whiteNonPawnTable{};
 		util::MultiArray<Entry, 2, Entries> m_majorTable{};
+		util::MultiArray<Entry, 2, 10, Entries> m_tripletTable{};
 		util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
 	};
 }

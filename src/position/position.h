@@ -39,29 +39,25 @@ namespace stormphrax
 	struct Keys
 	{
 		u64 all;
-		u64 pawns;
 		u64 blackNonPawns;
 		u64 whiteNonPawns;
 		u64 majors;
 
+		std::array<u64, 6> pieceTypes{};
+
 		inline auto clear()
 		{
 			all = 0;
-			pawns = 0;
 			blackNonPawns = 0;
 			whiteNonPawns = 0;
 			majors = 0;
+
+			pieceTypes.fill(0);
 		}
 
 		inline auto flipStm()
 		{
-			const auto key = keys::color();
-
-			all ^= key;
-			pawns ^= key;
-			blackNonPawns ^= key;
-			whiteNonPawns ^= key;
-			majors ^= key;
+			all ^= keys::color();
 		}
 
 		inline auto flipPiece(Piece piece, Square square)
@@ -70,14 +66,17 @@ namespace stormphrax
 
 			all ^= key;
 
-			if (pieceType(piece) == PieceType::Pawn)
-				pawns ^= key;
-			else if (pieceColor(piece) == Color::Black)
-				blackNonPawns ^= key;
-			else whiteNonPawns ^= key;
+			if (pieceType(piece) != PieceType::Pawn)
+			{
+				if (pieceColor(piece) == Color::Black)
+					blackNonPawns ^= key;
+				else whiteNonPawns ^= key;
+			}
 
 			if (isMajor(piece))
 				majors ^= key;
+
+			pieceTypes[static_cast<i32>(pieceType(piece))] ^= key;
 		}
 
 		inline auto movePiece(Piece piece, Square src, Square dst)
@@ -86,14 +85,17 @@ namespace stormphrax
 
 			all ^= key;
 
-			if (pieceType(piece) == PieceType::Pawn)
-				pawns ^= key;
-			else if (pieceColor(piece) == Color::Black)
-				blackNonPawns ^= key;
-			else whiteNonPawns ^= key;
+			if (pieceType(piece) != PieceType::Pawn)
+			{
+				if (pieceColor(piece) == Color::Black)
+					blackNonPawns ^= key;
+				else whiteNonPawns ^= key;
+			}
 
 			if (isMajor(piece))
 				majors ^= key;
+
+			pieceTypes[static_cast<i32>(pieceType(piece))] ^= key;
 		}
 
 		inline auto flipEp(Square epSq)
@@ -101,7 +103,7 @@ namespace stormphrax
 			const auto key = keys::enPassant(epSq);
 
 			all ^= key;
-			pawns ^= key;
+			pieceTypes[static_cast<i32>(PieceType::Pawn)] ^= key;
 		}
 
 		inline auto flipCastling(const CastlingRooks &rooks)
@@ -179,10 +181,16 @@ namespace stormphrax
 		[[nodiscard]] inline auto fullmove() const { return m_fullmove; }
 
 		[[nodiscard]] inline auto key() const { return m_keys.all; }
-		[[nodiscard]] inline auto pawnKey() const { return m_keys.pawns; }
+		[[nodiscard]] inline auto pawnKey() const { return m_keys.pieceTypes[static_cast<i32>(PieceType::Pawn)]; }
 		[[nodiscard]] inline auto blackNonPawnKey() const { return m_keys.blackNonPawns; }
 		[[nodiscard]] inline auto whiteNonPawnKey() const { return m_keys.whiteNonPawns; }
 		[[nodiscard]] inline auto majorKey() const { return m_keys.majors; }
+
+		[[nodiscard]] inline auto pieceTypeKey(PieceType pt) const
+		{
+			assert(pt != PieceType::None);
+			return m_keys.pieceTypes[static_cast<i32>(pt)];
+		}
 
 		[[nodiscard]] inline auto roughKeyAfter(Move move) const
 		{
@@ -567,7 +575,7 @@ namespace stormphrax
 		bool m_blackToMove{};
 	};
 
-	static_assert(sizeof(Position) == 208);
+	static_assert(sizeof(Position) == 248);
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;
 }
