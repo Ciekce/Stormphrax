@@ -44,6 +44,7 @@ namespace stormphrax
 			std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
 			std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
 			std::memset(&m_majorTable, 0, sizeof(m_majorTable));
+			std::memset(&m_tripletTable, 0, sizeof(m_tripletTable));
 			std::memset(&m_contTable, 0, sizeof(m_contTable));
 		}
 
