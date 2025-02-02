@@ -1192,7 +1192,16 @@ namespace stormphrax::search
 				if (legalMoves >= 2)
 					break;
 
-				if (!see::see(pos, move, qsearchSeeThreshold()))
+				const auto capthist = [&]
+				{
+					if (!pos.isNoisy(move))
+						return 0;
+
+					const auto captured = pos.captureTarget(move);
+					return thread.history.noisyScore(move, captured, pos.threats());
+				}();
+
+				if (!see::see(pos, move, qsearchSeeThreshold() - capthist / 32))
 					continue;
 			}
 
