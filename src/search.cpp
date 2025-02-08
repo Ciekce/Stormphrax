@@ -71,6 +71,40 @@ namespace stormphrax::search
 					moves.push(move);
 			}
 		}
+
+		[[nodiscard]] Bitboard calcNewThreats(const Position &pos, Move move)
+		{
+			const auto stm = pos.toMove();
+			const auto nstm =  oppColor(stm);
+
+			const auto moving = pos.boards().pieceTypeAt(move.dst());
+
+			const auto &bbs = pos.bbs();
+			const auto occ = bbs.occupancy();
+
+			assert(moving != PieceType::None);
+
+			Bitboard attacks;
+
+			switch (moving)
+			{
+			case PieceType::Pawn:
+				attacks = attacks::getPawnAttacks(move.dst(), stm);
+				return attacks & (bbs.knights(nstm)
+					| bbs.bishops(nstm) | bbs.rooks(nstm) | bbs.queens(nstm));
+			case PieceType::Knight:
+				attacks = attacks::getKnightAttacks(move.dst());
+				return attacks & (bbs.rooks(nstm) | bbs.queens(nstm));
+			case PieceType::Bishop:
+				attacks = attacks::getBishopAttacks(move.dst(), occ) & ~attacks::getBishopAttacks(move.src(), occ);
+				return attacks & (bbs.rooks(nstm) | bbs.queens(nstm));
+			case PieceType::Rook:
+				attacks = attacks::getRookAttacks(move.dst(), occ) & ~attacks::getRookAttacks(move.src(), occ);
+				return attacks & bbs.queens(nstm);
+			default:
+				return Bitboard{};
+			}
+		}
 	}
 
 	Searcher::Searcher(usize ttSizeMib)
@@ -955,6 +989,9 @@ namespace stormphrax::search
 						const bool highComplexity = *complexity > lmrHighComplexityThreshold();
 						r -= lmrHighComplexityReductionScale() * highComplexity;
 					}
+
+					const auto newThreats = calcNewThreats(newPos, move);
+					r -= 128 * newThreats.popcount();
 
 					r /= 128;
 
