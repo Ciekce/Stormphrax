@@ -363,7 +363,6 @@ namespace stormphrax::search
 		PvList pv{};
 
 		searchData.nodes = 0;
-		thread.stack[0].killers.clear();
 
 		i32 depthCompleted{};
 
@@ -788,8 +787,6 @@ namespace stormphrax::search
 			}
 		}
 
-		thread.stack[ply + 1].killers.clear();
-
 		moveStack.failLowQuiets .clear();
 		moveStack.failLowNoisies.clear();
 
@@ -799,7 +796,7 @@ namespace stormphrax::search
 		auto ttFlag = TtFlag::UpperBound;
 
 		auto generator = MoveGenerator::main(pos, moveStack.movegenData,
-			ttEntry.move, curr.killers, thread.history, thread.conthist, ply);
+			ttEntry.move, thread.history, thread.conthist, ply);
 
 		u32 legalMoves = 0;
 
@@ -1048,8 +1045,6 @@ namespace stormphrax::search
 
 			if (!pos.isNoisy(bestMove))
 			{
-				curr.killers.push(bestMove);
-
 				thread.history.updateQuietScore(thread.conthist, ply, pos.threats(),
 					pos.boards().pieceAt(bestMove.src()), bestMove, bonus);
 

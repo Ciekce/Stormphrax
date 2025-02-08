@@ -90,8 +90,6 @@ namespace stormphrax::search
 
 		Score staticEval;
 
-		KillerTable killers{};
-
 		Move excluded{};
 	};
 

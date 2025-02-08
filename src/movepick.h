@@ -27,21 +27,6 @@
 
 namespace stormphrax
 {
-	struct KillerTable
-	{
-		Move killer{};
-
-		inline auto push(Move move)
-		{
-			killer = move;
-		}
-
-		inline auto clear()
-		{
-			killer = NullMove;
-		}
-	};
-
 	struct MovegenData
 	{
 		ScoredMoveList moves;
@@ -52,7 +37,6 @@ namespace stormphrax
 		TtMove = 0,
 		GenNoisy,
 		GoodNoisy,
-		Killer,
 		GenQuiet,
 		Quiet,
 		StartBadNoisy,
@@ -131,19 +115,6 @@ namespace stormphrax
 				}
 
 				++m_stage;
-				[[fallthrough]];
-			}
-
-			case MovegenStage::Killer:
-			{
-				++m_stage;
-
-				if (!m_skipQuiets
-					&& m_killers.killer
-					&& m_killers.killer != m_ttMove
-					&& m_pos.isPseudolegal(m_killers.killer))
-					return m_killers.killer;
-
 				[[fallthrough]];
 			}
 
@@ -317,10 +288,9 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] static inline auto main(const Position &pos, MovegenData &data,
-			Move ttMove, const KillerTable &killers, const HistoryTables &history,
-			std::span<ContinuationSubtable *const> continuations, i32 ply)
+			Move ttMove, const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 		{
-			return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, &killers, history, continuations, ply);
+			return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, history, continuations, ply);
 		}
 
 		[[nodiscard]] static inline auto qsearch(const Position &pos,
@@ -328,19 +298,18 @@ namespace stormphrax
 			std::span<ContinuationSubtable *const> continuations, i32 ply)
 		{
 			const auto stage = pos.isCheck() ? MovegenStage::QsearchEvasionsTtMove : MovegenStage::QsearchTtMove;
-			return MoveGenerator(stage, pos, data, ttMove, nullptr, history, continuations, ply);
+			return MoveGenerator(stage, pos, data, ttMove, history, continuations, ply);
 		}
 
 		[[nodiscard]] static inline auto probcut(const Position &pos,
 			Move ttMove, MovegenData &data, const HistoryTables &history)
 		{
-			return MoveGenerator(MovegenStage::ProbcutTtMove, pos, data, ttMove, nullptr, history, {}, 0);
+			return MoveGenerator(MovegenStage::ProbcutTtMove, pos, data, ttMove, history, {}, 0);
 		}
 
 	private:
 		MoveGenerator(MovegenStage initialStage, const Position &pos, MovegenData &data,
-			Move ttMove, const KillerTable *killers, const HistoryTables &history,
-			std::span<ContinuationSubtable *const> continuations, i32 ply)
+			Move ttMove, const HistoryTables &history, std::span<ContinuationSubtable *const> continuations, i32 ply)
 			: m_stage{initialStage},
 			  m_pos{pos},
 			  m_data{data},
@@ -349,8 +318,6 @@ namespace stormphrax
 			  m_continuations{continuations},
 			  m_ply{ply}
 		{
-			if (killers)
-				m_killers = *killers;
 			m_data.moves.clear();
 		}
 
@@ -426,8 +393,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto isSpecial(Move move) -> bool
 		{
-			return move == m_ttMove
-				|| move == m_killers.killer;
+			return move == m_ttMove;
 		}
 
 		MovegenStage m_stage;
@@ -436,8 +402,6 @@ namespace stormphrax
 		MovegenData &m_data;
 
 		Move m_ttMove;
-
-		KillerTable m_killers{};
 		const HistoryTables &m_history;
 
 		std::span<ContinuationSubtable *const> m_continuations;
