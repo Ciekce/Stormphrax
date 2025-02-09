@@ -120,6 +120,7 @@ namespace stormphrax
 				dst.depth = entry.depth;
 				dst.move = entry.move;
 				dst.wasPv = entry.pv();
+				dst.forcedAllNode = entry.forced();
 				dst.flag = entry.flag();
 
 				return true;
@@ -130,7 +131,7 @@ namespace stormphrax
 	}
 
 	auto TTable::put(u64 key, Score score, Score staticEval,
-		Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void
+		Move move, i32 depth, i32 ply, TtFlag flag, bool pv, bool forcedAllNode) -> void
 	{
 		assert(!m_pendingInit);
 
@@ -139,6 +140,9 @@ namespace stormphrax
 
 		assert(staticEval == ScoreNone || staticEval > -ScoreWin);
 		assert(staticEval == ScoreNone || staticEval <  ScoreWin);
+
+		assert(!forcedAllNode || flag == TtFlag::UpperBound);
+		assert(move.isNull() || flag != TtFlag::UpperBound);
 
 		const auto newKey = packEntryKey(key);
 
@@ -190,7 +194,7 @@ namespace stormphrax
 		entry.score = static_cast<i16>(scoreToTt(score, ply));
 		entry.staticEval = static_cast<i16>(staticEval);
 		entry.depth = depth;
-		entry.setAgePvFlag(m_age, pv, flag);
+		entry.setAgePvForcedFlag(m_age, pv, forcedAllNode, flag);
 
 		*entryPtr = entry;
 	}

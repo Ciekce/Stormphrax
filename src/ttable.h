@@ -40,7 +40,7 @@ namespace stormphrax
 		None = 0,
 		UpperBound,
 		LowerBound,
-		Exact
+		Exact,
 	};
 
 	struct ProbedTTableEntry
@@ -50,6 +50,7 @@ namespace stormphrax
 		i32 depth;
 		Move move;
 		bool wasPv;
+		bool forcedAllNode;
 		TtFlag flag;
 	};
 
@@ -63,7 +64,8 @@ namespace stormphrax
 		auto finalize() -> bool;
 
 		auto probe(ProbedTTableEntry &dst, u64 key, i32 ply) const -> bool;
-		auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void;
+		auto put(u64 key, Score score, Score staticEval, Move move,
+			i32 depth, i32 ply, TtFlag flag, bool pv, bool forcedAllNode) -> void;
 
 		inline auto age()
 		{
@@ -82,7 +84,7 @@ namespace stormphrax
 	private:
 		struct Entry
 		{
-			static constexpr u32 AgeBits = 5;
+			static constexpr u32 AgeBits = 4;
 
 			static constexpr u32 AgeCycle = 1 << AgeBits;
 			static constexpr u32 AgeMask = AgeCycle - 1;
@@ -92,27 +94,34 @@ namespace stormphrax
 			i16 staticEval;
 			Move move;
 			u8 depth;
-			u8 agePvFlag;
+			u8 agePvForcedFlag;
 
 			[[nodiscard]] inline auto age() const
 			{
-				return static_cast<u32>(agePvFlag >> 3);
+				return static_cast<u32>(agePvForcedFlag >> 4);
 			}
 
 			[[nodiscard]] inline auto pv() const
 			{
-				return (static_cast<u32>(agePvFlag >> 2) & 1) != 0;
+				return (static_cast<u32>(agePvForcedFlag >> 3) & 1) != 0;
+			}
+
+			[[nodiscard]] inline auto forced() const
+			{
+				return (static_cast<u32>(agePvForcedFlag >> 2) & 1) != 0;
 			}
 
 			[[nodiscard]] inline auto flag() const
 			{
-				return static_cast<TtFlag>(agePvFlag & 0x3);
+				return static_cast<TtFlag>(agePvForcedFlag & 0x3);
 			}
 
-			inline auto setAgePvFlag(u32 age, bool pv, TtFlag flag)
+			inline auto setAgePvForcedFlag(u32 age, bool pv, bool forced, TtFlag flag)
 			{
 				assert(age < (1 << AgeBits));
-				agePvFlag = (age << 3) | (static_cast<u32>(pv) << 2) | static_cast<u32>(flag);
+				assert(!pv || !forced);
+				agePvForcedFlag = (age << 4) | (static_cast<u32>(pv) << 3)
+					| (static_cast<u32>(forced) << 2) | static_cast<u32>(flag);
 			}
 		};
 
