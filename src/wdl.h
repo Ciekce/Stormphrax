@@ -36,17 +36,11 @@ namespace stormphrax::wdl
 
 	inline auto normalizeScore(Score score, i32 material)
 	{
-		// don't normalise wins/losses, or zeroes that are pointless to normalise
-		if (score == 0 || std::abs(score) > ScoreWin)
-			return score;
-
-		const auto [a, b] = wdlParams(material);
-		return static_cast<Score>(std::round(100.0 * static_cast<f64>(score) / a));
+		return score;
 	}
 
 	inline auto unnormalizeScoreMaterial58(Score score)
 	{
-		return score == 0 || std::abs(score) > ScoreWin
-			? score : score * Material58NormalizationK / 100;
+		return score;
 	}
 }
