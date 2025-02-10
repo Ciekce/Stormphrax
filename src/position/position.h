@@ -158,10 +158,9 @@ namespace stormphrax
 			return m_blackToMove ? Color::White : Color::Black;
 		}
 
-		[[nodiscard]] inline auto material() const
+		[[nodiscard]] inline auto material() const -> const auto &
 		{
-			const auto material = m_material.get();
-			return m_blackToMove ? -material : material;
+			return m_material;
 		}
 
 		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return m_castlingRooks; }
@@ -548,7 +547,7 @@ namespace stormphrax
 		Bitboard m_pinned{};
 		Bitboard m_threats{};
 
-		eval::MaterialScore m_material{};
+		eval::MaterialState m_material{};
 
 		CastlingRooks m_castlingRooks{};
 

@@ -844,7 +844,7 @@ namespace stormphrax
 
 		m_keys.clear();
 
-		m_material = eval::MaterialScore{};
+		m_material = eval::MaterialState{};
 
 		for (u32 rank = 0; rank < 8; ++rank)
 		{

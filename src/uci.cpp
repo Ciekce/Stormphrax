@@ -56,7 +56,7 @@ namespace stormphrax
 
 	namespace
 	{
-		constexpr auto Name = "Pestophrax";
+		constexpr auto Name = "Northphrax";
 		constexpr auto Version = SP_STRINGIFY(SP_VERSION);
 		constexpr auto Author = "Ciekce";
 
@@ -773,7 +773,7 @@ namespace stormphrax
 
 		auto UciHandler::handleRawEval() -> void
 		{
-			const auto score = eval::staticEval<false>(m_pos);
+			const auto score = eval::staticEval(m_pos);
 			std::cout << score << std::endl;
 		}
 

@@ -96,6 +96,7 @@ namespace stormphrax::search
 		{
 			thread.history.clear();
 			thread.correctionHistory.clear();
+			thread.pawnCache.clear();
 		}
 	}
 
@@ -527,7 +528,8 @@ namespace stormphrax::search
 		const bool inCheck = pos.isCheck();
 
 		if (ply >= MaxDepth)
-			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.contMoves, ply, &thread.correctionHistory, m_contempt);
+			return inCheck ? 0 : eval::adjustedStaticEval(pos, thread.contMoves,
+				ply, &thread.correctionHistory, &thread.pawnCache, m_contempt);
 
 		const auto us = pos.toMove();
 		const auto them = oppColor(us);
@@ -655,7 +657,7 @@ namespace stormphrax::search
 				rawStaticEval = ScoreNone;
 			else if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
-			else rawStaticEval = eval::staticEval(pos, m_contempt);
+			else rawStaticEval = eval::staticEval(pos, &thread.pawnCache, m_contempt);
 
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
@@ -1111,7 +1113,8 @@ namespace stormphrax::search
 
 		if (ply >= MaxDepth)
 			return inCheck ? 0
-				: eval::adjustedStaticEval(pos, thread.contMoves, ply, &thread.correctionHistory, m_contempt);
+				: eval::adjustedStaticEval(pos, thread.contMoves, ply,
+					&thread.correctionHistory, &thread.pawnCache, m_contempt);
 
 		ProbedTTableEntry ttEntry{};
 		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
@@ -1135,7 +1138,7 @@ namespace stormphrax::search
 		{
 			if (ttHit && ttEntry.staticEval != ScoreNone)
 				rawStaticEval = ttEntry.staticEval;
-			else rawStaticEval = eval::staticEval(pos, m_contempt);
+			else rawStaticEval = eval::staticEval(pos, &thread.pawnCache, m_contempt);
 
 			if (!ttHit)
 				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);

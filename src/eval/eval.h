@@ -33,6 +33,46 @@ namespace stormphrax::eval
 	// black, white
 	using Contempt = std::array<Score, 2>;
 
+	constexpr usize PawnCacheEntries = 262144;
+
+	struct PawnCacheEntry
+	{
+		u64 key{};
+		TaperedScore eval{};
+		Bitboard passers{};
+	};
+
+	static_assert(sizeof(PawnCacheEntry) == 24);
+
+	class PawnCache
+	{
+	public:
+		PawnCache()
+		{
+			m_cache.resize(PawnCacheEntries);
+		}
+
+		inline auto probe(u64 key) -> PawnCacheEntry &
+		{
+			return m_cache[key % PawnCacheEntries];
+		}
+
+		inline auto clear()
+		{
+			std::memset(m_cache.data(), 0, m_cache.size() * sizeof(PawnCacheEntry));
+		}
+
+	private:
+		std::vector<PawnCacheEntry> m_cache{};
+	};
+
+	constexpr Score Tempo = 16;
+
+	[[nodiscard]] inline auto flipSide(Score eval)
+	{
+		return -eval + Tempo * 2;
+	}
+
 	template <bool Correct = true>
 	inline auto adjustEval(const Position &pos, std::span<search::PlayedMove> moves,
 		i32 ply, const CorrectionHistoryTable *correction, i32 eval, i32 *corrDelta = nullptr)
@@ -52,40 +92,13 @@ namespace stormphrax::eval
 		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
 	}
 
-	template <bool Scale>
-	inline auto adjustStatic(const Position &pos, const Contempt &contempt, Score eval)
-	{
-		if constexpr (Scale)
-		{
-			const auto bbs = pos.bbs();
-
-			const auto npMaterial
-				= see::values::Knight * bbs.knights().popcount()
-				+ see::values::Bishop * bbs.bishops().popcount()
-				+ see::values::Rook   * bbs.rooks  ().popcount()
-				+ see::values::Queen  * bbs.queens ().popcount();
-
-			eval = eval * (26500 + npMaterial) / 32768;
-		}
-
-		eval += contempt[static_cast<i32>(pos.toMove())];
-
-		return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
-	}
-
-	template <bool Scale = true>
-	inline auto staticEval(const Position &pos, const Contempt &contempt = {})
-	{
-		const auto eval = pos.material();
-		return adjustStatic<Scale>(pos, contempt, eval);
-	}
+	auto staticEval(const Position &pos, PawnCache *pawnCache = nullptr, const Contempt &contempt = {}) -> Score;
 
 	template <bool Correct = true>
-	inline auto adjustedStaticEval(const Position &pos,
-		std::span<search::PlayedMove> moves, i32 ply,
-		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
+	inline auto adjustedStaticEval(const Position &pos, std::span<search::PlayedMove> moves, i32 ply,
+		const CorrectionHistoryTable *correction, PawnCache *pawnCache = nullptr, const Contempt &contempt = {})
 	{
-		const auto eval = staticEval(pos, contempt);
+		const auto eval = staticEval(pos, pawnCache, contempt);
 		return adjustEval<Correct>(pos, moves, ply, correction, eval);
 	}
 }

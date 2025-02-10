@@ -32,11 +32,11 @@ namespace stormphrax::eval
 
 	namespace values
 	{
-		constexpr auto Pawn = S(82, 94);
-		constexpr auto Knight = S(337, 281);
-		constexpr auto Bishop = S(365, 297);
-		constexpr auto Rook = S(477, 512);
-		constexpr auto Queen = S(1025, 936);
+		constexpr auto Pawn = S(89, 100);
+		constexpr auto Knight = S(382, 331);
+		constexpr auto Bishop = S(402, 362);
+		constexpr auto Rook = S(512, 647);
+		constexpr auto Queen = S(1109, 1246);
 
 		constexpr auto King = S(0, 0);
 
@@ -92,34 +92,36 @@ namespace stormphrax::eval
 		0, 0, 1, 1, 2, 2, 2, 2, 4, 4, 0, 0,
 	};
 
-	struct MaterialScore
+	struct MaterialState
 	{
-		TaperedScore score{};
+		static constexpr i32 MaxPhase = 24;
+
+		TaperedScore material{};
 		i32 phase{};
 
 		constexpr auto subAdd(Piece piece, Square src, Square dst)
 		{
-			score -= pieceSquareValue(piece, src);
-			score += pieceSquareValue(piece, dst);
+			material -= pieceSquareValue(piece, src);
+			material += pieceSquareValue(piece, dst);
 		}
 
 		constexpr auto add(Piece piece, Square square)
 		{
 			phase += Phase[static_cast<i32>(piece)];
-			score += pieceSquareValue(piece, square);
+			material += pieceSquareValue(piece, square);
 		}
 
 		constexpr auto sub(Piece piece, Square square)
 		{
 			phase -= Phase[static_cast<i32>(piece)];
-			score -= pieceSquareValue(piece, square);
+			material -= pieceSquareValue(piece, square);
 		}
 
-		[[nodiscard]] constexpr auto get() const
+		[[nodiscard]] inline auto interp(TaperedScore tapered) const
 		{
-			return util::ilerp<24>(score.endgame(), score.midgame(), std::min(phase, 24));
+			return util::ilerp<MaxPhase>(tapered.endgame(), tapered.midgame(), std::min(phase, MaxPhase));
 		}
 
-		[[nodiscard]] constexpr auto operator==(const MaterialScore &other) const -> bool = default;
+		[[nodiscard]] constexpr auto operator==(const MaterialState &other) const -> bool = default;
 	};
 }

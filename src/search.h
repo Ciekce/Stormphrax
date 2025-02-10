@@ -146,6 +146,8 @@ namespace stormphrax::search
 
 		PvList rootPv{};
 
+		eval::PawnCache pawnCache{};
+
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 		std::vector<ContinuationSubtable *> conthist{};
