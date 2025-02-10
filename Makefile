@@ -1,7 +1,7 @@
 VERSION := $(file < version.txt)
 
 ifndef EXE
-    EXE = stormphrax-$(VERSION)
+    EXE = pestophrax-$(VERSION)
     NO_EXE_SET = true
 endif
 
