@@ -20,60 +20,19 @@
 
 #include "../types.h"
 
-#ifdef __x86_64__
-#include <immintrin.h>
-#endif
-
 #include <type_traits>
+#include <bit>
 
 #include "../arch.h"
+
+#ifdef SP_HAS_BMI2
+#include <immintrin.h>
+#endif
 
 namespace stormphrax::util
 {
 	namespace fallback
 	{
-		[[nodiscard]] constexpr auto lsb(u64 v)
-		{
-			return v & -v;
-		}
-
-		[[nodiscard]] constexpr auto resetLsb(u64 v)
-		{
-			return v & (v - 1);
-		}
-
-		[[nodiscard]] constexpr auto popcnt(u64 v)
-		{
-			v -= (v >> 1) & U64(0x5555555555555555);
-			v  = (v & U64(0x3333333333333333)) + ((v >> 2) & U64(0x3333333333333333));
-			v  = (v + (v >> 4)) & U64(0x0F0F0F0F0F0F0F0F);
-			return static_cast<i32>((v * U64(0x0101010101010101)) >> 56);
-		}
-
-		[[nodiscard]] constexpr auto ctz(u64 v)
-		{
-			if (std::is_constant_evaluated())
-			{
-				if (v == 0)
-					return 64;
-
-				i32 cnt{};
-
-				while ((v & 1) == 0)
-				{
-					++cnt;
-					v >>= 1;
-				}
-
-				return cnt;
-			}
-
-			if (v == 0)
-				return 64;
-
-			return __builtin_ctzll(v);
-		}
-
 		[[nodiscard]] constexpr auto pext(u64 v, u64 mask)
 		{
 			u64 dst{};
@@ -103,52 +62,22 @@ namespace stormphrax::util
 		}
 	}
 
-	[[nodiscard]] constexpr auto lsb(u64 v) -> u64
+	[[nodiscard]] constexpr auto isolateLsb(u64 v) -> u64
 	{
-#if SP_HAS_BMI1
-		if (std::is_constant_evaluated())
-			return fallback::lsb(v);
-
-		return _blsi_u64(v);
-#else
-		return fallback::lsb(v);
-#endif
+		return v & -v;
 	}
 
 	[[nodiscard]] constexpr auto resetLsb(u64 v) -> u64
 	{
-#if SP_HAS_BMI1
-		if (std::is_constant_evaluated())
-			return fallback::resetLsb(v);
-
-		return _blsr_u64(v);
-#else
-		return fallback::resetLsb(v);
-#endif
+		return v & (v - 1);
 	}
 
-	[[nodiscard]] constexpr auto popcnt(u64 v)
+	[[nodiscard]] constexpr auto ctz(u64 v) -> i32
 	{
-#if SP_HAS_POPCNT
 		if (std::is_constant_evaluated())
-			return fallback::popcnt(v);
+			return std::countr_zero(v);
 
-		return static_cast<i32>(_mm_popcnt_u64(v));
-#else
-		return fallback::popcnt(v);
-#endif
-	}
-
-	[[nodiscard]] constexpr auto ctz(u64 v)
-	{
-#if SP_HAS_BMI1
-		if (std::is_constant_evaluated())
-			return fallback::ctz(v);
-
-		return static_cast<i32>(__tzcnt_u64(v));
-#else
-		return fallback::ctz(v);
-#endif
+		return __builtin_ctzll(v);
 	}
 
 	[[nodiscard]] constexpr auto pext(u64 v, u64 mask) -> u64
