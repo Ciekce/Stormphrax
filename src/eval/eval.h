@@ -21,8 +21,8 @@
 #include "../types.h"
 
 #include <array>
+#include <span>
 
-#include "nnue.h"
 #include "../position/position.h"
 #include "../core.h"
 #include "../correction.h"
@@ -74,25 +74,18 @@ namespace stormphrax::eval
 	}
 
 	template <bool Scale = true>
-	inline auto staticEval(const Position &pos, NnueState &nnueState, const Contempt &contempt = {})
+	inline auto staticEval(const Position &pos, const Contempt &contempt = {})
 	{
-		auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
+		const auto eval = pos.material();
 		return adjustStatic<Scale>(pos, contempt, eval);
 	}
 
 	template <bool Correct = true>
 	inline auto adjustedStaticEval(const Position &pos,
-		std::span<search::PlayedMove> moves, i32 ply, NnueState &nnueState,
+		std::span<search::PlayedMove> moves, i32 ply,
 		const CorrectionHistoryTable *correction, const Contempt &contempt = {})
 	{
-		const auto eval = staticEval(pos, nnueState, contempt);
+		const auto eval = staticEval(pos, contempt);
 		return adjustEval<Correct>(pos, moves, ply, correction, eval);
-	}
-
-	template <bool Scale = true>
-	inline auto staticEvalOnce(const Position &pos, const Contempt &contempt = {})
-	{
-		auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-		return adjustStatic<Scale>(pos, contempt, eval);
 	}
 }

@@ -225,7 +225,6 @@ namespace stormphrax
 			std::cout << "option name SyzygyProbeLimit type spin default " << defaultOpts.syzygyProbeLimit
 				<< " min " << search::SyzygyProbeLimitRange.min()
 				<< " max " << search::SyzygyProbeLimitRange.max() << '\n';
-			std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
 #if SP_EXTERNAL_TUNE
 			for (const auto &param : tunableParams())
@@ -708,22 +707,6 @@ namespace stormphrax
 							opts::mutableOpts().syzygyProbeLimit = search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
 					}
 				}
-				else if (nameStr == "evalfile")
-				{
-					if (m_searcher.searching())
-						std::cerr << "still searching" << std::endl;
-
-					if (!valueEmpty)
-					{
-						if (valueStr == "<internal>")
-						{
-							eval::loadDefaultNetwork();
-							std::cout << "info string loaded embedded network "
-								<< eval::defaultNetworkName() << std::endl;
-						}
-						else eval::loadNetwork(valueStr);
-					}
-				}
 #if SP_EXTERNAL_TUNE
 				else if (auto *param = lookupTunableParam(nameStr))
 				{
@@ -771,7 +754,7 @@ namespace stormphrax
 
 			std::cout << std::endl;
 
-			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
+			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEval(m_pos));
 			const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
 			std::cout << "Static eval: ";
@@ -781,7 +764,7 @@ namespace stormphrax
 
 		auto UciHandler::handleEval() -> void
 		{
-			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
+			const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEval(m_pos));
 			const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
 			printScore(std::cout, normalized);
@@ -790,7 +773,7 @@ namespace stormphrax
 
 		auto UciHandler::handleRawEval() -> void
 		{
-			const auto score = eval::staticEvalOnce<false>(m_pos);
+			const auto score = eval::staticEval<false>(m_pos);
 			std::cout << score << std::endl;
 		}
 

@@ -37,8 +37,8 @@
 #include "position/position.h"
 #include "limit/limit.h"
 #include "util/timer.h"
-#include "ttable.h"
 #include "eval/eval.h"
+#include "ttable.h"
 #include "movepick.h"
 #include "util/barrier.h"
 #include "history.h"
@@ -102,13 +102,11 @@ namespace stormphrax::search
 		StaticVector<Move, 32> failLowNoisies{};
 	};
 
-	template <bool UpdateNnue>
 	class ThreadPosGuard
 	{
 	public:
-		explicit ThreadPosGuard(std::vector<u64> &keyHistory, eval::NnueState &nnueState)
-			: m_keyHistory{keyHistory},
-			  m_nnueState{nnueState} {}
+		explicit ThreadPosGuard(std::vector<u64> &keyHistory)
+			: m_keyHistory{keyHistory} {}
 
 		ThreadPosGuard(const ThreadPosGuard &) = delete;
 		ThreadPosGuard(ThreadPosGuard &&) = delete;
@@ -116,14 +114,10 @@ namespace stormphrax::search
 		inline ~ThreadPosGuard()
 		{
 			m_keyHistory.pop_back();
-
-			if constexpr (UpdateNnue)
-				m_nnueState.pop();
 		}
 
 	private:
 		std::vector<u64> &m_keyHistory;
-		eval::NnueState &m_nnueState;
 	};
 
 	struct alignas(CacheLineSize) ThreadData
@@ -152,8 +146,6 @@ namespace stormphrax::search
 
 		PvList rootPv{};
 
-		eval::NnueState nnueState{};
-
 		std::vector<SearchStackEntry> stack{};
 		std::vector<MoveStackEntry> moveStack{};
 		std::vector<ContinuationSubtable *> conthist{};
@@ -181,10 +173,10 @@ namespace stormphrax::search
 
 			keyHistory.push_back(pos.key());
 
-			return std::pair<Position, ThreadPosGuard<false>>{
+			return std::pair<Position, ThreadPosGuard>{
 				std::piecewise_construct,
 				std::forward_as_tuple(pos.applyNullMove()),
-				std::forward_as_tuple(keyHistory, nnueState)
+				std::forward_as_tuple(keyHistory)
 			};
 		}
 
@@ -200,10 +192,10 @@ namespace stormphrax::search
 
 			keyHistory.push_back(pos.key());
 
-			return std::pair<Position, ThreadPosGuard<true>>{
+			return std::pair<Position, ThreadPosGuard>{
 				std::piecewise_construct,
-				std::forward_as_tuple(pos.applyMove<NnueUpdateAction::Queue>(move, &nnueState)),
-				std::forward_as_tuple(keyHistory, nnueState)
+				std::forward_as_tuple(pos.applyMove(move)),
+				std::forward_as_tuple(keyHistory)
 			};
 		}
 

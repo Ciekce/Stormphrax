@@ -25,12 +25,13 @@
 #include <stack>
 #include <optional>
 #include <utility>
+#include <span>
 
 #include "boards.h"
 #include "../move.h"
 #include "../attacks/attacks.h"
 #include "../ttable.h"
-#include "../eval/nnue.h"
+#include "../eval/material.h"
 #include "../rays.h"
 #include "../keys.h"
 
@@ -130,19 +131,11 @@ namespace stormphrax
 		return std::string{Files[s % 8], Ranks[s / 8]};
 	}
 
-	enum class NnueUpdateAction
-	{
-		None = 0,
-		Queue,
-		Apply,
-	};
-
 	class Position
 	{
 	public:
 		// Moves are assumed to be legal
-		template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
-		[[nodiscard]] auto applyMove(Move move, eval::NnueState *nnueState = nullptr) const -> Position;
+		[[nodiscard]] auto applyMove(Move move) const -> Position;
 
 		[[nodiscard]] inline auto applyNullMove() const
 		{
@@ -163,6 +156,12 @@ namespace stormphrax
 		[[nodiscard]] inline auto opponent() const
 		{
 			return m_blackToMove ? Color::White : Color::Black;
+		}
+
+		[[nodiscard]] inline auto material() const
+		{
+			const auto material = m_material.get();
+			return m_blackToMove ? -material : material;
 		}
 
 		[[nodiscard]] inline auto castlingRooks() const -> const auto & { return m_castlingRooks; }
@@ -446,15 +445,15 @@ namespace stormphrax
 		template <bool UpdateKeys = true>
 		auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
 
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		template <bool UpdateKeys = true>
+		[[nodiscard]] auto movePiece(Piece piece, Square src, Square dst) -> Piece;
 
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates &nnueUpdates) -> Piece;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates &nnueUpdates) -> void;
-		template <bool UpdateKeys = true, bool UpdateNnue = true>
-		auto enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates &nnueUpdates) -> Piece;
+		template <bool UpdateKeys = true>
+		auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo) -> Piece;
+		template <bool UpdateKeys = true>
+		auto castle(Piece king, Square kingSrc, Square rookSrc) -> void;
+		template <bool UpdateKeys = true>
+		auto enPassant(Piece pawn, Square src, Square dst) -> Piece;
 
 		[[nodiscard]] inline auto calcCheckers() const
 		{
@@ -549,6 +548,8 @@ namespace stormphrax
 		Bitboard m_pinned{};
 		Bitboard m_threats{};
 
+		eval::MaterialScore m_material{};
+
 		CastlingRooks m_castlingRooks{};
 
 		u16 m_halfmove{};
@@ -561,7 +562,7 @@ namespace stormphrax
 		bool m_blackToMove{};
 	};
 
-	static_assert(sizeof(Position) == 208);
+	static_assert(sizeof(Position) == 216);
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;
 }
