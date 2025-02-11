@@ -686,6 +686,15 @@ namespace stormphrax::search
 			return true;
 		}();
 
+		if (!RootNode
+			&& !inCheck
+			&& parent->reduction > 0
+			&& !parent->noisy
+			&& parent->staticEval != ScoreNone
+			&& curr.staticEval < -parent->staticEval
+			&& curr.staticEval <= alpha)
+			++depth;
+
 		if (!PvNode
 			&& !inCheck
 			&& !curr.excluded)
@@ -923,6 +932,8 @@ namespace stormphrax::search
 
 			cutnode |= extension < 0;
 
+			curr.noisy = noisy;
+
 			m_ttable.prefetch(pos.roughKeyAfter(move));
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
@@ -960,8 +971,12 @@ namespace stormphrax::search
 
 					// can't use std::clamp because newDepth can be <0
 					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
+					curr.reduction = newDepth - reduced;
+
 					score = -search(thread, newPos, curr.pv, reduced,
 						ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
+
+					curr.reduction = 0;
 
 					if (score > alpha && reduced < newDepth)
 					{

@@ -86,7 +86,10 @@ namespace stormphrax::search
 	struct SearchStackEntry
 	{
 		PvList pv{};
+
 		Move move;
+		bool noisy{};
+		i32 reduction{};
 
 		Score staticEval;
 
