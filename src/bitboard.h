@@ -196,7 +196,7 @@ namespace stormphrax
 		[[nodiscard]] constexpr auto operator[](Square s) const -> bool { return m_board & squareBit(s); }
 		[[nodiscard]] constexpr auto operator[](Square s) { return BitboardSlot{m_board, static_cast<i32>(s)}; }
 
-		[[nodiscard]] constexpr auto popcount() const { return util::popcnt(m_board); }
+		[[nodiscard]] constexpr auto popcount() const { return std::popcount(m_board); }
 
 		[[nodiscard]] constexpr auto empty() const { return m_board == 0; }
 		[[nodiscard]] constexpr auto multiple() const { return util::resetLsb(m_board) != 0; }
@@ -209,7 +209,7 @@ namespace stormphrax
 
 		[[nodiscard]] constexpr auto lowestBit() const -> Bitboard
 		{
-			return util::lsb(m_board);
+			return util::isolateLsb(m_board);
 		}
 
 		[[nodiscard]] constexpr auto popLowestSquare()

@@ -55,13 +55,7 @@ namespace stormphrax
 
 		inline auto flipStm()
 		{
-			const auto key = keys::color();
-
-			all ^= key;
-			pawns ^= key;
-			blackNonPawns ^= key;
-			whiteNonPawns ^= key;
-			majors ^= key;
+			all ^= keys::color();
 		}
 
 		inline auto flipPiece(Piece piece, Square square)
