@@ -803,6 +803,8 @@ namespace stormphrax::search
 
 		u32 legalMoves = 0;
 
+		i32 ttMoveExtension = 0;
+
 		while (const auto move = generator.next())
 		{
 			if (move == curr.excluded)
@@ -919,6 +921,8 @@ namespace stormphrax::search
 					extension = -2;
 				else if (ttEntry.score >= beta)
 					extension = -1;
+
+				ttMoveExtension = extension;
 			}
 
 			cutnode |= extension < 0;
@@ -949,6 +953,7 @@ namespace stormphrax::search
 					r -= improving * lmrImprovingReductionScale();
 					r -= givesCheck * lmrCheckReductionScale();
 					r += cutnode * lmrCutnodeReductionScale();
+					r += 128 * (ttMoveExtension > 0);
 
 					if (complexity)
 					{
