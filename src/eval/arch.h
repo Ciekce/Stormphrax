@@ -35,14 +35,24 @@ namespace stormphrax::eval
 
 	constexpr bool PairwiseMul = false;
 
-	constexpr u32 L1Size = 128;
+	constexpr u32 L1Size = 32;
 
 	using L1Activation = nnue::activation::SquaredClippedReLU<i16, i32, L1Q>;
 
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::SingleBucketMirrored<nnue::features::MirroredKingSide::Abcd>;
+	using InputFeatureSet = nnue::features::KingBucketsMirrored<
+	    nnue::features::MirroredKingSide::Abcd,
+		0, 0, 1, 1,
+		2, 2, 2, 2,
+		3, 3, 3, 3,
+		3, 3, 3, 3,
+		3, 3, 3, 3,
+		3, 3, 3, 3,
+		3, 3, 3, 3,
+		3, 3, 3, 3
+	>;
 
 	using OutputBucketing = nnue::output::Single;
 }
