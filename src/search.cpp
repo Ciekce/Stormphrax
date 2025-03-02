@@ -931,7 +931,7 @@ namespace stormphrax::search
 
 			Score score{};
 
-			if (newPos.isDrawn(true, thread.keyHistory))
+			if (newPos.isDrawn(ply, thread.keyHistory))
 				score = drawScore(thread.search.loadNodes());
 			else
 			{
@@ -1204,7 +1204,7 @@ namespace stormphrax::search
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
-			const auto score = newPos.isDrawn(false, thread.keyHistory)
+			const auto score = newPos.isDrawn(ply, thread.keyHistory)
 				? drawScore(thread.search.loadNodes())
 				: -qsearch<PvNode>(thread, newPos, ply + 1, moveStackIdx + 1, -beta, -alpha);
 

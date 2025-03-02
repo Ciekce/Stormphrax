@@ -296,7 +296,7 @@ namespace stormphrax::datagen
 
 					assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
 
-					if (pos.isDrawn(false, thread->keyHistory))
+					if (pos.isDrawn(0, thread->keyHistory))
 					{
 						outcome = Outcome::Draw;
 						output.push(true, move, 0);
