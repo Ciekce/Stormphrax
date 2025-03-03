@@ -365,7 +365,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto threats() const { return m_threats; }
 
 		[[nodiscard]] auto hasCycle(i32 ply, std::span<const u64> keys) const -> bool;
-		[[nodiscard]] auto isDrawn(bool threefold, std::span<const u64> keys) const -> bool;
+		[[nodiscard]] auto isDrawn(i32 ply, std::span<const u64> keys) const -> bool;
 
 		[[nodiscard]] inline auto captureTarget(Move move) const
 		{
