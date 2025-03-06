@@ -141,6 +141,7 @@ namespace stormphrax
 				if (!m_skipQuiets
 					&& m_killers.killer
 					&& m_killers.killer != m_ttMove
+					&& !m_pos.isNoisy(m_killers.killer)
 					&& m_pos.isPseudolegal(m_killers.killer))
 					return m_killers.killer;
 
