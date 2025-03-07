@@ -533,7 +533,7 @@ namespace stormphrax
 		return false;
 	}
 
-	auto Position::isDrawn(bool threefold, std::span<const u64> keys) const -> bool
+	auto Position::isDrawn(i32 ply, std::span<const u64> keys) const -> bool
 	{
 		const auto halfmove = m_halfmove;
 
@@ -556,12 +556,15 @@ namespace stormphrax
 		const auto currKey = m_keys.all;
 		const auto limit = std::max(0, static_cast<i32>(keys.size()) - halfmove - 2);
 
-		i32 repetitionsLeft = threefold ? 2 : 1;
+		ply -= 4;
 
-		for (auto i = static_cast<i32>(keys.size()) - 4; i >= limit; i -= 2)
+		i32 repetitions = 0;
+
+		for (auto i = static_cast<i32>(keys.size()) - 4; i >= limit; i -= 2, ply -= 2)
 		{
+			// require a threefold repetition before root
 			if (keys[i] == currKey
-				&& --repetitionsLeft == 0)
+				&& ++repetitions == 1 + (ply < 0))
 				return true;
 		}
 
