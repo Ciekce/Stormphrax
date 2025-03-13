@@ -33,7 +33,7 @@
 namespace stormphrax
 {
 	constexpr usize DefaultTtSizeMib = 64;
-	constexpr util::Range<usize> TtSizeMibRange{1, 131072};
+	constexpr util::Range<usize> TtSizeMibRange{1, 67108864};
 
 	enum class TtFlag : u8
 	{
