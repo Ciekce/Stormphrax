@@ -1163,6 +1163,8 @@ namespace stormphrax::search
 
 		const auto futility = eval + qsearchFpMargin();
 
+		const auto parentDst = thread.stack[ply - 1].move ? thread.stack[ply - 1].move.dst() : Square::None;
+
 		auto bestMove = NullMove;
 		auto bestScore = eval;
 
@@ -1178,7 +1180,7 @@ namespace stormphrax::search
 			if (!pos.isLegal(move))
 				continue;
 
-			if (bestScore > -ScoreWin)
+			if (bestScore > -ScoreWin && move.dst() != parentDst)
 			{
 				if (!inCheck
 					&& futility <= alpha
