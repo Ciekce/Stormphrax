@@ -99,7 +99,7 @@ namespace stormphrax
 						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
 			}
 
-			score += correction / 128;
+			score += correction / 2048;
 
 			return std::clamp(score, -ScoreWin + 1, ScoreWin - 1);
 		}
@@ -109,8 +109,6 @@ namespace stormphrax
 
 		static constexpr i32 Limit = 1024;
 		static constexpr i32 MaxBonus = Limit / 4;
-
-		static constexpr i32 CorrectionScale = 48;
 
 		struct Entry
 		{
@@ -123,7 +121,7 @@ namespace stormphrax
 
 			[[nodiscard]] inline operator i32() const
 			{
-				return value * CorrectionScale / 16384;
+				return value;
 			}
 		};
 
