@@ -110,7 +110,7 @@ namespace stormphrax
 		static constexpr i32 Limit = 1024;
 		static constexpr i32 MaxBonus = Limit / 4;
 
-		static constexpr i32 CorrectionScale = 128;
+		static constexpr i32 CorrectionScale = 48;
 
 		struct Entry
 		{
