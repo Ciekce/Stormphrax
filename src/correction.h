@@ -50,15 +50,14 @@ namespace stormphrax
 		inline auto update(const Position &pos, std::span<search::PlayedMove> moves,
 			i32 ply, i32 depth, Score searchScore, Score staticEval)
 		{
-			const auto scaledError = static_cast<i32>((searchScore - staticEval) * Grain);
-			const auto newWeight = static_cast<i32>(std::min(depth + 1, 16));
+			const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -MaxBonus, MaxBonus);
 
 			const auto stm = static_cast<i32>(pos.toMove());
 
-			m_pawnTable[stm][pos.pawnKey() % Entries].update(scaledError, newWeight);
-			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(scaledError, newWeight);
-			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(scaledError, newWeight);
-			m_majorTable[stm][pos.majorKey() % Entries].update(scaledError, newWeight);
+			m_pawnTable[stm][pos.pawnKey() % Entries].update(bonus);
+			m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(bonus);
+			m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(bonus);
+			m_majorTable[stm][pos.majorKey() % Entries].update(bonus);
 
 			if (ply >= 2)
 			{
@@ -67,7 +66,7 @@ namespace stormphrax
 
 				if (moving2 != Piece::None && moving1 != Piece::None)
 					m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
-						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].update(scaledError, newWeight);
+						[static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)].update(bonus);
 			}
 		}
 
@@ -108,23 +107,23 @@ namespace stormphrax
 	private:
 		static constexpr usize Entries = 16384;
 
-		static constexpr i32 Grain = 256;
-		static constexpr i32 WeightScale = 256;
-		static constexpr i32 Max = Grain * 32;
+		static constexpr i32 Limit = 1024;
+		static constexpr i32 MaxBonus = Limit / 4;
+
+		static constexpr i32 CorrectionScale = 128;
 
 		struct Entry
 		{
 			i16 value{};
 
-			inline auto update(i32 scaledError, i32 newWeight) -> void
+			inline auto update(i32 bonus) -> void
 			{
-				const auto v = util::ilerp<WeightScale>(value, scaledError, newWeight);
-				value = static_cast<i16>(std::clamp(v, -Max, Max));
+				value += bonus - value * std::abs(bonus) / Limit;
 			}
 
 			[[nodiscard]] inline operator i32() const
 			{
-				return value / Grain;
+				return value * CorrectionScale / 16384;
 			}
 		};
 
