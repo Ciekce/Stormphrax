@@ -1079,6 +1079,11 @@ namespace stormphrax::search
 				thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), penalty);
 			}
 		}
+		else if (!RootNode && parent->move && !parent->noisy)
+		{
+			const auto bonus = historyBonus(depth);
+			thread.history.updateMainQuietScore(parent->threats, parent->move, bonus);
+		}
 
 		bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 

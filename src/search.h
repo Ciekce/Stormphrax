@@ -86,7 +86,11 @@ namespace stormphrax::search
 	struct SearchStackEntry
 	{
 		PvList pv{};
+
 		Move move;
+		bool noisy;
+
+		Bitboard threats;
 
 		Score staticEval;
 
@@ -175,7 +179,12 @@ namespace stormphrax::search
 		{
 			assert(ply <= MaxDepth);
 
-			stack[ply].move = NullMove;
+			auto &entry = stack[ply];
+
+			entry.move = NullMove;
+			entry.noisy = false;
+			entry.threats = pos.threats();
+
 			conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
 			contMoves[ply] = { Piece::None, Square::None };
 
@@ -192,9 +201,14 @@ namespace stormphrax::search
 		{
 			assert(ply <= MaxDepth);
 
+			auto &entry = stack[ply];
+
+			entry.move = move;
+			entry.noisy = pos.isNoisy(move);
+			entry.threats = pos.threats();
+
 			const auto moving = pos.boards().pieceAt(move.src());
 
-			stack[ply].move = move;
 			conthist[ply] = &history.contTable(moving, move.dst());
 			contMoves[ply] = { moving, move.dst() };
 

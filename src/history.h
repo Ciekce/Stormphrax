@@ -129,6 +129,11 @@ namespace stormphrax
 			updateConthist(continuations, ply, moving, move, bonus, 4);
 		}
 
+		inline auto updateMainQuietScore(Bitboard threats, Move move, HistoryScore bonus)
+		{
+			mainEntry(threats, move).update(bonus);
+		}
+
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
