@@ -132,7 +132,7 @@ namespace stormphrax
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
-			mainEntry(threats, move).update(bonus);
+			mainEntry(pieceColor(moving), threats, move).update(bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
@@ -146,7 +146,7 @@ namespace stormphrax
 		{
 			i32 score{};
 
-			score += mainEntry(threats, move);
+			score += mainEntry(pieceColor(moving), threats, move);
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
@@ -162,7 +162,7 @@ namespace stormphrax
 
 	private:
 		// [from][to][from attacked][to attacked]
-		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_main{};
+		util::MultiArray<HistoryEntry, 2, 64, 64, 2, 2> m_main{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -186,14 +186,18 @@ namespace stormphrax
 			return 0;
 		}
 
-		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) const -> const HistoryEntry &
+		[[nodiscard]] inline auto mainEntry(Color stm, Bitboard threats, Move move) const -> const HistoryEntry &
 		{
-			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			assert(stm);
+			return m_main[static_cast<i32>(stm)][move.srcIdx()]
+				[move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
-		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) -> HistoryEntry &
+		[[nodiscard]] inline auto mainEntry(Color stm, Bitboard threats, Move move) -> HistoryEntry &
 		{
-			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			assert(stm);
+			return m_main[static_cast<i32>(stm)][move.srcIdx()]
+				[move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
 		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
