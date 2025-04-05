@@ -1162,7 +1162,7 @@ namespace stormphrax::search
 			else eval = staticEval;
 
 			if (eval >= beta)
-				return eval;
+				return (eval + beta) / 2;
 
 			if (eval > alpha)
 				alpha = eval;
