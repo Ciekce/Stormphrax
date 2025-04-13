@@ -957,6 +957,7 @@ namespace stormphrax::search
 					r -= givesCheck * lmrCheckReductionScale();
 					r += cutnode * lmrCutnodeReductionScale();
 					r += (ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
+					r += (cutnode && !ttEntry.move) * 128;
 
 					if (complexity)
 					{
