@@ -174,6 +174,7 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmrImprovingReductionScale, 148, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrCheckReductionScale, 111, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 257, 32, 384, 12)
+	SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 128, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrHighComplexityReductionScale, 128, 32, 384, 12)
 
 	SP_TUNABLE_PARAM(lmrHistoryDivisor, 10835, 4096, 16384, 650)
