@@ -134,7 +134,7 @@ namespace stormphrax
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
 			butterflyEntry(threats, move).update(bonus);
-			pieceToEntry(moving, move).update(bonus);
+			pieceToEntry(threats, moving, move).update(bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
@@ -148,7 +148,7 @@ namespace stormphrax
 		{
 			i32 score{};
 
-			score += (butterflyEntry(threats, move) + pieceToEntry(moving, move)) / 2;
+			score += (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
@@ -166,7 +166,7 @@ namespace stormphrax
 		// [from][to][from attacked][to attacked]
 		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
 		// [piece][to]
-		util::MultiArray<HistoryEntry, 12, 64> m_pieceTo{};
+		util::MultiArray<HistoryEntry, 12, 64, 2, 2> m_pieceTo{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -200,14 +200,14 @@ namespace stormphrax
 			return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
-		[[nodiscard]] inline auto pieceToEntry(Piece moving, Move move) const -> const HistoryEntry &
+		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) const -> const HistoryEntry &
 		{
-			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
-		[[nodiscard]] inline auto pieceToEntry(Piece moving, Move move) -> HistoryEntry &
+		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) -> HistoryEntry &
 		{
-			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
 		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
