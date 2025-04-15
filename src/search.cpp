@@ -572,8 +572,6 @@ namespace stormphrax::search
 
 					return ttEntry.score;
 				}
-				else if (depth <= 6)
-					++depth;
 			}
 		}
 
