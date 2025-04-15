@@ -106,7 +106,8 @@ namespace stormphrax
 
 		inline auto clear()
 		{
-			std::memset(&m_main        , 0, sizeof(m_main        ));
+			std::memset(&m_butterfly   , 0, sizeof(m_butterfly   ));
+			std::memset(&m_pieceTo     , 0, sizeof(m_pieceTo     ));
 			std::memset(&m_continuation, 0, sizeof(m_continuation));
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
@@ -132,7 +133,8 @@ namespace stormphrax
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
-			mainEntry(threats, move).update(bonus);
+			butterflyEntry(threats, move).update(bonus);
+			pieceToEntry(moving, move).update(bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
@@ -146,7 +148,7 @@ namespace stormphrax
 		{
 			i32 score{};
 
-			score += mainEntry(threats, move);
+			score += (butterflyEntry(threats, move) + pieceToEntry(moving, move)) / 2;
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
@@ -162,7 +164,9 @@ namespace stormphrax
 
 	private:
 		// [from][to][from attacked][to attacked]
-		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_main{};
+		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
+		// [piece][to]
+		util::MultiArray<HistoryEntry, 12, 64> m_pieceTo{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -186,14 +190,24 @@ namespace stormphrax
 			return 0;
 		}
 
-		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) const -> const HistoryEntry &
+		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) const -> const HistoryEntry &
 		{
-			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
 		}
 
-		[[nodiscard]] inline auto mainEntry(Bitboard threats, Move move) -> HistoryEntry &
+		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) -> HistoryEntry &
 		{
-			return m_main[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+		}
+
+		[[nodiscard]] inline auto pieceToEntry(Piece moving, Move move) const -> const HistoryEntry &
+		{
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
+		}
+
+		[[nodiscard]] inline auto pieceToEntry(Piece moving, Move move) -> HistoryEntry &
+		{
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
 		}
 
 		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
