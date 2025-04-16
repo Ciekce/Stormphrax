@@ -39,22 +39,6 @@ namespace stormphrax::search
 		constexpr f64 WidenReportDelay = 1.0;
 		constexpr f64 CurrmoveReportDelay = 2.5;
 
-		// [improving][clamped depth]
-		constexpr auto LmpTable = []
-		{
-			util::MultiArray<i32, 2, 16> result{};
-
-			for (i32 improving = 0; improving < 2; ++improving)
-			{
-				for (i32 depth = 0; depth < 16; ++depth)
-				{
-					result[improving][depth] = (3 + depth * depth) / (2 - improving);
-				}
-			}
-
-			return result;
-		}();
-
 		inline auto drawScore(usize nodes)
 		{
 			return 2 - static_cast<Score>(nodes % 4);
@@ -838,12 +822,6 @@ namespace stormphrax::search
 
 				if (!noisy)
 				{
-					if (legalMoves >= LmpTable[improving][std::min(depth, 15)])
-					{
-						generator.skipQuiets();
-						continue;
-					}
-
 					if (lmrDepth <= 5
 						&& history < quietHistPruningMargin() * depth + quietHistPruningOffset())
 					{
