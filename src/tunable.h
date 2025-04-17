@@ -38,8 +38,13 @@ namespace stormphrax::tunable
 	// [noisy][depth][legal moves]
 	extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
 
+	// [coloured piece], +1 for none
+	extern std::array<i32, 13> g_seeValues;
+
 	auto updateQuietLmrTable() -> void;
 	auto updateNoisyLmrTable() -> void;
+
+	auto updateSeeValueTable() -> void;
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
 	static_assert((Default) >= (Min)); \
@@ -122,6 +127,19 @@ namespace stormphrax::tunable
 
 	SP_TUNABLE_PARAM_F64(timeScaleMin, 0.07, 0.001, 1.0, 0.1, 1000)
 
+	SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 100, 50, 200, 7.5, updateSeeValueTable)
+	SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 450, 300, 700, 25, updateSeeValueTable)
+	SP_TUNABLE_PARAM_CALLBACK(seeValueBishop, 450, 300, 700, 25, updateSeeValueTable)
+	SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 650, 400, 1000, 30, updateSeeValueTable)
+	SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1250, 800, 1600, 40, updateSeeValueTable)
+
+	SP_TUNABLE_PARAM(scalingValueKnight, 450, 300, 700, 25)
+	SP_TUNABLE_PARAM(scalingValueBishop, 450, 300, 700, 25)
+	SP_TUNABLE_PARAM(scalingValueRook, 650, 400, 1000, 30)
+	SP_TUNABLE_PARAM(scalingValueQueen, 1250, 800, 1600, 40)
+
+	SP_TUNABLE_PARAM(materialScalingBase, 26500, 10000, 40000, 1500)
+
 	SP_TUNABLE_PARAM(pawnCorrhistWeight, 133, 32, 384, 18)
 	SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 142, 32, 384, 18)
 	SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 142, 32, 384, 18)
@@ -161,6 +179,8 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
 	SP_TUNABLE_PARAM(tripleExtMargin, 105, 10, 150, 7)
 
+	SP_TUNABLE_PARAM(ldseMargin, 26, 10, 60, 3)
+
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 83, 50, 120, 15, updateQuietLmrTable)
 	SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 218, 100, 300, 10, updateQuietLmrTable)
 
@@ -172,9 +192,11 @@ namespace stormphrax::tunable
 	SP_TUNABLE_PARAM(lmrImprovingReductionScale, 148, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrCheckReductionScale, 111, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 257, 32, 384, 12)
+	SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 128, 32, 384, 12)
 	SP_TUNABLE_PARAM(lmrHighComplexityReductionScale, 128, 32, 384, 12)
 
-	SP_TUNABLE_PARAM(lmrHistoryDivisor, 10835, 4096, 16384, 650)
+	SP_TUNABLE_PARAM(lmrQuietHistoryDivisor, 10835, 4096, 16384, 650)
+	SP_TUNABLE_PARAM(lmrNoisyHistoryDivisor, 10835, 4096, 16384, 650)
 
 	SP_TUNABLE_PARAM(lmrHighComplexityThreshold, 70, 30, 120, 5)
 

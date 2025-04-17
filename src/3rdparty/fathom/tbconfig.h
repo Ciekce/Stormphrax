@@ -39,7 +39,7 @@
  * implementation. To do this supply a macro or function definition
  * here:
  */
-#define TB_CUSTOM_POP_COUNT(x) (stormphrax::util::popcnt(x))
+#define TB_CUSTOM_POP_COUNT(x) (std::popcount(x))
 
 /*
  * Define TB_CUSTOM_LSB to override the internal lsb
@@ -58,7 +58,7 @@
  * Define TB_NO_STDBOOL if you do not want to use <stdbool.h> or it is not
  * available or unnecessary (e.g. C++).
  */
-/* #define TB_NO_STDBOOL */
+#define TB_NO_STDBOOL
 
 /*
  * Define TB_NO_THREADS if your program is not multi-threaded.

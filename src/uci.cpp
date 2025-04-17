@@ -103,6 +103,7 @@ namespace stormphrax
 			auto handleSetoption(const std::vector<std::string> &tokens) -> void;
 			// V ======= NONSTANDARD ======= V
 			auto handleD() -> void;
+			auto handleFen() -> void;
 			auto handleCheckers() -> void;
 			auto handleThreats() -> void;
 			auto handleEval() -> void;
@@ -164,6 +165,8 @@ namespace stormphrax
 				// V ======= NONSTANDARD ======= V
 				else if (command == "d")
 					handleD();
+				else if (command == "fen")
+					handleFen();
 				else if (command == "eval")
 					handleEval();
 				else if (command == "raweval")
@@ -760,6 +763,11 @@ namespace stormphrax
 			std::cout << "Static eval: ";
 			printScore(std::cout, m_pos.toMove() == Color::Black ? -normalized : normalized);
 			std::cout << std::endl;
+		}
+
+		auto UciHandler::handleFen() -> void
+		{
+			std::cout << m_pos.toFen() << std::endl;
 		}
 
 		auto UciHandler::handleEval() -> void
