@@ -25,6 +25,7 @@
 #include "nnue.h"
 #include "../position/position.h"
 #include "../core.h"
+#include "../tunable.h"
 #include "../correction.h"
 #include "../see.h"
 
@@ -55,17 +56,19 @@ namespace stormphrax::eval
 	template <bool Scale>
 	inline auto adjustStatic(const Position &pos, const Contempt &contempt, Score eval)
 	{
+		using namespace tunable;
+
 		if constexpr (Scale)
 		{
 			const auto bbs = pos.bbs();
 
 			const auto npMaterial
-				= see::values::Knight * bbs.knights().popcount()
-				+ see::values::Bishop * bbs.bishops().popcount()
-				+ see::values::Rook   * bbs.rooks  ().popcount()
-				+ see::values::Queen  * bbs.queens ().popcount();
+				= scalingValueKnight() * bbs.knights().popcount()
+				+ scalingValueBishop() * bbs.bishops().popcount()
+				+ scalingValueRook()   * bbs.rooks  ().popcount()
+				+ scalingValueQueen()  * bbs.queens ().popcount();
 
-			eval = eval * (26500 + npMaterial) / 32768;
+			eval = eval * (materialScalingBase() + npMaterial) / 32768;
 		}
 
 		eval += contempt[static_cast<i32>(pos.toMove())];
