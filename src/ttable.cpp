@@ -176,6 +176,9 @@ namespace stormphrax
 
 		auto entry = *entryPtr;
 
+		if (entry.age() == m_age && flag == TtFlag::None && entry.flag() != TtFlag::None)
+			return;
+
 		// Roughly the SF replacement scheme
 		if (!(flag == TtFlag::Exact
 			|| newKey != entry.key
