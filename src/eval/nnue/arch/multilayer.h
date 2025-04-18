@@ -142,7 +142,7 @@ namespace stormphrax::eval::nnue::arch
 		inline auto propagateL1Avx2
 			(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
 		{
-			static_assert(L2Activation::Id == activation::SquaredReLU::Id);
+			static_assert(L2Activation::Id == activation::SquaredClippedReLU::Id);
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 			static constexpr auto ChunkSizeI32 = sizeof(__m256i) / sizeof(i32);
@@ -213,6 +213,7 @@ namespace stormphrax::eval::nnue::arch
 
 				out = _mm256_fmadd_ps(out, oneOverQuant, biases);
 				out = _mm256_max_ps(out, _mm256_setzero_ps());
+				out = _mm256_min_ps(out, _mm256_set1_ps(1.0F));
 				out = _mm256_mul_ps(out, out);
 
 				_mm256_store_ps(&outputs[idx], out);

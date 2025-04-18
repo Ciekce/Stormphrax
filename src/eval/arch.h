@@ -38,13 +38,13 @@ namespace stormphrax::eval
 
 	constexpr u32 FtScaleBits = 7;
 
-	constexpr u32 L1Size = 1792;
-	constexpr u32 L2Size = 8;
+	constexpr u32 L1Size = 1536;
+	constexpr u32 L2Size = 16;
 	constexpr u32 L3Size = 32;
 
 	using L1Activation = nnue::activation::ClippedReLU;
-	using L2Activation = nnue::activation::SquaredReLU;
-	using L3Activation = nnue::activation::SquaredReLU;
+	using L2Activation = nnue::activation::SquaredClippedReLU;
+	using L3Activation = nnue::activation::SquaredClippedReLU;
 
 	constexpr i32 Scale = 400;
 
@@ -53,12 +53,12 @@ namespace stormphrax::eval
 		nnue::features::MirroredKingSide::Abcd,
 		 0,  1,  2,  3,
 		 4,  5,  6,  7,
-		 8,  9, 10, 11,
-		 8,  9, 10, 11,
-		12, 12, 13, 13,
-		12, 12, 13, 13,
-		14, 14, 15, 15,
-		14, 14, 15, 15
+		 8,  8,  9,  9,
+		10, 10, 10, 10,
+		10, 10, 10, 10,
+		11, 11, 11, 11,
+		11, 11, 11, 11,
+		11, 11, 11, 11
 	>;
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
