@@ -152,7 +152,7 @@ namespace stormphrax
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
-			score += conthistScore(continuations, ply, moving, move, 4) / 2;
+			score += conthistScore(continuations, ply, moving, move, 4);
 
 			return score;
 		}
