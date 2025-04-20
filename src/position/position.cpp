@@ -941,24 +941,33 @@ namespace stormphrax
 
 		const auto king = m_kings.color(capturing);
 
-		const auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
-		const auto vertPinned = m_pinned & boards::Files[squareFile(king)];
+		auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
 
 		// vertically pinned pawns cannot capture at all
-		const auto pawns = candidates & ~vertPinned;
+		const auto vertPinned = m_pinned & boards::Files[squareFile(king)];
+		candidates &= ~vertPinned;
 
-		if (!pawns)
+		if (!candidates)
 		{
 			unset();
 			return;
 		}
 
-		// if there are multiple pawns available, they can't both be
-		// pinned and neither capture can result in a discovered check
-		if (candidates.multiple())
-			return;
+		const auto diagPinned = candidates & m_pinned;
 
-		const auto diagPinned = pawns & m_pinned;
+		if (candidates.multiple())
+		{
+			// if there are two diagonally pinned pawns, neither can possibly capture
+			if (candidates == diagPinned)
+				unset();
+
+			// otherwise, one pawn has to be unpinned, and thus ep is legal.
+			// the discovered check case handled below cannot apply -
+			// the other pawn will still block the potential check.
+
+			// either way, we can stop here
+			return;
+		}
 
 		// if the capturing pawn is pinned, it has to be pinned
 		// along the same diagonal that the capture would occur
