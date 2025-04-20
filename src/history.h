@@ -108,6 +108,7 @@ namespace stormphrax
 		{
 			std::memset(&m_butterfly   , 0, sizeof(m_butterfly   ));
 			std::memset(&m_pieceTo     , 0, sizeof(m_pieceTo     ));
+			std::memset(&m_pawn        , 0, sizeof(m_pawn        ));
 			std::memset(&m_continuation, 0, sizeof(m_continuation));
 			std::memset(&m_noisy       , 0, sizeof(m_noisy       ));
 		}
@@ -131,10 +132,12 @@ namespace stormphrax
 		}
 
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
-			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move, HistoryScore bonus)
 		{
 			butterflyEntry(threats, move).update(bonus);
 			pieceToEntry(threats, moving, move).update(bonus);
+			pawnEntry(pawnKey, moving, move).update(bonus);
+
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
@@ -143,7 +146,23 @@ namespace stormphrax
 			noisyEntry(move, captured, threats[move.dst()]).update(bonus);
 		}
 
-		[[nodiscard]] inline auto quietScore(std::span<ContinuationSubtable *const> continuations,
+		[[nodiscard]] inline auto quietOrderingScore(std::span<ContinuationSubtable *const> continuations,
+			i32 ply, Bitboard threats, u64 pawnKey, Piece moving, Move move) const -> i32
+		{
+			i32 score{};
+
+			score += (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
+
+			score += pawnEntry(pawnKey, moving, move);
+
+			score += conthistScore(continuations, ply, moving, move, 1);
+			score += conthistScore(continuations, ply, moving, move, 2);
+			score += conthistScore(continuations, ply, moving, move, 4) / 2;
+
+			return score;
+		}
+
+		[[nodiscard]] inline auto quietPruningScore(std::span<ContinuationSubtable *const> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move) const -> i32
 		{
 			i32 score{};
@@ -163,10 +182,14 @@ namespace stormphrax
 		}
 
 	private:
+		static constexpr usize PawnEntries = 16384;
+
 		// [from][to][from attacked][to attacked]
 		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
 		// [piece][to]
 		util::MultiArray<HistoryEntry, 12, 64, 2, 2> m_pieceTo{};
+		// [pawn key][piece][to]
+		util::MultiArray<HistoryEntry, PawnEntries, 12, 64> m_pawn{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -208,6 +231,16 @@ namespace stormphrax
 		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) -> HistoryEntry &
 		{
 			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Move move) const -> const HistoryEntry &
+		{
+			return m_pawn[pawnKey % PawnEntries][static_cast<i32>(moving)][move.dstIdx()];
+		}
+
+		[[nodiscard]] inline auto pawnEntry(u64 pawnKey, Piece moving, Move move) -> HistoryEntry &
+		{
+			return m_pawn[pawnKey % PawnEntries][static_cast<i32>(moving)][move.dstIdx()];
 		}
 
 		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
