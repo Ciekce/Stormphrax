@@ -953,13 +953,23 @@ namespace stormphrax
 			return;
 		}
 
+		const auto diagPinned = candidates & m_pinned;
+
 		// if there are multiple pawns available, they can't both be
 		// diagonally pinned and neither capture can result in a discovered
 		// check. vertically pinned pawns were masked off above
 		if (candidates.multiple())
-			return;
+		{
+			// if there are two diagonally pinned pawns, neither can possibly capture
+			if (candidates == diagPinned)
+				unset();
 
-		const auto diagPinned = candidates & m_pinned;
+			// otherwise, one pawn has to be unpinned, and thus ep is legal.
+			// the case handled below cannot apply - the other pawn will still block the potential check.
+
+			// either way, we can stop here
+			return;
+		}
 
 		// if the capturing pawn is pinned, it has to be pinned
 		// along the same diagonal that the capture would occur
