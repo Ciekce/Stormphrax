@@ -686,12 +686,14 @@ namespace stormphrax::search
 			return true;
 		}();
 
+		const bool opponentWorsening = !RootNode && curr.staticEval > -parent->staticEval;
+
 		if (!PvNode
 			&& !inCheck
 			&& !curr.excluded)
 		{
 			if (depth <= 6
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) - 25 * opponentWorsening >= beta)
 				return (curr.staticEval + beta) / 2;
 
 			if (depth <= 4
