@@ -946,7 +946,7 @@ namespace stormphrax::search
 
 				if (depth >= 2
 					&& legalMoves >= 2 + RootNode
-					&& quietOrLosing)
+					&& (!ttpv || quietOrLosing))
 				{
 					auto r = baseLmr;
 
