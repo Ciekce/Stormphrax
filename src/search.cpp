@@ -703,9 +703,15 @@ namespace stormphrax::search
 					return score;
 			}
 
+			const auto eval = ttEntry.flag == TtFlag::Exact
+					|| ttEntry.flag == TtFlag::UpperBound && ttEntry.score < curr.staticEval
+					|| ttEntry.flag == TtFlag::LowerBound && ttEntry.score > curr.staticEval
+				? ttEntry.score : curr.staticEval;
+
 			if (depth >= 4
 				&& ply >= thread.minNmpPly
 				&& curr.staticEval >= beta
+				&& eval >= curr.staticEval
 				&& !parent->move.isNull()
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
 				&& !bbs.nonPk(us).empty())
