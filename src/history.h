@@ -41,9 +41,14 @@ namespace stormphrax
 		HistoryEntry() = default;
 		HistoryEntry(HistoryScore v) : value{v} {}
 
-		[[nodiscard]] inline operator HistoryScore() const
+		[[nodiscard]] inline auto get() const -> HistoryScore
 		{
 			return value;
+		}
+
+		inline auto update(HistoryScore bonus)
+		{
+			value += bonus - value * std::abs(bonus) / tunable::maxHistory();
 		}
 
 		[[nodiscard]] inline auto operator=(HistoryScore v) -> auto &
@@ -51,10 +56,27 @@ namespace stormphrax
 			value = v;
 			return *this;
 		}
+	};
 
-		inline auto update(HistoryScore bonus)
+	struct MainHistoryEntry
+	{
+		util::MultiArray<HistoryEntry, 2, 2> buckets{};
+		HistoryEntry factorizer{};
+
+		[[nodiscard]] inline auto get(Bitboard threats, Move move) const -> i32
 		{
-			value += bonus - value * std::abs(bonus) / tunable::maxHistory();
+			i32 value{};
+
+			value += buckets[threats[move.src()]][threats[move.dst()]].get();
+			value += factorizer.get();
+
+			return value / 2;
+		}
+
+		inline auto update(Bitboard threats, Move move, HistoryScore bonus)
+		{
+			buckets[threats[move.src()]][threats[move.dst()]].update(bonus);
+			factorizer.update(bonus);
 		}
 	};
 
@@ -81,7 +103,7 @@ namespace stormphrax
 		~ContinuationSubtable() = default;
 
 		//TODO take two args when c++23 is usable
-		inline auto operator[](std::pair<Piece, Move> move) const -> HistoryScore
+		inline auto operator[](std::pair<Piece, Move> move) const -> const auto &
 		{
 			const auto [piece, mv] = move;
 			return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
@@ -133,8 +155,8 @@ namespace stormphrax
 		inline auto updateQuietScore(std::span<ContinuationSubtable *> continuations,
 			i32 ply, Bitboard threats, Piece moving, Move move, HistoryScore bonus)
 		{
-			butterflyEntry(threats, move).update(bonus);
-			pieceToEntry(threats, moving, move).update(bonus);
+			butterflyEntry(threats, move).update(threats, move, bonus);
+			pieceToEntry(threats, moving, move).update(threats, move, bonus);
 			updateConthist(continuations, ply, moving, move, bonus);
 		}
 
@@ -148,7 +170,10 @@ namespace stormphrax
 		{
 			i32 score{};
 
-			score += (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
+			const auto butterfly = butterflyEntry(threats, move).get(threats, move);
+			const auto pieceTo = pieceToEntry(threats, moving, move).get(threats, move);
+
+			score += (butterfly + pieceTo) / 2;
 
 			score += conthistScore(continuations, ply, moving, move, 1);
 			score += conthistScore(continuations, ply, moving, move, 2);
@@ -159,14 +184,14 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto noisyScore(Move move, Piece captured, Bitboard threats) const -> i32
 		{
-			return noisyEntry(move, captured, threats[move.dst()]);
+			return noisyEntry(move, captured, threats[move.dst()]).get();
 		}
 
 	private:
 		// [from][to][from attacked][to attacked]
-		util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
+		util::MultiArray<MainHistoryEntry, 64, 64> m_butterfly{};
 		// [piece][to]
-		util::MultiArray<HistoryEntry, 12, 64, 2, 2> m_pieceTo{};
+		util::MultiArray<MainHistoryEntry, 12, 64> m_pieceTo{};
 		// [prev piece][to][curr piece type][to]
 		util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -185,29 +210,30 @@ namespace stormphrax
 			i32 ply, Piece moving, Move move, i32 offset) -> HistoryScore
 		{
 			if (offset <= ply)
-				return conthistEntry(continuations, ply, offset)[{moving, move}];
+				return conthistEntry(continuations, ply, offset)[{moving, move}].get();
 
 			return 0;
 		}
 
-		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) const -> const HistoryEntry &
+		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) const -> const MainHistoryEntry &
 		{
-			return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_butterfly[move.srcIdx()][move.dstIdx()];
 		}
 
-		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) -> HistoryEntry &
+		[[nodiscard]] inline auto butterflyEntry(Bitboard threats, Move move) -> MainHistoryEntry &
 		{
-			return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_butterfly[move.srcIdx()][move.dstIdx()];
 		}
 
-		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) const -> const HistoryEntry &
+		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) const
+			-> const MainHistoryEntry &
 		{
-			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
 		}
 
-		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) -> HistoryEntry &
+		[[nodiscard]] inline auto pieceToEntry(Bitboard threats, Piece moving, Move move) -> MainHistoryEntry &
 		{
-			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+			return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()];
 		}
 
 		[[nodiscard]] static inline auto conthistEntry(std::span<ContinuationSubtable *const> continuations,
