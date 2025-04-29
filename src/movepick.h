@@ -54,8 +54,9 @@ namespace stormphrax
 		GoodNoisy,
 		Killer,
 		GenQuiet,
-		Quiet,
+		GoodQuiet,
 		BadNoisy,
+		BadQuiet,
 		QsearchTtMove,
 		QsearchGenNoisy,
 		QsearchNoisy,
@@ -129,6 +130,8 @@ namespace stormphrax
 					else return move;
 				}
 
+				m_badQuietEnd = m_badNoisyEnd;
+
 				++m_stage;
 				[[fallthrough]];
 			}
@@ -159,12 +162,22 @@ namespace stormphrax
 				[[fallthrough]];
 			}
 
-			case MovegenStage::Quiet:
+			case MovegenStage::GoodQuiet:
 			{
 				if (!m_skipQuiets)
 				{
-					if (const auto move = selectNext([this](auto move) { return !isSpecial(move); }))
-						return move;
+					while (m_idx < m_end)
+					{
+						const auto idx = findNext();
+						const auto [move, score] = m_data.moves[idx];
+
+						if (isSpecial(move))
+							continue;
+
+						if (score < -3000 * m_depth)
+							m_data.moves[m_badQuietEnd++] = m_data.moves[idx];
+						else return move;
+					}
 				}
 
 				m_idx = 0;
@@ -177,6 +190,18 @@ namespace stormphrax
 			case MovegenStage::BadNoisy:
 			{
 				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+					return move;
+
+				m_idx = m_badNoisyEnd;
+				m_end = m_badQuietEnd;
+
+				++m_stage;
+				[[fallthrough]];
+			}
+
+			case MovegenStage::BadQuiet:
+			{
+				if (const auto move = selectNext([this](auto move) { return !isSpecial(move); }))
 					return move;
 
 				m_stage = MovegenStage::End;
@@ -311,9 +336,9 @@ namespace stormphrax
 
 		[[nodiscard]] static inline auto main(const Position &pos, MovegenData &data,
 			Move ttMove, const KillerTable &killers, const HistoryTables &history,
-			std::span<ContinuationSubtable *const> continuations, i32 ply)
+			std::span<ContinuationSubtable *const> continuations, i32 ply, i32 depth)
 		{
-			return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, &killers, history, continuations, ply);
+			return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, &killers, history, continuations, ply, depth);
 		}
 
 		[[nodiscard]] static inline auto qsearch(const Position &pos,
@@ -321,26 +346,27 @@ namespace stormphrax
 			std::span<ContinuationSubtable *const> continuations, i32 ply)
 		{
 			const auto stage = pos.isCheck() ? MovegenStage::QsearchEvasionsTtMove : MovegenStage::QsearchTtMove;
-			return MoveGenerator(stage, pos, data, ttMove, nullptr, history, continuations, ply);
+			return MoveGenerator(stage, pos, data, ttMove, nullptr, history, continuations, ply, 0);
 		}
 
 		[[nodiscard]] static inline auto probcut(const Position &pos,
 			Move ttMove, MovegenData &data, const HistoryTables &history)
 		{
-			return MoveGenerator(MovegenStage::ProbcutTtMove, pos, data, ttMove, nullptr, history, {}, 0);
+			return MoveGenerator(MovegenStage::ProbcutTtMove, pos, data, ttMove, nullptr, history, {}, 0, 0);
 		}
 
 	private:
 		MoveGenerator(MovegenStage initialStage, const Position &pos, MovegenData &data,
 			Move ttMove, const KillerTable *killers, const HistoryTables &history,
-			std::span<ContinuationSubtable *const> continuations, i32 ply)
+			std::span<ContinuationSubtable *const> continuations, i32 ply, i32 depth)
 			: m_stage{initialStage},
 			  m_pos{pos},
 			  m_data{data},
 			  m_ttMove{ttMove},
 			  m_history{history},
 			  m_continuations{continuations},
-			  m_ply{ply}
+			  m_ply{ply},
+			  m_depth{depth}
 		{
 			if (killers)
 				m_killers = *killers;
@@ -436,11 +462,14 @@ namespace stormphrax
 		std::span<ContinuationSubtable *const> m_continuations;
 		i32 m_ply{};
 
+		i32 m_depth{};
+
 		bool m_skipQuiets{false};
 
 		u32 m_idx{};
 		u32 m_end{};
 
 		u32 m_badNoisyEnd{};
+		u32 m_badQuietEnd{};
 	};
 }
