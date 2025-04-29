@@ -1260,7 +1260,6 @@ namespace stormphrax::search
 		usize nodes = 0;
 		i32 seldepth = 0;
 
-		// technically a potential race but it doesn't matter
 		for (const auto &thread : m_threads)
 		{
 			nodes += thread.search.loadNodes();
@@ -1328,7 +1327,6 @@ namespace stormphrax::search
 			if (m_rootStatus == RootStatus::Tablebase)
 				++tbhits;
 
-			// technically a potential race but it doesn't matter
 			for (const auto &thread : m_threads)
 			{
 				tbhits += thread.search.loadTbHits();
