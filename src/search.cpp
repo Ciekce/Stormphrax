@@ -1045,7 +1045,11 @@ namespace stormphrax::search
 		}
 
 		if (legalMoves == 0)
+		{
+			if (curr.excluded)
+				return alpha;
 			return inCheck ? (-ScoreMate + ply) : 0;
+		}
 
 		if (bestMove)
 		{
