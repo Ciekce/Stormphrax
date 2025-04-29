@@ -1325,6 +1325,9 @@ namespace stormphrax::search
 		{
 			usize tbhits = 0;
 
+			if (m_rootStatus == RootStatus::Tablebase)
+				++tbhits;
+
 			// technically a potential race but it doesn't matter
 			for (const auto &thread : m_threads)
 			{
