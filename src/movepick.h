@@ -55,7 +55,6 @@ namespace stormphrax
 		Killer,
 		GenQuiet,
 		Quiet,
-		StartBadNoisy,
 		BadNoisy,
 		QsearchTtMove,
 		QsearchGenNoisy,
@@ -168,12 +167,6 @@ namespace stormphrax
 						return move;
 				}
 
-				++m_stage;
-				[[fallthrough]];
-			}
-
-			case MovegenStage::StartBadNoisy:
-			{
 				m_idx = 0;
 				m_end = m_badNoisyEnd;
 
