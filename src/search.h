@@ -92,6 +92,7 @@ namespace stormphrax::search
 
 		KillerTable killers{};
 
+		i32 reduction{};
 		Move excluded{};
 	};
 

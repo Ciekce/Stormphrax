@@ -686,6 +686,15 @@ namespace stormphrax::search
 			return true;
 		}();
 
+		if (!RootNode
+			&& depth >= 2
+			&& !curr.excluded
+			&& !inCheck
+			&& parent->reduction >= 1
+			&& parent->staticEval != ScoreNone
+			&& curr.staticEval + parent->staticEval > 100)
+			--depth;
+
 		if (!PvNode
 			&& !inCheck
 			&& !curr.excluded)
@@ -968,8 +977,12 @@ namespace stormphrax::search
 
 					// can't use std::clamp because newDepth can be <0
 					const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
+					curr.reduction = newDepth - reduced;
+
 					score = -search(thread, newPos, curr.pv, reduced,
 						ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
+
+					curr.reduction = 0;
 
 					if (score > alpha && reduced < newDepth)
 					{
