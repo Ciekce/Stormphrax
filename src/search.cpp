@@ -751,7 +751,6 @@ namespace stormphrax::search
 				&& !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
 			{
 				const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
-				const auto keyBefore = pos.key();
 
 				auto generator = MoveGenerator::probcut(pos, ttEntry.move, moveStack.movegenData, thread.history);
 
@@ -780,7 +779,7 @@ namespace stormphrax::search
 
 					if (score >= probcutBeta)
 					{
-						m_ttable.put(keyBefore, score, curr.staticEval,
+						m_ttable.put(pos.key(), score, curr.staticEval,
 							move, probcutDepth, ply, TtFlag::LowerBound, false);
 						return score;
 					}
