@@ -237,6 +237,12 @@ namespace stormphrax::search
 			m_limiter = std::move(limiter);
 		}
 
+		// ignored for bench and real searches
+		inline auto setDatagenMaxDepth(i32 maxDepth)
+		{
+			m_maxDepth = maxDepth;
+		}
+
 		auto startSearch(const Position &pos, std::span<const u64> keyHistory, util::Instant startTime,
 			i32 maxDepth, std::span<Move> moves, std::unique_ptr<limit::ISearchLimiter> limiter, bool infinite) -> void;
 		auto stop() -> void;
