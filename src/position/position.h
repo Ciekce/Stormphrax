@@ -362,7 +362,7 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto checkers() const { return m_checkers; }
-		[[nodiscard]] inline auto pinned(Color c) const { return m_pinned[static_cast<int>(c) ^ 1]; }
+		[[nodiscard]] inline auto pinned(Color c) const { return m_pinned[static_cast<int>(c)]; }
 		[[nodiscard]] inline auto pinned() const { return m_pinned; }
 		[[nodiscard]] inline auto threats() const { return m_threats; }
 
@@ -497,7 +497,7 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto calcPinned() -> std::array<Bitboard, 2> const
 		{
-			return {calcPinned(Color::White), calcPinned(Color::Black)};
+			return {calcPinned(Color::Black), calcPinned(Color::White)};
 		}
 
 		[[nodiscard]] inline auto calcThreats() const

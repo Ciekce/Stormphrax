@@ -108,13 +108,13 @@ namespace stormphrax::see
 		const auto bishops = queens | bbs.bishops();
 		const auto rooks = queens | bbs.rooks();
 
-		const auto white_pinned = pos.pinned(Color::White);
-		const auto black_pinned = pos.pinned(Color::Black);
+		const auto whitePinned = pos.pinned(Color::White);
+		const auto blackPinned = pos.pinned(Color::Black);
 
-		const auto white_king_ray = rayIntersecting(pos.whiteKing(), square);
-		const auto black_king_ray = rayIntersecting(pos.blackKing(), square);
+		const auto whiteKingRay = rayIntersecting(pos.whiteKing(), square);
+		const auto blackKingRay = rayIntersecting(pos.blackKing(), square);
 
-		const auto allowed = ~(white_pinned | black_pinned) | (white_pinned & white_king_ray) | (black_pinned & black_king_ray);
+		const auto allowed = ~(whitePinned | blackPinned) | (whitePinned & whiteKingRay) | (blackPinned & blackKingRay);
 
 		auto attackers = pos.allAttackersTo(square, occupancy) & allowed;
 
