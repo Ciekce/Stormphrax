@@ -466,7 +466,6 @@ namespace stormphrax
 
 		[[nodiscard]] inline auto calcPinned(Color c) const
 		{
-
 			Bitboard pinned{};
 
 			const auto king = m_kings.color(c);
