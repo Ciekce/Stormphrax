@@ -362,7 +362,7 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto checkers() const { return m_checkers; }
-		[[nodiscard]] inline auto pinned(Color c) const { return m_pinned[static_cast<int>(c)]; }
+		[[nodiscard]] inline auto pinned(Color c) const { return m_pinned[static_cast<i32>(c)]; }
 		[[nodiscard]] inline auto pinned() const { return m_pinned; }
 		[[nodiscard]] inline auto threats() const { return m_threats; }
 
@@ -464,7 +464,7 @@ namespace stormphrax
 			return attackersTo(m_kings.color(color), oppColor(color));
 		}
 
-		[[nodiscard]] inline auto calcPinned(Color c)const {
+		[[nodiscard]] inline auto calcPinned(Color c) const {
 
 			Bitboard pinned{};
 
