@@ -941,7 +941,7 @@ namespace stormphrax
 
 		const auto king = m_kings.color(capturing);
 
-		const auto pinnedPieces = pinned(toMove());
+		const auto pinnedPieces = pinned(capturing);
 		auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
 
 		// vertically pinned pawns cannot capture at all
