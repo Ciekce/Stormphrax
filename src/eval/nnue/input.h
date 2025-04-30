@@ -122,6 +122,24 @@ namespace stormphrax::eval::nnue
 			sub(forColor(c), featureTransformer.weights, feature * OutputCount);
 		}
 
+		inline auto activateFourFeatures(const Ft &featureTransformer, Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
+		{
+			assert(feature < InputCount);
+			addAddAddAdd(forColor(c), featureTransformer.weights, feature0 * OutputCount, 
+																  feature1 * OutputCount,
+																  feature2 * OutputCount,
+																  feature3 * OutputCount);
+		}
+
+		inline auto deactivateFourFeatures(const Ft &featureTransformer, Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
+		{
+			assert(feature < InputCount);
+			subSubSubSub(forColor(c), featureTransformer.weights, feature0 * OutputCount, 
+																  feature1 * OutputCount,
+																  feature2 * OutputCount,
+																  feature3 * OutputCount);
+		}
+
 		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
 		{
 			const auto idx = static_cast<i32>(c);
@@ -183,6 +201,43 @@ namespace stormphrax::eval::nnue
 					- delta[subOffset0 + i]
 					+ delta[addOffset1 + i]
 					- delta[subOffset1 + i];
+			}
+		}
+
+		[[clang::always_inline]] static inline auto addAddAddAdd(std::span<Type, OutputCount> accumulator,
+			std::span<const Type, WeightCount> delta,
+			u32 addOffset0, u32 addOffset1, u32 addOffset2, u32 addOffset3) -> void
+		{
+			assert(addOffset0 + OutputCount <= delta.size());
+			assert(addOffset1 + OutputCount <= delta.size());
+			assert(addOffset2 + OutputCount <= delta.size());
+			assert(addOffset3 + OutputCount <= delta.size());
+
+			for (u32 i = 0; i < OutputCount; ++i)
+			{
+				accumulator[i] +=
+					delta[addOffset0 + i]
+					+ delta[addOffset1 + i]
+					+ delta[addOffset2 + i]
+					+ delta[addOffset3 + i];
+			}
+		}
+		[[clang::always_inline]] static inline auto subSubSubSub(std::span<Type, OutputCount> accumulator,
+			std::span<const Type, WeightCount> delta,
+			u32 subOffset0, u32 subOffset1, u32 subOffset2, u32 subOffset3) -> void
+		{
+			assert(subOffset0 + OutputCount <= delta.size());
+			assert(subOffset1 + OutputCount <= delta.size());
+			assert(subOffset2 + OutputCount <= delta.size());
+			assert(subOffset3 + OutputCount <= delta.size());
+
+			for (u32 i = 0; i < OutputCount; ++i)
+			{
+				accumulator[i] -=
+					delta[subOffset0 + i]
+					+ delta[subOffset1 + i]
+					+ delta[subOffset2 + i]
+					+ delta[subOffset3 + i];
 			}
 		}
 

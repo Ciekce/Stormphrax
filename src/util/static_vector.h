@@ -51,6 +51,12 @@ namespace stormphrax
 			m_data[m_size++] = std::move(elem);
 		}
 
+		inline T pop()
+		{
+			assert(m_size > 0);
+			return std::move(m_data[--m_size]);
+		}
+
 		inline auto clear() { m_size = 0; }
 
 		inline auto fill(const T &v) { m_data.fill(v); }
