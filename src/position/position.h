@@ -464,7 +464,8 @@ namespace stormphrax
 			return attackersTo(m_kings.color(color), oppColor(color));
 		}
 
-		[[nodiscard]] inline auto calcPinned(Color c) const {
+		[[nodiscard]] inline auto calcPinned(Color c) const
+		{
 
 			Bitboard pinned{};
 
