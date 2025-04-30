@@ -20,6 +20,7 @@
 
 #include "../types.h"
 
+#include <array>
 #include <string>
 #include <vector>
 #include <stack>
@@ -361,6 +362,7 @@ namespace stormphrax
 		}
 
 		[[nodiscard]] inline auto checkers() const { return m_checkers; }
+		[[nodiscard]] inline auto pinned(Color c) const { return m_pinned[static_cast<int>(c) ^ 1]; }
 		[[nodiscard]] inline auto pinned() const { return m_pinned; }
 		[[nodiscard]] inline auto threats() const { return m_threats; }
 
@@ -462,18 +464,16 @@ namespace stormphrax
 			return attackersTo(m_kings.color(color), oppColor(color));
 		}
 
-		[[nodiscard]] inline auto calcPinned() const
-		{
-			const auto color = toMove();
+		[[nodiscard]] inline auto calcPinned(Color c)const {
 
 			Bitboard pinned{};
 
-			const auto king = m_kings.color(color);
-			const auto opponent = oppColor(color);
+			const auto king = m_kings.color(c);
+			const auto opponent = oppColor(c);
 
 			const auto &bbs = m_boards.bbs();
 
-			const auto ourOcc = bbs.occupancy(color);
+			const auto ourOcc = bbs.occupancy(c);
 			const auto oppOcc = bbs.occupancy(opponent);
 
 			const auto oppQueens = bbs.queens(opponent);
@@ -492,6 +492,12 @@ namespace stormphrax
 			}
 
 			return pinned;
+		}
+		
+
+		[[nodiscard]] inline auto calcPinned() -> std::array<Bitboard, 2> const
+		{
+			return {calcPinned(Color::White), calcPinned(Color::Black)};
 		}
 
 		[[nodiscard]] inline auto calcThreats() const
@@ -546,7 +552,7 @@ namespace stormphrax
 		Keys m_keys{};
 
 		Bitboard m_checkers{};
-		Bitboard m_pinned{};
+		std::array<Bitboard, 2> m_pinned{};
 		Bitboard m_threats{};
 
 		CastlingRooks m_castlingRooks{};
@@ -561,7 +567,7 @@ namespace stormphrax
 		bool m_blackToMove{};
 	};
 
-	static_assert(sizeof(Position) == 208);
+	static_assert(sizeof(Position) == 216);
 
 	[[nodiscard]] auto squareFromString(const std::string &str) -> Square;
 }

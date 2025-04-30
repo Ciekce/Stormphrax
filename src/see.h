@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "rays.h"
 #include "types.h"
 
 #include <array>
@@ -107,7 +108,15 @@ namespace stormphrax::see
 		const auto bishops = queens | bbs.bishops();
 		const auto rooks = queens | bbs.rooks();
 
-		auto attackers = pos.allAttackersTo(square, occupancy);
+		const auto white_pinned = pos.pinned(Color::White);
+		const auto black_pinned = pos.pinned(Color::Black);
+
+		const auto white_king_ray = rayIntersecting(pos.whiteKing(), square);
+		const auto black_king_ray = rayIntersecting(pos.blackKing(), square);
+
+		const auto allowed = ~(white_pinned | black_pinned) | (white_pinned & white_king_ray) | (black_pinned & black_king_ray);
+
+		auto attackers = pos.allAttackersTo(square, occupancy) & allowed;
 
 		auto us = oppColor(color);
 

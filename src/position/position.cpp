@@ -430,7 +430,7 @@ namespace stormphrax
 		if (move.type() == MoveType::Castling)
 		{
 			const auto kingDst = toSquare(move.srcRank(), move.srcFile() < move.dstFile() ? 6 : 2);
-			return !m_threats[kingDst] && !(g_opts.chess960 && m_pinned[dst]);
+			return !m_threats[kingDst] && !(g_opts.chess960 && pinned(us)[dst]);
 		}
 		else if (move.type() == MoveType::EnPassant)
 		{
@@ -466,7 +466,7 @@ namespace stormphrax
 
 		// multiple checks can only be evaded with a king move
 		if (m_checkers.multiple()
-			|| m_pinned[src] && !rayIntersecting(src, dst)[king])
+			|| pinned(us)[src] && !rayIntersecting(src, dst)[king])
 			return false;
 
 		if (m_checkers.empty())
@@ -941,10 +941,11 @@ namespace stormphrax
 
 		const auto king = m_kings.color(capturing);
 
+		const auto pinned_pieces = pinned(oppColor(toMove()));
 		auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
 
 		// vertically pinned pawns cannot capture at all
-		const auto vertPinned = m_pinned & boards::Files[squareFile(king)];
+		const auto vertPinned = pinned_pieces & boards::Files[squareFile(king)];
 		candidates &= ~vertPinned;
 
 		if (!candidates)
@@ -953,7 +954,7 @@ namespace stormphrax
 			return;
 		}
 
-		const auto diagPinned = candidates & m_pinned;
+		const auto diagPinned = candidates & pinned_pieces;
 
 		if (candidates.multiple())
 		{
