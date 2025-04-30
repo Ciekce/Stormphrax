@@ -941,11 +941,11 @@ namespace stormphrax
 
 		const auto king = m_kings.color(capturing);
 
-		const auto pinned_pieces = pinned(oppColor(toMove()));
+		const auto pinnedPieces = pinned(toMove());
 		auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
 
 		// vertically pinned pawns cannot capture at all
-		const auto vertPinned = pinned_pieces & boards::Files[squareFile(king)];
+		const auto vertPinned = pinnedPieces & boards::Files[squareFile(king)];
 		candidates &= ~vertPinned;
 
 		if (!candidates)
@@ -954,7 +954,7 @@ namespace stormphrax
 			return;
 		}
 
-		const auto diagPinned = candidates & pinned_pieces;
+		const auto diagPinned = candidates & pinnedPieces;
 
 		if (candidates.multiple())
 		{
