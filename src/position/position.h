@@ -494,7 +494,6 @@ namespace stormphrax
 
 			return pinned;
 		}
-		
 
 		[[nodiscard]] inline auto calcPinned() -> std::array<Bitboard, 2> const
 		{
