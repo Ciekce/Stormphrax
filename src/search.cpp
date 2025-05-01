@@ -129,24 +129,23 @@ namespace stormphrax::search
 		m_resetBarrier.arriveAndWait();
 
 		m_infinite = infinite;
+		m_maxDepth = maxDepth;
 
 		m_minRootScore = -ScoreInf;
 		m_maxRootScore =  ScoreInf;
-
-		RootStatus status;
 
 		if (!moves.empty())
 		{
 			m_rootMoves.resize(moves.size());
 			std::ranges::copy(moves, m_rootMoves.begin());
 
-			status = RootStatus::Searchmoves;
+			m_rootStatus = RootStatus::Searchmoves;
 		}
 		else
 		{
-			status = initRootMoves(pos);
+			m_rootStatus = initRootMoves(pos);
 
-			if (status == RootStatus::NoLegalMoves)
+			if (m_rootStatus == RootStatus::NoLegalMoves)
 			{
 				std::cout << "info string no legal moves" << std::endl;
 				return;
@@ -163,24 +162,10 @@ namespace stormphrax::search
 		m_contempt[static_cast<i32>(pos.  toMove())] =  contempt;
 		m_contempt[static_cast<i32>(pos.opponent())] = -contempt;
 
-		const auto keyHistorySize = util::pad<usize{256}>(keyHistory.size());
+		m_setupInfo.rootPos = pos;
 
-		for (auto &thread : m_threads)
-		{
-			thread.maxDepth = maxDepth;
-			thread.search = SearchData{};
-			thread.rootPos = pos;
-
-			thread.keyHistory.clear();
-			thread.keyHistory.reserve(keyHistorySize);
-
-			std::ranges::copy(keyHistory, std::back_inserter(thread.keyHistory));
-
-			thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
-		}
-
-		if (status == RootStatus::Tablebase)
-			m_threads[0].search.tbhits = 1;
+		m_setupInfo.keyHistorySize = util::pad<usize{256}>(keyHistory.size());
+		m_setupInfo.keyHistory = keyHistory;
 
 		m_startTime = startTime;
 
@@ -190,6 +175,7 @@ namespace stormphrax::search
 		m_searching.store(true, std::memory_order::relaxed);
 
 		m_idleBarrier.arriveAndWait();
+		m_setupBarrier.arriveAndWait();
 	}
 
 	auto Searcher::stop() -> void
@@ -231,13 +217,13 @@ namespace stormphrax::search
 
 		m_contempt = {};
 
+		m_maxDepth = depth;
+
 		// this struct is a small boulder the size of a large boulder
 		// and overflows the stack if not on the heap
 		auto thread = std::make_unique<ThreadData>();
 
 		thread->rootPos = pos;
-		thread->maxDepth = depth;
-
 		thread->nnueState.reset(thread->rootPos.bbs(), thread->rootPos.kings());
 
 		if (initRootMoves(thread->rootPos) == RootStatus::NoLegalMoves)
@@ -270,6 +256,7 @@ namespace stormphrax::search
 
 		m_resetBarrier.reset(threadCount + 1);
 		m_idleBarrier.reset(threadCount + 1);
+		m_setupBarrier.reset(threadCount + 1);
 
 		m_searchEndBarrier.reset(threadCount);
 
@@ -350,6 +337,21 @@ namespace stormphrax::search
 
 	auto Searcher::searchRoot(ThreadData &thread, bool actualSearch) -> Score
 	{
+		if (actualSearch)
+		{
+			thread.search = SearchData{};
+			thread.rootPos = m_setupInfo.rootPos;
+
+			thread.keyHistory.clear();
+			thread.keyHistory.reserve(m_setupInfo.keyHistorySize);
+
+			std::ranges::copy(m_setupInfo.keyHistory, std::back_inserter(thread.keyHistory));
+
+			thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
+
+			m_setupBarrier.arriveAndWait();
+		}
+
 		assert(!m_rootMoves.empty());
 
 		auto &searchData = thread.search;
@@ -432,7 +434,7 @@ namespace stormphrax::search
 			score = newScore;
 			pv = thread.rootPv;
 
-			if (depth >= thread.maxDepth)
+			if (depth >= m_maxDepth)
 			{
 				if (mainThread && m_infinite)
 					report(thread, pv, searchData.rootDepth, elapsed(), score);
@@ -751,7 +753,6 @@ namespace stormphrax::search
 				&& !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
 			{
 				const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
-				const auto keyBefore = pos.key();
 
 				auto generator = MoveGenerator::probcut(pos, ttEntry.move, moveStack.movegenData, thread.history);
 
@@ -780,7 +781,7 @@ namespace stormphrax::search
 
 					if (score >= probcutBeta)
 					{
-						m_ttable.put(keyBefore, score, curr.staticEval,
+						m_ttable.put(pos.key(), score, curr.staticEval,
 							move, probcutDepth, ply, TtFlag::LowerBound, false);
 						return score;
 					}
@@ -946,7 +947,7 @@ namespace stormphrax::search
 
 				if (depth >= 2
 					&& legalMoves >= 2 + RootNode
-					&& quietOrLosing)
+					&& (!ttpv || quietOrLosing))
 				{
 					auto r = baseLmr;
 
@@ -1045,7 +1046,11 @@ namespace stormphrax::search
 		}
 
 		if (legalMoves == 0)
+		{
+			if (curr.excluded)
+				return alpha;
 			return inCheck ? (-ScoreMate + ply) : 0;
+		}
 
 		if (bestMove)
 		{
@@ -1255,7 +1260,6 @@ namespace stormphrax::search
 		usize nodes = 0;
 		i32 seldepth = 0;
 
-		// technically a potential race but it doesn't matter
 		for (const auto &thread : m_threads)
 		{
 			nodes += thread.search.loadNodes();
@@ -1320,7 +1324,9 @@ namespace stormphrax::search
 		{
 			usize tbhits = 0;
 
-			// technically a potential race but it doesn't matter
+			if (m_rootStatus == RootStatus::Tablebase)
+				++tbhits;
+
 			for (const auto &thread : m_threads)
 			{
 				tbhits += thread.search.loadTbHits();

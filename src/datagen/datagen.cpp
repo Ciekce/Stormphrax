@@ -208,13 +208,13 @@ namespace stormphrax::datagen
 
 				thread->nnueState.reset(pos.bbs(), pos.kings());
 
-				thread->maxDepth = 10;
+				searcher.setDatagenMaxDepth(10);
 				limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
 				limiter.setHardNodeLimit(VerificationHardNodeLimit);
 
 				const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
-				thread->maxDepth = MaxDepth;
+				searcher.setDatagenMaxDepth(MaxDepth);
 				limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
 				limiter.setHardNodeLimit(DatagenHardNodeLimit);
 

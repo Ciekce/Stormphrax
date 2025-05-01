@@ -55,7 +55,6 @@ namespace stormphrax
 		Killer,
 		GenQuiet,
 		Quiet,
-		StartBadNoisy,
 		BadNoisy,
 		QsearchTtMove,
 		QsearchGenNoisy,
@@ -168,12 +167,6 @@ namespace stormphrax
 						return move;
 				}
 
-				++m_stage;
-				[[fallthrough]];
-			}
-
-			case MovegenStage::StartBadNoisy:
-			{
 				m_idx = 0;
 				m_end = m_badNoisyEnd;
 
@@ -183,7 +176,7 @@ namespace stormphrax
 
 			case MovegenStage::BadNoisy:
 			{
-				if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+				if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; }))
 					return move;
 
 				m_stage = MovegenStage::End;
@@ -410,11 +403,12 @@ namespace stormphrax
 			return m_idx++;
 		}
 
+		template <bool Sort = true>
 		[[nodiscard]] inline auto selectNext(auto predicate) -> Move
 		{
 			while (m_idx < m_end)
 			{
-				const auto idx = findNext();
+				const auto idx = Sort ? findNext() : m_idx++;
 				const auto move = m_data.moves[idx].move;
 
 				if (predicate(move))

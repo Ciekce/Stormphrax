@@ -766,7 +766,7 @@ namespace stormphrax
 
 			std::cout << "Pinned:";
 
-			auto pinned = m_pos.pinned();
+			auto pinned = m_pos.pinned(m_pos.toMove());
 			while (pinned)
 			{
 				std::cout << ' ' << squareToString(pinned.popLowestSquare());

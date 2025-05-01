@@ -141,9 +141,6 @@ namespace stormphrax::search
 		u32 id{};
 		std::thread thread{};
 
-		// this is in here so clion in its infinite wisdom doesn't
-		// mark the entire iterative deepening loop unreachable
-		i32 maxDepth{};
 		SearchData search{};
 
 		bool datagen{false};
@@ -213,6 +210,14 @@ namespace stormphrax::search
 		}
 	};
 
+	struct SetupInfo
+	{
+		Position rootPos{};
+
+		usize keyHistorySize{};
+		std::span<const u64> keyHistory{};
+	};
+
 	class Searcher
 	{
 	public:
@@ -230,6 +235,12 @@ namespace stormphrax::search
 		inline auto setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter)
 		{
 			m_limiter = std::move(limiter);
+		}
+
+		// ignored for bench and real searches
+		inline auto setDatagenMaxDepth(i32 maxDepth)
+		{
+			m_maxDepth = maxDepth;
 		}
 
 		auto startSearch(const Position &pos, std::span<const u64> keyHistory, util::Instant startTime,
@@ -263,6 +274,14 @@ namespace stormphrax::search
 		}
 
 	private:
+		enum class RootStatus
+		{
+			NoLegalMoves = 0,
+			Tablebase,
+			Generated,
+			Searchmoves,
+		};
+
 		TTable m_ttable;
 
 		std::vector<ThreadData> m_threads{};
@@ -276,6 +295,7 @@ namespace stormphrax::search
 
 		util::Barrier m_resetBarrier{2};
 		util::Barrier m_idleBarrier{2};
+		util::Barrier m_setupBarrier{2};
 
 		util::Barrier m_searchEndBarrier{1};
 
@@ -286,7 +306,9 @@ namespace stormphrax::search
 		std::atomic_int m_runningThreads{};
 
 		std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+
 		bool m_infinite{};
+		i32 m_maxDepth{MaxDepth};
 
 		MoveList m_rootMoves{};
 
@@ -295,13 +317,8 @@ namespace stormphrax::search
 
 		eval::Contempt m_contempt{};
 
-		enum class RootStatus
-		{
-			NoLegalMoves = 0,
-			Tablebase,
-			Generated,
-			Searchmoves,
-		};
+		RootStatus m_rootStatus{};
+		SetupInfo m_setupInfo{};
 
 		auto initRootMoves(const Position &pos) -> RootStatus;
 
