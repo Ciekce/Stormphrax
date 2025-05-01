@@ -204,7 +204,7 @@ namespace stormphrax::eval::nnue
 			}
 		}
 
-		[[clang::always_inline]] static inline auto addAddAddAdd(std::span<Type, OutputCount> accumulator,
+		static __attribute__((always_inline)) inline auto addAddAddAdd(std::span<Type, OutputCount> accumulator,
 			std::span<const Type, WeightCount> delta,
 			u32 addOffset0, u32 addOffset1, u32 addOffset2, u32 addOffset3) -> void
 		{
@@ -222,7 +222,8 @@ namespace stormphrax::eval::nnue
 					+ delta[addOffset3 + i];
 			}
 		}
-		[[clang::always_inline]] static inline auto subSubSubSub(std::span<Type, OutputCount> accumulator,
+		
+		static __attribute__((always_inline)) inline auto subSubSubSub(std::span<Type, OutputCount> accumulator,
 			std::span<const Type, WeightCount> delta,
 			u32 subOffset0, u32 subOffset1, u32 subOffset2, u32 subOffset3) -> void
 		{

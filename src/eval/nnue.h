@@ -20,7 +20,6 @@
 
 #include "../types.h"
 
-#include <cstddef>
 #include <vector>
 
 #include "arch.h"

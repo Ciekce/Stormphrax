@@ -21,7 +21,6 @@
 #include "../types.h"
 
 #include <array>
-#include <cstddef>
 #include <algorithm>
 #include <cassert>
 
