@@ -125,19 +125,13 @@ namespace stormphrax::eval::nnue
 		inline auto activateFourFeatures(const Ft &featureTransformer, Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
 		{
 			assert(feature < InputCount);
-			addAddAddAdd(forColor(c), featureTransformer.weights, feature0 * OutputCount, 
-																  feature1 * OutputCount,
-																  feature2 * OutputCount,
-																  feature3 * OutputCount);
+			addAddAddAdd(forColor(c), featureTransformer.weights, feature0 * OutputCount, feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
 		}
 
 		inline auto deactivateFourFeatures(const Ft &featureTransformer, Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
 		{
 			assert(feature < InputCount);
-			subSubSubSub(forColor(c), featureTransformer.weights, feature0 * OutputCount, 
-																  feature1 * OutputCount,
-																  feature2 * OutputCount,
-																  feature3 * OutputCount);
+			subSubSubSub(forColor(c), featureTransformer.weights, feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
 		}
 
 		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
