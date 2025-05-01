@@ -131,7 +131,7 @@ namespace stormphrax::eval::nnue
 		inline auto deactivateFourFeatures(const Ft &featureTransformer, Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
 		{
 			assert(feature < InputCount);
-			subSubSubSub(forColor(c), featureTransformer.weights, feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
+			subSubSubSub(forColor(c), featureTransformer.weights, feature0 * OutputCount, feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
 		}
 
 		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
@@ -216,7 +216,7 @@ namespace stormphrax::eval::nnue
 					+ delta[addOffset3 + i];
 			}
 		}
-		
+
 		static __attribute__((always_inline)) inline auto subSubSubSub(std::span<Type, OutputCount> accumulator,
 			std::span<const Type, WeightCount> delta,
 			u32 subOffset0, u32 subOffset1, u32 subOffset2, u32 subOffset3) -> void
