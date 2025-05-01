@@ -318,6 +318,8 @@ namespace stormphrax::eval
 			auto &rtEntry = refreshTable.table[tableIdx];
 			auto &prevBoards = rtEntry.colorBbs(c);
 
+			StaticVector<u32, 32> adds;
+			StaticVector<u32, 32> subs;
 			for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::None); ++pieceIdx)
 			{
 				const auto piece = static_cast<Piece>(pieceIdx);
@@ -332,18 +334,45 @@ namespace stormphrax::eval
 				{
 					const auto sq = added.popLowestSquare();
 					const auto feature = featureIndex(c, piece, sq, king);
-
-					rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, feature);
+					adds.push(feature);
 				}
 
 				while (removed)
 				{
 					const auto sq = removed.popLowestSquare();
 					const auto feature = featureIndex(c, piece, sq, king);
-
-					rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, feature);
+					subs.push(feature);
 				}
 			}
+
+			while (adds.size() >= 4)
+			{
+				const auto add0 = adds.pop();
+				const auto add1 = adds.pop();
+				const auto add2 = adds.pop();
+				const auto add3 = adds.pop();
+				rtEntry.accumulator.activateFourFeatures(g_network.featureTransformer(), c, add0, add1, add2, add3);
+			}
+			while (adds.size() >= 1)
+			{
+				const auto add = adds.pop();
+				rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, add);
+			}
+
+			while (subs.size() >= 4)
+			{
+				const auto sub0 = subs.pop();
+				const auto sub1 = subs.pop();
+				const auto sub2 = subs.pop();
+				const auto sub3 = subs.pop();
+				rtEntry.accumulator.deactivateFourFeatures(g_network.featureTransformer(), c, sub0, sub1, sub2, sub3);
+			}
+			while (subs.size() >= 1)
+			{
+				const auto sub = subs.pop();
+				rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, sub);
+			}
+
 
 			accumulator.acc.copyFrom(c, rtEntry.accumulator);
 			prevBoards = bbs;
