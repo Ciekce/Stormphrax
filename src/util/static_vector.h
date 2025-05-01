@@ -21,7 +21,6 @@
 #include "../types.h"
 
 #include <array>
-#include <cstddef>
 #include <algorithm>
 #include <cassert>
 
@@ -49,6 +48,12 @@ namespace stormphrax
 		{
 			assert(m_size < Capacity);
 			m_data[m_size++] = std::move(elem);
+		}
+
+		inline T pop()
+		{
+			assert(m_size > 0);
+			return std::move(m_data[--m_size]);
 		}
 
 		inline auto clear() { m_size = 0; }

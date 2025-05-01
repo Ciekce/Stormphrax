@@ -24,7 +24,6 @@
 #include <span>
 #include <cassert>
 #include <limits>
-#include <cstddef>
 
 namespace stormphrax::util
 {
