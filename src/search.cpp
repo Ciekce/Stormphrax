@@ -692,8 +692,15 @@ namespace stormphrax::search
 			&& !inCheck
 			&& !curr.excluded)
 		{
-			if (depth <= 6
-				&& curr.staticEval - rfpMargin() * std::max(depth - improving, 0) >= beta)
+			const auto rfpMargin = [&]
+			{
+				auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+				if (complexity)
+					margin += *complexity / 2;
+				return margin;
+			};
+
+			if (depth <= 6 && curr.staticEval - rfpMargin() >= beta)
 				return (curr.staticEval + beta) / 2;
 
 			if (depth <= 4
