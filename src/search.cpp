@@ -71,6 +71,11 @@ namespace stormphrax::search
 					moves.push(move);
 			}
 		}
+
+		[[nodiscard]] constexpr bool isWin(Score score)
+		{
+			return std::abs(score) > ScoreWin;
+		}
 	}
 
 	Searcher::Searcher(usize ttSizeMib)
@@ -701,7 +706,8 @@ namespace stormphrax::search
 			};
 
 			if (depth <= 6 && curr.staticEval - rfpMargin() >= beta)
-				return (curr.staticEval + beta) / 2;
+				return !isWin(curr.staticEval) && !isWin(beta)
+					? (curr.staticEval + beta) / 2 : curr.staticEval;
 
 			if (depth <= 4
 				&& std::abs(alpha) < 2000
@@ -1175,7 +1181,7 @@ namespace stormphrax::search
 			else eval = staticEval;
 
 			if (eval >= beta)
-				return (eval + beta) / 2;
+				return !isWin(eval) && !isWin(beta) ? (eval + beta) / 2 : eval;
 
 			if (eval > alpha)
 				alpha = eval;
