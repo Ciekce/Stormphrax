@@ -56,7 +56,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 			const auto printUsage = [&]()
 			{
 				std::cerr << "usage: " << argv[0]
-					<< " datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [game limit per thread]"
+					<< " datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]"
 					<< std::endl;
 			};
 
@@ -85,15 +85,11 @@ auto main(i32 argc, const char *argv[]) -> i32
 				return 1;
 			}
 
-			auto games = datagen::UnlimitedGames;
-			if (argc > 6 && !util::tryParseU32(games, argv[6]))
-			{
-				std::cerr << "invalid number of games " << argv[6] << std::endl;
-				printUsage();
-				return 1;
-			}
+			std::optional<std::string> tbPath{};
+			if (argc > 6)
+				tbPath = std::string{argv[5]};
 
-			return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), games);
+			return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), tbPath);
 		}
 #if SP_EXTERNAL_TUNE
 		else if (mode == "printwf"

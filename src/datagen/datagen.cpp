@@ -37,11 +37,8 @@
 #include "marlinformat.h"
 #include "fen.h"
 #include "../util/ctrlc.h"
-
-// abandon hope all ye who enter here
-// my search was not written with this in mind
-
-//TODO refactor search so this can be less horrible
+#include "../3rdparty/fathom/tbprobe.h"
+#include "../tb.h"
 
 namespace stormphrax::datagen
 {
@@ -99,23 +96,45 @@ namespace stormphrax::datagen
 			usize m_hardNodeLimit{};
 		};
 
+		[[nodiscard]] auto probeTb(const Position &pos) -> std::optional<Outcome>
+		{
+			if (pos.bbs().occupancy().popcount() > TB_LARGEST
+				|| pos.halfmove() != 0
+				|| pos.castlingRooks() != CastlingRooks{})
+				return {};
+
+			switch(tb::probe(pos))
+			{
+			case tb::ProbeResult::Failed:
+				return {};
+			case tb::ProbeResult::Win:
+				return pos.toMove() == Color::Black ? Outcome::WhiteLoss : Outcome::WhiteWin;
+			case tb::ProbeResult::Draw:
+				return Outcome::Draw;
+			case tb::ProbeResult::Loss:
+				return pos.toMove() == Color::Black ? Outcome::WhiteWin : Outcome::WhiteLoss;
+			}
+		}
+
 		constexpr usize VerificationHardNodeLimit = 25165814;
 
-		constexpr usize DatagenSoftNodeLimit = 5000;
+		constexpr usize DatagenSoftNodeLimit = 24000;
 		constexpr usize DatagenHardNodeLimit = 8388608;
 
-		constexpr Score VerificationScoreLimit = 1000;
+		constexpr Score VerificationScoreLimit = 500;
 
-		constexpr Score WinAdjMinScore = 2500;
+		constexpr Score WinAdjMinScore = 1250;
 		constexpr Score DrawAdjMaxScore = 10;
 
-		constexpr u32 WinAdjMaxPlies = 5;
-		constexpr u32 DrawAdjMaxPlies = 10;
+		constexpr u32 DrawAdjMinPlies = 70;
 
-		constexpr i32 ReportInterval = 1024;
+		constexpr u32 WinAdjPlyCount = 5;
+		constexpr u32 DrawAdjPlyCount = 10;
+
+		constexpr i32 ReportInterval = 512;
 
 		template <OutputFormat Format>
-		auto runThread(u32 id, bool dfrc, u32 games, u64 seed, const std::filesystem::path &outDir)
+		auto runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path &outDir)
 		{
 			const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
 			std::ofstream out{outFile, std::ios::binary | std::ios::app};
@@ -157,7 +176,7 @@ namespace stormphrax::datagen
 
 			usize totalPositions{};
 
-			for (i32 game = 0; game < games && !s_stop.load(std::memory_order::seq_cst); ++game)
+			for (i32 game = 0; !s_stop.load(std::memory_order::seq_cst); ++game)
 			{
 				resetSearch();
 
@@ -268,7 +287,8 @@ namespace stormphrax::datagen
 							++lossPlies;
 							drawPlies = 0;
 						}
-						else if (std::abs(normScore) < DrawAdjMaxScore)
+						else if (thread->rootPos.plyFromStartpos() >= DrawAdjMinPlies
+							&& std::abs(normScore) < DrawAdjMaxScore)
 						{
 							winPlies = 0;
 							lossPlies = 0;
@@ -281,11 +301,11 @@ namespace stormphrax::datagen
 							drawPlies = 0;
 						}
 
-						if (winPlies >= WinAdjMaxPlies)
+						if (winPlies >= WinAdjPlyCount)
 							outcome = Outcome::WhiteWin;
-						else if (lossPlies >= WinAdjMaxPlies)
+						else if (lossPlies >= WinAdjPlyCount)
 							outcome = Outcome::WhiteLoss;
-						else if (drawPlies >= DrawAdjMaxPlies)
+						else if (drawPlies >= DrawAdjPlyCount)
 							outcome = Outcome::Draw;
 					}
 
@@ -303,6 +323,19 @@ namespace stormphrax::datagen
 						break;
 					}
 
+					if (const auto tbOutcome = probeTb(pos))
+					{
+						static constexpr auto Scores = std::array {
+							-ScoreTbWin,
+							0,
+							ScoreTbWin,
+						};
+
+						outcome = *tbOutcome;
+						output.push(true, move, Scores[static_cast<i32>(*tbOutcome)]);
+						break;
+					}
+
 					output.push(filtered, move, score);
 
 					if (outcome)
@@ -314,8 +347,7 @@ namespace stormphrax::datagen
 				const auto positions = output.writeAllWithOutcome(out, *outcome);
 				totalPositions += positions;
 
-				if (game == games - 1
-					|| ((game + 1) % ReportInterval) == 0
+				if (((game + 1) % ReportInterval) == 0
 					|| s_stop.load(std::memory_order::seq_cst))
 				{
 					const auto time = startTime.elapsed();
@@ -326,16 +358,13 @@ namespace stormphrax::datagen
 			}
 		}
 
-		template auto runThread<Marlinformat>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<Viriformat>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
-		template auto runThread<Fen>(u32 id, bool dfrc,
-			u32 games, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<Marlinformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<Viriformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path &outDir);
+		template auto runThread<Fen>(u32 id, bool dfrc, u64 seed, const std::filesystem::path &outDir);
 	}
 
 	auto run(const std::function<void()> &printUsage, const std::string &format,
-		bool dfrc, const std::string &output, i32 threads, u32 games) -> i32
+		bool dfrc, const std::string &output, i32 threads, std::optional<std::string> tbPath) -> i32
 	{
 		std::function<decltype(runThread<Marlinformat>)> threadFunc{};
 
@@ -354,6 +383,26 @@ namespace stormphrax::datagen
 
 		opts::mutableOpts().chess960 = dfrc;
 
+		if (tbPath)
+		{
+			if (!tb_init(tbPath->c_str()))
+			{
+				std::cerr << "Failed to initialize Fathom" << std::endl;
+				return 2;
+			}
+
+			if (TB_LARGEST > 0)
+			{
+				std::cout << "Found up to " << TB_LARGEST << "-man TBs" << std::endl;
+				opts::mutableOpts().syzygyEnabled = true;
+			}
+			else
+			{
+				std::cerr << "No TBs found" << std::endl;
+				return 2;
+			}
+		}
+
 		const auto baseSeed = util::rng::generateSingleSeed();
 		std::cout << "base seed: " << baseSeed << std::endl;
 
@@ -366,16 +415,14 @@ namespace stormphrax::datagen
 		std::vector<std::thread> theThreads{};
 		theThreads.reserve(threads);
 
-		if (games == UnlimitedGames)
-			std::cout << "generating on " << threads << " threads" << std::endl;
-		else std::cout << "generating " << games << " games each on " << threads << " threads" << std::endl;
+		std::cout << "generating on " << threads << " threads" << std::endl;
 
 		for (u32 i = 0; i < threads; ++i)
 		{
 			const auto seed = seedGenerator.nextSeed();
 			theThreads.emplace_back([&, i, seed]()
 			{
-				threadFunc(i, dfrc, games, seed, outDir);
+				threadFunc(i, dfrc, seed, outDir);
 			});
 		}
 
@@ -383,6 +430,9 @@ namespace stormphrax::datagen
 		{
 			thread.join();
 		}
+
+		if (tbPath)
+			tb_free();
 
 		std::cout << "done" << std::endl;
 
