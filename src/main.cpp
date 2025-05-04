@@ -87,7 +87,7 @@ auto main(i32 argc, const char *argv[]) -> i32
 
 			std::optional<std::string> tbPath{};
 			if (argc > 6)
-				tbPath = std::string{argv[5]};
+				tbPath = std::string{argv[6]};
 
 			return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), tbPath);
 		}

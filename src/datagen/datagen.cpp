@@ -385,6 +385,8 @@ namespace stormphrax::datagen
 
 		if (tbPath)
 		{
+			std::cout << "looking for TBs in \"" << *tbPath << "\"" << std::endl;
+
 			if (!tb_init(tbPath->c_str()))
 			{
 				std::cerr << "Failed to initialize Fathom" << std::endl;
