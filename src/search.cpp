@@ -718,7 +718,8 @@ namespace stormphrax::search
 					return score;
 			}
 
-			if (depth >= 4
+			if (cutnode
+				&& depth >= 4
 				&& ply >= thread.minNmpPly
 				&& curr.staticEval >= beta
 				&& !parent->move.isNull()
