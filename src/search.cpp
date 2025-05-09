@@ -369,6 +369,8 @@ namespace stormphrax::search
 		auto score = -ScoreInf;
 		PvList pv{};
 
+		auto averageScore = ScoreNone;
+
 		searchData.nodes = 0;
 		thread.stack[0].killers.clear();
 
@@ -389,8 +391,8 @@ namespace stormphrax::search
 
 			if (depth >= 3)
 			{
-				alpha = std::max(score - delta, -ScoreInf);
-				beta  = std::min(score + delta,  ScoreInf);
+				alpha = std::max(averageScore - delta, -ScoreInf);
+				beta  = std::min(averageScore + delta,  ScoreInf);
 			}
 
 			Score newScore{};
@@ -438,6 +440,10 @@ namespace stormphrax::search
 
 			score = newScore;
 			pv = thread.rootPv;
+
+			if (depth == 1)
+				averageScore = score;
+			else averageScore = (averageScore + score) / 2;
 
 			if (depth >= m_maxDepth)
 			{
