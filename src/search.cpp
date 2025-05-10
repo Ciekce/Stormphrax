@@ -27,6 +27,7 @@
 #include "3rdparty/fathom/tbprobe.h"
 #include "tb.h"
 #include "see.h"
+#include "stats.h"
 
 namespace stormphrax::search
 {
@@ -701,7 +702,7 @@ namespace stormphrax::search
 			{
 				auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
 				if (complexity)
-					margin += *complexity / 2;
+					margin += *complexity * rfpCorrplexityScale() / 128;
 				return margin;
 			};
 

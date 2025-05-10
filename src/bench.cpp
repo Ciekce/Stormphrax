@@ -21,6 +21,7 @@
 #include <array>
 
 #include "position/position.h"
+#include "stats.h"
 
 namespace stormphrax::bench
 {
@@ -97,5 +98,7 @@ namespace stormphrax::bench
 
 		std::cout << "info string " << time << " seconds" << std::endl;
 		std::cout << nodes << " nodes " << static_cast<usize>(static_cast<f64>(nodes) / time) << " nps" << std::endl;
+
+		stats::print();
 	}
 }

@@ -24,6 +24,7 @@
 #include "see.h"
 #include "history.h"
 #include "tunable.h"
+#include "stats.h"
 
 namespace stormphrax
 {
