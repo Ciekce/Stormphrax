@@ -25,7 +25,7 @@
 
 #if SP_HAS_AVX512
 
-#include "x64common.h"
+#include <immintrin.h>
 
 namespace stormphrax::util::simd
 {

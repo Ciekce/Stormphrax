@@ -30,8 +30,6 @@
 #include "simd/avx512.h"
 #elif SP_HAS_AVX2
 #include "simd/avx2.h"
-#elif SP_HAS_SSE41
-#include "simd/sse41.h"
 #else
 #error No supported SIMD extension found
 #endif

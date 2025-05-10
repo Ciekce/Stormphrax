@@ -25,7 +25,7 @@
 
 #if SP_HAS_AVX2 && !SP_HAS_AVX512
 
-#include "x64common.h"
+#include <immintrin.h>
 
 namespace stormphrax::util::simd
 {
@@ -277,7 +277,18 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32(VectorI32 v) -> i32
 		{
-			return x64::hsumI32Avx2(v);
+			const auto high128 = _mm256_extracti128_si256(v, 1);
+			const auto low128 = _mm256_castsi256_si128(v);
+
+			const auto sum128 = _mm_add_epi32(high128, low128);
+
+			const auto high64 = _mm_unpackhi_epi64(sum128, sum128);
+			const auto sum64 = _mm_add_epi32(sum128, high64);
+
+			const auto high32 = _mm_shuffle_epi32(sum64, _MM_SHUFFLE(2, 3, 0, 1));
+			const auto sum32 = _mm_add_epi32(sum64, high32);
+
+			return _mm_cvtsi128_si32(sum32);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i)
@@ -356,7 +367,18 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32(VectorF32 v) -> f32
 		{
-			return x64::hsumF32Avx2(v);
+			const auto high128 = _mm256_extractf128_ps(v, 1);
+			const auto low128 = _mm256_castps256_ps128(v);
+
+			const auto sum128 = _mm_add_ps(high128, low128);
+
+			const auto high64 = _mm_movehl_ps(sum128, sum128);
+			const auto sum64 = _mm_add_ps(sum128, high64);
+
+			const auto high32 = _mm_shuffle_ps(sum64, sum64, _MM_SHUFFLE(0, 0, 0, 1));
+			const auto sum32 = _mm_add_ss(sum64, high32);
+
+			return _mm_cvtss_f32(sum32);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto castI32F32(VectorI32 v) -> VectorF32

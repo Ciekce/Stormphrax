@@ -59,8 +59,8 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h src/eval/nnue/features.h
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
-	src/util/multi_array.h src/correction.h src/limit/compound.h src/util/simd/x64common.h src/util/simd/avx512.h
-	src/util/simd/avx2.h src/util/simd/sse41.h src/util/align.h src/3rdparty/zstd/zstddeclib.c
+	src/util/multi_array.h src/correction.h src/limit/compound.h src/util/simd/avx512.h
+	src/util/simd/avx2.h src/util/align.h src/3rdparty/zstd/zstddeclib.c
 	src/eval/nnue/io_impl.h src/eval/nnue/io_impl.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h
 	src/util/ctrlc.cpp src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp)
 
@@ -73,7 +73,6 @@ add_executable(stormphrax-vnni512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC
 add_executable(stormphrax-avx512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
-add_executable(stormphrax-sse41-popcnt ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 target_compile_options(stormphrax-native PUBLIC -march=native)
 target_compile_options(stormphrax-vnni512 PUBLIC -march=znver4)
@@ -81,7 +80,6 @@ target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
 target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 # excavator without amd-specific extensions and bmi2
 target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
-target_compile_options(stormphrax-sse41-popcnt PUBLIC -march=nehalem)
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
@@ -89,14 +87,12 @@ if(NOT MSVC)
 	target_compile_options(stormphrax-avx512 PUBLIC -mtune=skylake-avx512)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
-	target_compile_options(stormphrax-sse41-popcnt PUBLIC -mtune=sandybridge)
 else() # clang
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
 	target_compile_options(stormphrax-vnni512 PUBLIC /tune:znver4)
 	target_compile_options(stormphrax-avx512 PUBLIC /tune:skylake-avx512)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
-	target_compile_options(stormphrax-sse41-popcnt PUBLIC /tune:sandybridge)
 endif()
 
 if(SP_FAST_PEXT)

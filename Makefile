@@ -30,7 +30,6 @@ CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver4 -mtune=znver4
 CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=x86-64-v4 -mtune=skylake-avx512
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=haswell
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
-CXXFLAGS_SSE41_POPCNT := -DSP_SSE41_POPCNT -march=nehalem -mtune=sandybridge
 
 LDFLAGS :=
 
@@ -120,7 +119,7 @@ define build
 endef
 endif
 
-release: vnni512 avx512 avx2-bmi2 avx2 sse41-popcnt
+release: vnni512 avx512 avx2-bmi2 avx2
 all: native release
 
 .PHONY: all
@@ -154,9 +153,6 @@ avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,AVX2,avx2)
-
-sse41-popcnt: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,SSE41_POPCNT,sse41-popcnt)
 
 clean:
 
