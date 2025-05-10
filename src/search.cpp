@@ -561,7 +561,7 @@ namespace stormphrax::search
 			ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
 			if (!PvNode
-				&& ttEntry.depth >= depth
+				&& ttEntry.depth >= depth + (ttEntry.score >= beta)
 				&& (ttEntry.score <= alpha || cutnode))
 			{
 				if (ttEntry.flag == TtFlag::Exact
