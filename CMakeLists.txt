@@ -60,7 +60,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
 	src/util/multi_array.h src/correction.h src/limit/compound.h src/util/simd/x64common.h src/util/simd/avx512.h
-	src/util/simd/avx2.h src/util/simd/sse41.h src/util/simd/neon.h src/util/align.h src/3rdparty/zstd/zstddeclib.c
+	src/util/simd/avx2.h src/util/simd/sse41.h src/util/align.h src/3rdparty/zstd/zstddeclib.c
 	src/eval/nnue/io_impl.h src/eval/nnue/io_impl.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h
 	src/util/ctrlc.cpp src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp)
 
