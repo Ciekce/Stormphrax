@@ -73,7 +73,10 @@ namespace stormphrax::util::signal
 		};
 
 		if (sigaction(SIGINT, &action, nullptr))
-			std::cerr << "failed to set ctrl+c handler" << std::endl;
+			std::cerr << "failed to set SIGINT handler" << std::endl;
+
+		if (sigaction(SIGTERM, &action, nullptr))
+			std::cerr << "failed to set SIGTERM handler" << std::endl;
 #endif
 	}
 }
