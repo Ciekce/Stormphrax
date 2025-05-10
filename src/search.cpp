@@ -27,6 +27,7 @@
 #include "3rdparty/fathom/tbprobe.h"
 #include "tb.h"
 #include "see.h"
+#include "stats.h"
 
 namespace stormphrax::search
 {
