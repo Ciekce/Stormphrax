@@ -30,6 +30,7 @@
 #include "../../../util/simd.h"
 #include "../io.h"
 #include "../../../util/multi_array.h"
+#include "../../../util/cemath.h"
 
 namespace stormphrax::eval::nnue::arch
 {
@@ -50,7 +51,11 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr bool Pairwise = true;
 
 	private:
+		static constexpr auto I8sPerI32 = sizeof(i32) / sizeof(u8);
+
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
+
+		static constexpr u32 L2SizePadded = util::pad<util::simd::ChunkSize<f32>>(L2Size);
 
 		SP_SIMD_ALIGNAS std::array<i8,  OutputBucketCount * L1Size * L2Size> l1Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2Size> l1Biases{};
@@ -61,6 +66,9 @@ namespace stormphrax::eval::nnue::arch
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount>          l3Biases{};
 
+		SP_SIMD_ALIGNAS std::array<i8,  OutputBucketCount * L1Size * L2SizePadded> l1WeightsPadded{};
+		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount *          L2SizePadded> l1BiasesPadded{};
+
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
 			std::span<const i16, L1Size> nstmInputs,
 			std::span<u8, L1Size> outputs) const
@@ -68,8 +76,6 @@ namespace stormphrax::eval::nnue::arch
 			using namespace util::simd;
 
 			static constexpr auto PairCount = L1Size / 2;
-
-			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
 			const auto zero_ = zero<i16>();
 			const auto one = set1<i16>(FtQ);
@@ -134,137 +140,44 @@ namespace stormphrax::eval::nnue::arch
 			activatePerspective(nstmInputs, PairCount);
 		}
 
-		// Extremely dirty hack to allow 8-neuron L2 with AVX512
-		// Hardcoded to squared ReLU
-		//TODO: literally anything but this
-#if SP_HAS_AVX512
-	private:
-		inline auto propagateL1Avx2
-			(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
-		{
-			static_assert(L2Activation::Id == activation::SquaredReLU::Id);
-
-			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
-			static constexpr auto ChunkSizeI32 = sizeof(__m256i) / sizeof(i32);
-
-			const auto dpbusd = [](__m256i sum, __m256i u, __m256i i)
-			{
-#if SP_HAS_AVX512VNNI && __AVX512VL__
-				return _mm256_dpbusd_epi32(sum, u, i);
-#else
-				const auto p = _mm256_maddubs_epi16(u, i);
-				const auto w = _mm256_madd_epi16(p, _mm256_set1_epi16(1));
-				return _mm256_add_epi32(sum, w);
-#endif
-			};
-
-			const auto oneOverQuant = _mm256_set1_ps(
-				static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q));
-
-			const auto weightOffset = bucket * L2Size * L1Size;
-			const auto biasOffset   = bucket * L2Size;
-
-			// SAFETY: u8 (unsigned char) can safely be aliased to any type
-			const auto *inI32s = reinterpret_cast<const i32 *>(inputs.data());
-
-			SP_SIMD_ALIGNAS util::MultiArray<__m256i, L2Size / ChunkSizeI32, 4> intermediate{};
-
-			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8ChunkSizeI32 * 4)
-			{
-				const auto weightsStart = weightOffset + inputIdx * L2Size;
-
-				const auto i_0 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 0]);
-				const auto i_1 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 1]);
-				const auto i_2 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 2]);
-				const auto i_3 = _mm256_set1_epi32(inI32s[inputIdx / I8ChunkSizeI32 + 3]);
-
-				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += ChunkSizeI32)
-				{
-					auto &v = intermediate[outputIdx / ChunkSizeI32];
-
-					const auto w_0 = _mm256_load_epi32
-						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
-					const auto w_1 = _mm256_load_epi32
-						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
-					const auto w_2 = _mm256_load_epi32
-						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
-					const auto w_3 = _mm256_load_epi32
-						(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
-
-					v[0] = dpbusd(v[0], i_0, w_0);
-					v[1] = dpbusd(v[1], i_1, w_1);
-					v[2] = dpbusd(v[2], i_2, w_2);
-					v[3] = dpbusd(v[3], i_3, w_3);
-				}
-			}
-
-			for (u32 idx = 0; idx < L2Size; idx += ChunkSizeI32)
-			{
-				const auto &v = intermediate[idx / ChunkSizeI32];
-
-				const auto halfSums_0 = _mm256_add_epi32(v[0], v[1]);
-				const auto halfSums_1 = _mm256_add_epi32(v[2], v[3]);
-
-				const auto sums = _mm256_add_epi32(halfSums_0, halfSums_1);
-
-				const auto biases = _mm256_load_ps(&l1Biases[biasOffset + idx]);
-
-				auto out = _mm256_cvtepi32_ps(sums);
-
-				out = _mm256_fmadd_ps(out, oneOverQuant, biases);
-				out = _mm256_max_ps(out, _mm256_setzero_ps());
-				out = _mm256_mul_ps(out, out);
-
-				_mm256_store_ps(&outputs[idx], out);
-			}
-		}
-
-	public:
-#endif
-
 		// Take activated feature transformer outputs, propagate L1, dequantise and activate
-		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
+		inline auto propagateL1(
+			u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2SizePadded> outputs) const
 		{
-#if SP_HAS_AVX512
-			if constexpr (L2Size == 8)
-			{
-				propagateL1Avx2(bucket, inputs, outputs);
-				return;
-			}
-#endif
-
 			using namespace util::simd;
-
-			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
 			const auto oneOverQuant = set1<f32>(
 				static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q));
 
-			const auto weightOffset = bucket * L2Size * L1Size;
-			const auto biasOffset   = bucket * L2Size;
+			const auto weightOffset = bucket * L2SizePadded * L1Size;
+			const auto biasOffset   = bucket * L2SizePadded;
 
 			// SAFETY: u8 (unsigned char) can safely be aliased to any type
 			const auto *inI32s = reinterpret_cast<const i32 *>(inputs.data());
 
-			SP_SIMD_ALIGNAS util::MultiArray<Vector<i32>, L2Size / ChunkSize<i32>, 4> intermediate{};
+			SP_SIMD_ALIGNAS util::MultiArray<Vector<i32>, L2SizePadded / ChunkSize<i32>, 4> intermediate{};
 
-			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8ChunkSizeI32 * 4)
+			for (u32 inputIdx = 0; inputIdx < L1Size; inputIdx += I8sPerI32 * 4)
 			{
-				const auto weightsStart = weightOffset + inputIdx * L2Size;
+				const auto weightsStart = weightOffset + inputIdx * L2SizePadded;
 
-				const auto i_0 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 0]);
-				const auto i_1 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 1]);
-				const auto i_2 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 2]);
-				const auto i_3 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 3]);
+				const auto i_0 = set1<i32>(inI32s[inputIdx / I8sPerI32 + 0]);
+				const auto i_1 = set1<i32>(inI32s[inputIdx / I8sPerI32 + 1]);
+				const auto i_2 = set1<i32>(inI32s[inputIdx / I8sPerI32 + 2]);
+				const auto i_3 = set1<i32>(inI32s[inputIdx / I8sPerI32 + 3]);
 
-				for (u32 outputIdx = 0; outputIdx < L2Size; outputIdx += ChunkSize<i32>)
+				for (u32 outputIdx = 0; outputIdx < L2SizePadded; outputIdx += ChunkSize<i32>)
 				{
 					auto &v = intermediate[outputIdx / ChunkSize<i32>];
 
-					const auto w_0 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 0)]);
-					const auto w_1 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 1)]);
-					const auto w_2 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 2)]);
-					const auto w_3 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + L2Size * 3)]);
+					const auto w_0
+						= load<i8>(&l1WeightsPadded[weightsStart + I8sPerI32 * (outputIdx + L2SizePadded * 0)]);
+					const auto w_1
+						= load<i8>(&l1WeightsPadded[weightsStart + I8sPerI32 * (outputIdx + L2SizePadded * 1)]);
+					const auto w_2
+						= load<i8>(&l1WeightsPadded[weightsStart + I8sPerI32 * (outputIdx + L2SizePadded * 2)]);
+					const auto w_3
+						= load<i8>(&l1WeightsPadded[weightsStart + I8sPerI32 * (outputIdx + L2SizePadded * 3)]);
 
 					v[0] = dpbusd<i32>(v[0], i_0, w_0);
 					v[1] = dpbusd<i32>(v[1], i_1, w_1);
@@ -273,7 +186,7 @@ namespace stormphrax::eval::nnue::arch
 				}
 			}
 
-			for (u32 idx = 0; idx < L2Size; idx += ChunkSize<i32>)
+			for (u32 idx = 0; idx < L2SizePadded; idx += ChunkSize<i32>)
 			{
 				const auto &v = intermediate[idx / ChunkSize<i32>];
 
@@ -282,7 +195,7 @@ namespace stormphrax::eval::nnue::arch
 
 				const auto sums = add<i32>(halfSums_0, halfSums_1);
 
-				const auto biases = load<f32>(&l1Biases[biasOffset + idx]);
+				const auto biases = load<f32>(&l1BiasesPadded[biasOffset + idx]);
 
 				auto out = cast<i32, f32>(sums);
 
@@ -295,7 +208,8 @@ namespace stormphrax::eval::nnue::arch
 
 		// Take activated L1 outputs and propagate L2
 		// Does not activate outputs
-		inline auto propagateL2(u32 bucket, std::span<const f32, L2Size> inputs, std::span<f32, L3Size> outputs) const
+		inline auto propagateL2(
+			u32 bucket, std::span<const f32, L2SizePadded> inputs, std::span<f32, L3Size> outputs) const
 		{
 			using namespace util::simd;
 
@@ -311,7 +225,7 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
-					const auto i = set1<f32>(inputs[inputIdx]);
+					const auto i = set1<f32>(inputs[inputIdx + (inputIdx & ~1) * (L2SizePadded > L2Size)]);
 
 					for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<f32> * 2)
 					{
@@ -335,7 +249,7 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
-					const auto i = set1<f32>(inputs[inputIdx]);
+					const auto i = set1<f32>(inputs[inputIdx + (inputIdx & ~1) * (L2SizePadded > L2Size)]);
 
 					for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<f32> * 4)
 					{
@@ -456,7 +370,7 @@ namespace stormphrax::eval::nnue::arch
 			assert(isAligned(   outputs.data()));
 
 			Array<u8, L1Size> activatedFt;
-			Array<f32, L2Size> l1Out;
+			Array<f32, L2SizePadded> l1Out;
 			Array<f32, L3Size> l2Out;
 			Array<f32, 1> l3Out;
 
@@ -465,17 +379,62 @@ namespace stormphrax::eval::nnue::arch
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
+			//std::cout << "l1 out:";
+			//for (const auto v : l1Out)
+			//{
+			//	std::cout << " " << v;
+			//}
+			//std::cout << std::endl;
+
 			outputs[0] = static_cast<i32>(l3Out[0] * Scale);
 		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			return stream.read(l1Weights)
+			const bool readSuccess
+				 = stream.read(l1Weights)
 				&& stream.read(l1Biases)
 				&& stream.read(l2Weights)
 				&& stream.read(l2Biases)
 				&& stream.read(l3Weights)
 				&& stream.read(l3Biases);
+
+			if (!readSuccess)
+				return false;
+
+			if constexpr (L2Size == L2SizePadded)
+			{
+				l1WeightsPadded = l1Weights;
+				l1BiasesPadded = l1Biases;
+				return true;
+			}
+
+			l1WeightsPadded.fill(0);
+			l1BiasesPadded.fill(0);
+
+			for (u32 bucket = 0; bucket < OutputBucketCount; ++bucket)
+			{
+				for (u32 l1 = 0; l1 < L1Size; ++l1)
+				{
+					const auto src = bucket * L1Size * L2Size + l1 * L2Size;
+					const auto dst = bucket * L1Size * L2SizePadded + l1 * L2SizePadded;
+
+					std::copy(&l1Weights[src], &l1Weights[src + L2Size], &l1WeightsPadded[dst]);
+				}
+			}
+
+			for (u32 bucket = 0; bucket < OutputBucketCount; ++bucket)
+			{
+				const auto src = bucket * L2Size;
+				const auto dst = bucket * L2SizePadded;
+
+				for (u32 l2 = 0; l2 < L2Size; ++l2)
+				{
+					l1BiasesPadded[dst + l2 + (l2 & ~1)] = l1Biases[src + l2];
+				}
+			}
+
+			return true;
 		}
 
 		inline auto writeTo(IParamStream &stream) const -> bool

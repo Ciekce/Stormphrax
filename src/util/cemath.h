@@ -43,7 +43,7 @@ namespace stormphrax::util
 	}
 
 	template <std::unsigned_integral auto Block>
-	[[nodiscard]] inline auto pad(decltype(Block) v)
+	[[nodiscard]] constexpr auto pad(decltype(Block) v)
 	{
 		return ceilDiv(v, Block) * Block;
 	}
