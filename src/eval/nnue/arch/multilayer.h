@@ -379,13 +379,6 @@ namespace stormphrax::eval::nnue::arch
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
-			//std::cout << "l1 out:";
-			//for (const auto v : l1Out)
-			//{
-			//	std::cout << " " << v;
-			//}
-			//std::cout << std::endl;
-
 			outputs[0] = static_cast<i32>(l3Out[0] * Scale);
 		}
 
