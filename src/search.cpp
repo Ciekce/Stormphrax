@@ -932,9 +932,9 @@ namespace stormphrax::search
 					else if (sBeta >= beta)
 						return sBeta;
 					else if (cutnode)
-						extension = -2;
+						extension = -3;
 					else if (ttEntry.score >= beta)
-						extension = -1;
+						extension = -2;
 				}
 				else if (depth <= 7
 					&& !inCheck
