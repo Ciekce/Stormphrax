@@ -46,7 +46,7 @@ namespace stormphrax::eval
 	using L2Activation = nnue::activation::SquaredReLU;
 	using L3Activation = nnue::activation::SquaredReLU;
 
-	constexpr i32 Scale = 400;
+	constexpr i32 Scale = 440;
 
 	// visually flipped upside down, a1 = 0
 	using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
