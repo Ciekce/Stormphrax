@@ -79,6 +79,12 @@ namespace stormphrax::search
 
 			return *this;
 		}
+
+		inline auto reset()
+		{
+			moves[0] = NullMove;
+			length = 0;
+		}
 	};
 
 	struct ThreadData;
