@@ -553,12 +553,14 @@ namespace stormphrax::search
 
 		auto &moveStack = thread.moveStack[moveStackIdx];
 
+		const auto ttKey = pos.key() ^ keys::halfmove(pos.halfmove());
+
 		ProbedTTableEntry ttEntry{};
 		bool ttHit = false;
 
 		if (!curr.excluded)
 		{
-			ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+			ttHit = m_ttable.probe(ttEntry, ttKey, ply);
 
 			if (!PvNode
 				&& ttEntry.depth >= depth
@@ -634,7 +636,7 @@ namespace stormphrax::search
 					|| flag == TtFlag::UpperBound && score <= alpha
 					|| flag == TtFlag::LowerBound && score >= beta)
 				{
-					m_ttable.put(pos.key(), score, ScoreNone, NullMove, depth, ply, flag, ttpv);
+					m_ttable.put(ttKey, score, ScoreNone, NullMove, depth, ply, flag, ttpv);
 					return score;
 				}
 
@@ -670,7 +672,7 @@ namespace stormphrax::search
 			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
 			if (!ttHit)
-				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
+				m_ttable.put(ttKey, ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
 			if (inCheck)
 				curr.staticEval = ScoreNone;
@@ -726,7 +728,7 @@ namespace stormphrax::search
 				&& !(ttEntry.flag == TtFlag::UpperBound && ttEntry.score < beta)
 				&& !bbs.nonPk(us).empty())
 			{
-				m_ttable.prefetch(pos.key() ^ keys::color());
+				m_ttable.prefetch(ttKey ^ keys::color());
 
 				const auto R = 4
 					+ depth / 5
@@ -780,7 +782,7 @@ namespace stormphrax::search
 
 					thread.search.incNodes();
 
-					m_ttable.prefetch(pos.roughKeyAfter(move));
+					m_ttable.prefetch(pos.roughTtKeyAfter(move));
 
 					const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
@@ -795,7 +797,7 @@ namespace stormphrax::search
 
 					if (score >= probcutBeta)
 					{
-						m_ttable.put(pos.key(), score, curr.staticEval,
+						m_ttable.put(ttKey, score, curr.staticEval,
 							move, probcutDepth, ply, TtFlag::LowerBound, false);
 						return score;
 					}
@@ -945,7 +947,7 @@ namespace stormphrax::search
 
 			cutnode |= extension < 0;
 
-			m_ttable.prefetch(pos.roughKeyAfter(move));
+			m_ttable.prefetch(pos.roughTtKeyAfter(move));
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
@@ -1111,7 +1113,7 @@ namespace stormphrax::search
 					|| ttFlag == TtFlag::LowerBound && bestScore > curr.staticEval))
 				thread.correctionHistory.update(pos, thread.contMoves, ply, depth, bestScore, curr.staticEval);
 
-			m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
+			m_ttable.put(ttKey, bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
 		}
 
 		return bestScore;
@@ -1145,8 +1147,10 @@ namespace stormphrax::search
 				: eval::adjustedStaticEval(pos, thread.contMoves, ply,
 					thread.nnueState, &thread.correctionHistory, m_contempt);
 
+		const auto ttKey = pos.key() ^ keys::halfmove(pos.halfmove());
+
 		ProbedTTableEntry ttEntry{};
-		const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+		const bool ttHit = m_ttable.probe(ttEntry, ttKey, ply);
 
 		if (!PvNode
 			&& (ttEntry.flag == TtFlag::Exact
@@ -1170,7 +1174,7 @@ namespace stormphrax::search
 			else rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
 
 			if (!ttHit)
-				m_ttable.put(pos.key(), ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
+				m_ttable.put(ttKey, ScoreNone, rawStaticEval, NullMove, 0, 0, TtFlag::None, ttpv);
 
 			const auto staticEval = eval::adjustEval(pos, thread.contMoves,
 				ply, &thread.correctionHistory, rawStaticEval);
@@ -1227,7 +1231,7 @@ namespace stormphrax::search
 
 			thread.search.incNodes();
 
-			m_ttable.prefetch(pos.roughKeyAfter(move));
+			m_ttable.prefetch(pos.roughTtKeyAfter(move));
 
 			const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
@@ -1263,7 +1267,7 @@ namespace stormphrax::search
 		if (inCheck && legalMoves == 0)
 			return -ScoreMate + ply;
 
-		m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
+		m_ttable.put(ttKey, bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
 
 		return bestScore;
 	}

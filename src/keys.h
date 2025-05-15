@@ -24,17 +24,22 @@
 
 #include "core.h"
 #include "util/rng.h"
+#include "util/cemath.h"
 
 namespace stormphrax::keys
 {
+	constexpr i32 HalfmoveOffset = 8;
+	constexpr i32 HalfmoveStep = 8;
+
 	namespace sizes
 	{
 		constexpr usize PieceSquares = 12 * 64;
 		constexpr usize Color = 1;
 		constexpr usize Castling = 16;
 		constexpr usize EnPassant = 8;
+		constexpr usize Halfmove = util::ceilDiv(100 - HalfmoveOffset + 1, HalfmoveStep);
 
-		constexpr auto Total = PieceSquares + Color + Castling + EnPassant;
+		constexpr auto Total = PieceSquares + Color + Castling + EnPassant + Halfmove;
 	}
 
 	namespace offsets
@@ -43,6 +48,7 @@ namespace stormphrax::keys
 		constexpr auto Color = PieceSquares + sizes::PieceSquares;
 		constexpr auto Castling = Color + sizes::Color;
 		constexpr auto EnPassant = Castling + sizes::Castling;
+		constexpr auto Halfmove = EnPassant + sizes::EnPassant;
 	}
 
 	constexpr auto Keys = []
@@ -112,5 +118,11 @@ namespace stormphrax::keys
 			return 0;
 
 		return Keys[offsets::EnPassant + squareFile(square)];
+	}
+
+	inline auto halfmove(u16 halfmoveClock) -> u64
+	{
+		const auto keyIdx = std::clamp(halfmoveClock - HalfmoveOffset, 0, 100) / HalfmoveStep;
+		return Keys[offsets::Halfmove + keyIdx];
 	}
 }

@@ -179,7 +179,7 @@ namespace stormphrax
 		[[nodiscard]] inline auto whiteNonPawnKey() const { return m_keys.whiteNonPawns; }
 		[[nodiscard]] inline auto majorKey() const { return m_keys.majors; }
 
-		[[nodiscard]] inline auto roughKeyAfter(Move move) const
+		[[nodiscard]] inline auto roughTtKeyAfter(Move move) const
 		{
 			assert(move);
 
@@ -197,6 +197,10 @@ namespace stormphrax
 				key ^= keys::pieceSquare(captured, move.dst());
 
 			key ^= keys::color();
+
+			if (pieceType(moving) == PieceType::Pawn || captured != Piece::None)
+				key ^= keys::halfmove(0);
+			else key ^= keys::halfmove(m_halfmove + 1);
 
 			return key;
 		}
