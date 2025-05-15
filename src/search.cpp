@@ -201,6 +201,8 @@ namespace stormphrax::search
 
 	auto Searcher::runDatagenSearch(ThreadData &thread) -> std::pair<Score, Score>
 	{
+		thread.rootPv.reset();
+
 		if (initRootMoves(thread.rootPos) == RootStatus::NoLegalMoves)
 			return {-ScoreMate, -ScoreMate};
 
@@ -364,8 +366,7 @@ namespace stormphrax::search
 
 		const bool mainThread = actualSearch && thread.isMainThread();
 
-		thread.rootPv.moves[0] = NullMove;
-		thread.rootPv.length = 0;
+		thread.rootPv.reset();
 
 		auto score = -ScoreInf;
 		PvList pv{};
