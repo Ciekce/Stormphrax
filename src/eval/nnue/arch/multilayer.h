@@ -315,15 +315,10 @@ namespace stormphrax::eval::nnue::arch
 					const auto w_2 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 2]);
 					const auto w_3 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 3]);
 
-					i_0 = max<f32>(i_0, zero<f32>());
-					i_1 = max<f32>(i_1, zero<f32>());
-					i_2 = max<f32>(i_2, zero<f32>());
-					i_3 = max<f32>(i_3, zero<f32>());
-
-					i_0 = mul<f32>(i_0, i_0);
-					i_1 = mul<f32>(i_1, i_1);
-					i_2 = mul<f32>(i_2, i_2);
-					i_3 = mul<f32>(i_3, i_3);
+					i_0 = L3Activation::template activate<f32>(i_0);
+					i_1 = L3Activation::template activate<f32>(i_1);
+					i_2 = L3Activation::template activate<f32>(i_2);
+					i_3 = L3Activation::template activate<f32>(i_3);
 
 					l3Out_0 = fma<f32>(i_0, w_0, l3Out_0);
 					l3Out_1 = fma<f32>(i_1, w_1, l3Out_1);
@@ -352,13 +347,13 @@ namespace stormphrax::eval::nnue::arch
 			assert(isAligned(nstmInputs.data()));
 			assert(isAligned(   outputs.data()));
 
-			Array<u8, L1Size> activatedFt;
+			Array< u8, L1Size> ftOut;
 			Array<f32, L2Size> l1Out;
 			Array<f32, L3Size> l2Out;
-			Array<f32, 1> l3Out;
+			Array<f32,      1> l3Out;
 
-			activateFt(stmInputs, nstmInputs, activatedFt);
-			propagateL1(bucket, activatedFt, l1Out);
+			activateFt(stmInputs, nstmInputs, ftOut);
+			propagateL1(bucket, ftOut, l1Out);
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
