@@ -48,6 +48,7 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr u32 OutputCount = 1;
 
 		static constexpr bool Pairwise = true;
+		static constexpr bool RequiresFtPermute = util::simd::PackNonSequential;
 
 	private:
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
@@ -114,16 +115,8 @@ namespace stormphrax::eval::nnue::arch
 					const auto p_2 = mulHi<i16>(i1_2, i2_2);
 					const auto p_3 = mulHi<i16>(i1_3, i2_3);
 
-					auto packed_0 = packUnsigned<i16>(p_0, p_1);
-					auto packed_1 = packUnsigned<i16>(p_2, p_3);
-
-#if SP_HAS_AVX512
-					packed_0 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_0);
-					packed_1 = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_1);
-#elif SP_HAS_AVX2
-					packed_0 = _mm256_permute4x64_epi64(packed_0, _MM_SHUFFLE(3, 1, 2, 0));
-					packed_1 = _mm256_permute4x64_epi64(packed_1, _MM_SHUFFLE(3, 1, 2, 0));
-#endif
+					const auto packed_0 = packUnsigned<i16>(p_0, p_1);
+					const auto packed_1 = packUnsigned<i16>(p_2, p_3);
 
 					store<u8>(&outputs[outputOffset + inputIdx + ChunkSize<i8> * 0], packed_0);
 					store<u8>(&outputs[outputOffset + inputIdx + ChunkSize<i8> * 1], packed_1);
@@ -390,6 +383,36 @@ namespace stormphrax::eval::nnue::arch
 				&& stream.write(l2Biases)
 				&& stream.write(l3Weights)
 				&& stream.write(l3Biases);
+		}
+
+		template <typename W, typename B>
+		static inline auto permuteFt(std::span<W> weights, std::span<B> biases)
+		{
+			using namespace util::simd;
+
+			if constexpr (!PackNonSequential)
+				return;
+
+			static constexpr usize PackSize = PackOrdering.size();
+			static constexpr usize ChunkSize = PackSize * PackGrouping;
+
+			const auto permute = [&]<typename T, usize N>(std::span<T, N> values)
+			{
+				util::MultiArray<T, PackSize, PackGrouping> tmp;
+
+				for (usize offset = 0; offset < values.size(); offset += ChunkSize)
+				{
+					std::copy(&values[offset], &values[offset + ChunkSize], &tmp[0][0]);
+
+					for (usize i = 0; i < PackSize; ++i)
+					{
+						std::ranges::copy(tmp[PackOrdering[i]], &values[offset + i * PackGrouping]);
+					}
+				}
+			};
+
+			permute(weights);
+			permute(biases);
 		}
 	};
 }

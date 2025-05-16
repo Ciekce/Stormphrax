@@ -43,6 +43,7 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr u32 OutputCount = 1;
 
 		static constexpr bool Pairwise = false;
+		static constexpr bool RequiresFtPermute = false;
 
 	private:
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;

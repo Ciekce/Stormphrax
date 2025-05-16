@@ -40,6 +40,13 @@ namespace stormphrax::util::simd
 
 	constexpr std::uintptr_t Alignment = sizeof(__m256i);
 
+	constexpr bool PackNonSequential = true;
+
+	constexpr usize PackGrouping = 8;
+	constexpr auto PackOrdering = std::array {
+		0, 2, 1, 3,
+	};
+
 	namespace impl
 	{
 		// ================================ u8 ================================

@@ -52,8 +52,14 @@ namespace stormphrax::eval::nnue
 
 		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			return m_featureTransformer.readFrom(stream)
-				&& m_arch.readFrom(stream);
+			if (!m_featureTransformer.readFrom(stream) || !m_arch.readFrom(stream))
+				return false;
+
+			if constexpr (Arch::RequiresFtPermute)
+				Arch::template permuteFt<typename Ft::WeightType, typename Ft::OutputType>(
+					m_featureTransformer.weights, m_featureTransformer.biases);
+
+			return true;
 		}
 
 		inline auto writeTo(IParamStream &stream) const -> bool
