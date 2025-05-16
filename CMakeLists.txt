@@ -44,6 +44,7 @@ find_package(Threads REQUIRED)
 add_compile_options($<$<CONFIG:Release>:-flto>)
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
+option(SP_DISABLE_AVX512 "whether to disable AVX-512 (zen 4)" OFF)
 
 set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h
 	src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h
@@ -70,33 +71,33 @@ set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_mag
 
 add_executable(stormphrax-native ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 add_executable(stormphrax-vnni512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
-add_executable(stormphrax-avx512 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2-bmi2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_BMI2_SRC})
 add_executable(stormphrax-avx2 ${STORMPHRAX_COMMON_SRC} ${STORMPHRAX_NON_BMI2_SRC})
 
 target_compile_options(stormphrax-native PUBLIC -march=native)
-target_compile_options(stormphrax-vnni512 PUBLIC -march=znver4)
-target_compile_options(stormphrax-avx512 PUBLIC -march=x86-64-v4)
+target_compile_options(stormphrax-vnni512 PUBLIC -march=znver5)
 target_compile_options(stormphrax-avx2-bmi2 PUBLIC -march=haswell)
 # excavator without amd-specific extensions and bmi2
 target_compile_options(stormphrax-avx2 PUBLIC -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2)
 
 if(NOT MSVC)
 	target_compile_options(stormphrax-native PUBLIC -mtune=native)
-	target_compile_options(stormphrax-vnni512 PUBLIC -mtune=znver4)
-	target_compile_options(stormphrax-avx512 PUBLIC -mtune=skylake-avx512)
+	target_compile_options(stormphrax-vnni512 PUBLIC -mtune=znver5)
 	target_compile_options(stormphrax-avx2-bmi2 PUBLIC -mtune=haswell)
 	target_compile_options(stormphrax-avx2 PUBLIC -mtune=znver2) # zen 2
 else() # clang
 	target_compile_options(stormphrax-native PUBLIC /tune:native)
-	target_compile_options(stormphrax-vnni512 PUBLIC /tune:znver4)
-	target_compile_options(stormphrax-avx512 PUBLIC /tune:skylake-avx512)
-	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:haswell)
+	target_compile_options(stormphrax-vnni512 PUBLIC /tune:znver5)
+	target_compile_options(stormphrax-avx2-bmi2 PUBLIC /tune:znver3)
 	target_compile_options(stormphrax-avx2 PUBLIC /tune:znver2) # zen 2
 endif()
 
 if(SP_FAST_PEXT)
 	target_compile_definitions(stormphrax-native PUBLIC SP_FAST_PEXT)
+endif()
+
+if(SP_DISABLE_AVX512)
+	target_compile_definitions(stormphrax-native PUBLIC SP_DISABLE_AVX512)
 endif()
 
 get_directory_property(TARGETS BUILDSYSTEM_TARGETS)

@@ -300,9 +300,13 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i)
 		{
+#if SP_HAS_VNNI256
+			return _mm256_dpbusd_epi32(sum, u, i);
+#else
 			const auto p = _mm256_maddubs_epi16(u, i);
 			const auto w = _mm256_madd_epi16(p, _mm256_set1_epi16(1));
 			return _mm256_add_epi32(sum, w);
+#endif
 		}
 
 		// Depends on addI32
