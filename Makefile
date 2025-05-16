@@ -96,6 +96,8 @@ ifneq ($(findstring __BMI2__, $(ARCH_DEFINES)),)
     endif
 endif
 
+CXXFLAGS_NO512 := $(CXXFLAGS_NATIVE) -DSP_DISABLE_AVX512
+
 # AVX-512 as a whole is slower on zen 4
 ifneq ($(findstring __znver4, $(ARCH_DEFINES)),)
     CXXFLAGS_NATIVE += -DSP_DISABLE_AVX512
@@ -154,6 +156,9 @@ avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,AVX2,avx2)
+
+no512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+	$(call build,NO512,no512)
 
 clean:
 

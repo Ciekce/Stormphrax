@@ -29,6 +29,8 @@
 #include "util/split.h"
 #endif
 
+#include <iostream>
+
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
@@ -39,6 +41,24 @@ auto main(i32 argc, const char *argv[]) -> i32
 	cuckoo::init();
 
 	eval::loadDefaultNetwork();
+
+#if SP_HAS_VNNI512
+	std::cout << "VNNI enabled" << std::endl;
+#else
+	std::cout << "VNNI disabled" << std::endl;
+#endif
+
+#if SP_HAS_AVX512
+	std::cout << "AVX-512 enabled" << std::endl;
+#else
+	std::cout << "AVX-512 disabled" << std::endl;
+#endif
+
+#if SP_HAS_AVX2
+	std::cout << "AVX2 enabled" << std::endl;
+#else
+	std::cout << "AVX2 disabled" << std::endl;
+#endif
 
 	if (argc > 1)
 	{
