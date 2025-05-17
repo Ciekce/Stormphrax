@@ -34,9 +34,7 @@ namespace stormphrax::eval
 	// pairwise clipped ReLU -> squared ReLU -> squared ReLU
 
 	constexpr u32 FtQBits = 8;
-
-	constexpr i32 FtQ = (1 << FtQBits) - 1;
-	constexpr i32 L1Q = 128;
+	constexpr u32 L1QBits = 7;
 
 	constexpr u32 FtScaleBits = 7;
 
@@ -64,5 +62,5 @@ namespace stormphrax::eval
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 
 	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSqrReLUSqrReLU<
-		L1Size, L2Size, L3Size, FtScaleBits, FtQ, L1Q, OutputBucketing, Scale>;
+		L1Size, L2Size, L3Size, FtScaleBits, FtQBits, L1QBits, OutputBucketing, Scale>;
 }

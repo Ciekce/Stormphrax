@@ -36,7 +36,7 @@ namespace stormphrax::eval::nnue::arch
 	// implements an (inputs->L1)x2->(L2->L3->1)xN network, with
 	// pairwise clipped ReLU on L1 and squared ReLU on later layers
 	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits,
-	    u32 FtQ, u32 L1Q, output::OutputBucketing OutputBucketing, i32 Scale>
+	    u32 FtQBits, u32 L1QBits, output::OutputBucketing OutputBucketing, i32 Scale>
 	struct PairwiseMultilayerCReLUSqrReLUSqrReLU
 	{
 		static_assert(L1Size % (util::simd::ChunkSize<i16>) == 0);
@@ -61,6 +61,8 @@ namespace stormphrax::eval::nnue::arch
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount>          l3Biases{};
 
+		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount *          L2Size> l1BiasesQ{};
+
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L2Size * L3Size> l2WeightsQ{};
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount *          L3Size> l2BiasesQ{};
 
@@ -81,7 +83,7 @@ namespace stormphrax::eval::nnue::arch
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
 			const auto zero_ = zero<i16>();
-			const auto one = set1<i16>(FtQ);
+			const auto one = set1<i16>((1 << FtQBits) - 1);
 
 			const auto activatePerspective = [&](
 				std::span<const i16, L1Size> inputs, u32 outputOffset)
@@ -136,14 +138,13 @@ namespace stormphrax::eval::nnue::arch
 		}
 
 		// Take activated feature transformer outputs, propagate L1, dequantise and activate
-		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<f32, L2Size> outputs) const
+		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2Size> outputs) const
 		{
 			using namespace util::simd;
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
-			const auto oneOverQuant = set1<f32>(
-				static_cast<f32>(1 << (16 - FtScaleBits)) / static_cast<f32>(FtQ * FtQ * L1Q));
+			static constexpr i32 Shift = 16 + QuantBits - FtScaleBits - FtQBits - FtQBits - L1QBits;
 
 			const auto weightOffset = bucket * L2Size * L1Size;
 			const auto biasOffset   = bucket * L2Size;
@@ -178,6 +179,9 @@ namespace stormphrax::eval::nnue::arch
 				}
 			}
 
+			// << (16 - FtScaleBits + QuantBits)
+			// >> (FtQBits + FtQBits + L1QBits)
+
 			for (u32 idx = 0; idx < L2Size; idx += ChunkSize<i32>)
 			{
 				const auto &v = intermediate[idx / ChunkSize<i32>];
@@ -186,48 +190,40 @@ namespace stormphrax::eval::nnue::arch
 				const auto halfSums_1 = add<i32>(v[2], v[3]);
 
 				const auto sums = add<i32>(halfSums_0, halfSums_1);
+				const auto biases = load<i32>(&l1BiasesQ[biasOffset + idx]);
 
-				const auto biases = load<f32>(&l1Biases[biasOffset + idx]);
+				auto out = shift<i32, Shift>(sums);
 
-				auto out = cast<i32, f32>(sums);
+				out = add<i32>(out, biases);
 
-				out = fma<f32>(out, oneOverQuant, biases);
+				out = max<i32>(out, zero<i32>());
+				out = mulLo<i32>(out, out);
 
-				out = max<f32>(out, zero<f32>());
-				out = mul<f32>(out, out);
-
-				store<f32>(&outputs[idx], out);
+				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
 			}
 		}
 
 		// Take activated L1 outputs and propagate L2
 		// Does not activate outputs
-		inline auto propagateL2(u32 bucket, std::span<const f32, L2Size> inputs, std::span<i32, L3Size> outputs) const
+		inline auto propagateL2(u32 bucket, std::span<const i32, L2Size> inputs, std::span<i32, L3Size> outputs) const
 		{
 			using namespace util::simd;
 
 			const auto weightOffset = bucket * L3Size * L2Size;
 			const auto biasOffset   = bucket * L3Size;
 
-			Array<i32, L3Size> inputsQ;
-
-			for (usize i = 0; i < L3Size; ++i)
-			{
-				inputsQ[i] = static_cast<i32>(inputs[i] * Q);
-			}
-
 			std::memcpy(outputs.data(), &l2BiasesQ[biasOffset], outputs.size_bytes());
 
 			// avx512
-			if constexpr (ChunkSize<f32> * 4 > L3Size)
+			if constexpr (ChunkSize<i32> * 4 > L3Size)
 			{
 				for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
-					const auto i = set1<i32>(inputsQ[inputIdx]);
+					const auto i = set1<i32>(inputs[inputIdx]);
 
-					for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<f32> * 2)
+					for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<i32> * 2)
 					{
 						const auto w_0 = load<i32>(&l2WeightsQ[weightsStart + outputIdx + ChunkSize<i32> * 0]);
 						const auto w_1 = load<i32>(&l2WeightsQ[weightsStart + outputIdx + ChunkSize<i32> * 1]);
@@ -252,7 +248,7 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
-					const auto i = set1<i32>(inputsQ[inputIdx]);
+					const auto i = set1<i32>(inputs[inputIdx]);
 
 					for (u32 outputIdx = 0; outputIdx < L3Size; outputIdx += ChunkSize<i32> * 4)
 					{
@@ -292,15 +288,15 @@ namespace stormphrax::eval::nnue::arch
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
 
-			Vector<f32> s;
+			Vector<i32> s;
 
 			// avx512
-			if constexpr (ChunkSize<f32> * 4 > L3Size)
+			if constexpr (ChunkSize<i32> * 4 > L3Size)
 			{
-				auto out_0 = zero<f32>();
-				auto out_1 = zero<f32>();
+				auto out_0 = zero<i32>();
+				auto out_1 = zero<i32>();
 
-				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<f32> * 2)
+				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<i32> * 2)
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
@@ -323,7 +319,7 @@ namespace stormphrax::eval::nnue::arch
 					out_1 = add<i32>(i_1, out_1);
 				}
 
-				s = add<f32>(out_0, out_1);
+				s = add<i32>(out_0, out_1);
 			}
 			else
 			{
@@ -389,7 +385,7 @@ namespace stormphrax::eval::nnue::arch
 			assert(isAligned(   outputs.data()));
 
 			Array< u8, L1Size> ftOut;
-			Array<f32, L2Size> l1Out;
+			Array<i32, L2Size> l1Out;
 			Array<i32, L3Size> l2Out;
 			Array<i32,      1> l3Out;
 
@@ -413,6 +409,16 @@ namespace stormphrax::eval::nnue::arch
 
 			if (!readSuccess)
 				return false;
+
+			for (auto &w : l1Weights)
+			{
+				w = static_cast<i8>(std::round(static_cast<f64>(w) * 256.0 / 255.0));
+			}
+
+			for (usize i = 0; i < l1Biases.size(); ++i)
+			{
+				l1BiasesQ[i] = static_cast<i32>(std::round(l1Biases[i] * Q));
+			}
 
 			for (usize i = 0; i < l2Weights.size(); ++i)
 			{

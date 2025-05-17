@@ -316,6 +316,16 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 		return impl::shiftRightI32(v, shift);
 	}
 
+	template <typename T, i32 Shift>
+	SP_ALWAYS_INLINE_NDEBUG inline auto shift(Vector<T> v)
+	{
+		if constexpr (Shift > 0)
+			return shiftLeft<T>(v, Shift);
+		else if constexpr (Shift < 0)
+			return shiftRight<T>(v, -Shift);
+		else return v;
+	}
+
 	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj(Vector<T> a, Vector<T> b) = delete;
 	template <>
