@@ -293,30 +293,33 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 0]);
-					auto i_1 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 1]);
+					auto i_0 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 0]);
+					auto i_1 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 1]);
 
-					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
-					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
+					const auto w_0 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 0]);
+					const auto w_1 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 1]);
 
-					i_0 = max<f32>(i_0, zero<f32>());
-					i_1 = max<f32>(i_1, zero<f32>());
+					i_0 = max<i32>(i_0, zero<i32>());
+					i_1 = max<i32>(i_1, zero<i32>());
 
-					i_0 = mul<f32>(i_0, i_0);
-					i_1 = mul<f32>(i_1, i_1);
+					i_0 = mulLo<i32>(i_0, i_0);
+					i_1 = mulLo<i32>(i_1, i_1);
 
-					out_0 = fma<f32>(i_0, w_0, out_0);
-					out_1 = fma<f32>(i_1, w_1, out_1);
+					i_0 = mulLo<i32>(i_0, w_0);
+					i_1 = mulLo<i32>(i_1, w_1);
+
+					out_0 = add<i32>(i_0, out_0);
+					out_1 = add<i32>(i_1, out_1);
 				}
 
 				s = add<f32>(out_0, out_1);
 			}
 			else
 			{
-				auto l3Out_0 = zero<i32>();
-				auto l3Out_1 = zero<i32>();
-				auto l3Out_2 = zero<i32>();
-				auto l3Out_3 = zero<i32>();
+				auto out_0 = zero<i32>();
+				auto out_1 = zero<i32>();
+				auto out_2 = zero<i32>();
+				auto out_3 = zero<i32>();
 
 				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<i32> * 4)
 				{
@@ -347,14 +350,14 @@ namespace stormphrax::eval::nnue::arch
 					i_2 = mulLo<i32>(i_2, w_2);
 					i_3 = mulLo<i32>(i_3, w_3);
 
-					l3Out_0 = add<i32>(i_0, l3Out_0);
-					l3Out_1 = add<i32>(i_1, l3Out_1);
-					l3Out_2 = add<i32>(i_2, l3Out_2);
-					l3Out_3 = add<i32>(i_3, l3Out_3);
+					out_0 = add<i32>(i_0, out_0);
+					out_1 = add<i32>(i_1, out_1);
+					out_2 = add<i32>(i_2, out_2);
+					out_3 = add<i32>(i_3, out_3);
 				}
 
-				const auto s0 = add<i32>(l3Out_0, l3Out_1);
-				const auto s1 = add<i32>(l3Out_2, l3Out_3);
+				const auto s0 = add<i32>(out_0, out_1);
+				const auto s1 = add<i32>(out_2, out_3);
 
 				s = add<i32>(s0, s1);
 			}
