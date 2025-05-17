@@ -36,9 +36,8 @@ namespace stormphrax::eval::nnue::arch
 	// implements an (inputs->L1)x2->(L2->L3->1)xN network, with
 	// pairwise clipped ReLU on L1 and squared ReLU on later layers
 	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits,
-	    u32 FtQ, u32 L1Q, typename L2Activation, typename L3Activation,
-		output::OutputBucketing OutputBucketing, i32 Scale>
-	struct PairwiseMultilayerCReLU
+	    u32 FtQ, u32 L1Q, output::OutputBucketing OutputBucketing, i32 Scale>
+	struct PairwiseMultilayerCReLUSqrReLUSqrReLU
 	{
 		static_assert(L1Size % (util::simd::ChunkSize<i16>) == 0);
 		static_assert(L2Size % 16 == 0);
@@ -61,6 +60,12 @@ namespace stormphrax::eval::nnue::arch
 
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<f32, OutputBucketCount>          l3Biases{};
+
+		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L3Size> l3WeightsQ{};
+		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount>          l3BiasesQ{};
+
+		static constexpr i32 QuantBits = 6;
+		static constexpr i32 Q = 1 << QuantBits;
 
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
 			std::span<const i16, L1Size> nstmInputs,
@@ -184,7 +189,9 @@ namespace stormphrax::eval::nnue::arch
 				auto out = cast<i32, f32>(sums);
 
 				out = fma<f32>(out, oneOverQuant, biases);
-				out = L2Activation::template activate<f32>(out);
+
+				out = max<f32>(out, zero<f32>());
+				out = mul<f32>(out, out);
 
 				store<f32>(&outputs[idx], out);
 			}
@@ -260,12 +267,19 @@ namespace stormphrax::eval::nnue::arch
 			}
 		}
 
-		inline auto propagateL3(u32 bucket, std::span<const f32, L3Size> inputs, std::span<f32, 1> outputs) const
+		inline auto propagateL3(u32 bucket, std::span<const f32, L3Size> inputs, std::span<i32, 1> outputs) const
 		{
 			using namespace util::simd;
 
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
+
+			Array<i32, L3Size> inputsQ;
+
+			for (usize i = 0; i < L3Size; ++i)
+			{
+				inputsQ[i] = static_cast<i32>(inputs[i] * (1 << QuantBits));
+			}
 
 			Vector<f32> s;
 
@@ -285,8 +299,11 @@ namespace stormphrax::eval::nnue::arch
 					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
 					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
 
-					i_0 = L3Activation::template activate<f32>(i_0);
-					i_1 = L3Activation::template activate<f32>(i_1);
+					i_0 = max<f32>(i_0, zero<f32>());
+					i_1 = max<f32>(i_1, zero<f32>());
+
+					i_0 = mul<f32>(i_0, i_0);
+					i_1 = mul<f32>(i_1, i_1);
 
 					out_0 = fma<f32>(i_0, w_0, out_0);
 					out_1 = fma<f32>(i_1, w_1, out_1);
@@ -296,43 +313,53 @@ namespace stormphrax::eval::nnue::arch
 			}
 			else
 			{
-				auto l3Out_0 = zero<f32>();
-				auto l3Out_1 = zero<f32>();
-				auto l3Out_2 = zero<f32>();
-				auto l3Out_3 = zero<f32>();
+				auto l3Out_0 = zero<i32>();
+				auto l3Out_1 = zero<i32>();
+				auto l3Out_2 = zero<i32>();
+				auto l3Out_3 = zero<i32>();
 
-				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<f32> * 4)
+				for (u32 inputIdx = 0; inputIdx < L3Size; inputIdx += ChunkSize<i32> * 4)
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 0]);
-					auto i_1 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 1]);
-					auto i_2 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 2]);
-					auto i_3 = load<f32>(&inputs[inputIdx + ChunkSize<f32> * 3]);
+					auto i_0 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 0]);
+					auto i_1 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 1]);
+					auto i_2 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 2]);
+					auto i_3 = load<i32>(&inputsQ[inputIdx + ChunkSize<i32> * 3]);
 
-					const auto w_0 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 0]);
-					const auto w_1 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 1]);
-					const auto w_2 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 2]);
-					const auto w_3 = load<f32>(&l3Weights[weightIdx + ChunkSize<f32> * 3]);
+					const auto w_0 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 0]);
+					const auto w_1 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 1]);
+					const auto w_2 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 2]);
+					const auto w_3 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 3]);
 
-					i_0 = L3Activation::template activate<f32>(i_0);
-					i_1 = L3Activation::template activate<f32>(i_1);
-					i_2 = L3Activation::template activate<f32>(i_2);
-					i_3 = L3Activation::template activate<f32>(i_3);
+					i_0 = max<i32>(i_0, zero<i32>());
+					i_1 = max<i32>(i_1, zero<i32>());
+					i_2 = max<i32>(i_2, zero<i32>());
+					i_3 = max<i32>(i_3, zero<i32>());
 
-					l3Out_0 = fma<f32>(i_0, w_0, l3Out_0);
-					l3Out_1 = fma<f32>(i_1, w_1, l3Out_1);
-					l3Out_2 = fma<f32>(i_2, w_2, l3Out_2);
-					l3Out_3 = fma<f32>(i_3, w_3, l3Out_3);
+					i_0 = mulLo<i32>(i_0, i_0);
+					i_1 = mulLo<i32>(i_1, i_1);
+					i_2 = mulLo<i32>(i_2, i_2);
+					i_3 = mulLo<i32>(i_3, i_3);
+
+					i_0 = mulLo<i32>(i_0, w_0);
+					i_1 = mulLo<i32>(i_1, w_1);
+					i_2 = mulLo<i32>(i_2, w_2);
+					i_3 = mulLo<i32>(i_3, w_3);
+
+					l3Out_0 = add<i32>(i_0, l3Out_0);
+					l3Out_1 = add<i32>(i_1, l3Out_1);
+					l3Out_2 = add<i32>(i_2, l3Out_2);
+					l3Out_3 = add<i32>(i_3, l3Out_3);
 				}
 
-				const auto s0 = add<f32>(l3Out_0, l3Out_1);
-				const auto s1 = add<f32>(l3Out_2, l3Out_3);
+				const auto s0 = add<i32>(l3Out_0, l3Out_1);
+				const auto s1 = add<i32>(l3Out_2, l3Out_3);
 
-				s = add<f32>(s0, s1);
+				s = add<i32>(s0, s1);
 			}
 
-			outputs[0] = l3Biases[biasOffset] + hsum<f32>(s);
+			outputs[0] = (l3BiasesQ[biasOffset] + hsum<i32>(s)) / Q;
 		}
 
 	public:
@@ -350,24 +377,40 @@ namespace stormphrax::eval::nnue::arch
 			Array< u8, L1Size> ftOut;
 			Array<f32, L2Size> l1Out;
 			Array<f32, L3Size> l2Out;
-			Array<f32,      1> l3Out;
+			Array<i32,      1> l3Out;
 
 			activateFt(stmInputs, nstmInputs, ftOut);
 			propagateL1(bucket, ftOut, l1Out);
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
-			outputs[0] = static_cast<i32>(l3Out[0] * Scale);
+			outputs[0] = l3Out[0] * Scale / (Q * Q);
 		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
 		{
-			return stream.read(l1Weights)
+			const auto readSuccess
+				 = stream.read(l1Weights)
 				&& stream.read(l1Biases)
 				&& stream.read(l2Weights)
 				&& stream.read(l2Biases)
 				&& stream.read(l3Weights)
 				&& stream.read(l3Biases);
+
+			if (!readSuccess)
+				return false;
+
+			for (usize i = 0; i < l3Weights.size(); ++i)
+			{
+				l3WeightsQ[i] = static_cast<i32>(std::round(l3Weights[i] * Q));
+			}
+
+			for (usize i = 0; i < l3Biases.size(); ++i)
+			{
+				l3BiasesQ[i] = static_cast<i32>(std::round(l3Biases[i] * Q * Q));
+			}
+
+			return true;
 		}
 
 		inline auto writeTo(IParamStream &stream) const -> bool

@@ -304,6 +304,19 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	}
 
 	template <typename T>
+	SP_ALWAYS_INLINE_NDEBUG inline auto shiftRight(Vector<T> v, i32 shift) = delete;
+	template <>
+	SP_ALWAYS_INLINE_NDEBUG inline auto shiftRight<i16>(Vector<i16> v, i32 shift)
+	{
+		return impl::shiftRightI16(v, shift);
+	}
+	template <>
+	SP_ALWAYS_INLINE_NDEBUG inline auto shiftRight<i32>(Vector<i32> v, i32 shift)
+	{
+		return impl::shiftRightI32(v, shift);
+	}
+
+	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj(Vector<T> a, Vector<T> b) = delete;
 	template <>
 	SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdj<i16>(Vector<i16> a, Vector<i16> b)
