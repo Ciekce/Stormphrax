@@ -207,6 +207,11 @@ namespace stormphrax::util::simd
 			return _mm512_slli_epi16(v, shift);
 		}
 
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI16(VectorI16 v, i32 shift) -> VectorI16
+		{
+			return _mm512_srai_epi16(v, shift);
+		}
+
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjI16(VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			return _mm512_madd_epi16(a, b);
@@ -275,6 +280,11 @@ namespace stormphrax::util::simd
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI32(VectorI32 v, i32 shift) -> VectorI32
 		{
 			return _mm512_slli_epi32(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI32(VectorI32 v, i32 shift) -> VectorI32
+		{
+			return _mm512_srai_epi32(v, shift);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI32(VectorI32 a, VectorI32 b) -> VectorU16
