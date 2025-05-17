@@ -29,20 +29,55 @@ namespace stormphrax::stats
 	{
 		constexpr usize Slots = 32;
 
-		util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
+		struct Range
+		{
+			std::atomic<i64> min{std::numeric_limits<i64>::max()};
+			std::atomic<i64> max{std::numeric_limits<i64>::min()};
+		};
 
-		std::atomic_bool s_anyUsed{};
+		util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
+		util::MultiArray<Range, Slots> s_ranges{};
+
+		std::atomic_bool s_anyUsed{false};
+
+		template <typename T>
+		inline auto atomicMin(std::atomic<T> &v, T x)
+		{
+			auto curr = v.load();
+			while (x < curr && v.compare_exchange_weak(curr, x)) {}
+		}
+
+		template <typename T>
+		inline auto atomicMax(std::atomic<T> &v, T x)
+		{
+			auto curr = v.load();
+			while (x > curr && v.compare_exchange_weak(curr, x)) {}
+		}
 	}
 
 	auto conditionHit(bool condition, usize slot) -> void
 	{
 		if (slot >= Slots)
 		{
-			std::cerr << "tried to hit stat " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+			std::cerr << "tried to hit condition " << slot << " (max " << (Slots - 1) << ")" << std::endl;
 			return;
 		}
 
 		++s_conditionHits[slot][condition];
+
+		s_anyUsed = true;
+	}
+
+	auto range(i64 v, usize slot) -> void
+	{
+		if (slot >= Slots)
+		{
+			std::cerr << "tried to hit range " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+			return;
+		}
+
+		atomicMin(s_ranges[slot].min, v);
+		atomicMax(s_ranges[slot].max, v);
 
 		s_anyUsed = true;
 	}
@@ -62,10 +97,23 @@ namespace stormphrax::stats
 
 			const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
 
-			std::cout << "stat " << slot << ":\n";
+			std::cout << "condition " << slot << ":\n";
 			std::cout << "    hits: " << hits << "\n";
 			std::cout << "    misses: " << misses << "\n";
 			std::cout << "    hitrate: " << (hitrate * 100) << "%" << std::endl;
+		}
+
+		for (usize slot = 0; slot < Slots; ++slot)
+		{
+			const auto min = s_ranges[slot].min.load();
+			const auto max = s_ranges[slot].max.load();
+
+			if (min == std::numeric_limits<i64>::max())
+				continue;
+
+			std::cout << "range " << slot << ":\n";
+			std::cout << "    min: " << min << "\n";
+			std::cout << "    max: " << max << std::endl;
 		}
 	}
 }
