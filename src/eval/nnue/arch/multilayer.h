@@ -61,7 +61,7 @@ namespace stormphrax::eval::nnue::arch
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount>          l3Biases{};
 
-		static constexpr i32 QuantBits = 6;
+		static constexpr i32 QuantBits = 7;
 		static constexpr i32 Q = 1 << QuantBits;
 
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
