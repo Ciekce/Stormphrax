@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <atomic>
+#include <limits>
 
 #include "util/multi_array.h"
 
