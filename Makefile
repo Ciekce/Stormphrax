@@ -1,5 +1,16 @@
+ifeq ($(OS), Windows_NT)
+    DETECTED_OS := Windows
+else
+    DETECTED_OS := $(shell uname -s)
+endif
+
+ifeq ($(DETECTED_OS),Darwin)
+VERSION := $(shell cat version.txt)
+DEFAULT_NET := $(shell cat network.txt)
+else
 VERSION := $(file < version.txt)
 DEFAULT_NET := $(file < network.txt)
+endif
 
 ifndef EXE
     EXE = stormphrax-$(VERSION)
@@ -44,14 +55,12 @@ ifeq (, $(findstring clang,$(COMPILER_VERSION)))
     endif
 endif
 
-ifeq ($(OS), Windows_NT)
-    DETECTED_OS := Windows
+ifeq ($(DETECTED_OS), Windows)
     SUFFIX := .exe
     # for fathom
     CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
     RM := del
 else
-    DETECTED_OS := $(shell uname -s)
     SUFFIX :=
     LDFLAGS += -pthread
     # don't ask
