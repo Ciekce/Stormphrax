@@ -494,6 +494,7 @@ namespace stormphrax::search
 			finalReport(thread, pv, depthCompleted, time, score);
 
 			m_ttable.age();
+			stats::print();
 
 			m_searching.store(false, std::memory_order::relaxed);
 		}
