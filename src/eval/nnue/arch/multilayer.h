@@ -64,6 +64,16 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr i32 QuantBits = 7;
 		static constexpr i32 Q = 1 << QuantBits;
 
+		static inline auto dequant(util::simd::VectorI32 vec)
+		{
+			using namespace util::simd;
+
+			vec = add<i32>(vec, set1<i32>(Q / 2));
+			vec = shiftRight<i32>(vec, QuantBits);
+
+			return vec;
+		}
+
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
 			std::span<const i16, L1Size> nstmInputs,
 			std::span<u8, L1Size> outputs) const
@@ -191,7 +201,7 @@ namespace stormphrax::eval::nnue::arch
 				out = max<i32>(out, zero<i32>());
 				out = mulLo<i32>(out, out);
 
-				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
+				store<i32>(&outputs[idx], dequant(out));
 			}
 		}
 
@@ -292,8 +302,8 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
+					auto i_0 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]));
+					auto i_1 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]));
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
@@ -324,10 +334,10 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
-					auto i_2 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]), QuantBits);
-					auto i_3 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]), QuantBits);
+					auto i_0 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]));
+					auto i_1 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]));
+					auto i_2 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]));
+					auto i_3 = dequant(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]));
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
