@@ -51,12 +51,6 @@ namespace stormphrax::eval::nnue
 			return readI32s(dst);
 		}
 
-		template <>
-		inline auto read<f32>(std::span<f32> dst) -> bool
-		{
-			return readF32s(dst);
-		}
-
 		template <typename T, usize Size>
 		inline auto read(std::array<T, Size> &dst)
 		{
@@ -76,12 +70,6 @@ namespace stormphrax::eval::nnue
 		inline auto write<i16>(std::span<const i16> src) -> bool
 		{
 			return writeI16s(src);
-		}
-
-		template <>
-		inline auto write<f32>(std::span<const f32> src) -> bool
-		{
-			return writeF32s(src);
 		}
 
 		template <>
@@ -105,8 +93,5 @@ namespace stormphrax::eval::nnue
 
 		virtual auto readI32s(std::span<i32> dst) -> bool = 0;
 		virtual auto writeI32s(std::span<const i32> src) -> bool = 0;
-
-		virtual auto readF32s(std::span<f32> dst) -> bool = 0;
-		virtual auto writeF32s(std::span<const f32> src) -> bool = 0;
 	};
 }

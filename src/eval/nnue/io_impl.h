@@ -77,16 +77,6 @@ namespace stormphrax::eval::nnue
 			return write(reinterpret_cast<const std::byte *>(src.data()), src.size_bytes());
 		}
 
-		inline auto readF32s(std::span<f32> dst) -> bool final
-		{
-			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
-		}
-
-		inline auto writeF32s(std::span<const f32> src) -> bool final
-		{
-			return write(reinterpret_cast<const std::byte *>(src.data()), src.size_bytes());
-		}
-
 	private:
 		std::variant<std::istream *, std::ostream *> m_stream;
 
@@ -172,17 +162,6 @@ namespace stormphrax::eval::nnue
 		inline auto writeI32s(std::span<const i32> src) -> bool final
 		{
 			std::cerr << "ZstdParamStream::writeI32s" << std::endl;
-			std::terminate();
-		}
-
-		inline auto readF32s(std::span<f32> dst) -> bool final
-		{
-			return read(reinterpret_cast<std::byte *>(dst.data()), dst.size_bytes());
-		}
-
-		inline auto writeF32s(std::span<const f32> src) -> bool final
-		{
-			std::cerr << "ZstdParamStream::writeF32s" << std::endl;
 			std::terminate();
 		}
 
