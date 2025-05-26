@@ -54,12 +54,6 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<T>(sum, products, inputs2);
 		}
 
-		template <std::floating_point T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activate(util::simd::Vector<T> inputs)
-		{
-			return inputs;
-		}
-
 		template <typename OutputType>
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
 		{
@@ -93,14 +87,6 @@ namespace stormphrax::eval::nnue::activation
 
 			const auto products = mulLo<T>(activated1, weights);
 			return mulAddAdjAcc<T>(sum, products, activated2);
-		}
-
-		template <std::floating_point T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activate(util::simd::Vector<T> inputs)
-		{
-			using namespace util::simd;
-
-			return max<T>(inputs, zero<T>());
 		}
 
 		template <typename T>
@@ -142,15 +128,6 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<T>(sum, clipped2, products);
 		}
 
-		template <std::floating_point T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activate(util::simd::Vector<T> inputs)
-		{
-			using namespace util::simd;
-
-			static const auto max = set1(T{1.0});
-			return clamp<T>(inputs, zero<T>(), max);
-		}
-
 		template <typename T>
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value)
 		{
@@ -175,35 +152,10 @@ namespace stormphrax::eval::nnue::activation
 			return mulAddAdjAcc<T>(sum, crelu, clipped);
 		}
 
-		template <std::floating_point T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activate(util::simd::Vector<T> inputs)
-		{
-			using namespace util::simd;
-
-			static const auto max = set1(T{1.0});
-
-			const auto clipped = clamp<T>(inputs, zero<T>(), max);
-			return mul<T>(clipped, clipped);
-		}
-
 		template <typename T, T Max>
 		SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value)
 		{
 			return value / Max;
-		}
-	};
-
-	struct [[maybe_unused]] SquaredReLU
-	{
-		static constexpr u8 Id = 6;
-
-		template <std::floating_point T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activate(util::simd::Vector<T> inputs)
-		{
-			using namespace util::simd;
-
-			const auto clipped = max<T>(inputs, zero<T>());
-			return mul<T>(clipped, clipped);
 		}
 	};
 }
