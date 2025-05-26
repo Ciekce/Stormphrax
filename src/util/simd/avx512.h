@@ -36,8 +36,6 @@ namespace stormphrax::util::simd
 	using VectorI16 = __m512i;
 	using VectorI32 = __m512i;
 
-	using VectorF32 = __m512;
-
 	constexpr std::uintptr_t Alignment = sizeof(__m512i);
 
 	constexpr bool PackNonSequential = true;
@@ -319,77 +317,6 @@ namespace stormphrax::util::simd
 			const auto products = mulAddAdjI16(a, b);
 			return addI32(sum, products);
 #endif
-		}
-
-		// ================================ f32 ================================
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto zeroF32() -> VectorF32
-		{
-			return _mm512_setzero_ps();
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto set1F32(f32 v) -> VectorF32
-		{
-			return _mm512_set1_ps(v);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto loadF32(const void *ptr) -> VectorF32
-		{
-			assert(isAligned<Alignment>(ptr));
-			return _mm512_load_ps(ptr);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto storeF32(void *ptr, VectorF32 v)
-		{
-			assert(isAligned<Alignment>(ptr));
-			_mm512_store_ps(ptr, v);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto minF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm512_min_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto maxF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm512_max_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto clampF32(
-			VectorF32 v, VectorF32 min, VectorF32 max) -> VectorF32
-		{
-			return minF32(maxF32(v, min), max);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto addF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm512_add_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto subF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm512_sub_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm512_mul_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto fmaF32(VectorF32 a, VectorF32 b, VectorF32 c) -> VectorF32
-		{
-			return _mm512_fmadd_ps(a, b, c);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32(VectorF32 v) -> f32
-		{
-			// see comment in hsumI32
-			return _mm512_reduce_add_ps(v);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto castI32F32(VectorI32 v) -> VectorF32
-		{
-			return _mm512_cvtepi32_ps(v);
 		}
 	}
 }

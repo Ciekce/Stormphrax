@@ -36,8 +36,6 @@ namespace stormphrax::util::simd
 	using VectorI16 = __m256i;
 	using VectorI32 = __m256i;
 
-	using VectorF32 = __m256;
-
 	constexpr std::uintptr_t Alignment = sizeof(__m256i);
 
 	constexpr bool PackNonSequential = true;
@@ -324,87 +322,6 @@ namespace stormphrax::util::simd
 		{
 			const auto products = mulAddAdjI16(a, b);
 			return addI32(sum, products);
-		}
-
-		// ================================ f32 ================================
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto zeroF32() -> VectorF32
-		{
-			return _mm256_setzero_si256();
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto set1F32(f32 v) -> VectorF32
-		{
-			return _mm256_set1_ps(v);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto loadF32(const void *ptr) -> VectorF32
-		{
-			assert(isAligned<Alignment>(ptr));
-			return _mm256_load_ps(static_cast<const f32 *>(ptr));
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto storeF32(void *ptr, VectorF32 v)
-		{
-			assert(isAligned<Alignment>(ptr));
-			_mm256_store_ps(static_cast<f32 *>(ptr), v);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto minF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm256_min_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto maxF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm256_max_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto clampF32(
-			VectorF32 v, VectorF32 min, VectorF32 max) -> VectorF32
-		{
-			return minF32(maxF32(v, min), max);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto addF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm256_add_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto subF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm256_sub_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulF32(VectorF32 a, VectorF32 b) -> VectorF32
-		{
-			return _mm256_mul_ps(a, b);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto fmaF32(VectorF32 a, VectorF32 b, VectorF32 c) -> VectorF32
-		{
-			return _mm256_fmadd_ps(a, b, c);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto hsumF32(VectorF32 v) -> f32
-		{
-			const auto high128 = _mm256_extractf128_ps(v, 1);
-			const auto low128 = _mm256_castps256_ps128(v);
-
-			const auto sum128 = _mm_add_ps(high128, low128);
-
-			const auto high64 = _mm_movehl_ps(sum128, sum128);
-			const auto sum64 = _mm_add_ps(sum128, high64);
-
-			const auto high32 = _mm_shuffle_ps(sum64, sum64, _MM_SHUFFLE(0, 0, 0, 1));
-			const auto sum32 = _mm_add_ss(sum64, high32);
-
-			return _mm_cvtss_f32(sum32);
-		}
-
-		SP_ALWAYS_INLINE_NDEBUG inline auto castI32F32(VectorI32 v) -> VectorF32
-		{
-			return _mm256_cvtepi32_ps(v);
 		}
 	}
 }

@@ -74,12 +74,6 @@ namespace stormphrax::util::simd
 		using Type = VectorI32;
 	};
 
-	template <>
-	struct VectorImpl<f32>
-	{
-		using Type = VectorF32;
-	};
-
 	template <typename T>
 	using Vector = typename VectorImpl<T>::Type;
 	template <typename T>
@@ -95,12 +89,6 @@ namespace stormphrax::util::simd
 	struct PromotedVectorImpl<i16>
 	{
 		using Type = VectorI32;
-	};
-
-	template <>
-	struct PromotedVectorImpl<f32>
-	{
-		using Type = VectorF32;
 	};
 
 	template <typename T>
@@ -147,11 +135,6 @@ namespace stormphrax::util::simd
 	SP_ALWAYS_INLINE_NDEBUG inline auto Name<i32>() \
 	{ \
 		return impl::Name##I32(); \
-	} \
-	template <> \
-	SP_ALWAYS_INLINE_NDEBUG inline auto Name<f32>() \
-	{ \
-		return impl::Name##F32(); \
 	}
 
 #define SP_SIMD_OP_1_VALUE(Name, Arg0) \
@@ -171,11 +154,6 @@ namespace stormphrax::util::simd
 	SP_ALWAYS_INLINE_NDEBUG inline auto Name<i32>(i32 Arg0) \
 	{ \
 		return impl::Name##I32(Arg0); \
-	} \
-	template <> \
-	SP_ALWAYS_INLINE_NDEBUG inline auto Name<f32>(f32 Arg0) \
-	{ \
-		return impl::Name##F32(Arg0); \
 	}
 
 #define SP_SIMD_OP_2_VECTORS(Name, Arg0, Arg1) \
@@ -195,11 +173,6 @@ namespace stormphrax::util::simd
 	SP_ALWAYS_INLINE_NDEBUG inline auto Name<i32>(Vector<i32> Arg0, Vector<i32> Arg1) \
 	{ \
 		return impl::Name##I32(Arg0, Arg1); \
-	} \
-	template <> \
-	SP_ALWAYS_INLINE_NDEBUG inline auto Name<f32>(Vector<f32> Arg0, Vector<f32> Arg1) \
-	{ \
-		return impl::Name##F32(Arg0, Arg1); \
 	}
 
 #define SP_SIMD_OP_3_VECTORS(Name, Arg0, Arg1, Arg2) \
@@ -219,11 +192,6 @@ namespace stormphrax::util::simd
 	SP_ALWAYS_INLINE_NDEBUG inline auto Name<i32>(Vector<i32> Arg0, Vector<i32> Arg1, Vector<i32> Arg2) \
 	{ \
 		return impl::Name##I32(Arg0, Arg1, Arg2); \
-	} \
-	template <> \
-	SP_ALWAYS_INLINE_NDEBUG inline auto Name<f32>(Vector<f32> Arg0, Vector<f32> Arg1, Vector<f32> Arg2) \
-	{ \
-		return impl::Name##F32(Arg0, Arg1, Arg2); \
 	}
 
 SP_SIMD_OP_0(zero)
@@ -251,11 +219,6 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	{
 		return impl::loadI32(ptr);
 	}
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto load<f32>(const void *ptr)
-	{
-		return impl::loadF32(ptr);
-	}
 
 	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto store(void *ptr, Vector<T> v) = delete;
@@ -278,11 +241,6 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	SP_ALWAYS_INLINE_NDEBUG inline auto store<i32>(void *ptr, Vector<i32> v)
 	{
 		impl::storeI32(ptr, v);
-	}
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto store<f32>(void *ptr, Vector<f32> v)
-	{
-		impl::storeF32(ptr, v);
 	}
 
 	template <typename T>
@@ -356,14 +314,6 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	}
 
 	template <typename T>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mul(Vector<T> a, Vector<T> b) = delete;
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mul<f32>(Vector<f32> a, Vector<f32> b)
-	{
-		return impl::mulF32(a, b);
-	}
-
-	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto packUnsigned(Vector<T> a, Vector<T> b) = delete;
 	template <>
 	SP_ALWAYS_INLINE_NDEBUG inline auto packUnsigned<i16>(Vector<i16> a, Vector<i16> b)
@@ -385,32 +335,11 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	}
 
 	template <typename T>
-	SP_ALWAYS_INLINE_NDEBUG inline auto fma(Vector<T> a, Vector<T> b, Vector<T> c) = delete;
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto fma<f32>(Vector<f32> a, Vector<f32> b, Vector<f32> c)
-	{
-		return impl::fmaF32(a, b, c);
-	}
-
-	template <typename T>
 	SP_ALWAYS_INLINE_NDEBUG inline auto hsum(Vector<T> v) = delete;
 	template <>
 	SP_ALWAYS_INLINE_NDEBUG inline auto hsum<i32>(Vector<i32> v)
 	{
 		return impl::hsumI32(v);
-	}
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto hsum<f32>(Vector<f32> v)
-	{
-		return impl::hsumF32(v);
-	}
-
-	template <typename F, typename T>
-	SP_ALWAYS_INLINE_NDEBUG inline auto cast(Vector<F> v) = delete;
-	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto cast<i32, f32>(Vector<i32> v)
-	{
-		return impl::castI32F32(v);
 	}
 
 	template <typename T>
