@@ -188,7 +188,7 @@ namespace stormphrax::eval::nnue::arch
 
 				out = add<i32>(out, biases);
 
-				out = max<i32>(out, zero<i32>());
+				out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
 				out = mulLo<i32>(out, out);
 
 				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
