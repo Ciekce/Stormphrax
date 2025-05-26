@@ -191,7 +191,7 @@ namespace stormphrax::eval::nnue::arch
 				out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
 				out = mulLo<i32>(out, out);
 
-				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
+				store<i32>(&outputs[idx], out);
 			}
 		}
 
@@ -292,8 +292,8 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
+					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits * 2);
+					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits * 2);
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
@@ -324,10 +324,10 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
-					auto i_2 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]), QuantBits);
-					auto i_3 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]), QuantBits);
+					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits * 2);
+					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits * 2);
+					auto i_2 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]), QuantBits * 2);
+					auto i_3 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]), QuantBits * 2);
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
