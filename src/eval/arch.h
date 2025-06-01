@@ -43,13 +43,13 @@ namespace stormphrax::eval
 	constexpr u32 L3Size = 32;
 
 	using L1Activation = nnue::activation::ClippedReLU;
-	using L2Activation = nnue::activation::SquaredReLU;
-	using L3Activation = nnue::activation::SquaredReLU;
+	using L2Activation = nnue::activation::SquaredClippedReLU;
+	using L3Activation = nnue::activation::ClippedReLU;
 
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
+	using InputFeatureSet = nnue::features::KingBucketsMirrored<
 		nnue::features::MirroredKingSide::Abcd,
 		 0,  1,  2,  3,
 		 4,  5,  6,  7,
