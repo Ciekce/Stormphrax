@@ -181,7 +181,11 @@ namespace stormphrax
 			|| newKey != entry.key
 			|| entry.age() != m_age
 			|| depth + 4 + pv * 2 > entry.depth))
+		{
+			if (entry.depth >= 5 && entry.flag() != TtFlag::Exact)
+				--entryPtr->depth;
 			return;
+		}
 
 		if (move || entry.key != newKey)
 			entry.move = move;
