@@ -21,6 +21,7 @@
 #include <iostream>
 #include <atomic>
 #include <limits>
+#include <utility>
 
 #include "util/multi_array.h"
 
@@ -38,6 +39,7 @@ namespace stormphrax::stats
 
 		util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
 		util::MultiArray<Range, Slots> s_ranges{};
+		util::MultiArray<std::pair<std::atomic<i64>, std::atomic<u64>>, Slots> s_means{};
 
 		std::atomic_bool s_anyUsed{false};
 
@@ -83,6 +85,20 @@ namespace stormphrax::stats
 		s_anyUsed = true;
 	}
 
+	auto mean(i64 v, usize slot) -> void
+	{
+		if (slot >= Slots)
+		{
+			std::cerr << "tried to hit mean " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+			return;
+		}
+
+		s_means[slot].first += v;
+		++s_means[slot].second;
+
+		s_anyUsed = true;
+	}
+
 	auto print() -> void
 	{
 		if (!s_anyUsed.load())
@@ -115,6 +131,22 @@ namespace stormphrax::stats
 			std::cout << "range " << slot << ":\n";
 			std::cout << "    min: " << min << "\n";
 			std::cout << "    max: " << max << std::endl;
+		}
+
+		for (usize slot = 0; slot < Slots; ++slot)
+		{
+			const auto total = s_means[slot].first.load();
+			const auto count = s_means[slot].second.load();
+
+			if (count == 0)
+				continue;
+
+			const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
+
+			std::cout << "mean " << slot << ":\n";
+			std::cout << "    mean: " << mean << "\n";
+			std::cout << "    total: " << total << "\n";
+			std::cout << "    count: " << count << std::endl;
 		}
 	}
 }

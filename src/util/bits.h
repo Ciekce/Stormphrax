@@ -25,7 +25,7 @@
 
 #include "../arch.h"
 
-#ifdef SP_HAS_BMI2
+#if SP_HAS_BMI2
 #include <immintrin.h>
 #endif
 
