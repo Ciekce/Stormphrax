@@ -72,6 +72,102 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr i32 QuantBits = 6;
 		static constexpr i32 Q = 1 << QuantBits;
 
+		static auto checkAdd(util::simd::VectorI32 x, util::simd::VectorI32 y)
+		{
+			using namespace util::simd;
+
+			Array<i32, ChunkSize<i32>> xv{};
+			Array<i32, ChunkSize<i32>> yv{};
+
+			store<i32>(xv.data(), x);
+			store<i32>(yv.data(), y);
+
+			for (usize i = 0; i < ChunkSize<i32>; ++i)
+			{
+				const auto sum = static_cast<i64>(xv[i]) + static_cast<i64>(yv[i]);
+
+				if (sum < std::numeric_limits<i32>::min()
+					|| sum > std::numeric_limits<i32>::max())
+				{
+					std::cout << "vector add overflowed" << std::endl;
+					std::terminate();
+				}
+			}
+		}
+
+		static auto checkMul(util::simd::VectorI32 x, util::simd::VectorI32 y)
+		{
+			using namespace util::simd;
+
+			Array<i32, ChunkSize<i32>> xv{};
+			Array<i32, ChunkSize<i32>> yv{};
+
+			store<i32>(xv.data(), x);
+			store<i32>(yv.data(), y);
+
+			for (usize i = 0; i < ChunkSize<i32>; ++i)
+			{
+				const auto product = static_cast<i64>(xv[i]) * static_cast<i64>(yv[i]);
+
+				if (product < std::numeric_limits<i32>::min()
+					|| product > std::numeric_limits<i32>::max())
+				{
+					std::cout << "vector mul overflowed" << std::endl;
+					std::terminate();
+				}
+			}
+		}
+
+		static auto checkAdd(i32 x, i32 y)
+		{
+			using namespace util::simd;
+
+			const auto sum = static_cast<i64>(x) + static_cast<i64>(y);
+
+			if (sum < std::numeric_limits<i32>::min()
+				|| sum > std::numeric_limits<i32>::max())
+			{
+				std::cout << "scalar add overflowed" << std::endl;
+				std::terminate();
+			}
+		}
+
+		static auto checkMul(i32 x, i32 y)
+		{
+			using namespace util::simd;
+
+			const auto product = static_cast<i64>(x) * static_cast<i64>(y);
+
+			if (product < std::numeric_limits<i32>::min()
+				|| product > std::numeric_limits<i32>::max())
+			{
+				std::cout << "scalar mul overflowed" << std::endl;
+				std::terminate();
+			}
+		}
+
+		static auto checkHadd(util::simd::VectorI32 vec)
+		{
+			using namespace util::simd;
+
+			Array<i32, ChunkSize<i32>> vs{};
+			store<i32>(vs.data(), vec);
+
+			i64 sum{};
+
+			for (const auto v : vs)
+			{
+				sum += v;
+			}
+
+			if (sum < std::numeric_limits<i32>::min()
+				|| sum > std::numeric_limits<i32>::max())
+			{
+				std::cout << "hadd overflowed" << std::endl;
+				std::terminate();
+			}
+		}
+
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
 			std::span<const i16, L1Size> nstmInputs,
 			std::span<u8, L1Size> outputs) const
@@ -196,10 +292,10 @@ namespace stormphrax::eval::nnue::arch
 
 				out = add<i32>(out, biases);
 
-				out = max<i32>(out, zero<i32>());
+				out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
 				out = mulLo<i32>(out, out);
 
-				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
+				store<i32>(&outputs[idx], out);
 			}
 		}
 
@@ -262,10 +358,20 @@ namespace stormphrax::eval::nnue::arch
 						auto out_2 = load<i32>(&outputs[outputIdx + ChunkSize<i32> * 2]);
 						auto out_3 = load<i32>(&outputs[outputIdx + ChunkSize<i32> * 3]);
 
+						checkMul(i, w_0);
+						checkMul(i, w_1);
+						checkMul(i, w_2);
+						checkMul(i, w_3);
+
 						const auto p_0 = mulLo<i32>(i, w_0);
 						const auto p_1 = mulLo<i32>(i, w_1);
 						const auto p_2 = mulLo<i32>(i, w_2);
 						const auto p_3 = mulLo<i32>(i, w_3);
+
+						checkAdd(out_0, p_0);
+						checkAdd(out_1, p_1);
+						checkAdd(out_2, p_2);
+						checkAdd(out_3, p_3);
 
 						out_0 = add<i32>(out_0, p_0);
 						out_1 = add<i32>(out_1, p_1);
@@ -288,6 +394,8 @@ namespace stormphrax::eval::nnue::arch
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
 
+			const auto one = set1<i32>(Q * Q * Q * Q);
+
 			Vector<i32> s;
 
 			// avx512
@@ -306,11 +414,8 @@ namespace stormphrax::eval::nnue::arch
 					const auto w_0 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 1]);
 
-					i_0 = max<i32>(i_0, zero<i32>());
-					i_1 = max<i32>(i_1, zero<i32>());
-
-					i_0 = mulLo<i32>(i_0, i_0);
-					i_1 = mulLo<i32>(i_1, i_1);
+					i_0 = clamp<i32>(i_0, zero<i32>(), one);
+					i_1 = clamp<i32>(i_1, zero<i32>(), one);
 
 					i_0 = mulLo<i32>(i_0, w_0);
 					i_1 = mulLo<i32>(i_1, w_1);
@@ -332,30 +437,35 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
-					auto i_2 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]), QuantBits);
-					auto i_3 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]), QuantBits);
+					auto i_0 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]);
+					auto i_1 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]);
+					auto i_2 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]);
+					auto i_3 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]);
 
 					const auto w_0 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 1]);
 					const auto w_2 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 2]);
 					const auto w_3 = load<i32>(&l3WeightsQ[weightIdx + ChunkSize<i32> * 3]);
 
-					i_0 = max<i32>(i_0, zero<i32>());
-					i_1 = max<i32>(i_1, zero<i32>());
-					i_2 = max<i32>(i_2, zero<i32>());
-					i_3 = max<i32>(i_3, zero<i32>());
+					i_0 = clamp<i32>(i_0, zero<i32>(), one);
+					i_1 = clamp<i32>(i_1, zero<i32>(), one);
+					i_2 = clamp<i32>(i_2, zero<i32>(), one);
+					i_3 = clamp<i32>(i_3, zero<i32>(), one);
 
-					i_0 = mulLo<i32>(i_0, i_0);
-					i_1 = mulLo<i32>(i_1, i_1);
-					i_2 = mulLo<i32>(i_2, i_2);
-					i_3 = mulLo<i32>(i_3, i_3);
+					checkMul(i_0, w_0);
+					checkMul(i_1, w_1);
+					checkMul(i_2, w_2);
+					checkMul(i_3, w_3);
 
 					i_0 = mulLo<i32>(i_0, w_0);
 					i_1 = mulLo<i32>(i_1, w_1);
 					i_2 = mulLo<i32>(i_2, w_2);
 					i_3 = mulLo<i32>(i_3, w_3);
+
+					checkAdd(i_0, out_0);
+					checkAdd(i_1, out_1);
+					checkAdd(i_2, out_2);
+					checkAdd(i_3, out_3);
 
 					out_0 = add<i32>(i_0, out_0);
 					out_1 = add<i32>(i_1, out_1);
@@ -363,11 +473,18 @@ namespace stormphrax::eval::nnue::arch
 					out_3 = add<i32>(i_3, out_3);
 				}
 
+				checkAdd(out_0, out_1);
+				checkAdd(out_2, out_3);
+
 				const auto s0 = add<i32>(out_0, out_1);
 				const auto s1 = add<i32>(out_2, out_3);
 
+				checkAdd(s0, s1);
+
 				s = add<i32>(s0, s1);
 			}
+
+			checkHadd(s);
 
 			outputs[0] = (l3BiasesQ[biasOffset] + hsum<i32>(s)) / Q;
 		}
@@ -394,7 +511,9 @@ namespace stormphrax::eval::nnue::arch
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
-			outputs[0] = l3Out[0] * Scale / (Q * Q);
+			checkMul(l3Out[0], Scale);
+
+			outputs[0] = l3Out[0] * Scale / (Q * Q * Q);
 		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
@@ -412,7 +531,7 @@ namespace stormphrax::eval::nnue::arch
 
 			for (auto &w : l1Weights)
 			{
-				w = static_cast<i8>(std::round(static_cast<f64>(w) * 256.0 / 255.0));
+				w = static_cast<i8>(std::round(static_cast<f64>(w) * 256.0 / 255.0 * 256.0 / 255.0));
 			}
 
 			for (usize i = 0; i < l1Biases.size(); ++i)
@@ -427,7 +546,7 @@ namespace stormphrax::eval::nnue::arch
 
 			for (usize i = 0; i < l2Biases.size(); ++i)
 			{
-				l2BiasesQ[i] = static_cast<i32>(std::round(l2Biases[i] * Q * Q));
+				l2BiasesQ[i] = static_cast<i32>(std::round(l2Biases[i] * Q * Q * Q));
 			}
 
 			for (usize i = 0; i < l3Weights.size(); ++i)
@@ -437,7 +556,7 @@ namespace stormphrax::eval::nnue::arch
 
 			for (usize i = 0; i < l3Biases.size(); ++i)
 			{
-				l3BiasesQ[i] = static_cast<i32>(std::round(l3Biases[i] * Q * Q));
+				l3BiasesQ[i] = static_cast<i32>(std::round(l3Biases[i] * Q * Q * Q * Q));
 			}
 
 			return true;

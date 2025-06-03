@@ -47,7 +47,7 @@ namespace stormphrax::eval
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
+	using InputFeatureSet = nnue::features::KingBucketsMirrored<
 		nnue::features::MirroredKingSide::Abcd,
 		 0,  1,  2,  3,
 		 4,  5,  6,  7,
