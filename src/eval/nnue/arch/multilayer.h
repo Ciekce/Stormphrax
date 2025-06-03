@@ -61,7 +61,7 @@ namespace stormphrax::eval::nnue::arch
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount>          l3Biases{};
 
-		static constexpr i32 QuantBits = 7;
+		static constexpr i32 QuantBits = 6;
 		static constexpr i32 Q = 1 << QuantBits;
 
 		inline auto activateFt(std::span<const i16, L1Size> stmInputs,
@@ -129,7 +129,6 @@ namespace stormphrax::eval::nnue::arch
 			activatePerspective(nstmInputs, PairCount);
 		}
 
-		// Take activated feature transformer outputs, propagate L1, dequantise and activate
 		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2Size> outputs) const
 		{
 			using namespace util::simd;
@@ -188,10 +187,10 @@ namespace stormphrax::eval::nnue::arch
 
 				out = add<i32>(out, biases);
 
-				out = max<i32>(out, zero<i32>());
+				out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
 				out = mulLo<i32>(out, out);
 
-				store<i32>(&outputs[idx], shiftRight<i32>(out, QuantBits));
+				store<i32>(&outputs[idx], out);
 			}
 		}
 
@@ -280,6 +279,8 @@ namespace stormphrax::eval::nnue::arch
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
 
+			const auto one = set1<i32>(Q * Q * Q);
+
 			Vector<i32> s;
 
 			// avx512
@@ -292,17 +293,14 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
+					auto i_0 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]);
+					auto i_1 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]);
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
 
-					i_0 = max<i32>(i_0, zero<i32>());
-					i_1 = max<i32>(i_1, zero<i32>());
-
-					i_0 = mulLo<i32>(i_0, i_0);
-					i_1 = mulLo<i32>(i_1, i_1);
+					i_0 = clamp<i32>(i_0, zero<i32>(), one);
+					i_1 = clamp<i32>(i_1, zero<i32>(), one);
 
 					i_0 = mulLo<i32>(i_0, w_0);
 					i_1 = mulLo<i32>(i_1, w_1);
@@ -324,25 +322,20 @@ namespace stormphrax::eval::nnue::arch
 				{
 					const auto weightIdx = weightOffset + inputIdx;
 
-					auto i_0 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]), QuantBits);
-					auto i_1 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]), QuantBits);
-					auto i_2 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]), QuantBits);
-					auto i_3 = shiftRight<i32>(load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]), QuantBits);
+					auto i_0 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 0]);
+					auto i_1 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 1]);
+					auto i_2 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 2]);
+					auto i_3 = load<i32>(&inputs[inputIdx + ChunkSize<i32> * 3]);
 
 					const auto w_0 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 0]);
 					const auto w_1 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 1]);
 					const auto w_2 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 2]);
 					const auto w_3 = load<i32>(&l3Weights[weightIdx + ChunkSize<i32> * 3]);
 
-					i_0 = max<i32>(i_0, zero<i32>());
-					i_1 = max<i32>(i_1, zero<i32>());
-					i_2 = max<i32>(i_2, zero<i32>());
-					i_3 = max<i32>(i_3, zero<i32>());
-
-					i_0 = mulLo<i32>(i_0, i_0);
-					i_1 = mulLo<i32>(i_1, i_1);
-					i_2 = mulLo<i32>(i_2, i_2);
-					i_3 = mulLo<i32>(i_3, i_3);
+					i_0 = clamp<i32>(i_0, zero<i32>(), one);
+					i_1 = clamp<i32>(i_1, zero<i32>(), one);
+					i_2 = clamp<i32>(i_2, zero<i32>(), one);
+					i_3 = clamp<i32>(i_3, zero<i32>(), one);
 
 					i_0 = mulLo<i32>(i_0, w_0);
 					i_1 = mulLo<i32>(i_1, w_1);
@@ -386,7 +379,7 @@ namespace stormphrax::eval::nnue::arch
 			propagateL2(bucket, l1Out, l2Out);
 			propagateL3(bucket, l2Out, l3Out);
 
-			outputs[0] = l3Out[0] * Scale / (Q * Q);
+			outputs[0] = l3Out[0] * Scale / (Q * Q * Q);
 		}
 
 		inline auto readFrom(IParamStream &stream) -> bool
