@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include "rays.h"
 #include "types.h"
 
 #include <array>
@@ -27,6 +26,7 @@
 #include "tunable.h"
 #include "position/position.h"
 #include "attacks/attacks.h"
+#include "rays.h"
 
 namespace stormphrax::see
 {
