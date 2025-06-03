@@ -34,10 +34,11 @@
 namespace stormphrax::eval::nnue::arch
 {
 	// implements an (inputs->L1)x2->(L2->L3->1)xN network, with
-	// pairwise clipped ReLU on L1 and squared ReLU on later layers
+	// airwise clipped ReLU on the FT, squared clipped ReLU on L1,
+	// and clipped ReLU on L2
 	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits,
 	    u32 FtQBits, u32 L1QBits, output::OutputBucketing OutputBucketing, i32 Scale>
-	struct PairwiseMultilayerCReLUSqrReLUSqrReLU
+	struct PairwiseMultilayerCReLUSCReLUCReLU
 	{
 		static_assert(L1Size % (util::simd::ChunkSize<i16>) == 0);
 		static_assert(L2Size % 16 == 0);
@@ -169,9 +170,6 @@ namespace stormphrax::eval::nnue::arch
 					v[3] = dpbusd<i32>(v[3], i_3, w_3);
 				}
 			}
-
-			// << (16 - FtScaleBits + QuantBits)
-			// >> (FtQBits + FtQBits + L1QBits)
 
 			for (u32 idx = 0; idx < L2Size; idx += ChunkSize<i32>)
 			{
