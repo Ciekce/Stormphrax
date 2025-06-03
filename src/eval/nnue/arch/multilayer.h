@@ -419,7 +419,7 @@ namespace stormphrax::eval::nnue::arch
 
 				for (usize offset = 0; offset < values.size(); offset += ChunkSize)
 				{
-					std::copy(&values[offset], &values[offset + ChunkSize], &tmp[0][0]);
+					std::copy(&values[offset], &values[offset] + ChunkSize, &tmp[0][0]);
 
 					for (usize i = 0; i < PackSize; ++i)
 					{
