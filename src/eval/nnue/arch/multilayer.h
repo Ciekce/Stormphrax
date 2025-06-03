@@ -279,7 +279,7 @@ namespace stormphrax::eval::nnue::arch
 			const auto weightOffset = bucket * L3Size;
 			const auto biasOffset   = bucket;
 
-			const auto one = set1<i32>(Q * Q * Q * Q);
+			const auto one = set1<i32>(Q * Q * Q);
 
 			Vector<i32> s;
 
