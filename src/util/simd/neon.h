@@ -40,6 +40,11 @@ namespace stormphrax::util::simd
 
 	constexpr bool PackNonSequential = false;
 
+	constexpr usize PackGrouping = 1;
+	constexpr auto PackOrdering = std::array {
+		0,
+	};
+
 	namespace impl
 	{
 		// ================================ u8 ================================
@@ -132,7 +137,7 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI8(VectorI8 v, i32 shift) -> VectorI8
 		{
-			return vshlq_n_s8(v, shift);
+			return vshlq_s8(v, vdupq_n_s8(static_cast<u8>(shift));
 		}
 
 		// ================================ i16 ================================
@@ -192,12 +197,12 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI16(VectorI16 v, i32 shift) -> VectorI16
 		{
-			return vshlq_n_s16(v, shift);
+			return vshlq_s16(v, vdupq_n_s16(static_cast<i16>(shift)));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI16(VectorI16 v, i32 shift) -> VectorI16
 		{
-			return vshrq_n_s16(v, shift);
+			return vshrq_s16(v, vdupq_n_s16(static_cast<i16>(shift)));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHiI16(VectorI16 a, VectorI16 b, i32 shift) -> VectorI16
@@ -219,7 +224,7 @@ namespace stormphrax::util::simd
 		{
 			const auto high = vqmovun_s16(a);
 			const auto low = vqmovun_s16(b);
-			return vcombine_u8(a, b);
+			return vcombine_u8(high, low);
 		}
 
 		// ================================ i32 ================================
@@ -279,12 +284,12 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI32(VectorI32 v, i32 shift) -> VectorI32
 		{
-			return vshlq_n_s32(v, shift);
+			return vshlq_s32(v, vdupq_n_s32(static_cast<i32>(shift)));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI32(VectorI32 v, i32 shift) -> VectorI32
 		{
-			return vshrq_n_s32(v, shift);
+			return vshrq_s32(v, vdupq_n_s32(static_cast<i32>(shift)));
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI32(VectorI32 a, VectorI32 b) -> VectorU16
@@ -301,7 +306,7 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i) -> VectorI32
 		{
-			const auto i0 = vreinterpretq_s8(u);
+			const auto i0 = vreinterpretq_u8_s8(u);
 
 			const auto low  = vmull_s8(vget_low_s8(i0), vget_low_s8(i));
 			const auto high = vmull_high_s8(i0, i);
