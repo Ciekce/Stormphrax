@@ -299,7 +299,7 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i)
 		{
-#if SP_HAS_AVX512VNNI
+#if SP_HAS_VNNI512
 			return _mm512_dpbusd_epi32(sum, u, i);
 #else
 			const auto p = _mm512_maddubs_epi16(u, i);
@@ -311,7 +311,7 @@ namespace stormphrax::util::simd
 		// Depends on addI32
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) -> VectorI32
 		{
-#if SP_HAS_AVX512VNNI
+#if SP_HAS_VNNI512
 			return _mm512_dpwssd_epi32(sum, a, b);
 #else
 			const auto products = mulAddAdjI16(a, b);
