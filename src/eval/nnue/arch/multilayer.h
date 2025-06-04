@@ -75,14 +75,6 @@ namespace stormphrax::eval::nnue::arch
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
-#if SP_HAS_NEON
-// the intrinsic used for mulhi on neon, VQDMULH, doubles the results.
-// this is effectively a shift by another bit, so shift by one less
-			static constexpr auto Shift = FtScaleBits - 1;
-#else
-			static constexpr auto Shift = FtScaleBits;
-#endif
-
 			const auto zero_ = zero<i16>();
 			const auto one = set1<i16>((1 << FtQBits) - 1);
 
