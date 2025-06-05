@@ -29,6 +29,10 @@
 #include "util/split.h"
 #endif
 
+#if SP_HAS_AVX512
+#pragma message("AVX512 enabled")
+#endif
+
 using namespace stormphrax;
 
 auto main(i32 argc, const char *argv[]) -> i32
