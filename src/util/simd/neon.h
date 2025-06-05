@@ -209,7 +209,7 @@ namespace stormphrax::util::simd
 		{
 			// the instruction used for mulhi here, VQDMULH, doubles the results.
 			// this is effectively a shift by another bit, so shift by one less
-			const auto shifted = vshlq_s16(a, shift - 1);
+			const auto shifted = vshlq_s16(a, vdupq_n_s16(static_cast<i16>(shift - 1)));
 			return vqdmulhq_s16(shifted, b);
 		}
 
