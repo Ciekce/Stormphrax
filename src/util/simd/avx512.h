@@ -195,11 +195,6 @@ namespace stormphrax::util::simd
 			return _mm512_mullo_epi16(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulHiI16(VectorI16 a, VectorI16 b) -> VectorI16
-		{
-			return _mm512_mulhi_epi16(a, b);
-		}
-
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI16(VectorI16 v, i32 shift) -> VectorI16
 		{
 			return _mm512_slli_epi16(v, shift);
@@ -210,12 +205,18 @@ namespace stormphrax::util::simd
 			return _mm512_srai_epi16(v, shift);
 		}
 
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHiI16(VectorI16 a, VectorI16 b, i32 shift) -> VectorI16
+		{
+			const auto shifted = _mm512_slli_epi16(a, shift);
+			return _mm512_mulhi_epi16(shifted, b);
+		}
+
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjI16(VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			return _mm512_madd_epi16(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI16(VectorI16 a, VectorI16 b) -> VectorI16
+		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI16(VectorI16 a, VectorI16 b) -> VectorU8
 		{
 			return _mm512_packus_epi16(a, b);
 		}
@@ -297,7 +298,7 @@ namespace stormphrax::util::simd
 			return _mm512_reduce_add_epi32(v);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i)
+		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i) -> VectorI32
 		{
 #if SP_HAS_VNNI512
 			return _mm512_dpbusd_epi32(sum, u, i);

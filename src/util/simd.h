@@ -30,6 +30,8 @@
 #include "simd/avx512.h"
 #elif SP_HAS_AVX2
 #include "simd/avx2.h"
+#elif SP_HAS_NEON
+#include "simd/neon.h"
 #else
 #error No supported SIMD extension found
 #endif
@@ -306,11 +308,11 @@ SP_SIMD_OP_3_VECTORS(clamp, v, min, max)
 	}
 
 	template <typename T>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mulHi(Vector<T> a, Vector<T> b) = delete;
+	SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHi(Vector<T> a, Vector<T> b, i32 shift) = delete;
 	template <>
-	SP_ALWAYS_INLINE_NDEBUG inline auto mulHi<i16>(Vector<i16> a, Vector<i16> b)
+	SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHi<i16>(Vector<i16> a, Vector<i16> b, i32 shift)
 	{
-		return impl::mulHiI16(a, b);
+		return impl::shiftLeftMulHiI16(a, b, shift);
 	}
 
 	template <typename T>

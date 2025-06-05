@@ -39,6 +39,7 @@
 	#define SP_HAS_VNNI256 0 // slowdown on any cpu that would use it
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_POPCNT __POPCNT__
+	#define SP_HAS_NEON __ARM_NEON
 #elif defined(SP_VNNI512)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_VNNI512 1
@@ -46,6 +47,7 @@
 	#define SP_HAS_VNNI256 1
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
+	#define SP_HAS_NEON 0
 #elif defined(SP_AVX2_BMI2)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_VNNI512 0
@@ -53,6 +55,7 @@
 	#define SP_HAS_VNNI256 0
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
+	#define SP_HAS_NEON 0
 #elif defined(SP_AVX2)
 	#define SP_HAS_BMI2 0
 	#define SP_HAS_VNNI512 0
@@ -60,6 +63,7 @@
 	#define SP_HAS_VNNI256 0
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
+	#define SP_HAS_NEON 0
 #else
 #error no arch specified
 #endif

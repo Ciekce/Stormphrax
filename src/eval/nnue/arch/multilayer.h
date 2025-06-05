@@ -108,15 +108,10 @@ namespace stormphrax::eval::nnue::arch
 					i1_2 = max<i16>(i1_2, zero_);
 					i1_3 = max<i16>(i1_3, zero_);
 
-					i1_0 = shiftLeft<i16>(i1_0, FtScaleBits);
-					i1_1 = shiftLeft<i16>(i1_1, FtScaleBits);
-					i1_2 = shiftLeft<i16>(i1_2, FtScaleBits);
-					i1_3 = shiftLeft<i16>(i1_3, FtScaleBits);
-
-					const auto p_0 = mulHi<i16>(i1_0, i2_0);
-					const auto p_1 = mulHi<i16>(i1_1, i2_1);
-					const auto p_2 = mulHi<i16>(i1_2, i2_2);
-					const auto p_3 = mulHi<i16>(i1_3, i2_3);
+					const auto p_0 = shiftLeftMulHi<i16>(i1_0, i2_0, FtScaleBits);
+					const auto p_1 = shiftLeftMulHi<i16>(i1_1, i2_1, FtScaleBits);
+					const auto p_2 = shiftLeftMulHi<i16>(i1_2, i2_2, FtScaleBits);
+					const auto p_3 = shiftLeftMulHi<i16>(i1_3, i2_3, FtScaleBits);
 
 					const auto packed_0 = packUnsigned<i16>(p_0, p_1);
 					const auto packed_1 = packUnsigned<i16>(p_2, p_3);
