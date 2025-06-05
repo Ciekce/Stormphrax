@@ -30,7 +30,7 @@
 
 namespace stormphrax::eval
 {
-	// current arch: (768x16->1792)x2->(16->32->1)x8, mirrored
+	// current arch: (768x16hm->1792)x2->(16->32->1)x8
 	// pairwise clipped ReLU -> clipped squared ReLU -> clipped ReLU
 
 	constexpr u32 FtQBits = 8;
