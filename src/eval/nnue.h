@@ -25,29 +25,14 @@
 #include "arch.h"
 #include "nnue/input.h"
 #include "nnue/network.h"
-#include "nnue/layers/dense_affine.h"
-#include "nnue/layers/scale.h"
-#include "nnue/layers/dequantize.h"
+#include "nnue/arch/multilayer.h"
 #include "nnue/activation.h"
 #include "../util/static_vector.h"
 
 namespace stormphrax::eval
 {
-	using FeatureTransformer = nnue::FeatureTransformer<
-		i16, L1Size, InputFeatureSet
-	>;
-
-	using Network = nnue::PerspectiveNetwork<
-		FeatureTransformer,
-		nnue::layers::DensePerspectiveAffine<PairwiseMul,
-			i16, i16,
-			L1Activation,
-			L1Size, 1, L1Q,
-			OutputBucketing
-		>,
-		nnue::layers::Scale<i32, 1, Scale>,
-		nnue::layers::Dequantize<i32, i32, 1, L1Q * OutputQ>
-	>;
+	using FeatureTransformer = nnue::FeatureTransformer<i16, L1Size, InputFeatureSet>;
+	using Network = nnue::PerspectiveNetwork<FeatureTransformer, OutputBucketing, LayeredArch>;
 
 	using Accumulator = FeatureTransformer::Accumulator;
 	using RefreshTable = FeatureTransformer::RefreshTable;
@@ -320,10 +305,9 @@ namespace stormphrax::eval
 			const BitboardSet &bbs, Color stm) -> i32
 		{
 			assert(stm != Color::None);
-
 			return stm == Color::Black
-				? g_network.propagate(bbs, accumulator.black(), accumulator.white())
-				: g_network.propagate(bbs, accumulator.white(), accumulator.black());
+				? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
+				: g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
 		}
 
 		static inline auto refreshAccumulator(UpdatableAccumulator &accumulator, Color c,

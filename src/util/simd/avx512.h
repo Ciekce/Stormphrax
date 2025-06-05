@@ -25,17 +25,123 @@
 
 #if SP_HAS_AVX512
 
-#include "x64common.h"
+#include <immintrin.h>
 
 namespace stormphrax::util::simd
 {
+	using VectorU8 = __m512i;
+	using VectorU16 = __m512i;
+
+	using VectorI8 = __m512i;
 	using VectorI16 = __m512i;
 	using VectorI32 = __m512i;
 
-	constexpr std::uintptr_t Alignment = sizeof(VectorI16);
+	constexpr std::uintptr_t Alignment = sizeof(__m512i);
+
+	constexpr bool PackNonSequential = true;
+
+	constexpr usize PackGrouping = 8;
+	constexpr auto PackOrdering = std::array {
+		0, 2, 4, 6, 1, 3, 5, 7,
+	};
 
 	namespace impl
 	{
+		// ================================ u8 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroU8() -> VectorU8
+		{
+			return _mm512_setzero_si512();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadU8(const void *ptr) -> VectorU8
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm512_load_si512(ptr);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeU8(void *ptr, VectorU8 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm512_store_si512(ptr, v);
+		}
+
+		// ================================ u16 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroU16() -> VectorU16
+		{
+			return _mm512_setzero_si512();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadU16(const void *ptr) -> VectorU16
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm512_load_si512(ptr);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeU16(void *ptr, VectorU16 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm512_store_si512(ptr, v);
+		}
+
+		// ================================ i8 ================================
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI8() -> VectorI8
+		{
+			return _mm512_setzero_si512();
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto set1I8(i8 v) -> VectorI8
+		{
+			return _mm512_set1_epi8(v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto loadI8(const void *ptr) -> VectorI8
+		{
+			assert(isAligned<Alignment>(ptr));
+			return _mm512_load_si512(ptr);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto storeI8(void *ptr, VectorI8 v)
+		{
+			assert(isAligned<Alignment>(ptr));
+			_mm512_store_si512(ptr, v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto minI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm512_min_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto maxI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm512_max_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto clampI8(
+			VectorI8 v, VectorI8 min, VectorI8 max) -> VectorI8
+		{
+			return minI8(maxI8(v, min), max);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto addI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm512_add_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto subI8(VectorI8 a, VectorI8 b) -> VectorI8
+		{
+			return _mm512_sub_epi8(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI8(VectorI8 v, i32 shift) -> VectorI8
+		{
+			unimplemented();
+		}
+
+		// ================================ i16 ================================
+
 		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI16() -> VectorI16
 		{
 			return _mm512_setzero_si512();
@@ -84,15 +190,38 @@ namespace stormphrax::util::simd
 			return _mm512_sub_epi16(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI16(VectorI16 a, VectorI16 b) -> VectorI16
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulLoI16(VectorI16 a, VectorI16 b) -> VectorI16
 		{
 			return _mm512_mullo_epi16(a, b);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI16(VectorI16 v, i32 shift) -> VectorI16
+		{
+			return _mm512_slli_epi16(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI16(VectorI16 v, i32 shift) -> VectorI16
+		{
+			return _mm512_srai_epi16(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHiI16(VectorI16 a, VectorI16 b, i32 shift) -> VectorI16
+		{
+			const auto shifted = _mm512_slli_epi16(a, shift);
+			return _mm512_mulhi_epi16(shifted, b);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjI16(VectorI16 a, VectorI16 b) -> VectorI32
 		{
 			return _mm512_madd_epi16(a, b);
 		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI16(VectorI16 a, VectorI16 b) -> VectorU8
+		{
+			return _mm512_packus_epi16(a, b);
+		}
+
+		// ================================ i32 ================================
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto zeroI32() -> VectorI32
 		{
@@ -142,20 +271,48 @@ namespace stormphrax::util::simd
 			return _mm512_sub_epi32(a, b);
 		}
 
-		SP_ALWAYS_INLINE_NDEBUG inline auto mulI32(VectorI32 a, VectorI32 b) -> VectorI32
+		SP_ALWAYS_INLINE_NDEBUG inline auto mulLoI32(VectorI32 a, VectorI32 b) -> VectorI32
 		{
 			return _mm512_mullo_epi32(a, b);
 		}
 
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI32(VectorI32 v, i32 shift) -> VectorI32
+		{
+			return _mm512_slli_epi32(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI32(VectorI32 v, i32 shift) -> VectorI32
+		{
+			return _mm512_srai_epi32(v, shift);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI32(VectorI32 a, VectorI32 b) -> VectorU16
+		{
+			return _mm512_packus_epi32(a, b);
+		}
+
 		SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32(VectorI32 v) -> i32
 		{
-			return x64::hsumI32Avx512(v);
+			// GCC supposedly emits suboptimal code for this
+			// intrinsic, but SP doesn't support GCC anyway so
+			return _mm512_reduce_add_epi32(v);
+		}
+
+		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i) -> VectorI32
+		{
+#if SP_HAS_VNNI512
+			return _mm512_dpbusd_epi32(sum, u, i);
+#else
+			const auto p = _mm512_maddubs_epi16(u, i);
+			const auto w = _mm512_madd_epi16(p, _mm512_set1_epi16(1));
+			return _mm512_add_epi32(sum, w);
+#endif
 		}
 
 		// Depends on addI32
 		SP_ALWAYS_INLINE_NDEBUG inline auto mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) -> VectorI32
 		{
-#if SP_HAS_AVX512VNNI
+#if SP_HAS_VNNI512
 			return _mm512_dpwssd_epi32(sum, a, b);
 #else
 			const auto products = mulAddAdjI16(a, b);

@@ -24,6 +24,7 @@ endif
 
 PGO = off
 COMMIT_HASH = off
+DISABLE_NEON_DOTPROD = off
 
 SOURCES_COMMON := src/main.cpp src/uci.cpp src/util/split.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/fathom/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
@@ -37,11 +38,9 @@ CXXFLAGS := -std=c++20 -O3 -flto -DNDEBUG -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver4 -mtune=znver4
-CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=x86-64-v4 -mtune=skylake-avx512
-CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=haswell
+CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver5 -mtune=znver5
+CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
-CXXFLAGS_SSE41_POPCNT := -DSP_SSE41_POPCNT -march=nehalem -mtune=sandybridge
 
 LDFLAGS :=
 
@@ -107,6 +106,17 @@ ifneq ($(findstring __BMI2__, $(ARCH_DEFINES)),)
     endif
 endif
 
+# AVX-512 as a whole is slower on zen 4
+ifneq ($(findstring __znver4, $(ARCH_DEFINES)),)
+    CXXFLAGS_NATIVE += -DSP_DISABLE_AVX512
+endif
+
+ifneq ($(findstring __ARM_ARCH, $(ARCH_DEFINES)),)
+    ifeq ($(DISABLE_NEON_DOTPROD),on)
+        CXXFLAGS_NATIVE += -DSP_DISABLE_NEON_DOTPROD
+    endif
+endif
+
 ifeq ($(COMMIT_HASH),on)
     CXXFLAGS += -DSP_COMMIT_HASH=$(shell git log -1 --pretty=format:%h)
 endif
@@ -129,7 +139,7 @@ define build
 endef
 endif
 
-release: vnni512 avx512 avx2-bmi2 avx2 sse41-popcnt
+release: vnni512 avx2-bmi2 avx2
 all: native release
 
 .PHONY: all
@@ -155,17 +165,11 @@ tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,VNNI512,vnni512)
 
-avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,AVX512,avx512)
-
 avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX2_BMI2,avx2-bmi2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,AVX2,avx2)
-
-sse41-popcnt: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,SSE41_POPCNT,sse41-popcnt)
 
 clean:
 
