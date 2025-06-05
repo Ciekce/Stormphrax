@@ -309,10 +309,8 @@ namespace stormphrax::util::simd
 			const auto i0 = vreinterpretq_u8_s8(u);
 
 #if SP_HAS_NEON_DOTPROD
-#pragma message("dotprod enabled")
 			return vdotq_s32(sum, i0, i);
 #else
-#pragma message("dotprod disabled")
 			const auto low  = vmull_s8(vget_low_s8(i0), vget_low_s8(i));
 			const auto high = vmull_high_s8(i0, i);
 			const auto p = vpaddq_s16(low, high);
