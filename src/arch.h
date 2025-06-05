@@ -40,6 +40,7 @@
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_POPCNT __POPCNT__
 	#define SP_HAS_NEON __ARM_NEON
+	#define SP_HAS_NEON_DOTPROD (__ARM_ARCH >= 8 && !SP_DISABLE_NEON_DOTPROD)
 #elif defined(SP_VNNI512)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_VNNI512 1
@@ -48,6 +49,7 @@
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
 	#define SP_HAS_NEON 0
+	#define SP_HAS_NEON_DOTPROD 0
 #elif defined(SP_AVX2_BMI2)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_VNNI512 0
@@ -56,6 +58,7 @@
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
 	#define SP_HAS_NEON 0
+	#define SP_HAS_NEON_DOTPROD 0
 #elif defined(SP_AVX2)
 	#define SP_HAS_BMI2 0
 	#define SP_HAS_VNNI512 0
@@ -64,6 +67,7 @@
 	#define SP_HAS_AVX2 1
 	#define SP_HAS_POPCNT 1
 	#define SP_HAS_NEON 0
+	#define SP_HAS_NEON_DOTPROD 0
 #else
 #error no arch specified
 #endif
