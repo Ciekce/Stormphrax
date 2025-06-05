@@ -40,7 +40,6 @@ namespace stormphrax::eval::nnue::arch
 	    u32 FtQBits, u32 L1QBits, output::OutputBucketing OutputBucketing, i32 Scale>
 	struct PairwiseMultilayerCReLUSCReLUCReLU
 	{
-		static_assert(L1Size % util::simd::ChunkSize<i16> == 0);
 		static_assert(L2Size % 16 == 0);
 		static_assert(L3Size % 16 == 0);
 
@@ -72,6 +71,7 @@ namespace stormphrax::eval::nnue::arch
 			using namespace util::simd;
 
 			static constexpr auto PairCount = L1Size / 2;
+			static_assert(PairCount % (util::simd::ChunkSize<i16> * 4) == 0);
 
 			static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
