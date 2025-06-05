@@ -137,7 +137,7 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftI8(VectorI8 v, i32 shift) -> VectorI8
 		{
-			return vshlq_s8(v, vdupq_n_s8(static_cast<u8>(shift));
+			return vshlq_s8(v, vdupq_n_s8(static_cast<u8>(shift)));
 		}
 
 		// ================================ i16 ================================
@@ -202,14 +202,14 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI16(VectorI16 v, i32 shift) -> VectorI16
 		{
-			return vshrq_s16(v, vdupq_n_s16(static_cast<i16>(shift)));
+			return shiftLeftI16(v, -shift);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftLeftMulHiI16(VectorI16 a, VectorI16 b, i32 shift) -> VectorI16
 		{
 			// the instruction used for mulhi here, VQDMULH, doubles the results.
 			// this is effectively a shift by another bit, so shift by one less
-			const auto shifted = vshlq_n_s16(a, shift - 1);
+			const auto shifted = vshlq_s16(a, shift - 1);
 			return vqdmulhq_s16(shifted, b);
 		}
 
@@ -289,14 +289,14 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto shiftRightI32(VectorI32 v, i32 shift) -> VectorI32
 		{
-			return vshrq_s32(v, vdupq_n_s32(static_cast<i32>(shift)));
+			return shiftLeftI32(v, -shift);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto packUnsignedI32(VectorI32 a, VectorI32 b) -> VectorU16
 		{
 			const auto high = vqmovun_s32(a);
 			const auto low = vqmovun_s32(b);
-			return vcombine_u16(a, b);
+			return vcombine_u16(high, low);
 		}
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto hsumI32(VectorI32 v) -> i32
