@@ -40,7 +40,11 @@
 	#define SP_HAS_AVX2 __AVX2__
 	#define SP_HAS_POPCNT __POPCNT__
 	#define SP_HAS_NEON __ARM_NEON
-	#define SP_HAS_NEON_DOTPROD (__ARM_ARCH >= 8 && !SP_DISABLE_NEON_DOTPROD)
+	#if !defined(SP_DISABLE_NEON_DOTPROD)
+		#define SP_HAS_NEON_DOTPROD (__ARM_ARCH >= 8)
+	#else
+		#define SP_HAS_NEON_DOTPROD 0
+	#endif
 #elif defined(SP_VNNI512)
 	#define SP_HAS_BMI2 1
 	#define SP_HAS_VNNI512 1
