@@ -300,7 +300,9 @@ namespace stormphrax::util::simd
 
 		SP_ALWAYS_INLINE_NDEBUG inline auto dpbusdI32(VectorI32 sum, VectorU8 u, VectorI8 i) -> VectorI32
 		{
-			return _mm512_dpbusd_epi32(sum, u, i);
+			const auto p = _mm512_maddubs_epi16(u, i);
+			const auto w = _mm512_madd_epi16(p, _mm512_set1_epi16(1));
+			return _mm512_add_epi32(sum, w);
 		}
 
 		// Depends on addI32
