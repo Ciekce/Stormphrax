@@ -308,10 +308,14 @@ namespace stormphrax::util::simd
 		{
 			const auto i0 = vreinterpretq_u8_s8(u);
 
+#if SP_HAS_NEON_DOTPROD
+			return vdotq_s32(sum, i0, i);
+#else
 			const auto low  = vmull_s8(vget_low_s8(i0), vget_low_s8(i));
 			const auto high = vmull_high_s8(i0, i);
 			const auto p = vpaddq_s16(low, high);
 			return vpadalq_s16(sum, p);
+#endif
 		}
 
 		// Depends on addI32

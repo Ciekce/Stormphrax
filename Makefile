@@ -24,6 +24,7 @@ endif
 
 PGO = off
 COMMIT_HASH = off
+DISABLE_NEON_DOTPROD = off
 
 SOURCES_COMMON := src/main.cpp src/uci.cpp src/util/split.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/pretty.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/fathom/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
@@ -108,6 +109,12 @@ endif
 # AVX-512 as a whole is slower on zen 4
 ifneq ($(findstring __znver4, $(ARCH_DEFINES)),)
     CXXFLAGS_NATIVE += -DSP_DISABLE_AVX512
+endif
+
+ifneq ($(findstring __ARM_ARCH, $(ARCH_DEFINES)),)
+    ifeq ($(DISABLE_NEON_DOTPROD),on)
+        CXXFLAGS_NATIVE += -DSP_DISABLE_NEON_DOTPROD
+    endif
 endif
 
 ifeq ($(COMMIT_HASH),on)

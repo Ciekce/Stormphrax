@@ -45,6 +45,7 @@ add_compile_options($<$<CONFIG:Release>:-flto>)
 
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 option(SP_DISABLE_AVX512 "whether to disable AVX-512 (zen 4)" OFF)
+option(SP_DISABLE_NEON_DOTPROD "whether to disable NEON dotprod on ARM machines" OFF)
 
 set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/util/bitfield.h src/util/bits.h
 	src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h src/bitboard.h
@@ -98,6 +99,10 @@ endif()
 
 if(SP_DISABLE_AVX512)
 	target_compile_definitions(stormphrax-native PUBLIC SP_DISABLE_AVX512)
+endif()
+
+if(SP_DISABLE_NEON_DOTPROD)
+	target_compile_definitions(stormphrax-native PUBLIC SP_DISABLE_NEON_DOTPROD)
 endif()
 
 get_directory_property(TARGETS BUILDSYSTEM_TARGETS)
