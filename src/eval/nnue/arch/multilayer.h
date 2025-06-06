@@ -40,6 +40,8 @@ namespace stormphrax::eval::nnue::arch
 	    u32 FtQBits, u32 L1QBits, output::OutputBucketing OutputBucketing, i32 Scale>
 	struct PairwiseMultilayerCReLUSCReLUCReLU
 	{
+		static constexpr u32 ArchId = 2;
+
 		static_assert(L2Size % 16 == 0);
 		static_assert(L3Size % 16 == 0);
 

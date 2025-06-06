@@ -39,6 +39,8 @@ namespace stormphrax::eval::nnue::arch
 	    output::OutputBucketing OutputBucketing, i32 Scale>
 	struct SingleLayer
 	{
+		static constexpr u32 ArchId = 1;
+
 		using OutputType = i32;
 		static constexpr u32 OutputCount = 1;
 

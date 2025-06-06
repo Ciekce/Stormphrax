@@ -114,10 +114,10 @@ namespace stormphrax::eval
 				return false;
 			}
 
-			if (header.arch != 2 /* perspective_multilayer */)
+			if (header.arch != LayeredArch::ArchId)
 			{
 				std::cerr << "wrong network architecture " << archName(header.arch)
-					<< " (expected: " << archName(2) << ")" << std::endl;
+					<< " (expected: " << archName(LayeredArch::ArchId) << ")" << std::endl;
 				return false;
 			}
 
