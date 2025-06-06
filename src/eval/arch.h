@@ -27,6 +27,7 @@
 #include "nnue/features.h"
 #include "nnue/arch/singlelayer.h"
 #include "nnue/arch/multilayer.h"
+#include "nnue/arch/multilayer_dual_act.h"
 
 namespace stormphrax::eval
 {
@@ -61,6 +62,6 @@ namespace stormphrax::eval
 
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 
-	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
+	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUDualActCReLU<
 		L1Size, L2Size, L3Size, FtScaleBits, FtQBits, L1QBits, OutputBucketing, Scale>;
 }
