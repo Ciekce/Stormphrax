@@ -44,6 +44,8 @@ namespace stormphrax::eval
 
 	using L1Activation = nnue::activation::ClippedReLU;
 
+	constexpr bool DualActivation = true;
+
 	constexpr i32 Scale = 400;
 
 	// visually flipped upside down, a1 = 0
@@ -62,5 +64,5 @@ namespace stormphrax::eval
 	using OutputBucketing = nnue::output::MaterialCount<8>;
 
 	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
-		L1Size, L2Size, L3Size, FtScaleBits, FtQBits, L1QBits, OutputBucketing, Scale>;
+		L1Size, L2Size, L3Size, FtScaleBits, FtQBits, L1QBits, DualActivation, OutputBucketing, Scale>;
 }

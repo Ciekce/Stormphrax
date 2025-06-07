@@ -77,7 +77,7 @@ namespace stormphrax::eval
 		inline auto archName(u8 arch)
 		{
 			static constexpr auto NetworkArchNames = std::array {
-				"basic", "perspective", "perspective_multilayer"
+				"basic", "perspective", "perspective_multilayer", "perspective_multilayer_dual_act",
 			};
 
 			if (arch < NetworkArchNames.size())

@@ -34,13 +34,13 @@
 namespace stormphrax::eval::nnue::arch
 {
 	// implements an (inputs->L1)x2->(L2->L3->1)xN network, with
-	// airwise clipped ReLU on the FT, squared clipped ReLU on L1,
-	// and clipped ReLU on L2
-	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits,
-	    u32 FtQBits, u32 L1QBits, output::OutputBucketing OutputBucketing, i32 Scale>
+	// airwise clipped ReLU on the FT, squared clipped ReLU
+	// or dual CReLU or SCReLU on L1, and clipped ReLU on L2
+	template <u32 L1Size, u32 L2Size, u32 L3Size, u32 FtScaleBits, u32 FtQBits, u32 L1QBits,
+	    bool DualActivation, output::OutputBucketing OutputBucketing, i32 Scale>
 	struct PairwiseMultilayerCReLUSCReLUCReLU
 	{
-		static constexpr u32 ArchId = 2;
+		static constexpr u32 ArchId = DualActivation ? 3 : 2;
 
 		static_assert(L2Size % 16 == 0);
 		static_assert(L3Size % 16 == 0);
@@ -52,13 +52,15 @@ namespace stormphrax::eval::nnue::arch
 		static constexpr bool RequiresFtPermute = util::simd::PackNonSequential;
 
 	private:
+		static constexpr u32 L2SizeFull = L2Size * (1 + DualActivation);
+
 		static constexpr auto OutputBucketCount = OutputBucketing::BucketCount;
 
 		SP_SIMD_ALIGNAS std::array<i8,  OutputBucketCount * L1Size * L2Size> l1Weights{};
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount *          L2Size> l1Biases{};
 
-		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L2Size * L3Size> l2Weights{};
-		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount *          L3Size> l2Biases{};
+		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L2SizeFull * L3Size> l2Weights{};
+		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount *              L3Size> l2Biases{};
 
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount * L3Size> l3Weights{};
 		SP_SIMD_ALIGNAS std::array<i32, OutputBucketCount>          l3Biases{};
@@ -127,7 +129,8 @@ namespace stormphrax::eval::nnue::arch
 			activatePerspective(nstmInputs, PairCount);
 		}
 
-		inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2Size> outputs) const
+		inline auto propagateL1(
+			u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2SizeFull> outputs) const
 		{
 			using namespace util::simd;
 
@@ -182,20 +185,38 @@ namespace stormphrax::eval::nnue::arch
 
 				out = add<i32>(out, biases);
 
-				out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
-				out = mulLo<i32>(out, out);
+				if constexpr (DualActivation)
+				{
+					// crelu side
+					auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
+					out0 = shiftLeft<i32>(out0, QuantBits);
 
-				store<i32>(&outputs[idx], out);
+					// screlu side
+					// SF-style square-then-clip
+					auto out1 = mulLo<i32>(out, out);
+					out1 = min<i32>(out1, set1<i32>(Q * Q));
+
+					store<i32>(&outputs[idx         ], out0);
+					store<i32>(&outputs[idx + L2Size], out1);
+				}
+				else
+				{
+					out = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
+					out = mulLo<i32>(out, out);
+
+					store<i32>(&outputs[idx], out);
+				}
 			}
 		}
 
 		// Take activated L1 outputs and propagate L2
 		// Does not activate outputs
-		inline auto propagateL2(u32 bucket, std::span<const i32, L2Size> inputs, std::span<i32, L3Size> outputs) const
+		inline auto propagateL2(
+			u32 bucket, std::span<const i32, L2SizeFull> inputs, std::span<i32, L3Size> outputs) const
 		{
 			using namespace util::simd;
 
-			const auto weightOffset = bucket * L3Size * L2Size;
+			const auto weightOffset = bucket * L3Size * L2SizeFull;
 			const auto biasOffset   = bucket * L3Size;
 
 			std::memcpy(outputs.data(), &l2Biases[biasOffset], outputs.size_bytes());
@@ -203,7 +224,7 @@ namespace stormphrax::eval::nnue::arch
 			// avx512
 			if constexpr (ChunkSize<i32> * 4 > L3Size)
 			{
-				for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
+				for (u32 inputIdx = 0; inputIdx < L2SizeFull; ++inputIdx)
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
@@ -230,7 +251,7 @@ namespace stormphrax::eval::nnue::arch
 			}
 			else
 			{
-				for (u32 inputIdx = 0; inputIdx < L2Size; ++inputIdx)
+				for (u32 inputIdx = 0; inputIdx < L2SizeFull; ++inputIdx)
 				{
 					const auto weightsStart = weightOffset + inputIdx * L3Size;
 
@@ -364,10 +385,10 @@ namespace stormphrax::eval::nnue::arch
 			assert(isAligned(nstmInputs.data()));
 			assert(isAligned(   outputs.data()));
 
-			Array< u8, L1Size> ftOut;
-			Array<i32, L2Size> l1Out;
-			Array<i32, L3Size> l2Out;
-			Array<i32,      1> l3Out;
+			Array< u8, L1Size    > ftOut;
+			Array<i32, L2SizeFull> l1Out;
+			Array<i32, L3Size    > l2Out;
+			Array<i32,          1> l3Out;
 
 			activateFt(stmInputs, nstmInputs, ftOut);
 			propagateL1(bucket, ftOut, l1Out);
