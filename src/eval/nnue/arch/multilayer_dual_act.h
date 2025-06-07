@@ -183,8 +183,14 @@ namespace stormphrax::eval::nnue::arch
 
 				out = add<i32>(out, biases);
 
-				const auto out0 = shiftLeft<i32>(clamp<i32>(out, zero<i32>(), set1<i32>(Q)), QuantBits);
-				const auto out1 = min<i32>(mulLo<i32>(out, out), set1<i32>(Q * Q));
+				// crelu side
+				auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(Q));
+				out0 = shiftLeft<i32>(out0, QuantBits);
+
+				// screlu side
+				// SF-style square-then-clip
+				auto out1 = mulLo<i32>(out, out);
+				out1 = min<i32>(out1, set1<i32>(Q * Q));
 
 				store<i32>(&outputs[idx         ], out0);
 				store<i32>(&outputs[idx + L2Size], out1);
