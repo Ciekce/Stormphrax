@@ -33,11 +33,11 @@ namespace stormphrax::util::signal {
         std::vector<CtrlCHandler> s_handlers{};
     }
 
-    auto addCtrlCHandler(CtrlCHandler handler) -> void {
+    void addCtrlCHandler(CtrlCHandler handler) {
         s_handlers.push_back(std::move(handler));
     }
 
-    auto init() -> void {
+    void init() {
 #ifdef _WIN32
         const auto result = SetConsoleCtrlHandler(
             [](DWORD dwCtrlType) -> BOOL {

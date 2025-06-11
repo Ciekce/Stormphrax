@@ -29,15 +29,15 @@
 #include "tunable.h"
 
 namespace stormphrax::see {
-    constexpr auto value(Piece piece) {
+    constexpr i32 value(Piece piece) {
         return tunable::g_seeValues[static_cast<i32>(piece)];
     }
 
-    constexpr auto value(PieceType piece) {
+    constexpr i32 value(PieceType piece) {
         return tunable::g_seeValues[static_cast<i32>(piece) * 2];
     }
 
-    inline auto gain(const PositionBoards& boards, Move move) {
+    inline i32 gain(const PositionBoards& boards, Move move) {
         const auto type = move.type();
 
         if (type == MoveType::Castling) {
@@ -55,7 +55,12 @@ namespace stormphrax::see {
         return score;
     }
 
-    [[nodiscard]] inline auto popLeastValuable(const BitboardSet& bbs, Bitboard& occ, Bitboard attackers, Color color) {
+    [[nodiscard]] inline PieceType popLeastValuable(
+        const BitboardSet& bbs,
+        Bitboard& occ,
+        Bitboard attackers,
+        Color color
+    ) {
         for (i32 i = 0; i < 6; ++i) {
             const auto piece = static_cast<PieceType>(i);
             auto board = attackers & bbs.forPiece(piece, color);
@@ -70,7 +75,7 @@ namespace stormphrax::see {
     }
 
     // basically ported from ethereal and weiss (their implementation is the same)
-    inline auto see(const Position& pos, Move move, Score threshold) {
+    inline bool see(const Position& pos, Move move, Score threshold) {
         const auto& boards = pos.boards();
         const auto& bbs = boards.bbs();
 

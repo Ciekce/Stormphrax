@@ -35,12 +35,12 @@ namespace stormphrax {
             *this = other;
         }
 
-        inline auto push(const T& elem) {
+        inline void push(const T& elem) {
             assert(m_size < Capacity);
             m_data[m_size++] = elem;
         }
 
-        inline auto push(T&& elem) {
+        inline void push(T&& elem) {
             assert(m_size < Capacity);
             m_data[m_size++] = std::move(elem);
         }
@@ -50,23 +50,23 @@ namespace stormphrax {
             return std::move(m_data[--m_size]);
         }
 
-        inline auto clear() {
+        inline void clear() {
             m_size = 0;
         }
 
-        inline auto fill(const T& v) {
+        inline void fill(const T& v) {
             m_data.fill(v);
         }
 
-        [[nodiscard]] inline auto size() const {
+        [[nodiscard]] inline usize size() const {
             return m_size;
         }
 
-        [[nodiscard]] inline auto empty() const {
+        [[nodiscard]] inline bool empty() const {
             return m_size == 0;
         }
 
-        [[nodiscard]] inline auto operator[](usize i) const -> const auto& {
+        [[nodiscard]] inline const T& operator[](usize i) const {
             assert(i < m_size);
             return m_data[i];
         }
@@ -74,11 +74,12 @@ namespace stormphrax {
         [[nodiscard]] inline auto begin() {
             return m_data.begin();
         }
+
         [[nodiscard]] inline auto end() {
             return m_data.begin() + static_cast<std::ptrdiff_t>(m_size);
         }
 
-        [[nodiscard]] inline auto operator[](usize i) -> auto& {
+        [[nodiscard]] inline T& operator[](usize i) {
             assert(i < m_size);
             return m_data[i];
         }
@@ -86,16 +87,17 @@ namespace stormphrax {
         [[nodiscard]] inline auto begin() const {
             return m_data.begin();
         }
+
         [[nodiscard]] inline auto end() const {
             return m_data.begin() + static_cast<std::ptrdiff_t>(m_size);
         }
 
-        inline auto resize(usize size) {
+        inline void resize(usize size) {
             assert(size <= Capacity);
             m_size = size;
         }
 
-        inline auto operator=(const StaticVector<T, Capacity>& other) -> auto& {
+        inline StaticVector<T, Capacity>& operator=(const StaticVector<T, Capacity>& other) {
             std::copy(other.begin(), other.end(), begin());
             m_size = other.m_size;
             return *this;

@@ -30,10 +30,10 @@ namespace stormphrax::wdl {
     // Normalisation goes through the wdl model so as to be independent of material
     constexpr Score Material58NormalizationK = 259;
 
-    [[nodiscard]] auto wdlParams(i32 material) -> std::pair<f64, f64>;
-    [[nodiscard]] auto wdlModel(Score povScore, i32 material) -> std::pair<i32, i32>; // [win, loss]
+    [[nodiscard]] std::pair<f64, f64> wdlParams(i32 material);
+    [[nodiscard]] std::pair<i32, i32> wdlModel(Score povScore, i32 material); // [win, loss]
 
-    inline auto normalizeScore(Score score, i32 material) {
+    inline Score normalizeScore(Score score, i32 material) {
         // don't normalise wins/losses, or zeroes that are pointless to normalise
         if (score == 0 || std::abs(score) > ScoreWin) {
             return score;
@@ -43,7 +43,7 @@ namespace stormphrax::wdl {
         return static_cast<Score>(std::round(100.0 * static_cast<f64>(score) / a));
     }
 
-    inline auto unnormalizeScoreMaterial58(Score score) {
+    inline Score unnormalizeScoreMaterial58(Score score) {
         return score == 0 || std::abs(score) > ScoreWin ? score : score * Material58NormalizationK / 100;
     }
 } // namespace stormphrax::wdl

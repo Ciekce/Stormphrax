@@ -38,7 +38,7 @@ namespace stormphrax::util::rng {
 
         ~Jsf64Rng() = default;
 
-        constexpr auto nextU64() -> u64 {
+        constexpr u64 nextU64() {
             const auto e = m_a - std::rotl(m_b, 7);
             m_a = m_b ^ std::rotl(m_c, 13);
             m_b = m_c + std::rotl(m_d, 37);
@@ -47,11 +47,11 @@ namespace stormphrax::util::rng {
             return m_d;
         }
 
-        constexpr auto nextU32() {
+        constexpr u32 nextU32() {
             return static_cast<u32>(nextU64() >> 32);
         }
 
-        constexpr auto nextU32(u32 bound) -> u32 {
+        constexpr u32 nextU32(u32 bound) {
             if (bound == 0) {
                 return 0;
             }
@@ -81,14 +81,15 @@ namespace stormphrax::util::rng {
             return static_cast<u32>(m >> 32);
         }
 
-        constexpr auto operator()() {
+        constexpr u64 operator()() {
             return nextU64();
         }
 
-        static constexpr auto min() {
+        static constexpr u64 min() {
             return std::numeric_limits<u64>::min();
         }
-        static constexpr auto max() {
+
+        static constexpr u64 max() {
             return std::numeric_limits<u64>::max();
         }
 
@@ -99,7 +100,7 @@ namespace stormphrax::util::rng {
         u64 m_d;
     };
 
-    inline auto generateSingleSeed() {
+    inline u64 generateSingleSeed() {
         std::random_device generator{};
         return static_cast<u64>(generator()) << 32 | generator();
     }
@@ -112,7 +113,7 @@ namespace stormphrax::util::rng {
 
         ~SeedGenerator() = default;
 
-        constexpr auto nextSeed() {
+        constexpr u64 nextSeed() {
             m_state += U64(0x9E3779B97F4A7C15);
 
             auto z = m_state;

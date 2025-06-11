@@ -51,7 +51,7 @@ namespace stormphrax::eval::nnue::arch {
         SP_SIMD_ALIGNAS std::array<i16, OutputBucketCount> l1Biases{};
 
     public:
-        inline auto propagate(
+        inline void propagate(
             u32 bucket,
             std::span<const i16, L1Size> stmInputs,
             std::span<const i16, L1Size> nstmInputs,
@@ -94,11 +94,11 @@ namespace stormphrax::eval::nnue::arch {
             outputs[0] = out * Scale / Q;
         }
 
-        inline auto readFrom(IParamStream& stream) -> bool {
+        inline bool readFrom(IParamStream& stream) {
             return stream.read(l1Weights) && stream.read(l1Biases);
         }
 
-        inline auto writeTo(IParamStream& stream) const -> bool {
+        inline bool writeTo(IParamStream& stream) const {
             return stream.write(l1Weights) && stream.write(l1Biases);
         }
     };

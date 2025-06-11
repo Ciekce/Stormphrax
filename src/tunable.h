@@ -32,7 +32,7 @@
 #endif
 
 namespace stormphrax::tunable {
-    auto init() -> void;
+    void init();
 
     // [noisy][depth][legal moves]
     extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
@@ -40,10 +40,10 @@ namespace stormphrax::tunable {
     // [coloured piece], +1 for none
     extern std::array<i32, 13> g_seeValues;
 
-    auto updateQuietLmrTable() -> void;
-    auto updateNoisyLmrTable() -> void;
+    void updateQuietLmrTable();
+    void updateNoisyLmrTable();
 
-    auto updateSeeValueTable() -> void;
+    void updateSeeValueTable();
 
 #define SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
     static_assert((Default) >= (Min)); \
@@ -101,7 +101,7 @@ namespace stormphrax::tunable {
 #else
     #define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
-        constexpr auto Name() -> i32 { \
+        constexpr i32 Name() { \
             return Default; \
         }
     #define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
@@ -109,7 +109,7 @@ namespace stormphrax::tunable {
 
     #define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
         SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
-        constexpr auto Name() -> f64 { \
+        constexpr f64 Name() { \
             return Default; \
         }
 #endif

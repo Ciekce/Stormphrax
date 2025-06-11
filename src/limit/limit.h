@@ -27,11 +27,11 @@ namespace stormphrax::limit {
     public:
         virtual ~ISearchLimiter() = default;
 
-        virtual auto update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) -> void {}
-        virtual auto updateMoveNodes(Move move, usize nodes) -> void {}
+        virtual void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {}
+        virtual void updateMoveNodes(Move move, usize nodes) {}
 
-        [[nodiscard]] virtual auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool = 0;
+        [[nodiscard]] virtual bool stop(const search::SearchData& data, bool allowSoftTimeout) = 0;
 
-        [[nodiscard]] virtual auto stopped() const -> bool = 0;
+        [[nodiscard]] virtual bool stopped() const = 0;
     };
 } // namespace stormphrax::limit

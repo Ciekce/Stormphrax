@@ -38,7 +38,7 @@
 
 namespace stormphrax {
     namespace {
-        auto scharnaglToBackrank(u32 n) {
+        std::array<PieceType, 8> scharnaglToBackrank(u32 n) {
             // https://en.wikipedia.org/wiki/Fischer_random_chess_numbering_scheme#Direct_derivation
 
             // these are stored with the second knight moved left by an empty square,
@@ -106,41 +106,41 @@ namespace stormphrax {
         }
     } // namespace
 
-    template auto Position::applyMove<NnueUpdateAction::None>(Move, eval::NnueState*) const -> Position;
-    template auto Position::applyMove<NnueUpdateAction::Queue>(Move, eval::NnueState*) const -> Position;
-    template auto Position::applyMove<NnueUpdateAction::Apply>(Move, eval::NnueState*) const -> Position;
+    template Position Position::applyMove<NnueUpdateAction::None>(Move, eval::NnueState*) const;
+    template Position Position::applyMove<NnueUpdateAction::Queue>(Move, eval::NnueState*) const;
+    template Position Position::applyMove<NnueUpdateAction::Apply>(Move, eval::NnueState*) const;
 
-    template auto Position::setPiece<false>(Piece, Square) -> void;
-    template auto Position::setPiece<true>(Piece, Square) -> void;
+    template void Position::setPiece<false>(Piece, Square);
+    template void Position::setPiece<true>(Piece, Square);
 
-    template auto Position::removePiece<false>(Piece, Square) -> void;
-    template auto Position::removePiece<true>(Piece, Square) -> void;
+    template void Position::removePiece<false>(Piece, Square);
+    template void Position::removePiece<true>(Piece, Square);
 
-    template auto Position::movePieceNoCap<false>(Piece, Square, Square) -> void;
-    template auto Position::movePieceNoCap<true>(Piece, Square, Square) -> void;
+    template void Position::movePieceNoCap<false>(Piece, Square, Square);
+    template void Position::movePieceNoCap<true>(Piece, Square, Square);
 
-    template auto Position::movePiece<false, false>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::movePiece<true, false>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::movePiece<false, true>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::movePiece<true, true>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
+    template Piece Position::movePiece<false, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::movePiece<true, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::movePiece<false, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::movePiece<true, true>(Piece, Square, Square, eval::NnueUpdates&);
 
-    template auto Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&) -> Piece;
-    template auto Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&) -> Piece;
-    template auto Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&) -> Piece;
-    template auto Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&) -> Piece;
+    template Piece Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
+    template Piece Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
+    template Piece Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
+    template Piece Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
 
-    template auto Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates&) -> void;
-    template auto Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates&) -> void;
-    template auto Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates&) -> void;
-    template auto Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates&) -> void;
+    template void Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template void Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template void Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template void Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates&);
 
-    template auto Position::enPassant<false, false>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
-    template auto Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates&) -> Piece;
+    template Piece Position::enPassant<false, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates&);
 
     template <NnueUpdateAction NnueAction>
-    auto Position::applyMove(Move move, eval::NnueState* nnueState) const -> Position {
+    Position Position::applyMove(Move move, eval::NnueState* nnueState) const {
         static constexpr bool UpdateNnue = NnueAction != NnueUpdateAction::None;
 
         if constexpr (UpdateNnue) {
@@ -239,7 +239,7 @@ namespace stormphrax {
         return newPos;
     }
 
-    auto Position::isPseudolegal(Move move) const -> bool {
+    bool Position::isPseudolegal(Move move) const {
         assert(move != NullMove);
 
         const auto us = toMove();
@@ -415,7 +415,7 @@ namespace stormphrax {
     }
 
     // This does *not* check for pseudolegality, moves are assumed to be pseudolegal
-    auto Position::isLegal(Move move) const -> bool {
+    bool Position::isLegal(Move move) const {
         assert(move != NullMove);
 
         const auto us = toMove();
@@ -473,7 +473,7 @@ namespace stormphrax {
     }
 
     // see comment in cuckoo.cpp
-    auto Position::hasCycle(i32 ply, std::span<const u64> keys) const -> bool {
+    bool Position::hasCycle(i32 ply, std::span<const u64> keys) const {
         const auto end = std::min<i32>(m_halfmove, static_cast<i32>(keys.size()));
 
         if (end < 3) {
@@ -529,7 +529,7 @@ namespace stormphrax {
         return false;
     }
 
-    auto Position::isDrawn(i32 ply, std::span<const u64> keys) const -> bool {
+    bool Position::isDrawn(i32 ply, std::span<const u64> keys) const {
         const auto halfmove = m_halfmove;
 
         if (halfmove >= 100) {
@@ -589,7 +589,7 @@ namespace stormphrax {
         return false;
     }
 
-    auto Position::toFen() const -> std::string {
+    std::string Position::toFen() const {
         std::ostringstream fen{};
 
         for (i32 rank = 7; rank >= 0; --rank) {
@@ -658,7 +658,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey>
-    auto Position::setPiece(Piece piece, Square square) -> void {
+    void Position::setPiece(Piece piece, Square square) {
         assert(piece != Piece::None);
         assert(square != Square::None);
 
@@ -672,7 +672,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey>
-    auto Position::removePiece(Piece piece, Square square) -> void {
+    void Position::removePiece(Piece piece, Square square) {
         assert(piece != Piece::None);
         assert(square != Square::None);
 
@@ -686,7 +686,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey>
-    auto Position::movePieceNoCap(Piece piece, Square src, Square dst) -> void {
+    void Position::movePieceNoCap(Piece piece, Square src, Square dst) {
         assert(piece != Piece::None);
 
         assert(src != Square::None);
@@ -709,7 +709,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey, bool UpdateNnue>
-    auto Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates) -> Piece {
+    Piece Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
         assert(piece != Piece::None);
 
         assert(src != Square::None);
@@ -760,8 +760,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey, bool UpdateNnue>
-    auto Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates)
-        -> Piece {
+    Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates) {
         assert(pawn != Piece::None);
         assert(pieceType(pawn) == PieceType::Pawn);
 
@@ -810,7 +809,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey, bool UpdateNnue>
-    auto Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates) -> void {
+    void Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates) {
         assert(king != Piece::None);
         assert(pieceType(king) == PieceType::King);
 
@@ -850,7 +849,7 @@ namespace stormphrax {
     }
 
     template <bool UpdateKey, bool UpdateNnue>
-    auto Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates) -> Piece {
+    Piece Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
         assert(pawn != Piece::None);
         assert(pieceType(pawn) == PieceType::Pawn);
 
@@ -889,7 +888,7 @@ namespace stormphrax {
         return enemyPawn;
     }
 
-    auto Position::regen() -> void {
+    void Position::regen() {
         m_boards.regenFromBbs();
 
         m_keys.clear();
@@ -999,7 +998,7 @@ namespace stormphrax {
         }
     }
 
-    auto Position::moveFromUci(const std::string& move) const -> Move {
+    Move Position::moveFromUci(const std::string& move) const {
         if (move.length() < 4 || move.length() > 5) {
             return NullMove;
         }
@@ -1033,7 +1032,7 @@ namespace stormphrax {
         }
     }
 
-    auto Position::starting() -> Position {
+    Position Position::starting() {
         Position pos{};
 
         auto& bbs = pos.m_boards.bbs();
@@ -1061,7 +1060,7 @@ namespace stormphrax {
         return pos;
     }
 
-    auto Position::fromFen(const std::string& fen) -> std::optional<Position> {
+    std::optional<Position> Position::fromFen(const std::string& fen) {
         const auto tokens = split::split(fen, ' ');
 
         if (tokens.size() > 6) {
@@ -1326,7 +1325,7 @@ namespace stormphrax {
         return pos;
     }
 
-    auto Position::fromFrcIndex(u32 n) -> std::optional<Position> {
+    std::optional<Position> Position::fromFrcIndex(u32 n) {
         assert(g_opts.chess960);
 
         if (n >= 960) {
@@ -1375,7 +1374,7 @@ namespace stormphrax {
         return pos;
     }
 
-    auto Position::fromDfrcIndex(u32 n) -> std::optional<Position> {
+    std::optional<Position> Position::fromDfrcIndex(u32 n) {
         assert(g_opts.chess960);
 
         if (n >= 960 * 960) {
@@ -1434,7 +1433,7 @@ namespace stormphrax {
         return pos;
     }
 
-    auto squareFromString(const std::string& str) -> Square {
+    Square squareFromString(const std::string& str) {
         if (str.length() != 2) {
             return Square::None;
         }

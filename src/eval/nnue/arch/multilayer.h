@@ -74,7 +74,7 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr i32 QuantBits = 6;
         static constexpr i32 Q = 1 << QuantBits;
 
-        inline auto activateFt(
+        inline void activateFt(
             std::span<const i16, L1Size> stmInputs,
             std::span<const i16, L1Size> nstmInputs,
             std::span<u8, L1Size> outputs
@@ -133,7 +133,7 @@ namespace stormphrax::eval::nnue::arch {
             activatePerspective(nstmInputs, PairCount);
         }
 
-        inline auto propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2SizeFull> outputs)
+        inline void propagateL1(u32 bucket, std::span<const u8, L1Size> inputs, std::span<i32, L2SizeFull> outputs)
             const {
             using namespace util::simd;
 
@@ -208,7 +208,7 @@ namespace stormphrax::eval::nnue::arch {
 
         // Take activated L1 outputs and propagate L2
         // Does not activate outputs
-        inline auto propagateL2(u32 bucket, std::span<const i32, L2SizeFull> inputs, std::span<i32, L3Size> outputs)
+        inline void propagateL2(u32 bucket, std::span<const i32, L2SizeFull> inputs, std::span<i32, L3Size> outputs)
             const {
             using namespace util::simd;
 
@@ -277,7 +277,7 @@ namespace stormphrax::eval::nnue::arch {
             }
         }
 
-        inline auto propagateL3(u32 bucket, std::span<const i32, L3Size> inputs, std::span<i32, 1> outputs) const {
+        inline void propagateL3(u32 bucket, std::span<const i32, L3Size> inputs, std::span<i32, 1> outputs) const {
             using namespace util::simd;
 
             const auto weightOffset = bucket * L3Size;
@@ -357,7 +357,7 @@ namespace stormphrax::eval::nnue::arch {
         }
 
     public:
-        inline auto propagate(
+        inline void propagate(
             u32 bucket,
             std::span<const i16, L1Size> stmInputs,
             std::span<const i16, L1Size> nstmInputs,
@@ -382,18 +382,18 @@ namespace stormphrax::eval::nnue::arch {
             outputs[0] = l3Out[0] * Scale / (Q * Q * Q);
         }
 
-        inline auto readFrom(IParamStream& stream) -> bool {
+        inline bool readFrom(IParamStream& stream) {
             return stream.read(l1Weights) && stream.read(l1Biases) && stream.read(l2Weights) && stream.read(l2Biases)
                 && stream.read(l3Weights) && stream.read(l3Biases);
         }
 
-        inline auto writeTo(IParamStream& stream) const -> bool {
+        inline bool writeTo(IParamStream& stream) const {
             return stream.write(l1Weights) && stream.write(l1Biases) && stream.write(l2Weights)
                 && stream.write(l2Biases) && stream.write(l3Weights) && stream.write(l3Biases);
         }
 
         template <typename W, typename B>
-        static inline auto permuteFt(std::span<W> weights, std::span<B> biases) {
+        static inline void permuteFt(std::span<W> weights, std::span<B> biases) {
             using namespace util::simd;
 
             if constexpr (!PackNonSequential) {

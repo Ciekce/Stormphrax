@@ -51,11 +51,11 @@ namespace stormphrax::search {
             return result;
         }();
 
-        inline auto drawScore(usize nodes) {
+        inline Score drawScore(usize nodes) {
             return 2 - static_cast<Score>(nodes % 4);
         }
 
-        inline auto generateLegal(MoveList& moves, const Position& pos) {
+        inline void generateLegal(MoveList& moves, const Position& pos) {
             ScoredMoveList generated{};
             generateAll(generated, pos);
 
@@ -79,10 +79,11 @@ namespace stormphrax::search {
         thread.thread = std::thread{[this, &thread] { run(thread); }};
     }
 
-    auto Searcher::newGame() -> void {
+    void Searcher::newGame() {
         // Finalisation (init) clears the TT, so don't clear it twice
-        if (!m_ttable.finalize())
+        if (!m_ttable.finalize()) {
             m_ttable.clear();
+        }
 
         for (auto& thread : m_threads) {
             thread.history.clear();
@@ -90,11 +91,11 @@ namespace stormphrax::search {
         }
     }
 
-    auto Searcher::ensureReady() -> void {
+    void Searcher::ensureReady() {
         m_ttable.finalize();
     }
 
-    auto Searcher::startSearch(
+    void Searcher::startSearch(
         const Position& pos,
         std::span<const u64> keyHistory,
         Instant startTime,
@@ -102,7 +103,7 @@ namespace stormphrax::search {
         std::span<Move> moves,
         std::unique_ptr<limit::ISearchLimiter> limiter,
         bool infinite
-    ) -> void {
+    ) {
         if (!m_limiter && !limiter) {
             std::cerr << "missing limiter" << std::endl;
             return;
@@ -166,7 +167,7 @@ namespace stormphrax::search {
         m_setupBarrier.arriveAndWait();
     }
 
-    auto Searcher::stop() -> void {
+    void Searcher::stop() {
         m_stop.store(true, std::memory_order::relaxed);
 
         // safe, always runs from uci thread
@@ -176,7 +177,7 @@ namespace stormphrax::search {
         }
     }
 
-    auto Searcher::runDatagenSearch(ThreadData& thread) -> std::pair<Score, Score> {
+    std::pair<Score, Score> Searcher::runDatagenSearch(ThreadData& thread) {
         thread.rootPv.reset();
 
         if (initRootMoves(thread.rootPos) == RootStatus::NoLegalMoves) {
@@ -195,7 +196,7 @@ namespace stormphrax::search {
         return {whitePovScore, wdl::normalizeScore(whitePovScore, thread.rootPos.classicalMaterial())};
     }
 
-    auto Searcher::runBench(BenchData& data, const Position& pos, i32 depth) -> void {
+    void Searcher::runBench(BenchData& data, const Position& pos, i32 depth) {
         m_limiter = std::make_unique<limit::InfiniteLimiter>();
         m_infinite = false;
 
@@ -226,7 +227,7 @@ namespace stormphrax::search {
         data.time = start.elapsed();
     }
 
-    auto Searcher::setThreads(u32 threadCount) -> void {
+    void Searcher::setThreads(u32 threadCount) {
         if (threadCount == m_threads.size()) {
             return;
         }
@@ -253,7 +254,7 @@ namespace stormphrax::search {
         }
     }
 
-    auto Searcher::initRootMoves(const Position& pos) -> RootStatus {
+    RootStatus Searcher::initRootMoves(const Position& pos) {
         m_rootMoves.clear();
 
         if (g_opts.syzygyEnabled
@@ -288,7 +289,7 @@ namespace stormphrax::search {
         return m_rootMoves.empty() ? RootStatus::NoLegalMoves : RootStatus::Generated;
     }
 
-    auto Searcher::stopThreads() -> void {
+    void Searcher::stopThreads() {
         m_quit.store(true, std::memory_order::release);
 
         m_resetBarrier.arriveAndWait();
@@ -299,7 +300,7 @@ namespace stormphrax::search {
         }
     }
 
-    auto Searcher::run(ThreadData& thread) -> void {
+    void Searcher::run(ThreadData& thread) {
         while (true) {
             m_resetBarrier.arriveAndWait();
             m_idleBarrier.arriveAndWait();
@@ -312,7 +313,7 @@ namespace stormphrax::search {
         }
     }
 
-    auto Searcher::searchRoot(ThreadData& thread, bool actualSearch) -> Score {
+    Score Searcher::searchRoot(ThreadData& thread, bool actualSearch) {
         if (actualSearch) {
             thread.search = SearchData{};
             thread.rootPos = m_setupInfo.rootPos;
@@ -465,7 +466,7 @@ namespace stormphrax::search {
     }
 
     template <bool PvNode, bool RootNode>
-    auto Searcher::search(
+    Score Searcher::search(
         ThreadData& thread,
         const Position& pos,
         PvList& pv,
@@ -475,7 +476,7 @@ namespace stormphrax::search {
         Score alpha,
         Score beta,
         bool cutnode
-    ) -> Score {
+    ) {
         assert(ply >= 0 && ply <= MaxDepth);
         assert(RootNode || ply > 0);
         assert(PvNode || alpha + 1 == beta);
@@ -1106,8 +1107,14 @@ namespace stormphrax::search {
     }
 
     template <bool PvNode>
-    auto Searcher::qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta)
-        -> Score {
+    Score Searcher::qsearch(
+        ThreadData& thread,
+        const Position& pos,
+        i32 ply,
+        u32 moveStackIdx,
+        Score alpha,
+        Score beta
+    ) {
         assert(ply > 0 && ply <= MaxDepth);
 
         if (checkHardTimeout(thread.search, thread.isMainThread())) {
@@ -1276,7 +1283,7 @@ namespace stormphrax::search {
         return bestScore;
     }
 
-    auto Searcher::report(
+    void Searcher::report(
         const ThreadData& mainThread,
         const PvList& pv,
         i32 depth,
@@ -1284,7 +1291,7 @@ namespace stormphrax::search {
         Score score,
         Score alpha,
         Score beta
-    ) -> void {
+    ) {
         usize nodes = 0;
         i32 seldepth = 0;
 
@@ -1370,13 +1377,13 @@ namespace stormphrax::search {
         std::cout << std::endl;
     }
 
-    auto Searcher::finalReport(
+    void Searcher::finalReport(
         const ThreadData& mainThread,
         const PvList& pv,
         i32 depthCompleted,
         f64 time,
         Score score
-    ) -> void {
+    ) {
         report(mainThread, pv, depthCompleted, time, score);
         std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
     }

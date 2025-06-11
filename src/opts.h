@@ -49,7 +49,7 @@ namespace stormphrax {
             i32 contempt{wdl::unnormalizeScoreMaterial58(DefaultNormalizedContempt)};
         };
 
-        auto mutableOpts() -> GlobalOptions&;
+        GlobalOptions& mutableOpts();
     } // namespace opts
 
     extern const opts::GlobalOptions& g_opts;

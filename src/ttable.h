@@ -50,21 +50,21 @@ namespace stormphrax {
         explicit TTable(usize mib = DefaultTtSizeMib);
         ~TTable();
 
-        auto resize(usize mib) -> void;
-        auto finalize() -> bool;
+        void resize(usize mib);
+        bool finalize();
 
-        auto probe(ProbedTTableEntry& dst, u64 key, i32 ply) const -> bool;
-        auto put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv) -> void;
+        bool probe(ProbedTTableEntry& dst, u64 key, i32 ply) const;
+        void put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv);
 
-        inline auto age() {
+        inline void age() {
             m_age = (m_age + 1) % (1 << Entry::AgeBits);
         }
 
-        auto clear() -> void;
+        void clear();
 
-        [[nodiscard]] auto full() const -> u32;
+        [[nodiscard]] u32 full() const;
 
-        inline auto prefetch(u64 key) {
+        inline void prefetch(u64 key) {
             __builtin_prefetch(&m_clusters[index(key)]);
         }
 
@@ -82,19 +82,19 @@ namespace stormphrax {
             u8 depth;
             u8 agePvFlag;
 
-            [[nodiscard]] inline auto age() const {
+            [[nodiscard]] inline u32 age() const {
                 return static_cast<u32>(agePvFlag >> 3);
             }
 
-            [[nodiscard]] inline auto pv() const {
+            [[nodiscard]] inline bool pv() const {
                 return (static_cast<u32>(agePvFlag >> 2) & 1) != 0;
             }
 
-            [[nodiscard]] inline auto flag() const {
+            [[nodiscard]] inline TtFlag flag() const {
                 return static_cast<TtFlag>(agePvFlag & 0x3);
             }
 
-            inline auto setAgePvFlag(u32 age, bool pv, TtFlag flag) {
+            inline void setAgePvFlag(u32 age, bool pv, TtFlag flag) {
                 assert(age < (1 << AgeBits));
                 agePvFlag = (age << 3) | (static_cast<u32>(pv) << 2) | static_cast<u32>(flag);
             }
@@ -116,7 +116,7 @@ namespace stormphrax {
                 };
         };
 
-        [[nodiscard]] inline auto index(u64 key) const -> u64 {
+        [[nodiscard]] inline u64 index(u64 key) const {
             // this emits a single mul on both x64 and arm64
             return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(m_clusterCount)) >> 64);
         }

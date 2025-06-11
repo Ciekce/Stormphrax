@@ -34,9 +34,9 @@ namespace stormphrax::datagen {
 
         static constexpr auto Extension = "vf";
 
-        auto start(const Position& initialPosition) -> void;
-        auto push(bool filtered, Move move, Score score) -> void;
-        auto writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize;
+        void start(const Position& initialPosition);
+        void push(bool filtered, Move move, Score score);
+        usize writeAllWithOutcome(std::ostream& stream, Outcome outcome);
 
     private:
         using ScoredMove = std::pair<u16, i16>;

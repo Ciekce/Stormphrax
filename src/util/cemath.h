@@ -24,22 +24,22 @@
 
 namespace stormphrax::util {
     template <typename T>
-    constexpr auto abs(T v) {
+    constexpr T abs(T v) {
         return v < T{0} ? -v : v;
     }
 
     template <std::integral auto One>
-    constexpr auto ilerp(decltype(One) a, decltype(One) b, decltype(One) t) -> decltype(One) {
+    constexpr decltype(One) ilerp(decltype(One) a, decltype(One) b, decltype(One) t) {
         return (a * (One - t) + b * t) / One;
     }
 
     template <std::integral T>
-    constexpr auto ceilDiv(T a, T b) {
+    constexpr T ceilDiv(T a, T b) {
         return (a + b - 1) / b;
     }
 
     template <std::unsigned_integral auto Block>
-    [[nodiscard]] inline auto pad(decltype(Block) v) {
+    [[nodiscard]] inline decltype(Block) pad(decltype(Block) v) {
         return ceilDiv(v, Block) * Block;
     }
 } // namespace stormphrax::util

@@ -32,29 +32,29 @@ namespace stormphrax::limit {
         ~CompoundLimiter() final = default;
 
         template <typename T, typename... Args>
-        inline auto addLimiter(Args&&... args) {
+        inline void addLimiter(Args&&... args) {
             m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
         }
 
-        inline auto update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) -> void final {
+        inline void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) final {
             for (const auto& limiter : m_limiters) {
                 limiter->update(data, score, bestMove, totalNodes);
             }
         }
 
-        inline auto updateMoveNodes(Move move, usize nodes) -> void final {
+        inline void updateMoveNodes(Move move, usize nodes) final {
             for (const auto& limiter : m_limiters) {
                 limiter->updateMoveNodes(move, nodes);
             }
         }
 
-        [[nodiscard]] inline auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final {
+        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
             return std::ranges::any_of(m_limiters, [&](const auto& limiter) {
                 return limiter->stop(data, allowSoftTimeout);
             });
         }
 
-        [[nodiscard]] inline auto stopped() const -> bool final {
+        [[nodiscard]] inline bool stopped() const final {
             return std::ranges::any_of(m_limiters, [&](const auto& limiter) { return limiter->stopped(); });
         }
 

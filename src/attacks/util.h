@@ -28,7 +28,7 @@
 
 namespace stormphrax::attacks {
     namespace internal {
-        constexpr auto edges(i32 dir) {
+        constexpr Bitboard edges(i32 dir) {
             switch (dir) {
                 case offsets::Up:
                     return boards::Rank8;
@@ -51,7 +51,7 @@ namespace stormphrax::attacks {
             }
         }
 
-        constexpr auto generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy) {
+        constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy) {
             Bitboard dst{};
 
             auto blockers = edges(dir);
@@ -80,7 +80,7 @@ namespace stormphrax::attacks {
     } // namespace internal
 
     template <i32... Dirs>
-    consteval auto generateEmptyBoardAttacks() {
+    consteval std::array<Bitboard, 64> generateEmptyBoardAttacks() {
         std::array<Bitboard, 64> dst{};
 
         for (i32 square = 0; square < 64; ++square) {
@@ -99,7 +99,7 @@ namespace stormphrax::attacks {
         generateEmptyBoardAttacks<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>();
 
     template <i32... Dirs>
-    consteval auto genAllSlidingAttacks(Square src, Bitboard occupancy) {
+    consteval Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
         Bitboard dst{};
 
         for (const auto dir : {Dirs...}) {
@@ -109,11 +109,11 @@ namespace stormphrax::attacks {
         return dst;
     }
 
-    consteval auto genRookAttacks(Square src, Bitboard occupancy) {
+    consteval Bitboard genRookAttacks(Square src, Bitboard occupancy) {
         return genAllSlidingAttacks<offsets::Up, offsets::Down, offsets::Left, offsets::Right>(src, occupancy);
     }
 
-    consteval auto genBishopAttacks(Square src, Bitboard occupancy) {
+    consteval Bitboard genBishopAttacks(Square src, Bitboard occupancy) {
         return genAllSlidingAttacks<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>(
             src,
             occupancy

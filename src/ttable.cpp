@@ -30,7 +30,7 @@ namespace stormphrax {
     namespace {
         // for a long time, these were backwards
         // cheers toanth
-        inline auto scoreToTt(Score score, i32 ply) {
+        inline Score scoreToTt(Score score, i32 ply) {
             if (score < -ScoreWin) {
                 return score - ply;
             } else if (score > ScoreWin) {
@@ -39,7 +39,7 @@ namespace stormphrax {
             return score;
         }
 
-        inline auto scoreFromTt(Score score, i32 ply) {
+        inline Score scoreFromTt(Score score, i32 ply) {
             if (score < -ScoreWin) {
                 return score + ply;
             } else if (score > ScoreWin) {
@@ -48,7 +48,7 @@ namespace stormphrax {
             return score;
         }
 
-        inline auto packEntryKey(u64 key) {
+        inline u16 packEntryKey(u64 key) {
             return static_cast<u16>(key);
         }
     } // namespace
@@ -63,7 +63,7 @@ namespace stormphrax {
         }
     }
 
-    auto TTable::resize(usize mib) -> void {
+    void TTable::resize(usize mib) {
         const auto clusters = mib * 1024 * 1024;
         const auto capacity = clusters / sizeof(Cluster);
 
@@ -80,7 +80,7 @@ namespace stormphrax {
         m_pendingInit = true;
     }
 
-    auto TTable::finalize() -> bool {
+    bool TTable::finalize() {
         if (!m_pendingInit) {
             return false;
         }
@@ -98,7 +98,7 @@ namespace stormphrax {
         return true;
     }
 
-    auto TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply) const -> bool {
+    bool TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply) const {
         assert(!m_pendingInit);
 
         const auto packedKey = packEntryKey(key);
@@ -120,8 +120,7 @@ namespace stormphrax {
         return false;
     }
 
-    auto TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv)
-        -> void {
+    void TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv) {
         assert(!m_pendingInit);
 
         assert(depth >= 0);
@@ -181,7 +180,7 @@ namespace stormphrax {
         *entryPtr = entry;
     }
 
-    auto TTable::clear() -> void {
+    void TTable::clear() {
         assert(!m_pendingInit);
 
         const auto threadCount = g_opts.threads;
@@ -209,7 +208,7 @@ namespace stormphrax {
         }
     }
 
-    auto TTable::full() const -> u32 {
+    u32 TTable::full() const {
         assert(!m_pendingInit);
 
         u32 filledEntries{};

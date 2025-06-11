@@ -22,7 +22,7 @@
 #include <numeric>
 
 namespace stormphrax::wdl {
-    auto wdlParams(i32 material) -> std::pair<f64, f64> {
+    std::pair<f64, f64> wdlParams(i32 material) {
         static constexpr auto As = std::array{-21.62471742, 57.27533161, -196.12706447, 419.75122408};
 
         static constexpr auto Bs = std::array{-41.67494726, 81.27819509, 10.83073229, 48.03832274};
@@ -34,7 +34,7 @@ namespace stormphrax::wdl {
         return {(((As[0] * m + As[1]) * m + As[2]) * m) + As[3], (((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3]};
     }
 
-    auto wdlModel(Score povScore, i32 material) -> std::pair<i32, i32> {
+    std::pair<i32, i32> wdlModel(Score povScore, i32 material) {
         const auto [a, b] = wdlParams(material);
 
         const auto x = static_cast<f64>(povScore);

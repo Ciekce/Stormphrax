@@ -34,7 +34,7 @@ namespace stormphrax::util {
             setg(m_begin, m_begin, m_end);
         }
 
-        auto seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which) -> pos_type override {
+        pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which) override {
             assert(off <= std::numeric_limits<i32>::max());
 
             switch (dir) {
@@ -54,7 +54,7 @@ namespace stormphrax::util {
             return gptr() - eback();
         }
 
-        auto seekpos(std::streampos pos, std::ios_base::openmode mode) -> pos_type override {
+        pos_type seekpos(std::streampos pos, std::ios_base::openmode mode) override {
             return seekoff(pos, std::ios_base::beg, mode);
         }
 

@@ -19,6 +19,7 @@
 #include "nnue.h"
 
 #include <fstream>
+#include <string_view>
 
 #include "../util/memstream.h"
 #include "nnue/io_impl.h"
@@ -69,7 +70,7 @@ namespace stormphrax::eval {
 
         static_assert(sizeof(NetworkHeader) == 64);
 
-        inline auto archName(u8 arch) {
+        inline std::string_view archName(u8 arch) {
             static constexpr auto NetworkArchNames = std::array{
                 "basic",
                 "perspective",
@@ -84,7 +85,7 @@ namespace stormphrax::eval {
             return "<unknown>";
         }
 
-        inline auto activationFuncName(u8 func) {
+        inline std::string_view activationFuncName(u8 func) {
             static constexpr auto ActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
 
             if (func < ActivationFunctionNames.size()) {
@@ -95,7 +96,7 @@ namespace stormphrax::eval {
         }
 
         //TODO better error messages
-        auto validate(const NetworkHeader& header) {
+        bool validate(const NetworkHeader& header) {
             if (header.magic != std::array{'C', 'B', 'N', 'F'}) {
                 std::cerr << "invalid magic bytes in network header" << std::endl;
                 return false;
@@ -170,7 +171,7 @@ namespace stormphrax::eval {
             return true;
         }
 
-        auto loadNetworkFrom(Network& network, std::istream& stream, const NetworkHeader& header) {
+        bool loadNetworkFrom(Network& network, std::istream& stream, const NetworkHeader& header) {
             bool success;
 
             if (testFlags(header.flags, NetworkFlags::ZstdCompressed)) {
@@ -189,7 +190,7 @@ namespace stormphrax::eval {
 
     const Network& g_network = s_network;
 
-    auto loadDefaultNetwork() -> void {
+    void loadDefaultNetwork() {
         if (g_defaultNetSize < sizeof(NetworkHeader)) {
             std::cerr << "Missing default network?" << std::endl;
             return;
@@ -213,7 +214,7 @@ namespace stormphrax::eval {
         }
     }
 
-    auto loadNetwork(const std::string& name) -> void {
+    void loadNetwork(const std::string& name) {
         std::ifstream stream{name, std::ios::binary};
 
         if (!stream) {
@@ -242,7 +243,7 @@ namespace stormphrax::eval {
         std::cout << "info string loaded network " << netName << std::endl;
     }
 
-    auto defaultNetworkName() -> std::string_view {
+    std::string_view defaultNetworkName() {
         const auto& header = *reinterpret_cast<const NetworkHeader*>(g_defaultNetData);
         return {header.name.data(), header.nameLen};
     }

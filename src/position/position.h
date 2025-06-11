@@ -43,7 +43,7 @@ namespace stormphrax {
         u64 whiteNonPawns;
         u64 majors;
 
-        inline auto clear() {
+        inline void clear() {
             all = 0;
             pawns = 0;
             blackNonPawns = 0;
@@ -51,11 +51,11 @@ namespace stormphrax {
             majors = 0;
         }
 
-        inline auto flipStm() {
+        inline void flipStm() {
             all ^= keys::color();
         }
 
-        inline auto flipPiece(Piece piece, Square square) {
+        inline void flipPiece(Piece piece, Square square) {
             const auto key = keys::pieceSquare(piece, square);
 
             all ^= key;
@@ -73,7 +73,7 @@ namespace stormphrax {
             }
         }
 
-        inline auto movePiece(Piece piece, Square src, Square dst) {
+        inline void movePiece(Piece piece, Square src, Square dst) {
             const auto key = keys::pieceSquare(piece, src) ^ keys::pieceSquare(piece, dst);
 
             all ^= key;
@@ -91,14 +91,14 @@ namespace stormphrax {
             }
         }
 
-        inline auto flipEp(Square epSq) {
+        inline void flipEp(Square epSq) {
             const auto key = keys::enPassant(epSq);
 
             all ^= key;
             pawns ^= key;
         }
 
-        inline auto flipCastling(const CastlingRooks& rooks) {
+        inline void flipCastling(const CastlingRooks& rooks) {
             const auto key = keys::castling(rooks);
 
             all ^= key;
@@ -107,7 +107,7 @@ namespace stormphrax {
             majors ^= key;
         }
 
-        inline auto switchCastling(const CastlingRooks& before, const CastlingRooks& after) {
+        inline void switchCastling(const CastlingRooks& before, const CastlingRooks& after) {
             const auto key = keys::castling(before) ^ keys::castling(after);
 
             all ^= key;
@@ -116,10 +116,10 @@ namespace stormphrax {
             majors ^= key;
         }
 
-        [[nodiscard]] inline auto operator==(const Keys& other) const -> bool = default;
+        [[nodiscard]] inline bool operator==(const Keys& other) const = default;
     };
 
-    [[nodiscard]] inline auto squareToString(Square square) {
+    [[nodiscard]] inline std::string squareToString(Square square) {
         constexpr auto Files = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
         constexpr auto Ranks = std::array{'1', '2', '3', '4', '5', '6', '7', '8'};
 
@@ -137,62 +137,68 @@ namespace stormphrax {
     public:
         // Moves are assumed to be legal
         template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
-        [[nodiscard]] auto applyMove(Move move, eval::NnueState* nnueState = nullptr) const -> Position;
+        [[nodiscard]] Position applyMove(Move move, eval::NnueState* nnueState = nullptr) const;
 
-        [[nodiscard]] inline auto applyNullMove() const {
+        [[nodiscard]] inline Position applyNullMove() const {
             return applyMove(NullMove);
         }
 
-        [[nodiscard]] auto isPseudolegal(Move move) const -> bool;
-        [[nodiscard]] auto isLegal(Move move) const -> bool;
+        [[nodiscard]] bool isPseudolegal(Move move) const;
+        [[nodiscard]] bool isLegal(Move move) const;
 
-        [[nodiscard]] inline auto boards() const -> const auto& {
+        [[nodiscard]] inline const PositionBoards& boards() const {
             return m_boards;
         }
-        [[nodiscard]] inline auto bbs() const -> const auto& {
+
+        [[nodiscard]] inline const BitboardSet& bbs() const {
             return m_boards.bbs();
         }
 
-        [[nodiscard]] inline auto toMove() const {
+        [[nodiscard]] inline Color toMove() const {
             return m_blackToMove ? Color::Black : Color::White;
         }
 
-        [[nodiscard]] inline auto opponent() const {
+        [[nodiscard]] inline Color opponent() const {
             return m_blackToMove ? Color::White : Color::Black;
         }
 
-        [[nodiscard]] inline auto castlingRooks() const -> const auto& {
+        [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
             return m_castlingRooks;
         }
 
-        [[nodiscard]] inline auto enPassant() const {
+        [[nodiscard]] inline Square enPassant() const {
             return m_enPassant;
         }
 
-        [[nodiscard]] inline auto halfmove() const {
+        [[nodiscard]] inline u16 halfmove() const {
             return m_halfmove;
         }
-        [[nodiscard]] inline auto fullmove() const {
+
+        [[nodiscard]] inline u32 fullmove() const {
             return m_fullmove;
         }
 
-        [[nodiscard]] inline auto key() const {
+        [[nodiscard]] inline u64 key() const {
             return m_keys.all;
         }
-        [[nodiscard]] inline auto pawnKey() const {
+
+        [[nodiscard]] inline u64 pawnKey() const {
             return m_keys.pawns;
         }
-        [[nodiscard]] inline auto blackNonPawnKey() const {
+
+        [[nodiscard]] inline u64 blackNonPawnKey() const {
             return m_keys.blackNonPawns;
         }
-        [[nodiscard]] inline auto whiteNonPawnKey() const {
+
+        [[nodiscard]] inline u64 whiteNonPawnKey() const {
             return m_keys.whiteNonPawns;
         }
-        [[nodiscard]] inline auto majorKey() const {
+
+        [[nodiscard]] inline u64 majorKey() const {
             return m_keys.majors;
         }
 
-        [[nodiscard]] inline auto roughKeyAfter(Move move) const {
+        [[nodiscard]] inline u64 roughKeyAfter(Move move) const {
             assert(move);
 
             const auto moving = m_boards.pieceAt(move.src());
@@ -214,7 +220,7 @@ namespace stormphrax {
             return key;
         }
 
-        [[nodiscard]] inline auto allAttackersTo(Square square, Bitboard occupancy) const {
+        [[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const {
             assert(square != Square::None);
 
             const auto& bbs = this->bbs();
@@ -241,7 +247,7 @@ namespace stormphrax {
             return attackers;
         }
 
-        [[nodiscard]] inline auto attackersTo(Square square, Color attacker) const {
+        [[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const {
             assert(square != Square::None);
 
             const auto& bbs = this->bbs();
@@ -271,7 +277,7 @@ namespace stormphrax {
         }
 
         template <bool ThreatShortcut = true>
-        [[nodiscard]] inline auto isAttacked(Color toMove, Square square, Color attacker) const {
+        [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
             assert(toMove != Color::None);
             assert(square != Square::None);
             assert(attacker != Color::None);
@@ -318,14 +324,14 @@ namespace stormphrax {
         }
 
         template <bool ThreatShortcut = true>
-        [[nodiscard]] inline auto isAttacked(Square square, Color attacker) const {
+        [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
             assert(square != Square::None);
             assert(attacker != Color::None);
 
             return isAttacked<ThreatShortcut>(toMove(), square, attacker);
         }
 
-        [[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const {
+        [[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const {
             assert(attacker != Color::None);
 
             if (attacker == opponent()) {
@@ -342,58 +348,61 @@ namespace stormphrax {
             return false;
         }
 
-        [[nodiscard]] inline auto kings() const {
+        [[nodiscard]] inline KingPair kings() const {
             return m_kings;
         }
 
-        [[nodiscard]] inline auto blackKing() const {
+        [[nodiscard]] inline Square blackKing() const {
             return m_kings.black();
         }
-        [[nodiscard]] inline auto whiteKing() const {
+
+        [[nodiscard]] inline Square whiteKing() const {
             return m_kings.white();
         }
 
         template <Color C>
-        [[nodiscard]] inline auto king() const {
+        [[nodiscard]] inline Square king() const {
             return m_kings.color(C);
         }
 
-        [[nodiscard]] inline auto king(Color c) const {
+        [[nodiscard]] inline Square king(Color c) const {
             assert(c != Color::None);
             return m_kings.color(c);
         }
 
         template <Color C>
-        [[nodiscard]] inline auto oppKing() const {
+        [[nodiscard]] inline Square oppKing() const {
             return m_kings.color(oppColor(C));
         }
 
-        [[nodiscard]] inline auto oppKing(Color c) const {
+        [[nodiscard]] inline Square oppKing(Color c) const {
             assert(c != Color::None);
             return m_kings.color(oppColor(c));
         }
 
-        [[nodiscard]] inline auto isCheck() const {
+        [[nodiscard]] inline bool isCheck() const {
             return !m_checkers.empty();
         }
 
-        [[nodiscard]] inline auto checkers() const {
+        [[nodiscard]] inline Bitboard checkers() const {
             return m_checkers;
         }
-        [[nodiscard]] inline auto pinned(Color c) const {
+        [[nodiscard]] inline Bitboard pinned(Color c) const {
             return m_pinned[static_cast<i32>(c)];
         }
-        [[nodiscard]] inline auto pinned() const {
+
+        [[nodiscard]] inline std::array<Bitboard, 2> pinned() const {
             return m_pinned;
         }
-        [[nodiscard]] inline auto threats() const {
+
+        [[nodiscard]] inline Bitboard threats() const {
             return m_threats;
         }
 
-        [[nodiscard]] auto hasCycle(i32 ply, std::span<const u64> keys) const -> bool;
-        [[nodiscard]] auto isDrawn(i32 ply, std::span<const u64> keys) const -> bool;
+        [[nodiscard]] bool hasCycle(i32 ply, std::span<const u64> keys) const;
+        [[nodiscard]] bool isDrawn(i32 ply, std::span<const u64> keys) const;
 
-        [[nodiscard]] inline auto captureTarget(Move move) const {
+        [[nodiscard]] inline Piece captureTarget(Move move) const {
             assert(move != NullMove);
 
             const auto type = move.type();
@@ -407,7 +416,7 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] inline auto isNoisy(Move move) const {
+        [[nodiscard]] inline bool isNoisy(Move move) const {
             assert(move != NullMove);
 
             const auto type = move.type();
@@ -417,7 +426,7 @@ namespace stormphrax {
                     || boards().pieceAt(move.dst()) != Piece::None);
         }
 
-        [[nodiscard]] inline auto noisyCapturedPiece(Move move) const -> std::pair<bool, Piece> {
+        [[nodiscard]] inline std::pair<bool, Piece> noisyCapturedPiece(Move move) const {
             assert(move != NullMove);
 
             const auto type = move.type();
@@ -432,54 +441,54 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] auto toFen() const -> std::string;
+        [[nodiscard]] std::string toFen() const;
 
-        [[nodiscard]] inline auto operator==(const Position& other) const -> bool = default;
+        [[nodiscard]] inline bool operator==(const Position& other) const = default;
 
-        auto regen() -> void;
+        void regen();
 
-        [[nodiscard]] auto moveFromUci(const std::string& move) const -> Move;
+        [[nodiscard]] Move moveFromUci(const std::string& move) const;
 
-        [[nodiscard]] inline auto plyFromStartpos() const -> u32 {
+        [[nodiscard]] inline u32 plyFromStartpos() const {
             return m_fullmove * 2 - (m_blackToMove ? 0 : 1) - 1;
         }
 
-        [[nodiscard]] inline auto classicalMaterial() const -> i32 {
+        [[nodiscard]] inline i32 classicalMaterial() const {
             const auto& bbs = m_boards.bbs();
 
             return 1 * bbs.pawns().popcount() + 3 * bbs.knights().popcount() + 3 * bbs.bishops().popcount()
                  + 5 * bbs.rooks().popcount() + 9 * bbs.queens().popcount();
         }
 
-        [[nodiscard]] static auto starting() -> Position;
-        [[nodiscard]] static auto fromFen(const std::string& fen) -> std::optional<Position>;
-        [[nodiscard]] static auto fromFrcIndex(u32 n) -> std::optional<Position>;
-        [[nodiscard]] static auto fromDfrcIndex(u32 n) -> std::optional<Position>;
+        [[nodiscard]] static Position starting();
+        [[nodiscard]] static std::optional<Position> fromFen(const std::string& fen);
+        [[nodiscard]] static std::optional<Position> fromFrcIndex(u32 n);
+        [[nodiscard]] static std::optional<Position> fromDfrcIndex(u32 n);
 
     private:
         template <bool UpdateKeys = true>
-        auto setPiece(Piece piece, Square square) -> void;
+        void setPiece(Piece piece, Square square);
         template <bool UpdateKeys = true>
-        auto removePiece(Piece piece, Square square) -> void;
+        void removePiece(Piece piece, Square square);
         template <bool UpdateKeys = true>
-        auto movePieceNoCap(Piece piece, Square src, Square dst) -> void;
+        void movePieceNoCap(Piece piece, Square src, Square dst);
 
         template <bool UpdateKeys = true, bool UpdateNnue = true>
-        [[nodiscard]] auto movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates) -> Piece;
+        [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
 
         template <bool UpdateKeys = true, bool UpdateNnue = true>
-        auto promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates) -> Piece;
+        Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates);
         template <bool UpdateKeys = true, bool UpdateNnue = true>
-        auto castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates) -> void;
+        void castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates);
         template <bool UpdateKeys = true, bool UpdateNnue = true>
-        auto enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates) -> Piece;
+        Piece enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
 
-        [[nodiscard]] inline auto calcCheckers() const {
+        [[nodiscard]] inline Bitboard calcCheckers() const {
             const auto color = toMove();
             return attackersTo(m_kings.color(color), oppColor(color));
         }
 
-        [[nodiscard]] inline auto calcPinned(Color c) const {
+        [[nodiscard]] inline Bitboard calcPinned(Color c) const {
             Bitboard pinned{};
 
             const auto king = m_kings.color(c);
@@ -507,11 +516,11 @@ namespace stormphrax {
             return pinned;
         }
 
-        [[nodiscard]] inline auto calcPinned() -> std::array<Bitboard, 2> const {
+        [[nodiscard]] inline std::array<Bitboard, 2> calcPinned() const {
             return {calcPinned(Color::Black), calcPinned(Color::White)};
         }
 
-        [[nodiscard]] inline auto calcThreats() const {
+        [[nodiscard]] inline Bitboard calcThreats() const {
             const auto us = toMove();
             const auto them = oppColor(us);
 
@@ -578,5 +587,5 @@ namespace stormphrax {
 
     static_assert(sizeof(Position) == 216);
 
-    [[nodiscard]] auto squareFromString(const std::string& str) -> Square;
+    [[nodiscard]] Square squareFromString(const std::string& str);
 } // namespace stormphrax

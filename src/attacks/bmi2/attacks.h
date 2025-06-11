@@ -32,7 +32,7 @@ namespace stormphrax::attacks {
     extern const std::array<u16, bmi2::RookData.tableSize> RookAttacks;
     extern const std::array<Bitboard, bmi2::BishopData.tableSize> BishopAttacks;
 
-    inline auto getRookAttacks(Square src, Bitboard occupancy) -> Bitboard {
+    inline Bitboard getRookAttacks(Square src, Bitboard occupancy) {
         const auto s = static_cast<i32>(src);
 
         const auto& data = bmi2::RookData.data[s];
@@ -43,7 +43,7 @@ namespace stormphrax::attacks {
         return attacks;
     }
 
-    inline auto getBishopAttacks(Square src, Bitboard occupancy) {
+    inline Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
         const auto s = static_cast<i32>(src);
 
         const auto& data = bmi2::BishopData.data[s];

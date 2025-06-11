@@ -28,7 +28,7 @@
 
 namespace stormphrax {
     namespace {
-        inline auto pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
+        inline void pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
@@ -37,14 +37,14 @@ namespace stormphrax {
             }
         }
 
-        inline auto pushStandards(ScoredMoveList& dst, Square srcSquare, Bitboard board) {
+        inline void pushStandards(ScoredMoveList& dst, Square srcSquare, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
                 dst.push({Move::standard(srcSquare, dstSquare), 0});
             }
         }
 
-        inline auto pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
+        inline void pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
@@ -53,7 +53,7 @@ namespace stormphrax {
             }
         }
 
-        inline auto pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
+        inline void pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
@@ -64,11 +64,11 @@ namespace stormphrax {
             }
         }
 
-        inline auto pushCastling(ScoredMoveList& dst, Square srcSquare, Square dstSquare) {
+        inline void pushCastling(ScoredMoveList& dst, Square srcSquare, Square dstSquare) {
             dst.push({Move::castling(srcSquare, dstSquare), 0});
         }
 
-        inline auto pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
+        inline void pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
@@ -78,7 +78,7 @@ namespace stormphrax {
         }
 
         template <Color Us>
-        auto generatePawnsNoisy_(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
+        void generatePawnsNoisy_(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
             constexpr auto Them = oppColor(Us);
 
             constexpr auto PromotionRank = boards::promotionRank<Us>();
@@ -115,7 +115,7 @@ namespace stormphrax {
             }
         }
 
-        inline auto generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
+        inline void generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
             if (pos.toMove() == Color::Black) {
                 generatePawnsNoisy_<Color::Black>(noisy, pos, dstMask);
             } else {
@@ -124,7 +124,7 @@ namespace stormphrax {
         }
 
         template <Color Us>
-        auto generatePawnsQuiet_(ScoredMoveList& quiet, const BitboardSet& bbs, Bitboard dstMask, Bitboard occ) {
+        void generatePawnsQuiet_(ScoredMoveList& quiet, const BitboardSet& bbs, Bitboard dstMask, Bitboard occ) {
             constexpr auto Them = oppColor(Us);
 
             constexpr auto PromotionRank = boards::promotionRank<Us>();
@@ -161,7 +161,7 @@ namespace stormphrax {
             pushStandards(quiet, ForwardOffset, singles);
         }
 
-        inline auto generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
+        inline void generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
             if (pos.toMove() == Color::Black) {
                 generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
             } else {
@@ -170,7 +170,7 @@ namespace stormphrax {
         }
 
         template <PieceType Piece, const std::array<Bitboard, 64>& Attacks>
-        inline auto precalculated(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        inline void precalculated(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto us = pos.toMove();
 
             auto pieces = pos.bbs().forPiece(Piece, us);
@@ -182,11 +182,11 @@ namespace stormphrax {
             }
         }
 
-        auto generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             precalculated<PieceType::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
         }
 
-        inline auto generateFrcCastling(
+        inline void generateFrcCastling(
             ScoredMoveList& dst,
             const Position& pos,
             Bitboard occupancy,
@@ -208,7 +208,7 @@ namespace stormphrax {
         }
 
         template <bool Castling>
-        auto generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             precalculated<PieceType::King, attacks::KingAttacks>(dst, pos, dstMask);
 
             if constexpr (Castling) {
@@ -300,7 +300,7 @@ namespace stormphrax {
             }
         }
 
-        auto generateSliders(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateSliders(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto& bbs = pos.bbs();
 
             const auto us = pos.toMove();
@@ -332,7 +332,7 @@ namespace stormphrax {
         }
     } // namespace
 
-    auto generateNoisy(ScoredMoveList& noisy, const Position& pos) -> void {
+    void generateNoisy(ScoredMoveList& noisy, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.toMove();
@@ -379,7 +379,7 @@ namespace stormphrax {
         generateKings<false>(noisy, pos, kingDstMask);
     }
 
-    auto generateQuiet(ScoredMoveList& quiet, const Position& pos) -> void {
+    void generateQuiet(ScoredMoveList& quiet, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.toMove();
@@ -413,7 +413,7 @@ namespace stormphrax {
         generateKings<true>(quiet, pos, kingDstMask);
     }
 
-    auto generateAll(ScoredMoveList& dst, const Position& pos) -> void {
+    void generateAll(ScoredMoveList& dst, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.toMove();

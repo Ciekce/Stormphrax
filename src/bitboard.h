@@ -39,50 +39,56 @@ namespace stormphrax {
 
         template <Color C>
         constexpr auto up() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return Down;
-            else
+            } else {
                 return Up;
+            }
         }
 
         template <Color C>
         constexpr auto upLeft() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return DownLeft;
-            else
+            } else {
                 return UpLeft;
+            }
         }
 
         template <Color C>
         constexpr auto upRight() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return DownRight;
-            else
+            } else {
                 return UpRight;
+            }
         }
 
         template <Color C>
         constexpr auto down() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return Up;
-            else
+            } else {
                 return Down;
+            }
         }
 
         template <Color C>
         constexpr auto downLeft() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return UpLeft;
-            else
+            } else {
                 return DownLeft;
+            }
         }
 
         template <Color C>
         constexpr auto downRight() {
-            if constexpr (C == Color::Black)
+            if constexpr (C == Color::Black) {
                 return UpRight;
-            else
+            } else {
                 return DownRight;
+            }
         }
     } // namespace offsets
 
@@ -107,11 +113,12 @@ namespace stormphrax {
             return (m_board & m_mask) != 0;
         }
 
-        constexpr auto operator=(bool rhs) -> auto& {
-            if (rhs)
+        constexpr BitboardSlot& operator=(bool rhs) {
+            if (rhs) {
                 m_board |= m_mask;
-            else
+            } else {
                 m_board &= ~m_mask;
+            }
 
             return *this;
         }
@@ -160,261 +167,284 @@ namespace stormphrax {
             return m_board;
         }
 
-        [[nodiscard]] constexpr auto operator&(Bitboard rhs) const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard operator&(Bitboard rhs) const {
             return m_board & rhs;
         }
-        [[nodiscard]] constexpr auto operator|(Bitboard rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator|(Bitboard rhs) const {
             return m_board | rhs;
         }
-        [[nodiscard]] constexpr auto operator^(Bitboard rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator^(Bitboard rhs) const {
             return m_board ^ rhs;
         }
 
-        constexpr auto operator&=(Bitboard rhs) -> auto& {
+        constexpr Bitboard& operator&=(Bitboard rhs) {
             m_board &= rhs;
             return *this;
         }
-        constexpr auto operator|=(Bitboard rhs) -> auto& {
+
+        constexpr Bitboard& operator|=(Bitboard rhs) {
             m_board |= rhs;
             return *this;
         }
-        constexpr auto operator^=(Bitboard rhs) -> auto& {
+
+        constexpr Bitboard& operator^=(Bitboard rhs) {
             m_board ^= rhs;
             return *this;
         }
 
-        [[nodiscard]] constexpr auto operator&(u64 rhs) const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard operator&(u64 rhs) const {
             return m_board & rhs;
         }
-        [[nodiscard]] constexpr auto operator|(u64 rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator|(u64 rhs) const {
             return m_board | rhs;
         }
-        [[nodiscard]] constexpr auto operator^(u64 rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator^(u64 rhs) const {
             return m_board ^ rhs;
         }
 
-        constexpr auto operator&=(u64 rhs) -> auto& {
+        constexpr Bitboard& operator&=(u64 rhs) {
             m_board &= rhs;
             return *this;
         }
-        constexpr auto operator|=(u64 rhs) -> auto& {
+
+        constexpr Bitboard& operator|=(u64 rhs) {
             m_board |= rhs;
             return *this;
         }
-        constexpr auto operator^=(u64 rhs) -> auto& {
+
+        constexpr Bitboard& operator^=(u64 rhs) {
             m_board ^= rhs;
             return *this;
         }
 
-        [[nodiscard]] constexpr auto operator&(i32 rhs) const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard operator&(i32 rhs) const {
             return m_board & static_cast<u64>(rhs);
         }
-        [[nodiscard]] constexpr auto operator|(i32 rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator|(i32 rhs) const {
             return m_board | static_cast<u64>(rhs);
         }
-        [[nodiscard]] constexpr auto operator^(i32 rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator^(i32 rhs) const {
             return m_board ^ static_cast<u64>(rhs);
         }
 
-        constexpr auto operator&=(i32 rhs) -> auto& {
+        constexpr Bitboard& operator&=(i32 rhs) {
             m_board &= static_cast<u64>(rhs);
             return *this;
         }
-        constexpr auto operator|=(i32 rhs) -> auto& {
+
+        constexpr Bitboard& operator|=(i32 rhs) {
             m_board |= static_cast<u64>(rhs);
             return *this;
         }
-        constexpr auto operator^=(i32 rhs) -> auto& {
+
+        constexpr Bitboard& operator^=(i32 rhs) {
             m_board ^= static_cast<u64>(rhs);
             return *this;
         }
 
-        [[nodiscard]] constexpr auto operator~() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard operator~() const {
             return ~m_board;
         }
 
-        [[nodiscard]] constexpr auto operator<<(i32 rhs) const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard operator<<(i32 rhs) const {
             return m_board << rhs;
         }
-        [[nodiscard]] constexpr auto operator>>(i32 rhs) const -> Bitboard {
+
+        [[nodiscard]] constexpr Bitboard operator>>(i32 rhs) const {
             return m_board >> rhs;
         }
 
-        constexpr auto operator<<=(i32 rhs) -> auto& {
+        constexpr Bitboard& operator<<=(i32 rhs) {
             m_board <<= rhs;
             return *this;
         }
-        constexpr auto operator>>=(i32 rhs) -> auto& {
+
+        constexpr Bitboard& operator>>=(i32 rhs) {
             m_board >>= rhs;
             return *this;
         }
 
-        [[nodiscard]] constexpr auto operator[](Square s) const -> bool {
+        [[nodiscard]] constexpr bool operator[](Square s) const {
             return m_board & squareBit(s);
         }
-        [[nodiscard]] constexpr auto operator[](Square s) {
+
+        [[nodiscard]] constexpr BitboardSlot operator[](Square s) {
             return BitboardSlot{m_board, static_cast<i32>(s)};
         }
 
-        [[nodiscard]] constexpr auto popcount() const {
+        [[nodiscard]] constexpr i32 popcount() const {
             return std::popcount(m_board);
         }
 
-        [[nodiscard]] constexpr auto empty() const {
+        [[nodiscard]] constexpr bool empty() const {
             return m_board == 0;
         }
-        [[nodiscard]] constexpr auto multiple() const {
+
+        [[nodiscard]] constexpr bool multiple() const {
             return util::resetLsb(m_board) != 0;
         }
-        [[nodiscard]] constexpr auto one() const {
+
+        [[nodiscard]] constexpr bool one() const {
             return !empty() && !multiple();
         }
 
-        [[nodiscard]] constexpr auto lowestSquare() const {
+        [[nodiscard]] constexpr Square lowestSquare() const {
             return static_cast<Square>(util::ctz(m_board));
         }
 
-        [[nodiscard]] constexpr auto lowestBit() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard lowestBit() const {
             return util::isolateLsb(m_board);
         }
 
-        [[nodiscard]] constexpr auto popLowestSquare() {
+        [[nodiscard]] constexpr Square popLowestSquare() {
             const auto square = lowestSquare();
             m_board = util::resetLsb(m_board);
             return square;
         }
 
-        [[nodiscard]] constexpr auto popLowestBit() -> Bitboard {
+        [[nodiscard]] constexpr Bitboard popLowestBit() {
             const auto bit = lowestBit();
             m_board = util::resetLsb(m_board);
             return bit;
         }
 
-        constexpr auto clear() {
+        constexpr void clear() {
             m_board = 0;
         }
 
-        [[nodiscard]] constexpr auto shiftUp() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUp() const {
             return m_board << shifts::Vertical;
         }
 
-        [[nodiscard]] constexpr auto shiftDown() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDown() const {
             return m_board >> shifts::Vertical;
         }
 
-        [[nodiscard]] constexpr auto shiftLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftLeft() const {
             return (m_board >> shifts::Horizontal) & ~FileH;
         }
 
-        [[nodiscard]] constexpr auto shiftLeftUnchecked() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftLeftUnchecked() const {
             return m_board >> shifts::Horizontal;
         }
 
-        [[nodiscard]] constexpr auto shiftRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftRight() const {
             return (m_board << shifts::Horizontal) & ~FileA;
         }
 
-        [[nodiscard]] constexpr auto shiftRightUnchecked() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftRightUnchecked() const {
             return m_board << shifts::Horizontal;
         }
 
-        [[nodiscard]] constexpr auto shiftUpLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpLeft() const {
             return (m_board << shifts::DiagonalLR) & ~FileH;
         }
 
-        [[nodiscard]] constexpr auto shiftUpRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpRight() const {
             return (m_board << shifts::DiagonalRL) & ~FileA;
         }
 
-        [[nodiscard]] constexpr auto shiftDownLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownLeft() const {
             return (m_board >> shifts::DiagonalRL) & ~FileH;
         }
 
-        [[nodiscard]] constexpr auto shiftDownRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownRight() const {
             return (m_board >> shifts::DiagonalLR) & ~FileA;
         }
 
-        [[nodiscard]] constexpr auto shiftUpUpLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpUpLeft() const {
             return (m_board << shifts::Diagonal12LR) & ~FileH;
         }
 
-        [[nodiscard]] constexpr auto shiftUpUpRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpUpRight() const {
             return (m_board << shifts::Diagonal12RL) & ~FileA;
         }
 
-        [[nodiscard]] constexpr auto shiftUpLeftLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpLeftLeft() const {
             return (m_board << shifts::Diagonal21LR) & ~(FileG | FileH);
         }
 
-        [[nodiscard]] constexpr auto shiftUpRightRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftUpRightRight() const {
             return (m_board << shifts::Diagonal21RL) & ~(FileA | FileB);
         }
 
-        [[nodiscard]] constexpr auto shiftDownLeftLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownLeftLeft() const {
             return (m_board >> shifts::Diagonal21RL) & ~(FileG | FileH);
         }
 
-        [[nodiscard]] constexpr auto shiftDownRightRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownRightRight() const {
             return (m_board >> shifts::Diagonal21LR) & ~(FileA | FileB);
         }
 
-        [[nodiscard]] constexpr auto shiftDownDownLeft() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownDownLeft() const {
             return (m_board >> shifts::Diagonal12RL) & ~FileH;
         }
 
-        [[nodiscard]] constexpr auto shiftDownDownRight() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard shiftDownDownRight() const {
             return (m_board >> shifts::Diagonal12LR) & ~FileA;
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftUpRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftUpRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftDown();
-            else
+            } else {
                 return shiftUp();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftUpLeftRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftUpLeftRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftDownLeft();
-            else
+            } else {
                 return shiftUpLeft();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftUpRightRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftUpRightRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftDownRight();
-            else
+            } else {
                 return shiftUpRight();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftDownRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftDownRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftUp();
-            else
+            } else {
                 return shiftDown();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftDownLeftRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftDownLeftRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftUpLeft();
-            else
+            } else {
                 return shiftDownLeft();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto shiftDownRightRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard shiftDownRightRelative() const {
+            if constexpr (C == Color::Black) {
                 return shiftUpRight();
-            else
+            } else {
                 return shiftDownRight();
+            }
         }
 
-        [[nodiscard]] constexpr auto fillUp() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard fillUp() const {
             auto b = m_board;
             b |= b << 8;
             b |= b << 16;
@@ -422,7 +452,7 @@ namespace stormphrax {
             return b;
         }
 
-        [[nodiscard]] constexpr auto fillDown() const -> Bitboard {
+        [[nodiscard]] constexpr Bitboard fillDown() const {
             auto b = m_board;
             b |= b >> 8;
             b |= b >> 16;
@@ -431,42 +461,44 @@ namespace stormphrax {
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto fillUpRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard fillUpRelative() const {
+            if constexpr (C == Color::Black) {
                 return fillDown();
-            else
+            } else {
                 return fillUp();
+            }
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto fillDownRelative() const {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard fillDownRelative() const {
+            if constexpr (C == Color::Black) {
                 return fillUp();
-            else
+            } else {
                 return fillDown();
+            }
         }
 
-        [[nodiscard]] constexpr auto fillFile() const {
+        [[nodiscard]] constexpr Bitboard fillFile() const {
             return fillUp() | fillDown();
         }
 
-        [[nodiscard]] constexpr auto operator==(const Bitboard& other) const {
+        [[nodiscard]] constexpr bool operator==(const Bitboard& other) const {
             return m_board == other.m_board;
         }
 
-        [[nodiscard]] constexpr auto operator==(u64 other) const {
+        [[nodiscard]] constexpr bool operator==(u64 other) const {
             return m_board == other;
         }
 
-        [[nodiscard]] constexpr auto operator==(i32 other) const {
+        [[nodiscard]] constexpr bool operator==(i32 other) const {
             return m_board == other;
         }
 
-        [[nodiscard]] constexpr static auto fromSquare(Square square) -> Bitboard {
+        [[nodiscard]] constexpr static Bitboard fromSquare(Square square) {
             return squareBit(square);
         }
 
-        [[nodiscard]] constexpr static auto fromSquareChecked(Square square) -> Bitboard {
+        [[nodiscard]] constexpr static Bitboard fromSquareChecked(Square square) {
             return squareBitChecked(square);
         }
 
@@ -504,19 +536,20 @@ namespace stormphrax {
         constexpr Bitboard All{Bitboard::All};
 
         template <Color C>
-        [[nodiscard]] constexpr auto promotionRank() {
-            if constexpr (C == Color::Black)
+        [[nodiscard]] constexpr Bitboard promotionRank() {
+            if constexpr (C == Color::Black) {
                 return Rank1;
-            else
+            } else {
                 return Rank8;
+            }
         }
 
-        [[nodiscard]] constexpr auto promotionRank(Color c) {
+        [[nodiscard]] constexpr Bitboard promotionRank(Color c) {
             return c == Color::Black ? Rank1 : Rank8;
         }
 
         template <Color C>
-        [[nodiscard]] constexpr auto rank(i32 idx) {
+        [[nodiscard]] constexpr Bitboard rank(i32 idx) {
             return Ranks[relativeRank<C>(idx)];
         }
     } // namespace boards

@@ -57,7 +57,7 @@ namespace stormphrax::search {
         std::array<Move, MaxDepth> moves{};
         u32 length{};
 
-        inline auto update(Move move, const PvList& child) {
+        inline void update(Move move, const PvList& child) {
             moves[0] = move;
             std::copy(child.moves.begin(), child.moves.begin() + child.length, moves.begin() + 1);
 
@@ -66,14 +66,14 @@ namespace stormphrax::search {
             assert(length == 1 || moves[0] != moves[1]);
         }
 
-        inline auto operator=(const PvList& other) -> auto& {
+        inline PvList& operator=(const PvList& other) {
             std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
             length = other.length;
 
             return *this;
         }
 
-        inline auto reset() {
+        inline void reset() {
             moves[0] = NullMove;
             length = 0;
         }
@@ -159,7 +159,7 @@ namespace stormphrax::search {
             return id == 0;
         }
 
-        [[nodiscard]] inline auto applyNullmove(const Position& pos, i32 ply) {
+        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply) {
             assert(ply <= MaxDepth);
 
             stack[ply].move = NullMove;
@@ -175,7 +175,11 @@ namespace stormphrax::search {
             };
         }
 
-        [[nodiscard]] inline auto applyMove(const Position& pos, i32 ply, Move move) {
+        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<true>> applyMove(
+            const Position& pos,
+            i32 ply,
+            Move move
+        ) {
             assert(ply <= MaxDepth);
 
             const auto moving = pos.boards().pieceAt(move.src());
@@ -193,7 +197,7 @@ namespace stormphrax::search {
             };
         }
 
-        inline auto clearContMove(i32 ply) {
+        inline void clearContMove(i32 ply) {
             contMoves[ply] = {Piece::None, Square::None};
         }
     };
@@ -203,6 +207,13 @@ namespace stormphrax::search {
 
         usize keyHistorySize{};
         std::span<const u64> keyHistory{};
+    };
+
+    enum class RootStatus {
+        NoLegalMoves = 0,
+        Tablebase,
+        Generated,
+        Searchmoves,
     };
 
     class Searcher {
@@ -215,19 +226,19 @@ namespace stormphrax::search {
             }
         }
 
-        auto newGame() -> void;
-        auto ensureReady() -> void;
+        void newGame();
+        void ensureReady();
 
-        inline auto setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter) {
+        inline void setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter) {
             m_limiter = std::move(limiter);
         }
 
         // ignored for bench and real searches
-        inline auto setDatagenMaxDepth(i32 maxDepth) {
+        inline void setDatagenMaxDepth(i32 maxDepth) {
             m_maxDepth = maxDepth;
         }
 
-        auto startSearch(
+        void startSearch(
             const Position& pos,
             std::span<const u64> keyHistory,
             util::Instant startTime,
@@ -235,26 +246,26 @@ namespace stormphrax::search {
             std::span<Move> moves,
             std::unique_ptr<limit::ISearchLimiter> limiter,
             bool infinite
-        ) -> void;
-        auto stop() -> void;
+        );
+        void stop();
 
         // -> [move, unnormalised, normalised]
         auto runDatagenSearch(ThreadData& thread) -> std::pair<Score, Score>;
 
-        auto runBench(BenchData& data, const Position& pos, i32 depth) -> void;
+        void runBench(BenchData& data, const Position& pos, i32 depth);
 
         [[nodiscard]] inline auto searching() const {
             const std::unique_lock lock{m_searchMutex};
             return m_searching.load(std::memory_order::relaxed);
         }
 
-        auto setThreads(u32 threadCount) -> void;
+        void setThreads(u32 threadCount);
 
-        inline auto setTtSize(usize mib) {
+        inline void setTtSize(usize mib) {
             m_ttable.resize(mib);
         }
 
-        inline auto quit() -> void {
+        inline void quit() {
             m_quit.store(true, std::memory_order::release);
 
             stop();
@@ -262,13 +273,6 @@ namespace stormphrax::search {
         }
 
     private:
-        enum class RootStatus {
-            NoLegalMoves = 0,
-            Tablebase,
-            Generated,
-            Searchmoves,
-        };
-
         TTable m_ttable;
 
         std::vector<ThreadData> m_threads{};
@@ -307,17 +311,17 @@ namespace stormphrax::search {
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        auto initRootMoves(const Position& pos) -> RootStatus;
+        RootStatus initRootMoves(const Position& pos);
 
-        auto stopThreads() -> void;
+        void stopThreads();
 
-        auto run(ThreadData& thread) -> void;
+        void run(ThreadData& thread);
 
-        [[nodiscard]] inline auto hasStopped() const {
+        [[nodiscard]] inline bool hasStopped() const {
             return m_stop.load(std::memory_order::relaxed) != 0;
         }
 
-        [[nodiscard]] inline auto checkStop(const SearchData& data, bool mainThread, bool allowSoft) {
+        [[nodiscard]] inline bool checkStop(const SearchData& data, bool mainThread, bool allowSoft) {
             if (hasStopped()) {
                 return true;
             }
@@ -330,26 +334,26 @@ namespace stormphrax::search {
             return false;
         }
 
-        [[nodiscard]] inline auto checkHardTimeout(const SearchData& data, bool mainThread) -> bool {
+        [[nodiscard]] inline bool checkHardTimeout(const SearchData& data, bool mainThread) {
             return checkStop(data, mainThread, false);
         }
 
-        [[nodiscard]] inline auto checkSoftTimeout(const SearchData& data, bool mainThread) {
+        [[nodiscard]] inline bool checkSoftTimeout(const SearchData& data, bool mainThread) {
             return checkStop(data, mainThread, true);
         }
 
-        [[nodiscard]] inline auto elapsed() const {
+        [[nodiscard]] inline f64 elapsed() const {
             return m_startTime.elapsed();
         }
 
-        [[nodiscard]] inline auto isLegalRootMove(Move move) const {
+        [[nodiscard]] inline bool isLegalRootMove(Move move) const {
             return std::ranges::find(m_rootMoves, move) != m_rootMoves.end();
         }
 
-        auto searchRoot(ThreadData& thread, bool actualSearch) -> Score;
+        Score searchRoot(ThreadData& thread, bool actualSearch);
 
         template <bool PvNode = false, bool RootNode = false>
-        auto search(
+        Score search(
             ThreadData& thread,
             const Position& pos,
             PvList& pv,
@@ -359,10 +363,10 @@ namespace stormphrax::search {
             Score alpha,
             Score beta,
             bool cutnode
-        ) -> Score;
+        );
 
         template <>
-        auto search<false, true>(
+        Score search<false, true>(
             ThreadData& thread,
             const Position& pos,
             PvList& pv,
@@ -372,13 +376,12 @@ namespace stormphrax::search {
             Score alpha,
             Score beta,
             bool cutnode
-        ) -> Score = delete;
+        ) = delete;
 
         template <bool PvNode = false>
-        auto qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta)
-            -> Score;
+        Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        auto report(
+        void report(
             const ThreadData& mainThread,
             const PvList& pv,
             i32 depth,
@@ -386,8 +389,7 @@ namespace stormphrax::search {
             Score score,
             Score alpha = -ScoreInf,
             Score beta = ScoreInf
-        ) -> void;
-        auto finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score)
-            -> void;
+        );
+        void finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score);
     };
 } // namespace stormphrax::search

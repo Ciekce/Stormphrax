@@ -24,12 +24,12 @@
 
 namespace stormphrax::util {
     template <std::uintptr_t Alignment, typename T = void>
-    constexpr auto isAligned(const T* ptr) {
+    constexpr bool isAligned(const T* ptr) {
         return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
     }
 
     template <typename T>
-    inline auto alignedAlloc(usize alignment, usize count) {
+    inline T* alignedAlloc(usize alignment, usize count) {
         const auto size = count * sizeof(T);
 
 #ifdef _WIN32
@@ -39,7 +39,7 @@ namespace stormphrax::util {
 #endif
     }
 
-    inline auto alignedFree(void* ptr) {
+    inline void alignedFree(void* ptr) {
         if (!ptr) {
             return;
         }

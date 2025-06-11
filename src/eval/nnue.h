@@ -38,10 +38,10 @@ namespace stormphrax::eval {
 
     extern const Network& g_network;
 
-    auto loadDefaultNetwork() -> void;
-    auto loadNetwork(const std::string& name) -> void;
+    void loadDefaultNetwork();
+    void loadNetwork(const std::string& name);
 
-    [[nodiscard]] auto defaultNetworkName() -> std::string_view;
+    [[nodiscard]] std::string_view defaultNetworkName();
 
     struct NnueUpdates {
         using PieceSquare = std::pair<Piece, Square>;
@@ -52,24 +52,24 @@ namespace stormphrax::eval {
         StaticVector<PieceSquare, 2> sub{};
         StaticVector<PieceSquare, 2> add{};
 
-        inline auto setRefresh(Color c) {
+        inline void setRefresh(Color c) {
             refresh[static_cast<i32>(c)] = true;
         }
 
-        [[nodiscard]] inline auto requiresRefresh(Color c) const {
+        [[nodiscard]] inline bool requiresRefresh(Color c) const {
             return refresh[static_cast<i32>(c)];
         }
 
-        inline auto pushSubAdd(Piece piece, Square src, Square dst) {
+        inline void pushSubAdd(Piece piece, Square src, Square dst) {
             sub.push({piece, src});
             add.push({piece, dst});
         }
 
-        inline auto pushSub(Piece piece, Square square) {
+        inline void pushSub(Piece piece, Square square) {
             sub.push({piece, square});
         }
 
-        inline auto pushAdd(Piece piece, Square square) {
+        inline void pushAdd(Piece piece, Square square) {
             add.push({piece, square});
         }
     };
@@ -87,16 +87,16 @@ namespace stormphrax::eval {
             UpdateContext ctx{};
             std::array<bool, 2> dirty{};
 
-            inline auto setDirty() -> void {
+            inline void setDirty() {
                 dirty[0] = dirty[1] = true;
             }
 
-            inline auto setUpdated(Color c) -> void {
+            inline void setUpdated(Color c) {
                 assert(c != Color::None);
                 dirty[static_cast<i32>(c)] = false;
             }
 
-            [[nodiscard]] inline auto isDirty(Color c) -> bool {
+            [[nodiscard]] inline bool isDirty(Color c) {
                 assert(c != Color::None);
                 return dirty[static_cast<i32>(c)];
             }
@@ -107,7 +107,7 @@ namespace stormphrax::eval {
             m_accumulatorStack.resize(256);
         }
 
-        inline auto reset(const BitboardSet& bbs, KingPair kings) {
+        inline void reset(const BitboardSet& bbs, KingPair kings) {
             assert(kings.isValid());
 
             m_refreshTable.init(g_network.featureTransformer());
@@ -127,7 +127,7 @@ namespace stormphrax::eval {
         }
 
         template <bool ApplyImmediately>
-        inline auto pushUpdates(const NnueUpdates& updates, const BitboardSet& bbs, KingPair kings) {
+        inline void pushUpdates(const NnueUpdates& updates, const BitboardSet& bbs, KingPair kings) {
             if constexpr (ApplyImmediately) {
                 const UpdateContext ctx{updates, bbs, kings};
                 updateBoth(m_curr->acc, *m_curr, m_refreshTable, ctx);
@@ -139,12 +139,12 @@ namespace stormphrax::eval {
             }
         }
 
-        inline auto pop() {
+        inline void pop() {
             assert(m_curr > &m_accumulatorStack[0]);
             --m_curr;
         }
 
-        [[nodiscard]] inline auto evaluate(const BitboardSet& bbs, KingPair kings, Color stm) {
+        [[nodiscard]] inline i32 evaluate(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
             assert(stm != Color::None);
 
@@ -153,7 +153,7 @@ namespace stormphrax::eval {
             return evaluate(m_curr->acc, bbs, stm);
         }
 
-        [[nodiscard]] static inline auto evaluateOnce(const BitboardSet& bbs, KingPair kings, Color stm) {
+        [[nodiscard]] static inline i32 evaluateOnce(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(kings.isValid());
             assert(stm != Color::None);
 
@@ -173,13 +173,13 @@ namespace stormphrax::eval {
 
         RefreshTable m_refreshTable{};
 
-        static inline auto update(
+        static inline void update(
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             RefreshTable& refreshTable,
             const UpdateContext& ctx,
             Color c
-        ) -> void {
+        ) {
             if (ctx.updates.requiresRefresh(c)) {
                 refreshAccumulator(curr, c, ctx.bbs, refreshTable, ctx.kings.color(c));
                 return;
@@ -234,17 +234,17 @@ namespace stormphrax::eval {
             curr.setUpdated(c);
         }
 
-        static inline auto updateBoth(
+        static inline void updateBoth(
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             RefreshTable& refreshTable,
             const UpdateContext& ctx
-        ) -> void {
+        ) {
             update(prev, curr, refreshTable, ctx, Color::Black);
             update(prev, curr, refreshTable, ctx, Color::White);
         }
 
-        inline auto ensureUpToDate(const BitboardSet& bbs, KingPair kings) -> void {
+        inline void ensureUpToDate(const BitboardSet& bbs, KingPair kings) {
             for (const auto c : {Color::Black, Color::White}) {
                 if (!m_curr->isDirty(c)) {
                     continue;
@@ -279,20 +279,19 @@ namespace stormphrax::eval {
             }
         }
 
-        [[nodiscard]] static inline auto evaluate(const Accumulator& accumulator, const BitboardSet& bbs, Color stm)
-            -> i32 {
+        [[nodiscard]] static inline i32 evaluate(const Accumulator& accumulator, const BitboardSet& bbs, Color stm) {
             assert(stm != Color::None);
             return stm == Color::Black ? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
                                        : g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
         }
 
-        static inline auto refreshAccumulator(
+        static inline void refreshAccumulator(
             UpdatableAccumulator& accumulator,
             Color c,
             const BitboardSet& bbs,
             RefreshTable& refreshTable,
             Square king
-        ) -> void {
+        ) {
             const auto tableIdx = InputFeatureSet::getRefreshTableEntry(c, king);
 
             auto& rtEntry = refreshTable.table[tableIdx];
@@ -329,6 +328,7 @@ namespace stormphrax::eval {
                 const auto add3 = adds.pop();
                 rtEntry.accumulator.activateFourFeatures(g_network.featureTransformer(), c, add0, add1, add2, add3);
             }
+
             while (adds.size() >= 1) {
                 const auto add = adds.pop();
                 rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, add);
@@ -341,6 +341,7 @@ namespace stormphrax::eval {
                 const auto sub3 = subs.pop();
                 rtEntry.accumulator.deactivateFourFeatures(g_network.featureTransformer(), c, sub0, sub1, sub2, sub3);
             }
+
             while (subs.size() >= 1) {
                 const auto sub = subs.pop();
                 rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, sub);
@@ -352,8 +353,7 @@ namespace stormphrax::eval {
             accumulator.setUpdated(c);
         }
 
-        static inline auto resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king)
-            -> void {
+        static inline void resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king) {
             assert(c != Color::None);
             assert(king != Square::None);
 
@@ -372,17 +372,17 @@ namespace stormphrax::eval {
             }
         }
 
-        static inline auto resetAccumulator(
+        static inline void resetAccumulator(
             UpdatableAccumulator& accumulator,
             Color c,
             const BitboardSet& bbs,
             Square king
-        ) -> void {
+        ) {
             resetAccumulator(accumulator.acc, c, bbs, king);
             accumulator.setUpdated(c);
         }
 
-        [[nodiscard]] static inline auto featureIndex(Color c, Piece piece, Square sq, Square king) -> u32 {
+        [[nodiscard]] static inline u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
             assert(c != Color::None);
             assert(piece != Piece::None);
             assert(sq != Square::None);

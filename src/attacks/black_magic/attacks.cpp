@@ -23,7 +23,7 @@ namespace stormphrax::attacks {
     using namespace black_magic;
 
     namespace {
-        auto generateRookAttacks() {
+        std::array<Bitboard, RookData.tableSize> generateRookAttacks() {
             std::array<Bitboard, RookData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
@@ -50,7 +50,7 @@ namespace stormphrax::attacks {
             return dst;
         }
 
-        auto generateBishopAttacks() {
+        std::array<Bitboard, BishopData.tableSize> generateBishopAttacks() {
             std::array<Bitboard, BishopData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {

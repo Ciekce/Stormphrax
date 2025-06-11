@@ -30,7 +30,7 @@ namespace stormphrax::limit {
     MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead) :
             m_endTime{Instant::now() + static_cast<f64>(std::max<i64>(1, time - overhead)) / 1000.0} {}
 
-    auto MoveTimeLimiter::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
+    bool MoveTimeLimiter::stop(const search::SearchData& data, bool allowSoftTimeout) {
         if (data.rootDepth > 2 && data.nodes > 0 && (data.nodes % 1024) == 0 && Instant::now() >= m_endTime) {
             m_stopped.store(true, std::memory_order_release);
             return true;
@@ -39,7 +39,7 @@ namespace stormphrax::limit {
         return false;
     }
 
-    auto MoveTimeLimiter::stopped() const -> bool {
+    bool MoveTimeLimiter::stopped() const {
         return m_stopped.load(std::memory_order_acquire);
     }
 
@@ -59,7 +59,7 @@ namespace stormphrax::limit {
         m_softTime = std::min(baseTime * softTimeScale(), m_maxTime);
     }
 
-    auto TimeManager::update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) -> void {
+    void TimeManager::update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {
         assert(bestMove != NullMove);
         assert(totalNodes > 0);
 
@@ -102,12 +102,12 @@ namespace stormphrax::limit {
         m_scale = std::max(scale, timeScaleMin());
     }
 
-    auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void {
+    void TimeManager::updateMoveNodes(Move move, usize nodes) {
         assert(move != NullMove);
         m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
     }
 
-    auto TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
+    bool TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) {
         if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0)) {
             return false;
         }
@@ -122,7 +122,7 @@ namespace stormphrax::limit {
         return false;
     }
 
-    auto TimeManager::stopped() const -> bool {
+    bool TimeManager::stopped() const {
         return m_stopped.load(std::memory_order_acquire);
     }
 } // namespace stormphrax::limit

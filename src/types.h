@@ -40,7 +40,7 @@ namespace stormphrax {
 
     using usize = std::size_t;
 
-    [[noreturn]] inline auto unimplemented() {
+    [[noreturn]] inline void unimplemented() {
         std::terminate();
     }
 } // namespace stormphrax

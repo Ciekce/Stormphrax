@@ -35,7 +35,7 @@ namespace stormphrax::eval::nnue {
             return m_featureTransformer;
         }
 
-        inline auto propagate(
+        inline util::simd::Array<typename Arch::OutputType, Arch::OutputCount> propagate(
             const BitboardSet& bbs,
             std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> stmInputs,
             std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs
@@ -48,7 +48,7 @@ namespace stormphrax::eval::nnue {
             return outputs;
         }
 
-        inline auto readFrom(IParamStream& stream) -> bool {
+        inline bool readFrom(IParamStream& stream) {
             if (!m_featureTransformer.readFrom(stream) || !m_arch.readFrom(stream)) {
                 return false;
             }
@@ -63,7 +63,7 @@ namespace stormphrax::eval::nnue {
             return true;
         }
 
-        inline auto writeTo(IParamStream& stream) const -> bool {
+        inline bool writeTo(IParamStream& stream) const {
             return m_featureTransformer.writeTo(stream) && m_arch.writeTo(stream);
         }
 

@@ -33,7 +33,7 @@ namespace stormphrax::eval::nnue::activation {
         static constexpr u8 Id = 3;
 
         template <typename T, T _unused>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
             util::simd::Vector<T> weights
@@ -44,7 +44,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <typename T, T _unused>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs1,
             util::simd::Vector<T> inputs2,
@@ -57,7 +57,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <typename OutputType>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value) {
+        SP_ALWAYS_INLINE_NDEBUG static inline OutputType output(OutputType value) {
             return value;
         }
     };
@@ -66,7 +66,7 @@ namespace stormphrax::eval::nnue::activation {
         static constexpr u8 Id = 2;
 
         template <std::integral T, T _unused>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
             util::simd::Vector<T> weights
@@ -78,7 +78,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <std::integral T, T _unused>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs1,
             util::simd::Vector<T> inputs2,
@@ -94,7 +94,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <typename T>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value) {
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
             return value;
         }
     };
@@ -103,7 +103,7 @@ namespace stormphrax::eval::nnue::activation {
         static constexpr u8 Id = 0;
 
         template <std::integral T, T Max>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
             util::simd::Vector<T> weights
@@ -117,7 +117,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <std::integral T, T Max>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs1,
             util::simd::Vector<T> inputs2,
@@ -135,7 +135,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <typename T>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value) {
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
             return value;
         }
     };
@@ -144,7 +144,7 @@ namespace stormphrax::eval::nnue::activation {
         static constexpr u8 Id = 1;
 
         template <std::integral T, T Max>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
             util::simd::Vector<T> weights
@@ -159,7 +159,7 @@ namespace stormphrax::eval::nnue::activation {
         }
 
         template <typename T, T Max>
-        SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value) {
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
             return value / Max;
         }
     };

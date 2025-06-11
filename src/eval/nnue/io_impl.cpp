@@ -38,7 +38,7 @@ namespace stormphrax::eval::nnue {
         ZSTD_freeDStream(m_dStream);
     }
 
-    auto ZstdParamStream::fillBuffer() -> bool {
+    bool ZstdParamStream::fillBuffer() {
         while (m_pos >= m_end && (m_input.pos < m_input.size || !m_stream.fail())) {
             if (m_input.pos == m_input.size) {
                 if (!m_stream) {
@@ -76,7 +76,7 @@ namespace stormphrax::eval::nnue {
         return m_pos < m_end;
     }
 
-    auto ZstdParamStream::read(std::byte* dst, usize n) -> bool {
+    bool ZstdParamStream::read(std::byte* dst, usize n) {
         if (m_fail) {
             return false;
         }

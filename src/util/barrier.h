@@ -32,7 +32,7 @@ namespace stormphrax::util {
             reset(expected);
         }
 
-        auto reset(i64 expected) -> void {
+        void reset(i64 expected) {
             assert(expected > 0);
             assert(m_current.load() == m_total.load());
 
@@ -40,7 +40,7 @@ namespace stormphrax::util {
             m_current.store(expected, std::memory_order::seq_cst);
         }
 
-        auto arriveAndWait() {
+        void arriveAndWait() {
             std::unique_lock lock{m_waitMutex};
 
             const auto current = --m_current;

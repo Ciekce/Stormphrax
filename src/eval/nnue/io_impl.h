@@ -45,34 +45,34 @@ namespace stormphrax::eval::nnue {
         ~PaddedParamStream() final = default;
 
     protected:
-        inline auto readI8s(std::span<i8> dst) -> bool final {
+        inline bool readI8s(std::span<i8> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI8s(std::span<const i8> src) -> bool final {
+        inline bool writeI8s(std::span<const i8> src) final {
             return write(reinterpret_cast<const std::byte*>(src.data()), src.size_bytes());
         }
 
-        inline auto readI16s(std::span<i16> dst) -> bool final {
+        inline bool readI16s(std::span<i16> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI16s(std::span<const i16> src) -> bool final {
+        inline bool writeI16s(std::span<const i16> src) final {
             return write(reinterpret_cast<const std::byte*>(src.data()), src.size_bytes());
         }
 
-        inline auto readI32s(std::span<i32> dst) -> bool final {
+        inline bool readI32s(std::span<i32> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI32s(std::span<const i32> src) -> bool final {
+        inline bool writeI32s(std::span<const i32> src) final {
             return write(reinterpret_cast<const std::byte*>(src.data()), src.size_bytes());
         }
 
     private:
         std::variant<std::istream*, std::ostream*> m_stream;
 
-        inline auto read(std::byte* dst, usize n) -> bool {
+        inline bool read(std::byte* dst, usize n) {
             if (!std::holds_alternative<std::istream*>(m_stream)) {
                 assert(false);
                 return false;
@@ -88,7 +88,7 @@ namespace stormphrax::eval::nnue {
             return !stream.fail();
         }
 
-        inline auto write(const std::byte* src, usize n) -> bool {
+        inline bool write(const std::byte* src, usize n) {
             if (!std::holds_alternative<std::ostream*>(m_stream)) {
                 assert(false);
                 return false;
@@ -118,29 +118,29 @@ namespace stormphrax::eval::nnue {
         ~ZstdParamStream() final;
 
     protected:
-        inline auto readI8s(std::span<i8> dst) -> bool final {
+        inline bool readI8s(std::span<i8> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI8s(std::span<const i8> src) -> bool final {
+        inline bool writeI8s(std::span<const i8> src) final {
             std::cerr << "ZstdParamStream::writeI8s" << std::endl;
             std::terminate();
         }
 
-        inline auto readI16s(std::span<i16> dst) -> bool final {
+        inline bool readI16s(std::span<i16> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI16s(std::span<const i16> src) -> bool final {
+        inline bool writeI16s(std::span<const i16> src) final {
             std::cerr << "ZstdParamStream::writeI16s" << std::endl;
             std::terminate();
         }
 
-        inline auto readI32s(std::span<i32> dst) -> bool final {
+        inline bool readI32s(std::span<i32> dst) final {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline auto writeI32s(std::span<const i32> src) -> bool final {
+        inline bool writeI32s(std::span<const i32> src) final {
             std::cerr << "ZstdParamStream::writeI32s" << std::endl;
             std::terminate();
         }
@@ -163,7 +163,7 @@ namespace stormphrax::eval::nnue {
 
         bool m_fail{false};
 
-        auto fillBuffer() -> bool;
-        auto read(std::byte* dst, usize n) -> bool;
+        bool fillBuffer();
+        bool read(std::byte* dst, usize n);
     };
 } // namespace stormphrax::eval::nnue

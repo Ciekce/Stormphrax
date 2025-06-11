@@ -32,7 +32,7 @@ namespace stormphrax::util {
             Timer();
             ~Timer() = default;
 
-            [[nodiscard]] auto time() const -> f64;
+            [[nodiscard]] f64 time() const;
 
         private:
 #ifdef _WIN32
@@ -55,7 +55,7 @@ namespace stormphrax::util {
             m_initTime = initTime.QuadPart;
         }
 
-        auto Timer::time() const -> f64 {
+        f64 Timer::time() const {
             LARGE_INTEGER time{};
             QueryPerformanceCounter(&time);
 
@@ -69,7 +69,7 @@ namespace stormphrax::util {
             m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
         }
 
-        auto Timer::time() const -> f64 {
+        f64 Timer::time() const {
             struct timespec time{};
             clock_gettime(CLOCK_MONOTONIC, &time);
 
@@ -80,11 +80,11 @@ namespace stormphrax::util {
         const Timer s_timer{};
     } // namespace
 
-    auto Instant::elapsed() const -> f64 {
+    f64 Instant::elapsed() const {
         return s_timer.time() - m_time;
     }
 
-    auto Instant::now() -> Instant {
+    Instant Instant::now() {
         return Instant{s_timer.time()};
     }
 } // namespace stormphrax::util

@@ -25,21 +25,21 @@
 namespace stormphrax::util {
     class Instant {
     public:
-        [[nodiscard]] auto elapsed() const -> f64;
+        [[nodiscard]] f64 elapsed() const;
 
-        inline auto operator+(f64 time) const {
+        inline Instant operator+(f64 time) const {
             return Instant{m_time + time};
         }
 
-        inline auto operator-(f64 time) const {
+        inline Instant operator-(f64 time) const {
             return Instant{m_time - time};
         }
 
-        [[nodiscard]] inline auto operator<=>(const Instant& other) const {
+        [[nodiscard]] inline std::partial_ordering operator<=>(const Instant& other) const {
             return m_time <=> other.m_time;
         }
 
-        [[nodiscard]] static auto now() -> Instant;
+        [[nodiscard]] static Instant now();
 
     private:
         explicit Instant(f64 time) :

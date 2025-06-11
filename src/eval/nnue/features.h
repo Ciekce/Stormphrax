@@ -34,19 +34,19 @@ namespace stormphrax::eval::nnue::features {
         static constexpr bool IsMirrored = false;
         static constexpr bool MergedKings = false;
 
-        static constexpr auto transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq) {
+        static constexpr Square transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq) {
             return sq;
         }
 
-        static constexpr auto getBucket([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
+        static constexpr u32 getBucket([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
             return 0;
         }
 
-        static constexpr auto getRefreshTableEntry([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
+        static constexpr u32 getRefreshTableEntry([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
             return 0;
         }
 
-        static constexpr auto refreshRequired(
+        static constexpr bool refreshRequired(
             [[maybe_unused]] Color c,
             [[maybe_unused]] Square prevKingSq,
             [[maybe_unused]] Square kingSq
@@ -73,22 +73,22 @@ namespace stormphrax::eval::nnue::features {
 
         static_assert(BucketCount > 1, "use SingleBucket for single-bucket arches");
 
-        static constexpr auto transformFeatureSquare(Square sq, [[maybe_unused]] Square kingSq) {
+        static constexpr Square transformFeatureSquare(Square sq, [[maybe_unused]] Square kingSq) {
             return sq;
         }
 
-        static constexpr auto getBucket(Color c, Square kingSq) {
+        static constexpr u32 getBucket(Color c, Square kingSq) {
             if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
             }
             return Buckets[static_cast<i32>(kingSq)];
         }
 
-        static constexpr auto getRefreshTableEntry(Color c, Square kingSq) {
+        static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
             return getBucket(c, kingSq);
         }
 
-        static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq) {
+        static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
             assert(c != Color::None);
 
             assert(prevKingSq != Square::None);
@@ -144,7 +144,7 @@ namespace stormphrax::eval::nnue::features {
             return dst;
         }();
 
-        static constexpr auto shouldFlip(Square kingSq) {
+        static constexpr bool shouldFlip(Square kingSq) {
             if constexpr (Side == MirroredKingSide::Abcd) {
                 return squareFile(kingSq) > 3;
             } else {
@@ -161,19 +161,19 @@ namespace stormphrax::eval::nnue::features {
         static constexpr bool IsMirrored = true;
         static constexpr bool MergedKings = false;
 
-        static constexpr auto transformFeatureSquare(Square sq, Square kingSq) {
+        static constexpr Square transformFeatureSquare(Square sq, Square kingSq) {
             const bool flipped = shouldFlip(kingSq);
             return flipped ? flipSquareFile(sq) : sq;
         }
 
-        static constexpr auto getBucket(Color c, Square kingSq) {
+        static constexpr u32 getBucket(Color c, Square kingSq) {
             if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
             }
             return Buckets[static_cast<i32>(kingSq)];
         }
 
-        static constexpr auto getRefreshTableEntry(Color c, Square kingSq) {
+        static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
             if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
             }
@@ -181,7 +181,7 @@ namespace stormphrax::eval::nnue::features {
             return Buckets[static_cast<i32>(kingSq)] * 2 + flipped;
         }
 
-        static constexpr auto refreshRequired(Color c, Square prevKingSq, Square kingSq) {
+        static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
             assert(c != Color::None);
 
             assert(prevKingSq != Square::None);

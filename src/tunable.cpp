@@ -22,7 +22,7 @@
 
 namespace stormphrax::tunable {
     namespace {
-        inline auto lmrReduction(f64 base, f64 divisor, i32 depth, i32 moves) {
+        inline i32 lmrReduction(f64 base, f64 divisor, i32 depth, i32 moves) {
             const auto lnDepth = std::log(static_cast<f64>(depth));
             const auto lnMoves = std::log(static_cast<f64>(moves));
             return static_cast<i32>(128.0 * (base + lnDepth * lnMoves / divisor));
@@ -32,7 +32,7 @@ namespace stormphrax::tunable {
     util::MultiArray<i32, 2, 256, 256> g_lmrTable{};
     std::array<i32, 13> g_seeValues{};
 
-    auto updateQuietLmrTable() -> void {
+    void updateQuietLmrTable() {
         const auto base = static_cast<f64>(quietLmrBase()) / 100.0;
         const auto divisor = static_cast<f64>(quietLmrDivisor()) / 100.0;
 
@@ -43,7 +43,7 @@ namespace stormphrax::tunable {
         }
     }
 
-    auto updateNoisyLmrTable() -> void {
+    void updateNoisyLmrTable() {
         const auto base = static_cast<f64>(noisyLmrBase()) / 100.0;
         const auto divisor = static_cast<f64>(noisyLmrDivisor()) / 100.0;
 
@@ -54,7 +54,7 @@ namespace stormphrax::tunable {
         }
     }
 
-    auto updateSeeValueTable() -> void {
+    void updateSeeValueTable() {
         // king and none
         g_seeValues.fill(0);
 
@@ -72,7 +72,7 @@ namespace stormphrax::tunable {
         }
     }
 
-    auto init() -> void {
+    void init() {
         updateQuietLmrTable();
         updateNoisyLmrTable();
 

@@ -21,9 +21,9 @@
 #include "types.h"
 
 namespace stormphrax::stats {
-    auto conditionHit(bool condition, usize slot = 0) -> void;
-    auto range(i64 value, usize slot = 0) -> void;
-    auto mean(i64 value, usize slot = 0) -> void;
+    void conditionHit(bool condition, usize slot = 0);
+    void range(i64 value, usize slot = 0);
+    void mean(i64 value, usize slot = 0);
 
-    auto print() -> void;
+    void print();
 } // namespace stormphrax::stats

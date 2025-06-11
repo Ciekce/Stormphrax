@@ -36,7 +36,7 @@ namespace stormphrax {
         CorrectionHistoryTable() = default;
         ~CorrectionHistoryTable() = default;
 
-        inline auto clear() {
+        inline void clear() {
             std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
             std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
             std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
@@ -44,7 +44,7 @@ namespace stormphrax {
             std::memset(&m_contTable, 0, sizeof(m_contTable));
         }
 
-        inline auto update(
+        inline void update(
             const Position& pos,
             std::span<search::PlayedMove> moves,
             i32 ply,
@@ -73,7 +73,7 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] inline auto correct(
+        [[nodiscard]] inline Score correct(
             const Position& pos,
             std::span<search::PlayedMove> moves,
             i32 ply,
@@ -119,7 +119,7 @@ namespace stormphrax {
         struct Entry {
             i16 value{};
 
-            inline auto update(i32 bonus) -> void {
+            inline void update(i32 bonus) {
                 value += bonus - value * std::abs(bonus) / Limit;
             }
 

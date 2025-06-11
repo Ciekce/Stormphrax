@@ -28,7 +28,7 @@ namespace stormphrax {
     using util::Instant;
 
     namespace {
-        auto doPerft(const Position& pos, i32 depth) -> usize {
+        usize doPerft(const Position& pos, i32 depth) {
             if (depth == 0) {
                 return 1;
             }
@@ -57,11 +57,11 @@ namespace stormphrax {
         }
     } // namespace
 
-    auto perft(const Position& pos, i32 depth) -> void {
+    void perft(const Position& pos, i32 depth) {
         std::cout << doPerft(pos, depth) << std::endl;
     }
 
-    auto splitPerft(const Position& pos, i32 depth) -> void {
+    void splitPerft(const Position& pos, i32 depth) {
         --depth;
 
         const auto start = Instant::now();

@@ -59,7 +59,7 @@ namespace stormphrax {
         constexpr auto Author = "Ciekce";
 
 #if SP_EXTERNAL_TUNE
-        auto tunableParams() -> auto& {
+        std::vector<tunable::TunableParam>& tunableParams() {
             static auto params = [] {
                 std::vector<tunable::TunableParam> params{};
                 params.reserve(128);
@@ -69,7 +69,7 @@ namespace stormphrax {
             return params;
         }
 
-        inline auto lookupTunableParam(const std::string& name) -> tunable::TunableParam* {
+        inline tunable::TunableParam* lookupTunableParam(const std::string& name) {
             for (auto& param : tunableParams()) {
                 if (param.lowerName == name) {
                     return &param;
@@ -85,28 +85,28 @@ namespace stormphrax {
             UciHandler() = default;
             ~UciHandler();
 
-            auto run() -> i32;
+            i32 run();
 
         private:
-            auto handleUci() -> void;
-            auto handleUcinewgame() -> void;
-            auto handleIsready() -> void;
-            auto handlePosition(const std::vector<std::string>& tokens) -> void;
-            auto handleGo(const std::vector<std::string>& tokens, Instant startTime) -> void;
-            auto handleStop() -> void;
-            auto handleSetoption(const std::vector<std::string>& tokens) -> void;
+            void handleUci();
+            void handleUcinewgame();
+            void handleIsready();
+            void handlePosition(const std::vector<std::string>& tokens);
+            void handleGo(const std::vector<std::string>& tokens, Instant startTime);
+            void handleStop();
+            void handleSetoption(const std::vector<std::string>& tokens);
             // V ======= NONSTANDARD ======= V
-            auto handleD() -> void;
-            auto handleFen() -> void;
-            auto handleCheckers() -> void;
-            auto handleThreats() -> void;
-            auto handleEval() -> void;
-            auto handleRawEval() -> void;
-            auto handleRegen() -> void;
-            auto handleMoves() -> void;
-            auto handlePerft(const std::vector<std::string>& tokens) -> void;
-            auto handleSplitperft(const std::vector<std::string>& tokens) -> void;
-            auto handleBench(const std::vector<std::string>& tokens) -> void;
+            void handleD();
+            void handleFen();
+            void handleCheckers();
+            void handleThreats();
+            void handleEval();
+            void handleRawEval();
+            void handleRegen();
+            void handleMoves();
+            void handlePerft(const std::vector<std::string>& tokens);
+            void handleSplitperft(const std::vector<std::string>& tokens);
+            void handleBench(const std::vector<std::string>& tokens);
 
             bool m_fathomInitialized{false};
 
@@ -127,7 +127,7 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::run() -> i32 {
+        i32 UciHandler::run() {
             for (std::string line{}; std::getline(std::cin, line);) {
                 const auto startTime = Instant::now();
 
@@ -155,7 +155,7 @@ namespace stormphrax {
                     handleStop();
                 } else if (command == "setoption") {
                     handleSetoption(tokens);
-                // V ======= NONSTANDARD ======= V
+                    // V ======= NONSTANDARD ======= V
                 } else if (command == "d") {
                     handleD();
                 } else if (command == "fen") {
@@ -184,7 +184,7 @@ namespace stormphrax {
             return 0;
         }
 
-        auto UciHandler::handleUci() -> void {
+        void UciHandler::handleUci() {
             static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
@@ -231,7 +231,7 @@ namespace stormphrax {
             std::cout << "uciok" << std::endl;
         }
 
-        auto UciHandler::handleUcinewgame() -> void {
+        void UciHandler::handleUcinewgame() {
             if (m_searcher.searching()) {
                 std::cerr << "still searching" << std::endl;
             } else {
@@ -239,12 +239,12 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::handleIsready() -> void {
+        void UciHandler::handleIsready() {
             m_searcher.ensureReady();
             std::cout << "readyok" << std::endl;
         }
 
-        auto UciHandler::handlePosition(const std::vector<std::string>& tokens) -> void {
+        void UciHandler::handlePosition(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
                 std::cerr << "still searching" << std::endl;
             } else if (tokens.size() > 1) {
@@ -319,7 +319,7 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) -> void {
+        void UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) {
             if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
             } else {
@@ -491,7 +491,7 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::handleStop() -> void {
+        void UciHandler::handleStop() {
             if (!m_searcher.searching()) {
                 std::cerr << "not searching" << std::endl;
             } else {
@@ -500,7 +500,7 @@ namespace stormphrax {
         }
 
         //TODO refactor
-        auto UciHandler::handleSetoption(const std::vector<std::string>& tokens) -> void {
+        void UciHandler::handleSetoption(const std::vector<std::string>& tokens) {
             usize i = 1;
 
             for (; i < tokens.size() - 1 && tokens[i] != "name"; ++i) {
@@ -677,7 +677,7 @@ namespace stormphrax {
             }
         }
 
-        auto UciHandler::handleD() -> void {
+        void UciHandler::handleD() {
             std::cout << '\n';
 
             printBoard(std::cout, m_pos);
@@ -717,11 +717,11 @@ namespace stormphrax {
             std::cout << std::endl;
         }
 
-        auto UciHandler::handleFen() -> void {
+        void UciHandler::handleFen() {
             std::cout << m_pos.toFen() << std::endl;
         }
 
-        auto UciHandler::handleEval() -> void {
+        void UciHandler::handleEval() {
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
@@ -729,26 +729,26 @@ namespace stormphrax {
             std::cout << std::endl;
         }
 
-        auto UciHandler::handleRawEval() -> void {
+        void UciHandler::handleRawEval() {
             const auto score = eval::staticEvalOnce<false>(m_pos);
             std::cout << score << std::endl;
         }
 
-        auto UciHandler::handleCheckers() -> void {
+        void UciHandler::handleCheckers() {
             std::cout << '\n';
             printBitboard(std::cout, m_pos.checkers());
         }
 
-        auto UciHandler::handleThreats() -> void {
+        void UciHandler::handleThreats() {
             std::cout << '\n';
             printBitboard(std::cout, m_pos.threats());
         }
 
-        auto UciHandler::handleRegen() -> void {
+        void UciHandler::handleRegen() {
             m_pos.regen();
         }
 
-        auto UciHandler::handleMoves() -> void {
+        void UciHandler::handleMoves() {
             ScoredMoveList moves{};
             generateAll(moves, m_pos);
 
@@ -762,7 +762,7 @@ namespace stormphrax {
             std::cout << std::endl;
         }
 
-        auto UciHandler::handlePerft(const std::vector<std::string>& tokens) -> void {
+        void UciHandler::handlePerft(const std::vector<std::string>& tokens) {
             u32 depth = 6;
 
             if (tokens.size() > 1) {
@@ -775,7 +775,7 @@ namespace stormphrax {
             perft(m_pos, static_cast<i32>(depth));
         }
 
-        auto UciHandler::handleSplitperft(const std::vector<std::string>& tokens) -> void {
+        void UciHandler::handleSplitperft(const std::vector<std::string>& tokens) {
             u32 depth = 6;
 
             if (tokens.size() > 1) {
@@ -788,7 +788,7 @@ namespace stormphrax {
             splitPerft(m_pos, static_cast<i32>(depth));
         }
 
-        auto UciHandler::handleBench(const std::vector<std::string>& tokens) -> void {
+        void UciHandler::handleBench(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
                 return;
@@ -839,14 +839,14 @@ namespace stormphrax {
 
 #if SP_EXTERNAL_TUNE
     namespace tunable {
-        auto addTunableParam(
+        TunableParam& addTunableParam(
             const std::string& name,
             i32 value,
             i32 min,
             i32 max,
             f64 step,
             std::function<void()> callback
-        ) -> TunableParam& {
+        ) {
             auto& params = tunableParams();
 
             if (params.size() == params.capacity()) {
@@ -867,12 +867,12 @@ namespace stormphrax {
 #endif
 
     namespace uci {
-        auto run() -> i32 {
+        i32 run() {
             UciHandler handler{};
             return handler.run();
         }
 
-        auto moveToString(Move move) -> std::string {
+        std::string moveToString(Move move) {
             if (!move) {
                 return "0000";
             }
@@ -899,7 +899,7 @@ namespace stormphrax {
 
 #if SP_EXTERNAL_TUNE
         namespace {
-            auto printParams(
+            void printParams(
                 std::span<const std::string> params,
                 const std::function<void(const tunable::TunableParam&)>& printParam
             ) {
@@ -926,7 +926,7 @@ namespace stormphrax {
             }
         } // namespace
 
-        auto printWfTuningParams(std::span<const std::string> params) -> void {
+        void printWfTuningParams(std::span<const std::string> params) {
             std::cout << "{\n";
 
             bool first = true;
@@ -950,7 +950,7 @@ namespace stormphrax {
             std::cout << "\n}" << std::endl;
         }
 
-        auto printCttTuningParams(std::span<const std::string> params) -> void {
+        void printCttTuningParams(std::span<const std::string> params) {
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
@@ -968,7 +968,7 @@ namespace stormphrax {
             std::cout << std::endl;
         }
 
-        auto printObTuningParams(std::span<const std::string> params) -> void {
+        void printObTuningParams(std::span<const std::string> params) {
             const auto printParam = [](const auto& param) {
                 std::cout << param.name << ", int, " << param.value << ".0, " << param.range.min() << ".0, "
                           << param.range.max() << ".0, " << param.step << ", 0.002" << std::endl;

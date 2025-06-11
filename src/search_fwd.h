@@ -38,32 +38,33 @@ namespace stormphrax::search {
             *this = other;
         }
 
-        [[nodiscard]] inline auto loadSeldepth() const {
+        [[nodiscard]] inline i32 loadSeldepth() const {
             return seldepth.load(std::memory_order::relaxed);
         }
 
-        inline auto updateSeldepth(i32 v) {
-            if (v > loadSeldepth())
+        inline void updateSeldepth(i32 v) {
+            if (v > loadSeldepth()) {
                 seldepth.store(v, std::memory_order::relaxed);
+            }
         }
 
-        [[nodiscard]] inline auto loadNodes() const {
+        [[nodiscard]] inline usize loadNodes() const {
             return nodes.load(std::memory_order::relaxed);
         }
 
-        inline auto incNodes() {
+        inline void incNodes() {
             nodes.fetch_add(1, std::memory_order::relaxed);
         }
 
-        [[nodiscard]] inline auto loadTbHits() const {
+        [[nodiscard]] inline usize loadTbHits() const {
             return tbhits.load(std::memory_order::relaxed);
         }
 
-        inline auto incTbHits() {
+        inline void incTbHits() {
             tbhits.fetch_add(1, std::memory_order::relaxed);
         }
 
-        auto operator=(const SearchData& other) -> SearchData& {
+        SearchData& operator=(const SearchData& other) {
             rootDepth = other.rootDepth;
 
             seldepth.store(other.seldepth.load());

@@ -34,7 +34,7 @@ namespace stormphrax::eval {
     using Contempt = std::array<Score, 2>;
 
     template <bool Correct = true>
-    inline auto adjustEval(
+    inline Score adjustEval(
         const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
@@ -58,7 +58,7 @@ namespace stormphrax::eval {
     }
 
     template <bool Scale>
-    inline auto adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
+    inline Score adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
         using namespace tunable;
 
         if constexpr (Scale) {
@@ -77,13 +77,13 @@ namespace stormphrax::eval {
     }
 
     template <bool Scale = true>
-    inline auto staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
+    inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
         auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
         return adjustStatic<Scale>(pos, contempt, eval);
     }
 
     template <bool Correct = true>
-    inline auto adjustedStaticEval(
+    inline Score adjustedStaticEval(
         const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
@@ -96,7 +96,7 @@ namespace stormphrax::eval {
     }
 
     template <bool Scale = true>
-    inline auto staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
+    inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
         auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
         return adjustStatic<Scale>(pos, contempt, eval);
     }

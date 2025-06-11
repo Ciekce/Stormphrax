@@ -31,7 +31,7 @@ namespace stormphrax::util {
             return m_high ? (m_value >> 4) : (m_value & 0xF);
         }
 
-        constexpr inline auto operator=(u8 v) -> IndexedU4& {
+        constexpr inline IndexedU4& operator=(u8 v) {
             assert(v <= 0xF);
 
             if (m_high) {
@@ -62,12 +62,12 @@ namespace stormphrax::util {
         U4Array() = default;
         ~U4Array() = default;
 
-        constexpr auto operator[](usize i) const {
+        constexpr u8 operator[](usize i) const {
             assert(i < Size);
             return m_data[i / 2] >> ((i % 2) * 4);
         }
 
-        constexpr auto operator[](usize i) {
+        constexpr IndexedU4 operator[](usize i) {
             assert(i < Size);
             return IndexedU4{m_data[i / 2], (i % 2) == 1};
         }

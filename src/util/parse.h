@@ -24,7 +24,7 @@
 #include <string>
 
 namespace stormphrax::util {
-    [[nodiscard]] inline auto tryParseDigit(char c) -> std::optional<u32> {
+    [[nodiscard]] inline std::optional<u32> tryParseDigit(char c) {
         if (c >= '0' && c <= '9') {
             return static_cast<u32>(c - '0');
         } else {
@@ -32,7 +32,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseU32(const std::string& value, u32 radix = 10) -> std::optional<u32> {
+    [[nodiscard]] inline std::optional<u32> tryParseU32(const std::string& value, u32 radix = 10) {
         try {
             return std::stoul(value, nullptr, static_cast<i32>(radix));
         } catch (...) {
@@ -40,7 +40,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseU32(u32& dst, const std::string& value, u32 radix = 10) {
+    inline bool tryParseU32(u32& dst, const std::string& value, u32 radix = 10) {
         if (const auto parsed = tryParseU32(value, radix)) {
             dst = *parsed;
             return true;
@@ -49,7 +49,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseI32(const std::string& value, u32 radix = 10) -> std::optional<i32> {
+    [[nodiscard]] inline std::optional<i32> tryParseI32(const std::string& value, u32 radix = 10) {
         try {
             return std::stol(value, nullptr, static_cast<i32>(radix));
         } catch (...) {
@@ -57,7 +57,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseI32(i32& dst, const std::string& value, u32 radix = 10) {
+    inline bool tryParseI32(i32& dst, const std::string& value, u32 radix = 10) {
         if (const auto parsed = tryParseI32(value, radix)) {
             dst = *parsed;
             return true;
@@ -66,7 +66,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseU64(const std::string& value, u32 radix = 10) -> std::optional<u64> {
+    [[nodiscard]] inline std::optional<u64> tryParseU64(const std::string& value, u32 radix = 10) {
         try {
             return std::stoull(value, nullptr, static_cast<i32>(radix));
         } catch (...) {
@@ -74,7 +74,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseU64(u64& dst, const std::string& value, u32 radix = 10) {
+    inline bool tryParseU64(u64& dst, const std::string& value, u32 radix = 10) {
         if (const auto parsed = tryParseU64(value, radix)) {
             dst = *parsed;
             return true;
@@ -83,7 +83,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseI64(const std::string& value, u32 radix = 10) -> std::optional<i64> {
+    [[nodiscard]] inline std::optional<i64> tryParseI64(const std::string& value, u32 radix = 10) {
         try {
             return std::stoll(value, nullptr, static_cast<i32>(radix));
         } catch (...) {
@@ -91,7 +91,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseI64(i64& dst, const std::string& value, u32 radix = 10) {
+    inline bool tryParseI64(i64& dst, const std::string& value, u32 radix = 10) {
         if (const auto parsed = tryParseI64(value, radix)) {
             dst = *parsed;
             return true;
@@ -100,7 +100,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseSize(const std::string& value, u32 radix = 10) -> std::optional<usize> {
+    [[nodiscard]] inline std::optional<usize> tryParseSize(const std::string& value, u32 radix = 10) {
         if constexpr (sizeof(usize) == 8) {
             return tryParseU64(value, radix);
         } else {
@@ -108,7 +108,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseSize(usize& dst, const std::string& value, u32 radix = 10) {
+    inline bool tryParseSize(usize& dst, const std::string& value, u32 radix = 10) {
         if (const auto parsed = tryParseSize(value, radix)) {
             dst = *parsed;
             return true;
@@ -117,7 +117,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseBool(const std::string& value) -> std::optional<bool> {
+    [[nodiscard]] inline std::optional<bool> tryParseBool(const std::string& value) {
         if (value == "true") {
             return true;
         } else if (value == "false") {
@@ -127,7 +127,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseBool(bool& dst, const std::string& value) {
+    inline bool tryParseBool(bool& dst, const std::string& value) {
         if (const auto parsed = tryParseBool(value)) {
             dst = *parsed;
             return true;
@@ -136,7 +136,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseF32(const std::string& value) -> std::optional<f32> {
+    [[nodiscard]] inline std::optional<f32> tryParseF32(const std::string& value) {
         try {
             return std::stof(value, nullptr);
         } catch (...) {
@@ -144,7 +144,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseF32(f32& dst, const std::string& value) {
+    inline bool tryParseF32(f32& dst, const std::string& value) {
         if (const auto parsed = tryParseF32(value)) {
             dst = *parsed;
             return true;
@@ -153,7 +153,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline auto tryParseF64(const std::string& value) -> std::optional<f64> {
+    [[nodiscard]] inline std::optional<f64> tryParseF64(const std::string& value) {
         try {
             return std::stod(value, nullptr);
         } catch (...) {
@@ -161,7 +161,7 @@ namespace stormphrax::util {
         }
     }
 
-    inline auto tryParseF64(f64& dst, const std::string& value) {
+    inline bool tryParseF64(f64& dst, const std::string& value) {
         if (const auto parsed = tryParseF64(value)) {
             dst = *parsed;
             return true;

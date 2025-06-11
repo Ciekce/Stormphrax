@@ -22,7 +22,7 @@
 #include "move.h"
 
 namespace stormphrax::tb {
-    auto probeRoot(MoveList& rootMoves, const Position& pos) -> ProbeResult {
+    ProbeResult probeRoot(MoveList& rootMoves, const Position& pos) {
         const auto moveFromTb = [&pos](auto tbMove) {
             static constexpr auto PromoPieces =
                 std::array{PieceType::None, PieceType::Queen, PieceType::Rook, PieceType::Bishop, PieceType::Knight};
@@ -35,7 +35,7 @@ namespace stormphrax::tb {
                 return Move::promotion(src, dst, promo);
             } else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::Pawn) {
                 return Move::enPassant(src, dst);
-            // Syzygy TBs do not encode positions with castling rights
+                // Syzygy TBs do not encode positions with castling rights
             } else {
                 return Move::standard(src, dst);
             }
@@ -116,7 +116,7 @@ namespace stormphrax::tb {
         return wdl;
     }
 
-    auto probe(const Position& pos) -> ProbeResult {
+    ProbeResult probe(const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto epSq = pos.enPassant();

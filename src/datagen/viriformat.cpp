@@ -25,12 +25,12 @@ namespace stormphrax::datagen {
         m_moves.reserve(256);
     }
 
-    auto Viriformat::start(const Position& initialPosition) -> void {
+    void Viriformat::start(const Position& initialPosition) {
         m_initial = marlinformat::PackedBoard::pack(initialPosition, 0);
         m_moves.clear();
     }
 
-    auto Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) -> void {
+    void Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) {
         static constexpr auto MoveTypes = std::array{
             static_cast<u16>(0x0000), // normal
             static_cast<u16>(0xC000), // promo
@@ -48,7 +48,7 @@ namespace stormphrax::datagen {
         m_moves.push_back({viriMove, static_cast<i16>(score)});
     }
 
-    auto Viriformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize {
+    usize Viriformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) {
         static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
 
         m_initial.wdl = outcome;

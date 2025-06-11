@@ -35,50 +35,55 @@ namespace stormphrax {
         constexpr Move() = default;
         constexpr ~Move() = default;
 
-        [[nodiscard]] constexpr auto srcIdx() const {
+        [[nodiscard]] constexpr usize srcIdx() const {
             return m_move >> 10;
         }
-        [[nodiscard]] constexpr auto src() const {
+
+        [[nodiscard]] constexpr Square src() const {
             return static_cast<Square>(srcIdx());
         }
 
-        [[nodiscard]] constexpr auto srcRank() const {
+        [[nodiscard]] constexpr i32 srcRank() const {
             return m_move >> 13;
         }
-        [[nodiscard]] constexpr auto srcFile() const {
+
+        [[nodiscard]] constexpr i32 srcFile() const {
             return (m_move >> 10) & 0x7;
         }
 
-        [[nodiscard]] constexpr auto dstIdx() const {
+        [[nodiscard]] constexpr usize dstIdx() const {
             return (m_move >> 4) & 0x3F;
         }
-        [[nodiscard]] constexpr auto dst() const {
+
+        [[nodiscard]] constexpr Square dst() const {
             return static_cast<Square>(dstIdx());
         }
 
-        [[nodiscard]] constexpr auto dstRank() const {
+        [[nodiscard]] constexpr i32 dstRank() const {
             return (m_move >> 7) & 0x7;
         }
-        [[nodiscard]] constexpr auto dstFile() const {
+
+        [[nodiscard]] constexpr i32 dstFile() const {
             return (m_move >> 4) & 0x7;
         }
 
-        [[nodiscard]] constexpr auto promoIdx() const {
+        [[nodiscard]] constexpr usize promoIdx() const {
             return (m_move >> 2) & 0x3;
         }
-        [[nodiscard]] constexpr auto promo() const {
+
+        [[nodiscard]] constexpr PieceType promo() const {
             return static_cast<PieceType>(promoIdx() + 1);
         }
 
-        [[nodiscard]] constexpr auto type() const {
+        [[nodiscard]] constexpr MoveType type() const {
             return static_cast<MoveType>(m_move & 0x3);
         }
 
-        [[nodiscard]] constexpr auto isNull() const {
+        [[nodiscard]] constexpr bool isNull() const {
             return /*src() == dst()*/ m_move == 0;
         }
 
-        [[nodiscard]] constexpr auto data() const {
+        [[nodiscard]] constexpr u16 data() const {
             return m_move;
         }
 
@@ -86,7 +91,7 @@ namespace stormphrax {
         // castling moves, otherwise just the move's destination
         // used to avoid inflating the history of the generally
         // bad moves of putting the king in a corner when castling
-        [[nodiscard]] constexpr auto historyDst() const {
+        [[nodiscard]] constexpr Square historyDst() const {
             if (type() == MoveType::Castling && !g_opts.chess960) {
                 return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
             } else {
@@ -98,30 +103,30 @@ namespace stormphrax {
             return !isNull();
         }
 
-        constexpr auto operator==(Move other) const {
+        constexpr bool operator==(Move other) const {
             return m_move == other.m_move;
         }
 
-        [[nodiscard]] static constexpr auto standard(Square src, Square dst) {
+        [[nodiscard]] static constexpr Move standard(Square src, Square dst) {
             return Move{static_cast<u16>(
                 (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::Standard)
             )};
         }
 
-        [[nodiscard]] static constexpr auto promotion(Square src, Square dst, PieceType promo) {
+        [[nodiscard]] static constexpr Move promotion(Square src, Square dst, PieceType promo) {
             return Move{static_cast<u16>(
                 (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | ((static_cast<u16>(promo) - 1) << 2)
                 | static_cast<u16>(MoveType::Promotion)
             )};
         }
 
-        [[nodiscard]] static constexpr auto castling(Square src, Square dst) {
+        [[nodiscard]] static constexpr Move castling(Square src, Square dst) {
             return Move{static_cast<u16>(
                 (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::Castling)
             )};
         }
 
-        [[nodiscard]] static constexpr auto enPassant(Square src, Square dst) {
+        [[nodiscard]] static constexpr Move enPassant(Square src, Square dst) {
             return Move{static_cast<u16>(
                 (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::EnPassant)
             )};

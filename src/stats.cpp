@@ -41,7 +41,7 @@ namespace stormphrax::stats {
         std::atomic_bool s_anyUsed{false};
 
         template <typename T>
-        inline auto atomicMin(std::atomic<T>& v, T x) {
+        inline void atomicMin(std::atomic<T>& v, T x) {
             auto curr = v.load();
             while (x < curr && v.compare_exchange_weak(curr, x)) {
                 //
@@ -49,7 +49,7 @@ namespace stormphrax::stats {
         }
 
         template <typename T>
-        inline auto atomicMax(std::atomic<T>& v, T x) {
+        inline void atomicMax(std::atomic<T>& v, T x) {
             auto curr = v.load();
             while (x > curr && v.compare_exchange_weak(curr, x)) {
                 //
@@ -57,7 +57,7 @@ namespace stormphrax::stats {
         }
     } // namespace
 
-    auto conditionHit(bool condition, usize slot) -> void {
+    void conditionHit(bool condition, usize slot) {
         if (slot >= Slots) {
             std::cerr << "tried to hit condition " << slot << " (max " << (Slots - 1) << ")" << std::endl;
             return;
@@ -68,7 +68,7 @@ namespace stormphrax::stats {
         s_anyUsed = true;
     }
 
-    auto range(i64 v, usize slot) -> void {
+    void range(i64 v, usize slot) {
         if (slot >= Slots) {
             std::cerr << "tried to hit range " << slot << " (max " << (Slots - 1) << ")" << std::endl;
             return;
@@ -80,7 +80,7 @@ namespace stormphrax::stats {
         s_anyUsed = true;
     }
 
-    auto mean(i64 v, usize slot) -> void {
+    void mean(i64 v, usize slot) {
         if (slot >= Slots) {
             std::cerr << "tried to hit mean " << slot << " (max " << (Slots - 1) << ")" << std::endl;
             return;
@@ -92,7 +92,7 @@ namespace stormphrax::stats {
         s_anyUsed = true;
     }
 
-    auto print() -> void {
+    void print() {
         if (!s_anyUsed.load()) {
             return;
         }

@@ -31,11 +31,11 @@ namespace stormphrax::limit {
         InfiniteLimiter() = default;
         ~InfiniteLimiter() final = default;
 
-        [[nodiscard]] inline auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final {
+        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
             return false;
         }
 
-        [[nodiscard]] inline auto stopped() const -> bool final {
+        [[nodiscard]] inline bool stopped() const final {
             return false;
         }
     };
@@ -49,7 +49,7 @@ namespace stormphrax::limit {
 
         ~NodeLimiter() final = default;
 
-        [[nodiscard]] inline auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final {
+        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
             // if softLimit is enabled:
             //   - soft limit: m_maxNodes
             //   - hard limit: m_maxNodes * softNodeHardLimitMultiplier
@@ -67,7 +67,7 @@ namespace stormphrax::limit {
             return false;
         }
 
-        [[nodiscard]] inline auto stopped() const -> bool final {
+        [[nodiscard]] inline bool stopped() const final {
             return m_stopped.load(std::memory_order_acquire);
         }
 

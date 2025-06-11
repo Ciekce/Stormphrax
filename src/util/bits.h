@@ -31,7 +31,7 @@
 
 namespace stormphrax::util {
     namespace fallback {
-        [[nodiscard]] constexpr auto pext(u64 v, u64 mask) {
+        [[nodiscard]] constexpr u64 pext(u64 v, u64 mask) {
             u64 dst{};
 
             for (u64 bit = 1; mask != 0; bit <<= 1) {
@@ -44,7 +44,7 @@ namespace stormphrax::util {
             return dst;
         }
 
-        [[nodiscard]] constexpr auto pdep(u64 v, u64 mask) {
+        [[nodiscard]] constexpr u64 pdep(u64 v, u64 mask) {
             u64 dst{};
 
             for (u64 bit = 1; mask != 0; bit <<= 1) {
@@ -58,15 +58,15 @@ namespace stormphrax::util {
         }
     } // namespace fallback
 
-    [[nodiscard]] constexpr auto isolateLsb(u64 v) -> u64 {
+    [[nodiscard]] constexpr u64 isolateLsb(u64 v) {
         return v & -v;
     }
 
-    [[nodiscard]] constexpr auto resetLsb(u64 v) -> u64 {
+    [[nodiscard]] constexpr u64 resetLsb(u64 v) {
         return v & (v - 1);
     }
 
-    [[nodiscard]] constexpr auto ctz(u64 v) -> i32 {
+    [[nodiscard]] constexpr i32 ctz(u64 v) {
         if (std::is_constant_evaluated()) {
             return std::countr_zero(v);
         }
@@ -74,7 +74,7 @@ namespace stormphrax::util {
         return __builtin_ctzll(v);
     }
 
-    [[nodiscard]] constexpr auto pext(u64 v, u64 mask) -> u64 {
+    [[nodiscard]] constexpr u64 pext(u64 v, u64 mask) {
 #if SP_HAS_BMI2
         if (std::is_constant_evaluated()) {
             return fallback::pext(v, mask);
@@ -86,7 +86,7 @@ namespace stormphrax::util {
 #endif
     }
 
-    [[nodiscard]] constexpr auto pdep(u64 v, u64 mask) -> u64 {
+    [[nodiscard]] constexpr u64 pdep(u64 v, u64 mask) {
 #if SP_HAS_BMI2
         if (std::is_constant_evaluated()) {
             return fallback::pdep(v, mask);

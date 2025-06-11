@@ -78,7 +78,7 @@ namespace stormphrax::attacks {
     }();
 
     template <Color Us>
-    consteval auto generatePawnAttacks() {
+    consteval std::array<Bitboard, 64> generatePawnAttacks() {
         std::array<Bitboard, 64> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
@@ -94,24 +94,24 @@ namespace stormphrax::attacks {
     constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
     constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
 
-    constexpr auto getKnightAttacks(Square src) {
+    constexpr Bitboard getKnightAttacks(Square src) {
         return KnightAttacks[static_cast<usize>(src)];
     }
 
-    constexpr auto getKingAttacks(Square src) {
+    constexpr Bitboard getKingAttacks(Square src) {
         return KingAttacks[static_cast<usize>(src)];
     }
 
-    constexpr auto getPawnAttacks(Square src, Color color) {
+    constexpr Bitboard getPawnAttacks(Square src, Color color) {
         const auto& attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
         return attacks[static_cast<usize>(src)];
     }
 
-    inline auto getQueenAttacks(Square src, Bitboard occupancy) {
+    inline Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
         return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
     }
 
-    inline auto getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
+    inline Bitboard getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
         assert(piece != PieceType::None);
         assert(piece != PieceType::Pawn);
 

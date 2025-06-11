@@ -46,7 +46,7 @@ namespace stormphrax::datagen {
     namespace {
         std::atomic_bool s_stop{false};
 
-        auto initCtrlCHandler() {
+        void initCtrlCHandler() {
             util::signal::addCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
         }
 
@@ -56,7 +56,7 @@ namespace stormphrax::datagen {
                     m_threadId{threadId} {}
             ~DatagenNodeLimiter() final = default;
 
-            [[nodiscard]] auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool final {
+            [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
                 if (data.nodes >= m_hardNodeLimit) {
                     std::cout << "thread " << m_threadId << ": stopping search after " << data.nodes
                               << " nodes (limit: " << m_hardNodeLimit << ")" << std::endl;
@@ -66,16 +66,16 @@ namespace stormphrax::datagen {
                 return allowSoftTimeout && data.nodes >= m_softNodeLimit;
             }
 
-            [[nodiscard]] auto stopped() const -> bool final {
+            [[nodiscard]] bool stopped() const final {
                 // doesn't matter
                 return false;
             }
 
-            inline auto setSoftNodeLimit(usize nodes) {
+            inline void setSoftNodeLimit(usize nodes) {
                 m_softNodeLimit = nodes;
             }
 
-            inline auto setHardNodeLimit(usize nodes) {
+            inline void setHardNodeLimit(usize nodes) {
                 m_hardNodeLimit = nodes;
             }
 
@@ -85,10 +85,12 @@ namespace stormphrax::datagen {
             usize m_hardNodeLimit{};
         };
 
-        [[nodiscard]] auto probeTb(const Position& pos) -> std::optional<Outcome> {
+        [[nodiscard]] std::optional<Outcome> probeTb(const Position& pos) {
             if (pos.bbs().occupancy().popcount() > TB_LARGEST || pos.halfmove() != 0
                 || pos.castlingRooks() != CastlingRooks{})
+            {
                 return {};
+            }
 
             switch (tb::probe(pos)) {
                 case tb::ProbeResult::Failed:
@@ -120,7 +122,7 @@ namespace stormphrax::datagen {
         constexpr i32 ReportInterval = 512;
 
         template <OutputFormat Format>
-        auto runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
+        void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
             const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
@@ -325,19 +327,19 @@ namespace stormphrax::datagen {
             }
         }
 
-        template auto runThread<Marlinformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
-        template auto runThread<Viriformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
-        template auto runThread<Fen>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
+        template void runThread<Marlinformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
+        template void runThread<Viriformat>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
+        template void runThread<Fen>(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir);
     } // namespace
 
-    auto run(
+    i32 run(
         const std::function<void()>& printUsage,
         const std::string& format,
         bool dfrc,
         const std::string& output,
         i32 threads,
         std::optional<std::string> tbPath
-    ) -> i32 {
+    ) {
         std::function<decltype(runThread<Marlinformat>)> threadFunc{};
 
         if (format == "marlinformat") {

@@ -37,28 +37,28 @@ namespace stormphrax::eval::nnue {
     template <typename Ft>
     class Accumulator {
     public:
-        [[nodiscard]] inline auto black() const -> const auto& {
+        [[nodiscard]] inline const auto& black() const {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline auto white() const -> const auto& {
+        [[nodiscard]] inline const auto& white() const {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline auto forColor(Color c) const -> const auto& {
+        [[nodiscard]] inline const auto& forColor(Color c) const {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto black() -> auto& {
+        [[nodiscard]] inline auto& black() {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto& {
+        [[nodiscard]] inline auto& white() {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline auto forColor(Color c) -> auto& {
+        [[nodiscard]] inline auto& forColor(Color c) {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
@@ -68,14 +68,14 @@ namespace stormphrax::eval::nnue {
             std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
         }
 
-        inline auto subAddFrom(const Accumulator<Ft>& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
+        inline void subAddFrom(const Accumulator<Ft>& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
             assert(sub < InputCount);
             assert(add < InputCount);
 
             subAdd(src.forColor(c), forColor(c), featureTransformer.weights, sub * OutputCount, add * OutputCount);
         }
 
-        inline auto subSubAddFrom(
+        inline void subSubAddFrom(
             const Accumulator<Ft>& src,
             const Ft& featureTransformer,
             Color c,
@@ -97,7 +97,7 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline auto subSubAddAddFrom(
+        inline void subSubAddAddFrom(
             const Accumulator<Ft>& src,
             const Ft& featureTransformer,
             Color c,
@@ -122,17 +122,17 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline auto activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
+        inline void activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < InputCount);
             add(forColor(c), featureTransformer.weights, feature * OutputCount);
         }
 
-        inline auto deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
+        inline void deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < InputCount);
             sub(forColor(c), featureTransformer.weights, feature * OutputCount);
         }
 
-        inline auto activateFourFeatures(
+        inline void activateFourFeatures(
             const Ft& featureTransformer,
             Color c,
             u32 feature0,
@@ -154,7 +154,7 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline auto deactivateFourFeatures(
+        inline void deactivateFourFeatures(
             const Ft& featureTransformer,
             Color c,
             u32 feature0,
@@ -176,7 +176,7 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline auto copyFrom(Color c, const Accumulator<Ft>& other) {
+        inline void copyFrom(Color c, const Accumulator<Ft>& other) {
             const auto idx = static_cast<i32>(c);
             std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
         }
@@ -190,13 +190,13 @@ namespace stormphrax::eval::nnue {
 
         SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
 
-        static inline auto subAdd(
+        static inline void subAdd(
             std::span<const Type, OutputCount> src,
             std::span<Type, OutputCount> dst,
             std::span<const Type, WeightCount> delta,
             u32 subOffset,
             u32 addOffset
-        ) -> void {
+        ) {
             assert(subOffset + OutputCount <= delta.size());
             assert(addOffset + OutputCount <= delta.size());
 
@@ -205,14 +205,14 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static inline auto subSubAdd(
+        static inline void subSubAdd(
             std::span<const Type, OutputCount> src,
             std::span<Type, OutputCount> dst,
             std::span<const Type, WeightCount> delta,
             u32 subOffset0,
             u32 subOffset1,
             u32 addOffset
-        ) -> void {
+        ) {
             assert(subOffset0 + OutputCount <= delta.size());
             assert(subOffset1 + OutputCount <= delta.size());
             assert(addOffset + OutputCount <= delta.size());
@@ -222,7 +222,7 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static inline auto subSubAddAdd(
+        static inline void subSubAddAdd(
             std::span<const Type, OutputCount> src,
             std::span<Type, OutputCount> dst,
             std::span<const Type, WeightCount> delta,
@@ -230,7 +230,7 @@ namespace stormphrax::eval::nnue {
             u32 subOffset1,
             u32 addOffset0,
             u32 addOffset1
-        ) -> void {
+        ) {
             assert(subOffset0 + OutputCount <= delta.size());
             assert(subOffset1 + OutputCount <= delta.size());
             assert(addOffset0 + OutputCount <= delta.size());
@@ -242,14 +242,14 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static __attribute__((always_inline)) inline auto addAddAddAdd(
+        static __attribute__((always_inline)) inline void addAddAddAdd(
             std::span<Type, OutputCount> accumulator,
             std::span<const Type, WeightCount> delta,
             u32 addOffset0,
             u32 addOffset1,
             u32 addOffset2,
             u32 addOffset3
-        ) -> void {
+        ) {
             assert(addOffset0 + OutputCount <= delta.size());
             assert(addOffset1 + OutputCount <= delta.size());
             assert(addOffset2 + OutputCount <= delta.size());
@@ -261,14 +261,14 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static __attribute__((always_inline)) inline auto subSubSubSub(
+        static __attribute__((always_inline)) inline void subSubSubSub(
             std::span<Type, OutputCount> accumulator,
             std::span<const Type, WeightCount> delta,
             u32 subOffset0,
             u32 subOffset1,
             u32 subOffset2,
             u32 subOffset3
-        ) -> void {
+        ) {
             assert(subOffset0 + OutputCount <= delta.size());
             assert(subOffset1 + OutputCount <= delta.size());
             assert(subOffset2 + OutputCount <= delta.size());
@@ -280,11 +280,11 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static inline auto add(
+        static inline void add(
             std::span<Type, OutputCount> accumulator,
             std::span<const Type, WeightCount> delta,
             u32 offset
-        ) -> void {
+        ) {
             assert(offset + OutputCount <= delta.size());
 
             for (u32 i = 0; i < OutputCount; ++i) {
@@ -292,11 +292,11 @@ namespace stormphrax::eval::nnue {
             }
         }
 
-        static inline auto sub(
+        static inline void sub(
             std::span<Type, OutputCount> accumulator,
             std::span<const Type, WeightCount> delta,
             u32 offset
-        ) -> void {
+        ) {
             assert(offset + OutputCount <= delta.size());
 
             for (u32 i = 0; i < OutputCount; ++i) {
@@ -310,7 +310,7 @@ namespace stormphrax::eval::nnue {
         Acc accumulator{};
         std::array<BitboardSet, 2> bbs{};
 
-        [[nodiscard]] auto colorBbs(Color c) -> auto& {
+        [[nodiscard]] auto& colorBbs(Color c) {
             return bbs[static_cast<i32>(c)];
         }
     };
@@ -349,11 +349,11 @@ namespace stormphrax::eval::nnue {
         SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
         SP_SIMD_ALIGNAS std::array<OutputType, BiasCount> biases;
 
-        inline auto readFrom(IParamStream& stream) -> bool {
+        inline bool readFrom(IParamStream& stream) {
             return stream.read(weights) && stream.read(biases);
         }
 
-        inline auto writeTo(IParamStream& stream) const -> bool {
+        inline bool writeTo(IParamStream& stream) const {
             return stream.write(weights) && stream.write(biases);
         }
     };

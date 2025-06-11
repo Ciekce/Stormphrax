@@ -30,11 +30,11 @@ namespace stormphrax {
     struct KillerTable {
         Move killer{};
 
-        inline auto push(Move move) {
+        inline void push(Move move) {
             killer = move;
         }
 
-        inline auto clear() {
+        inline void clear() {
             killer = NullMove;
         }
     };
@@ -65,12 +65,12 @@ namespace stormphrax {
         End,
     };
 
-    inline auto operator++(MovegenStage& v) -> auto& {
+    inline MovegenStage& operator++(MovegenStage& v) {
         v = static_cast<MovegenStage>(static_cast<i32>(v) + 1);
         return v;
     }
 
-    inline auto operator<=>(MovegenStage a, MovegenStage b) {
+    inline std::strong_ordering operator<=>(MovegenStage a, MovegenStage b) {
         return static_cast<i32>(a) <=> static_cast<i32>(b);
     }
 
@@ -78,7 +78,7 @@ namespace stormphrax {
     public:
         ~MoveGenerator() = default;
 
-        [[nodiscard]] inline auto next() {
+        [[nodiscard]] inline Move next() {
             using namespace tunable;
 
             switch (m_stage) {
@@ -280,15 +280,15 @@ namespace stormphrax {
             }
         }
 
-        inline auto skipQuiets() {
+        inline void skipQuiets() {
             m_skipQuiets = true;
         }
 
-        [[nodiscard]] inline auto stage() const {
+        [[nodiscard]] inline MovegenStage stage() const {
             return m_stage;
         }
 
-        [[nodiscard]] static inline auto main(
+        [[nodiscard]] static inline MoveGenerator main(
             const Position& pos,
             MovegenData& data,
             Move ttMove,
@@ -300,7 +300,7 @@ namespace stormphrax {
             return MoveGenerator(MovegenStage::TtMove, pos, data, ttMove, &killers, history, continuations, ply);
         }
 
-        [[nodiscard]] static inline auto qsearch(
+        [[nodiscard]] static inline MoveGenerator qsearch(
             const Position& pos,
             MovegenData& data,
             Move ttMove,
@@ -312,7 +312,7 @@ namespace stormphrax {
             return MoveGenerator(stage, pos, data, ttMove, nullptr, history, continuations, ply);
         }
 
-        [[nodiscard]] static inline auto probcut(
+        [[nodiscard]] static inline MoveGenerator probcut(
             const Position& pos,
             Move ttMove,
             MovegenData& data,
@@ -345,7 +345,7 @@ namespace stormphrax {
             m_data.moves.clear();
         }
 
-        inline auto scoreNoisy(ScoredMove& scoredMove) {
+        inline void scoreNoisy(ScoredMove& scoredMove) {
             const auto move = scoredMove.move;
             auto& score = scoredMove.score;
 
@@ -359,13 +359,13 @@ namespace stormphrax {
             }
         }
 
-        inline auto scoreNoisies() -> void {
+        inline void scoreNoisies() {
             for (u32 i = m_idx; i < m_end; ++i) {
                 scoreNoisy(m_data.moves[i]);
             }
         }
 
-        inline auto scoreQuiet(ScoredMove& move) {
+        inline void scoreQuiet(ScoredMove& move) {
             move.score = m_history.quietScore(
                 m_continuations,
                 m_ply,
@@ -375,13 +375,13 @@ namespace stormphrax {
             );
         }
 
-        inline auto scoreQuiets() -> void {
+        inline void scoreQuiets() {
             for (u32 i = m_idx; i < m_end; ++i) {
                 scoreQuiet(m_data.moves[i]);
             }
         }
 
-        [[nodiscard]] inline auto findNext() -> u32 {
+        [[nodiscard]] inline u32 findNext() {
             auto best = m_idx;
             auto bestScore = m_data.moves[m_idx].score;
 
@@ -400,7 +400,7 @@ namespace stormphrax {
         }
 
         template <bool Sort = true>
-        [[nodiscard]] inline auto selectNext(auto predicate) -> Move {
+        [[nodiscard]] inline Move selectNext(auto predicate) {
             while (m_idx < m_end) {
                 const auto idx = Sort ? findNext() : m_idx++;
                 const auto move = m_data.moves[idx].move;
@@ -413,7 +413,7 @@ namespace stormphrax {
             return NullMove;
         }
 
-        [[nodiscard]] inline auto isSpecial(Move move) -> bool {
+        [[nodiscard]] inline bool isSpecial(Move move) {
             return move == m_ttMove || move == m_killers.killer;
         }
 

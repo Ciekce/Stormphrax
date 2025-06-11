@@ -23,19 +23,19 @@ namespace stormphrax::datagen {
         m_positions.reserve(256);
     }
 
-    auto Marlinformat::start(const Position& initialPosition) -> void {
+    void Marlinformat::start(const Position& initialPosition) {
         m_positions.clear();
         m_curr = initialPosition;
     }
 
-    auto Marlinformat::push(bool filtered, Move move, Score score) -> void {
+    void Marlinformat::push(bool filtered, Move move, Score score) {
         if (!filtered) {
             m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
         }
         m_curr = m_curr.applyMove(move);
     }
 
-    auto Marlinformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) -> usize {
+    usize Marlinformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) {
         for (auto& board : m_positions) {
             board.wdl = outcome;
         }

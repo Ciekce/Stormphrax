@@ -24,7 +24,7 @@ namespace stormphrax {
     }
 
     namespace opts {
-        auto mutableOpts() -> GlobalOptions& {
+        GlobalOptions& mutableOpts() {
             return s_opts;
         }
     } // namespace opts

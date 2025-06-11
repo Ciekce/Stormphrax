@@ -56,7 +56,7 @@ namespace stormphrax::keys {
         return keys;
     }();
 
-    inline auto pieceSquare(Piece piece, Square square) -> u64 {
+    inline u64 pieceSquare(Piece piece, Square square) {
         if (piece == Piece::None || square == Square::None) {
             return 0;
         }
@@ -65,15 +65,15 @@ namespace stormphrax::keys {
     }
 
     // for flipping
-    inline auto color() {
+    inline u64 color() {
         return Keys[offsets::Color];
     }
 
-    inline auto color(Color c) {
+    inline u64 color(Color c) {
         return c == Color::White ? 0 : color();
     }
 
-    inline auto castling(const CastlingRooks& castlingRooks) {
+    inline u64 castling(const CastlingRooks& castlingRooks) {
         constexpr usize BlackShort = 0x01;
         constexpr usize BlackLong = 0x02;
         constexpr usize WhiteShort = 0x04;
@@ -97,11 +97,11 @@ namespace stormphrax::keys {
         return Keys[offsets::Castling + flags];
     }
 
-    inline auto enPassant(u32 file) {
+    inline u64 enPassant(u32 file) {
         return Keys[offsets::EnPassant + file];
     }
 
-    inline auto enPassant(Square square) -> u64 {
+    inline u64 enPassant(Square square) {
         if (square == Square::None) {
             return 0;
         }

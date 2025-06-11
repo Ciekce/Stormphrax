@@ -51,73 +51,73 @@ namespace stormphrax {
 
     enum class Color : i8 { Black = 0, White, None };
 
-    [[nodiscard]] constexpr auto oppColor(Color color) {
+    [[nodiscard]] constexpr Color oppColor(Color color) {
         assert(color != Color::None);
         return static_cast<Color>(!static_cast<i32>(color));
     }
 
-    [[nodiscard]] constexpr auto colorPiece(PieceType piece, Color color) {
+    [[nodiscard]] constexpr Piece colorPiece(PieceType piece, Color color) {
         assert(piece != PieceType::None);
         assert(color != Color::None);
 
         return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
     }
 
-    [[nodiscard]] constexpr auto pieceType(Piece piece) {
+    [[nodiscard]] constexpr PieceType pieceType(Piece piece) {
         assert(piece != Piece::None);
         return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
     }
 
-    [[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece) {
+    [[nodiscard]] constexpr PieceType pieceTypeOrNone(Piece piece) {
         if (piece == Piece::None) {
             return PieceType::None;
         }
         return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
     }
 
-    [[nodiscard]] constexpr auto pieceColor(Piece piece) {
+    [[nodiscard]] constexpr Color pieceColor(Piece piece) {
         assert(piece != Piece::None);
         return static_cast<Color>(static_cast<i32>(piece) & 1);
     }
 
-    [[nodiscard]] constexpr auto flipPieceColor(Piece piece) {
+    [[nodiscard]] constexpr Piece flipPieceColor(Piece piece) {
         assert(piece != Piece::None);
         return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
     }
 
-    [[nodiscard]] constexpr auto copyPieceColor(Piece piece, PieceType target) {
+    [[nodiscard]] constexpr Piece copyPieceColor(Piece piece, PieceType target) {
         assert(piece != Piece::None);
         assert(target != PieceType::None);
 
         return colorPiece(target, pieceColor(piece));
     }
 
-    [[nodiscard]] constexpr auto isMajor(PieceType piece) {
+    [[nodiscard]] constexpr bool isMajor(PieceType piece) {
         assert(piece != PieceType::None);
         return piece == PieceType::Rook || piece == PieceType::Queen;
     }
 
-    [[nodiscard]] constexpr auto isMajor(Piece piece) {
+    [[nodiscard]] constexpr bool isMajor(Piece piece) {
         assert(piece != Piece::None);
         return isMajor(pieceType(piece));
     }
 
-    [[nodiscard]] constexpr auto isMinor(PieceType piece) {
+    [[nodiscard]] constexpr bool isMinor(PieceType piece) {
         assert(piece != PieceType::None);
         return piece == PieceType::Knight || piece == PieceType::Bishop;
     }
 
-    [[nodiscard]] constexpr auto isMinor(Piece piece) {
+    [[nodiscard]] constexpr bool isMinor(Piece piece) {
         assert(piece != Piece::None);
         return isMinor(pieceType(piece));
     }
 
-    [[nodiscard]] constexpr auto isValidPromotion(PieceType piece) {
+    [[nodiscard]] constexpr bool isValidPromotion(PieceType piece) {
         return piece == PieceType::Knight || piece == PieceType::Bishop || piece == PieceType::Rook
             || piece == PieceType::Queen;
     }
 
-    [[nodiscard]] constexpr auto pieceFromChar(char c) {
+    [[nodiscard]] constexpr Piece pieceFromChar(char c) {
         switch (c) {
             case 'p':
                 return Piece::BlackPawn;
@@ -148,7 +148,7 @@ namespace stormphrax {
         }
     }
 
-    [[nodiscard]] constexpr auto pieceToChar(Piece piece) {
+    [[nodiscard]] constexpr char pieceToChar(Piece piece) {
         switch (piece) {
             case Piece::None:
                 return ' ';
@@ -181,7 +181,7 @@ namespace stormphrax {
         }
     }
 
-    [[nodiscard]] constexpr auto pieceTypeFromChar(char c) {
+    [[nodiscard]] constexpr PieceType pieceTypeFromChar(char c) {
         switch (c) {
             case 'p':
                 return PieceType::Pawn;
@@ -200,7 +200,7 @@ namespace stormphrax {
         }
     }
 
-    [[nodiscard]] constexpr auto pieceTypeToChar(PieceType piece) {
+    [[nodiscard]] constexpr char pieceTypeToChar(PieceType piece) {
         switch (piece) {
             case PieceType::None:
                 return ' ';
@@ -223,106 +223,52 @@ namespace stormphrax {
 
     // upside down
     enum class Square : u8 {
-        A1,
-        B1,
-        C1,
-        D1,
-        E1,
-        F1,
-        G1,
-        H1,
-        A2,
-        B2,
-        C2,
-        D2,
-        E2,
-        F2,
-        G2,
-        H2,
-        A3,
-        B3,
-        C3,
-        D3,
-        E3,
-        F3,
-        G3,
-        H3,
-        A4,
-        B4,
-        C4,
-        D4,
-        E4,
-        F4,
-        G4,
-        H4,
-        A5,
-        B5,
-        C5,
-        D5,
-        E5,
-        F5,
-        G5,
-        H5,
-        A6,
-        B6,
-        C6,
-        D6,
-        E6,
-        F6,
-        G6,
-        H6,
-        A7,
-        B7,
-        C7,
-        D7,
-        E7,
-        F7,
-        G7,
-        H7,
-        A8,
-        B8,
-        C8,
-        D8,
-        E8,
-        F8,
-        G8,
-        H8,
+        // clang-format off
+        A1, B1, C1, D1, E1, F1, G1, H1,
+        A2, B2, C2, D2, E2, F2, G2, H2,
+        A3, B3, C3, D3, E3, F3, G3, H3,
+        A4, B4, C4, D4, E4, F4, G4, H4,
+        A5, B5, C5, D5, E5, F5, G5, H5,
+        A6, B6, C6, D6, E6, F6, G6, H6,
+        A7, B7, C7, D7, E7, F7, G7, H7,
+        A8, B8, C8, D8, E8, F8, G8, H8,
         None
+        // clang-format on
     };
 
-    [[nodiscard]] constexpr auto toSquare(u32 rank, u32 file) {
+    [[nodiscard]] constexpr Square toSquare(u32 rank, u32 file) {
         assert(rank < 8);
         assert(file < 8);
 
         return static_cast<Square>((rank << 3) | file);
     }
 
-    [[nodiscard]] constexpr auto squareRank(Square square) {
+    [[nodiscard]] constexpr i32 squareRank(Square square) {
         assert(square != Square::None);
         return static_cast<i32>(square) >> 3;
     }
 
-    [[nodiscard]] constexpr auto squareFile(Square square) {
+    [[nodiscard]] constexpr i32 squareFile(Square square) {
         assert(square != Square::None);
         return static_cast<i32>(square) & 0x7;
     }
 
-    [[nodiscard]] constexpr auto flipSquareRank(Square square) {
+    [[nodiscard]] constexpr Square flipSquareRank(Square square) {
         assert(square != Square::None);
         return static_cast<Square>(static_cast<i32>(square) ^ 0b111000);
     }
 
-    [[nodiscard]] constexpr auto flipSquareFile(Square square) {
+    [[nodiscard]] constexpr Square flipSquareFile(Square square) {
         assert(square != Square::None);
         return static_cast<Square>(static_cast<i32>(square) ^ 0b000111);
     }
 
-    [[nodiscard]] constexpr auto squareBit(Square square) {
+    [[nodiscard]] constexpr u64 squareBit(Square square) {
         assert(square != Square::None);
         return U64(1) << static_cast<i32>(square);
     }
 
-    [[nodiscard]] constexpr auto squareBitChecked(Square square) {
+    [[nodiscard]] constexpr u64 squareBitChecked(Square square) {
         if (square == Square::None) {
             return U64(0);
         }
@@ -331,7 +277,7 @@ namespace stormphrax {
     }
 
     template <Color C>
-    constexpr auto relativeRank(i32 rank) {
+    constexpr i32 relativeRank(i32 rank) {
         assert(rank >= 0 && rank < 8);
 
         if constexpr (C == Color::Black) {
@@ -341,7 +287,7 @@ namespace stormphrax {
         }
     }
 
-    constexpr auto relativeRank(Color c, i32 rank) {
+    constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
         return c == Color::Black ? 7 - rank : rank;
     }
@@ -349,35 +295,35 @@ namespace stormphrax {
     struct KingPair {
         std::array<Square, 2> kings{};
 
-        [[nodiscard]] inline auto black() const {
+        [[nodiscard]] inline Square black() const {
             return kings[0];
         }
 
-        [[nodiscard]] inline auto white() const {
+        [[nodiscard]] inline Square white() const {
             return kings[1];
         }
 
-        [[nodiscard]] inline auto black() -> auto& {
+        [[nodiscard]] inline Square& black() {
             return kings[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto& {
+        [[nodiscard]] inline Square& white() {
             return kings[1];
         }
 
-        [[nodiscard]] inline auto color(Color c) const {
+        [[nodiscard]] inline Square color(Color c) const {
             assert(c != Color::None);
             return kings[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto color(Color c) -> auto& {
+        [[nodiscard]] inline Square& color(Color c) {
             assert(c != Color::None);
             return kings[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto operator==(const KingPair& other) const -> bool = default;
+        [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
 
-        [[nodiscard]] inline auto isValid() {
+        [[nodiscard]] inline bool isValid() {
             return black() != Square::None && white() != Square::None && black() != white();
         }
     };
@@ -407,33 +353,33 @@ namespace stormphrax {
 
         std::array<RookPair, 2> rooks;
 
-        [[nodiscard]] inline auto black() const -> const auto& {
+        [[nodiscard]] inline const RookPair& black() const {
             return rooks[0];
         }
 
-        [[nodiscard]] inline auto white() const -> const auto& {
+        [[nodiscard]] inline const RookPair& white() const {
             return rooks[1];
         }
 
-        [[nodiscard]] inline auto black() -> auto& {
+        [[nodiscard]] inline RookPair& black() {
             return rooks[0];
         }
 
-        [[nodiscard]] inline auto white() -> auto& {
+        [[nodiscard]] inline RookPair& white() {
             return rooks[1];
         }
 
-        [[nodiscard]] inline auto color(Color c) const -> const auto& {
+        [[nodiscard]] inline const RookPair& color(Color c) const {
             assert(c != Color::None);
             return rooks[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto color(Color c) -> auto& {
+        [[nodiscard]] inline RookPair& color(Color c) {
             assert(c != Color::None);
             return rooks[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto operator==(const CastlingRooks&) const -> bool = default;
+        [[nodiscard]] inline bool operator==(const CastlingRooks&) const = default;
     };
 
     using Score = i32;
