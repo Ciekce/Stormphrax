@@ -41,7 +41,7 @@
 namespace stormphrax {
     template <typename T>
     constexpr bool testFlags(T field, T flags) {
-        return (field & flags) != T::None;
+        return (field & flags) != T::kNone;
     }
 
     template <typename T>

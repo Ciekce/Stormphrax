@@ -31,10 +31,10 @@
 #include "util/range.h"
 
 namespace stormphrax {
-    constexpr usize DefaultTtSizeMib = 64;
-    constexpr util::Range<usize> TtSizeMibRange{1, 67108864};
+    constexpr usize kDefaultTtSizeMib = 64;
+    constexpr util::Range<usize> kTtSizeMibRange{1, 67108864};
 
-    enum class TtFlag : u8 { None = 0, UpperBound, LowerBound, Exact };
+    enum class TtFlag : u8 { kNone = 0, kUpperBound, kLowerBound, kExact };
 
     struct ProbedTTableEntry {
         Score score;
@@ -47,7 +47,7 @@ namespace stormphrax {
 
     class TTable {
     public:
-        explicit TTable(usize mib = DefaultTtSizeMib);
+        explicit TTable(usize mib = kDefaultTtSizeMib);
         ~TTable();
 
         void resize(usize mib);
@@ -57,7 +57,7 @@ namespace stormphrax {
         void put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv);
 
         inline void age() {
-            m_age = (m_age + 1) % (1 << Entry::AgeBits);
+            m_age = (m_age + 1) % (1 << Entry::kAgeBits);
         }
 
         void clear();
@@ -70,10 +70,10 @@ namespace stormphrax {
 
     private:
         struct Entry {
-            static constexpr u32 AgeBits = 5;
+            static constexpr u32 kAgeBits = 5;
 
-            static constexpr u32 AgeCycle = 1 << AgeBits;
-            static constexpr u32 AgeMask = AgeCycle - 1;
+            static constexpr u32 kAgeCycle = 1 << kAgeBits;
+            static constexpr u32 kAgeMask = kAgeCycle - 1;
 
             u16 key;
             i16 score;
@@ -95,25 +95,25 @@ namespace stormphrax {
             }
 
             inline void setAgePvFlag(u32 age, bool pv, TtFlag flag) {
-                assert(age < (1 << AgeBits));
+                assert(age < (1 << kAgeBits));
                 agePvFlag = (age << 3) | (static_cast<u32>(pv) << 2) | static_cast<u32>(flag);
             }
         };
 
         static_assert(sizeof(Entry) == 10);
 
-        static constexpr usize ClusterAlignment = 32;
-        static constexpr auto StorageAlignment = std::max(CacheLineSize, ClusterAlignment);
+        static constexpr usize kClusterAlignment = 32;
+        static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
 
         struct alignas(32) Cluster {
-            static constexpr usize EntriesPerCluster = 3;
+            static constexpr usize kEntriesPerCluster = 3;
 
-            std::array<Entry, EntriesPerCluster> entries{};
+            std::array<Entry, kEntriesPerCluster> entries{};
 
             // round up to nearest power of 2 bytes
-            [[maybe_unused]] std::
-                array<u8, std::bit_ceil(sizeof(Entry) * EntriesPerCluster) - sizeof(Entry) * EntriesPerCluster> padding{
-                };
+            [[maybe_unused]] std::array<
+                u8,
+                std::bit_ceil(sizeof(Entry) * kEntriesPerCluster) - sizeof(Entry) * kEntriesPerCluster> padding{};
         };
 
         [[nodiscard]] inline u64 index(u64 key) const {

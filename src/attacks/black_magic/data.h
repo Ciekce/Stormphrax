@@ -28,17 +28,17 @@
 
 namespace stormphrax::attacks::black_magic {
     //TODO better magics exist
-    constexpr auto RookShifts =
+    constexpr auto kRookShifts =
         std::array{52, 53, 53, 53, 53, 53, 53, 52, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54,
                    54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54,
                    54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 52, 53, 53, 53, 53, 53, 53, 52};
 
-    constexpr auto BishopShifts =
+    constexpr auto kBishopShifts =
         std::array{59, 60, 59, 59, 59, 59, 60, 58, 60, 60, 59, 59, 59, 59, 60, 60, 59, 59, 57, 57, 57, 57,
                    59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 57,
                    57, 57, 59, 60, 60, 60, 59, 59, 59, 59, 60, 60, 59, 60, 59, 59, 59, 59, 60, 58};
 
-    constexpr auto RookMagics =
+    constexpr auto kRookMagics =
         std::array{U64(0x2080002040068490), U64(0x06C0021001200C40), U64(0x288009300280A000), U64(0x0100089521003000),
                    U64(0x6100040801003082), U64(0x65FFEBC5FFEEE7F0), U64(0x0400080C10219112), U64(0x0200014434060003),
                    U64(0x96CD8008C00379D9), U64(0x2A06002101FF81CF), U64(0x7BCA0020802E0641), U64(0xDAE2FFEFFD0020BA),
@@ -56,7 +56,7 @@ namespace stormphrax::attacks::black_magic {
                    U64(0x63BB9E8FBF01FE7A), U64(0x260ADF40007B9101), U64(0x2013CEFF6000BEF7), U64(0x13AD6200060EBFE6),
                    U64(0x2D4DFFFF28F4D9FA), U64(0x766200004B3A92F6), U64(0xB6AE6FF7FE8A070C), U64(0xD065F4839BFC4B02)};
 
-    constexpr auto BishopMagics =
+    constexpr auto kBishopMagics =
         std::array{U64(0x69906270549A3405), U64(0xE846197A0E88067F), U64(0x54D7C7FB06DE5827), U64(0xF4380209C8E966FE),
                    U64(0xDF33F39ECD91FCF6), U64(0xC580F3DFFCC85DB4), U64(0xC6A89809B600286C), U64(0xC1DE00D4289BFFC0),
                    U64(0x7BDA249AC632C811), U64(0x83534631B40CA406), U64(0x6EA35817F035775C), U64(0x6DB23BEF4DF5645E),
@@ -84,41 +84,41 @@ namespace stormphrax::attacks::black_magic {
         u32 tableSize;
     };
 
-    constexpr auto RookData = [] {
+    constexpr auto kRookData = [] {
         Data dst{};
 
         for (u32 i = 0; i < 64; ++i) {
             const auto square = static_cast<Square>(i);
 
-            dst.data[i].mask = boards::All;
+            dst.data[i].mask = boards::kAll;
 
-            for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right}) {
+            for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
                 const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
                 dst.data[i].mask &= ~(attacks & ~internal::edges(dir));
             }
 
             dst.data[i].offset = dst.tableSize;
-            dst.tableSize += 1 << (64 - RookShifts[i]);
+            dst.tableSize += 1 << (64 - kRookShifts[i]);
         }
 
         return dst;
     }();
 
-    constexpr auto BishopData = [] {
+    constexpr auto kBishopData = [] {
         Data dst{};
 
         for (u32 i = 0; i < 64; ++i) {
             const auto square = static_cast<Square>(i);
 
-            dst.data[i].mask = boards::All;
+            dst.data[i].mask = boards::kAll;
 
-            for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight}) {
+            for (const auto dir : {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight}) {
                 const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
                 dst.data[i].mask &= ~(attacks & ~internal::edges(dir));
             }
 
             dst.data[i].offset = dst.tableSize;
-            dst.tableSize += 1 << (64 - BishopShifts[i]);
+            dst.tableSize += 1 << (64 - kBishopShifts[i]);
         }
 
         return dst;

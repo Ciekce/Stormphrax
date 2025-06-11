@@ -43,7 +43,7 @@ i32 main(i32 argc, const char* argv[]) {
         const std::string mode{argv[1]};
 
         if (mode == "bench") {
-            search::Searcher searcher{bench::DefaultBenchTtSize};
+            search::Searcher searcher{bench::kDefaultBenchTtSize};
             bench::run(searcher);
 
             return 0;

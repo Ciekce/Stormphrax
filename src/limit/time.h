@@ -30,8 +30,8 @@
 #include "limit.h"
 
 namespace stormphrax::limit {
-    constexpr i32 DefaultMoveOverhead = 10;
-    constexpr util::Range<i32> MoveOverheadRange{0, 50000};
+    constexpr i32 kDefaultMoveOverhead = 10;
+    constexpr util::Range<i32> kMoveOverheadRange{0, 50000};
 
     class MoveTimeLimiter final : public ISearchLimiter {
     public:

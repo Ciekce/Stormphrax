@@ -60,7 +60,7 @@ namespace stormphrax::limit {
     }
 
     void TimeManager::update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {
-        assert(bestMove != NullMove);
+        assert(bestMove != kNullMove);
         assert(totalNodes > 0);
 
         if (bestMove == m_prevBestMove) {
@@ -103,7 +103,7 @@ namespace stormphrax::limit {
     }
 
     void TimeManager::updateMoveNodes(Move move, usize nodes) {
-        assert(move != NullMove);
+        assert(move != kNullMove);
         m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
     }
 

@@ -57,24 +57,24 @@ namespace stormphrax::datagen {
 
                     auto pieceId = static_cast<u8>(pieceType(piece));
 
-                    if (pieceType(piece) == PieceType::Rook
+                    if (pieceType(piece) == PieceType::kRook
                         && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
                             || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
                     {
                         pieceId = UnmovedRook;
                     }
 
-                    const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
+                    const u8 colorId = pieceColor(piece) == Color::kBlack ? (1 << 3) : 0;
 
                     board.pieces[i++] = pieceId | colorId;
                 }
 
-                const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
+                const u8 stm = pos.toMove() == Color::kBlack ? (1 << 7) : 0;
 
                 const Square relativeEpSquare =
-                    pos.enPassant() == Square::None
-                        ? Square::None
-                        : toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
+                    pos.enPassant() == Square::kNone
+                        ? Square::kNone
+                        : toSquare(pos.toMove() == Color::kBlack ? 2 : 5, squareFile(pos.enPassant()));
 
                 board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
                 board.halfmoveClock = pos.halfmove();
@@ -91,7 +91,7 @@ namespace stormphrax::datagen {
         Marlinformat();
         ~Marlinformat() = default;
 
-        static constexpr auto Extension = "bin";
+        static constexpr auto kExtension = "bin";
 
         void start(const Position& initialPosition);
         void push(bool filtered, Move move, Score score);

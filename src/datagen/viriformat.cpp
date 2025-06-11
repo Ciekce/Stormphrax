@@ -31,7 +31,7 @@ namespace stormphrax::datagen {
     }
 
     void Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) {
-        static constexpr auto MoveTypes = std::array{
+        static constexpr auto kMoveTypes = std::array{
             static_cast<u16>(0x0000), // normal
             static_cast<u16>(0xC000), // promo
             static_cast<u16>(0x8000), // castling
@@ -43,19 +43,19 @@ namespace stormphrax::datagen {
         viriMove |= move.srcIdx();
         viriMove |= move.dstIdx() << 6;
         viriMove |= move.promoIdx() << 12;
-        viriMove |= MoveTypes[static_cast<i32>(move.type())];
+        viriMove |= kMoveTypes[static_cast<i32>(move.type())];
 
         m_moves.push_back({viriMove, static_cast<i16>(score)});
     }
 
     usize Viriformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) {
-        static constexpr std::array<u8, sizeof(ScoredMove)> NullTerminator{};
+        static constexpr std::array<u8, sizeof(ScoredMove)> kNullTerminator{};
 
         m_initial.wdl = outcome;
 
         stream.write(reinterpret_cast<const char*>(&m_initial), sizeof(marlinformat::PackedBoard));
         stream.write(reinterpret_cast<const char*>(m_moves.data()), sizeof(ScoredMove) * m_moves.size());
-        stream.write(reinterpret_cast<const char*>(NullTerminator.data()), sizeof(ScoredMove));
+        stream.write(reinterpret_cast<const char*>(kNullTerminator.data()), sizeof(ScoredMove));
 
         return m_moves.size() + 1;
     }

@@ -35,12 +35,12 @@ namespace stormphrax::util::simd {
     using VectorI16 = int16x8_t;
     using VectorI32 = int32x4_t;
 
-    constexpr std::uintptr_t Alignment = sizeof(int16x8_t);
+    constexpr std::uintptr_t kAlignment = sizeof(int16x8_t);
 
-    constexpr bool PackNonSequential = false;
+    constexpr bool kPackNonSequential = false;
 
-    constexpr usize PackGrouping = 1;
-    constexpr auto PackOrdering = std::array{
+    constexpr usize kPackGrouping = 1;
+    constexpr auto kPackOrdering = std::array{
         0,
     };
 
@@ -52,12 +52,12 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline VectorU8 loadU8(const void* ptr) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             return vld1q_u8(static_cast<const u8*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline void storeU8(void* ptr, VectorU8 v) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             vst1q_u8(static_cast<u8*>(ptr), v);
         }
 
@@ -68,12 +68,12 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline VectorU16 loadU16(const void* ptr) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             return vld1q_u16(static_cast<const u16*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline void storeU16(void* ptr, VectorU16 v) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             vst1q_u16(static_cast<u16*>(ptr), v);
         }
 
@@ -88,12 +88,12 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline VectorI8 loadI8(const void* ptr) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             return vld1q_s8(static_cast<const i8*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline void storeI8(void* ptr, VectorI8 v) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             vst1q_s8(static_cast<i8*>(ptr), v);
         }
 
@@ -132,12 +132,12 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline VectorI16 loadI16(const void* ptr) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             return vld1q_s16(static_cast<const i16*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline void storeI16(void* ptr, VectorI16 v) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             vst1q_s16(static_cast<i16*>(ptr), v);
         }
 
@@ -203,12 +203,12 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline VectorI32I32(const void* ptr) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             return vld1q_s32(static_cast<const i32*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline void storeI32(void* ptr, VectorI32 v) {
-            assert(isAligned<Alignment>(ptr));
+            assert(isAligned<kAlignment>(ptr));
             vst1q_s32(static_cast<i32*>(ptr), v);
         }
 

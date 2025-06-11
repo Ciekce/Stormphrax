@@ -35,7 +35,7 @@ namespace stormphrax::cuckoo {
         u32 count = 0;
 
         // skip pawns
-        for (u32 p = static_cast<u32>(Piece::BlackKnight); p < static_cast<u32>(Piece::None); ++p) {
+        for (u32 p = static_cast<u32>(Piece::kBlackKnight); p < static_cast<u32>(Piece::kNone); ++p) {
             const auto piece = static_cast<Piece>(p);
 
             for (u32 s0 = 0; s0 < 64; ++s0) {
@@ -57,7 +57,7 @@ namespace stormphrax::cuckoo {
                         std::swap(keys[slot], key);
                         std::swap(moves[slot], move);
 
-                        if (move == NullMove) {
+                        if (move == kNullMove) {
                             break;
                         }
 

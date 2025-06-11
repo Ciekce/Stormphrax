@@ -50,11 +50,11 @@ namespace stormphrax::search {
         f64 time{};
     };
 
-    constexpr auto SyzygyProbeDepthRange = util::Range<i32>{1, MaxDepth};
-    constexpr auto SyzygyProbeLimitRange = util::Range<i32>{0, 7};
+    constexpr auto kSyzygyProbeDepthRange = util::Range<i32>{1, kMaxDepth};
+    constexpr auto kSyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
     struct PvList {
-        std::array<Move, MaxDepth> moves{};
+        std::array<Move, kMaxDepth> moves{};
         u32 length{};
 
         inline void update(Move move, const PvList& child) {
@@ -74,7 +74,7 @@ namespace stormphrax::search {
         }
 
         inline void reset() {
-            moves[0] = NullMove;
+            moves[0] = kNullMove;
             length = 0;
         }
     };
@@ -98,7 +98,7 @@ namespace stormphrax::search {
         StaticVector<Move, 32> failLowNoisies{};
     };
 
-    template <bool UpdateNnue>
+    template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
         explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::NnueState& nnueState) :
@@ -110,7 +110,7 @@ namespace stormphrax::search {
         inline ~ThreadPosGuard() {
             m_keyHistory.pop_back();
 
-            if constexpr (UpdateNnue) {
+            if constexpr (kUpdateNnue) {
                 m_nnueState.pop();
             }
         }
@@ -120,12 +120,12 @@ namespace stormphrax::search {
         eval::NnueState& m_nnueState;
     };
 
-    struct alignas(CacheLineSize) ThreadData {
+    struct alignas(kCacheLineSize) ThreadData {
         ThreadData() {
-            stack.resize(MaxDepth + 4);
-            moveStack.resize(MaxDepth * 2);
-            conthist.resize(MaxDepth + 4);
-            contMoves.resize(MaxDepth + 4);
+            stack.resize(kMaxDepth + 4);
+            moveStack.resize(kMaxDepth * 2);
+            conthist.resize(kMaxDepth + 4);
+            contMoves.resize(kMaxDepth + 4);
 
             keyHistory.reserve(1024);
         }
@@ -160,11 +160,11 @@ namespace stormphrax::search {
         }
 
         [[nodiscard]] inline std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply) {
-            assert(ply <= MaxDepth);
+            assert(ply <= kMaxDepth);
 
-            stack[ply].move = NullMove;
-            conthist[ply] = &history.contTable(Piece::WhitePawn, Square::A1);
-            contMoves[ply] = {Piece::None, Square::None};
+            stack[ply].move = kNullMove;
+            conthist[ply] = &history.contTable(Piece::kWhitePawn, Square::kA1);
+            contMoves[ply] = {Piece::kNone, Square::kNone};
 
             keyHistory.push_back(pos.key());
 
@@ -180,7 +180,7 @@ namespace stormphrax::search {
             i32 ply,
             Move move
         ) {
-            assert(ply <= MaxDepth);
+            assert(ply <= kMaxDepth);
 
             const auto moving = pos.boards().pieceAt(move.src());
 
@@ -192,13 +192,13 @@ namespace stormphrax::search {
 
             return std::pair<Position, ThreadPosGuard<true>>{
                 std::piecewise_construct,
-                std::forward_as_tuple(pos.applyMove<NnueUpdateAction::Queue>(move, &nnueState)),
+                std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kQueue>(move, &nnueState)),
                 std::forward_as_tuple(keyHistory, nnueState)
             };
         }
 
         inline void clearContMove(i32 ply) {
-            contMoves[ply] = {Piece::None, Square::None};
+            contMoves[ply] = {Piece::kNone, Square::kNone};
         }
     };
 
@@ -210,15 +210,15 @@ namespace stormphrax::search {
     };
 
     enum class RootStatus {
-        NoLegalMoves = 0,
-        Tablebase,
-        Generated,
-        Searchmoves,
+        kNoLegalMoves = 0,
+        kTablebase,
+        kGenerated,
+        kSearchmoves,
     };
 
     class Searcher {
     public:
-        explicit Searcher(usize ttSize = DefaultTtSizeMib);
+        explicit Searcher(usize ttSize = kDefaultTtSizeMib);
 
         ~Searcher() {
             if (!m_quit) {
@@ -300,7 +300,7 @@ namespace stormphrax::search {
         std::unique_ptr<limit::ISearchLimiter> m_limiter{};
 
         bool m_infinite{};
-        i32 m_maxDepth{MaxDepth};
+        i32 m_maxDepth{kMaxDepth};
 
         MoveList m_rootMoves{};
 
@@ -353,7 +353,7 @@ namespace stormphrax::search {
 
         Score searchRoot(ThreadData& thread, bool actualSearch);
 
-        template <bool PvNode = false, bool RootNode = false>
+        template <bool kPvNode = false, bool kRootNode = false>
         Score search(
             ThreadData& thread,
             const Position& pos,
@@ -379,7 +379,7 @@ namespace stormphrax::search {
             bool cutnode
         ) = delete;
 
-        template <bool PvNode = false>
+        template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
         void report(
@@ -388,8 +388,8 @@ namespace stormphrax::search {
             i32 depth,
             f64 time,
             Score score,
-            Score alpha = -ScoreInf,
-            Score beta = ScoreInf
+            Score alpha = -kScoreInf,
+            Score beta = kScoreInf
         );
 
         void finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score);

@@ -93,37 +93,37 @@ namespace stormphrax::datagen {
             }
 
             switch (tb::probe(pos)) {
-                case tb::ProbeResult::Failed:
+                case tb::ProbeResult::kFailed:
                     return {};
-                case tb::ProbeResult::Win:
-                    return pos.toMove() == Color::Black ? Outcome::WhiteLoss : Outcome::WhiteWin;
-                case tb::ProbeResult::Draw:
-                    return Outcome::Draw;
-                case tb::ProbeResult::Loss:
-                    return pos.toMove() == Color::Black ? Outcome::WhiteWin : Outcome::WhiteLoss;
+                case tb::ProbeResult::kWin:
+                    return pos.toMove() == Color::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
+                case tb::ProbeResult::kDraw:
+                    return Outcome::kDraw;
+                case tb::ProbeResult::kLoss:
+                    return pos.toMove() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
             }
         }
 
-        constexpr usize VerificationHardNodeLimit = 25165814;
+        constexpr usize kVerificationHardNodeLimit = 25165814;
 
-        constexpr usize DatagenSoftNodeLimit = 24000;
-        constexpr usize DatagenHardNodeLimit = 8388608;
+        constexpr usize kDatagenSoftNodeLimit = 24000;
+        constexpr usize kDatagenHardNodeLimit = 8388608;
 
-        constexpr Score VerificationScoreLimit = 500;
+        constexpr Score kVerificationScoreLimit = 500;
 
-        constexpr Score WinAdjMinScore = 1250;
-        constexpr Score DrawAdjMaxScore = 10;
+        constexpr Score kWinAdjMinScore = 1250;
+        constexpr Score kDrawAdjMaxScore = 10;
 
-        constexpr u32 DrawAdjMinPlies = 70;
+        constexpr u32 kDrawAdjMinPlies = 70;
 
-        constexpr u32 WinAdjPlyCount = 5;
-        constexpr u32 DrawAdjPlyCount = 10;
+        constexpr u32 kWinAdjPlyCount = 5;
+        constexpr u32 kDrawAdjPlyCount = 10;
 
-        constexpr i32 ReportInterval = 512;
+        constexpr i32 kReportInterval = 512;
 
         template <OutputFormat Format>
         void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
-            const auto outFile = outDir / (std::to_string(id) + "." + Format::Extension);
+            const auto outFile = outDir / (std::to_string(id) + "." + Format::kExtension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
@@ -210,15 +210,15 @@ namespace stormphrax::datagen {
 
                 searcher.setDatagenMaxDepth(10);
                 limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
-                limiter.setHardNodeLimit(VerificationHardNodeLimit);
+                limiter.setHardNodeLimit(kVerificationHardNodeLimit);
 
                 const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
-                searcher.setDatagenMaxDepth(MaxDepth);
-                limiter.setSoftNodeLimit(DatagenSoftNodeLimit);
-                limiter.setHardNodeLimit(DatagenHardNodeLimit);
+                searcher.setDatagenMaxDepth(kMaxDepth);
+                limiter.setSoftNodeLimit(kDatagenSoftNodeLimit);
+                limiter.setHardNodeLimit(kDatagenHardNodeLimit);
 
-                if (std::abs(normFirstScore) > VerificationScoreLimit) {
+                if (std::abs(normFirstScore) > kVerificationScoreLimit) {
                     --game;
                     continue;
                 }
@@ -239,29 +239,29 @@ namespace stormphrax::datagen {
 
                     if (!move) {
                         if (pos.isCheck()) {
-                            outcome = pos.toMove() == Color::Black ? Outcome::WhiteWin : Outcome::WhiteLoss;
+                            outcome = pos.toMove() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                         } else {
-                            outcome = Outcome::Draw; // stalemate
+                            outcome = Outcome::kDraw; // stalemate
                         }
 
                         break;
                     }
 
-                    assert(pos.boards().pieceAt(move.src()) != Piece::None);
+                    assert(pos.boards().pieceAt(move.src()) != Piece::kNone);
 
-                    if (std::abs(score) > ScoreWin) {
-                        outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
+                    if (std::abs(score) > kScoreWin) {
+                        outcome = score > 0 ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                     } else {
-                        if (normScore > WinAdjMinScore) {
+                        if (normScore > kWinAdjMinScore) {
                             ++winPlies;
                             lossPlies = 0;
                             drawPlies = 0;
-                        } else if (normScore < -WinAdjMinScore) {
+                        } else if (normScore < -kWinAdjMinScore) {
                             winPlies = 0;
                             ++lossPlies;
                             drawPlies = 0;
-                        } else if (thread->rootPos.plyFromStartpos() >= DrawAdjMinPlies
-                                   && std::abs(normScore) < DrawAdjMaxScore)
+                        } else if (thread->rootPos.plyFromStartpos() >= kDrawAdjMinPlies
+                                   && std::abs(normScore) < kDrawAdjMaxScore)
                         {
                             winPlies = 0;
                             lossPlies = 0;
@@ -272,33 +272,33 @@ namespace stormphrax::datagen {
                             drawPlies = 0;
                         }
 
-                        if (winPlies >= WinAdjPlyCount) {
-                            outcome = Outcome::WhiteWin;
-                        } else if (lossPlies >= WinAdjPlyCount) {
-                            outcome = Outcome::WhiteLoss;
-                        } else if (drawPlies >= DrawAdjPlyCount) {
-                            outcome = Outcome::Draw;
+                        if (winPlies >= kWinAdjPlyCount) {
+                            outcome = Outcome::kWhiteWin;
+                        } else if (lossPlies >= kWinAdjPlyCount) {
+                            outcome = Outcome::kWhiteLoss;
+                        } else if (drawPlies >= kDrawAdjPlyCount) {
+                            outcome = Outcome::kDraw;
                         }
                     }
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
                     thread->keyHistory.push_back(pos.key());
-                    pos = pos.applyMove<NnueUpdateAction::Apply>(move, &thread->nnueState);
+                    pos = pos.applyMove<NnueUpdateAction::kApply>(move, &thread->nnueState);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
 
                     if (pos.isDrawn(0, thread->keyHistory)) {
-                        outcome = Outcome::Draw;
+                        outcome = Outcome::kDraw;
                         output.push(true, move, 0);
                         break;
                     }
 
                     if (const auto tbOutcome = probeTb(pos)) {
                         static constexpr auto Scores = std::array{
-                            -ScoreTbWin,
+                            -kScoreTbWin,
                             0,
-                            ScoreTbWin,
+                            kScoreTbWin,
                         };
 
                         outcome = *tbOutcome;
@@ -318,7 +318,7 @@ namespace stormphrax::datagen {
                 const auto positions = output.writeAllWithOutcome(out, *outcome);
                 totalPositions += positions;
 
-                if (((game + 1) % ReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
+                if (((game + 1) % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
                     const auto time = startTime.elapsed();
                     std::cout << "thread " << id << ": wrote " << totalPositions << " positions from " << (game + 1)
                               << " games in " << time << " sec (" << (static_cast<f64>(totalPositions) / time)

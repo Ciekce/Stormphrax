@@ -23,11 +23,11 @@ namespace stormphrax::attacks {
     using namespace black_magic;
 
     namespace {
-        std::array<Bitboard, RookData.tableSize> generateRookAttacks() {
-            std::array<Bitboard, RookData.tableSize> dst{};
+        std::array<Bitboard, kRookData.tableSize> generateRookAttacks() {
+            std::array<Bitboard, kRookData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto& data = RookData.data[square];
+                const auto& data = kRookData.data[square];
 
                 const auto invMask = ~data.mask;
                 const auto maxEntries = 1 << invMask.popcount();
@@ -50,11 +50,11 @@ namespace stormphrax::attacks {
             return dst;
         }
 
-        std::array<Bitboard, BishopData.tableSize> generateBishopAttacks() {
-            std::array<Bitboard, BishopData.tableSize> dst{};
+        std::array<Bitboard, kBishopData.tableSize> generateBishopAttacks() {
+            std::array<Bitboard, kBishopData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto& data = BishopData.data[square];
+                const auto& data = kBishopData.data[square];
 
                 const auto invMask = ~data.mask;
                 const auto maxEntries = 1 << invMask.popcount();
@@ -78,7 +78,7 @@ namespace stormphrax::attacks {
         }
     } // namespace
 
-    const std::array<Bitboard, RookData.tableSize> RookAttacks = generateRookAttacks();
-    const std::array<Bitboard, BishopData.tableSize> BishopAttacks = generateBishopAttacks();
+    const std::array<Bitboard, kRookData.tableSize> g_rookAttacks = generateRookAttacks();
+    const std::array<Bitboard, kBishopData.tableSize> g_bishopAttacks = generateBishopAttacks();
 } // namespace stormphrax::attacks
 #endif // !SP_HAS_BMI2

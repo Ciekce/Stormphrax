@@ -35,12 +35,12 @@ namespace stormphrax::eval::nnue {
             return m_featureTransformer;
         }
 
-        inline util::simd::Array<typename Arch::OutputType, Arch::OutputCount> propagate(
+        inline util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> propagate(
             const BitboardSet& bbs,
-            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> stmInputs,
-            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmInputs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> nstmInputs
         ) const {
-            util::simd::Array<typename Arch::OutputType, Arch::OutputCount> outputs;
+            util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> outputs;
 
             const auto bucket = OutputBucketing::getBucket(bbs);
             m_arch.propagate(bucket, stmInputs, nstmInputs, outputs);
@@ -53,7 +53,7 @@ namespace stormphrax::eval::nnue {
                 return false;
             }
 
-            if constexpr (Arch::RequiresFtPermute) {
+            if constexpr (Arch::kRequiresFtPermute) {
                 Arch::template permuteFt<typename Ft::WeightType, typename Ft::OutputType>(
                     m_featureTransformer.weights,
                     m_featureTransformer.biases

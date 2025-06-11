@@ -60,9 +60,9 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::Pawn) {
+            if (pieceType(piece) == PieceType::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::Black) {
+            } else if (pieceColor(piece) == Color::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
@@ -78,9 +78,9 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::Pawn) {
+            if (pieceType(piece) == PieceType::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::Black) {
+            } else if (pieceColor(piece) == Color::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
@@ -128,19 +128,19 @@ namespace stormphrax {
     }
 
     enum class NnueUpdateAction {
-        None = 0,
-        Queue,
-        Apply,
+        kNone = 0,
+        kQueue,
+        kApply,
     };
 
     class Position {
     public:
         // Moves are assumed to be legal
-        template <NnueUpdateAction NnueAction = NnueUpdateAction::None>
+        template <NnueUpdateAction kNnueAction = NnueUpdateAction::kNone>
         [[nodiscard]] Position applyMove(Move move, eval::NnueState* nnueState = nullptr) const;
 
         [[nodiscard]] inline Position applyNullMove() const {
-            return applyMove(NullMove);
+            return applyMove(kNullMove);
         }
 
         [[nodiscard]] bool isPseudolegal(Move move) const;
@@ -155,11 +155,11 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Color toMove() const {
-            return m_blackToMove ? Color::Black : Color::White;
+            return m_blackToMove ? Color::kBlack : Color::kWhite;
         }
 
         [[nodiscard]] inline Color opponent() const {
-            return m_blackToMove ? Color::White : Color::Black;
+            return m_blackToMove ? Color::kWhite : Color::kBlack;
         }
 
         [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
@@ -202,7 +202,7 @@ namespace stormphrax {
             assert(move);
 
             const auto moving = m_boards.pieceAt(move.src());
-            assert(moving != Piece::None);
+            assert(moving != Piece::kNone);
 
             const auto captured = m_boards.pieceAt(move.dst());
 
@@ -211,7 +211,7 @@ namespace stormphrax {
             key ^= keys::pieceSquare(moving, move.src());
             key ^= keys::pieceSquare(moving, move.dst());
 
-            if (captured != Piece::None) {
+            if (captured != Piece::kNone) {
                 key ^= keys::pieceSquare(captured, move.dst());
             }
 
@@ -221,7 +221,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const {
-            assert(square != Square::None);
+            assert(square != Square::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -235,8 +235,8 @@ namespace stormphrax {
             const auto bishops = queens | bbs.bishops();
             attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
-            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::White);
-            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::Black);
+            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::kWhite);
+            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::kBlack);
 
             const auto knights = bbs.knights();
             attackers |= knights & attacks::getKnightAttacks(square);
@@ -248,7 +248,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const {
-            assert(square != Square::None);
+            assert(square != Square::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -276,13 +276,13 @@ namespace stormphrax {
             return attackers;
         }
 
-        template <bool ThreatShortcut = true>
+        template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
-            assert(toMove != Color::None);
-            assert(square != Square::None);
-            assert(attacker != Color::None);
+            assert(toMove != Color::kNone);
+            assert(square != Square::kNone);
+            assert(attacker != Color::kNone);
 
-            if constexpr (ThreatShortcut) {
+            if constexpr (kThreatShortcut) {
                 if (attacker != toMove) {
                     return m_threats[square];
                 }
@@ -323,16 +323,16 @@ namespace stormphrax {
             return false;
         }
 
-        template <bool ThreatShortcut = true>
+        template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
-            assert(square != Square::None);
-            assert(attacker != Color::None);
+            assert(square != Square::kNone);
+            assert(attacker != Color::kNone);
 
-            return isAttacked<ThreatShortcut>(toMove(), square, attacker);
+            return isAttacked<kThreatShortcut>(toMove(), square, attacker);
         }
 
         [[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const {
-            assert(attacker != Color::None);
+            assert(attacker != Color::kNone);
 
             if (attacker == opponent()) {
                 return !(squares & m_threats).empty();
@@ -366,7 +366,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Square king(Color c) const {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return m_kings.color(c);
         }
 
@@ -376,7 +376,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Square oppKing(Color c) const {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return m_kings.color(oppColor(c));
         }
 
@@ -403,13 +403,13 @@ namespace stormphrax {
         [[nodiscard]] bool isDrawn(i32 ply, std::span<const u64> keys) const;
 
         [[nodiscard]] inline Piece captureTarget(Move move) const {
-            assert(move != NullMove);
+            assert(move != kNullMove);
 
             const auto type = move.type();
 
-            if (type == MoveType::Castling) {
-                return Piece::None;
-            } else if (type == MoveType::EnPassant) {
+            if (type == MoveType::kCastling) {
+                return Piece::kNone;
+            } else if (type == MoveType::kEnPassant) {
                 return flipPieceColor(boards().pieceAt(move.src()));
             } else {
                 return boards().pieceAt(move.dst());
@@ -417,27 +417,27 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline bool isNoisy(Move move) const {
-            assert(move != NullMove);
+            assert(move != kNullMove);
 
             const auto type = move.type();
 
-            return type != MoveType::Castling
-                && (type == MoveType::EnPassant || move.promo() == PieceType::Queen
-                    || boards().pieceAt(move.dst()) != Piece::None);
+            return type != MoveType::kCastling
+                && (type == MoveType::kEnPassant || move.promo() == PieceType::kQueen
+                    || boards().pieceAt(move.dst()) != Piece::kNone);
         }
 
         [[nodiscard]] inline std::pair<bool, Piece> noisyCapturedPiece(Move move) const {
-            assert(move != NullMove);
+            assert(move != kNullMove);
 
             const auto type = move.type();
 
-            if (type == MoveType::Castling) {
-                return {false, Piece::None};
-            } else if (type == MoveType::EnPassant) {
-                return {true, colorPiece(PieceType::Pawn, toMove())};
+            if (type == MoveType::kCastling) {
+                return {false, Piece::kNone};
+            } else if (type == MoveType::kEnPassant) {
+                return {true, colorPiece(PieceType::kPawn, toMove())};
             } else {
                 const auto captured = boards().pieceAt(move.dst());
-                return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
+                return {captured != Piece::kNone || move.promo() == PieceType::kQueen, captured};
             }
         }
 
@@ -466,21 +466,21 @@ namespace stormphrax {
         [[nodiscard]] static std::optional<Position> fromDfrcIndex(u32 n);
 
     private:
-        template <bool UpdateKeys = true>
+        template <bool kUpdateKeys = true>
         void setPiece(Piece piece, Square square);
-        template <bool UpdateKeys = true>
+        template <bool kUpdateKeys = true>
         void removePiece(Piece piece, Square square);
-        template <bool UpdateKeys = true>
+        template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 
-        template <bool UpdateKeys = true, bool UpdateNnue = true>
+        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
         [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
 
-        template <bool UpdateKeys = true, bool UpdateNnue = true>
+        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
         Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates);
-        template <bool UpdateKeys = true, bool UpdateNnue = true>
+        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
         void castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates);
-        template <bool UpdateKeys = true, bool UpdateNnue = true>
+        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
         Piece enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
 
         [[nodiscard]] inline Bitboard calcCheckers() const {
@@ -517,7 +517,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline std::array<Bitboard, 2> calcPinned() const {
-            return {calcPinned(Color::Black), calcPinned(Color::White)};
+            return {calcPinned(Color::kBlack), calcPinned(Color::kWhite)};
         }
 
         [[nodiscard]] inline Bitboard calcThreats() const {
@@ -551,7 +551,7 @@ namespace stormphrax {
             }
 
             const auto pawns = bbs.pawns(them);
-            if (them == Color::Black) {
+            if (them == Color::kBlack) {
                 threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
             } else {
                 threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
@@ -578,7 +578,7 @@ namespace stormphrax {
         u16 m_halfmove{};
         u32 m_fullmove{1};
 
-        Square m_enPassant{Square::None};
+        Square m_enPassant{Square::kNone};
 
         KingPair m_kings{};
 

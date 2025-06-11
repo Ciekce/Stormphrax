@@ -39,34 +39,34 @@ namespace stormphrax::eval::nnue {
     private:
         using Type = typename Ft::OutputType;
 
-        static constexpr auto InputCount = Ft::InputCount;
-        static constexpr auto WeightCount = Ft::WeightCount;
-        static constexpr auto OutputCount = Ft::OutputCount;
+        static constexpr auto kInputCount = Ft::kInputCount;
+        static constexpr auto kWeightCount = Ft::kWeightCount;
+        static constexpr auto kOutputCount = Ft::kOutputCount;
 
     public:
-        [[nodiscard]] inline std::span<const Type, OutputCount> black() const {
+        [[nodiscard]] inline std::span<const Type, kOutputCount> black() const {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline std::span<const Type, OutputCount> white() const {
+        [[nodiscard]] inline std::span<const Type, kOutputCount> white() const {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline std::span<const Type, OutputCount> forColor(Color c) const {
-            assert(c != Color::None);
+        [[nodiscard]] inline std::span<const Type, kOutputCount> forColor(Color c) const {
+            assert(c != Color::kNone);
             return m_outputs[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline std::span<Type, OutputCount> black() {
+        [[nodiscard]] inline std::span<Type, kOutputCount> black() {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline std::span<Type, OutputCount> white() {
+        [[nodiscard]] inline std::span<Type, kOutputCount> white() {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline std::span<Type, OutputCount> forColor(Color c) {
-            assert(c != Color::None);
+        [[nodiscard]] inline std::span<Type, kOutputCount> forColor(Color c) {
+            assert(c != Color::kNone);
             return m_outputs[static_cast<i32>(c)];
         }
 
@@ -76,10 +76,10 @@ namespace stormphrax::eval::nnue {
         }
 
         inline void subAddFrom(const Accumulator<Ft>& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
-            assert(sub < InputCount);
-            assert(add < InputCount);
+            assert(sub < kInputCount);
+            assert(add < kInputCount);
 
-            subAdd(src.forColor(c), forColor(c), featureTransformer.weights, sub * OutputCount, add * OutputCount);
+            subAdd(src.forColor(c), forColor(c), featureTransformer.weights, sub * kOutputCount, add * kOutputCount);
         }
 
         inline void subSubAddFrom(
@@ -90,17 +90,17 @@ namespace stormphrax::eval::nnue {
             u32 sub1,
             u32 add
         ) {
-            assert(sub0 < InputCount);
-            assert(sub1 < InputCount);
-            assert(add < InputCount);
+            assert(sub0 < kInputCount);
+            assert(sub1 < kInputCount);
+            assert(add < kInputCount);
 
             subSubAdd(
                 src.forColor(c),
                 forColor(c),
                 featureTransformer.weights,
-                sub0 * OutputCount,
-                sub1 * OutputCount,
-                add * OutputCount
+                sub0 * kOutputCount,
+                sub1 * kOutputCount,
+                add * kOutputCount
             );
         }
 
@@ -113,30 +113,30 @@ namespace stormphrax::eval::nnue {
             u32 add0,
             u32 add1
         ) {
-            assert(sub0 < InputCount);
-            assert(sub1 < InputCount);
-            assert(add0 < InputCount);
-            assert(add1 < InputCount);
+            assert(sub0 < kInputCount);
+            assert(sub1 < kInputCount);
+            assert(add0 < kInputCount);
+            assert(add1 < kInputCount);
 
             subSubAddAdd(
                 src.forColor(c),
                 forColor(c),
                 featureTransformer.weights,
-                sub0 * OutputCount,
-                sub1 * OutputCount,
-                add0 * OutputCount,
-                add1 * OutputCount
+                sub0 * kOutputCount,
+                sub1 * kOutputCount,
+                add0 * kOutputCount,
+                add1 * kOutputCount
             );
         }
 
         inline void activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
-            assert(feature < InputCount);
-            add(forColor(c), featureTransformer.weights, feature * OutputCount);
+            assert(feature < kInputCount);
+            add(forColor(c), featureTransformer.weights, feature * kOutputCount);
         }
 
         inline void deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
-            assert(feature < InputCount);
-            sub(forColor(c), featureTransformer.weights, feature * OutputCount);
+            assert(feature < kInputCount);
+            sub(forColor(c), featureTransformer.weights, feature * kOutputCount);
         }
 
         inline void activateFourFeatures(
@@ -147,17 +147,17 @@ namespace stormphrax::eval::nnue {
             u32 feature2,
             u32 feature3
         ) {
-            assert(feature0 < InputCount);
-            assert(feature1 < InputCount);
-            assert(feature2 < InputCount);
-            assert(feature3 < InputCount);
+            assert(feature0 < kInputCount);
+            assert(feature1 < kInputCount);
+            assert(feature2 < kInputCount);
+            assert(feature3 < kInputCount);
             addAddAddAdd(
                 forColor(c),
                 featureTransformer.weights,
-                feature0 * OutputCount,
-                feature1 * OutputCount,
-                feature2 * OutputCount,
-                feature3 * OutputCount
+                feature0 * kOutputCount,
+                feature1 * kOutputCount,
+                feature2 * kOutputCount,
+                feature3 * kOutputCount
             );
         }
 
@@ -169,17 +169,17 @@ namespace stormphrax::eval::nnue {
             u32 feature2,
             u32 feature3
         ) {
-            assert(feature0 < InputCount);
-            assert(feature1 < InputCount);
-            assert(feature2 < InputCount);
-            assert(feature3 < InputCount);
+            assert(feature0 < kInputCount);
+            assert(feature1 < kInputCount);
+            assert(feature2 < kInputCount);
+            assert(feature3 < kInputCount);
             subSubSubSub(
                 forColor(c),
                 featureTransformer.weights,
-                feature0 * OutputCount,
-                feature1 * OutputCount,
-                feature2 * OutputCount,
-                feature3 * OutputCount
+                feature0 * kOutputCount,
+                feature1 * kOutputCount,
+                feature2 * kOutputCount,
+                feature3 * kOutputCount
             );
         }
 
@@ -189,118 +189,118 @@ namespace stormphrax::eval::nnue {
         }
 
     private:
-        SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
+        SP_SIMD_ALIGNAS util::MultiArray<Type, 2, kOutputCount> m_outputs;
 
         static inline void subAdd(
-            std::span<const Type, OutputCount> src,
-            std::span<Type, OutputCount> dst,
-            std::span<const Type, WeightCount> delta,
+            std::span<const Type, kOutputCount> src,
+            std::span<Type, kOutputCount> dst,
+            std::span<const Type, kWeightCount> delta,
             u32 subOffset,
             u32 addOffset
         ) {
-            assert(subOffset + OutputCount <= delta.size());
-            assert(addOffset + OutputCount <= delta.size());
+            assert(subOffset + kOutputCount <= delta.size());
+            assert(addOffset + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 dst[i] = src[i] + delta[addOffset + i] - delta[subOffset + i];
             }
         }
 
         static inline void subSubAdd(
-            std::span<const Type, OutputCount> src,
-            std::span<Type, OutputCount> dst,
-            std::span<const Type, WeightCount> delta,
+            std::span<const Type, kOutputCount> src,
+            std::span<Type, kOutputCount> dst,
+            std::span<const Type, kWeightCount> delta,
             u32 subOffset0,
             u32 subOffset1,
             u32 addOffset
         ) {
-            assert(subOffset0 + OutputCount <= delta.size());
-            assert(subOffset1 + OutputCount <= delta.size());
-            assert(addOffset + OutputCount <= delta.size());
+            assert(subOffset0 + kOutputCount <= delta.size());
+            assert(subOffset1 + kOutputCount <= delta.size());
+            assert(addOffset + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 dst[i] = src[i] + delta[addOffset + i] - delta[subOffset0 + i] - delta[subOffset1 + i];
             }
         }
 
         static inline void subSubAddAdd(
-            std::span<const Type, OutputCount> src,
-            std::span<Type, OutputCount> dst,
-            std::span<const Type, WeightCount> delta,
+            std::span<const Type, kOutputCount> src,
+            std::span<Type, kOutputCount> dst,
+            std::span<const Type, kWeightCount> delta,
             u32 subOffset0,
             u32 subOffset1,
             u32 addOffset0,
             u32 addOffset1
         ) {
-            assert(subOffset0 + OutputCount <= delta.size());
-            assert(subOffset1 + OutputCount <= delta.size());
-            assert(addOffset0 + OutputCount <= delta.size());
-            assert(addOffset1 + OutputCount <= delta.size());
+            assert(subOffset0 + kOutputCount <= delta.size());
+            assert(subOffset1 + kOutputCount <= delta.size());
+            assert(addOffset0 + kOutputCount <= delta.size());
+            assert(addOffset1 + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 dst[i] = src[i] + delta[addOffset0 + i] - delta[subOffset0 + i] + delta[addOffset1 + i]
                        - delta[subOffset1 + i];
             }
         }
 
         static __attribute__((always_inline)) inline void addAddAddAdd(
-            std::span<Type, OutputCount> accumulator,
-            std::span<const Type, WeightCount> delta,
+            std::span<Type, kOutputCount> accumulator,
+            std::span<const Type, kWeightCount> delta,
             u32 addOffset0,
             u32 addOffset1,
             u32 addOffset2,
             u32 addOffset3
         ) {
-            assert(addOffset0 + OutputCount <= delta.size());
-            assert(addOffset1 + OutputCount <= delta.size());
-            assert(addOffset2 + OutputCount <= delta.size());
-            assert(addOffset3 + OutputCount <= delta.size());
+            assert(addOffset0 + kOutputCount <= delta.size());
+            assert(addOffset1 + kOutputCount <= delta.size());
+            assert(addOffset2 + kOutputCount <= delta.size());
+            assert(addOffset3 + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 accumulator[i] +=
                     delta[addOffset0 + i] + delta[addOffset1 + i] + delta[addOffset2 + i] + delta[addOffset3 + i];
             }
         }
 
         static __attribute__((always_inline)) inline void subSubSubSub(
-            std::span<Type, OutputCount> accumulator,
-            std::span<const Type, WeightCount> delta,
+            std::span<Type, kOutputCount> accumulator,
+            std::span<const Type, kWeightCount> delta,
             u32 subOffset0,
             u32 subOffset1,
             u32 subOffset2,
             u32 subOffset3
         ) {
-            assert(subOffset0 + OutputCount <= delta.size());
-            assert(subOffset1 + OutputCount <= delta.size());
-            assert(subOffset2 + OutputCount <= delta.size());
-            assert(subOffset3 + OutputCount <= delta.size());
+            assert(subOffset0 + kOutputCount <= delta.size());
+            assert(subOffset1 + kOutputCount <= delta.size());
+            assert(subOffset2 + kOutputCount <= delta.size());
+            assert(subOffset3 + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 accumulator[i] -=
                     delta[subOffset0 + i] + delta[subOffset1 + i] + delta[subOffset2 + i] + delta[subOffset3 + i];
             }
         }
 
         static inline void add(
-            std::span<Type, OutputCount> accumulator,
-            std::span<const Type, WeightCount> delta,
+            std::span<Type, kOutputCount> accumulator,
+            std::span<const Type, kWeightCount> delta,
             u32 offset
         ) {
-            assert(offset + OutputCount <= delta.size());
+            assert(offset + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 accumulator[i] += delta[offset + i];
             }
         }
 
         static inline void sub(
-            std::span<Type, OutputCount> accumulator,
-            std::span<const Type, WeightCount> delta,
+            std::span<Type, kOutputCount> accumulator,
+            std::span<const Type, kWeightCount> delta,
             u32 offset
         ) {
-            assert(offset + OutputCount <= delta.size());
+            assert(offset + kOutputCount <= delta.size());
 
-            for (u32 i = 0; i < OutputCount; ++i) {
+            for (u32 i = 0; i < kOutputCount; ++i) {
                 accumulator[i] -= delta[offset + i];
             }
         }
@@ -316,9 +316,9 @@ namespace stormphrax::eval::nnue {
         }
     };
 
-    template <typename Ft, u32 Size>
+    template <typename Ft, u32 kSize>
     struct RefreshTable {
-        std::array<RefreshTableEntry<Accumulator<Ft>>, Size> table{};
+        std::array<RefreshTableEntry<Accumulator<Ft>>, kSize> table{};
 
         inline void init(const Ft& featureTransformer) {
             for (auto& entry : table) {
@@ -328,27 +328,28 @@ namespace stormphrax::eval::nnue {
         }
     };
 
-    template <typename Type, u32 Outputs, typename FeatureSet = features::SingleBucket>
+    template <typename Type, u32 kOutputs, typename FeatureSet = features::SingleBucket>
     struct FeatureTransformer {
         using WeightType = Type;
         using OutputType = Type;
 
         using InputFeatureSet = FeatureSet;
 
-        using Accumulator = Accumulator<FeatureTransformer<Type, Outputs, FeatureSet>>;
-        using RefreshTable = RefreshTable<FeatureTransformer<Type, Outputs, FeatureSet>, FeatureSet::RefreshTableSize>;
+        using Accumulator = Accumulator<FeatureTransformer<Type, kOutputs, FeatureSet>>;
+        using RefreshTable =
+            RefreshTable<FeatureTransformer<Type, kOutputs, FeatureSet>, FeatureSet::kRefreshTableSize>;
 
-        static constexpr auto InputCount = InputFeatureSet::BucketCount * FeatureSet::InputSize;
-        static constexpr auto OutputCount = Outputs;
+        static constexpr auto kInputCount = InputFeatureSet::kBucketCount * FeatureSet::kInputSize;
+        static constexpr auto kOutputCount = kOutputs;
 
-        static constexpr auto WeightCount = InputCount * OutputCount;
-        static constexpr auto BiasCount = OutputCount;
+        static constexpr auto kWeightCount = kInputCount * kOutputCount;
+        static constexpr auto kBiasCount = kOutputCount;
 
-        static_assert(InputCount > 0);
-        static_assert(OutputCount > 0);
+        static_assert(kInputCount > 0);
+        static_assert(kOutputCount > 0);
 
-        SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
-        SP_SIMD_ALIGNAS std::array<OutputType, BiasCount> biases;
+        SP_SIMD_ALIGNAS std::array<WeightType, kWeightCount> weights;
+        SP_SIMD_ALIGNAS std::array<OutputType, kBiasCount> biases;
 
         inline bool readFrom(IParamStream& stream) {
             return stream.read(weights) && stream.read(biases);

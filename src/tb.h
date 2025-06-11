@@ -25,7 +25,7 @@
 #include "ttable.h"
 
 namespace stormphrax::tb {
-    enum class ProbeResult { Failed, Win, Draw, Loss };
+    enum class ProbeResult { kFailed, kWin, kDraw, kLoss };
 
     ProbeResult probeRoot(MoveList& rootMoves, const Position& pos);
     ProbeResult probe(const Position& pos);

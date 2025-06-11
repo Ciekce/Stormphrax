@@ -49,7 +49,7 @@ namespace stormphrax {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-                noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::Queen), 0});
+                noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::kQueen), 0});
             }
         }
 
@@ -58,9 +58,9 @@ namespace stormphrax {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Knight), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Rook), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::Bishop), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kKnight), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kRook), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kBishop), 0});
             }
         }
 
@@ -107,7 +107,7 @@ namespace stormphrax {
             pushStandards(noisy, LeftOffset, leftAttacks & theirs & ~PromotionRank);
             pushStandards(noisy, RightOffset, rightAttacks & theirs & ~PromotionRank);
 
-            if (pos.enPassant() != Square::None) {
+            if (pos.enPassant() != Square::kNone) {
                 const auto epMask = Bitboard::fromSquare(pos.enPassant());
 
                 pushEnPassants(noisy, LeftOffset, leftAttacks & epMask);
@@ -116,74 +116,74 @@ namespace stormphrax {
         }
 
         inline void generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
-            if (pos.toMove() == Color::Black) {
-                generatePawnsNoisy_<Color::Black>(noisy, pos, dstMask);
+            if (pos.toMove() == Color::kBlack) {
+                generatePawnsNoisy_<Color::kBlack>(noisy, pos, dstMask);
             } else {
-                generatePawnsNoisy_<Color::White>(noisy, pos, dstMask);
+                generatePawnsNoisy_<Color::kWhite>(noisy, pos, dstMask);
             }
         }
 
-        template <Color Us>
+        template <Color kUs>
         void generatePawnsQuiet_(ScoredMoveList& quiet, const BitboardSet& bbs, Bitboard dstMask, Bitboard occ) {
-            constexpr auto Them = oppColor(Us);
+            constexpr auto Them = oppColor(kUs);
 
-            constexpr auto PromotionRank = boards::promotionRank<Us>();
-            constexpr auto ThirdRank = boards::rank<Us>(2);
+            constexpr auto PromotionRank = boards::promotionRank<kUs>();
+            constexpr auto ThirdRank = boards::rank<kUs>(2);
 
-            const auto ForwardOffset = offsets::up<Us>();
+            const auto ForwardOffset = offsets::up<kUs>();
             const auto DoubleOffset = ForwardOffset * 2;
 
-            constexpr auto LeftOffset = offsets::upLeft<Us>();
-            constexpr auto RightOffset = offsets::upRight<Us>();
+            constexpr auto LeftOffset = offsets::upLeft<kUs>();
+            constexpr auto RightOffset = offsets::upRight<kUs>();
 
             const auto theirs = bbs.occupancy<Them>();
 
             const auto forwardDstMask = dstMask & ~theirs;
 
-            const auto pawns = bbs.pawns<Us>();
+            const auto pawns = bbs.pawns<kUs>();
 
-            const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
-            const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
+            const auto leftAttacks = pawns.template shiftUpLeftRelative<kUs>() & dstMask;
+            const auto rightAttacks = pawns.template shiftUpRightRelative<kUs>() & dstMask;
 
             pushUnderpromotions(quiet, LeftOffset, leftAttacks & theirs & PromotionRank);
             pushUnderpromotions(quiet, RightOffset, rightAttacks & theirs & PromotionRank);
 
-            auto forwards = pawns.template shiftUpRelative<Us>() & ~occ;
+            auto forwards = pawns.template shiftUpRelative<kUs>() & ~occ;
 
             auto singles = forwards & forwardDstMask;
             pushUnderpromotions(quiet, ForwardOffset, singles & PromotionRank);
             singles &= ~PromotionRank;
 
             forwards &= ThirdRank;
-            const auto doubles = forwards.template shiftUpRelative<Us>() & forwardDstMask;
+            const auto doubles = forwards.template shiftUpRelative<kUs>() & forwardDstMask;
 
             pushStandards(quiet, DoubleOffset, doubles);
             pushStandards(quiet, ForwardOffset, singles);
         }
 
         inline void generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
-            if (pos.toMove() == Color::Black) {
-                generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
+            if (pos.toMove() == Color::kBlack) {
+                generatePawnsQuiet_<Color::kBlack>(quiet, pos.bbs(), dstMask, occ);
             } else {
-                generatePawnsQuiet_<Color::White>(quiet, pos.bbs(), dstMask, occ);
+                generatePawnsQuiet_<Color::kWhite>(quiet, pos.bbs(), dstMask, occ);
             }
         }
 
-        template <PieceType Piece, const std::array<Bitboard, 64>& Attacks>
+        template <PieceType kPiece, const std::array<Bitboard, 64>& kAttacks>
         inline void precalculated(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto us = pos.toMove();
 
-            auto pieces = pos.bbs().forPiece(Piece, us);
+            auto pieces = pos.bbs().forPiece(kPiece, us);
             while (!pieces.empty()) {
                 const auto srcSquare = pieces.popLowestSquare();
-                const auto attacks = Attacks[static_cast<usize>(srcSquare)];
+                const auto attacks = kAttacks[static_cast<usize>(srcSquare)];
 
                 pushStandards(dst, srcSquare, attacks & dstMask);
             }
         }
 
         void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<PieceType::Knight, attacks::KnightAttacks>(dst, pos, dstMask);
+            precalculated<PieceType::kKnight, attacks::kKnightAttacks>(dst, pos, dstMask);
         }
 
         inline void generateFrcCastling(
@@ -207,92 +207,92 @@ namespace stormphrax {
             }
         }
 
-        template <bool Castling>
+        template <bool kCastling>
         void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<PieceType::King, attacks::KingAttacks>(dst, pos, dstMask);
+            precalculated<PieceType::kKing, attacks::kKingAttacks>(dst, pos, dstMask);
 
-            if constexpr (Castling) {
+            if constexpr (kCastling) {
                 if (!pos.isCheck()) {
                     const auto& castlingRooks = pos.castlingRooks();
                     const auto occupancy = pos.bbs().occupancy();
 
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
                     if (g_opts.chess960) {
-                        if (pos.toMove() == Color::Black) {
-                            if (castlingRooks.black().kingside != Square::None) {
+                        if (pos.toMove() == Color::kBlack) {
+                            if (castlingRooks.black().kingside != Square::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.blackKing(),
-                                    Square::G8,
+                                    Square::kG8,
                                     castlingRooks.black().kingside,
-                                    Square::F8
+                                    Square::kF8
                                 );
                             }
-                            if (castlingRooks.black().queenside != Square::None) {
+                            if (castlingRooks.black().queenside != Square::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.blackKing(),
-                                    Square::C8,
+                                    Square::kC8,
                                     castlingRooks.black().queenside,
-                                    Square::D8
+                                    Square::kD8
                                 );
                             }
                         } else {
-                            if (castlingRooks.white().kingside != Square::None) {
+                            if (castlingRooks.white().kingside != Square::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.whiteKing(),
-                                    Square::G1,
+                                    Square::kG1,
                                     castlingRooks.white().kingside,
-                                    Square::F1
+                                    Square::kF1
                                 );
                             }
-                            if (castlingRooks.white().queenside != Square::None) {
+                            if (castlingRooks.white().queenside != Square::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.whiteKing(),
-                                    Square::C1,
+                                    Square::kC1,
                                     castlingRooks.white().queenside,
-                                    Square::D1
+                                    Square::kD1
                                 );
                             }
                         }
                     } else {
-                        if (pos.toMove() == Color::Black) {
-                            if (castlingRooks.black().kingside != Square::None
+                        if (pos.toMove() == Color::kBlack) {
+                            if (castlingRooks.black().kingside != Square::kNone
                                 && (occupancy & U64(0x6000000000000000)).empty()
-                                && !pos.isAttacked(Square::F8, Color::White))
+                                && !pos.isAttacked(Square::kF8, Color::kWhite))
                             {
-                                pushCastling(dst, pos.blackKing(), Square::H8);
+                                pushCastling(dst, pos.blackKing(), Square::kH8);
                             }
 
-                            if (castlingRooks.black().queenside != Square::None
+                            if (castlingRooks.black().queenside != Square::kNone
                                 && (occupancy & U64(0x0E00000000000000)).empty()
-                                && !pos.isAttacked(Square::D8, Color::White))
+                                && !pos.isAttacked(Square::kD8, Color::kWhite))
                             {
-                                pushCastling(dst, pos.blackKing(), Square::A8);
+                                pushCastling(dst, pos.blackKing(), Square::kA8);
                             }
                         } else {
-                            if (castlingRooks.white().kingside != Square::None
+                            if (castlingRooks.white().kingside != Square::kNone
                                 && (occupancy & U64(0x0000000000000060)).empty()
-                                && !pos.isAttacked(Square::F1, Color::Black))
+                                && !pos.isAttacked(Square::kF1, Color::kBlack))
                             {
-                                pushCastling(dst, pos.whiteKing(), Square::H1);
+                                pushCastling(dst, pos.whiteKing(), Square::kH1);
                             }
 
-                            if (castlingRooks.white().queenside != Square::None
+                            if (castlingRooks.white().queenside != Square::kNone
                                 && (occupancy & U64(0x000000000000000E)).empty()
-                                && !pos.isAttacked(Square::D1, Color::Black))
+                                && !pos.isAttacked(Square::kD1, Color::kBlack))
                             {
-                                pushCastling(dst, pos.whiteKing(), Square::A1);
+                                pushCastling(dst, pos.whiteKing(), Square::kA1);
                             }
                         }
                     }
@@ -347,13 +347,13 @@ namespace stormphrax {
         Bitboard epMask{};
         Bitboard epPawn{};
 
-        if (pos.enPassant() != Square::None) {
+        if (pos.enPassant() != Square::kNone) {
             epMask = Bitboard::fromSquare(pos.enPassant());
-            epPawn = us == Color::Black ? epMask.shiftUp() : epMask.shiftDown();
+            epPawn = us == Color::kBlack ? epMask.shiftUp() : epMask.shiftDown();
         }
 
         // queen promotions are noisy
-        const auto promos = ~ours & (us == Color::Black ? boards::Rank1 : boards::Rank8);
+        const auto promos = ~ours & (us == Color::kBlack ? boards::kRank1 : boards::kRank8);
 
         auto pawnDstMask = kingDstMask | epMask | promos;
 
@@ -425,9 +425,9 @@ namespace stormphrax {
         Bitboard epMask{};
         Bitboard epPawn{};
 
-        if (pos.enPassant() != Square::None) {
+        if (pos.enPassant() != Square::kNone) {
             epMask = Bitboard::fromSquare(pos.enPassant());
-            epPawn = pos.toMove() == Color::Black ? epMask.shiftUp() : epMask.shiftDown();
+            epPawn = pos.toMove() == Color::kBlack ? epMask.shiftUp() : epMask.shiftDown();
         }
 
         auto pawnDstMask = kingDstMask;

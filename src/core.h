@@ -32,149 +32,161 @@
 
 namespace stormphrax {
     enum class Piece : u8 {
-        BlackPawn = 0,
-        WhitePawn,
-        BlackKnight,
-        WhiteKnight,
-        BlackBishop,
-        WhiteBishop,
-        BlackRook,
-        WhiteRook,
-        BlackQueen,
-        WhiteQueen,
-        BlackKing,
-        WhiteKing,
-        None
+        kBlackPawn = 0,
+        kWhitePawn,
+        kBlackKnight,
+        kWhiteKnight,
+        kBlackBishop,
+        kWhiteBishop,
+        kBlackRook,
+        kWhiteRook,
+        kBlackQueen,
+        kWhiteQueen,
+        kBlackKing,
+        kWhiteKing,
+        kNone,
     };
 
-    enum class PieceType { Pawn = 0, Knight, Bishop, Rook, Queen, King, None };
+    enum class PieceType {
+        kPawn = 0,
+        kKnight,
+        kBishop,
+        kRook,
+        kQueen,
+        kKing,
+        kNone,
+    };
 
-    enum class Color : i8 { Black = 0, White, None };
+    enum class Color : i8 {
+        kBlack = 0,
+        kWhite,
+        kNone,
+    };
 
     [[nodiscard]] constexpr Color oppColor(Color color) {
-        assert(color != Color::None);
+        assert(color != Color::kNone);
         return static_cast<Color>(!static_cast<i32>(color));
     }
 
     [[nodiscard]] constexpr Piece colorPiece(PieceType piece, Color color) {
-        assert(piece != PieceType::None);
-        assert(color != Color::None);
+        assert(piece != PieceType::kNone);
+        assert(color != Color::kNone);
 
         return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
     }
 
     [[nodiscard]] constexpr PieceType pieceType(Piece piece) {
-        assert(piece != Piece::None);
+        assert(piece != Piece::kNone);
         return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
     }
 
     [[nodiscard]] constexpr PieceType pieceTypeOrNone(Piece piece) {
-        if (piece == Piece::None) {
-            return PieceType::None;
+        if (piece == Piece::kNone) {
+            return PieceType::kNone;
         }
         return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
     }
 
     [[nodiscard]] constexpr Color pieceColor(Piece piece) {
-        assert(piece != Piece::None);
+        assert(piece != Piece::kNone);
         return static_cast<Color>(static_cast<i32>(piece) & 1);
     }
 
     [[nodiscard]] constexpr Piece flipPieceColor(Piece piece) {
-        assert(piece != Piece::None);
+        assert(piece != Piece::kNone);
         return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
     }
 
     [[nodiscard]] constexpr Piece copyPieceColor(Piece piece, PieceType target) {
-        assert(piece != Piece::None);
-        assert(target != PieceType::None);
+        assert(piece != Piece::kNone);
+        assert(target != PieceType::kNone);
 
         return colorPiece(target, pieceColor(piece));
     }
 
     [[nodiscard]] constexpr bool isMajor(PieceType piece) {
-        assert(piece != PieceType::None);
-        return piece == PieceType::Rook || piece == PieceType::Queen;
+        assert(piece != PieceType::kNone);
+        return piece == PieceType::kRook || piece == PieceType::kQueen;
     }
 
     [[nodiscard]] constexpr bool isMajor(Piece piece) {
-        assert(piece != Piece::None);
+        assert(piece != Piece::kNone);
         return isMajor(pieceType(piece));
     }
 
     [[nodiscard]] constexpr bool isMinor(PieceType piece) {
-        assert(piece != PieceType::None);
-        return piece == PieceType::Knight || piece == PieceType::Bishop;
+        assert(piece != PieceType::kNone);
+        return piece == PieceType::kKnight || piece == PieceType::kBishop;
     }
 
     [[nodiscard]] constexpr bool isMinor(Piece piece) {
-        assert(piece != Piece::None);
+        assert(piece != Piece::kNone);
         return isMinor(pieceType(piece));
     }
 
     [[nodiscard]] constexpr bool isValidPromotion(PieceType piece) {
-        return piece == PieceType::Knight || piece == PieceType::Bishop || piece == PieceType::Rook
-            || piece == PieceType::Queen;
+        return piece == PieceType::kKnight || piece == PieceType::kBishop || piece == PieceType::kRook
+            || piece == PieceType::kQueen;
     }
 
     [[nodiscard]] constexpr Piece pieceFromChar(char c) {
         switch (c) {
             case 'p':
-                return Piece::BlackPawn;
+                return Piece::kBlackPawn;
             case 'P':
-                return Piece::WhitePawn;
+                return Piece::kWhitePawn;
             case 'n':
-                return Piece::BlackKnight;
+                return Piece::kBlackKnight;
             case 'N':
-                return Piece::WhiteKnight;
+                return Piece::kWhiteKnight;
             case 'b':
-                return Piece::BlackBishop;
+                return Piece::kBlackBishop;
             case 'B':
-                return Piece::WhiteBishop;
+                return Piece::kWhiteBishop;
             case 'r':
-                return Piece::BlackRook;
+                return Piece::kBlackRook;
             case 'R':
-                return Piece::WhiteRook;
+                return Piece::kWhiteRook;
             case 'q':
-                return Piece::BlackQueen;
+                return Piece::kBlackQueen;
             case 'Q':
-                return Piece::WhiteQueen;
+                return Piece::kWhiteQueen;
             case 'k':
-                return Piece::BlackKing;
+                return Piece::kBlackKing;
             case 'K':
-                return Piece::WhiteKing;
+                return Piece::kWhiteKing;
             default:
-                return Piece::None;
+                return Piece::kNone;
         }
     }
 
     [[nodiscard]] constexpr char pieceToChar(Piece piece) {
         switch (piece) {
-            case Piece::None:
+            case Piece::kNone:
                 return ' ';
-            case Piece::BlackPawn:
+            case Piece::kBlackPawn:
                 return 'p';
-            case Piece::WhitePawn:
+            case Piece::kWhitePawn:
                 return 'P';
-            case Piece::BlackKnight:
+            case Piece::kBlackKnight:
                 return 'n';
-            case Piece::WhiteKnight:
+            case Piece::kWhiteKnight:
                 return 'N';
-            case Piece::BlackBishop:
+            case Piece::kBlackBishop:
                 return 'b';
-            case Piece::WhiteBishop:
+            case Piece::kWhiteBishop:
                 return 'B';
-            case Piece::BlackRook:
+            case Piece::kBlackRook:
                 return 'r';
-            case Piece::WhiteRook:
+            case Piece::kWhiteRook:
                 return 'R';
-            case Piece::BlackQueen:
+            case Piece::kBlackQueen:
                 return 'q';
-            case Piece::WhiteQueen:
+            case Piece::kWhiteQueen:
                 return 'Q';
-            case Piece::BlackKing:
+            case Piece::kBlackKing:
                 return 'k';
-            case Piece::WhiteKing:
+            case Piece::kWhiteKing:
                 return 'K';
             default:
                 return ' ';
@@ -184,37 +196,37 @@ namespace stormphrax {
     [[nodiscard]] constexpr PieceType pieceTypeFromChar(char c) {
         switch (c) {
             case 'p':
-                return PieceType::Pawn;
+                return PieceType::kPawn;
             case 'n':
-                return PieceType::Knight;
+                return PieceType::kKnight;
             case 'b':
-                return PieceType::Bishop;
+                return PieceType::kBishop;
             case 'r':
-                return PieceType::Rook;
+                return PieceType::kRook;
             case 'q':
-                return PieceType::Queen;
+                return PieceType::kQueen;
             case 'k':
-                return PieceType::King;
+                return PieceType::kKing;
             default:
-                return PieceType::None;
+                return PieceType::kNone;
         }
     }
 
     [[nodiscard]] constexpr char pieceTypeToChar(PieceType piece) {
         switch (piece) {
-            case PieceType::None:
+            case PieceType::kNone:
                 return ' ';
-            case PieceType::Pawn:
+            case PieceType::kPawn:
                 return 'p';
-            case PieceType::Knight:
+            case PieceType::kKnight:
                 return 'n';
-            case PieceType::Bishop:
+            case PieceType::kBishop:
                 return 'b';
-            case PieceType::Rook:
+            case PieceType::kRook:
                 return 'r';
-            case PieceType::Queen:
+            case PieceType::kQueen:
                 return 'q';
-            case PieceType::King:
+            case PieceType::kKing:
                 return 'k';
             default:
                 return ' ';
@@ -224,15 +236,15 @@ namespace stormphrax {
     // upside down
     enum class Square : u8 {
         // clang-format off
-        A1, B1, C1, D1, E1, F1, G1, H1,
-        A2, B2, C2, D2, E2, F2, G2, H2,
-        A3, B3, C3, D3, E3, F3, G3, H3,
-        A4, B4, C4, D4, E4, F4, G4, H4,
-        A5, B5, C5, D5, E5, F5, G5, H5,
-        A6, B6, C6, D6, E6, F6, G6, H6,
-        A7, B7, C7, D7, E7, F7, G7, H7,
-        A8, B8, C8, D8, E8, F8, G8, H8,
-        None
+        kA1, kB1, kC1, kD1, kE1, kF1, kG1, kH1,
+        kA2, kB2, kC2, kD2, kE2, kF2, kG2, kH2,
+        kA3, kB3, kC3, kD3, kE3, kF3, kG3, kH3,
+        kA4, kB4, kC4, kD4, kE4, kF4, kG4, kH4,
+        kA5, kB5, kC5, kD5, kE5, kF5, kG5, kH5,
+        kA6, kB6, kC6, kD6, kE6, kF6, kG6, kH6,
+        kA7, kB7, kC7, kD7, kE7, kF7, kG7, kH7,
+        kA8, kB8, kC8, kD8, kE8, kF8, kG8, kH8,
+        kNone,
         // clang-format on
     };
 
@@ -244,32 +256,32 @@ namespace stormphrax {
     }
 
     [[nodiscard]] constexpr i32 squareRank(Square square) {
-        assert(square != Square::None);
+        assert(square != Square::kNone);
         return static_cast<i32>(square) >> 3;
     }
 
     [[nodiscard]] constexpr i32 squareFile(Square square) {
-        assert(square != Square::None);
+        assert(square != Square::kNone);
         return static_cast<i32>(square) & 0x7;
     }
 
     [[nodiscard]] constexpr Square flipSquareRank(Square square) {
-        assert(square != Square::None);
+        assert(square != Square::kNone);
         return static_cast<Square>(static_cast<i32>(square) ^ 0b111000);
     }
 
     [[nodiscard]] constexpr Square flipSquareFile(Square square) {
-        assert(square != Square::None);
+        assert(square != Square::kNone);
         return static_cast<Square>(static_cast<i32>(square) ^ 0b000111);
     }
 
     [[nodiscard]] constexpr u64 squareBit(Square square) {
-        assert(square != Square::None);
+        assert(square != Square::kNone);
         return U64(1) << static_cast<i32>(square);
     }
 
     [[nodiscard]] constexpr u64 squareBitChecked(Square square) {
-        if (square == Square::None) {
+        if (square == Square::kNone) {
             return U64(0);
         }
 
@@ -280,7 +292,7 @@ namespace stormphrax {
     constexpr i32 relativeRank(i32 rank) {
         assert(rank >= 0 && rank < 8);
 
-        if constexpr (C == Color::Black) {
+        if constexpr (C == Color::kBlack) {
             return 7 - rank;
         } else {
             return rank;
@@ -289,7 +301,7 @@ namespace stormphrax {
 
     constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
-        return c == Color::Black ? 7 - rank : rank;
+        return c == Color::kBlack ? 7 - rank : rank;
     }
 
     struct KingPair {
@@ -324,27 +336,27 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
 
         [[nodiscard]] inline bool isValid() {
-            return black() != Square::None && white() != Square::None && black() != white();
+            return black() != Square::kNone && white() != Square::kNone && black() != white();
         }
     };
 
     struct CastlingRooks {
         struct RookPair {
-            Square kingside{Square::None};
-            Square queenside{Square::None};
+            Square kingside{Square::kNone};
+            Square queenside{Square::kNone};
 
             inline void clear() {
-                kingside = Square::None;
-                queenside = Square::None;
+                kingside = Square::kNone;
+                queenside = Square::kNone;
             }
 
             inline void unset(Square square) {
-                assert(square != Square::None);
+                assert(square != Square::kNone);
 
                 if (square == kingside) {
-                    kingside = Square::None;
+                    kingside = Square::kNone;
                 } else if (square == queenside) {
-                    queenside = Square::None;
+                    queenside = Square::kNone;
                 }
             }
 
@@ -370,12 +382,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const RookPair& color(Color c) const {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return rooks[static_cast<i32>(c)];
         }
 
         [[nodiscard]] inline RookPair& color(Color c) {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return rooks[static_cast<i32>(c)];
         }
 
@@ -384,14 +396,14 @@ namespace stormphrax {
 
     using Score = i32;
 
-    constexpr auto ScoreInf = 32767;
-    constexpr auto ScoreMate = 32766;
-    constexpr auto ScoreTbWin = 30000;
-    constexpr auto ScoreWin = 25000;
+    constexpr auto kScoreInf = 32767;
+    constexpr auto kScoreMate = 32766;
+    constexpr auto kScoreTbWin = 30000;
+    constexpr auto kScoreWin = 25000;
 
-    constexpr auto ScoreNone = -ScoreInf;
+    constexpr auto kScoreNone = -kScoreInf;
 
-    constexpr i32 MaxDepth = 255;
+    constexpr i32 kMaxDepth = 255;
 
-    constexpr auto ScoreMaxMate = ScoreMate - MaxDepth;
+    constexpr auto kScoreMaxMate = kScoreMate - kMaxDepth;
 } // namespace stormphrax

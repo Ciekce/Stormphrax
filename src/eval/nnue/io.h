@@ -46,8 +46,8 @@ namespace stormphrax::eval::nnue {
             return readI32s(dst);
         }
 
-        template <typename T, usize Size>
-        inline bool read(std::array<T, Size>& dst) {
+        template <typename T, usize kSize>
+        inline bool read(std::array<T, kSize>& dst) {
             return read(std::span<T, std::dynamic_extent>{dst});
         }
 
@@ -69,8 +69,8 @@ namespace stormphrax::eval::nnue {
             return writeI32s(src);
         }
 
-        template <typename T, usize Size>
-        inline bool write(const std::array<T, Size>& src) {
+        template <typename T, usize kSize>
+        inline bool write(const std::array<T, kSize>& src) {
             return write(std::span<const T, std::dynamic_extent>{src});
         }
 

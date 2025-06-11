@@ -63,9 +63,9 @@ namespace stormphrax {
             return m_colors[1];
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard occupancy() const {
-            return m_colors[static_cast<i32>(C)];
+            return m_colors[static_cast<i32>(kC)];
         }
 
         [[nodiscard]] inline Bitboard occupancy(Color c) const {
@@ -77,27 +77,27 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard pawns() const {
-            return forPiece(PieceType::Pawn);
+            return forPiece(PieceType::kPawn);
         }
 
         [[nodiscard]] inline Bitboard knights() const {
-            return forPiece(PieceType::Knight);
+            return forPiece(PieceType::kKnight);
         }
 
         [[nodiscard]] inline Bitboard bishops() const {
-            return forPiece(PieceType::Bishop);
+            return forPiece(PieceType::kBishop);
         }
 
         [[nodiscard]] inline Bitboard rooks() const {
-            return forPiece(PieceType::Rook);
+            return forPiece(PieceType::kRook);
         }
 
         [[nodiscard]] inline Bitboard queens() const {
-            return forPiece(PieceType::Queen);
+            return forPiece(PieceType::kQueen);
         }
 
         [[nodiscard]] inline Bitboard kings() const {
-            return forPiece(PieceType::King);
+            return forPiece(PieceType::kKing);
         }
 
         [[nodiscard]] inline Bitboard blackPawns() const {
@@ -184,81 +184,81 @@ namespace stormphrax {
             return whiteOccupancy() ^ (pawns() | kings()) & whiteOccupancy();
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard pawns() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackPawns();
             } else {
                 return whitePawns();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard knights() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackKnights();
             } else {
                 return whiteKnights();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard bishops() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackBishops();
             } else {
                 return whiteBishops();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard rooks() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackRooks();
             } else {
                 return whiteRooks();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard queens() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackQueens();
             } else {
                 return whiteQueens();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard kings() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackKings();
             } else {
                 return whiteKings();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard minors() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackMinors();
             } else {
                 return whiteMinors();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard majors() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackMajors();
             } else {
                 return whiteMajors();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] inline Bitboard nonPk() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return blackNonPk();
             } else {
                 return whiteNonPk();
@@ -266,39 +266,39 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard pawns(Color color) const {
-            return forPiece(PieceType::Pawn, color);
+            return forPiece(PieceType::kPawn, color);
         }
 
         [[nodiscard]] inline Bitboard knights(Color color) const {
-            return forPiece(PieceType::Knight, color);
+            return forPiece(PieceType::kKnight, color);
         }
 
         [[nodiscard]] inline Bitboard bishops(Color color) const {
-            return forPiece(PieceType::Bishop, color);
+            return forPiece(PieceType::kBishop, color);
         }
 
         [[nodiscard]] inline Bitboard rooks(Color color) const {
-            return forPiece(PieceType::Rook, color);
+            return forPiece(PieceType::kRook, color);
         }
 
         [[nodiscard]] inline Bitboard queens(Color color) const {
-            return forPiece(PieceType::Queen, color);
+            return forPiece(PieceType::kQueen, color);
         }
 
         [[nodiscard]] inline Bitboard kings(Color color) const {
-            return forPiece(PieceType::King, color);
+            return forPiece(PieceType::kKing, color);
         }
 
         [[nodiscard]] inline Bitboard minors(Color color) const {
-            return color == Color::Black ? blackMinors() : whiteMinors();
+            return color == Color::kBlack ? blackMinors() : whiteMinors();
         }
 
         [[nodiscard]] inline Bitboard majors(Color color) const {
-            return color == Color::Black ? blackMajors() : whiteMajors();
+            return color == Color::kBlack ? blackMajors() : whiteMajors();
         }
 
         [[nodiscard]] inline Bitboard nonPk(Color color) const {
-            return color == Color::Black ? blackNonPk() : whiteNonPk();
+            return color == Color::kBlack ? blackNonPk() : whiteNonPk();
         }
 
         [[nodiscard]] inline bool operator==(const BitboardSet& other) const = default;
@@ -311,7 +311,7 @@ namespace stormphrax {
     class PositionBoards {
     public:
         PositionBoards() {
-            m_mailbox.fill(Piece::None);
+            m_mailbox.fill(Piece::kNone);
         }
 
         ~PositionBoards() = default;
@@ -325,14 +325,14 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline PieceType pieceTypeAt(Square square) const {
-            assert(square != Square::None);
+            assert(square != Square::kNone);
 
             const auto piece = m_mailbox[static_cast<i32>(square)];
-            return piece == Piece::None ? PieceType::None : pieceType(piece);
+            return piece == Piece::kNone ? PieceType::kNone : pieceType(piece);
         }
 
         [[nodiscard]] inline Piece pieceAt(Square square) const {
-            assert(square != Square::None);
+            assert(square != Square::kNone);
             return m_mailbox[static_cast<i32>(square)];
         }
 
@@ -341,10 +341,10 @@ namespace stormphrax {
         }
 
         inline void setPiece(Square square, Piece piece) {
-            assert(square != Square::None);
-            assert(piece != Piece::None);
+            assert(square != Square::kNone);
+            assert(piece != Piece::kNone);
 
-            assert(pieceAt(square) == Piece::None);
+            assert(pieceAt(square) == Piece::kNone);
 
             slot(square) = piece;
 
@@ -355,11 +355,11 @@ namespace stormphrax {
         }
 
         inline void movePiece(Square src, Square dst, Piece piece) {
-            assert(src != Square::None);
-            assert(dst != Square::None);
+            assert(src != Square::kNone);
+            assert(dst != Square::kNone);
 
             if (slot(src) == piece) {
-                [[likely]] slot(src) = Piece::None;
+                [[likely]] slot(src) = Piece::kNone;
             }
 
             slot(dst) = piece;
@@ -371,17 +371,17 @@ namespace stormphrax {
         }
 
         inline void moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo) {
-            assert(src != Square::None);
-            assert(dst != Square::None);
+            assert(src != Square::kNone);
+            assert(dst != Square::kNone);
             assert(src != dst);
 
-            assert(moving != Piece::None);
-            assert(promo != PieceType::None);
+            assert(moving != Piece::kNone);
+            assert(promo != PieceType::kNone);
 
             assert(pieceAt(src) == moving);
             assert(slot(src) == moving);
 
-            slot(src) = Piece::None;
+            slot(src) = Piece::kNone;
             slot(dst) = copyPieceColor(moving, promo);
 
             m_bbs.forPiece(pieceType(moving))[src] = false;
@@ -392,19 +392,19 @@ namespace stormphrax {
         }
 
         inline void removePiece(Square square, Piece piece) {
-            assert(square != Square::None);
-            assert(piece != Piece::None);
+            assert(square != Square::kNone);
+            assert(piece != Piece::kNone);
 
             assert(pieceAt(square) == piece);
 
-            slot(square) = Piece::None;
+            slot(square) = Piece::kNone;
 
             m_bbs.forPiece(pieceType(piece))[square] = false;
             m_bbs.forColor(pieceColor(piece))[square] = false;
         }
 
         inline void regenFromBbs() {
-            m_mailbox.fill(Piece::None);
+            m_mailbox.fill(Piece::kNone);
 
             for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
                 const auto piece = static_cast<Piece>(pieceIdx);
@@ -412,7 +412,7 @@ namespace stormphrax {
                 auto board = m_bbs.forPiece(piece);
                 while (!board.empty()) {
                     const auto sq = board.popLowestSquare();
-                    assert(slot(sq) == Piece::None);
+                    assert(slot(sq) == Piece::kNone);
                     slot(sq) = piece;
                 }
             }

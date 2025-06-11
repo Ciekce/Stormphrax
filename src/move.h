@@ -28,7 +28,7 @@
 #include "util/static_vector.h"
 
 namespace stormphrax {
-    enum class MoveType { Standard = 0, Promotion, Castling, EnPassant };
+    enum class MoveType { kStandard = 0, kPromotion, kCastling, kEnPassant };
 
     class Move {
     public:
@@ -92,7 +92,7 @@ namespace stormphrax {
         // used to avoid inflating the history of the generally
         // bad moves of putting the king in a corner when castling
         [[nodiscard]] constexpr Square historyDst() const {
-            if (type() == MoveType::Castling && !g_opts.chess960) {
+            if (type() == MoveType::kCastling && !g_opts.chess960) {
                 return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
             } else {
                 return dst();
@@ -109,26 +109,26 @@ namespace stormphrax {
 
         [[nodiscard]] static constexpr Move standard(Square src, Square dst) {
             return Move{static_cast<u16>(
-                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::Standard)
+                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::kStandard)
             )};
         }
 
         [[nodiscard]] static constexpr Move promotion(Square src, Square dst, PieceType promo) {
             return Move{static_cast<u16>(
                 (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | ((static_cast<u16>(promo) - 1) << 2)
-                | static_cast<u16>(MoveType::Promotion)
+                | static_cast<u16>(MoveType::kPromotion)
             )};
         }
 
         [[nodiscard]] static constexpr Move castling(Square src, Square dst) {
             return Move{static_cast<u16>(
-                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::Castling)
+                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::kCastling)
             )};
         }
 
         [[nodiscard]] static constexpr Move enPassant(Square src, Square dst) {
             return Move{static_cast<u16>(
-                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::EnPassant)
+                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | static_cast<u16>(MoveType::kEnPassant)
             )};
         }
 
@@ -139,10 +139,10 @@ namespace stormphrax {
         u16 m_move{};
     };
 
-    constexpr Move NullMove{};
+    constexpr Move kNullMove{};
 
     // assumed upper bound for number of possible moves is 218
-    constexpr usize DefaultMoveListCapacity = 256;
+    constexpr usize kDefaultMoveListCapacity = 256;
 
-    using MoveList = StaticVector<Move, DefaultMoveListCapacity>;
+    using MoveList = StaticVector<Move, kDefaultMoveListCapacity>;
 } // namespace stormphrax

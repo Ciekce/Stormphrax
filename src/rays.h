@@ -28,15 +28,15 @@
 #include "util/multi_array.h"
 
 namespace stormphrax {
-    consteval util::MultiArray<Bitboard, 64, 64> generateBetweenRays() {
+    constexpr auto kBetweenRays = [] {
         util::MultiArray<Bitboard, 64, 64> dst{};
 
         for (i32 from = 0; from < 64; ++from) {
             const auto srcSquare = static_cast<Square>(from);
             const auto srcMask = squareBit(srcSquare);
 
-            const auto rookAttacks = attacks::EmptyBoardRooks[from];
-            const auto bishopAttacks = attacks::EmptyBoardBishops[from];
+            const auto rookAttacks = attacks::kEmptyBoardRooks[from];
+            const auto bishopAttacks = attacks::kEmptyBoardBishops[from];
 
             for (i32 to = 0; to < 64; ++to) {
                 if (from == to) {
@@ -57,17 +57,17 @@ namespace stormphrax {
         }
 
         return dst;
-    }
+    }();
 
-    consteval util::MultiArray<Bitboard, 64, 64> generateIntersectingRays() {
+    constexpr auto kIntersectingRays = [] {
         util::MultiArray<Bitboard, 64, 64> dst{};
 
         for (i32 from = 0; from < 64; ++from) {
             const auto srcSquare = static_cast<Square>(from);
             const auto srcMask = squareBit(srcSquare);
 
-            const auto rookAttacks = attacks::EmptyBoardRooks[from];
-            const auto bishopAttacks = attacks::EmptyBoardBishops[from];
+            const auto rookAttacks = attacks::kEmptyBoardRooks[from];
+            const auto bishopAttacks = attacks::kEmptyBoardBishops[from];
 
             for (i32 to = 0; to < 64; ++to) {
                 if (from == to) {
@@ -88,16 +88,13 @@ namespace stormphrax {
         }
 
         return dst;
-    }
-
-    constexpr auto BetweenRays = generateBetweenRays();
-    constexpr auto IntersectingRays = generateIntersectingRays();
+    }();
 
     constexpr Bitboard rayBetween(Square src, Square dst) {
-        return BetweenRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+        return kBetweenRays[static_cast<i32>(src)][static_cast<i32>(dst)];
     }
 
     constexpr Bitboard rayIntersecting(Square src, Square dst) {
-        return IntersectingRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+        return kIntersectingRays[static_cast<i32>(src)][static_cast<i32>(dst)];
     }
 } // namespace stormphrax

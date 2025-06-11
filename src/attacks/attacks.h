@@ -35,7 +35,7 @@
 #endif
 
 namespace stormphrax::attacks {
-    constexpr auto KnightAttacks = [] {
+    constexpr auto kKnightAttacks = [] {
         std::array<Bitboard, 64> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
@@ -56,7 +56,7 @@ namespace stormphrax::attacks {
         return dst;
     }();
 
-    constexpr auto KingAttacks = [] {
+    constexpr auto kKingAttacks = [] {
         std::array<Bitboard, 64> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
@@ -91,19 +91,19 @@ namespace stormphrax::attacks {
         return dst;
     }
 
-    constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
-    constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
+    constexpr auto kBlackPawnAttacks = generatePawnAttacks<Color::kBlack>();
+    constexpr auto kWhitePawnAttacks = generatePawnAttacks<Color::kWhite>();
 
     constexpr Bitboard getKnightAttacks(Square src) {
-        return KnightAttacks[static_cast<usize>(src)];
+        return kKnightAttacks[static_cast<usize>(src)];
     }
 
     constexpr Bitboard getKingAttacks(Square src) {
-        return KingAttacks[static_cast<usize>(src)];
+        return kKingAttacks[static_cast<usize>(src)];
     }
 
     constexpr Bitboard getPawnAttacks(Square src, Color color) {
-        const auto& attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
+        const auto& attacks = color == Color::kWhite ? kWhitePawnAttacks : kBlackPawnAttacks;
         return attacks[static_cast<usize>(src)];
     }
 
@@ -112,19 +112,19 @@ namespace stormphrax::attacks {
     }
 
     inline Bitboard getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
-        assert(piece != PieceType::None);
-        assert(piece != PieceType::Pawn);
+        assert(piece != PieceType::kNone);
+        assert(piece != PieceType::kPawn);
 
         switch (piece) {
-            case PieceType::Knight:
+            case PieceType::kKnight:
                 return getKnightAttacks(src);
-            case PieceType::Bishop:
+            case PieceType::kBishop:
                 return getBishopAttacks(src, occupancy);
-            case PieceType::Rook:
+            case PieceType::kRook:
                 return getRookAttacks(src, occupancy);
-            case PieceType::Queen:
+            case PieceType::kQueen:
                 return getQueenAttacks(src, occupancy);
-            case PieceType::King:
+            case PieceType::kKing:
                 return getKingAttacks(src);
             default:
                 __builtin_unreachable();

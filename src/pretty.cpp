@@ -64,7 +64,7 @@ namespace stormphrax {
         out << " +---+---+---+---+---+---+---+---+\n";
         out << "   a   b   c   d   e   f   g   h\n\n";
 
-        out << (position.toMove() == Color::White ? "White" : "Black") << " to move\n";
+        out << (position.toMove() == Color::kWhite ? "White" : "Black") << " to move\n";
     }
 
     void printScore(std::ostream& out, Score score) {

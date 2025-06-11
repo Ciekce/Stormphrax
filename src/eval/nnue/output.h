@@ -30,7 +30,7 @@ namespace stormphrax::eval::nnue::output {
     template <typename T>
     concept OutputBucketing = requires {
         {
-            T::BucketCount
+            T::kBucketCount
         } -> std::same_as<const u32&>;
         {
             T::getBucket(BitboardSet{})
@@ -38,33 +38,33 @@ namespace stormphrax::eval::nnue::output {
     };
 
     struct [[maybe_unused]] Single {
-        static constexpr u32 BucketCount = 1;
+        static constexpr u32 kBucketCount = 1;
 
         static constexpr u32 getBucket(const BitboardSet&) {
             return 0;
         }
     };
 
-    template <u32 Count>
+    template <u32 kCount>
     struct [[maybe_unused]] MaterialCount {
-        static_assert(Count > 0 && util::resetLsb(Count) == 0);
-        static_assert(Count <= 32);
+        static_assert(kCount > 0 && util::resetLsb(kCount) == 0);
+        static_assert(kCount <= 32);
 
-        static constexpr u32 BucketCount = Count;
+        static constexpr u32 kBucketCount = kCount;
 
         static inline u32 getBucket(const BitboardSet& bbs) {
-            constexpr auto Div = 32 / Count;
+            constexpr auto Div = 32 / kCount;
             return (bbs.occupancy().popcount() - 2) / Div;
         }
     };
 
     struct [[maybe_unused]] Ocb {
-        static constexpr u32 BucketCount = 2;
+        static constexpr u32 kBucketCount = 2;
 
         static inline u32 getBucket(const BitboardSet& bbs) {
             return (!bbs.blackBishops().empty() && !bbs.whiteBishops().empty()
-                    && (bbs.blackBishops() & boards::LightSquares).empty()
-                           != (bbs.whiteBishops() & boards::LightSquares).empty())
+                    && (bbs.blackBishops() & boards::kLightSquares).empty()
+                           != (bbs.whiteBishops() & boards::kLightSquares).empty())
                      ? 1
                      : 0;
         }
@@ -73,10 +73,10 @@ namespace stormphrax::eval::nnue::output {
     template <OutputBucketing L, OutputBucketing R>
         requires(!std::is_same_v<L, Single> && !std::is_same_v<R, Single>)
     struct [[maybe_unused]] Combo {
-        static constexpr u32 BucketCount = L::BucketCount * R::BucketCount;
+        static constexpr u32 kBucketCount = L::kBucketCount * R::kBucketCount;
 
         static inline u32 getBucket(const BitboardSet& bbs) {
-            return L::getBucket(bbs) * R::BucketCount + R::getBucket(bbs);
+            return L::getBucket(bbs) * R::kBucketCount + R::getBucket(bbs);
         }
     };
 } // namespace stormphrax::eval::nnue::output

@@ -32,7 +32,7 @@ namespace stormphrax::datagen {
         Fen();
         ~Fen() = default;
 
-        static constexpr auto Extension = "txt";
+        static constexpr auto kExtension = "txt";
 
         void start(const Position& initialPosition);
         void push(bool filtered, Move move, Score score);

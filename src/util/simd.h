@@ -36,15 +36,15 @@
     #error No supported SIMD extension found
 #endif
 
-#define SP_SIMD_ALIGNAS alignas(stormphrax::util::simd::Alignment)
+#define SP_SIMD_ALIGNAS alignas(stormphrax::util::simd::kAlignment)
 
 namespace stormphrax::util::simd {
-    template <typename T, usize N>
-    using Array = AlignedArray<Alignment, T, N>;
+    template <typename T, usize kN>
+    using Array = AlignedArray<kAlignment, T, kN>;
 
     template <typename T = void>
     auto isAligned(const T* ptr) {
-        return util::isAligned<Alignment>(ptr);
+        return util::isAligned<kAlignment>(ptr);
     }
 
     template <typename T>
@@ -108,7 +108,7 @@ namespace stormphrax::util::simd {
     using PackedVector = typename PromotedVectorImpl<T>::Type;
 
     template <typename T>
-    constexpr auto ChunkSize = sizeof(Vector<T>) / sizeof(T);
+    constexpr auto kChunkSize = sizeof(Vector<T>) / sizeof(T);
 
 #define SP_SIMD_OP_0(Name) \
     template <typename T> \

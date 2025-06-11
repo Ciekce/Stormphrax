@@ -27,84 +27,84 @@
 
 namespace stormphrax {
     namespace offsets {
-        constexpr i32 Up = 8;
-        constexpr i32 Down = -8;
-        constexpr i32 Left = -1;
-        constexpr i32 Right = 1;
+        constexpr i32 kUp = 8;
+        constexpr i32 kDown = -8;
+        constexpr i32 kLeft = -1;
+        constexpr i32 kRight = 1;
 
-        constexpr auto UpLeft = Up + Left;
-        constexpr auto UpRight = Up + Right;
-        constexpr auto DownLeft = Down + Left;
-        constexpr auto DownRight = Down + Right;
+        constexpr auto kUpLeft = kUp + kLeft;
+        constexpr auto kUpRight = kUp + kRight;
+        constexpr auto kDownLeft = kDown + kLeft;
+        constexpr auto kDownRight = kDown + kRight;
 
-        template <Color C>
+        template <Color kC>
         constexpr auto up() {
-            if constexpr (C == Color::Black) {
-                return Down;
+            if constexpr (kC == Color::kBlack) {
+                return kDown;
             } else {
-                return Up;
+                return kUp;
             }
         }
 
-        template <Color C>
+        template <Color kC>
         constexpr auto upLeft() {
-            if constexpr (C == Color::Black) {
-                return DownLeft;
+            if constexpr (kC == Color::kBlack) {
+                return kDownLeft;
             } else {
-                return UpLeft;
+                return kUpLeft;
             }
         }
 
-        template <Color C>
+        template <Color kC>
         constexpr auto upRight() {
-            if constexpr (C == Color::Black) {
-                return DownRight;
+            if constexpr (kC == Color::kBlack) {
+                return kDownRight;
             } else {
-                return UpRight;
+                return kUpRight;
             }
         }
 
         template <Color C>
         constexpr auto down() {
-            if constexpr (C == Color::Black) {
-                return Up;
+            if constexpr (C == Color::kBlack) {
+                return kUp;
             } else {
-                return Down;
+                return kDown;
             }
         }
 
-        template <Color C>
+        template <Color kC>
         constexpr auto downLeft() {
-            if constexpr (C == Color::Black) {
-                return UpLeft;
+            if constexpr (kC == Color::kBlack) {
+                return kUpLeft;
             } else {
-                return DownLeft;
+                return kDownLeft;
             }
         }
 
-        template <Color C>
+        template <Color kC>
         constexpr auto downRight() {
-            if constexpr (C == Color::Black) {
-                return UpRight;
+            if constexpr (kC == Color::kBlack) {
+                return kUpRight;
             } else {
-                return DownRight;
+                return kDownRight;
             }
         }
     } // namespace offsets
 
     namespace shifts {
-        constexpr i32 Vertical = 8;
-        constexpr i32 Horizontal = 1;
+        constexpr i32 kVertical = 8;
+        constexpr i32 kHorizontal = 1;
 
         // '\'
-        constexpr auto DiagonalLR = Vertical - Horizontal;
+        constexpr auto kDiagonalLR = kVertical - kHorizontal;
         // '/'
-        constexpr auto DiagonalRL = Vertical + Horizontal;
+        constexpr auto kDiagonalRL = kVertical + kHorizontal;
 
-        constexpr auto Diagonal12LR = Vertical + Vertical - Horizontal;
-        constexpr auto Diagonal12RL = Vertical + Vertical + Horizontal;
-        constexpr auto Diagonal21LR = Vertical - Horizontal - Horizontal;
-        constexpr auto Diagonal21RL = Vertical + Horizontal + Horizontal;
+        constexpr auto kDiagonal12LR = kVertical + kVertical - kHorizontal;
+        constexpr auto kDiagonal12RL = kVertical + kVertical + kHorizontal;
+        constexpr auto kDiagonal21LR = kVertical - kHorizontal - kHorizontal;
+        constexpr auto kDiagonal21RL = kVertical + kHorizontal + kHorizontal;
     } // namespace shifts
 
     class BitboardSlot {
@@ -135,30 +135,30 @@ namespace stormphrax {
 
     class Bitboard {
     public:
-        static constexpr auto Rank1 = U64(0x00000000000000FF);
-        static constexpr auto Rank2 = U64(0x000000000000FF00);
-        static constexpr auto Rank3 = U64(0x0000000000FF0000);
-        static constexpr auto Rank4 = U64(0x00000000FF000000);
-        static constexpr auto Rank5 = U64(0x000000FF00000000);
-        static constexpr auto Rank6 = U64(0x0000FF0000000000);
-        static constexpr auto Rank7 = U64(0x00FF000000000000);
-        static constexpr auto Rank8 = U64(0xFF00000000000000);
+        static constexpr auto kRank1 = U64(0x00000000000000FF);
+        static constexpr auto kRank2 = U64(0x000000000000FF00);
+        static constexpr auto kRank3 = U64(0x0000000000FF0000);
+        static constexpr auto kRank4 = U64(0x00000000FF000000);
+        static constexpr auto kRank5 = U64(0x000000FF00000000);
+        static constexpr auto kRank6 = U64(0x0000FF0000000000);
+        static constexpr auto kRank7 = U64(0x00FF000000000000);
+        static constexpr auto kRank8 = U64(0xFF00000000000000);
 
-        static constexpr auto FileA = U64(0x0101010101010101);
-        static constexpr auto FileB = U64(0x0202020202020202);
-        static constexpr auto FileC = U64(0x0404040404040404);
-        static constexpr auto FileD = U64(0x0808080808080808);
-        static constexpr auto FileE = U64(0x1010101010101010);
-        static constexpr auto FileF = U64(0x2020202020202020);
-        static constexpr auto FileG = U64(0x4040404040404040);
-        static constexpr auto FileH = U64(0x8080808080808080);
+        static constexpr auto kFileA = U64(0x0101010101010101);
+        static constexpr auto kFileB = U64(0x0202020202020202);
+        static constexpr auto kFileC = U64(0x0404040404040404);
+        static constexpr auto kFileD = U64(0x0808080808080808);
+        static constexpr auto kFileE = U64(0x1010101010101010);
+        static constexpr auto kFileF = U64(0x2020202020202020);
+        static constexpr auto kFileG = U64(0x4040404040404040);
+        static constexpr auto kFileH = U64(0x8080808080808080);
 
-        static constexpr auto DarkSquares = U64(0xAA55AA55AA55AA55);
-        static constexpr auto LightSquares = U64(0x55AA55AA55AA55AA);
+        static constexpr auto kDarkSquares = U64(0xAA55AA55AA55AA55);
+        static constexpr auto kLightSquares = U64(0x55AA55AA55AA55AA);
 
-        static constexpr auto CenterSquares = U64(0x0000001818000000);
+        static constexpr auto kCenterSquares = U64(0x0000001818000000);
 
-        static constexpr auto All = U64(0xFFFFFFFFFFFFFFFF);
+        static constexpr auto kAll = U64(0xFFFFFFFFFFFFFFFF);
 
         constexpr Bitboard(u64 board = 0) :
                 m_board{board} {}
@@ -319,125 +319,125 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr Bitboard shiftUp() const {
-            return m_board << shifts::Vertical;
+            return m_board << shifts::kVertical;
         }
 
         [[nodiscard]] constexpr Bitboard shiftDown() const {
-            return m_board >> shifts::Vertical;
+            return m_board >> shifts::kVertical;
         }
 
         [[nodiscard]] constexpr Bitboard shiftLeft() const {
-            return (m_board >> shifts::Horizontal) & ~FileH;
+            return (m_board >> shifts::kHorizontal) & ~kFileH;
         }
 
         [[nodiscard]] constexpr Bitboard shiftLeftUnchecked() const {
-            return m_board >> shifts::Horizontal;
+            return m_board >> shifts::kHorizontal;
         }
 
         [[nodiscard]] constexpr Bitboard shiftRight() const {
-            return (m_board << shifts::Horizontal) & ~FileA;
+            return (m_board << shifts::kHorizontal) & ~kFileA;
         }
 
         [[nodiscard]] constexpr Bitboard shiftRightUnchecked() const {
-            return m_board << shifts::Horizontal;
+            return m_board << shifts::kHorizontal;
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpLeft() const {
-            return (m_board << shifts::DiagonalLR) & ~FileH;
+            return (m_board << shifts::kDiagonalLR) & ~kFileH;
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpRight() const {
-            return (m_board << shifts::DiagonalRL) & ~FileA;
+            return (m_board << shifts::kDiagonalRL) & ~kFileA;
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownLeft() const {
-            return (m_board >> shifts::DiagonalRL) & ~FileH;
+            return (m_board >> shifts::kDiagonalRL) & ~kFileH;
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownRight() const {
-            return (m_board >> shifts::DiagonalLR) & ~FileA;
+            return (m_board >> shifts::kDiagonalLR) & ~kFileA;
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpUpLeft() const {
-            return (m_board << shifts::Diagonal12LR) & ~FileH;
+            return (m_board << shifts::kDiagonal12LR) & ~kFileH;
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpUpRight() const {
-            return (m_board << shifts::Diagonal12RL) & ~FileA;
+            return (m_board << shifts::kDiagonal12RL) & ~kFileA;
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpLeftLeft() const {
-            return (m_board << shifts::Diagonal21LR) & ~(FileG | FileH);
+            return (m_board << shifts::kDiagonal21LR) & ~(kFileG | kFileH);
         }
 
         [[nodiscard]] constexpr Bitboard shiftUpRightRight() const {
-            return (m_board << shifts::Diagonal21RL) & ~(FileA | FileB);
+            return (m_board << shifts::kDiagonal21RL) & ~(kFileA | kFileB);
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownLeftLeft() const {
-            return (m_board >> shifts::Diagonal21RL) & ~(FileG | FileH);
+            return (m_board >> shifts::kDiagonal21RL) & ~(kFileG | kFileH);
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownRightRight() const {
-            return (m_board >> shifts::Diagonal21LR) & ~(FileA | FileB);
+            return (m_board >> shifts::kDiagonal21LR) & ~(kFileA | kFileB);
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownDownLeft() const {
-            return (m_board >> shifts::Diagonal12RL) & ~FileH;
+            return (m_board >> shifts::kDiagonal12RL) & ~kFileH;
         }
 
         [[nodiscard]] constexpr Bitboard shiftDownDownRight() const {
-            return (m_board >> shifts::Diagonal12LR) & ~FileA;
+            return (m_board >> shifts::kDiagonal12LR) & ~kFileA;
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftUpRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftDown();
             } else {
                 return shiftUp();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftUpLeftRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftDownLeft();
             } else {
                 return shiftUpLeft();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftUpRightRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftDownRight();
             } else {
                 return shiftUpRight();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftDownRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftUp();
             } else {
                 return shiftDown();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftDownLeftRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftUpLeft();
             } else {
                 return shiftDownLeft();
             }
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard shiftDownRightRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (kC == Color::kBlack) {
                 return shiftUpRight();
             } else {
                 return shiftDownRight();
@@ -462,7 +462,7 @@ namespace stormphrax {
 
         template <Color C>
         [[nodiscard]] constexpr Bitboard fillUpRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (C == Color::kBlack) {
                 return fillDown();
             } else {
                 return fillUp();
@@ -471,7 +471,7 @@ namespace stormphrax {
 
         template <Color C>
         [[nodiscard]] constexpr Bitboard fillDownRelative() const {
-            if constexpr (C == Color::Black) {
+            if constexpr (C == Color::kBlack) {
                 return fillUp();
             } else {
                 return fillDown();
@@ -507,50 +507,50 @@ namespace stormphrax {
     };
 
     namespace boards {
-        constexpr Bitboard Rank1{Bitboard::Rank1};
-        constexpr Bitboard Rank2{Bitboard::Rank2};
-        constexpr Bitboard Rank3{Bitboard::Rank3};
-        constexpr Bitboard Rank4{Bitboard::Rank4};
-        constexpr Bitboard Rank5{Bitboard::Rank5};
-        constexpr Bitboard Rank6{Bitboard::Rank6};
-        constexpr Bitboard Rank7{Bitboard::Rank7};
-        constexpr Bitboard Rank8{Bitboard::Rank8};
+        constexpr Bitboard kRank1{Bitboard::kRank1};
+        constexpr Bitboard kRank2{Bitboard::kRank2};
+        constexpr Bitboard kRank3{Bitboard::kRank3};
+        constexpr Bitboard kRank4{Bitboard::kRank4};
+        constexpr Bitboard kRank5{Bitboard::kRank5};
+        constexpr Bitboard kRank6{Bitboard::kRank6};
+        constexpr Bitboard kRank7{Bitboard::kRank7};
+        constexpr Bitboard kRank8{Bitboard::kRank8};
 
-        constexpr Bitboard FileA{Bitboard::FileA};
-        constexpr Bitboard FileB{Bitboard::FileB};
-        constexpr Bitboard FileC{Bitboard::FileC};
-        constexpr Bitboard FileD{Bitboard::FileD};
-        constexpr Bitboard FileE{Bitboard::FileE};
-        constexpr Bitboard FileF{Bitboard::FileF};
-        constexpr Bitboard FileG{Bitboard::FileG};
-        constexpr Bitboard FileH{Bitboard::FileH};
+        constexpr Bitboard kFileA{Bitboard::kFileA};
+        constexpr Bitboard kFileB{Bitboard::kFileB};
+        constexpr Bitboard kFileC{Bitboard::kFileC};
+        constexpr Bitboard kFileD{Bitboard::kFileD};
+        constexpr Bitboard kFileE{Bitboard::kFileE};
+        constexpr Bitboard kFileF{Bitboard::kFileF};
+        constexpr Bitboard kFileG{Bitboard::kFileG};
+        constexpr Bitboard kFileH{Bitboard::kFileH};
 
-        constexpr auto Ranks = std::array{Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8};
-        constexpr auto Files = std::array{FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH};
+        constexpr auto kRanks = std::array{kRank1, kRank2, kRank3, kRank4, kRank5, kRank6, kRank7, kRank8};
+        constexpr auto kFiles = std::array{kFileA, kFileB, kFileC, kFileD, kFileE, kFileF, kFileG, kFileH};
 
-        constexpr Bitboard DarkSquares{Bitboard::DarkSquares};
-        constexpr Bitboard LightSquares{Bitboard::LightSquares};
+        constexpr Bitboard kDarkSquares{Bitboard::kDarkSquares};
+        constexpr Bitboard kLightSquares{Bitboard::kLightSquares};
 
-        constexpr Bitboard CenterSquares{Bitboard::CenterSquares};
+        constexpr Bitboard kCenterSquares{Bitboard::kCenterSquares};
 
-        constexpr Bitboard All{Bitboard::All};
+        constexpr Bitboard kAll{Bitboard::kAll};
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard promotionRank() {
-            if constexpr (C == Color::Black) {
-                return Rank1;
+            if constexpr (kC == Color::kBlack) {
+                return kRank1;
             } else {
-                return Rank8;
+                return kRank8;
             }
         }
 
         [[nodiscard]] constexpr Bitboard promotionRank(Color c) {
-            return c == Color::Black ? Rank1 : Rank8;
+            return c == Color::kBlack ? kRank1 : kRank8;
         }
 
-        template <Color C>
+        template <Color kC>
         [[nodiscard]] constexpr Bitboard rank(i32 idx) {
-            return Ranks[relativeRank<C>(idx)];
+            return kRanks[relativeRank<kC>(idx)];
         }
     } // namespace boards
 } // namespace stormphrax

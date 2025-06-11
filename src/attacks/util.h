@@ -30,22 +30,22 @@ namespace stormphrax::attacks {
     namespace internal {
         constexpr Bitboard edges(i32 dir) {
             switch (dir) {
-                case offsets::Up:
-                    return boards::Rank8;
-                case offsets::Down:
-                    return boards::Rank1;
-                case offsets::Left:
-                    return boards::FileA;
-                case offsets::Right:
-                    return boards::FileH;
-                case offsets::UpLeft:
-                    return boards::FileA | boards::Rank8;
-                case offsets::UpRight:
-                    return boards::FileH | boards::Rank8;
-                case offsets::DownLeft:
-                    return boards::FileA | boards::Rank1;
-                case offsets::DownRight:
-                    return boards::FileH | boards::Rank1;
+                case offsets::kUp:
+                    return boards::kRank8;
+                case offsets::kDown:
+                    return boards::kRank1;
+                case offsets::kLeft:
+                    return boards::kFileA;
+                case offsets::kRight:
+                    return boards::kFileH;
+                case offsets::kUpLeft:
+                    return boards::kFileA | boards::kRank8;
+                case offsets::kUpRight:
+                    return boards::kFileH | boards::kRank8;
+                case offsets::kDownLeft:
+                    return boards::kFileA | boards::kRank1;
+                case offsets::kDownRight:
+                    return boards::kFileH | boards::kRank1;
                 default:
                     __builtin_unreachable(); // don't
             }
@@ -93,16 +93,16 @@ namespace stormphrax::attacks {
         return dst;
     }
 
-    constexpr auto EmptyBoardRooks =
-        generateEmptyBoardAttacks<offsets::Up, offsets::Down, offsets::Left, offsets::Right>();
-    constexpr auto EmptyBoardBishops =
-        generateEmptyBoardAttacks<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>();
+    constexpr auto kEmptyBoardRooks =
+        generateEmptyBoardAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>();
+    constexpr auto kEmptyBoardBishops =
+        generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>();
 
-    template <i32... Dirs>
+    template <i32... kDirs>
     consteval Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
         Bitboard dst{};
 
-        for (const auto dir : {Dirs...}) {
+        for (const auto dir : {kDirs...}) {
             dst |= internal::generateSlidingAttacks(src, dir, occupancy);
         }
 
@@ -110,11 +110,11 @@ namespace stormphrax::attacks {
     }
 
     consteval Bitboard genRookAttacks(Square src, Bitboard occupancy) {
-        return genAllSlidingAttacks<offsets::Up, offsets::Down, offsets::Left, offsets::Right>(src, occupancy);
+        return genAllSlidingAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>(src, occupancy);
     }
 
     consteval Bitboard genBishopAttacks(Square src, Bitboard occupancy) {
-        return genAllSlidingAttacks<offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight>(
+        return genAllSlidingAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>(
             src,
             occupancy
         );

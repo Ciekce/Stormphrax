@@ -34,7 +34,7 @@
 #include "io.h"
 
 namespace stormphrax::eval::nnue {
-    template <usize BlockSize>
+    template <usize kBlockSize>
     class PaddedParamStream final : public IParamStream {
     public:
         explicit PaddedParamStream(std::istream& in) :
@@ -94,7 +94,7 @@ namespace stormphrax::eval::nnue {
                 return false;
             }
 
-            static constexpr std::array<std::byte, BlockSize> Empty{};
+            static constexpr std::array<std::byte, kBlockSize> Empty{};
 
             auto& stream = *std::get<std::ostream*>(m_stream);
 
@@ -107,7 +107,7 @@ namespace stormphrax::eval::nnue {
         }
 
         [[nodiscard]] static constexpr usize calcPadding(usize v) {
-            return v - util::pad<BlockSize>(v);
+            return v - util::pad<kBlockSize>(v);
         }
     };
 

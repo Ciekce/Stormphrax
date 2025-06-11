@@ -26,8 +26,7 @@
 namespace stormphrax::util {
     class IndexedU4 {
     public:
-        constexpr inline operator u8() const // NOLINT
-        {
+        constexpr inline operator u8() const { // NOLINT
             return m_high ? (m_value >> 4) : (m_value & 0xF);
         }
 
@@ -50,29 +49,29 @@ namespace stormphrax::util {
         u8& m_value;
         bool m_high;
 
-        template <usize Size>
+        template <usize kSize>
         friend class U4Array;
     };
 
-    template <usize Size>
+    template <usize kSize>
     class U4Array {
-        static_assert(Size % 2 == 0);
+        static_assert(kSize % 2 == 0);
 
     public:
         U4Array() = default;
         ~U4Array() = default;
 
         constexpr u8 operator[](usize i) const {
-            assert(i < Size);
+            assert(i < kSize);
             return m_data[i / 2] >> ((i % 2) * 4);
         }
 
         constexpr IndexedU4 operator[](usize i) {
-            assert(i < Size);
+            assert(i < kSize);
             return IndexedU4{m_data[i / 2], (i % 2) == 1};
         }
 
     private:
-        std::array<u8, Size / 2> m_data{};
+        std::array<u8, kSize / 2> m_data{};
     };
 } // namespace stormphrax::util

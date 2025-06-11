@@ -52,20 +52,20 @@ namespace stormphrax {
             Score searchScore,
             Score staticEval
         ) {
-            const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -MaxBonus, MaxBonus);
+            const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
             const auto stm = static_cast<i32>(pos.toMove());
 
-            m_pawnTable[stm][pos.pawnKey() % Entries].update(bonus);
-            m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries].update(bonus);
-            m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries].update(bonus);
-            m_majorTable[stm][pos.majorKey() % Entries].update(bonus);
+            m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
+            m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
+            m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries].update(bonus);
+            m_majorTable[stm][pos.majorKey() % kEntries].update(bonus);
 
             if (ply >= 2) {
                 const auto [moving2, dst2] = moves[ply - 2];
                 const auto [moving1, dst1] = moves[ply - 1];
 
-                if (moving2 != Piece::None && moving1 != Piece::None) {
+                if (moving2 != Piece::kNone && moving1 != Piece::kNone) {
                     m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
                                [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
                                    .update(bonus);
@@ -84,21 +84,21 @@ namespace stormphrax {
             const auto stm = static_cast<i32>(pos.toMove());
 
             const auto [blackNpWeight, whiteNpWeight] =
-                pos.toMove() == Color::Black ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                             : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
+                pos.toMove() == Color::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
+                                              : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
 
             i32 correction{};
 
-            correction += pawnCorrhistWeight() * m_pawnTable[stm][pos.pawnKey() % Entries];
-            correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % Entries];
-            correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % Entries];
-            correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % Entries];
+            correction += pawnCorrhistWeight() * m_pawnTable[stm][pos.pawnKey() % kEntries];
+            correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries];
+            correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries];
+            correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % kEntries];
 
             if (ply >= 2) {
                 const auto [moving2, dst2] = moves[ply - 2];
                 const auto [moving1, dst1] = moves[ply - 1];
 
-                if (moving2 != Piece::None && moving1 != Piece::None) {
+                if (moving2 != Piece::kNone && moving1 != Piece::kNone) {
                     correction += contCorrhistWeight()
                                 * m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
                                              [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
@@ -107,20 +107,20 @@ namespace stormphrax {
 
             score += correction / 2048;
 
-            return std::clamp(score, -ScoreWin + 1, ScoreWin - 1);
+            return std::clamp(score, -kScoreWin + 1, kScoreWin - 1);
         }
 
     private:
-        static constexpr usize Entries = 16384;
+        static constexpr usize kEntries = 16384;
 
-        static constexpr i32 Limit = 1024;
-        static constexpr i32 MaxBonus = Limit / 4;
+        static constexpr i32 kLimit = 1024;
+        static constexpr i32 kMaxBonus = kLimit / 4;
 
         struct Entry {
             i16 value{};
 
             inline void update(i32 bonus) {
-                value += bonus - value * std::abs(bonus) / Limit;
+                value += bonus - value * std::abs(bonus) / kLimit;
             }
 
             [[nodiscard]] inline operator i32() const {
@@ -128,10 +128,10 @@ namespace stormphrax {
             }
         };
 
-        util::MultiArray<Entry, 2, Entries> m_pawnTable{};
-        util::MultiArray<Entry, 2, Entries> m_blackNonPawnTable{};
-        util::MultiArray<Entry, 2, Entries> m_whiteNonPawnTable{};
-        util::MultiArray<Entry, 2, Entries> m_majorTable{};
+        util::MultiArray<Entry, 2, kEntries> m_pawnTable{};
+        util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
+        util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
+        util::MultiArray<Entry, 2, kEntries> m_majorTable{};
         util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
     };
 } // namespace stormphrax

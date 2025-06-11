@@ -54,9 +54,9 @@ namespace stormphrax {
     using util::Instant;
 
     namespace {
-        constexpr auto Name = "Stormphrax";
-        constexpr auto Version = SP_STRINGIFY(SP_VERSION);
-        constexpr auto Author = "Ciekce";
+        constexpr auto kName = "Stormphrax";
+        constexpr auto kVersion = SP_STRINGIFY(SP_VERSION);
+        constexpr auto kAuthor = "Ciekce";
 
 #if SP_EXTERNAL_TUNE
         std::vector<tunable::TunableParam>& tunableParams() {
@@ -115,7 +115,7 @@ namespace stormphrax {
             std::vector<u64> m_keyHistory{};
             Position m_pos{Position::starting()};
 
-            i32 m_moveOverhead{limit::DefaultMoveOverhead};
+            i32 m_moveOverhead{limit::kDefaultMoveOverhead};
         };
 
         UciHandler::~UciHandler() {
@@ -188,26 +188,26 @@ namespace stormphrax {
             static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
-            std::cout << "id name " << Name << ' ' << Version << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+            std::cout << "id name " << kName << ' ' << kVersion << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
 #else
             std::cout << "id name " << Name << ' ' << Version << '\n';
 #endif
-            std::cout << "id author " << Author << '\n';
+            std::cout << "id author " << kAuthor << '\n';
 
             std::cout << std::boolalpha;
 
-            std::cout << "option name Hash type spin default " << DefaultTtSizeMib << " min " << TtSizeMibRange.min()
-                      << " max " << TtSizeMibRange.max() << '\n';
+            std::cout << "option name Hash type spin default " << kDefaultTtSizeMib << " min " << kTtSizeMibRange.min()
+                      << " max " << kTtSizeMibRange.max() << '\n';
             std::cout << "option name Clear Hash type button\n";
-            std::cout << "option name Threads type spin default " << opts::DefaultThreadCount << " min "
-                      << opts::ThreadCountRange.min() << " max " << opts::ThreadCountRange.max() << '\n';
-            std::cout << "option name Contempt type spin default " << opts::DefaultNormalizedContempt << " min "
+            std::cout << "option name Threads type spin default " << opts::kDefaultThreadCount << " min "
+                      << opts::kThreadCountRange.min() << " max " << opts::kThreadCountRange.max() << '\n';
+            std::cout << "option name Contempt type spin default " << opts::kDefaultNormalizedContempt << " min "
                       << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
             std::cout << "option name UCI_Chess960 type check default " << defaultOpts.chess960 << '\n';
             std::cout << "option name UCI_ShowWDL type check default " << defaultOpts.showWdl << '\n';
             std::cout << "option name ShowCurrMove type check default " << defaultOpts.showCurrMove << '\n';
-            std::cout << "option name Move Overhead type spin default " << limit::DefaultMoveOverhead << " min "
-                      << limit::MoveOverheadRange.min() << " max " << limit::MoveOverheadRange.max() << '\n';
+            std::cout << "option name Move Overhead type spin default " << limit::kDefaultMoveOverhead << " min "
+                      << limit::kMoveOverheadRange.min() << " max " << limit::kMoveOverheadRange.max() << '\n';
             std::cout << "option name SoftNodes type check default " << defaultOpts.softNodes << std::endl;
             std::cout << "option name SoftNodeHardLimitMultiplier type spin default "
                       << defaultOpts.softNodeHardLimitMultiplier << " min "
@@ -216,9 +216,11 @@ namespace stormphrax {
             std::cout << "option name EnableWeirdTCs type check default " << defaultOpts.enableWeirdTcs << std::endl;
             std::cout << "option name SyzygyPath type string default <empty>\n";
             std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth << " min "
-                      << search::SyzygyProbeDepthRange.min() << " max " << search::SyzygyProbeDepthRange.max() << '\n';
+                      << search::kSyzygyProbeDepthRange.min() << " max " << search::kSyzygyProbeDepthRange.max()
+                      << '\n';
             std::cout << "option name SyzygyProbeLimit type spin default " << defaultOpts.syzygyProbeLimit << " min "
-                      << search::SyzygyProbeLimitRange.min() << " max " << search::SyzygyProbeLimitRange.max() << '\n';
+                      << search::kSyzygyProbeLimitRange.min() << " max " << search::kSyzygyProbeLimitRange.max()
+                      << '\n';
             std::cout << "option name EvalFile type string default <internal>" << std::endl;
 
 #if SP_EXTERNAL_TUNE
@@ -323,7 +325,7 @@ namespace stormphrax {
             if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
             } else {
-                u32 depth = MaxDepth;
+                u32 depth = kMaxDepth;
                 auto limiter = std::make_unique<limit::CompoundLimiter>();
 
                 MoveList movesToSearch{};
@@ -364,7 +366,7 @@ namespace stormphrax {
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
                         }
                     } else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.toMove() == Color::Black ? "btime" : "wtime"))
+                               && tokens[i - 1] == (m_pos.toMove() == Color::kBlack ? "btime" : "wtime"))
                     {
                         tournamentTime = true;
 
@@ -376,7 +378,7 @@ namespace stormphrax {
                             timeRemaining = static_cast<i64>(time);
                         }
                     } else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.toMove() == Color::Black ? "binc" : "winc"))
+                               && tokens[i - 1] == (m_pos.toMove() == Color::kBlack ? "binc" : "winc"))
                     {
                         tournamentTime = true;
 
@@ -437,8 +439,8 @@ namespace stormphrax {
 
                 if (depth == 0) {
                     return;
-                } else if (depth > MaxDepth) {
-                    depth = MaxDepth;
+                } else if (depth > kMaxDepth) {
+                    depth = kMaxDepth;
                 }
 
                 if (tournamentTime) {
@@ -551,7 +553,7 @@ namespace stormphrax {
                 if (nameStr == "hash") {
                     if (!valueEmpty) {
                         if (const auto newTtSize = util::tryParseSize(valueStr)) {
-                            m_searcher.setTtSize(TtSizeMibRange.clamp(*newTtSize));
+                            m_searcher.setTtSize(kTtSizeMibRange.clamp(*newTtSize));
                         }
                     }
                 } else if (nameStr == "clear hash") {
@@ -568,7 +570,7 @@ namespace stormphrax {
                     if (!valueEmpty) {
                         if (const auto newThreads = util::tryParseU32(valueStr)) {
                             opts::mutableOpts().threads = *newThreads;
-                            m_searcher.setThreads(opts::ThreadCountRange.clamp(*newThreads));
+                            m_searcher.setThreads(opts::kThreadCountRange.clamp(*newThreads));
                         }
                     }
                 } else if (nameStr == "contempt") {
@@ -599,7 +601,7 @@ namespace stormphrax {
                 } else if (nameStr == "move overhead") {
                     if (!valueEmpty) {
                         if (const auto newMoveOverhead = util::tryParseI32(valueStr)) {
-                            m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+                            m_moveOverhead = limit::kMoveOverheadRange.clamp(*newMoveOverhead);
                         }
                     }
                 } else if (nameStr == "softnodes") {
@@ -641,14 +643,14 @@ namespace stormphrax {
                     if (!valueEmpty) {
                         if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().syzygyProbeDepth =
-                                search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
+                                search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
                         }
                     }
                 } else if (nameStr == "syzygyprobelimit") {
                     if (!valueEmpty) {
                         if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().syzygyProbeLimit =
-                                search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
+                                search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
                         }
                     }
                 } else if (nameStr == "evalfile") {
@@ -713,7 +715,7 @@ namespace stormphrax {
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
             std::cout << "Static eval: ";
-            printScore(std::cout, m_pos.toMove() == Color::Black ? -normalized : normalized);
+            printScore(std::cout, m_pos.toMove() == Color::kBlack ? -normalized : normalized);
             std::cout << std::endl;
         }
 
@@ -794,8 +796,8 @@ namespace stormphrax {
                 return;
             }
 
-            i32 depth = bench::DefaultBenchDepth;
-            usize ttSize = bench::DefaultBenchTtSize;
+            i32 depth = bench::kDefaultBenchDepth;
+            usize ttSize = bench::kDefaultBenchTtSize;
 
             if (tokens.size() > 1) {
                 if (const auto newDepth = util::tryParseU32(tokens[1])) {
@@ -883,9 +885,9 @@ namespace stormphrax {
 
             const auto type = move.type();
 
-            if (type != MoveType::Castling || g_opts.chess960) {
+            if (type != MoveType::kCastling || g_opts.chess960) {
                 str << squareToString(move.dst());
-                if (type == MoveType::Promotion) {
+                if (type == MoveType::kPromotion) {
                     str << pieceTypeToChar(move.promo());
                 }
             } else {

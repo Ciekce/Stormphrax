@@ -32,7 +32,7 @@ namespace stormphrax::datagen {
         Viriformat();
         ~Viriformat() = default;
 
-        static constexpr auto Extension = "vf";
+        static constexpr auto kExtension = "vf";
 
         void start(const Position& initialPosition);
         void push(bool filtered, Move move, Score score);

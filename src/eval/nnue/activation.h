@@ -30,7 +30,7 @@
 
 namespace stormphrax::eval::nnue::activation {
     struct [[maybe_unused]] Identity {
-        static constexpr u8 Id = 3;
+        static constexpr u8 kId = 3;
 
         template <typename T, T _unused>
         SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
@@ -63,7 +63,7 @@ namespace stormphrax::eval::nnue::activation {
     };
 
     struct [[maybe_unused]] ReLU {
-        static constexpr u8 Id = 2;
+        static constexpr u8 kId = 2;
 
         template <std::integral T, T _unused>
         SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
@@ -100,9 +100,9 @@ namespace stormphrax::eval::nnue::activation {
     };
 
     struct [[maybe_unused]] ClippedReLU {
-        static constexpr u8 Id = 0;
+        static constexpr u8 kId = 0;
 
-        template <std::integral T, T Max>
+        template <std::integral T, T kMax>
         SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
@@ -110,13 +110,13 @@ namespace stormphrax::eval::nnue::activation {
         ) {
             using namespace util::simd;
 
-            static const auto max = set1(Max);
+            static const auto max = set1(kMax);
 
             const auto clipped = clamp<T>(inputs, zero<T>(), max);
             return mulAddAdjAcc<T>(sum, clipped, weights);
         }
 
-        template <std::integral T, T Max>
+        template <std::integral T, T kMax>
         SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs1,
@@ -125,7 +125,7 @@ namespace stormphrax::eval::nnue::activation {
         ) {
             using namespace util::simd;
 
-            static const auto max = set1(Max);
+            static const auto max = set1(kMax);
 
             const auto clipped1 = clamp<T>(inputs1, zero<T>(), max);
             const auto clipped2 = clamp<T>(inputs2, zero<T>(), max);
@@ -141,9 +141,9 @@ namespace stormphrax::eval::nnue::activation {
     };
 
     struct [[maybe_unused]] SquaredClippedReLU {
-        static constexpr u8 Id = 1;
+        static constexpr u8 kId = 1;
 
-        template <std::integral T, T Max>
+        template <std::integral T, T kMax>
         SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
             util::simd::PromotedVector<T> sum,
             util::simd::Vector<T> inputs,
@@ -151,16 +151,16 @@ namespace stormphrax::eval::nnue::activation {
         ) {
             using namespace util::simd;
 
-            static const auto max = set1(Max);
+            static const auto max = set1(kMax);
 
             const auto clipped = clamp<T>(inputs, zero<T>(), max);
             const auto crelu = mulLo<T>(clipped, weights);
             return mulAddAdjAcc<T>(sum, crelu, clipped);
         }
 
-        template <typename T, T Max>
+        template <typename T, T kMax>
         SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
-            return value / Max;
+            return value / kMax;
         }
     };
 } // namespace stormphrax::eval::nnue::activation

@@ -27,16 +27,16 @@
 
 namespace stormphrax::stats {
     namespace {
-        constexpr usize Slots = 32;
+        constexpr usize kSlots = 32;
 
         struct Range {
             std::atomic<i64> min{std::numeric_limits<i64>::max()};
             std::atomic<i64> max{std::numeric_limits<i64>::min()};
         };
 
-        util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
-        util::MultiArray<Range, Slots> s_ranges{};
-        util::MultiArray<std::pair<std::atomic<i64>, std::atomic<u64>>, Slots> s_means{};
+        util::MultiArray<std::atomic<u64>, kSlots, 2> s_conditionHits{};
+        util::MultiArray<Range, kSlots> s_ranges{};
+        util::MultiArray<std::pair<std::atomic<i64>, std::atomic<u64>>, kSlots> s_means{};
 
         std::atomic_bool s_anyUsed{false};
 
@@ -58,8 +58,8 @@ namespace stormphrax::stats {
     } // namespace
 
     void conditionHit(bool condition, usize slot) {
-        if (slot >= Slots) {
-            std::cerr << "tried to hit condition " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+        if (slot >= kSlots) {
+            std::cerr << "tried to hit condition " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
             return;
         }
 
@@ -69,8 +69,8 @@ namespace stormphrax::stats {
     }
 
     void range(i64 v, usize slot) {
-        if (slot >= Slots) {
-            std::cerr << "tried to hit range " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+        if (slot >= kSlots) {
+            std::cerr << "tried to hit range " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
             return;
         }
 
@@ -81,8 +81,8 @@ namespace stormphrax::stats {
     }
 
     void mean(i64 v, usize slot) {
-        if (slot >= Slots) {
-            std::cerr << "tried to hit mean " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+        if (slot >= kSlots) {
+            std::cerr << "tried to hit mean " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
             return;
         }
 
@@ -97,7 +97,7 @@ namespace stormphrax::stats {
             return;
         }
 
-        for (usize slot = 0; slot < Slots; ++slot) {
+        for (usize slot = 0; slot < kSlots; ++slot) {
             const auto hits = s_conditionHits[slot][1].load();
             const auto misses = s_conditionHits[slot][0].load();
 
@@ -113,7 +113,7 @@ namespace stormphrax::stats {
             std::cout << "    hitrate: " << (hitrate * 100) << "%" << std::endl;
         }
 
-        for (usize slot = 0; slot < Slots; ++slot) {
+        for (usize slot = 0; slot < kSlots; ++slot) {
             const auto min = s_ranges[slot].min.load();
             const auto max = s_ranges[slot].max.load();
 
@@ -126,7 +126,7 @@ namespace stormphrax::stats {
             std::cout << "    max: " << max << std::endl;
         }
 
-        for (usize slot = 0; slot < Slots; ++slot) {
+        for (usize slot = 0; slot < kSlots; ++slot) {
             const auto total = s_means[slot].first.load();
             const auto count = s_means[slot].second.load();
 

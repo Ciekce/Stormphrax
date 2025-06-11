@@ -33,7 +33,7 @@ namespace stormphrax::eval {
     // black, white
     using Contempt = std::array<Score, 2>;
 
-    template <bool Correct = true>
+    template <bool kCorrect = true>
     inline Score adjustEval(
         const Position& pos,
         std::span<search::PlayedMove> moves,
@@ -44,7 +44,7 @@ namespace stormphrax::eval {
     ) {
         eval = eval * (200 - pos.halfmove()) / 200;
 
-        if constexpr (Correct) {
+        if constexpr (kCorrect) {
             const auto corrected = correction->correct(pos, moves, ply, eval);
 
             if (corrDelta) {
@@ -54,14 +54,14 @@ namespace stormphrax::eval {
             eval = corrected;
         }
 
-        return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+        return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }
 
-    template <bool Scale>
+    template <bool kScale>
     inline Score adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
         using namespace tunable;
 
-        if constexpr (Scale) {
+        if constexpr (kScale) {
             const auto bbs = pos.bbs();
 
             const auto npMaterial =
@@ -73,16 +73,16 @@ namespace stormphrax::eval {
 
         eval += contempt[static_cast<i32>(pos.toMove())];
 
-        return std::clamp(eval, -ScoreWin + 1, ScoreWin - 1);
+        return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }
 
-    template <bool Scale = true>
+    template <bool kScale = true>
     inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
         auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
-        return adjustStatic<Scale>(pos, contempt, eval);
+        return adjustStatic<kScale>(pos, contempt, eval);
     }
 
-    template <bool Correct = true>
+    template <bool kCorrect = true>
     inline Score adjustedStaticEval(
         const Position& pos,
         std::span<search::PlayedMove> moves,
@@ -92,12 +92,12 @@ namespace stormphrax::eval {
         const Contempt& contempt = {}
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<Correct>(pos, moves, ply, correction, eval);
+        return adjustEval<kCorrect>(pos, moves, ply, correction, eval);
     }
 
-    template <bool Scale = true>
+    template <bool kScale = true>
     inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
         auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
-        return adjustStatic<Scale>(pos, contempt, eval);
+        return adjustStatic<kScale>(pos, contempt, eval);
     }
 } // namespace stormphrax::eval

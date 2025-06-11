@@ -41,7 +41,7 @@ namespace stormphrax::datagen {
         std::ostream& stream
     ) {
         {
-            T::Extension
+            T::kExtension
         } -> std::convertible_to<const std::string&>;
         t.start(initialPosition);
         t.push(filtered, move, score);

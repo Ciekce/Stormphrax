@@ -25,23 +25,23 @@
 #include <cassert>
 
 namespace stormphrax {
-    template <typename T, usize Capacity>
+    template <typename T, usize kCapacity>
     class StaticVector {
     public:
         StaticVector() = default;
         ~StaticVector() = default;
 
-        StaticVector(const StaticVector<T, Capacity>& other) {
+        StaticVector(const StaticVector<T, kCapacity>& other) {
             *this = other;
         }
 
         inline void push(const T& elem) {
-            assert(m_size < Capacity);
+            assert(m_size < kCapacity);
             m_data[m_size++] = elem;
         }
 
         inline void push(T&& elem) {
-            assert(m_size < Capacity);
+            assert(m_size < kCapacity);
             m_data[m_size++] = std::move(elem);
         }
 
@@ -93,18 +93,18 @@ namespace stormphrax {
         }
 
         inline void resize(usize size) {
-            assert(size <= Capacity);
+            assert(size <= kCapacity);
             m_size = size;
         }
 
-        inline StaticVector<T, Capacity>& operator=(const StaticVector<T, Capacity>& other) {
+        inline StaticVector<T, kCapacity>& operator=(const StaticVector<T, kCapacity>& other) {
             std::copy(other.begin(), other.end(), begin());
             m_size = other.m_size;
             return *this;
         }
 
     private:
-        std::array<T, Capacity> m_data{};
+        std::array<T, kCapacity> m_data{};
         usize m_size{0};
     };
 } // namespace stormphrax

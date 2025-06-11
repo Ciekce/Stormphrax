@@ -24,16 +24,21 @@
 namespace stormphrax::tb {
     ProbeResult probeRoot(MoveList& rootMoves, const Position& pos) {
         const auto moveFromTb = [&pos](auto tbMove) {
-            static constexpr auto PromoPieces =
-                std::array{PieceType::None, PieceType::Queen, PieceType::Rook, PieceType::Bishop, PieceType::Knight};
+            static constexpr auto kPromoPieces = std::array{
+                PieceType::kNone,
+                PieceType::kQueen,
+                PieceType::kRook,
+                PieceType::kBishop,
+                PieceType::kKnight
+            };
 
             const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
             const auto dst = static_cast<Square>(TB_MOVE_TO(tbMove));
-            const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
+            const auto promo = kPromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
-            if (promo != PieceType::None) {
+            if (promo != PieceType::kNone) {
                 return Move::promotion(src, dst, promo);
-            } else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::Pawn) {
+            } else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::kPawn) {
                 return Move::enPassant(src, dst);
                 // Syzygy TBs do not encode positions with castling rights
             } else {
@@ -57,8 +62,8 @@ namespace stormphrax::tb {
             bbs.pawns(),
             pos.halfmove(),
             0,
-            epSq == Square::None ? 0 : static_cast<i32>(epSq),
-            pos.toMove() == Color::White,
+            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+            pos.toMove() == Color::kWhite,
             false /*TODO*/,
             true,
             &tbRootMoves
@@ -76,15 +81,15 @@ namespace stormphrax::tb {
                 bbs.pawns(),
                 pos.halfmove(),
                 0,
-                epSq == Square::None ? 0 : static_cast<i32>(epSq),
-                pos.toMove() == Color::White,
+                epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+                pos.toMove() == Color::kWhite,
                 true,
                 &tbRootMoves
             );
         }
 
         if (!result || tbRootMoves.size == 0) { // mate or stalemate at root, handled by search
-            return ProbeResult::Failed;
+            return ProbeResult::kFailed;
         }
 
         std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](auto a, auto b) {
@@ -95,11 +100,11 @@ namespace stormphrax::tb {
             const auto best = tbRootMoves.moves[0];
 
             if (best.tbRank >= 900) {
-                return {ProbeResult::Win, 900};
+                return {ProbeResult::kWin, 900};
             } else if (best.tbRank >= -899) { // includes cursed wins and blessed losses
-                return {ProbeResult::Draw, -899};
+                return {ProbeResult::kDraw, -899};
             } else {
-                return {ProbeResult::Loss, -1000};
+                return {ProbeResult::kLoss, -1000};
             }
         }();
 
@@ -131,20 +136,20 @@ namespace stormphrax::tb {
             bbs.pawns(),
             0,
             0,
-            epSq == Square::None ? 0 : static_cast<i32>(epSq),
-            pos.toMove() == Color::White
+            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+            pos.toMove() == Color::kWhite
         );
 
         if (wdl == TB_RESULT_FAILED) {
-            return ProbeResult::Failed;
+            return ProbeResult::kFailed;
         }
 
         if (wdl == TB_WIN) {
-            return ProbeResult::Win;
+            return ProbeResult::kWin;
         } else if (wdl == TB_LOSS) {
-            return ProbeResult::Loss;
+            return ProbeResult::kLoss;
         } else {
-            return ProbeResult::Draw;
+            return ProbeResult::kDraw;
         }
     }
 } // namespace stormphrax::tb

@@ -25,13 +25,13 @@
 
 namespace stormphrax {
     namespace opts {
-        constexpr u32 DefaultThreadCount = 1;
-        constexpr auto ThreadCountRange = util::Range<u32>{1, 2048};
+        constexpr u32 kDefaultThreadCount = 1;
+        constexpr auto kThreadCountRange = util::Range<u32>{1, 2048};
 
-        constexpr i32 DefaultNormalizedContempt = 0;
+        constexpr i32 kDefaultNormalizedContempt = 0;
 
         struct GlobalOptions {
-            u32 threads{DefaultThreadCount};
+            u32 threads{kDefaultThreadCount};
 
             bool chess960{false};
             bool showWdl{true};
@@ -46,7 +46,7 @@ namespace stormphrax {
             i32 syzygyProbeDepth{1};
             i32 syzygyProbeLimit{7};
 
-            i32 contempt{wdl::unnormalizeScoreMaterial58(DefaultNormalizedContempt)};
+            i32 contempt{wdl::unnormalizeScoreMaterial58(kDefaultNormalizedContempt)};
         };
 
         GlobalOptions& mutableOpts();

@@ -78,8 +78,8 @@
 
 namespace stormphrax {
 #ifdef __cpp_lib_hardware_interference_size
-    constexpr auto CacheLineSize = std::hardware_destructive_interference_size;
+    constexpr auto kCacheLineSize = std::hardware_destructive_interference_size;
 #else
-    constexpr usize CacheLineSize = 64;
+    constexpr usize kCacheLineSize = 64;
 #endif
 } // namespace stormphrax

@@ -27,27 +27,27 @@
 
 namespace stormphrax::keys {
     namespace sizes {
-        constexpr usize PieceSquares = 12 * 64;
-        constexpr usize Color = 1;
-        constexpr usize Castling = 16;
-        constexpr usize EnPassant = 8;
+        constexpr usize kPieceSquares = 12 * 64;
+        constexpr usize kColor = 1;
+        constexpr usize kCastling = 16;
+        constexpr usize kEnPassant = 8;
 
-        constexpr auto Total = PieceSquares + Color + Castling + EnPassant;
+        constexpr auto kTotal = kPieceSquares + kColor + kCastling + kEnPassant;
     } // namespace sizes
 
     namespace offsets {
-        constexpr usize PieceSquares = 0;
-        constexpr auto Color = PieceSquares + sizes::PieceSquares;
-        constexpr auto Castling = Color + sizes::Color;
-        constexpr auto EnPassant = Castling + sizes::Castling;
+        constexpr usize kPieceSquares = 0;
+        constexpr auto kColor = kPieceSquares + sizes::kPieceSquares;
+        constexpr auto kCastling = kColor + sizes::kColor;
+        constexpr auto kEnPassant = kCastling + sizes::kCastling;
     } // namespace offsets
 
-    constexpr auto Keys = [] {
-        constexpr auto Seed = U64(0xD06C659954EC904A);
+    constexpr auto kKeys = [] {
+        constexpr auto kSeed = U64(0xD06C659954EC904A);
 
-        std::array<u64, sizes::Total> keys{};
+        std::array<u64, sizes::kTotal> keys{};
 
-        util::rng::Jsf64Rng rng{Seed};
+        util::rng::Jsf64Rng rng{kSeed};
 
         for (auto& key : keys) {
             key = rng.nextU64();
@@ -57,20 +57,20 @@ namespace stormphrax::keys {
     }();
 
     inline u64 pieceSquare(Piece piece, Square square) {
-        if (piece == Piece::None || square == Square::None) {
+        if (piece == Piece::kNone || square == Square::kNone) {
             return 0;
         }
 
-        return Keys[offsets::PieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+        return kKeys[offsets::kPieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
     }
 
     // for flipping
     inline u64 color() {
-        return Keys[offsets::Color];
+        return kKeys[offsets::kColor];
     }
 
     inline u64 color(Color c) {
-        return c == Color::White ? 0 : color();
+        return c == Color::kWhite ? 0 : color();
     }
 
     inline u64 castling(const CastlingRooks& castlingRooks) {
@@ -81,31 +81,31 @@ namespace stormphrax::keys {
 
         usize flags{};
 
-        if (castlingRooks.black().kingside != Square::None) {
+        if (castlingRooks.black().kingside != Square::kNone) {
             flags |= BlackShort;
         }
-        if (castlingRooks.black().queenside != Square::None) {
+        if (castlingRooks.black().queenside != Square::kNone) {
             flags |= BlackLong;
         }
-        if (castlingRooks.white().kingside != Square::None) {
+        if (castlingRooks.white().kingside != Square::kNone) {
             flags |= WhiteShort;
         }
-        if (castlingRooks.white().queenside != Square::None) {
+        if (castlingRooks.white().queenside != Square::kNone) {
             flags |= WhiteLong;
         }
 
-        return Keys[offsets::Castling + flags];
+        return kKeys[offsets::kCastling + flags];
     }
 
     inline u64 enPassant(u32 file) {
-        return Keys[offsets::EnPassant + file];
+        return kKeys[offsets::kEnPassant + file];
     }
 
     inline u64 enPassant(Square square) {
-        if (square == Square::None) {
+        if (square == Square::kNone) {
             return 0;
         }
 
-        return Keys[offsets::EnPassant + squareFile(square)];
+        return kKeys[offsets::kEnPassant + squareFile(square)];
     }
 } // namespace stormphrax::keys

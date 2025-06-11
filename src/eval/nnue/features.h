@@ -26,13 +26,13 @@
 
 namespace stormphrax::eval::nnue::features {
     struct [[maybe_unused]] SingleBucket {
-        static constexpr u32 InputSize = 768;
+        static constexpr u32 kInputSize = 768;
 
-        static constexpr u32 BucketCount = 1;
-        static constexpr u32 RefreshTableSize = 1;
+        static constexpr u32 kBucketCount = 1;
+        static constexpr u32 kRefreshTableSize = 1;
 
-        static constexpr bool IsMirrored = false;
-        static constexpr bool MergedKings = false;
+        static constexpr bool kIsMirrored = false;
+        static constexpr bool kMergedKings = false;
 
         static constexpr Square transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq) {
             return sq;
@@ -55,33 +55,33 @@ namespace stormphrax::eval::nnue::features {
         }
     };
 
-    template <u32... BucketIndices>
+    template <u32... kBucketIndices>
     struct [[maybe_unused]] KingBuckets {
-        static_assert(sizeof...(BucketIndices) == 64);
+        static_assert(sizeof...(kBucketIndices) == 64);
 
     private:
-        static constexpr auto Buckets = std::array{BucketIndices...};
+        static constexpr auto kBuckets = std::array{kBucketIndices...};
 
     public:
-        static constexpr u32 InputSize = 768;
+        static constexpr u32 kInputSize = 768;
 
-        static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
-        static constexpr auto RefreshTableSize = BucketCount;
+        static constexpr auto kBucketCount = *std::ranges::max_element(kBuckets) + 1;
+        static constexpr auto kRefreshTableSize = kBucketCount;
 
-        static constexpr bool IsMirrored = false;
-        static constexpr bool MergedKings = false;
+        static constexpr bool kIsMirrored = false;
+        static constexpr bool kMergedKings = false;
 
-        static_assert(BucketCount > 1, "use SingleBucket for single-bucket arches");
+        static_assert(kBucketCount > 1, "use SingleBucket for single-bucket arches");
 
         static constexpr Square transformFeatureSquare(Square sq, [[maybe_unused]] Square kingSq) {
             return sq;
         }
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
-            if (c == Color::Black) {
+            if (c == Color::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
-            return Buckets[static_cast<i32>(kingSq)];
+            return kBuckets[static_cast<i32>(kingSq)];
         }
 
         static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
@@ -89,17 +89,17 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
 
-            assert(prevKingSq != Square::None);
-            assert(kingSq != Square::None);
+            assert(prevKingSq != Square::kNone);
+            assert(kingSq != Square::kNone);
 
-            if (c == Color::Black) {
+            if (c == Color::kBlack) {
                 prevKingSq = flipSquareRank(prevKingSq);
                 kingSq = flipSquareRank(kingSq);
             }
 
-            return Buckets[static_cast<i32>(prevKingSq)] != Buckets[static_cast<i32>(kingSq)];
+            return kBuckets[static_cast<i32>(prevKingSq)] != kBuckets[static_cast<i32>(kingSq)];
         }
     };
 
@@ -117,17 +117,17 @@ namespace stormphrax::eval::nnue::features {
         >;
 
     enum class MirroredKingSide {
-        Abcd,
-        Efgh,
+        kAbcd,
+        kEfgh,
     };
 
-    template <MirroredKingSide Side, u32... BucketIndices>
+    template <MirroredKingSide kSide, u32... kBucketIndices>
     struct [[maybe_unused]] KingBucketsMirrored {
-        static_assert(sizeof...(BucketIndices) == 32);
+        static_assert(sizeof...(kBucketIndices) == 32);
 
     private:
-        static constexpr auto Buckets = [] {
-            constexpr auto HalfBuckets = std::array{BucketIndices...};
+        static constexpr auto kBuckets = [] {
+            constexpr auto HalfBuckets = std::array{kBucketIndices...};
 
             std::array<u32, 64> dst{};
 
@@ -145,7 +145,7 @@ namespace stormphrax::eval::nnue::features {
         }();
 
         static constexpr bool shouldFlip(Square kingSq) {
-            if constexpr (Side == MirroredKingSide::Abcd) {
+            if constexpr (kSide == MirroredKingSide::kAbcd) {
                 return squareFile(kingSq) > 3;
             } else {
                 return squareFile(kingSq) <= 3;
@@ -153,13 +153,13 @@ namespace stormphrax::eval::nnue::features {
         }
 
     public:
-        static constexpr u32 InputSize = 768;
+        static constexpr u32 kInputSize = 768;
 
-        static constexpr auto BucketCount = *std::ranges::max_element(Buckets) + 1;
-        static constexpr auto RefreshTableSize = BucketCount * 2;
+        static constexpr auto kBucketCount = *std::ranges::max_element(kBuckets) + 1;
+        static constexpr auto kRefreshTableSize = kBucketCount * 2;
 
-        static constexpr bool IsMirrored = true;
-        static constexpr bool MergedKings = false;
+        static constexpr bool kIsMirrored = true;
+        static constexpr bool kMergedKings = false;
 
         static constexpr Square transformFeatureSquare(Square sq, Square kingSq) {
             const bool flipped = shouldFlip(kingSq);
@@ -167,25 +167,25 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
-            if (c == Color::Black) {
+            if (c == Color::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
-            return Buckets[static_cast<i32>(kingSq)];
+            return kBuckets[static_cast<i32>(kingSq)];
         }
 
         static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
-            if (c == Color::Black) {
+            if (c == Color::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
             const bool flipped = shouldFlip(kingSq);
-            return Buckets[static_cast<i32>(kingSq)] * 2 + flipped;
+            return kBuckets[static_cast<i32>(kingSq)] * 2 + flipped;
         }
 
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
 
-            assert(prevKingSq != Square::None);
-            assert(kingSq != Square::None);
+            assert(prevKingSq != Square::kNone);
+            assert(kingSq != Square::kNone);
 
             const bool prevFlipped = shouldFlip(prevKingSq);
             const bool flipped = shouldFlip(kingSq);
@@ -194,18 +194,18 @@ namespace stormphrax::eval::nnue::features {
                 return true;
             }
 
-            if (c == Color::Black) {
+            if (c == Color::kBlack) {
                 prevKingSq = flipSquareRank(prevKingSq);
                 kingSq = flipSquareRank(kingSq);
             }
 
-            return Buckets[static_cast<i32>(prevKingSq)] != Buckets[static_cast<i32>(kingSq)];
+            return kBuckets[static_cast<i32>(prevKingSq)] != kBuckets[static_cast<i32>(kingSq)];
         }
     };
 
-    template <MirroredKingSide Side>
+    template <MirroredKingSide kSide>
     using SingleBucketMirrored [[maybe_unused]] = KingBucketsMirrored<
-        Side,
+        kSide,
         // clang-format off
         0, 0, 0, 0,
         0, 0, 0, 0,
@@ -218,9 +218,9 @@ namespace stormphrax::eval::nnue::features {
         // clang-format on
         >;
 
-    template <MirroredKingSide Side>
+    template <MirroredKingSide kSide>
     using HalfKaMirrored [[maybe_unused]] = KingBucketsMirrored<
-        Side,
+        kSide,
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,
@@ -234,15 +234,15 @@ namespace stormphrax::eval::nnue::features {
         >;
 
     //TODO verify that buckets work for merged kings
-    template <MirroredKingSide Side, u32... BucketIndices>
-    struct [[maybe_unused]] KingBucketsMergedMirrored : public KingBucketsMirrored<Side, BucketIndices...> {
-        static constexpr u32 InputSize = 704;
-        static constexpr bool MergedKings = true;
+    template <MirroredKingSide kSide, u32... kBucketIndices>
+    struct [[maybe_unused]] KingBucketsMergedMirrored : public KingBucketsMirrored<kSide, kBucketIndices...> {
+        static constexpr u32 kInputSize = 704;
+        static constexpr bool kMergedKings = true;
     };
 
-    template <MirroredKingSide Side>
+    template <MirroredKingSide kSide>
     using HalfKaV2Mirrored [[maybe_unused]] = KingBucketsMergedMirrored<
-        Side,
+        kSide,
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,

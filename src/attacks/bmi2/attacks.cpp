@@ -23,11 +23,11 @@ namespace stormphrax::attacks {
     using namespace bmi2;
 
     namespace {
-        std::array<u16, RookData.tableSize> generateRookAttacks() {
-            std::array<u16, RookData.tableSize> dst{};
+        std::array<u16, kRookData.tableSize> generateRookAttacks() {
+            std::array<u16, kRookData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto& data = RookData.data[square];
+                const auto& data = kRookData.data[square];
                 const auto entries = 1 << data.srcMask.popcount();
 
                 for (u32 i = 0; i < entries; ++i) {
@@ -35,7 +35,7 @@ namespace stormphrax::attacks {
 
                     Bitboard attacks{};
 
-                    for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right}) {
+                    for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
                         attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
                     }
 
@@ -46,17 +46,19 @@ namespace stormphrax::attacks {
             return dst;
         }
 
-        std::array<Bitboard, BishopData.tableSize> generateBishopAttacks() {
-            std::array<Bitboard, BishopData.tableSize> dst{};
+        std::array<Bitboard, kBishopData.tableSize> generateBishopAttacks() {
+            std::array<Bitboard, kBishopData.tableSize> dst{};
 
             for (u32 square = 0; square < 64; ++square) {
-                const auto& data = BishopData.data[square];
+                const auto& data = kBishopData.data[square];
                 const auto entries = 1 << data.mask.popcount();
 
                 for (u32 i = 0; i < entries; ++i) {
                     const auto occupancy = util::pdep(i, data.mask);
 
-                    for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight}) {
+                    for (const auto dir :
+                         {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight})
+                    {
                         dst[data.offset + i] |=
                             internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
                     }
@@ -67,7 +69,7 @@ namespace stormphrax::attacks {
         }
     } // namespace
 
-    const std::array<u16, RookData.tableSize> RookAttacks = generateRookAttacks();
-    const std::array<Bitboard, BishopData.tableSize> BishopAttacks = generateBishopAttacks();
+    const std::array<u16, kRookData.tableSize> g_rookAttacks = generateRookAttacks();
+    const std::array<Bitboard, kBishopData.tableSize> g_bishopAttacks = generateBishopAttacks();
 } // namespace stormphrax::attacks
 #endif // SP_HAS_BMI2

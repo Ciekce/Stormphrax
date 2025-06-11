@@ -45,11 +45,11 @@ namespace {
 namespace stormphrax::eval {
     namespace {
         SP_ENUM_FLAGS(u16, NetworkFlags){
-            None = 0x0000,
-            ZstdCompressed = 0x0001,
-            HorizontallyMirrored = 0x0002,
-            MergedKings = 0x0004,
-            PairwiseMul = 0x0008,
+            kNone = 0x0000,
+            kZstdCompressed = 0x0001,
+            kHorizontallyMirrored = 0x0002,
+            kMergedKings = 0x0004,
+            kPairwiseMul = 0x0008,
         };
 
         constexpr u16 ExpectedHeaderVersion = 1;
@@ -71,25 +71,25 @@ namespace stormphrax::eval {
         static_assert(sizeof(NetworkHeader) == 64);
 
         inline std::string_view archName(u8 arch) {
-            static constexpr auto NetworkArchNames = std::array{
+            static constexpr auto kNetworkArchNames = std::array{
                 "basic",
                 "perspective",
                 "perspective_multilayer",
                 "perspective_multilayer_dual_act",
             };
 
-            if (arch < NetworkArchNames.size()) {
-                return NetworkArchNames[arch];
+            if (arch < kNetworkArchNames.size()) {
+                return kNetworkArchNames[arch];
             }
 
             return "<unknown>";
         }
 
         inline std::string_view activationFuncName(u8 func) {
-            static constexpr auto ActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
+            static constexpr auto kActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
 
-            if (func < ActivationFunctionNames.size()) {
-                return ActivationFunctionNames[func];
+            if (func < kActivationFunctionNames.size()) {
+                return kActivationFunctionNames[func];
             }
 
             return "<unknown>";
@@ -108,14 +108,14 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (header.arch != LayeredArch::ArchId) {
+            if (header.arch != LayeredArch::kArchId) {
                 std::cerr << "wrong network architecture " << archName(header.arch)
-                          << " (expected: " << archName(LayeredArch::ArchId) << ")" << std::endl;
+                          << " (expected: " << archName(LayeredArch::kArchId) << ")" << std::endl;
                 return false;
             }
 
-            if (testFlags(header.flags, NetworkFlags::HorizontallyMirrored) != InputFeatureSet::IsMirrored) {
-                if constexpr (InputFeatureSet::IsMirrored) {
+            if (testFlags(header.flags, NetworkFlags::kHorizontallyMirrored) != InputFeatureSet::kIsMirrored) {
+                if constexpr (InputFeatureSet::kIsMirrored) {
                     std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
                 } else {
                     std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
@@ -124,8 +124,8 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (testFlags(header.flags, NetworkFlags::MergedKings) != InputFeatureSet::MergedKings) {
-                if constexpr (InputFeatureSet::MergedKings) {
+            if (testFlags(header.flags, NetworkFlags::kMergedKings) != InputFeatureSet::kMergedKings) {
+                if constexpr (InputFeatureSet::kMergedKings) {
                     std::cerr << "network does not have merged king planes, expected merged" << std::endl;
                 } else {
                     std::cerr << "network has merged king planes, expected unmerged" << std::endl;
@@ -134,8 +134,8 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (testFlags(header.flags, NetworkFlags::PairwiseMul) != LayeredArch::Pairwise) {
-                if constexpr (LayeredArch::Pairwise) {
+            if (testFlags(header.flags, NetworkFlags::kPairwiseMul) != LayeredArch::kPairwise) {
+                if constexpr (LayeredArch::kPairwise) {
                     std::cerr << "network L1 does not require pairwise multiplication, expected paired" << std::endl;
                 } else {
                     std::cerr << "network L1 requires pairwise multiplication, expected unpaired" << std::endl;
@@ -144,27 +144,27 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (header.activation != L1Activation::Id) {
+            if (header.activation != L1Activation::kId) {
                 std::cerr << "wrong network l1 activation function (" << activationFuncName(header.activation)
-                          << ", expected: " << activationFuncName(L1Activation::Id) << ")" << std::endl;
+                          << ", expected: " << activationFuncName(L1Activation::kId) << ")" << std::endl;
                 return false;
             }
 
-            if (header.hiddenSize != L1Size) {
-                std::cerr << "wrong number of hidden neurons (" << header.hiddenSize << ", expected: " << L1Size << ")"
+            if (header.hiddenSize != kL1Size) {
+                std::cerr << "wrong number of hidden neurons (" << header.hiddenSize << ", expected: " << kL1Size << ")"
                           << std::endl;
                 return false;
             }
 
-            if (header.inputBuckets != InputFeatureSet::BucketCount) {
+            if (header.inputBuckets != InputFeatureSet::kBucketCount) {
                 std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
-                          << ", expected: " << InputFeatureSet::BucketCount << ")" << std::endl;
+                          << ", expected: " << InputFeatureSet::kBucketCount << ")" << std::endl;
                 return false;
             }
 
-            if (header.outputBuckets != OutputBucketing::BucketCount) {
+            if (header.outputBuckets != OutputBucketing::kBucketCount) {
                 std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
-                          << ", expected: " << OutputBucketing::BucketCount << ")" << std::endl;
+                          << ", expected: " << OutputBucketing::kBucketCount << ")" << std::endl;
                 return false;
             }
 
@@ -174,7 +174,7 @@ namespace stormphrax::eval {
         bool loadNetworkFrom(Network& network, std::istream& stream, const NetworkHeader& header) {
             bool success;
 
-            if (testFlags(header.flags, NetworkFlags::ZstdCompressed)) {
+            if (testFlags(header.flags, NetworkFlags::kZstdCompressed)) {
                 nnue::ZstdParamStream paramStream{stream};
                 success = network.readFrom(paramStream);
             } else {

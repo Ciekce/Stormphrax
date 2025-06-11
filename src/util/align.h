@@ -23,9 +23,9 @@
 #include <cstdlib>
 
 namespace stormphrax::util {
-    template <std::uintptr_t Alignment, typename T = void>
+    template <std::uintptr_t kAlignment, typename T = void>
     constexpr bool isAligned(const T* ptr) {
-        return (reinterpret_cast<std::uintptr_t>(ptr) % Alignment) == 0;
+        return (reinterpret_cast<std::uintptr_t>(ptr) % kAlignment) == 0;
     }
 
     template <typename T>

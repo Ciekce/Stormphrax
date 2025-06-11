@@ -40,13 +40,13 @@ namespace stormphrax::datagen {
             stream << fen << " | ";
 
             switch (outcome) {
-                case Outcome::WhiteLoss:
+                case Outcome::kWhiteLoss:
                     stream << "0.0";
                     break;
-                case Outcome::Draw:
+                case Outcome::kDraw:
                     stream << "0.5";
                     break;
-                case Outcome::WhiteWin:
+                case Outcome::kWhiteWin:
                     stream << "1.0";
                     break;
             }

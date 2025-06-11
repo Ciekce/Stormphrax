@@ -35,7 +35,7 @@ namespace stormphrax::wdl {
 
     inline Score normalizeScore(Score score, i32 material) {
         // don't normalise wins/losses, or zeroes that are pointless to normalise
-        if (score == 0 || std::abs(score) > ScoreWin) {
+        if (score == 0 || std::abs(score) > kScoreWin) {
             return score;
         }
 
@@ -44,6 +44,6 @@ namespace stormphrax::wdl {
     }
 
     inline Score unnormalizeScoreMaterial58(Score score) {
-        return score == 0 || std::abs(score) > ScoreWin ? score : score * Material58NormalizationK / 100;
+        return score == 0 || std::abs(score) > kScoreWin ? score : score * Material58NormalizationK / 100;
     }
 } // namespace stormphrax::wdl

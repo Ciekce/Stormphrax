@@ -24,12 +24,12 @@
 
 namespace stormphrax::bench {
 #ifdef SP_PGO_PROFILE
-    constexpr i32 DefaultBenchDepth = 10;
+    constexpr i32 kDefaultBenchDepth = 10;
 #else
-    constexpr i32 DefaultBenchDepth = 14;
+    constexpr i32 kDefaultBenchDepth = 14;
 #endif
 
-    constexpr usize DefaultBenchTtSize = 16;
+    constexpr usize kDefaultBenchTtSize = 16;
 
-    void run(search::Searcher& searcher, i32 depth = DefaultBenchDepth);
+    void run(search::Searcher& searcher, i32 depth = kDefaultBenchDepth);
 } // namespace stormphrax::bench

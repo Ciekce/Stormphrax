@@ -24,7 +24,7 @@
 #include <span>
 
 namespace stormphrax::util {
-    template <usize Alignment, typename T, usize Count>
+    template <usize kAlignment, typename T, usize kCount>
     class AlignedArray {
     public:
         [[nodiscard]] constexpr T& at(usize idx) {
@@ -135,36 +135,36 @@ namespace stormphrax::util {
             m_array.swap(other.m_array);
         }
 
-        [[nodiscard]] constexpr std::array<T, Count>& array() {
+        [[nodiscard]] constexpr std::array<T, kCount>& array() {
             return m_array;
         }
 
-        [[nodiscard]] constexpr const std::array<T, Count>& array() const {
+        [[nodiscard]] constexpr const std::array<T, kCount>& array() const {
             return m_array;
         }
 
-        constexpr operator std::array<T, Count>&() {
+        constexpr operator std::array<T, kCount>&() {
             return m_array;
         }
 
-        constexpr operator const std::array<T, Count>&() const {
+        constexpr operator const std::array<T, kCount>&() const {
             return m_array;
         }
 
-        constexpr operator std::span<T, Count>() {
+        constexpr operator std::span<T, kCount>() {
             return m_array;
         }
 
-        constexpr operator std::span<const T, Count>() const {
+        constexpr operator std::span<const T, kCount>() const {
             return m_array;
         }
 
     private:
-        alignas(Alignment) std::array<T, Count> m_array;
+        alignas(kAlignment) std::array<T, kCount> m_array;
     };
 
-    template <usize Alignment, typename T, usize Count>
-    void swap(AlignedArray<Alignment, T, Count>& a, AlignedArray<Alignment, T, Count>& b) noexcept {
+    template <usize kAlignment, typename T, usize kCount>
+    void swap(AlignedArray<kAlignment, T, kCount>& a, AlignedArray<kAlignment, T, kCount>& b) noexcept {
         a.swap(b);
     }
 } // namespace stormphrax::util

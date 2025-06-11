@@ -31,18 +31,18 @@ namespace stormphrax {
         // for a long time, these were backwards
         // cheers toanth
         inline Score scoreToTt(Score score, i32 ply) {
-            if (score < -ScoreWin) {
+            if (score < -kScoreWin) {
                 return score - ply;
-            } else if (score > ScoreWin) {
+            } else if (score > kScoreWin) {
                 return score + ply;
             }
             return score;
         }
 
         inline Score scoreFromTt(Score score, i32 ply) {
-            if (score < -ScoreWin) {
+            if (score < -kScoreWin) {
                 return score + ply;
-            } else if (score > ScoreWin) {
+            } else if (score > kScoreWin) {
                 return score - ply;
             }
             return score;
@@ -86,7 +86,7 @@ namespace stormphrax {
         }
 
         m_pendingInit = false;
-        m_clusters = util::alignedAlloc<Cluster>(StorageAlignment, m_clusterCount);
+        m_clusters = util::alignedAlloc<Cluster>(kStorageAlignment, m_clusterCount);
 
         if (!m_clusters) {
             std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
@@ -124,15 +124,15 @@ namespace stormphrax {
         assert(!m_pendingInit);
 
         assert(depth >= 0);
-        assert(depth <= MaxDepth);
+        assert(depth <= kMaxDepth);
 
-        assert(staticEval == ScoreNone || staticEval > -ScoreWin);
-        assert(staticEval == ScoreNone || staticEval < ScoreWin);
+        assert(staticEval == kScoreNone || staticEval > -kScoreWin);
+        assert(staticEval == kScoreNone || staticEval < kScoreWin);
 
         const auto newKey = packEntryKey(key);
 
         const auto entryValue = [this](const auto& entry) {
-            const i32 relativeAge = (Entry::AgeCycle + m_age - entry.age()) & Entry::AgeMask;
+            const i32 relativeAge = (Entry::kAgeCycle + m_age - entry.age()) & Entry::kAgeMask;
             return entry.depth - relativeAge * 2;
         };
 
@@ -143,7 +143,7 @@ namespace stormphrax {
 
         for (auto& candidate : cluster.entries) {
             // always take an empty entry, or one from the same position
-            if (candidate.key == newKey || candidate.flag() == TtFlag::None) {
+            if (candidate.key == newKey || candidate.flag() == TtFlag::kNone) {
                 entryPtr = &candidate;
                 break;
             }
@@ -162,7 +162,8 @@ namespace stormphrax {
         auto entry = *entryPtr;
 
         // Roughly the SF replacement scheme
-        if (!(flag == TtFlag::Exact || newKey != entry.key || entry.age() != m_age || depth + 4 + pv * 2 > entry.depth))
+        if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age || depth + 4 + pv * 2 > entry.depth
+            ))
         {
             return;
         }
@@ -216,12 +217,12 @@ namespace stormphrax {
         for (u64 i = 0; i < 1000; ++i) {
             const auto cluster = m_clusters[i];
             for (const auto& entry : cluster.entries) {
-                if (entry.flag() != TtFlag::None && entry.age() == m_age) {
+                if (entry.flag() != TtFlag::kNone && entry.age() == m_age) {
                     ++filledEntries;
                 }
             }
         }
 
-        return filledEntries / Cluster::EntriesPerCluster;
+        return filledEntries / Cluster::kEntriesPerCluster;
     }
 } // namespace stormphrax

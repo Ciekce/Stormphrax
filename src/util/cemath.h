@@ -28,9 +28,9 @@ namespace stormphrax::util {
         return v < T{0} ? -v : v;
     }
 
-    template <std::integral auto One>
-    constexpr decltype(One) ilerp(decltype(One) a, decltype(One) b, decltype(One) t) {
-        return (a * (One - t) + b * t) / One;
+    template <std::integral auto kOne>
+    constexpr decltype(kOne) ilerp(decltype(kOne) a, decltype(kOne) b, decltype(kOne) t) {
+        return (a * (kOne - t) + b * t) / kOne;
     }
 
     template <std::integral T>
@@ -38,8 +38,8 @@ namespace stormphrax::util {
         return (a + b - 1) / b;
     }
 
-    template <std::unsigned_integral auto Block>
-    [[nodiscard]] inline decltype(Block) pad(decltype(Block) v) {
-        return ceilDiv(v, Block) * Block;
+    template <std::unsigned_integral auto kBlock>
+    [[nodiscard]] inline decltype(kBlock) pad(decltype(kBlock) v) {
+        return ceilDiv(v, kBlock) * kBlock;
     }
 } // namespace stormphrax::util
