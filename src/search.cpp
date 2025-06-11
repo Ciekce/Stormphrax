@@ -543,7 +543,7 @@ namespace stormphrax::search {
             ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
             if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)) {
-                if (ttEntry.flag == TtFlag::kExact //
+                if (ttEntry.flag == TtFlag::kExact                                   //
                     || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha //
                     || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)
                 {
@@ -598,8 +598,7 @@ namespace stormphrax::search {
                 } else if (result == tb::ProbeResult::kLoss) {
                     score = -kScoreTbWin + ply;
                     flag = TtFlag::kUpperBound;
-                } else // draw
-                {
+                } else { // draw
                     score = drawScore(thread.search.loadNodes());
                     flag = TtFlag::kExact;
                 }
@@ -615,8 +614,7 @@ namespace stormphrax::search {
                 if constexpr (kPvNode) {
                     if (flag == TtFlag::kUpperBound) {
                         syzygyMax = score;
-                    } else // lower bound (win)
-                    {
+                    } else { // lower bound (win)
                         if (score > alpha) {
                             alpha = score;
                         }
@@ -1163,7 +1161,7 @@ namespace stormphrax::search {
         const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
         if (!kPvNode
-            && (ttEntry.flag == TtFlag::kExact //
+            && (ttEntry.flag == TtFlag::kExact                                   //
                 || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha //
                 || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta))
         {
@@ -1191,7 +1189,7 @@ namespace stormphrax::search {
             const auto staticEval =
                 eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
 
-            if (ttEntry.flag == TtFlag::kExact //
+            if (ttEntry.flag == TtFlag::kExact                                       //
                 || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval //
                 || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > staticEval)
             {
