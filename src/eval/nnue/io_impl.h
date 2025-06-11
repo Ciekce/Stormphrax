@@ -106,7 +106,7 @@ namespace stormphrax::eval::nnue {
             return !stream.fail();
         }
 
-        [[nodiscard]] static constexpr auto calcPadding(usize v) -> usize {
+        [[nodiscard]] static constexpr usize calcPadding(usize v) {
             return v - util::pad<BlockSize>(v);
         }
     };

@@ -333,12 +333,12 @@ namespace stormphrax {
             Square kingside{Square::None};
             Square queenside{Square::None};
 
-            inline auto clear() {
+            inline void clear() {
                 kingside = Square::None;
                 queenside = Square::None;
             }
 
-            inline auto unset(Square square) {
+            inline void unset(Square square) {
                 assert(square != Square::None);
 
                 if (square == kingside) {
@@ -348,7 +348,7 @@ namespace stormphrax {
                 }
             }
 
-            [[nodiscard]] inline auto operator==(const RookPair&) const -> bool = default;
+            [[nodiscard]] inline bool operator==(const RookPair&) const = default;
         };
 
         std::array<RookPair, 2> rooks;

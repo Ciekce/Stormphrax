@@ -316,31 +316,31 @@ namespace stormphrax {
 
         ~PositionBoards() = default;
 
-        [[nodiscard]] inline auto bbs() const -> const auto& {
+        [[nodiscard]] inline const BitboardSet& bbs() const {
             return m_bbs;
         }
 
-        [[nodiscard]] inline auto bbs() -> auto& {
+        [[nodiscard]] inline BitboardSet& bbs() {
             return m_bbs;
         }
 
-        [[nodiscard]] inline auto pieceTypeAt(Square square) const {
+        [[nodiscard]] inline PieceType pieceTypeAt(Square square) const {
             assert(square != Square::None);
 
             const auto piece = m_mailbox[static_cast<i32>(square)];
             return piece == Piece::None ? PieceType::None : pieceType(piece);
         }
 
-        [[nodiscard]] inline auto pieceAt(Square square) const {
+        [[nodiscard]] inline Piece pieceAt(Square square) const {
             assert(square != Square::None);
             return m_mailbox[static_cast<i32>(square)];
         }
 
-        [[nodiscard]] inline auto pieceAt(u32 rank, u32 file) const {
+        [[nodiscard]] inline Piece pieceAt(u32 rank, u32 file) const {
             return pieceAt(toSquare(rank, file));
         }
 
-        inline auto setPiece(Square square, Piece piece) {
+        inline void setPiece(Square square, Piece piece) {
             assert(square != Square::None);
             assert(piece != Piece::None);
 
@@ -354,12 +354,14 @@ namespace stormphrax {
             m_bbs.forColor(pieceColor(piece)) ^= mask;
         }
 
-        inline auto movePiece(Square src, Square dst, Piece piece) {
+        inline void movePiece(Square src, Square dst, Piece piece) {
             assert(src != Square::None);
             assert(dst != Square::None);
 
-            if (slot(src) == piece) [[likely]]
-                slot(src) = Piece::None;
+            if (slot(src) == piece) {
+                [[likely]] slot(src) = Piece::None;
+            }
+
             slot(dst) = piece;
 
             const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
@@ -368,7 +370,7 @@ namespace stormphrax {
             m_bbs.forColor(pieceColor(piece)) ^= mask;
         }
 
-        inline auto moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo) {
+        inline void moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo) {
             assert(src != Square::None);
             assert(dst != Square::None);
             assert(src != dst);
@@ -389,7 +391,7 @@ namespace stormphrax {
             m_bbs.forColor(pieceColor(moving)) ^= mask;
         }
 
-        inline auto removePiece(Square square, Piece piece) {
+        inline void removePiece(Square square, Piece piece) {
             assert(square != Square::None);
             assert(piece != Piece::None);
 
@@ -401,7 +403,7 @@ namespace stormphrax {
             m_bbs.forColor(pieceColor(piece))[square] = false;
         }
 
-        inline auto regenFromBbs() {
+        inline void regenFromBbs() {
             m_mailbox.fill(Piece::None);
 
             for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
@@ -416,10 +418,10 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] inline auto operator==(const PositionBoards& other) const -> bool = default;
+        [[nodiscard]] inline bool operator==(const PositionBoards& other) const = default;
 
     private:
-        [[nodiscard]] inline auto slot(Square square) -> Piece& {
+        [[nodiscard]] inline Piece& slot(Square square) {
             return m_mailbox[static_cast<i32>(square)];
         }
 

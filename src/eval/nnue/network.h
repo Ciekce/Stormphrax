@@ -31,7 +31,7 @@ namespace stormphrax::eval::nnue {
     public:
         using FeatureTransformer = Ft;
 
-        [[nodiscard]] inline auto featureTransformer() const -> const auto& {
+        [[nodiscard]] inline const FeatureTransformer& featureTransformer() const {
             return m_featureTransformer;
         }
 

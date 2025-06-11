@@ -36,29 +36,36 @@
 namespace stormphrax::eval::nnue {
     template <typename Ft>
     class Accumulator {
+    private:
+        using Type = typename Ft::OutputType;
+
+        static constexpr auto InputCount = Ft::InputCount;
+        static constexpr auto WeightCount = Ft::WeightCount;
+        static constexpr auto OutputCount = Ft::OutputCount;
+
     public:
-        [[nodiscard]] inline const auto& black() const {
+        [[nodiscard]] inline std::span<const Type, OutputCount> black() const {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline const auto& white() const {
+        [[nodiscard]] inline std::span<const Type, OutputCount> white() const {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline const auto& forColor(Color c) const {
+        [[nodiscard]] inline std::span<const Type, OutputCount> forColor(Color c) const {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
 
-        [[nodiscard]] inline auto& black() {
+        [[nodiscard]] inline std::span<Type, OutputCount> black() {
             return m_outputs[0];
         }
 
-        [[nodiscard]] inline auto& white() {
+        [[nodiscard]] inline std::span<Type, OutputCount> white() {
             return m_outputs[1];
         }
 
-        [[nodiscard]] inline auto& forColor(Color c) {
+        [[nodiscard]] inline std::span<Type, OutputCount> forColor(Color c) {
             assert(c != Color::None);
             return m_outputs[static_cast<i32>(c)];
         }
@@ -182,12 +189,6 @@ namespace stormphrax::eval::nnue {
         }
 
     private:
-        using Type = typename Ft::OutputType;
-
-        static constexpr auto InputCount = Ft::InputCount;
-        static constexpr auto WeightCount = Ft::WeightCount;
-        static constexpr auto OutputCount = Ft::OutputCount;
-
         SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
 
         static inline void subAdd(
@@ -310,7 +311,7 @@ namespace stormphrax::eval::nnue {
         Acc accumulator{};
         std::array<BitboardSet, 2> bbs{};
 
-        [[nodiscard]] auto& colorBbs(Color c) {
+        [[nodiscard]] BitboardSet& colorBbs(Color c) {
             return bbs[static_cast<i32>(c)];
         }
     };

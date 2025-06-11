@@ -73,20 +73,26 @@ namespace stormphrax::tunable {
         std::function<void()> callback;
     };
 
-    auto addTunableParam(const std::string& name, i32 value, i32 min, i32 max, f64 step, std::function<void()> callback)
-        -> TunableParam&;
+    TunableParam& addTunableParam(
+        const std::string& name,
+        i32 value,
+        i32 min,
+        i32 max,
+        f64 step,
+        std::function<void()> callback
+    );
 
     #define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
         inline TunableParam& param_##Name = addTunableParam(#Name, Default, Min, Max, Step, nullptr); \
-        inline auto Name() { \
+        inline i32 Name() { \
             return param_##Name.value; \
         }
 
     #define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
         inline TunableParam& param_##Name = addTunableParam(#Name, Default, Min, Max, Step, Callback); \
-        inline auto Name() { \
+        inline i32 Name() { \
             return param_##Name.value; \
         }
 
@@ -95,7 +101,7 @@ namespace stormphrax::tunable {
         SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
         inline TunableParam& param_##Name = \
             addTunableParam(#Name, (Default) * (Q), (Min) * (Q), (Max) * (Q), (Step) * (Q), nullptr); \
-        inline auto Name() { \
+        inline f64 Name() { \
             return static_cast<f64>(param_##Name.value) / (Q); \
         }
 #else

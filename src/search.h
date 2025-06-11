@@ -155,7 +155,7 @@ namespace stormphrax::search {
 
         std::vector<u64> keyHistory{};
 
-        [[nodiscard]] inline auto isMainThread() const {
+        [[nodiscard]] inline bool isMainThread() const {
             return id == 0;
         }
 
@@ -247,14 +247,15 @@ namespace stormphrax::search {
             std::unique_ptr<limit::ISearchLimiter> limiter,
             bool infinite
         );
+
         void stop();
 
         // -> [move, unnormalised, normalised]
-        auto runDatagenSearch(ThreadData& thread) -> std::pair<Score, Score>;
+        std::pair<Score, Score> runDatagenSearch(ThreadData& thread);
 
         void runBench(BenchData& data, const Position& pos, i32 depth);
 
-        [[nodiscard]] inline auto searching() const {
+        [[nodiscard]] inline bool searching() const {
             const std::unique_lock lock{m_searchMutex};
             return m_searching.load(std::memory_order::relaxed);
         }
@@ -390,6 +391,7 @@ namespace stormphrax::search {
             Score alpha = -ScoreInf,
             Score beta = ScoreInf
         );
+
         void finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score);
     };
 } // namespace stormphrax::search

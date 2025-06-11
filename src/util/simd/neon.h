@@ -79,11 +79,11 @@ namespace stormphrax::util::simd {
 
         // ================================ i8 ================================
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto zeroI8() {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 zeroI8() {
             return vdupq_n_s8(0);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto set1I8(i8 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline void set1I8(i8 v) {
             return vdupq_n_s8(v);
         }
 

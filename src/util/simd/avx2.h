@@ -59,7 +59,7 @@ namespace stormphrax::util::simd {
             return _mm256_load_si256(static_cast<const VectorU8*>(ptr));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeU8(void* ptr, VectorU8 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline void storeU8(void* ptr, VectorU8 v) {
             assert(isAligned<Alignment>(ptr));
             _mm256_store_si256(static_cast<VectorU8*>(ptr), v);
         }
@@ -75,7 +75,7 @@ namespace stormphrax::util::simd {
             return _mm256_load_si256(static_cast<const VectorU16*>(ptr));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeU16(void* ptr, VectorU16 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline void storeU16(void* ptr, VectorU16 v) {
             assert(isAligned<Alignment>(ptr));
             _mm256_store_si256(static_cast<VectorU16*>(ptr), v);
         }
@@ -95,7 +95,7 @@ namespace stormphrax::util::simd {
             return _mm256_load_si256(static_cast<const VectorI8*>(ptr));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline auto storeI8(void* ptr, VectorI8 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline void storeI8(void* ptr, VectorI8 v) {
             assert(isAligned<Alignment>(ptr));
             _mm256_store_si256(static_cast<VectorI8*>(ptr), v);
         }
