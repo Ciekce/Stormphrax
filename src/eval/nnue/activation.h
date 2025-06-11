@@ -22,140 +22,145 @@
 
 #include <algorithm>
 #include <cmath>
-#include <type_traits>
 #include <concepts>
 #include <exception>
+#include <type_traits>
 
 #include "../../util/simd.h"
 
-namespace stormphrax::eval::nnue::activation
-{
-	struct [[maybe_unused]] Identity
-	{
-		static constexpr u8 Id = 3;
+namespace stormphrax::eval::nnue::activation {
+    struct [[maybe_unused]] Identity {
+        static constexpr u8 Id = 3;
 
-		template <typename T, T _unused>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <typename T, T _unused>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			return mulAddAdjAcc<T>(sum, inputs, weights);
-		}
+            return mulAddAdjAcc<T>(sum, inputs, weights);
+        }
 
-		template <typename T, T _unused>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs1,
-			util::simd::Vector<T> inputs2, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <typename T, T _unused>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs1,
+            util::simd::Vector<T> inputs2,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			const auto products = mulLo<T>(inputs1, weights);
-			return mulAddAdjAcc<T>(sum, products, inputs2);
-		}
+            const auto products = mulLo<T>(inputs1, weights);
+            return mulAddAdjAcc<T>(sum, products, inputs2);
+        }
 
-		template <typename OutputType>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto output(OutputType value)
-		{
-			return value;
-		}
-	};
+        template <typename OutputType>
+        SP_ALWAYS_INLINE_NDEBUG static inline OutputType output(OutputType value) {
+            return value;
+        }
+    };
 
-	struct [[maybe_unused]] ReLU
-	{
-		static constexpr u8 Id = 2;
+    struct [[maybe_unused]] ReLU {
+        static constexpr u8 Id = 2;
 
-		template <std::integral T, T _unused>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <std::integral T, T _unused>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			const auto activated = max<T>(inputs, zero<T>());
-			return mulAddAdjAcc<T>(sum, activated, weights);
-		}
+            const auto activated = max<T>(inputs, zero<T>());
+            return mulAddAdjAcc<T>(sum, activated, weights);
+        }
 
-		template <std::integral T, T _unused>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs1,
-			util::simd::Vector<T> inputs2, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <std::integral T, T _unused>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs1,
+            util::simd::Vector<T> inputs2,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			const auto activated1 = max<T>(inputs1, zero<T>());
-			const auto activated2 = max<T>(inputs2, zero<T>());
+            const auto activated1 = max<T>(inputs1, zero<T>());
+            const auto activated2 = max<T>(inputs2, zero<T>());
 
-			const auto products = mulLo<T>(activated1, weights);
-			return mulAddAdjAcc<T>(sum, products, activated2);
-		}
+            const auto products = mulLo<T>(activated1, weights);
+            return mulAddAdjAcc<T>(sum, products, activated2);
+        }
 
-		template <typename T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value)
-		{
-			return value;
-		}
-	};
+        template <typename T>
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
+            return value;
+        }
+    };
 
-	struct [[maybe_unused]] ClippedReLU
-	{
-		static constexpr u8 Id = 0;
+    struct [[maybe_unused]] ClippedReLU {
+        static constexpr u8 Id = 0;
 
-		template <std::integral T, T Max>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <std::integral T, T Max>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			static const auto max = set1(Max);
+            static const auto max = set1(Max);
 
-			const auto clipped = clamp<T>(inputs, zero<T>(), max);
-			return mulAddAdjAcc<T>(sum, clipped, weights);
-		}
+            const auto clipped = clamp<T>(inputs, zero<T>(), max);
+            return mulAddAdjAcc<T>(sum, clipped, weights);
+        }
 
-		template <std::integral T, T Max>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs1,
-			util::simd::Vector<T> inputs2, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <std::integral T, T Max>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs1,
+            util::simd::Vector<T> inputs2,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			static const auto max = set1(Max);
+            static const auto max = set1(Max);
 
-			const auto clipped1 = clamp<T>(inputs1, zero<T>(), max);
-			const auto clipped2 = clamp<T>(inputs2, zero<T>(), max);
+            const auto clipped1 = clamp<T>(inputs1, zero<T>(), max);
+            const auto clipped2 = clamp<T>(inputs2, zero<T>(), max);
 
-			const auto products = mulLo<T>(clipped1, weights);
-			return mulAddAdjAcc<T>(sum, clipped2, products);
-		}
+            const auto products = mulLo<T>(clipped1, weights);
+            return mulAddAdjAcc<T>(sum, clipped2, products);
+        }
 
-		template <typename T>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value)
-		{
-			return value;
-		}
-	};
+        template <typename T>
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
+            return value;
+        }
+    };
 
-	struct [[maybe_unused]] SquaredClippedReLU
-	{
-		static constexpr u8 Id = 1;
+    struct [[maybe_unused]] SquaredClippedReLU {
+        static constexpr u8 Id = 1;
 
-		template <std::integral T, T Max>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto activateDotAccumulate(
-			util::simd::PromotedVector<T> sum, util::simd::Vector<T> inputs, util::simd::Vector<T> weights)
-		{
-			using namespace util::simd;
+        template <std::integral T, T Max>
+        SP_ALWAYS_INLINE_NDEBUG static inline util::simd::PromotedVector<T> activateDotAccumulate(
+            util::simd::PromotedVector<T> sum,
+            util::simd::Vector<T> inputs,
+            util::simd::Vector<T> weights
+        ) {
+            using namespace util::simd;
 
-			static const auto max = set1(Max);
+            static const auto max = set1(Max);
 
-			const auto clipped = clamp<T>(inputs, zero<T>(), max);
-			const auto crelu = mulLo<T>(clipped, weights);
-			return mulAddAdjAcc<T>(sum, crelu, clipped);
-		}
+            const auto clipped = clamp<T>(inputs, zero<T>(), max);
+            const auto crelu = mulLo<T>(clipped, weights);
+            return mulAddAdjAcc<T>(sum, crelu, clipped);
+        }
 
-		template <typename T, T Max>
-		SP_ALWAYS_INLINE_NDEBUG static inline auto output(T value)
-		{
-			return value / Max;
-		}
-	};
-}
+        template <typename T, T Max>
+        SP_ALWAYS_INLINE_NDEBUG static inline T output(T value) {
+            return value / Max;
+        }
+    };
+} // namespace stormphrax::eval::nnue::activation

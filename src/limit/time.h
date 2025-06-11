@@ -24,59 +24,56 @@
 #include <atomic>
 #include <optional>
 
-#include "limit.h"
-#include "../util/timer.h"
-#include "../util/range.h"
 #include "../util/multi_array.h"
+#include "../util/range.h"
+#include "../util/timer.h"
+#include "limit.h"
 
-namespace stormphrax::limit
-{
-	constexpr i32 DefaultMoveOverhead = 10;
-	constexpr util::Range<i32> MoveOverheadRange{0, 50000};
+namespace stormphrax::limit {
+    constexpr i32 DefaultMoveOverhead = 10;
+    constexpr util::Range<i32> MoveOverheadRange{0, 50000};
 
-	class MoveTimeLimiter final : public ISearchLimiter
-	{
-	public:
-		explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
-		~MoveTimeLimiter() final = default;
+    class MoveTimeLimiter final : public ISearchLimiter {
+    public:
+        explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
+        ~MoveTimeLimiter() final = default;
 
-		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+        [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final;
 
-		[[nodiscard]] auto stopped() const -> bool final;
+        [[nodiscard]] bool stopped() const final;
 
-	private:
-		util::Instant m_endTime;
-		std::atomic_bool m_stopped{false};
-	};
+    private:
+        util::Instant m_endTime;
+        std::atomic_bool m_stopped{false};
+    };
 
-	class TimeManager final : public ISearchLimiter
-	{
-	public:
-		TimeManager(util::Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
-		~TimeManager() final = default;
+    class TimeManager final : public ISearchLimiter {
+    public:
+        TimeManager(util::Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
+        ~TimeManager() final = default;
 
-		auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void final;
-		auto updateMoveNodes(Move move, usize nodes) -> void final;
+        void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) final;
+        void updateMoveNodes(Move move, usize nodes) final;
 
-		[[nodiscard]] auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final;
+        [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final;
 
-		[[nodiscard]] auto stopped() const -> bool final;
+        [[nodiscard]] bool stopped() const final;
 
-	private:
-		util::Instant m_startTime;
+    private:
+        util::Instant m_startTime;
 
-		f64 m_softTime{};
-		f64 m_maxTime{};
+        f64 m_softTime{};
+        f64 m_maxTime{};
 
-		f64 m_scale{1.0};
+        f64 m_scale{1.0};
 
-		util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
+        util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
-		Move m_prevBestMove{};
-		u32 m_stability{};
+        Move m_prevBestMove{};
+        u32 m_stability{};
 
-		std::optional<Score> m_avgScore{};
+        std::optional<Score> m_avgScore{};
 
-		std::atomic_bool m_stopped{false};
-	};
-}
+        std::atomic_bool m_stopped{false};
+    };
+} // namespace stormphrax::limit

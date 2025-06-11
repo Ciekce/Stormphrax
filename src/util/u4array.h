@@ -20,63 +20,59 @@
 
 #include "../types.h"
 
-#include <cassert>
 #include <array>
+#include <cassert>
 
-namespace stormphrax::util
-{
-	class IndexedU4
-	{
-	public:
-		constexpr inline operator u8() const // NOLINT
-		{
-			return m_high ? (m_value >> 4) : (m_value & 0xF);
-		}
+namespace stormphrax::util {
+    class IndexedU4 {
+    public:
+        constexpr inline operator u8() const // NOLINT
+        {
+            return m_high ? (m_value >> 4) : (m_value & 0xF);
+        }
 
-		constexpr inline auto operator=(u8 v) -> IndexedU4 &
-		{
-			assert(v <= 0xF);
+        constexpr inline IndexedU4& operator=(u8 v) {
+            assert(v <= 0xF);
 
-			if (m_high)
-				m_value = (m_value & 0x0F) | (v << 4);
-			else m_value = (m_value & 0xF0) | (v & 0x0F);
+            if (m_high) {
+                m_value = (m_value & 0x0F) | (v << 4);
+            } else {
+                m_value = (m_value & 0xF0) | (v & 0x0F);
+            }
 
-			return *this;
-		}
+            return *this;
+        }
 
-	private:
-		constexpr IndexedU4(u8 &value, bool high)
-			: m_value{value}, m_high{high} {}
+    private:
+        constexpr IndexedU4(u8& value, bool high) :
+                m_value{value}, m_high{high} {}
 
-		u8 &m_value;
-		bool m_high;
+        u8& m_value;
+        bool m_high;
 
-		template <usize Size>
-		friend class U4Array;
-	};
+        template <usize Size>
+        friend class U4Array;
+    };
 
-	template <usize Size>
-	class U4Array
-	{
-		static_assert(Size % 2 == 0);
+    template <usize Size>
+    class U4Array {
+        static_assert(Size % 2 == 0);
 
-	public:
-		U4Array() = default;
-		~U4Array() = default;
+    public:
+        U4Array() = default;
+        ~U4Array() = default;
 
-		constexpr auto operator[](usize i) const
-		{
-			assert(i < Size);
-			return m_data[i / 2] >> ((i % 2) * 4);
-		}
+        constexpr u8 operator[](usize i) const {
+            assert(i < Size);
+            return m_data[i / 2] >> ((i % 2) * 4);
+        }
 
-		constexpr auto operator[](usize i)
-		{
-			assert(i < Size);
-			return IndexedU4{m_data[i / 2], (i % 2) == 1};
-		}
+        constexpr IndexedU4 operator[](usize i) {
+            assert(i < Size);
+            return IndexedU4{m_data[i / 2], (i % 2) == 1};
+        }
 
-	private:
-		std::array<u8, Size / 2> m_data{};
-	};
-}
+    private:
+        std::array<u8, Size / 2> m_data{};
+    };
+} // namespace stormphrax::util

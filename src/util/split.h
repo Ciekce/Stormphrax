@@ -20,10 +20,9 @@
 
 #include "../types.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
-namespace stormphrax::split
-{
-	auto split(const std::string &str, char delim) -> std::vector<std::string>;
+namespace stormphrax::split {
+    std::vector<std::string> split(const std::string& str, char delim);
 }

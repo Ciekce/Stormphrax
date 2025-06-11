@@ -21,60 +21,51 @@
 #include "../types.h"
 
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
 #include <cassert>
+#include <condition_variable>
+#include <mutex>
 
-namespace stormphrax::util
-{
-	class Barrier
-	{
-	public:
-		explicit Barrier(i64 expected)
-		{
-			reset(expected);
-		}
+namespace stormphrax::util {
+    class Barrier {
+    public:
+        explicit Barrier(i64 expected) {
+            reset(expected);
+        }
 
-		auto reset(i64 expected) -> void
-		{
-			assert(expected > 0);
-			assert(m_current.load() == m_total.load());
+        void reset(i64 expected) {
+            assert(expected > 0);
+            assert(m_current.load() == m_total.load());
 
-			m_total.store(expected, std::memory_order::seq_cst);
-			m_current.store(expected, std::memory_order::seq_cst);
-		}
+            m_total.store(expected, std::memory_order::seq_cst);
+            m_current.store(expected, std::memory_order::seq_cst);
+        }
 
-		auto arriveAndWait()
-		{
-			std::unique_lock lock{m_waitMutex};
+        void arriveAndWait() {
+            std::unique_lock lock{m_waitMutex};
 
-			const auto current = --m_current;
+            const auto current = --m_current;
 
-			if (current > 0)
-			{
-				const auto phase = m_phase.load(std::memory_order::relaxed);
-				m_waitSignal.wait(lock, [this, phase]
-				{
-					return (phase - m_phase.load(std::memory_order::acquire)) < 0;
-				});
-			}
-			else
-			{
-				const auto total = m_total.load(std::memory_order::acquire);
-				m_current.store(total, std::memory_order::release);
+            if (current > 0) {
+                const auto phase = m_phase.load(std::memory_order::relaxed);
+                m_waitSignal.wait(lock, [this, phase] {
+                    return (phase - m_phase.load(std::memory_order::acquire)) < 0;
+                });
+            } else {
+                const auto total = m_total.load(std::memory_order::acquire);
+                m_current.store(total, std::memory_order::release);
 
-				++m_phase;
+                ++m_phase;
 
-				m_waitSignal.notify_all();
-			}
-		}
+                m_waitSignal.notify_all();
+            }
+        }
 
-	private:
-		std::atomic<i64> m_total{};
-		std::atomic<i64> m_current{};
-		std::atomic<i64> m_phase{};
+    private:
+        std::atomic<i64> m_total{};
+        std::atomic<i64> m_current{};
+        std::atomic<i64> m_phase{};
 
-		std::mutex m_waitMutex{};
-		std::condition_variable m_waitSignal{};
-	};
-}
+        std::mutex m_waitMutex{};
+        std::condition_variable m_waitSignal{};
+    };
+} // namespace stormphrax::util

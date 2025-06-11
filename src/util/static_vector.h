@@ -20,83 +20,91 @@
 
 #include "../types.h"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <cassert>
 
-namespace stormphrax
-{
-	template <typename T, usize Capacity>
-	class StaticVector
-	{
-	public:
-		StaticVector() = default;
-		~StaticVector() = default;
+namespace stormphrax {
+    template <typename T, usize Capacity>
+    class StaticVector {
+    public:
+        StaticVector() = default;
+        ~StaticVector() = default;
 
-		StaticVector(const StaticVector<T, Capacity> &other)
-		{
-			*this = other;
-		}
+        StaticVector(const StaticVector<T, Capacity>& other) {
+            *this = other;
+        }
 
-		inline auto push(const T &elem)
-		{
-			assert(m_size < Capacity);
-			m_data[m_size++] = elem;
-		}
+        inline void push(const T& elem) {
+            assert(m_size < Capacity);
+            m_data[m_size++] = elem;
+        }
 
-		inline auto push(T &&elem)
-		{
-			assert(m_size < Capacity);
-			m_data[m_size++] = std::move(elem);
-		}
+        inline void push(T&& elem) {
+            assert(m_size < Capacity);
+            m_data[m_size++] = std::move(elem);
+        }
 
-		inline T pop()
-		{
-			assert(m_size > 0);
-			return std::move(m_data[--m_size]);
-		}
+        inline T pop() {
+            assert(m_size > 0);
+            return std::move(m_data[--m_size]);
+        }
 
-		inline auto clear() { m_size = 0; }
+        inline void clear() {
+            m_size = 0;
+        }
 
-		inline auto fill(const T &v) { m_data.fill(v); }
+        inline void fill(const T& v) {
+            m_data.fill(v);
+        }
 
-		[[nodiscard]] inline auto size() const { return m_size; }
+        [[nodiscard]] inline usize size() const {
+            return m_size;
+        }
 
-		[[nodiscard]] inline auto empty() const { return m_size == 0; }
+        [[nodiscard]] inline bool empty() const {
+            return m_size == 0;
+        }
 
-		[[nodiscard]] inline auto operator[](usize i) const -> const auto &
-		{
-			assert(i < m_size);
-			return m_data[i];
-		}
+        [[nodiscard]] inline const T& operator[](usize i) const {
+            assert(i < m_size);
+            return m_data[i];
+        }
 
-		[[nodiscard]] inline auto begin() { return m_data.begin(); }
-		[[nodiscard]] inline auto end() { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
+        [[nodiscard]] inline auto begin() {
+            return m_data.begin();
+        }
 
-		[[nodiscard]] inline auto operator[](usize i) -> auto &
-		{
-			assert(i < m_size);
-			return m_data[i];
-		}
+        [[nodiscard]] inline auto end() {
+            return m_data.begin() + static_cast<std::ptrdiff_t>(m_size);
+        }
 
-		[[nodiscard]] inline auto begin() const { return m_data.begin(); }
-		[[nodiscard]] inline auto end() const { return m_data.begin() + static_cast<std::ptrdiff_t>(m_size); }
+        [[nodiscard]] inline T& operator[](usize i) {
+            assert(i < m_size);
+            return m_data[i];
+        }
 
-		inline auto resize(usize size)
-		{
-			assert(size <= Capacity);
-			m_size = size;
-		}
+        [[nodiscard]] inline auto begin() const {
+            return m_data.begin();
+        }
 
-		inline auto operator=(const StaticVector<T, Capacity> &other) -> auto &
-		{
-			std::copy(other.begin(), other.end(), begin());
-			m_size = other.m_size;
-			return *this;
-		}
+        [[nodiscard]] inline auto end() const {
+            return m_data.begin() + static_cast<std::ptrdiff_t>(m_size);
+        }
 
-	private:
-		std::array<T, Capacity> m_data{};
-		usize m_size{0};
-	};
-}
+        inline void resize(usize size) {
+            assert(size <= Capacity);
+            m_size = size;
+        }
+
+        inline StaticVector<T, Capacity>& operator=(const StaticVector<T, Capacity>& other) {
+            std::copy(other.begin(), other.end(), begin());
+            m_size = other.m_size;
+            return *this;
+        }
+
+    private:
+        std::array<T, Capacity> m_data{};
+        usize m_size{0};
+    };
+} // namespace stormphrax

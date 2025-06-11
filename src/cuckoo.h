@@ -24,20 +24,17 @@
 
 #include "move.h"
 
-namespace stormphrax::cuckoo
-{
-	constexpr auto h1(u64 key)
-	{
-		return static_cast<usize>(key & 0x1FFF);
-	}
+namespace stormphrax::cuckoo {
+    constexpr usize h1(u64 key) {
+        return static_cast<usize>(key & 0x1FFF);
+    }
 
-	constexpr auto h2(u64 key)
-	{
-		return static_cast<usize>((key >> 16) & 0x1FFF);
-	}
+    constexpr usize h2(u64 key) {
+        return static_cast<usize>((key >> 16) & 0x1FFF);
+    }
 
-	extern std::array<u64, 8192> keys;
-	extern std::array<Move, 8192> moves;
+    extern std::array<u64, 8192> keys;
+    extern std::array<Move, 8192> moves;
 
-	void init();
-}
+    void init();
+} // namespace stormphrax::cuckoo

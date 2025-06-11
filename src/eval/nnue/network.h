@@ -25,51 +25,50 @@
 #include "../../position/boards.h"
 #include "../../util/aligned_array.h"
 
-namespace stormphrax::eval::nnue
-{
-	template <typename Ft, typename OutputBucketing, typename Arch>
-	class PerspectiveNetwork
-	{
-	public:
-		using FeatureTransformer = Ft;
+namespace stormphrax::eval::nnue {
+    template <typename Ft, typename OutputBucketing, typename Arch>
+    class PerspectiveNetwork {
+    public:
+        using FeatureTransformer = Ft;
 
-		[[nodiscard]] inline auto featureTransformer() const -> const auto &
-		{
-			return m_featureTransformer;
-		}
+        [[nodiscard]] inline const FeatureTransformer& featureTransformer() const {
+            return m_featureTransformer;
+        }
 
-		inline auto propagate(const BitboardSet &bbs,
-			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount>  stmInputs,
-			std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs) const
-		{
-			util::simd::Array<typename Arch::OutputType, Arch::OutputCount> outputs;
+        inline util::simd::Array<typename Arch::OutputType, Arch::OutputCount> propagate(
+            const BitboardSet& bbs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> stmInputs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::OutputCount> nstmInputs
+        ) const {
+            util::simd::Array<typename Arch::OutputType, Arch::OutputCount> outputs;
 
-			const auto bucket = OutputBucketing::getBucket(bbs);
-			m_arch.propagate(bucket, stmInputs, nstmInputs, outputs);
+            const auto bucket = OutputBucketing::getBucket(bbs);
+            m_arch.propagate(bucket, stmInputs, nstmInputs, outputs);
 
-			return outputs;
-		}
+            return outputs;
+        }
 
-		inline auto readFrom(IParamStream &stream) -> bool
-		{
-			if (!m_featureTransformer.readFrom(stream) || !m_arch.readFrom(stream))
-				return false;
+        inline bool readFrom(IParamStream& stream) {
+            if (!m_featureTransformer.readFrom(stream) || !m_arch.readFrom(stream)) {
+                return false;
+            }
 
-			if constexpr (Arch::RequiresFtPermute)
-				Arch::template permuteFt<typename Ft::WeightType, typename Ft::OutputType>(
-					m_featureTransformer.weights, m_featureTransformer.biases);
+            if constexpr (Arch::RequiresFtPermute) {
+                Arch::template permuteFt<typename Ft::WeightType, typename Ft::OutputType>(
+                    m_featureTransformer.weights,
+                    m_featureTransformer.biases
+                );
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		inline auto writeTo(IParamStream &stream) const -> bool
-		{
-			return m_featureTransformer.writeTo(stream)
-				&& m_arch.writeTo(stream);
-		}
+        inline bool writeTo(IParamStream& stream) const {
+            return m_featureTransformer.writeTo(stream) && m_arch.writeTo(stream);
+        }
 
-	private:
-		FeatureTransformer m_featureTransformer{};
-		Arch m_arch{};
-	};
-}
+    private:
+        FeatureTransformer m_featureTransformer{};
+        Arch m_arch{};
+    };
+} // namespace stormphrax::eval::nnue

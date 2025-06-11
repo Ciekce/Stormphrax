@@ -22,89 +22,85 @@
 
 #include <vector>
 
-#include "format.h"
 #include "../position/position.h"
 #include "../util/u4array.h"
+#include "format.h"
 
-namespace stormphrax::datagen
-{
-	namespace marlinformat
-	{
-		// https://github.com/jnlt3/marlinflow/blob/main/marlinformat/src/lib.rs
-		struct __attribute__((packed)) PackedBoard
-		{
-			u64 occupancy;
-			util::U4Array<32> pieces;
-			u8 stmEpSquare;
-			u8 halfmoveClock;
-			u16 fullmoveNumber;
-			i16 eval;
-			Outcome wdl;
-			[[maybe_unused]] u8 extra;
+namespace stormphrax::datagen {
+    namespace marlinformat {
+        // https://github.com/jnlt3/marlinflow/blob/main/marlinformat/src/lib.rs
+        struct __attribute__((packed)) PackedBoard {
+            u64 occupancy;
+            util::U4Array<32> pieces;
+            u8 stmEpSquare;
+            u8 halfmoveClock;
+            u16 fullmoveNumber;
+            i16 eval;
+            Outcome wdl;
+            [[maybe_unused]] u8 extra;
 
-			[[nodiscard]] static auto pack(const Position &pos, i16 score)
-			{
-				static constexpr u8 UnmovedRook = 6;
+            [[nodiscard]] static PackedBoard pack(const Position& pos, i16 score) {
+                static constexpr u8 UnmovedRook = 6;
 
-				PackedBoard board{};
+                PackedBoard board{};
 
-				const auto castlingRooks = pos.castlingRooks();
-				const auto &boards = pos.boards();
+                const auto castlingRooks = pos.castlingRooks();
+                const auto& boards = pos.boards();
 
-				auto occupancy = boards.bbs().occupancy();
-				board.occupancy = occupancy;
+                auto occupancy = boards.bbs().occupancy();
+                board.occupancy = occupancy;
 
-				usize i = 0;
-				while (occupancy)
-				{
-					const auto square = occupancy.popLowestSquare();
-					const auto piece = boards.pieceAt(square);
+                usize i = 0;
+                while (occupancy) {
+                    const auto square = occupancy.popLowestSquare();
+                    const auto piece = boards.pieceAt(square);
 
-					auto pieceId = static_cast<u8>(pieceType(piece));
+                    auto pieceId = static_cast<u8>(pieceType(piece));
 
-					if (pieceType(piece) == PieceType::Rook
-						&& (square == castlingRooks.black().kingside
-							|| square == castlingRooks.black().queenside
-							|| square == castlingRooks.white().kingside
-							|| square == castlingRooks.white().queenside))
-						pieceId = UnmovedRook;
+                    if (pieceType(piece) == PieceType::Rook
+                        && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
+                            || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
+                    {
+                        pieceId = UnmovedRook;
+                    }
 
-					const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
+                    const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
 
-					board.pieces[i++] = pieceId | colorId;
-				}
+                    board.pieces[i++] = pieceId | colorId;
+                }
 
-				const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
+                const u8 stm = pos.toMove() == Color::Black ? (1 << 7) : 0;
 
-				const Square relativeEpSquare = pos.enPassant() == Square::None ? Square::None
-					: toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
+                const Square relativeEpSquare =
+                    pos.enPassant() == Square::None
+                        ? Square::None
+                        : toSquare(pos.toMove() == Color::Black ? 2 : 5, squareFile(pos.enPassant()));
 
-				board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
-				board.halfmoveClock = pos.halfmove();
-				board.fullmoveNumber = pos.fullmove();
-				board.eval = score;
+                board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
+                board.halfmoveClock = pos.halfmove();
+                board.fullmoveNumber = pos.fullmove();
+                board.eval = score;
 
-				return board;
-			}
-		};
-	}
+                return board;
+            }
+        };
+    } // namespace marlinformat
 
-	class Marlinformat
-	{
-	public:
-		Marlinformat();
-		~Marlinformat() = default;
+    class Marlinformat {
+    public:
+        Marlinformat();
+        ~Marlinformat() = default;
 
-		static constexpr auto Extension = "bin";
+        static constexpr auto Extension = "bin";
 
-		auto start(const Position &initialPosition) -> void;
-		auto push(bool filtered, Move move, Score score) -> void;
-		auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+        void start(const Position& initialPosition);
+        void push(bool filtered, Move move, Score score);
+        usize writeAllWithOutcome(std::ostream& stream, Outcome outcome);
 
-	private:
-		std::vector<marlinformat::PackedBoard> m_positions{};
-		Position m_curr;
-	};
+    private:
+        std::vector<marlinformat::PackedBoard> m_positions{};
+        Position m_curr;
+    };
 
-	static_assert(OutputFormat<Marlinformat>);
-}
+    static_assert(OutputFormat<Marlinformat>);
+} // namespace stormphrax::datagen

@@ -23,119 +23,111 @@
 #include <array>
 #include <cassert>
 
-#include "../core.h"
 #include "../bitboard.h"
-#include "util.h"
+#include "../core.h"
 #include "../util/bits.h"
+#include "util.h"
 
 #if SP_HAS_BMI2
-#include "bmi2/attacks.h"
+    #include "bmi2/attacks.h"
 #else
-#include "black_magic/attacks.h"
+    #include "black_magic/attacks.h"
 #endif
 
-namespace stormphrax::attacks
-{
-	constexpr auto KnightAttacks = []
-	{
-		std::array<Bitboard, 64> dst{};
+namespace stormphrax::attacks {
+    constexpr auto KnightAttacks = [] {
+        std::array<Bitboard, 64> dst{};
 
-		for (usize i = 0; i < dst.size(); ++i)
-		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+        for (usize i = 0; i < dst.size(); ++i) {
+            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
-			auto &attacks = dst[i];
+            auto& attacks = dst[i];
 
-			attacks |= bit.shiftUpUpLeft();
-			attacks |= bit.shiftUpUpRight();
-			attacks |= bit.shiftUpLeftLeft();
-			attacks |= bit.shiftUpRightRight();
-			attacks |= bit.shiftDownLeftLeft();
-			attacks |= bit.shiftDownRightRight();
-			attacks |= bit.shiftDownDownLeft();
-			attacks |= bit.shiftDownDownRight();
-		}
+            attacks |= bit.shiftUpUpLeft();
+            attacks |= bit.shiftUpUpRight();
+            attacks |= bit.shiftUpLeftLeft();
+            attacks |= bit.shiftUpRightRight();
+            attacks |= bit.shiftDownLeftLeft();
+            attacks |= bit.shiftDownRightRight();
+            attacks |= bit.shiftDownDownLeft();
+            attacks |= bit.shiftDownDownRight();
+        }
 
-		return dst;
-	}();
+        return dst;
+    }();
 
-	constexpr auto KingAttacks = []
-	{
-		std::array<Bitboard, 64> dst{};
+    constexpr auto KingAttacks = [] {
+        std::array<Bitboard, 64> dst{};
 
-		for (usize i = 0; i < dst.size(); ++i)
-		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+        for (usize i = 0; i < dst.size(); ++i) {
+            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
-			auto &attacks = dst[i];
+            auto& attacks = dst[i];
 
-			attacks |= bit.shiftUp();
-			attacks |= bit.shiftDown();
-			attacks |= bit.shiftLeft();
-			attacks |= bit.shiftRight();
-			attacks |= bit.shiftUpLeft();
-			attacks |= bit.shiftUpRight();
-			attacks |= bit.shiftDownLeft();
-			attacks |= bit.shiftDownRight();
-		}
+            attacks |= bit.shiftUp();
+            attacks |= bit.shiftDown();
+            attacks |= bit.shiftLeft();
+            attacks |= bit.shiftRight();
+            attacks |= bit.shiftUpLeft();
+            attacks |= bit.shiftUpRight();
+            attacks |= bit.shiftDownLeft();
+            attacks |= bit.shiftDownRight();
+        }
 
-		return dst;
-	}();
+        return dst;
+    }();
 
-	template <Color Us>
-	consteval auto generatePawnAttacks()
-	{
-		std::array<Bitboard, 64> dst{};
+    template <Color Us>
+    consteval std::array<Bitboard, 64> generatePawnAttacks() {
+        std::array<Bitboard, 64> dst{};
 
-		for (usize i = 0; i < dst.size(); ++i)
-		{
-			const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+        for (usize i = 0; i < dst.size(); ++i) {
+            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
 
-			dst[i] |= bit.shiftUpLeftRelative<Us>();
-			dst[i] |= bit.shiftUpRightRelative<Us>();
-		}
+            dst[i] |= bit.shiftUpLeftRelative<Us>();
+            dst[i] |= bit.shiftUpRightRelative<Us>();
+        }
 
-		return dst;
-	}
+        return dst;
+    }
 
-	constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
-	constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
+    constexpr auto BlackPawnAttacks = generatePawnAttacks<Color::Black>();
+    constexpr auto WhitePawnAttacks = generatePawnAttacks<Color::White>();
 
-	constexpr auto getKnightAttacks(Square src)
-	{
-		return KnightAttacks[static_cast<usize>(src)];
-	}
+    constexpr Bitboard getKnightAttacks(Square src) {
+        return KnightAttacks[static_cast<usize>(src)];
+    }
 
-	constexpr auto getKingAttacks(Square src)
-	{
-		return KingAttacks[static_cast<usize>(src)];
-	}
+    constexpr Bitboard getKingAttacks(Square src) {
+        return KingAttacks[static_cast<usize>(src)];
+    }
 
-	constexpr auto getPawnAttacks(Square src, Color color)
-	{
-		const auto &attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
-		return attacks[static_cast<usize>(src)];
-	}
+    constexpr Bitboard getPawnAttacks(Square src, Color color) {
+        const auto& attacks = color == Color::White ? WhitePawnAttacks : BlackPawnAttacks;
+        return attacks[static_cast<usize>(src)];
+    }
 
-	inline auto getQueenAttacks(Square src, Bitboard occupancy)
-	{
-		return getRookAttacks(src, occupancy)
-			| getBishopAttacks(src, occupancy);
-	}
+    inline Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
+        return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
+    }
 
-	inline auto getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{})
-	{
-		assert(piece != PieceType::None);
-		assert(piece != PieceType::Pawn);
+    inline Bitboard getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
+        assert(piece != PieceType::None);
+        assert(piece != PieceType::Pawn);
 
-		switch (piece)
-		{
-		case PieceType::Knight: return getKnightAttacks(src);
-		case PieceType::Bishop: return getBishopAttacks(src, occupancy);
-		case PieceType::Rook: return getRookAttacks(src, occupancy);
-		case PieceType::Queen: return getQueenAttacks(src, occupancy);
-		case PieceType::King: return getKingAttacks(src);
-		default: __builtin_unreachable();
-		}
-	}
-}
+        switch (piece) {
+            case PieceType::Knight:
+                return getKnightAttacks(src);
+            case PieceType::Bishop:
+                return getBishopAttacks(src, occupancy);
+            case PieceType::Rook:
+                return getRookAttacks(src, occupancy);
+            case PieceType::Queen:
+                return getQueenAttacks(src, occupancy);
+            case PieceType::King:
+                return getKingAttacks(src);
+            default:
+                __builtin_unreachable();
+        }
+    }
+} // namespace stormphrax::attacks

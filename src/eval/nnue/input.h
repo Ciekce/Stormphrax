@@ -20,316 +20,342 @@
 
 #include "../../types.h"
 
+#include <algorithm>
 #include <array>
 #include <istream>
 #include <ostream>
 #include <span>
-#include <algorithm>
 
 #include "../../core.h"
-#include "../../util/simd.h"
-#include "../../util/multi_array.h"
 #include "../../position/boards.h"
-#include "io.h"
+#include "../../util/multi_array.h"
+#include "../../util/simd.h"
 #include "features.h"
+#include "io.h"
 
-namespace stormphrax::eval::nnue
-{
-	template <typename Ft>
-	class Accumulator
-	{
-	public:
-		[[nodiscard]] inline auto black() const -> const auto &
-		{
-			return m_outputs[0];
-		}
+namespace stormphrax::eval::nnue {
+    template <typename Ft>
+    class Accumulator {
+    private:
+        using Type = typename Ft::OutputType;
 
-		[[nodiscard]] inline auto white() const -> const auto &
-		{
-			return m_outputs[1];
-		}
+        static constexpr auto InputCount = Ft::InputCount;
+        static constexpr auto WeightCount = Ft::WeightCount;
+        static constexpr auto OutputCount = Ft::OutputCount;
 
-		[[nodiscard]] inline auto forColor(Color c) const -> const auto &
-		{
-			assert(c != Color::None);
-			return m_outputs[static_cast<i32>(c)];
-		}
+    public:
+        [[nodiscard]] inline std::span<const Type, OutputCount> black() const {
+            return m_outputs[0];
+        }
 
-		[[nodiscard]] inline auto black() -> auto &
-		{
-			return m_outputs[0];
-		}
+        [[nodiscard]] inline std::span<const Type, OutputCount> white() const {
+            return m_outputs[1];
+        }
 
-		[[nodiscard]] inline auto white() -> auto &
-		{
-			return m_outputs[1];
-		}
+        [[nodiscard]] inline std::span<const Type, OutputCount> forColor(Color c) const {
+            assert(c != Color::None);
+            return m_outputs[static_cast<i32>(c)];
+        }
 
-		[[nodiscard]] inline auto forColor(Color c) -> auto &
-		{
-			assert(c != Color::None);
-			return m_outputs[static_cast<i32>(c)];
-		}
+        [[nodiscard]] inline std::span<Type, OutputCount> black() {
+            return m_outputs[0];
+        }
 
-		inline void initBoth(const Ft &featureTransformer)
-		{
-			std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
-			std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
-		}
+        [[nodiscard]] inline std::span<Type, OutputCount> white() {
+            return m_outputs[1];
+        }
 
-		inline auto subAddFrom(const Accumulator<Ft> &src,
-			const Ft &featureTransformer, Color c, u32 sub, u32 add)
-		{
-			assert(sub < InputCount);
-			assert(add < InputCount);
+        [[nodiscard]] inline std::span<Type, OutputCount> forColor(Color c) {
+            assert(c != Color::None);
+            return m_outputs[static_cast<i32>(c)];
+        }
 
-			subAdd(src.forColor(c), forColor(c), featureTransformer.weights,
-				sub * OutputCount, add * OutputCount);
-		}
+        inline void initBoth(const Ft& featureTransformer) {
+            std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
+            std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
+        }
 
-		inline auto subSubAddFrom(const Accumulator<Ft> &src,
-			const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add)
-		{
-			assert(sub0 < InputCount);
-			assert(sub1 < InputCount);
-			assert(add  < InputCount);
+        inline void subAddFrom(const Accumulator<Ft>& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
+            assert(sub < InputCount);
+            assert(add < InputCount);
 
-			subSubAdd(src.forColor(c), forColor(c), featureTransformer.weights,
-				sub0 * OutputCount, sub1 * OutputCount, add * OutputCount);
-		}
+            subAdd(src.forColor(c), forColor(c), featureTransformer.weights, sub * OutputCount, add * OutputCount);
+        }
 
-		inline auto subSubAddAddFrom(const Accumulator<Ft> &src,
-			const Ft &featureTransformer, Color c, u32 sub0, u32 sub1, u32 add0, u32 add1)
-		{
-			assert(sub0 < InputCount);
-			assert(sub1 < InputCount);
-			assert(add0 < InputCount);
-			assert(add1 < InputCount);
+        inline void subSubAddFrom(
+            const Accumulator<Ft>& src,
+            const Ft& featureTransformer,
+            Color c,
+            u32 sub0,
+            u32 sub1,
+            u32 add
+        ) {
+            assert(sub0 < InputCount);
+            assert(sub1 < InputCount);
+            assert(add < InputCount);
 
-			subSubAddAdd(src.forColor(c), forColor(c), featureTransformer.weights,
-				sub0 * OutputCount, sub1 * OutputCount, add0 * OutputCount, add1 * OutputCount);
-		}
+            subSubAdd(
+                src.forColor(c),
+                forColor(c),
+                featureTransformer.weights,
+                sub0 * OutputCount,
+                sub1 * OutputCount,
+                add * OutputCount
+            );
+        }
 
-		inline auto activateFeature(const Ft &featureTransformer, Color c, u32 feature)
-		{
-			assert(feature < InputCount);
-			add(forColor(c), featureTransformer.weights, feature * OutputCount);
-		}
+        inline void subSubAddAddFrom(
+            const Accumulator<Ft>& src,
+            const Ft& featureTransformer,
+            Color c,
+            u32 sub0,
+            u32 sub1,
+            u32 add0,
+            u32 add1
+        ) {
+            assert(sub0 < InputCount);
+            assert(sub1 < InputCount);
+            assert(add0 < InputCount);
+            assert(add1 < InputCount);
 
-		inline auto deactivateFeature(const Ft &featureTransformer, Color c, u32 feature)
-		{
-			assert(feature < InputCount);
-			sub(forColor(c), featureTransformer.weights, feature * OutputCount);
-		}
+            subSubAddAdd(
+                src.forColor(c),
+                forColor(c),
+                featureTransformer.weights,
+                sub0 * OutputCount,
+                sub1 * OutputCount,
+                add0 * OutputCount,
+                add1 * OutputCount
+            );
+        }
 
-		inline auto activateFourFeatures(const Ft &featureTransformer,
-			Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
-		{
-			assert(feature0 < InputCount);
-			assert(feature1 < InputCount);
-			assert(feature2 < InputCount);
-			assert(feature3 < InputCount);
-			addAddAddAdd(forColor(c), featureTransformer.weights, feature0 * OutputCount,
-				feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
-		}
+        inline void activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
+            assert(feature < InputCount);
+            add(forColor(c), featureTransformer.weights, feature * OutputCount);
+        }
 
-		inline auto deactivateFourFeatures(const Ft &featureTransformer,
-			Color c, u32 feature0, u32 feature1, u32 feature2, u32 feature3)
-		{
-			assert(feature0 < InputCount);
-			assert(feature1 < InputCount);
-			assert(feature2 < InputCount);
-			assert(feature3 < InputCount);
-			subSubSubSub(forColor(c), featureTransformer.weights, feature0 * OutputCount,
-				feature1 * OutputCount, feature2 * OutputCount, feature3 * OutputCount);
-		}
+        inline void deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
+            assert(feature < InputCount);
+            sub(forColor(c), featureTransformer.weights, feature * OutputCount);
+        }
 
-		inline auto copyFrom(Color c, const Accumulator<Ft> &other)
-		{
-			const auto idx = static_cast<i32>(c);
-			std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
-		}
+        inline void activateFourFeatures(
+            const Ft& featureTransformer,
+            Color c,
+            u32 feature0,
+            u32 feature1,
+            u32 feature2,
+            u32 feature3
+        ) {
+            assert(feature0 < InputCount);
+            assert(feature1 < InputCount);
+            assert(feature2 < InputCount);
+            assert(feature3 < InputCount);
+            addAddAddAdd(
+                forColor(c),
+                featureTransformer.weights,
+                feature0 * OutputCount,
+                feature1 * OutputCount,
+                feature2 * OutputCount,
+                feature3 * OutputCount
+            );
+        }
 
-	private:
-		using Type = typename Ft::OutputType;
+        inline void deactivateFourFeatures(
+            const Ft& featureTransformer,
+            Color c,
+            u32 feature0,
+            u32 feature1,
+            u32 feature2,
+            u32 feature3
+        ) {
+            assert(feature0 < InputCount);
+            assert(feature1 < InputCount);
+            assert(feature2 < InputCount);
+            assert(feature3 < InputCount);
+            subSubSubSub(
+                forColor(c),
+                featureTransformer.weights,
+                feature0 * OutputCount,
+                feature1 * OutputCount,
+                feature2 * OutputCount,
+                feature3 * OutputCount
+            );
+        }
 
-		static constexpr auto  InputCount = Ft:: InputCount;
-		static constexpr auto WeightCount = Ft::WeightCount;
-		static constexpr auto OutputCount = Ft::OutputCount;
+        inline void copyFrom(Color c, const Accumulator<Ft>& other) {
+            const auto idx = static_cast<i32>(c);
+            std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
+        }
 
-		SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
+    private:
+        SP_SIMD_ALIGNAS util::MultiArray<Type, 2, OutputCount> m_outputs;
 
-		static inline auto subAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
-			std::span<const Type, WeightCount> delta, u32 subOffset, u32 addOffset) -> void
-		{
-			assert(subOffset + OutputCount <= delta.size());
-			assert(addOffset + OutputCount <= delta.size());
+        static inline void subAdd(
+            std::span<const Type, OutputCount> src,
+            std::span<Type, OutputCount> dst,
+            std::span<const Type, WeightCount> delta,
+            u32 subOffset,
+            u32 addOffset
+        ) {
+            assert(subOffset + OutputCount <= delta.size());
+            assert(addOffset + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				dst[i] = src[i]
-					+ delta[addOffset + i]
-					- delta[subOffset + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                dst[i] = src[i] + delta[addOffset + i] - delta[subOffset + i];
+            }
+        }
 
-		static inline auto subSubAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
-			std::span<const Type, WeightCount> delta, u32 subOffset0, u32 subOffset1, u32 addOffset) -> void
-		{
-			assert(subOffset0 + OutputCount <= delta.size());
-			assert(subOffset1 + OutputCount <= delta.size());
-			assert(addOffset  + OutputCount <= delta.size());
+        static inline void subSubAdd(
+            std::span<const Type, OutputCount> src,
+            std::span<Type, OutputCount> dst,
+            std::span<const Type, WeightCount> delta,
+            u32 subOffset0,
+            u32 subOffset1,
+            u32 addOffset
+        ) {
+            assert(subOffset0 + OutputCount <= delta.size());
+            assert(subOffset1 + OutputCount <= delta.size());
+            assert(addOffset + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				dst[i] = src[i]
-					+ delta[addOffset + i]
-					- delta[subOffset0 + i]
-					- delta[subOffset1 + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                dst[i] = src[i] + delta[addOffset + i] - delta[subOffset0 + i] - delta[subOffset1 + i];
+            }
+        }
 
-		static inline auto subSubAddAdd(std::span<const Type, OutputCount> src, std::span<Type, OutputCount> dst,
-			std::span<const Type, WeightCount> delta,
-			u32 subOffset0, u32 subOffset1, u32 addOffset0, u32 addOffset1) -> void
-		{
-			assert(subOffset0 + OutputCount <= delta.size());
-			assert(subOffset1 + OutputCount <= delta.size());
-			assert(addOffset0 + OutputCount <= delta.size());
-			assert(addOffset1 + OutputCount <= delta.size());
+        static inline void subSubAddAdd(
+            std::span<const Type, OutputCount> src,
+            std::span<Type, OutputCount> dst,
+            std::span<const Type, WeightCount> delta,
+            u32 subOffset0,
+            u32 subOffset1,
+            u32 addOffset0,
+            u32 addOffset1
+        ) {
+            assert(subOffset0 + OutputCount <= delta.size());
+            assert(subOffset1 + OutputCount <= delta.size());
+            assert(addOffset0 + OutputCount <= delta.size());
+            assert(addOffset1 + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				dst[i] = src[i]
-					+ delta[addOffset0 + i]
-					- delta[subOffset0 + i]
-					+ delta[addOffset1 + i]
-					- delta[subOffset1 + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                dst[i] = src[i] + delta[addOffset0 + i] - delta[subOffset0 + i] + delta[addOffset1 + i]
+                       - delta[subOffset1 + i];
+            }
+        }
 
-		static __attribute__((always_inline)) inline auto addAddAddAdd(std::span<Type, OutputCount> accumulator,
-			std::span<const Type, WeightCount> delta,
-			u32 addOffset0, u32 addOffset1, u32 addOffset2, u32 addOffset3) -> void
-		{
-			assert(addOffset0 + OutputCount <= delta.size());
-			assert(addOffset1 + OutputCount <= delta.size());
-			assert(addOffset2 + OutputCount <= delta.size());
-			assert(addOffset3 + OutputCount <= delta.size());
+        static __attribute__((always_inline)) inline void addAddAddAdd(
+            std::span<Type, OutputCount> accumulator,
+            std::span<const Type, WeightCount> delta,
+            u32 addOffset0,
+            u32 addOffset1,
+            u32 addOffset2,
+            u32 addOffset3
+        ) {
+            assert(addOffset0 + OutputCount <= delta.size());
+            assert(addOffset1 + OutputCount <= delta.size());
+            assert(addOffset2 + OutputCount <= delta.size());
+            assert(addOffset3 + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				accumulator[i] +=
-					delta[addOffset0 + i]
-					+ delta[addOffset1 + i]
-					+ delta[addOffset2 + i]
-					+ delta[addOffset3 + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                accumulator[i] +=
+                    delta[addOffset0 + i] + delta[addOffset1 + i] + delta[addOffset2 + i] + delta[addOffset3 + i];
+            }
+        }
 
-		static __attribute__((always_inline)) inline auto subSubSubSub(std::span<Type, OutputCount> accumulator,
-			std::span<const Type, WeightCount> delta,
-			u32 subOffset0, u32 subOffset1, u32 subOffset2, u32 subOffset3) -> void
-		{
-			assert(subOffset0 + OutputCount <= delta.size());
-			assert(subOffset1 + OutputCount <= delta.size());
-			assert(subOffset2 + OutputCount <= delta.size());
-			assert(subOffset3 + OutputCount <= delta.size());
+        static __attribute__((always_inline)) inline void subSubSubSub(
+            std::span<Type, OutputCount> accumulator,
+            std::span<const Type, WeightCount> delta,
+            u32 subOffset0,
+            u32 subOffset1,
+            u32 subOffset2,
+            u32 subOffset3
+        ) {
+            assert(subOffset0 + OutputCount <= delta.size());
+            assert(subOffset1 + OutputCount <= delta.size());
+            assert(subOffset2 + OutputCount <= delta.size());
+            assert(subOffset3 + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				accumulator[i] -=
-					delta[subOffset0 + i]
-					+ delta[subOffset1 + i]
-					+ delta[subOffset2 + i]
-					+ delta[subOffset3 + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                accumulator[i] -=
+                    delta[subOffset0 + i] + delta[subOffset1 + i] + delta[subOffset2 + i] + delta[subOffset3 + i];
+            }
+        }
 
-		static inline auto add(std::span<Type, OutputCount> accumulator,
-			std::span<const Type, WeightCount> delta, u32 offset) -> void
-		{
-			assert(offset + OutputCount <= delta.size());
+        static inline void add(
+            std::span<Type, OutputCount> accumulator,
+            std::span<const Type, WeightCount> delta,
+            u32 offset
+        ) {
+            assert(offset + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				accumulator[i] += delta[offset + i];
-			}
-		}
+            for (u32 i = 0; i < OutputCount; ++i) {
+                accumulator[i] += delta[offset + i];
+            }
+        }
 
-		static inline auto sub(std::span<Type, OutputCount> accumulator,
-			std::span<const Type, WeightCount> delta, u32 offset) -> void
-		{
-			assert(offset + OutputCount <= delta.size());
+        static inline void sub(
+            std::span<Type, OutputCount> accumulator,
+            std::span<const Type, WeightCount> delta,
+            u32 offset
+        ) {
+            assert(offset + OutputCount <= delta.size());
 
-			for (u32 i = 0; i < OutputCount; ++i)
-			{
-				accumulator[i] -= delta[offset + i];
-			}
-		}
-	};
+            for (u32 i = 0; i < OutputCount; ++i) {
+                accumulator[i] -= delta[offset + i];
+            }
+        }
+    };
 
-	template <typename Acc>
-	struct RefreshTableEntry
-	{
-		Acc accumulator{};
-		std::array<BitboardSet, 2> bbs{};
+    template <typename Acc>
+    struct RefreshTableEntry {
+        Acc accumulator{};
+        std::array<BitboardSet, 2> bbs{};
 
-		[[nodiscard]] auto colorBbs(Color c) -> auto &
-		{
-			return bbs[static_cast<i32>(c)];
-		}
-	};
+        [[nodiscard]] BitboardSet& colorBbs(Color c) {
+            return bbs[static_cast<i32>(c)];
+        }
+    };
 
-	template <typename Ft, u32 Size>
-	struct RefreshTable
-	{
-		std::array<RefreshTableEntry<Accumulator<Ft>>, Size> table{};
+    template <typename Ft, u32 Size>
+    struct RefreshTable {
+        std::array<RefreshTableEntry<Accumulator<Ft>>, Size> table{};
 
-		inline void init(const Ft &featureTransformer)
-		{
-			for (auto &entry : table)
-			{
-				entry.accumulator.initBoth(featureTransformer);
-				entry.bbs.fill(BitboardSet{});
-			}
-		}
-	};
+        inline void init(const Ft& featureTransformer) {
+            for (auto& entry : table) {
+                entry.accumulator.initBoth(featureTransformer);
+                entry.bbs.fill(BitboardSet{});
+            }
+        }
+    };
 
-	template <typename Type, u32 Outputs, typename FeatureSet = features::SingleBucket>
-	struct FeatureTransformer
-	{
-		using WeightType = Type;
-		using OutputType = Type;
+    template <typename Type, u32 Outputs, typename FeatureSet = features::SingleBucket>
+    struct FeatureTransformer {
+        using WeightType = Type;
+        using OutputType = Type;
 
-		using InputFeatureSet = FeatureSet;
+        using InputFeatureSet = FeatureSet;
 
-		using Accumulator = Accumulator<FeatureTransformer<Type, Outputs, FeatureSet>>;
-		using RefreshTable = RefreshTable<FeatureTransformer<Type, Outputs, FeatureSet>,
-		    FeatureSet::RefreshTableSize>;
+        using Accumulator = Accumulator<FeatureTransformer<Type, Outputs, FeatureSet>>;
+        using RefreshTable = RefreshTable<FeatureTransformer<Type, Outputs, FeatureSet>, FeatureSet::RefreshTableSize>;
 
-		static constexpr auto  InputCount = InputFeatureSet::BucketCount * FeatureSet::InputSize;
-		static constexpr auto OutputCount = Outputs;
+        static constexpr auto InputCount = InputFeatureSet::BucketCount * FeatureSet::InputSize;
+        static constexpr auto OutputCount = Outputs;
 
-		static constexpr auto WeightCount =  InputCount * OutputCount;
-		static constexpr auto   BiasCount = OutputCount;
+        static constexpr auto WeightCount = InputCount * OutputCount;
+        static constexpr auto BiasCount = OutputCount;
 
-		static_assert( InputCount > 0);
-		static_assert(OutputCount > 0);
+        static_assert(InputCount > 0);
+        static_assert(OutputCount > 0);
 
-		SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
-		SP_SIMD_ALIGNAS std::array<OutputType,   BiasCount> biases;
+        SP_SIMD_ALIGNAS std::array<WeightType, WeightCount> weights;
+        SP_SIMD_ALIGNAS std::array<OutputType, BiasCount> biases;
 
-		inline auto readFrom(IParamStream &stream) -> bool
-		{
-			return stream.read(weights)
-				&& stream.read(biases);
-		}
+        inline bool readFrom(IParamStream& stream) {
+            return stream.read(weights) && stream.read(biases);
+        }
 
-		inline auto writeTo(IParamStream &stream) const -> bool
-		{
-			return stream.write(weights)
-				&& stream.write(biases);
-		}
-	};
-}
+        inline bool writeTo(IParamStream& stream) const {
+            return stream.write(weights) && stream.write(biases);
+        }
+    };
+} // namespace stormphrax::eval::nnue

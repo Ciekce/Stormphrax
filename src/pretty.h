@@ -25,12 +25,11 @@
 #include "bitboard.h"
 #include "position/position.h"
 
-namespace stormphrax
-{
-	auto printBitboard(std::ostream &out, Bitboard board) -> void;
-	auto printBitboardCompact(std::ostream &out, Bitboard board) -> void;
+namespace stormphrax {
+    void printBitboard(std::ostream& out, Bitboard board);
+    void printBitboardCompact(std::ostream& out, Bitboard board);
 
-	auto printBoard(std::ostream &out, const Position &position) -> void;
+    void printBoard(std::ostream& out, const Position& position);
 
-	auto printScore(std::ostream &out, Score score) -> void;
-}
+    void printScore(std::ostream& out, Score score);
+} // namespace stormphrax

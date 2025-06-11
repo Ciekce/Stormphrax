@@ -20,20 +20,13 @@
 
 #include "types.h"
 
-#include "position/position.h"
 #include "movegen.h"
+#include "position/position.h"
 #include "ttable.h"
 
-namespace stormphrax::tb
-{
-	enum class ProbeResult
-	{
-		Failed,
-		Win,
-		Draw,
-		Loss
-	};
+namespace stormphrax::tb {
+    enum class ProbeResult { Failed, Win, Draw, Loss };
 
-	auto probeRoot(MoveList &rootMoves, const Position &pos) -> ProbeResult;
-	auto probe(const Position &pos) -> ProbeResult;
-}
+    ProbeResult probeRoot(MoveList& rootMoves, const Position& pos);
+    ProbeResult probe(const Position& pos);
+} // namespace stormphrax::tb

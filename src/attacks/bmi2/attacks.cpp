@@ -19,66 +19,55 @@
 #include "../attacks.h"
 
 #if SP_HAS_BMI2
-namespace stormphrax::attacks
-{
-	using namespace bmi2;
+namespace stormphrax::attacks {
+    using namespace bmi2;
 
-	namespace
-	{
-		auto generateRookAttacks()
-		{
-			std::array<u16, RookData.tableSize> dst{};
+    namespace {
+        std::array<u16, RookData.tableSize> generateRookAttacks() {
+            std::array<u16, RookData.tableSize> dst{};
 
-			for (u32 square = 0; square < 64; ++square)
-			{
-				const auto &data = RookData.data[square];
-				const auto entries = 1 << data.srcMask.popcount();
+            for (u32 square = 0; square < 64; ++square) {
+                const auto& data = RookData.data[square];
+                const auto entries = 1 << data.srcMask.popcount();
 
-				for (u32 i = 0; i < entries; ++i)
-				{
-					const auto occupancy = util::pdep(i, data.srcMask);
+                for (u32 i = 0; i < entries; ++i) {
+                    const auto occupancy = util::pdep(i, data.srcMask);
 
-					Bitboard attacks{};
+                    Bitboard attacks{};
 
-					for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right})
-					{
-						attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
-					}
+                    for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right}) {
+                        attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                    }
 
-					dst[data.offset + i] = static_cast<u16>(util::pext(attacks, data.dstMask));
-				}
-			}
+                    dst[data.offset + i] = static_cast<u16>(util::pext(attacks, data.dstMask));
+                }
+            }
 
-			return dst;
-		}
+            return dst;
+        }
 
-		auto generateBishopAttacks()
-		{
-			std::array<Bitboard, BishopData.tableSize> dst{};
+        std::array<Bitboard, BishopData.tableSize> generateBishopAttacks() {
+            std::array<Bitboard, BishopData.tableSize> dst{};
 
-			for (u32 square = 0; square < 64; ++square)
-			{
-				const auto &data = BishopData.data[square];
-				const auto entries = 1 << data.mask.popcount();
+            for (u32 square = 0; square < 64; ++square) {
+                const auto& data = BishopData.data[square];
+                const auto entries = 1 << data.mask.popcount();
 
-				for (u32 i = 0; i < entries; ++i)
-				{
-					const auto occupancy = util::pdep(i, data.mask);
+                for (u32 i = 0; i < entries; ++i) {
+                    const auto occupancy = util::pdep(i, data.mask);
 
-					for (const auto dir
-						: {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight})
-					{
-						dst[data.offset + i]
-							|= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
-					}
-				}
-			}
+                    for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight}) {
+                        dst[data.offset + i] |=
+                            internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                    }
+                }
+            }
 
-			return dst;
-		}
-	}
+            return dst;
+        }
+    } // namespace
 
-	const std::array<     u16,   RookData.tableSize>   RookAttacks =   generateRookAttacks();
-	const std::array<Bitboard, BishopData.tableSize> BishopAttacks = generateBishopAttacks();
-}
+    const std::array<u16, RookData.tableSize> RookAttacks = generateRookAttacks();
+    const std::array<Bitboard, BishopData.tableSize> BishopAttacks = generateBishopAttacks();
+} // namespace stormphrax::attacks
 #endif // SP_HAS_BMI2

@@ -19,81 +19,72 @@
 #include "timer.h"
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
 #else // posix
-#include <time.h>
+    #include <time.h>
 #endif
 
-namespace stormphrax::util
-{
-	namespace
-	{
-		class Timer
-		{
-		public:
-			Timer();
-			~Timer() = default;
+namespace stormphrax::util {
+    namespace {
+        class Timer {
+        public:
+            Timer();
+            ~Timer() = default;
 
-			[[nodiscard]] auto time() const -> f64;
+            [[nodiscard]] f64 time() const;
 
-		private:
+        private:
 #ifdef _WIN32
-			u64 m_initTime{};
-			f64 m_frequency;
+            u64 m_initTime{};
+            f64 m_frequency;
 #else
-			f64 m_initTime;
+            f64 m_initTime;
 #endif
-		};
+        };
 
 #ifdef _WIN32
-		Timer::Timer()
-		{
-			LARGE_INTEGER freq{};
-			QueryPerformanceFrequency(&freq);
+        Timer::Timer() {
+            LARGE_INTEGER freq{};
+            QueryPerformanceFrequency(&freq);
 
-			LARGE_INTEGER initTime{};
-			QueryPerformanceCounter(&initTime);
+            LARGE_INTEGER initTime{};
+            QueryPerformanceCounter(&initTime);
 
-			m_frequency = static_cast<f64>(freq.QuadPart);
-			m_initTime = initTime.QuadPart;
-		}
+            m_frequency = static_cast<f64>(freq.QuadPart);
+            m_initTime = initTime.QuadPart;
+        }
 
-		auto Timer::time() const -> f64
-		{
-			LARGE_INTEGER time{};
-			QueryPerformanceCounter(&time);
+        f64 Timer::time() const {
+            LARGE_INTEGER time{};
+            QueryPerformanceCounter(&time);
 
-			return static_cast<f64>(time.QuadPart - m_initTime) / m_frequency;
-		}
+            return static_cast<f64>(time.QuadPart - m_initTime) / m_frequency;
+        }
 #else
-		Timer::Timer()
-		{
-			struct timespec time;
-			clock_gettime(CLOCK_MONOTONIC, &time);
+        Timer::Timer() {
+            struct timespec time;
+            clock_gettime(CLOCK_MONOTONIC, &time);
 
-			m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
-		}
+            m_initTime = static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0;
+        }
 
-		auto Timer::time() const -> f64
-		{
-			struct timespec time{};
-			clock_gettime(CLOCK_MONOTONIC, &time);
+        f64 Timer::time() const {
+            struct timespec time{};
+            clock_gettime(CLOCK_MONOTONIC, &time);
 
-			return (static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0) - m_initTime;
-		}
+            return (static_cast<f64>(time.tv_sec) + static_cast<f64>(time.tv_nsec) / 1000000000.0) - m_initTime;
+        }
 #endif
 
-		const Timer s_timer{};
-	}
+        const Timer s_timer{};
+    } // namespace
 
-	auto Instant::elapsed() const -> f64
-	{
-		return s_timer.time() - m_time;
-	}
+    f64 Instant::elapsed() const {
+        return s_timer.time() - m_time;
+    }
 
-	auto Instant::now() -> Instant
-	{
-		return Instant{s_timer.time()};
-	}
-}
+    Instant Instant::now() {
+        return Instant{s_timer.time()};
+    }
+} // namespace stormphrax::util

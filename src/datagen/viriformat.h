@@ -24,29 +24,27 @@
 #include "format.h"
 #include "marlinformat.h"
 
-namespace stormphrax::datagen
-{
-	// Format originally from Viridithas
-	// https://github.com/cosmobobak/viridithas/blob/029672a/src/datagen/dataformat.rs
-	class Viriformat
-	{
-	public:
-		Viriformat();
-		~Viriformat() = default;
+namespace stormphrax::datagen {
+    // Format originally from Viridithas
+    // https://github.com/cosmobobak/viridithas/blob/029672a/src/datagen/dataformat.rs
+    class Viriformat {
+    public:
+        Viriformat();
+        ~Viriformat() = default;
 
-		static constexpr auto Extension = "vf";
+        static constexpr auto Extension = "vf";
 
-		auto start(const Position &initialPosition) -> void;
-		auto push(bool filtered, Move move, Score score) -> void;
-		auto writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize;
+        void start(const Position& initialPosition);
+        void push(bool filtered, Move move, Score score);
+        usize writeAllWithOutcome(std::ostream& stream, Outcome outcome);
 
-	private:
-		using ScoredMove = std::pair<u16, i16>;
-		static_assert(sizeof(ScoredMove) == sizeof(u16) + sizeof(i16));
+    private:
+        using ScoredMove = std::pair<u16, i16>;
+        static_assert(sizeof(ScoredMove) == sizeof(u16) + sizeof(i16));
 
-		marlinformat::PackedBoard m_initial{};
-		std::vector<ScoredMove> m_moves{};
-	};
+        marlinformat::PackedBoard m_initial{};
+        std::vector<ScoredMove> m_moves{};
+    };
 
-	static_assert(OutputFormat<Viriformat>);
-}
+    static_assert(OutputFormat<Viriformat>);
+} // namespace stormphrax::datagen

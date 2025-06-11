@@ -22,65 +22,57 @@
 
 #include <atomic>
 
-#include "limit.h"
 #include "../opts.h"
+#include "limit.h"
 
-namespace stormphrax::limit
-{
-	class InfiniteLimiter final : public ISearchLimiter
-	{
-	public:
-		InfiniteLimiter() = default;
-		~InfiniteLimiter() final = default;
+namespace stormphrax::limit {
+    class InfiniteLimiter final : public ISearchLimiter {
+    public:
+        InfiniteLimiter() = default;
+        ~InfiniteLimiter() final = default;
 
-		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
-		{
-			return false;
-		}
+        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
+            return false;
+        }
 
-		[[nodiscard]] inline auto stopped() const -> bool final
-		{
-			return false;
-		}
-	};
+        [[nodiscard]] inline bool stopped() const final {
+            return false;
+        }
+    };
 
-	constexpr auto SoftNodeHardLimitMultiplierRange = util::Range<i32>{1,  5000};
+    constexpr auto SoftNodeHardLimitMultiplierRange = util::Range<i32>{1, 5000};
 
-	class NodeLimiter final : public ISearchLimiter
-	{
-	public:
-		explicit NodeLimiter(usize maxNodes) : m_maxNodes{maxNodes} {}
+    class NodeLimiter final : public ISearchLimiter {
+    public:
+        explicit NodeLimiter(usize maxNodes) :
+                m_maxNodes{maxNodes} {}
 
-		~NodeLimiter() final = default;
+        ~NodeLimiter() final = default;
 
-		[[nodiscard]] inline auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool final
-		{
-			// if softLimit is enabled:
-			//   - soft limit: m_maxNodes
-			//   - hard limit: m_maxNodes * softNodeHardLimitMultiplier
-			// otherwise:
-			//   - no soft limit
-			//   - hard limit: m_maxNodes
+        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
+            // if softLimit is enabled:
+            //   - soft limit: m_maxNodes
+            //   - hard limit: m_maxNodes * softNodeHardLimitMultiplier
+            // otherwise:
+            //   - no soft limit
+            //   - hard limit: m_maxNodes
 
-			const auto hardLimit = m_maxNodes
-				* (g_opts.softNodes ? g_opts.softNodeHardLimitMultiplier : 1);
+            const auto hardLimit = m_maxNodes * (g_opts.softNodes ? g_opts.softNodeHardLimitMultiplier : 1);
 
-			if (data.nodes >= hardLimit || (g_opts.softNodes && allowSoftTimeout && data.nodes >= m_maxNodes))
-			{
-				m_stopped.store(true, std::memory_order_release);
-				return true;
-			}
+            if (data.nodes >= hardLimit || (g_opts.softNodes && allowSoftTimeout && data.nodes >= m_maxNodes)) {
+                m_stopped.store(true, std::memory_order_release);
+                return true;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		[[nodiscard]] inline auto stopped() const -> bool final
-		{
-			return m_stopped.load(std::memory_order_acquire);
-		}
+        [[nodiscard]] inline bool stopped() const final {
+            return m_stopped.load(std::memory_order_acquire);
+        }
 
-	private:
-		usize m_maxNodes; // hard limit when softNodes is disabled, soft limit when enabled
-		std::atomic_bool m_stopped{false};
-	};
-}
+    private:
+        usize m_maxNodes; // hard limit when softNodes is disabled, soft limit when enabled
+        std::atomic_bool m_stopped{false};
+    };
+} // namespace stormphrax::limit

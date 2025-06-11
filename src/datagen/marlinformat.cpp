@@ -18,36 +18,33 @@
 
 #include "marlinformat.h"
 
-namespace stormphrax::datagen
-{
-	Marlinformat::Marlinformat()
-	{
-		m_positions.reserve(256);
-	}
+namespace stormphrax::datagen {
+    Marlinformat::Marlinformat() {
+        m_positions.reserve(256);
+    }
 
-	auto Marlinformat::start(const Position &initialPosition) -> void
-	{
-		m_positions.clear();
-		m_curr = initialPosition;
-	}
+    void Marlinformat::start(const Position& initialPosition) {
+        m_positions.clear();
+        m_curr = initialPosition;
+    }
 
-	auto Marlinformat::push(bool filtered, Move move, Score score) -> void
-	{
-		if (!filtered)
-			m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
-		m_curr = m_curr.applyMove(move);
-	}
+    void Marlinformat::push(bool filtered, Move move, Score score) {
+        if (!filtered) {
+            m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
+        }
+        m_curr = m_curr.applyMove(move);
+    }
 
-	auto Marlinformat::writeAllWithOutcome(std::ostream &stream, Outcome outcome) -> usize
-	{
-		for (auto &board : m_positions)
-		{
-			board.wdl = outcome;
-		}
+    usize Marlinformat::writeAllWithOutcome(std::ostream& stream, Outcome outcome) {
+        for (auto& board : m_positions) {
+            board.wdl = outcome;
+        }
 
-		stream.write(reinterpret_cast<const char *>(m_positions.data()),
-			static_cast<std::streamsize>(m_positions.size() * sizeof(marlinformat::PackedBoard)));
+        stream.write(
+            reinterpret_cast<const char*>(m_positions.data()),
+            static_cast<std::streamsize>(m_positions.size() * sizeof(marlinformat::PackedBoard))
+        );
 
-		return m_positions.size();
-	}
-}
+        return m_positions.size();
+    }
+} // namespace stormphrax::datagen

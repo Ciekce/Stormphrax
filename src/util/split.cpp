@@ -20,22 +20,20 @@
 
 #include <sstream>
 
-namespace stormphrax::split
-{
-	auto split(const std::string &str, char delim) -> std::vector<std::string>
-	{
-		std::vector<std::string> result{};
+namespace stormphrax::split {
+    std::vector<std::string> split(const std::string& str, char delim) {
+        std::vector<std::string> result{};
 
-		std::istringstream stream{str};
+        std::istringstream stream{str};
 
-		for (std::string token{}; std::getline(stream, token, delim);)
-		{
-			if (token.empty())
-				continue;
+        for (std::string token{}; std::getline(stream, token, delim);) {
+            if (token.empty()) {
+                continue;
+            }
 
-			result.push_back(token);
-		}
+            result.push_back(token);
+        }
 
-		return result;
-	}
-}
+        return result;
+    }
+} // namespace stormphrax::split

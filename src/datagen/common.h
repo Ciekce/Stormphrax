@@ -20,12 +20,6 @@
 
 #include "../types.h"
 
-namespace stormphrax::datagen
-{
-	enum class Outcome : u8
-	{
-		WhiteLoss = 0,
-		Draw,
-		WhiteWin
-	};
+namespace stormphrax::datagen {
+    enum class Outcome : u8 { WhiteLoss = 0, Draw, WhiteWin };
 }
