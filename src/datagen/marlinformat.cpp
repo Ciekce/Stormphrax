@@ -29,8 +29,9 @@ namespace stormphrax::datagen {
     }
 
     auto Marlinformat::push(bool filtered, Move move, Score score) -> void {
-        if (!filtered)
+        if (!filtered) {
             m_positions.push_back(marlinformat::PackedBoard::pack(m_curr, static_cast<i16>(score)));
+        }
         m_curr = m_curr.applyMove(move);
     }
 

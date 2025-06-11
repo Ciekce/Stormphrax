@@ -31,13 +31,14 @@ namespace stormphrax::tb {
             const auto dst = static_cast<Square>(TB_MOVE_TO(tbMove));
             const auto promo = PromoPieces[TB_MOVE_PROMOTES(tbMove)];
 
-            if (promo != PieceType::None)
+            if (promo != PieceType::None) {
                 return Move::promotion(src, dst, promo);
-            else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::Pawn)
+            } else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::Pawn) {
                 return Move::enPassant(src, dst);
             // Syzygy TBs do not encode positions with castling rights
-            else
+            } else {
                 return Move::standard(src, dst);
+            }
         };
 
         const auto& bbs = pos.bbs();
@@ -63,7 +64,7 @@ namespace stormphrax::tb {
             &tbRootMoves
         );
 
-        if (!result) // DTZ tables unavailable, fall back to WDL
+        if (!result) { // DTZ tables unavailable, fall back to WDL
             result = tb_probe_root_wdl(
                 bbs.whiteOccupancy(),
                 bbs.blackOccupancy(),
@@ -80,9 +81,11 @@ namespace stormphrax::tb {
                 true,
                 &tbRootMoves
             );
+        }
 
-        if (!result || tbRootMoves.size == 0) // mate or stalemate at root, handled by search
+        if (!result || tbRootMoves.size == 0) { // mate or stalemate at root, handled by search
             return ProbeResult::Failed;
+        }
 
         std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](auto a, auto b) {
             return a.tbRank > b.tbRank;
@@ -91,19 +94,21 @@ namespace stormphrax::tb {
         const auto [wdl, minRank] = [&]() -> std::pair<ProbeResult, i32> {
             const auto best = tbRootMoves.moves[0];
 
-            if (best.tbRank >= 900)
+            if (best.tbRank >= 900) {
                 return {ProbeResult::Win, 900};
-            else if (best.tbRank >= -899) // includes cursed wins and blessed losses
+            } else if (best.tbRank >= -899) { // includes cursed wins and blessed losses
                 return {ProbeResult::Draw, -899};
-            else
+            } else {
                 return {ProbeResult::Loss, -1000};
+            }
         }();
 
         for (u32 i = 0; i < tbRootMoves.size; ++i) {
             const auto move = tbRootMoves.moves[i];
 
-            if (move.tbRank < minRank)
+            if (move.tbRank < minRank) {
                 break;
+            }
 
             rootMoves.push(moveFromTb(move.move));
         }
@@ -130,14 +135,16 @@ namespace stormphrax::tb {
             pos.toMove() == Color::White
         );
 
-        if (wdl == TB_RESULT_FAILED)
+        if (wdl == TB_RESULT_FAILED) {
             return ProbeResult::Failed;
+        }
 
-        if (wdl == TB_WIN)
+        if (wdl == TB_WIN) {
             return ProbeResult::Win;
-        else if (wdl == TB_LOSS)
+        } else if (wdl == TB_LOSS) {
             return ProbeResult::Loss;
-        else
+        } else {
             return ProbeResult::Draw;
+        }
     }
 } // namespace stormphrax::tb

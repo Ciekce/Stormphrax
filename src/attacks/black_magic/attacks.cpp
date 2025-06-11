@@ -36,8 +36,9 @@ namespace stormphrax::attacks {
                     const auto occupancy = util::pdep(i, invMask);
                     const auto idx = getRookIdx(occupancy, static_cast<Square>(square));
 
-                    if (!dst[data.offset + idx].empty())
+                    if (!dst[data.offset + idx].empty()) {
                         continue;
+                    }
 
                     for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right}) {
                         dst[data.offset + idx] |=
@@ -62,8 +63,9 @@ namespace stormphrax::attacks {
                     const auto occupancy = util::pdep(i, invMask);
                     const auto idx = getBishopIdx(occupancy, static_cast<Square>(square));
 
-                    if (!dst[data.offset + idx].empty())
+                    if (!dst[data.offset + idx].empty()) {
                         continue;
+                    }
 
                     for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight}) {
                         dst[data.offset + idx] |=

@@ -188,8 +188,9 @@ namespace stormphrax::eval {
             const auto subCount = ctx.updates.sub.size();
             const auto addCount = ctx.updates.add.size();
 
-            if (subCount == 0 && addCount == 0)
+            if (subCount == 0 && addCount == 0) {
                 return;
+            }
 
             const auto king = ctx.kings.color(c);
 
@@ -226,8 +227,9 @@ namespace stormphrax::eval {
                 const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
 
                 curr.acc.subSubAddAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
-            } else
+            } else {
                 assert(false && "Materialising a piece from nowhere?");
+            }
 
             curr.setUpdated(c);
         }
@@ -244,8 +246,9 @@ namespace stormphrax::eval {
 
         inline auto ensureUpToDate(const BitboardSet& bbs, KingPair kings) -> void {
             for (const auto c : {Color::Black, Color::White}) {
-                if (!m_curr->isDirty(c))
+                if (!m_curr->isDirty(c)) {
                     continue;
+                }
 
                 // if the current accumulator needs a refresh, just do it
                 if (m_curr->ctx.updates.requiresRefresh(c)) {
@@ -262,10 +265,10 @@ namespace stormphrax::eval {
                 assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresRefresh(c));
 
                 // if the found accumulator requires a refresh, just give up and refresh the current one
-                if (curr->ctx.updates.requiresRefresh(c))
+                if (curr->ctx.updates.requiresRefresh(c)) {
                     refreshAccumulator(*m_curr, c, bbs, m_refreshTable, kings.color(c));
-                else // otherwise go forward and incrementally update all accumulators in between
-                {
+                } else {
+                    // otherwise go forward and incrementally update all accumulators in between
                     do {
                         const auto& prev = *curr;
 
@@ -391,13 +394,15 @@ namespace stormphrax::eval {
             const auto type = static_cast<u32>(pieceType(piece));
 
             const auto color = [piece, c]() -> u32 {
-                if (InputFeatureSet::MergedKings && pieceType(piece) == PieceType::King)
+                if (InputFeatureSet::MergedKings && pieceType(piece) == PieceType::King) {
                     return 0;
+                }
                 return pieceColor(piece) == c ? 0 : 1;
             }();
 
-            if (c == Color::Black)
+            if (c == Color::Black) {
                 sq = flipSquareRank(sq);
+            }
 
             sq = InputFeatureSet::transformFeatureSquare(sq, king);
 

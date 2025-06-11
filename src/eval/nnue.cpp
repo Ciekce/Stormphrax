@@ -77,8 +77,9 @@ namespace stormphrax::eval {
                 "perspective_multilayer_dual_act",
             };
 
-            if (arch < NetworkArchNames.size())
+            if (arch < NetworkArchNames.size()) {
                 return NetworkArchNames[arch];
+            }
 
             return "<unknown>";
         }
@@ -86,8 +87,9 @@ namespace stormphrax::eval {
         inline auto activationFuncName(u8 func) {
             static constexpr auto ActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
 
-            if (func < ActivationFunctionNames.size())
+            if (func < ActivationFunctionNames.size()) {
                 return ActivationFunctionNames[func];
+            }
 
             return "<unknown>";
         }
@@ -112,28 +114,31 @@ namespace stormphrax::eval {
             }
 
             if (testFlags(header.flags, NetworkFlags::HorizontallyMirrored) != InputFeatureSet::IsMirrored) {
-                if constexpr (InputFeatureSet::IsMirrored)
+                if constexpr (InputFeatureSet::IsMirrored) {
                     std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
-                else
+                } else {
                     std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
+                }
 
                 return false;
             }
 
             if (testFlags(header.flags, NetworkFlags::MergedKings) != InputFeatureSet::MergedKings) {
-                if constexpr (InputFeatureSet::MergedKings)
+                if constexpr (InputFeatureSet::MergedKings) {
                     std::cerr << "network does not have merged king planes, expected merged" << std::endl;
-                else
+                } else {
                     std::cerr << "network has merged king planes, expected unmerged" << std::endl;
+                }
 
                 return false;
             }
 
             if (testFlags(header.flags, NetworkFlags::PairwiseMul) != LayeredArch::Pairwise) {
-                if constexpr (LayeredArch::Pairwise)
+                if constexpr (LayeredArch::Pairwise) {
                     std::cerr << "network L1 does not require pairwise multiplication, expected paired" << std::endl;
-                else
+                } else {
                     std::cerr << "network L1 requires pairwise multiplication, expected unpaired" << std::endl;
+                }
 
                 return false;
             }
@@ -224,8 +229,9 @@ namespace stormphrax::eval {
             return;
         }
 
-        if (!validate(header))
+        if (!validate(header)) {
             return;
+        }
 
         if (!loadNetworkFrom(s_network, stream, header)) {
             std::cerr << "failed to read network parameters" << std::endl;

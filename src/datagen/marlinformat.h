@@ -60,7 +60,9 @@ namespace stormphrax::datagen {
                     if (pieceType(piece) == PieceType::Rook
                         && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
                             || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
+                    {
                         pieceId = UnmovedRook;
+                    }
 
                     const u8 colorId = pieceColor(piece) == Color::Black ? (1 << 3) : 0;
 

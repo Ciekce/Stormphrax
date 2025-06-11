@@ -29,8 +29,9 @@ namespace stormphrax {
 
     namespace {
         auto doPerft(const Position& pos, i32 depth) -> usize {
-            if (depth == 0)
+            if (depth == 0) {
                 return 1;
+            }
 
             --depth;
 
@@ -40,12 +41,13 @@ namespace stormphrax {
             usize total{};
 
             for (const auto [move, score] : moves) {
-                if (!pos.isLegal(move))
+                if (!pos.isLegal(move)) {
                     continue;
+                }
 
-                if (depth == 0)
+                if (depth == 0) {
                     ++total;
-                else {
+                } else {
                     const auto newPos = pos.applyMove(move);
                     total += doPerft(newPos, depth);
                 }
@@ -70,8 +72,9 @@ namespace stormphrax {
         usize total{};
 
         for (const auto [move, score] : moves) {
-            if (!pos.isLegal(move))
+            if (!pos.isLegal(move)) {
                 continue;
+            }
 
             const auto newPos = pos.applyMove(move);
             const auto value = doPerft(newPos, depth);

@@ -61,9 +61,9 @@ auto main(i32 argc, const char* argv[]) -> i32 {
 
             bool dfrc = false;
 
-            if (std::string{argv[3]} == "dfrc")
+            if (std::string{argv[3]} == "dfrc") {
                 dfrc = true;
-            else if (std::string{argv[3]} != "standard") {
+            } else if (std::string{argv[3]} != "standard") {
                 std::cerr << "invalid variant " << argv[3] << std::endl;
                 printUsage();
                 return 1;
@@ -77,25 +77,28 @@ auto main(i32 argc, const char* argv[]) -> i32 {
             }
 
             std::optional<std::string> tbPath{};
-            if (argc > 6)
+            if (argc > 6) {
                 tbPath = std::string{argv[6]};
+            }
 
             return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), tbPath);
         }
 #if SP_EXTERNAL_TUNE
         else if (mode == "printwf" || mode == "printctt" || mode == "printob")
         {
-            if (argc == 2)
+            if (argc == 2) {
                 return 0;
+            }
 
             const auto params = split::split(argv[2], ',');
 
-            if (mode == "printwf")
+            if (mode == "printwf") {
                 uci::printWfTuningParams(params);
-            else if (mode == "printctt")
+            } else if (mode == "printctt") {
                 uci::printCttTuningParams(params);
-            else if (mode == "printob")
+            } else if (mode == "printob") {
                 uci::printObTuningParams(params);
+            }
 
             return 0;
         }

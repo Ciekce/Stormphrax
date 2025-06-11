@@ -165,8 +165,9 @@ namespace stormphrax::datagen {
                 if (dfrc) {
                     const auto dfrcIndex = rng.nextU32(960 * 960);
                     pos = *Position::fromDfrcIndex(dfrcIndex);
-                } else
+                } else {
                     pos = Position::starting();
+                }
 
                 const auto moveCount = 8 + (rng.nextU32() >> 31);
 
@@ -190,8 +191,9 @@ namespace stormphrax::datagen {
                         }
                     }
 
-                    if (!legalFound)
+                    if (!legalFound) {
                         break;
+                    }
                 }
 
                 if (!legalFound) {
@@ -234,19 +236,20 @@ namespace stormphrax::datagen {
                     const auto move = thread->rootPv.moves[0];
 
                     if (!move) {
-                        if (pos.isCheck())
+                        if (pos.isCheck()) {
                             outcome = pos.toMove() == Color::Black ? Outcome::WhiteWin : Outcome::WhiteLoss;
-                        else
+                        } else {
                             outcome = Outcome::Draw; // stalemate
+                        }
 
                         break;
                     }
 
                     assert(pos.boards().pieceAt(move.src()) != Piece::None);
 
-                    if (std::abs(score) > ScoreWin)
+                    if (std::abs(score) > ScoreWin) {
                         outcome = score > 0 ? Outcome::WhiteWin : Outcome::WhiteLoss;
-                    else {
+                    } else {
                         if (normScore > WinAdjMinScore) {
                             ++winPlies;
                             lossPlies = 0;
@@ -267,12 +270,13 @@ namespace stormphrax::datagen {
                             drawPlies = 0;
                         }
 
-                        if (winPlies >= WinAdjPlyCount)
+                        if (winPlies >= WinAdjPlyCount) {
                             outcome = Outcome::WhiteWin;
-                        else if (lossPlies >= WinAdjPlyCount)
+                        } else if (lossPlies >= WinAdjPlyCount) {
                             outcome = Outcome::WhiteLoss;
-                        else if (drawPlies >= DrawAdjPlyCount)
+                        } else if (drawPlies >= DrawAdjPlyCount) {
                             outcome = Outcome::Draw;
+                        }
                     }
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
@@ -302,8 +306,9 @@ namespace stormphrax::datagen {
 
                     output.push(filtered, move, score);
 
-                    if (outcome)
+                    if (outcome) {
                         break;
+                    }
                 }
 
                 assert(outcome.has_value());
@@ -335,13 +340,13 @@ namespace stormphrax::datagen {
     ) -> i32 {
         std::function<decltype(runThread<Marlinformat>)> threadFunc{};
 
-        if (format == "marlinformat")
+        if (format == "marlinformat") {
             threadFunc = runThread<Marlinformat>;
-        else if (format == "viriformat")
+        } else if (format == "viriformat") {
             threadFunc = runThread<Viriformat>;
-        else if (format == "fen")
+        } else if (format == "fen") {
             threadFunc = runThread<Fen>;
-        else {
+        } else {
             std::cerr << "invalid output format " << format << std::endl;
             printUsage();
             return 1;
@@ -389,8 +394,9 @@ namespace stormphrax::datagen {
             thread.join();
         }
 
-        if (tbPath)
+        if (tbPath) {
             tb_free();
+        }
 
         std::cout << "done" << std::endl;
 

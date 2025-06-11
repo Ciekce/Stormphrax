@@ -110,8 +110,9 @@ namespace stormphrax::search {
         inline ~ThreadPosGuard() {
             m_keyHistory.pop_back();
 
-            if constexpr (UpdateNnue)
+            if constexpr (UpdateNnue) {
                 m_nnueState.pop();
+            }
         }
 
     private:
@@ -209,8 +210,9 @@ namespace stormphrax::search {
         explicit Searcher(usize ttSize = DefaultTtSizeMib);
 
         ~Searcher() {
-            if (!m_quit)
+            if (!m_quit) {
                 quit();
+            }
         }
 
         auto newGame() -> void;
@@ -316,8 +318,9 @@ namespace stormphrax::search {
         }
 
         [[nodiscard]] inline auto checkStop(const SearchData& data, bool mainThread, bool allowSoft) {
-            if (hasStopped())
+            if (hasStopped()) {
                 return true;
+            }
 
             if (mainThread && m_limiter->stop(data, allowSoft)) {
                 m_stop.store(1, std::memory_order::relaxed);

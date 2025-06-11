@@ -37,8 +37,9 @@ namespace stormphrax {
     auto printBitboardCompact(std::ostream& out, Bitboard board) -> void {
         for (i32 rank = 7; rank >= 0; --rank) {
             for (usize file = 0; file < 8; ++file) {
-                if (file > 0)
+                if (file > 0) {
                     out << ' ';
+                }
 
                 out << (board[toSquare(rank, file)] ? '1' : '.');
             }
@@ -74,15 +75,17 @@ namespace stormphrax {
 
         out << (score < 0 ? '-' : '+');
 
-        if (score < 0)
+        if (score < 0) {
             score = -score;
+        }
 
         out << (score / 100) << '.';
 
         const auto d = score % 100;
 
-        if (d < 10)
+        if (d < 10) {
             out << '0';
+        }
 
         out << d;
     }

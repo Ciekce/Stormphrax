@@ -116,10 +116,11 @@ namespace stormphrax {
         }
 
         inline auto generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
-            if (pos.toMove() == Color::Black)
+            if (pos.toMove() == Color::Black) {
                 generatePawnsNoisy_<Color::Black>(noisy, pos, dstMask);
-            else
+            } else {
                 generatePawnsNoisy_<Color::White>(noisy, pos, dstMask);
+            }
         }
 
         template <Color Us>
@@ -161,10 +162,11 @@ namespace stormphrax {
         }
 
         inline auto generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
-            if (pos.toMove() == Color::Black)
+            if (pos.toMove() == Color::Black) {
                 generatePawnsQuiet_<Color::Black>(quiet, pos.bbs(), dstMask, occ);
-            else
+            } else {
                 generatePawnsQuiet_<Color::White>(quiet, pos.bbs(), dstMask, occ);
+            }
         }
 
         template <PieceType Piece, const std::array<Bitboard, 64>& Attacks>
@@ -200,7 +202,9 @@ namespace stormphrax {
 
             if ((occ & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
                 && !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.opponent()))
+            {
                 pushCastling(dst, king, rook);
+            }
         }
 
         template <bool Castling>
@@ -215,7 +219,7 @@ namespace stormphrax {
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
                     if (g_opts.chess960) {
                         if (pos.toMove() == Color::Black) {
-                            if (castlingRooks.black().kingside != Square::None)
+                            if (castlingRooks.black().kingside != Square::None) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
@@ -225,7 +229,8 @@ namespace stormphrax {
                                     castlingRooks.black().kingside,
                                     Square::F8
                                 );
-                            if (castlingRooks.black().queenside != Square::None)
+                            }
+                            if (castlingRooks.black().queenside != Square::None) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
@@ -235,8 +240,9 @@ namespace stormphrax {
                                     castlingRooks.black().queenside,
                                     Square::D8
                                 );
+                            }
                         } else {
-                            if (castlingRooks.white().kingside != Square::None)
+                            if (castlingRooks.white().kingside != Square::None) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
@@ -246,7 +252,8 @@ namespace stormphrax {
                                     castlingRooks.white().kingside,
                                     Square::F1
                                 );
-                            if (castlingRooks.white().queenside != Square::None)
+                            }
+                            if (castlingRooks.white().queenside != Square::None) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
@@ -256,28 +263,37 @@ namespace stormphrax {
                                     castlingRooks.white().queenside,
                                     Square::D1
                                 );
+                            }
                         }
                     } else {
                         if (pos.toMove() == Color::Black) {
                             if (castlingRooks.black().kingside != Square::None
                                 && (occupancy & U64(0x6000000000000000)).empty()
                                 && !pos.isAttacked(Square::F8, Color::White))
+                            {
                                 pushCastling(dst, pos.blackKing(), Square::H8);
+                            }
 
                             if (castlingRooks.black().queenside != Square::None
                                 && (occupancy & U64(0x0E00000000000000)).empty()
                                 && !pos.isAttacked(Square::D8, Color::White))
+                            {
                                 pushCastling(dst, pos.blackKing(), Square::A8);
+                            }
                         } else {
                             if (castlingRooks.white().kingside != Square::None
                                 && (occupancy & U64(0x0000000000000060)).empty()
                                 && !pos.isAttacked(Square::F1, Color::Black))
+                            {
                                 pushCastling(dst, pos.whiteKing(), Square::H1);
+                            }
 
                             if (castlingRooks.white().queenside != Square::None
                                 && (occupancy & U64(0x000000000000000E)).empty()
                                 && !pos.isAttacked(Square::D1, Color::Black))
+                            {
                                 pushCastling(dst, pos.whiteKing(), Square::A1);
+                            }
                         }
                     }
                 }
@@ -352,8 +368,9 @@ namespace stormphrax {
             pawnDstMask = kingDstMask | (promos & rayBetween(pos.king(us), pos.checkers().lowestSquare()));
 
             // pawn that just moved is the checker
-            if (!(pos.checkers() & epPawn).empty())
+            if (!(pos.checkers() & epPawn).empty()) {
                 pawnDstMask |= epMask;
+            }
         }
 
         generateSliders(noisy, pos, dstMask);
@@ -386,8 +403,9 @@ namespace stormphrax {
             pawnDstMask = dstMask = rayBetween(pos.king(us), pos.checkers().lowestSquare());
 
             pawnDstMask |= pos.checkers() & boards::promotionRank(us);
-        } else
+        } else {
             pawnDstMask |= boards::promotionRank(us);
+        }
 
         generateSliders(quiet, pos, dstMask);
         generatePawnsQuiet(quiet, pos, pawnDstMask, ours | theirs);
@@ -422,8 +440,9 @@ namespace stormphrax {
 
             pawnDstMask = dstMask = pos.checkers() | rayBetween(pos.king(us), pos.checkers().lowestSquare());
 
-            if (!(pos.checkers() & epPawn).empty())
+            if (!(pos.checkers() & epPawn).empty()) {
                 pawnDstMask |= epMask;
+            }
         }
 
         generateSliders(dst, pos, dstMask);

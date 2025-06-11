@@ -40,8 +40,9 @@ namespace stormphrax::util {
     }
 
     inline auto alignedFree(void* ptr) {
-        if (!ptr)
+        if (!ptr) {
             return;
+        }
 
 #ifdef _WIN32
         _aligned_free(ptr);

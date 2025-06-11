@@ -35,8 +35,9 @@ namespace stormphrax::util {
             u64 dst{};
 
             for (u64 bit = 1; mask != 0; bit <<= 1) {
-                if ((v & mask & -mask) != 0)
+                if ((v & mask & -mask) != 0) {
                     dst |= bit;
+                }
                 mask &= mask - 1;
             }
 
@@ -47,8 +48,9 @@ namespace stormphrax::util {
             u64 dst{};
 
             for (u64 bit = 1; mask != 0; bit <<= 1) {
-                if ((v & bit) != 0)
+                if ((v & bit) != 0) {
                     dst |= mask & -mask;
+                }
                 mask &= mask - 1;
             }
 
@@ -65,16 +67,18 @@ namespace stormphrax::util {
     }
 
     [[nodiscard]] constexpr auto ctz(u64 v) -> i32 {
-        if (std::is_constant_evaluated())
+        if (std::is_constant_evaluated()) {
             return std::countr_zero(v);
+        }
 
         return __builtin_ctzll(v);
     }
 
     [[nodiscard]] constexpr auto pext(u64 v, u64 mask) -> u64 {
 #if SP_HAS_BMI2
-        if (std::is_constant_evaluated())
+        if (std::is_constant_evaluated()) {
             return fallback::pext(v, mask);
+        }
 
         return _pext_u64(v, mask);
 #else
@@ -84,8 +88,9 @@ namespace stormphrax::util {
 
     [[nodiscard]] constexpr auto pdep(u64 v, u64 mask) -> u64 {
 #if SP_HAS_BMI2
-        if (std::is_constant_evaluated())
+        if (std::is_constant_evaluated()) {
             return fallback::pdep(v, mask);
+        }
 
         return _pdep_u64(v, mask);
 #else

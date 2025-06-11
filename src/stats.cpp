@@ -44,6 +44,7 @@ namespace stormphrax::stats {
         inline auto atomicMin(std::atomic<T>& v, T x) {
             auto curr = v.load();
             while (x < curr && v.compare_exchange_weak(curr, x)) {
+                //
             }
         }
 
@@ -51,6 +52,7 @@ namespace stormphrax::stats {
         inline auto atomicMax(std::atomic<T>& v, T x) {
             auto curr = v.load();
             while (x > curr && v.compare_exchange_weak(curr, x)) {
+                //
             }
         }
     } // namespace
@@ -91,15 +93,17 @@ namespace stormphrax::stats {
     }
 
     auto print() -> void {
-        if (!s_anyUsed.load())
+        if (!s_anyUsed.load()) {
             return;
+        }
 
         for (usize slot = 0; slot < Slots; ++slot) {
             const auto hits = s_conditionHits[slot][1].load();
             const auto misses = s_conditionHits[slot][0].load();
 
-            if (hits == 0 && misses == 0)
+            if (hits == 0 && misses == 0) {
                 continue;
+            }
 
             const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
 
@@ -113,8 +117,9 @@ namespace stormphrax::stats {
             const auto min = s_ranges[slot].min.load();
             const auto max = s_ranges[slot].max.load();
 
-            if (min == std::numeric_limits<i64>::max())
+            if (min == std::numeric_limits<i64>::max()) {
                 continue;
+            }
 
             std::cout << "range " << slot << ":\n";
             std::cout << "    min: " << min << "\n";
@@ -125,8 +130,9 @@ namespace stormphrax::stats {
             const auto total = s_means[slot].first.load();
             const auto count = s_means[slot].second.load();
 
-            if (count == 0)
+            if (count == 0) {
                 continue;
+            }
 
             const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
 

@@ -65,10 +65,11 @@ namespace stormphrax {
                 const auto [moving2, dst2] = moves[ply - 2];
                 const auto [moving1, dst1] = moves[ply - 1];
 
-                if (moving2 != Piece::None && moving1 != Piece::None)
+                if (moving2 != Piece::None && moving1 != Piece::None) {
                     m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
                                [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
                                    .update(bonus);
+                }
             }
         }
 
@@ -97,10 +98,11 @@ namespace stormphrax {
                 const auto [moving2, dst2] = moves[ply - 2];
                 const auto [moving1, dst1] = moves[ply - 1];
 
-                if (moving2 != Piece::None && moving1 != Piece::None)
+                if (moving2 != Piece::None && moving1 != Piece::None) {
                     correction += contCorrhistWeight()
                                 * m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
                                              [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                }
             }
 
             score += correction / 2048;

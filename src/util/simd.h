@@ -244,12 +244,13 @@ namespace stormphrax::util::simd {
 
     template <typename T, i32 Shift>
     SP_ALWAYS_INLINE_NDEBUG inline auto shift(Vector<T> v) {
-        if constexpr (Shift > 0)
+        if constexpr (Shift > 0) {
             return shiftLeft<T>(v, Shift);
-        else if constexpr (Shift < 0)
+        } else if constexpr (Shift < 0) {
             return shiftRight<T>(v, -Shift);
-        else
+        } else {
             return v;
+        }
     }
 
     template <typename T>

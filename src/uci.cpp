@@ -71,8 +71,9 @@ namespace stormphrax {
 
         inline auto lookupTunableParam(const std::string& name) -> tunable::TunableParam* {
             for (auto& param : tunableParams()) {
-                if (param.lowerName == name)
+                if (param.lowerName == name) {
                     return &param;
+                }
             }
 
             return nullptr;
@@ -121,8 +122,9 @@ namespace stormphrax {
             // can't do this in a destructor, because it will run after tb_free is called
             m_searcher.quit();
 
-            if (m_fathomInitialized)
+            if (m_fathomInitialized) {
                 tb_free();
+            }
         }
 
         auto UciHandler::run() -> i32 {
@@ -131,50 +133,52 @@ namespace stormphrax {
 
                 const auto tokens = split::split(line, ' ');
 
-                if (tokens.empty())
+                if (tokens.empty()) {
                     continue;
+                }
 
                 const auto& command = tokens[0];
 
-                if (command == "quit")
+                if (command == "quit") {
                     return 0;
-                else if (command == "uci")
+                } else if (command == "uci") {
                     handleUci();
-                else if (command == "ucinewgame")
+                } else if (command == "ucinewgame") {
                     handleUcinewgame();
-                else if (command == "isready")
+                } else if (command == "isready") {
                     handleIsready();
-                else if (command == "position")
+                } else if (command == "position") {
                     handlePosition(tokens);
-                else if (command == "go")
+                } else if (command == "go") {
                     handleGo(tokens, startTime);
-                else if (command == "stop")
+                } else if (command == "stop") {
                     handleStop();
-                else if (command == "setoption")
+                } else if (command == "setoption") {
                     handleSetoption(tokens);
                 // V ======= NONSTANDARD ======= V
-                else if (command == "d")
+                } else if (command == "d") {
                     handleD();
-                else if (command == "fen")
+                } else if (command == "fen") {
                     handleFen();
-                else if (command == "eval")
+                } else if (command == "eval") {
                     handleEval();
-                else if (command == "raweval")
+                } else if (command == "raweval") {
                     handleRawEval();
-                else if (command == "checkers")
+                } else if (command == "checkers") {
                     handleCheckers();
-                else if (command == "threats")
+                } else if (command == "threats") {
                     handleThreats();
-                else if (command == "regen")
+                } else if (command == "regen") {
                     handleRegen();
-                else if (command == "moves")
+                } else if (command == "moves") {
                     handleMoves();
-                else if (command == "perft")
+                } else if (command == "perft") {
                     handlePerft(tokens);
-                else if (command == "splitperft")
+                } else if (command == "splitperft") {
                     handleSplitperft(tokens);
-                else if (command == "bench")
+                } else if (command == "bench") {
                     handleBench(tokens);
+                }
             }
 
             return 0;
@@ -228,10 +232,11 @@ namespace stormphrax {
         }
 
         auto UciHandler::handleUcinewgame() -> void {
-            if (m_searcher.searching())
+            if (m_searcher.searching()) {
                 std::cerr << "still searching" << std::endl;
-            else
+            } else {
                 m_searcher.newGame();
+            }
         }
 
         auto UciHandler::handleIsready() -> void {
@@ -240,9 +245,9 @@ namespace stormphrax {
         }
 
         auto UciHandler::handlePosition(const std::vector<std::string>& tokens) -> void {
-            if (m_searcher.searching())
+            if (m_searcher.searching()) {
                 std::cerr << "still searching" << std::endl;
-            else if (tokens.size() > 1) {
+            } else if (tokens.size() > 1) {
                 const auto& position = tokens[1];
 
                 usize next = 2;
@@ -260,9 +265,9 @@ namespace stormphrax {
                     if (const auto newPos = Position::fromFen(fen.str())) {
                         m_pos = *newPos;
                         m_keyHistory.clear();
-                        ;
-                    } else
+                    } else {
                         return;
+                    }
                 } else if (position == "frc") {
                     if (!g_opts.chess960) {
                         std::cerr << "Chess960 not enabled" << std::endl;
@@ -274,10 +279,12 @@ namespace stormphrax {
                             if (const auto newPos = Position::fromFrcIndex(*frcIndex)) {
                                 m_pos = *newPos;
                                 m_keyHistory.clear();
-                            } else
+                            } else {
                                 return;
-                        } else
+                            }
+                        } else {
                             return;
+                        }
                     }
                 } else if (position == "dfrc") {
                     if (!g_opts.chess960) {
@@ -290,13 +297,16 @@ namespace stormphrax {
                             if (const auto newPos = Position::fromDfrcIndex(*dfrcIndex)) {
                                 m_pos = *newPos;
                                 m_keyHistory.clear();
-                            } else
+                            } else {
                                 return;
-                        } else
+                            }
+                        } else {
                             return;
+                        }
                     }
-                } else
+                } else {
                     return;
+                }
 
                 if (next < tokens.size() && tokens[next++] == "moves") {
                     for (; next < tokens.size(); ++next) {
@@ -310,9 +320,9 @@ namespace stormphrax {
         }
 
         auto UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) -> void {
-            if (m_searcher.searching())
+            if (m_searcher.searching()) {
                 std::cerr << "already searching" << std::endl;
-            else {
+            } else {
                 u32 depth = MaxDepth;
                 auto limiter = std::make_unique<limit::CompoundLimiter>();
 
@@ -327,8 +337,9 @@ namespace stormphrax {
 
                 for (usize i = 1; i < tokens.size(); ++i) {
                     if (tokens[i] == "depth" && ++i < tokens.size()) {
-                        if (!util::tryParseU32(depth, tokens[i]))
+                        if (!util::tryParseU32(depth, tokens[i])) {
                             std::cerr << "invalid depth " << tokens[i] << std::endl;
+                        }
                         continue;
                     }
 
@@ -339,15 +350,16 @@ namespace stormphrax {
 
                     if (tokens[i] == "nodes" && ++i < tokens.size()) {
                         usize nodes{};
-                        if (!util::tryParseSize(nodes, tokens[i]))
+                        if (!util::tryParseSize(nodes, tokens[i])) {
                             std::cerr << "invalid node count " << tokens[i] << std::endl;
-                        else
+                        } else {
                             limiter->addLimiter<limit::NodeLimiter>(nodes);
+                        }
                     } else if (tokens[i] == "movetime" && ++i < tokens.size()) {
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i]))
+                        if (!util::tryParseI64(time, tokens[i])) {
                             std::cerr << "invalid time " << tokens[i] << std::endl;
-                        else {
+                        } else {
                             time = std::max<i64>(time, 1);
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
                         }
@@ -357,9 +369,9 @@ namespace stormphrax {
                         tournamentTime = true;
 
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i]))
+                        if (!util::tryParseI64(time, tokens[i])) {
                             std::cerr << "invalid time " << tokens[i] << std::endl;
-                        else {
+                        } else {
                             time = std::max<i64>(time, 1);
                             timeRemaining = static_cast<i64>(time);
                         }
@@ -369,9 +381,9 @@ namespace stormphrax {
                         tournamentTime = true;
 
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i]))
+                        if (!util::tryParseI64(time, tokens[i])) {
                             std::cerr << "invalid time " << tokens[i] << std::endl;
-                        else {
+                        } else {
                             time = std::max<i64>(time, 1);
                             increment = static_cast<i64>(time);
                         }
@@ -379,9 +391,9 @@ namespace stormphrax {
                         tournamentTime = true;
 
                         u32 moves{};
-                        if (!util::tryParseU32(moves, tokens[i]))
+                        if (!util::tryParseU32(moves, tokens[i])) {
                             std::cerr << "invalid movestogo " << tokens[i] << std::endl;
-                        else {
+                        } else {
                             moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
                             toGo = static_cast<i32>(moves);
                         }
@@ -398,15 +410,17 @@ namespace stormphrax {
                                 const auto move = m_pos.moveFromUci(candidate);
 
                                 if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                    if (m_pos.isPseudolegal(move) && m_pos.isLegal(move))
+                                    if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
                                         movesToSearch.push(move);
-                                    else
+                                    } else {
                                         std::cout << "info string ignoring illegal move " << candidate << std::endl;
+                                    }
                                 }
 
                                 ++i;
-                            } else
+                            } else {
                                 break;
+                            }
                         }
                     }
                 }
@@ -421,18 +435,19 @@ namespace stormphrax {
                     std::cout << std::endl;
                 }
 
-                if (depth == 0)
+                if (depth == 0) {
                     return;
-                else if (depth > MaxDepth)
+                } else if (depth > MaxDepth) {
                     depth = MaxDepth;
+                }
 
                 if (tournamentTime) {
                     if (toGo != 0) {
-                        if (g_opts.enableWeirdTcs)
+                        if (g_opts.enableWeirdTcs) {
                             std::cout << "info string Warning: Stormphrax does not officially"
                                          " support cyclic (movestogo) time controls"
                                       << std::endl;
-                        else {
+                        } else {
                             std::cout << "info string Cyclic (movestogo) time controls"
                                          " not enabled, see the EnableWeirdTCs option"
                                       << std::endl;
@@ -440,11 +455,11 @@ namespace stormphrax {
                             return;
                         }
                     } else if (increment == 0) {
-                        if (g_opts.enableWeirdTcs)
+                        if (g_opts.enableWeirdTcs) {
                             std::cout << "info string Warning: Stormphrax does not officially"
                                          " support sudden death (0 increment) time controls"
                                       << std::endl;
-                        else {
+                        } else {
                             std::cout << "info string Sudden death (0 increment) time controls"
                                          " not enabled, see the EnableWeirdTCs option"
                                       << std::endl;
@@ -454,7 +469,7 @@ namespace stormphrax {
                     }
                 }
 
-                if (tournamentTime && timeRemaining > 0)
+                if (tournamentTime && timeRemaining > 0) {
                     limiter->addLimiter<limit::TimeManager>(
                         startTime,
                         static_cast<f64>(timeRemaining) / 1000.0,
@@ -462,6 +477,7 @@ namespace stormphrax {
                         toGo,
                         static_cast<f64>(m_moveOverhead) / 1000.0
                     );
+                }
 
                 m_searcher.startSearch(
                     m_pos,
@@ -476,10 +492,11 @@ namespace stormphrax {
         }
 
         auto UciHandler::handleStop() -> void {
-            if (!m_searcher.searching())
+            if (!m_searcher.searching()) {
                 std::cerr << "not searching" << std::endl;
-            else
+            } else {
                 m_searcher.stop();
+            }
         }
 
         //TODO refactor
@@ -487,34 +504,39 @@ namespace stormphrax {
             usize i = 1;
 
             for (; i < tokens.size() - 1 && tokens[i] != "name"; ++i) {
+                //
             }
 
-            if (++i == tokens.size())
+            if (++i == tokens.size()) {
                 return;
+            }
 
             bool nameEmpty = true;
             std::ostringstream name{};
 
             for (; i < tokens.size() && tokens[i] != "value"; ++i) {
-                if (!nameEmpty)
+                if (!nameEmpty) {
                     name << ' ';
-                else
+                } else {
                     nameEmpty = false;
+                }
 
                 name << tokens[i];
             }
 
-            if (++i == tokens.size())
+            if (++i == tokens.size()) {
                 return;
+            }
 
             bool valueEmpty = true;
             std::ostringstream value{};
 
             for (; i < tokens.size(); ++i) {
-                if (!valueEmpty)
+                if (!valueEmpty) {
                     value << ' ';
-                else
+                } else {
                     valueEmpty = false;
+                }
 
                 value << tokens[i];
             }
@@ -528,17 +550,20 @@ namespace stormphrax {
 
                 if (nameStr == "hash") {
                     if (!valueEmpty) {
-                        if (const auto newTtSize = util::tryParseSize(valueStr))
+                        if (const auto newTtSize = util::tryParseSize(valueStr)) {
                             m_searcher.setTtSize(TtSizeMibRange.clamp(*newTtSize));
+                        }
                     }
                 } else if (nameStr == "clear hash") {
-                    if (m_searcher.searching())
+                    if (m_searcher.searching()) {
                         std::cerr << "still searching" << std::endl;
+                    }
 
                     m_searcher.newGame();
                 } else if (nameStr == "threads") {
-                    if (m_searcher.searching())
+                    if (m_searcher.searching()) {
                         std::cerr << "still searching" << std::endl;
+                    }
 
                     if (!valueEmpty) {
                         if (const auto newThreads = util::tryParseU32(valueStr)) {
@@ -548,49 +573,58 @@ namespace stormphrax {
                     }
                 } else if (nameStr == "contempt") {
                     if (!valueEmpty) {
-                        if (const auto newContempt = util::tryParseI32(valueStr))
+                        if (const auto newContempt = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().contempt =
                                 wdl::unnormalizeScoreMaterial58(ContemptRange.clamp(*newContempt));
+                        }
                     }
                 } else if (nameStr == "uci_chess960") {
                     if (!valueEmpty) {
-                        if (const auto newChess960 = util::tryParseBool(valueStr))
+                        if (const auto newChess960 = util::tryParseBool(valueStr)) {
                             opts::mutableOpts().chess960 = *newChess960;
+                        }
                     }
                 } else if (nameStr == "uci_showwdl") {
                     if (!valueEmpty) {
-                        if (const auto newShowWdl = util::tryParseBool(valueStr))
+                        if (const auto newShowWdl = util::tryParseBool(valueStr)) {
                             opts::mutableOpts().showWdl = *newShowWdl;
+                        }
                     }
                 } else if (nameStr == "showcurrmove") {
                     if (!valueEmpty) {
-                        if (const auto newShowCurrMove = util::tryParseBool(valueStr))
+                        if (const auto newShowCurrMove = util::tryParseBool(valueStr)) {
                             opts::mutableOpts().showCurrMove = *newShowCurrMove;
+                        }
                     }
                 } else if (nameStr == "move overhead") {
                     if (!valueEmpty) {
-                        if (const auto newMoveOverhead = util::tryParseI32(valueStr))
+                        if (const auto newMoveOverhead = util::tryParseI32(valueStr)) {
                             m_moveOverhead = limit::MoveOverheadRange.clamp(*newMoveOverhead);
+                        }
                     }
                 } else if (nameStr == "softnodes") {
                     if (!valueEmpty) {
-                        if (const auto newSoftNodes = util::tryParseBool(valueStr))
+                        if (const auto newSoftNodes = util::tryParseBool(valueStr)) {
                             opts::mutableOpts().softNodes = *newSoftNodes;
+                        }
                     }
                 } else if (nameStr == "softnodehardlimitmultiplier") {
                     if (!valueEmpty) {
-                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(valueStr))
+                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().softNodeHardLimitMultiplier =
                                 limit::SoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
+                        }
                     }
                 } else if (nameStr == "enableweirdtcs") {
                     if (!valueEmpty) {
-                        if (const auto newEnableWeirdTcs = util::tryParseBool(valueStr))
+                        if (const auto newEnableWeirdTcs = util::tryParseBool(valueStr)) {
                             opts::mutableOpts().enableWeirdTcs = *newEnableWeirdTcs;
+                        }
                     }
                 } else if (nameStr == "syzygypath") {
-                    if (m_searcher.searching())
+                    if (m_searcher.searching()) {
                         std::cerr << "still searching" << std::endl;
+                    }
 
                     m_fathomInitialized = true;
 
@@ -599,39 +633,45 @@ namespace stormphrax {
                         tb_init("");
                     } else {
                         opts::mutableOpts().syzygyEnabled = valueStr != "<empty>";
-                        if (!tb_init(valueStr.c_str()))
+                        if (!tb_init(valueStr.c_str())) {
                             std::cerr << "failed to initialize Fathom" << std::endl;
+                        }
                     }
                 } else if (nameStr == "syzygyprobedepth") {
                     if (!valueEmpty) {
-                        if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr))
+                        if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().syzygyProbeDepth =
                                 search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
+                        }
                     }
                 } else if (nameStr == "syzygyprobelimit") {
                     if (!valueEmpty) {
-                        if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr))
+                        if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr)) {
                             opts::mutableOpts().syzygyProbeLimit =
                                 search::SyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
+                        }
                     }
                 } else if (nameStr == "evalfile") {
-                    if (m_searcher.searching())
+                    if (m_searcher.searching()) {
                         std::cerr << "still searching" << std::endl;
+                    }
 
                     if (!valueEmpty) {
                         if (valueStr == "<internal>") {
                             eval::loadDefaultNetwork();
                             std::cout << "info string loaded embedded network " << eval::defaultNetworkName()
                                       << std::endl;
-                        } else
+                        } else {
                             eval::loadNetwork(valueStr);
+                        }
                     }
                 }
 #if SP_EXTERNAL_TUNE
                 else if (auto* param = lookupTunableParam(nameStr))
                 {
-                    if (!valueEmpty && util::tryParseI32(param->value, valueStr) && param->callback)
+                    if (!valueEmpty && util::tryParseI32(param->value, valueStr) && param->callback) {
                         param->callback();
+                    }
                 }
 #endif
             }
@@ -713,8 +753,9 @@ namespace stormphrax {
             generateAll(moves, m_pos);
 
             for (u32 i = 0; i < moves.size(); ++i) {
-                if (i > 0)
+                if (i > 0) {
                     std::cout << ' ';
+                }
                 std::cout << moveToString(moves[i].move);
             }
 
@@ -757,9 +798,9 @@ namespace stormphrax {
             usize ttSize = bench::DefaultBenchTtSize;
 
             if (tokens.size() > 1) {
-                if (const auto newDepth = util::tryParseU32(tokens[1]))
+                if (const auto newDepth = util::tryParseU32(tokens[1])) {
                     depth = static_cast<i32>(*newDepth);
-                else {
+                } else {
                     std::cout << "info string invalid depth " << tokens[1] << std::endl;
                     return;
                 }
@@ -767,8 +808,9 @@ namespace stormphrax {
 
             if (tokens.size() > 2) {
                 if (const auto newThreads = util::tryParseU32(tokens[2])) {
-                    if (*newThreads > 1)
+                    if (*newThreads > 1) {
                         std::cout << "info string multiple search threads not yet supported, using 1" << std::endl;
+                    }
                 } else {
                     std::cout << "info string invalid thread count " << tokens[2] << std::endl;
                     return;
@@ -776,9 +818,9 @@ namespace stormphrax {
             }
 
             if (tokens.size() > 3) {
-                if (const auto newTtSize = util::tryParseSize(tokens[3]))
+                if (const auto newTtSize = util::tryParseSize(tokens[3])) {
                     ttSize = static_cast<i32>(*newTtSize);
-                else {
+                } else {
                     std::cout << "info string invalid tt size " << tokens[3] << std::endl;
                     return;
                 }
@@ -787,8 +829,9 @@ namespace stormphrax {
             m_searcher.setTtSize(ttSize);
             std::cout << "info string set tt size to " << ttSize << " MB" << std::endl;
 
-            if (depth == 0)
+            if (depth == 0) {
                 depth = 1;
+            }
 
             bench::run(m_searcher, depth);
         }
@@ -830,8 +873,9 @@ namespace stormphrax {
         }
 
         auto moveToString(Move move) -> std::string {
-            if (!move)
+            if (!move) {
                 return "0000";
+            }
 
             std::ostringstream str{};
 
@@ -841,8 +885,9 @@ namespace stormphrax {
 
             if (type != MoveType::Castling || g_opts.chess960) {
                 str << squareToString(move.dst());
-                if (type == MoveType::Promotion)
+                if (type == MoveType::Promotion) {
                     str << pieceTypeToChar(move.promo());
+                }
             } else {
                 const auto dst =
                     move.srcFile() < move.dstFile() ? toSquare(move.srcRank(), 6) : toSquare(move.srcRank(), 2);
@@ -871,9 +916,9 @@ namespace stormphrax {
                         return std::tolower(c);
                     });
 
-                    if (const auto* param = lookupTunableParam(paramName))
+                    if (const auto* param = lookupTunableParam(paramName)) {
                         printParam(*param);
-                    else {
+                    } else {
                         std::cerr << "unknown parameter " << paramName << std::endl;
                         return;
                     }
@@ -886,8 +931,9 @@ namespace stormphrax {
 
             bool first = true;
             const auto printParam = [&first](const auto& param) {
-                if (!first)
+                if (!first) {
                     std::cout << ",\n";
+                }
 
                 std::cout << "  \"" << param.name << "\": {\n";
                 std::cout << "    \"value\": " << param.value << ",\n";
@@ -907,8 +953,9 @@ namespace stormphrax {
         auto printCttTuningParams(std::span<const std::string> params) -> void {
             bool first = true;
             const auto printParam = [&first](const auto& param) {
-                if (!first)
+                if (!first) {
                     std::cout << ",\n";
+                }
 
                 std::cout << "\"" << param.name << "\": \"Integer(" << param.range.min() << ", " << param.range.max()
                           << ")\"";

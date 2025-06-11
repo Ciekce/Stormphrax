@@ -49,8 +49,9 @@ namespace stormphrax::limit {
 
         const auto limit = std::max(0.001, remaining - overhead);
 
-        if (toGo == 0)
+        if (toGo == 0) {
             toGo = defaultMovesToGo();
+        }
 
         const auto baseTime = limit / static_cast<f64>(toGo) + increment * incrementScale();
 
@@ -62,9 +63,9 @@ namespace stormphrax::limit {
         assert(bestMove != NullMove);
         assert(totalNodes > 0);
 
-        if (bestMove == m_prevBestMove)
+        if (bestMove == m_prevBestMove) {
             ++m_stability;
-        else {
+        } else {
             m_stability = 1;
             m_prevBestMove = bestMove;
         }
@@ -94,8 +95,9 @@ namespace stormphrax::limit {
             scale *= std::clamp(1.0 - invScale, scoreTrendTmMin(), scoreTrendTmMax());
 
             m_avgScore = util::ilerp<8>(avgScore, score, 1);
-        } else
+        } else {
             m_avgScore = score;
+        }
 
         m_scale = std::max(scale, timeScaleMin());
     }
@@ -106,8 +108,9 @@ namespace stormphrax::limit {
     }
 
     auto TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
-        if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0))
+        if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0)) {
             return false;
+        }
 
         const auto elapsed = m_startTime.elapsed();
 

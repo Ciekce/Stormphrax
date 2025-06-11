@@ -87,10 +87,11 @@ namespace stormphrax {
         // used to avoid inflating the history of the generally
         // bad moves of putting the king in a corner when castling
         [[nodiscard]] constexpr auto historyDst() const {
-            if (type() == MoveType::Castling && !g_opts.chess960)
+            if (type() == MoveType::Castling && !g_opts.chess960) {
                 return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
-            else
+            } else {
                 return dst();
+            }
         }
 
         [[nodiscard]] explicit constexpr operator bool() const {

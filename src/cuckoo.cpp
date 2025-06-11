@@ -44,8 +44,9 @@ namespace stormphrax::cuckoo {
                 for (u32 s1 = s0 + 1; s1 < 64; ++s1) {
                     const auto square1 = static_cast<Square>(s1);
 
-                    if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1])
+                    if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1]) {
                         continue;
+                    }
 
                     auto move = Move::standard(square0, square1);
                     auto key = keys::pieceSquare(piece, square0) ^ keys::pieceSquare(piece, square1) ^ keys::color();
@@ -56,8 +57,9 @@ namespace stormphrax::cuckoo {
                         std::swap(keys[slot], key);
                         std::swap(moves[slot], move);
 
-                        if (move == NullMove)
+                        if (move == NullMove) {
                             break;
+                        }
 
                         slot = slot == h1(key) ? h2(key) : h1(key);
                     }

@@ -61,16 +61,18 @@ namespace stormphrax::attacks {
 
             auto bit = squareBit(src);
 
-            if (!(blockers & bit).empty())
+            if (!(blockers & bit).empty()) {
                 return dst;
+            }
 
             blockers |= occupancy;
 
             do {
-                if (right)
+                if (right) {
                     dst |= bit >>= shift;
-                else
+                } else {
                     dst |= bit <<= shift;
+                }
             } while (!(bit & blockers));
 
             return dst;

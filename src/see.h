@@ -40,15 +40,17 @@ namespace stormphrax::see {
     inline auto gain(const PositionBoards& boards, Move move) {
         const auto type = move.type();
 
-        if (type == MoveType::Castling)
+        if (type == MoveType::Castling) {
             return 0;
-        else if (type == MoveType::EnPassant)
+        } else if (type == MoveType::EnPassant) {
             return value(PieceType::Pawn);
+        }
 
         auto score = value(boards.pieceAt(move.dst()));
 
-        if (type == MoveType::Promotion)
+        if (type == MoveType::Promotion) {
             score += value(move.promo()) - value(PieceType::Pawn);
+        }
 
         return score;
     }
@@ -76,15 +78,17 @@ namespace stormphrax::see {
 
         auto score = gain(boards, move) - threshold;
 
-        if (score < 0)
+        if (score < 0) {
             return false;
+        }
 
         auto next = move.type() == MoveType::Promotion ? move.promo() : pieceType(boards.pieceAt(move.src()));
 
         score -= value(next);
 
-        if (score >= 0)
+        if (score >= 0) {
             return true;
+        }
 
         const auto square = move.dst();
 
@@ -110,16 +114,19 @@ namespace stormphrax::see {
         while (true) {
             const auto ourAttackers = attackers & bbs.forColor(us);
 
-            if (ourAttackers.empty())
+            if (ourAttackers.empty()) {
                 break;
+            }
 
             next = popLeastValuable(bbs, occupancy, ourAttackers, us);
 
-            if (next == PieceType::Pawn || next == PieceType::Bishop || next == PieceType::Queen)
+            if (next == PieceType::Pawn || next == PieceType::Bishop || next == PieceType::Queen) {
                 attackers |= attacks::getBishopAttacks(square, occupancy) & bishops;
+            }
 
-            if (next == PieceType::Rook || next == PieceType::Queen)
+            if (next == PieceType::Rook || next == PieceType::Queen) {
                 attackers |= attacks::getRookAttacks(square, occupancy) & rooks;
+            }
 
             attackers &= occupancy;
 
@@ -128,8 +135,9 @@ namespace stormphrax::see {
 
             if (score >= 0) {
                 // our only attacker is our king, but the opponent still has defenders
-                if (next == PieceType::King && !(attackers & bbs.forColor(us)).empty())
+                if (next == PieceType::King && !(attackers & bbs.forColor(us)).empty()) {
                     us = oppColor(us);
+                }
                 break;
             }
         }

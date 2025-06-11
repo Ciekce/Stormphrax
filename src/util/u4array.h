@@ -34,10 +34,11 @@ namespace stormphrax::util {
         constexpr inline auto operator=(u8 v) -> IndexedU4& {
             assert(v <= 0xF);
 
-            if (m_high)
+            if (m_high) {
                 m_value = (m_value & 0x0F) | (v << 4);
-            else
+            } else {
                 m_value = (m_value & 0xF0) | (v & 0x0F);
+            }
 
             return *this;
         }

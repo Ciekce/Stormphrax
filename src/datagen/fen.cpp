@@ -29,8 +29,9 @@ namespace stormphrax::datagen {
     }
 
     auto Fen::push(bool filtered, Move move, Score score) -> void {
-        if (!filtered)
+        if (!filtered) {
             m_positions.push_back(m_curr.toFen() + " | " + std::to_string(score));
+        }
         m_curr = m_curr.applyMove(move);
     }
 

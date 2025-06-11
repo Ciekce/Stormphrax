@@ -182,8 +182,9 @@ namespace stormphrax {
             HistoryScore bonus,
             i32 offset
         ) -> void {
-            if (offset <= ply)
+            if (offset <= ply) {
                 conthistEntry(continuations, ply, offset)[{moving, move}].update(bonus);
+            }
         }
 
         static inline auto conthistScore(
@@ -193,8 +194,9 @@ namespace stormphrax {
             Move move,
             i32 offset
         ) -> HistoryScore {
-            if (offset <= ply)
+            if (offset <= ply) {
                 return conthistEntry(continuations, ply, offset)[{moving, move}];
+            }
 
             return 0;
         }

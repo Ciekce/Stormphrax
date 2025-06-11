@@ -69,8 +69,9 @@ namespace stormphrax {
     }
 
     [[nodiscard]] constexpr auto pieceTypeOrNone(Piece piece) {
-        if (piece == Piece::None)
+        if (piece == Piece::None) {
             return PieceType::None;
+        }
         return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
     }
 
@@ -322,8 +323,9 @@ namespace stormphrax {
     }
 
     [[nodiscard]] constexpr auto squareBitChecked(Square square) {
-        if (square == Square::None)
+        if (square == Square::None) {
             return U64(0);
+        }
 
         return U64(1) << static_cast<i32>(square);
     }
@@ -332,10 +334,11 @@ namespace stormphrax {
     constexpr auto relativeRank(i32 rank) {
         assert(rank >= 0 && rank < 8);
 
-        if constexpr (C == Color::Black)
+        if constexpr (C == Color::Black) {
             return 7 - rank;
-        else
+        } else {
             return rank;
+        }
     }
 
     constexpr auto relativeRank(Color c, i32 rank) {
@@ -392,10 +395,11 @@ namespace stormphrax {
             inline auto unset(Square square) {
                 assert(square != Square::None);
 
-                if (square == kingside)
+                if (square == kingside) {
                     kingside = Square::None;
-                else if (square == queenside)
+                } else if (square == queenside) {
                     queenside = Square::None;
+                }
             }
 
             [[nodiscard]] inline auto operator==(const RookPair&) const -> bool = default;

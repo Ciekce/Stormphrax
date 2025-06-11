@@ -52,8 +52,9 @@ namespace stormphrax::util::rng {
         }
 
         constexpr auto nextU32(u32 bound) -> u32 {
-            if (bound == 0)
+            if (bound == 0) {
                 return 0;
+            }
 
             auto x = nextU32();
             auto m = static_cast<u64>(x) * static_cast<u64>(bound);
@@ -65,8 +66,9 @@ namespace stormphrax::util::rng {
                 if (t >= bound) {
                     t -= bound;
 
-                    if (t >= bound)
+                    if (t >= bound) {
                         t %= bound;
+                    }
                 }
 
                 while (l < t) {

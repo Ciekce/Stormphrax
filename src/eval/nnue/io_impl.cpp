@@ -52,8 +52,9 @@ namespace stormphrax::eval::nnue {
                 m_input.pos = 0;
             }
 
-            if (m_result == 0 && m_input.pos < m_input.size)
+            if (m_result == 0 && m_input.pos < m_input.size) {
                 ZSTD_initDStream(m_dStream);
+            }
 
             m_output.size = m_outBuf.size();
             m_output.pos = 0;
@@ -76,12 +77,14 @@ namespace stormphrax::eval::nnue {
     }
 
     auto ZstdParamStream::read(std::byte* dst, usize n) -> bool {
-        if (m_fail)
+        if (m_fail) {
             return false;
+        }
 
         while (n > 0) {
-            if (m_pos >= m_end && !fillBuffer())
+            if (m_pos >= m_end && !fillBuffer()) {
                 return false;
+            }
 
             const auto remaining = m_end - m_pos;
             const auto count = std::min(n, remaining);

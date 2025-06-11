@@ -60,15 +60,17 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::Pawn)
+            if (pieceType(piece) == PieceType::Pawn) {
                 pawns ^= key;
-            else if (pieceColor(piece) == Color::Black)
+            } else if (pieceColor(piece) == Color::Black) {
                 blackNonPawns ^= key;
-            else
+            } else {
                 whiteNonPawns ^= key;
+            }
 
-            if (isMajor(piece))
+            if (isMajor(piece)) {
                 majors ^= key;
+            }
         }
 
         inline auto movePiece(Piece piece, Square src, Square dst) {
@@ -76,15 +78,17 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::Pawn)
+            if (pieceType(piece) == PieceType::Pawn) {
                 pawns ^= key;
-            else if (pieceColor(piece) == Color::Black)
+            } else if (pieceColor(piece) == Color::Black) {
                 blackNonPawns ^= key;
-            else
+            } else {
                 whiteNonPawns ^= key;
+            }
 
-            if (isMajor(piece))
+            if (isMajor(piece)) {
                 majors ^= key;
+            }
         }
 
         inline auto flipEp(Square epSq) {
@@ -201,8 +205,9 @@ namespace stormphrax {
             key ^= keys::pieceSquare(moving, move.src());
             key ^= keys::pieceSquare(moving, move.dst());
 
-            if (captured != Piece::None)
+            if (captured != Piece::None) {
                 key ^= keys::pieceSquare(captured, move.dst());
+            }
 
             key ^= keys::color();
 
@@ -272,33 +277,42 @@ namespace stormphrax {
             assert(attacker != Color::None);
 
             if constexpr (ThreatShortcut) {
-                if (attacker != toMove)
+                if (attacker != toMove) {
                     return m_threats[square];
+                }
             }
 
             const auto& bbs = m_boards.bbs();
 
             const auto occ = bbs.occupancy();
 
-            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(square)).empty())
+            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(square)).empty()) {
                 return true;
+            }
 
             if (const auto pawns = bbs.pawns(attacker);
                 !(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
+            {
                 return true;
+            }
 
-            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(square)).empty())
+            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(square)).empty()) {
                 return true;
+            }
 
             const auto queens = bbs.queens(attacker);
 
             if (const auto bishops = queens | bbs.bishops(attacker);
                 !(bishops & attacks::getBishopAttacks(square, occ)).empty())
+            {
                 return true;
+            }
 
             if (const auto rooks = queens | bbs.rooks(attacker);
                 !(rooks & attacks::getRookAttacks(square, occ)).empty())
+            {
                 return true;
+            }
 
             return false;
         }
@@ -314,13 +328,15 @@ namespace stormphrax {
         [[nodiscard]] inline auto anyAttacked(Bitboard squares, Color attacker) const {
             assert(attacker != Color::None);
 
-            if (attacker == opponent())
+            if (attacker == opponent()) {
                 return !(squares & m_threats).empty();
+            }
 
             while (squares) {
                 const auto square = squares.popLowestSquare();
-                if (isAttacked(square, attacker))
+                if (isAttacked(square, attacker)) {
                     return true;
+                }
             }
 
             return false;
@@ -382,12 +398,13 @@ namespace stormphrax {
 
             const auto type = move.type();
 
-            if (type == MoveType::Castling)
+            if (type == MoveType::Castling) {
                 return Piece::None;
-            else if (type == MoveType::EnPassant)
+            } else if (type == MoveType::EnPassant) {
                 return flipPieceColor(boards().pieceAt(move.src()));
-            else
+            } else {
                 return boards().pieceAt(move.dst());
+            }
         }
 
         [[nodiscard]] inline auto isNoisy(Move move) const {
@@ -405,11 +422,11 @@ namespace stormphrax {
 
             const auto type = move.type();
 
-            if (type == MoveType::Castling)
+            if (type == MoveType::Castling) {
                 return {false, Piece::None};
-            else if (type == MoveType::EnPassant)
+            } else if (type == MoveType::EnPassant) {
                 return {true, colorPiece(PieceType::Pawn, toMove())};
-            else {
+            } else {
                 const auto captured = boards().pieceAt(move.dst());
                 return {captured != Piece::None || move.promo() == PieceType::Queen, captured};
             }
@@ -482,8 +499,9 @@ namespace stormphrax {
                 const auto potentialAttacker = potentialAttackers.popLowestSquare();
                 const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
 
-                if (maybePinned.one())
+                if (maybePinned.one()) {
                     pinned |= maybePinned;
+                }
             }
 
             return pinned;
@@ -524,10 +542,11 @@ namespace stormphrax {
             }
 
             const auto pawns = bbs.pawns(them);
-            if (them == Color::Black)
+            if (them == Color::Black) {
                 threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
-            else
+            } else {
                 threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
+            }
 
             threats |= attacks::getKingAttacks(m_kings.color(them));
 

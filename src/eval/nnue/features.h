@@ -78,8 +78,9 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr auto getBucket(Color c, Square kingSq) {
-            if (c == Color::Black)
+            if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
+            }
             return Buckets[static_cast<i32>(kingSq)];
         }
 
@@ -197,10 +198,11 @@ namespace stormphrax::eval::nnue::features {
         }();
 
         static constexpr auto shouldFlip(Square kingSq) {
-            if constexpr (Side == MirroredKingSide::Abcd)
+            if constexpr (Side == MirroredKingSide::Abcd) {
                 return squareFile(kingSq) > 3;
-            else
+            } else {
                 return squareFile(kingSq) <= 3;
+            }
         }
 
     public:
@@ -218,14 +220,16 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr auto getBucket(Color c, Square kingSq) {
-            if (c == Color::Black)
+            if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
+            }
             return Buckets[static_cast<i32>(kingSq)];
         }
 
         static constexpr auto getRefreshTableEntry(Color c, Square kingSq) {
-            if (c == Color::Black)
+            if (c == Color::Black) {
                 kingSq = flipSquareRank(kingSq);
+            }
             const bool flipped = shouldFlip(kingSq);
             return Buckets[static_cast<i32>(kingSq)] * 2 + flipped;
         }
@@ -239,8 +243,9 @@ namespace stormphrax::eval::nnue::features {
             const bool prevFlipped = shouldFlip(prevKingSq);
             const bool flipped = shouldFlip(kingSq);
 
-            if (prevFlipped != flipped)
+            if (prevFlipped != flipped) {
                 return true;
+            }
 
             if (c == Color::Black) {
                 prevKingSq = flipSquareRank(prevKingSq);

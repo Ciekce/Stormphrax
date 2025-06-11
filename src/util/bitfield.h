@@ -46,10 +46,11 @@ namespace stormphrax {
 
     template <typename T>
     constexpr auto setFlags(T field, T flags, bool v) {
-        if (v)
+        if (v) {
             field |= flags;
-        else
+        } else {
             field &= ~flags;
+        }
 
         return field;
     }

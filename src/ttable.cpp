@@ -31,18 +31,20 @@ namespace stormphrax {
         // for a long time, these were backwards
         // cheers toanth
         inline auto scoreToTt(Score score, i32 ply) {
-            if (score < -ScoreWin)
+            if (score < -ScoreWin) {
                 return score - ply;
-            else if (score > ScoreWin)
+            } else if (score > ScoreWin) {
                 return score + ply;
+            }
             return score;
         }
 
         inline auto scoreFromTt(Score score, i32 ply) {
-            if (score < -ScoreWin)
+            if (score < -ScoreWin) {
                 return score + ply;
-            else if (score > ScoreWin)
+            } else if (score > ScoreWin) {
                 return score - ply;
+            }
             return score;
         }
 
@@ -56,8 +58,9 @@ namespace stormphrax {
     }
 
     TTable::~TTable() {
-        if (m_clusters)
+        if (m_clusters) {
             util::alignedFree(m_clusters);
+        }
     }
 
     auto TTable::resize(usize mib) -> void {
@@ -66,8 +69,9 @@ namespace stormphrax {
 
         // don't bother reallocating if we're already at the right size
         if (m_clusterCount != capacity) {
-            if (m_clusters)
+            if (m_clusters) {
                 util::alignedFree(m_clusters);
+            }
 
             m_clusters = nullptr;
             m_clusterCount = capacity;
@@ -77,8 +81,9 @@ namespace stormphrax {
     }
 
     auto TTable::finalize() -> bool {
-        if (!m_pendingInit)
+        if (!m_pendingInit) {
             return false;
+        }
 
         m_pendingInit = false;
         m_clusters = util::alignedAlloc<Cluster>(StorageAlignment, m_clusterCount);
@@ -159,10 +164,13 @@ namespace stormphrax {
 
         // Roughly the SF replacement scheme
         if (!(flag == TtFlag::Exact || newKey != entry.key || entry.age() != m_age || depth + 4 + pv * 2 > entry.depth))
+        {
             return;
+        }
 
-        if (move || entry.key != newKey)
+        if (move || entry.key != newKey) {
             entry.move = move;
+        }
 
         entry.key = newKey;
         entry.score = static_cast<i16>(scoreToTt(score, ply));
@@ -209,8 +217,9 @@ namespace stormphrax {
         for (u64 i = 0; i < 1000; ++i) {
             const auto cluster = m_clusters[i];
             for (const auto& entry : cluster.entries) {
-                if (entry.flag() != TtFlag::None && entry.age() == m_age)
+                if (entry.flag() != TtFlag::None && entry.age() == m_age) {
                     ++filledEntries;
+                }
             }
         }
 

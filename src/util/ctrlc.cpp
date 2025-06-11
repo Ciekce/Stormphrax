@@ -41,8 +41,9 @@ namespace stormphrax::util::signal {
 #ifdef _WIN32
         const auto result = SetConsoleCtrlHandler(
             [](DWORD dwCtrlType) -> BOOL {
-                if (dwCtrlType == CTRL_BREAK_EVENT)
+                if (dwCtrlType == CTRL_BREAK_EVENT) {
                     return FALSE;
+                }
 
                 for (auto& handler : s_handlers) {
                     handler();
@@ -53,8 +54,9 @@ namespace stormphrax::util::signal {
             TRUE
         );
 
-        if (!result)
+        if (!result) {
             std::cerr << "failed to set ctrl+c handler" << std::endl;
+        }
 #else
         struct sigaction action{.sa_flags = SA_RESTART};
 
@@ -65,11 +67,13 @@ namespace stormphrax::util::signal {
             }
         };
 
-        if (sigaction(SIGINT, &action, nullptr))
+        if (sigaction(SIGINT, &action, nullptr)) {
             std::cerr << "failed to set SIGINT handler" << std::endl;
+        }
 
-        if (sigaction(SIGTERM, &action, nullptr))
+        if (sigaction(SIGTERM, &action, nullptr)) {
             std::cerr << "failed to set SIGTERM handler" << std::endl;
+        }
 #endif
     }
 } // namespace stormphrax::util::signal

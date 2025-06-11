@@ -85,8 +85,9 @@ namespace stormphrax {
                 case MovegenStage::TtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
                         return m_ttMove;
+                    }
 
                     [[fallthrough]];
                 }
@@ -105,15 +106,17 @@ namespace stormphrax {
                         const auto idx = findNext();
                         const auto [move, score] = m_data.moves[idx];
 
-                        if (move == m_ttMove)
+                        if (move == m_ttMove) {
                             continue;
+                        }
 
                         const auto threshold = -score / 4 + goodNoisySeeOffset();
 
-                        if (!see::see(m_pos, move, threshold))
+                        if (!see::see(m_pos, move, threshold)) {
                             m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
-                        else
+                        } else {
                             return move;
+                        }
                     }
 
                     ++m_stage;
@@ -125,7 +128,9 @@ namespace stormphrax {
 
                     if (!m_skipQuiets && m_killers.killer && m_killers.killer != m_ttMove
                         && m_pos.isPseudolegal(m_killers.killer))
+                    {
                         return m_killers.killer;
+                    }
 
                     [[fallthrough]];
                 }
@@ -143,8 +148,9 @@ namespace stormphrax {
 
                 case MovegenStage::Quiet: {
                     if (!m_skipQuiets) {
-                        if (const auto move = selectNext([this](auto move) { return !isSpecial(move); }))
+                        if (const auto move = selectNext([this](auto move) { return !isSpecial(move); })) {
                             return move;
+                        }
                     }
 
                     m_idx = 0;
@@ -155,8 +161,9 @@ namespace stormphrax {
                 }
 
                 case MovegenStage::BadNoisy: {
-                    if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; }))
+                    if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; })) {
                         return move;
+                    }
 
                     m_stage = MovegenStage::End;
                     return NullMove;
@@ -165,8 +172,9 @@ namespace stormphrax {
                 case MovegenStage::QsearchTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
                         return m_ttMove;
+                    }
 
                     [[fallthrough]];
                 }
@@ -181,8 +189,9 @@ namespace stormphrax {
                 }
 
                 case MovegenStage::QsearchNoisy: {
-                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; })) {
                         return move;
+                    }
 
                     m_stage = MovegenStage::End;
                     return NullMove;
@@ -191,8 +200,9 @@ namespace stormphrax {
                 case MovegenStage::QsearchEvasionsTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
                         return m_ttMove;
+                    }
 
                     [[fallthrough]];
                 }
@@ -207,8 +217,9 @@ namespace stormphrax {
                 }
 
                 case MovegenStage::QsearchEvasionsNoisy: {
-                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; })) {
                         return move;
+                    }
 
                     ++m_stage;
                     [[fallthrough]];
@@ -227,8 +238,9 @@ namespace stormphrax {
 
                 case MovegenStage::QsearchEvasionsQuiet: {
                     if (!m_skipQuiets) {
-                        if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+                        if (const auto move = selectNext([this](auto move) { return move != m_ttMove; })) {
                             return move;
+                        }
                     }
 
                     m_stage = MovegenStage::End;
@@ -238,8 +250,9 @@ namespace stormphrax {
                 case MovegenStage::ProbcutTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove))
+                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
                         return m_ttMove;
+                    }
 
                     [[fallthrough]];
                 }
@@ -254,8 +267,9 @@ namespace stormphrax {
                 }
 
                 case MovegenStage::ProbcutNoisy: {
-                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; }))
+                    if (const auto move = selectNext([this](auto move) { return move != m_ttMove; })) {
                         return move;
+                    }
 
                     m_stage = MovegenStage::End;
                     return NullMove;
@@ -325,8 +339,9 @@ namespace stormphrax {
                 m_history{history},
                 m_continuations{continuations},
                 m_ply{ply} {
-            if (killers)
+            if (killers) {
                 m_killers = *killers;
+            }
             m_data.moves.clear();
         }
 
@@ -339,8 +354,9 @@ namespace stormphrax {
             score += m_history.noisyScore(move, captured, m_pos.threats()) / 8;
             score += see::value(captured);
 
-            if (move.type() == MoveType::Promotion)
+            if (move.type() == MoveType::Promotion) {
                 score += see::value(PieceType::Queen) - see::value(PieceType::Pawn);
+            }
         }
 
         inline auto scoreNoisies() -> void {
@@ -376,8 +392,9 @@ namespace stormphrax {
                 }
             }
 
-            if (best != m_idx)
+            if (best != m_idx) {
                 std::swap(m_data.moves[m_idx], m_data.moves[best]);
+            }
 
             return m_idx++;
         }
@@ -388,8 +405,9 @@ namespace stormphrax {
                 const auto idx = Sort ? findNext() : m_idx++;
                 const auto move = m_data.moves[idx].move;
 
-                if (predicate(move))
+                if (predicate(move)) {
                     return move;
+                }
             }
 
             return NullMove;

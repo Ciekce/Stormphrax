@@ -47,8 +47,9 @@ namespace stormphrax::eval {
         if constexpr (Correct) {
             const auto corrected = correction->correct(pos, moves, ply, eval);
 
-            if (corrDelta)
+            if (corrDelta) {
                 *corrDelta = std::abs(eval - corrected);
+            }
 
             eval = corrected;
         }

@@ -27,8 +27,9 @@ namespace stormphrax::split {
         std::istringstream stream{str};
 
         for (std::string token{}; std::getline(stream, token, delim);) {
-            if (token.empty())
+            if (token.empty()) {
                 continue;
+            }
 
             result.push_back(token);
         }

@@ -396,8 +396,9 @@ namespace stormphrax::eval::nnue::arch {
         static inline auto permuteFt(std::span<W> weights, std::span<B> biases) {
             using namespace util::simd;
 
-            if constexpr (!PackNonSequential)
+            if constexpr (!PackNonSequential) {
                 return;
+            }
 
             static constexpr usize PackSize = PackOrdering.size();
             static constexpr usize ChunkSize = PackSize * PackGrouping;
