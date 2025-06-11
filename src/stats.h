@@ -20,11 +20,10 @@
 
 #include "types.h"
 
-namespace stormphrax::stats
-{
-	auto conditionHit(bool condition, usize slot = 0) -> void;
-	auto range(i64 value, usize slot = 0) -> void;
-	auto mean(i64 value, usize slot = 0) -> void;
+namespace stormphrax::stats {
+    auto conditionHit(bool condition, usize slot = 0) -> void;
+    auto range(i64 value, usize slot = 0) -> void;
+    auto mean(i64 value, usize slot = 0) -> void;
 
-	auto print() -> void;
-}
+    auto print() -> void;
+} // namespace stormphrax::stats

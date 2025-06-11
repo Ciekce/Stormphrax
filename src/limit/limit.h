@@ -22,18 +22,16 @@
 
 #include "../search_fwd.h"
 
-namespace stormphrax::limit
-{
-	class ISearchLimiter
-	{
-	public:
-		virtual ~ISearchLimiter() = default;
+namespace stormphrax::limit {
+    class ISearchLimiter {
+    public:
+        virtual ~ISearchLimiter() = default;
 
-		virtual auto update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void {}
-		virtual auto updateMoveNodes(Move move, usize nodes) -> void {}
+        virtual auto update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) -> void {}
+        virtual auto updateMoveNodes(Move move, usize nodes) -> void {}
 
-		[[nodiscard]] virtual auto stop(const search::SearchData &data, bool allowSoftTimeout) -> bool = 0;
+        [[nodiscard]] virtual auto stop(const search::SearchData& data, bool allowSoftTimeout) -> bool = 0;
 
-		[[nodiscard]] virtual auto stopped() const -> bool = 0;
-	};
-}
+        [[nodiscard]] virtual auto stopped() const -> bool = 0;
+    };
+} // namespace stormphrax::limit

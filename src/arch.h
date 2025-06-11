@@ -23,64 +23,63 @@
 #include <new>
 
 #if defined(SP_NATIVE)
-	// cannot expand a macro to defined()
-	#if __BMI2__ && defined(SP_FAST_PEXT)
-		#define SP_HAS_BMI2 1
-	#else
-		#define SP_HAS_BMI2 0
-	#endif
-	#if !defined(SP_DISABLE_AVX512)
-		#define SP_HAS_VNNI512 __AVX512VNNI__
-		#define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
-	#else
-		#define SP_HAS_VNNI512 0
-		#define SP_HAS_AVX512 0
-	#endif
-	#define SP_HAS_VNNI256 0 // slowdown on any cpu that would use it
-	#define SP_HAS_AVX2 __AVX2__
-	#define SP_HAS_POPCNT __POPCNT__
-	#define SP_HAS_NEON __ARM_NEON
-	#if !defined(SP_DISABLE_NEON_DOTPROD)
-		#define SP_HAS_NEON_DOTPROD (__ARM_ARCH >= 8)
-	#else
-		#define SP_HAS_NEON_DOTPROD 0
-	#endif
+    // cannot expand a macro to defined()
+    #if __BMI2__ && defined(SP_FAST_PEXT)
+        #define SP_HAS_BMI2 1
+    #else
+        #define SP_HAS_BMI2 0
+    #endif
+    #if !defined(SP_DISABLE_AVX512)
+        #define SP_HAS_VNNI512 __AVX512VNNI__
+        #define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
+    #else
+        #define SP_HAS_VNNI512 0
+        #define SP_HAS_AVX512 0
+    #endif
+    #define SP_HAS_VNNI256 0 // slowdown on any cpu that would use it
+    #define SP_HAS_AVX2 __AVX2__
+    #define SP_HAS_POPCNT __POPCNT__
+    #define SP_HAS_NEON __ARM_NEON
+    #if !defined(SP_DISABLE_NEON_DOTPROD)
+        #define SP_HAS_NEON_DOTPROD (__ARM_ARCH >= 8)
+    #else
+        #define SP_HAS_NEON_DOTPROD 0
+    #endif
 #elif defined(SP_VNNI512)
-	#define SP_HAS_BMI2 1
-	#define SP_HAS_VNNI512 1
-	#define SP_HAS_AVX512 1
-	#define SP_HAS_VNNI256 1
-	#define SP_HAS_AVX2 1
-	#define SP_HAS_POPCNT 1
-	#define SP_HAS_NEON 0
-	#define SP_HAS_NEON_DOTPROD 0
+    #define SP_HAS_BMI2 1
+    #define SP_HAS_VNNI512 1
+    #define SP_HAS_AVX512 1
+    #define SP_HAS_VNNI256 1
+    #define SP_HAS_AVX2 1
+    #define SP_HAS_POPCNT 1
+    #define SP_HAS_NEON 0
+    #define SP_HAS_NEON_DOTPROD 0
 #elif defined(SP_AVX2_BMI2)
-	#define SP_HAS_BMI2 1
-	#define SP_HAS_VNNI512 0
-	#define SP_HAS_AVX512 0
-	#define SP_HAS_VNNI256 0
-	#define SP_HAS_AVX2 1
-	#define SP_HAS_POPCNT 1
-	#define SP_HAS_NEON 0
-	#define SP_HAS_NEON_DOTPROD 0
+    #define SP_HAS_BMI2 1
+    #define SP_HAS_VNNI512 0
+    #define SP_HAS_AVX512 0
+    #define SP_HAS_VNNI256 0
+    #define SP_HAS_AVX2 1
+    #define SP_HAS_POPCNT 1
+    #define SP_HAS_NEON 0
+    #define SP_HAS_NEON_DOTPROD 0
 #elif defined(SP_AVX2)
-	#define SP_HAS_BMI2 0
-	#define SP_HAS_VNNI512 0
-	#define SP_HAS_AVX512 0
-	#define SP_HAS_VNNI256 0
-	#define SP_HAS_AVX2 1
-	#define SP_HAS_POPCNT 1
-	#define SP_HAS_NEON 0
-	#define SP_HAS_NEON_DOTPROD 0
+    #define SP_HAS_BMI2 0
+    #define SP_HAS_VNNI512 0
+    #define SP_HAS_AVX512 0
+    #define SP_HAS_VNNI256 0
+    #define SP_HAS_AVX2 1
+    #define SP_HAS_POPCNT 1
+    #define SP_HAS_NEON 0
+    #define SP_HAS_NEON_DOTPROD 0
 #else
-#error no arch specified
+    #error no arch specified
 #endif
 
-namespace stormphrax
-{
+namespace stormphrax {
 #ifdef __cpp_lib_hardware_interference_size
-	constexpr auto CacheLineSize = std::hardware_destructive_interference_size;
+    constexpr auto CacheLineSize = std::hardware_destructive_interference_size;
 #else
-	constexpr usize CacheLineSize = 64;
+    constexpr usize CacheLineSize = 64;
 #endif
-}
+} // namespace stormphrax

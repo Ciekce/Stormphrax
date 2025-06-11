@@ -22,121 +22,104 @@
 
 #include "../tunable.h"
 
-namespace stormphrax::limit
-{
-	using namespace stormphrax::tunable;
+namespace stormphrax::limit {
+    using namespace stormphrax::tunable;
 
-	using util::Instant;
+    using util::Instant;
 
-	MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead)
-		: m_endTime{Instant::now() + static_cast<f64>(std::max<i64>(1, time - overhead)) / 1000.0} {}
+    MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead) :
+            m_endTime{Instant::now() + static_cast<f64>(std::max<i64>(1, time - overhead)) / 1000.0} {}
 
-	auto MoveTimeLimiter::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
-	{
-		if (data.rootDepth > 2
-			&& data.nodes > 0
-			&& (data.nodes % 1024) == 0
-			&& Instant::now() >= m_endTime)
-		{
-			m_stopped.store(true, std::memory_order_release);
-			return true;
-		}
+    auto MoveTimeLimiter::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
+        if (data.rootDepth > 2 && data.nodes > 0 && (data.nodes % 1024) == 0 && Instant::now() >= m_endTime) {
+            m_stopped.store(true, std::memory_order_release);
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	auto MoveTimeLimiter::stopped() const -> bool
-	{
-		return m_stopped.load(std::memory_order_acquire);
-	}
+    auto MoveTimeLimiter::stopped() const -> bool {
+        return m_stopped.load(std::memory_order_acquire);
+    }
 
-	TimeManager::TimeManager(Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead)
-		: m_startTime{start}
-	{
-		assert(toGo >= 0);
+    TimeManager::TimeManager(Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead) :
+            m_startTime{start} {
+        assert(toGo >= 0);
 
-		const auto limit = std::max(0.001, remaining - overhead);
+        const auto limit = std::max(0.001, remaining - overhead);
 
-		if (toGo == 0)
-			toGo = defaultMovesToGo();
+        if (toGo == 0)
+            toGo = defaultMovesToGo();
 
-		const auto baseTime = limit / static_cast<f64>(toGo) + increment * incrementScale();
+        const auto baseTime = limit / static_cast<f64>(toGo) + increment * incrementScale();
 
-		m_maxTime  = limit * hardTimeScale();
-		m_softTime = std::min(baseTime * softTimeScale(), m_maxTime);
-	}
+        m_maxTime = limit * hardTimeScale();
+        m_softTime = std::min(baseTime * softTimeScale(), m_maxTime);
+    }
 
-	auto TimeManager::update(const search::SearchData &data, Score score, Move bestMove, usize totalNodes) -> void
-	{
-		assert(bestMove != NullMove);
-		assert(totalNodes > 0);
+    auto TimeManager::update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) -> void {
+        assert(bestMove != NullMove);
+        assert(totalNodes > 0);
 
-		if (bestMove == m_prevBestMove)
-			++m_stability;
-		else
-		{
-			m_stability = 1;
-			m_prevBestMove = bestMove;
-		}
+        if (bestMove == m_prevBestMove)
+            ++m_stability;
+        else {
+            m_stability = 1;
+            m_prevBestMove = bestMove;
+        }
 
-		auto scale = 1.0;
+        auto scale = 1.0;
 
-		const auto bestMoveNodeFraction = static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()])
-			/ static_cast<f64>(totalNodes);
-		scale *= std::max(nodeTmBase() - bestMoveNodeFraction * nodeTmScale(), nodeTmScaleMin());
+        const auto bestMoveNodeFraction =
+            static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()]) / static_cast<f64>(totalNodes);
+        scale *= std::max(nodeTmBase() - bestMoveNodeFraction * nodeTmScale(), nodeTmScaleMin());
 
-		if (data.rootDepth >= 6)
-		{
-			const auto stability = static_cast<f64>(m_stability);
-			scale *= std::min(
-				bmStabilityTmMax(),
-				bmStabilityTmMin() + bmStabilityTmScale()
-					* std::pow(stability + bmStabilityTmOffset(), bmStabilityTmPower())
-			);
-		}
+        if (data.rootDepth >= 6) {
+            const auto stability = static_cast<f64>(m_stability);
+            scale *= std::min(
+                bmStabilityTmMax(),
+                bmStabilityTmMin()
+                    + bmStabilityTmScale() * std::pow(stability + bmStabilityTmOffset(), bmStabilityTmPower())
+            );
+        }
 
-		if (m_avgScore)
-		{
-			const auto avgScore = *m_avgScore;
+        if (m_avgScore) {
+            const auto avgScore = *m_avgScore;
 
-			const auto scoreChange = static_cast<f64>(score - avgScore) / scoreTrendTmScoreScale();
-			const auto invScale = scoreChange * scoreTrendTmScale() / (std::abs(scoreChange) + scoreTrendTmStretch())
-				* (scoreChange > 0 ? scoreTrendTmPositiveScale() : scoreTrendTmNegativeScale());
+            const auto scoreChange = static_cast<f64>(score - avgScore) / scoreTrendTmScoreScale();
+            const auto invScale = scoreChange * scoreTrendTmScale() / (std::abs(scoreChange) + scoreTrendTmStretch())
+                                * (scoreChange > 0 ? scoreTrendTmPositiveScale() : scoreTrendTmNegativeScale());
 
-			scale *= std::clamp(1.0 - invScale, scoreTrendTmMin(), scoreTrendTmMax());
+            scale *= std::clamp(1.0 - invScale, scoreTrendTmMin(), scoreTrendTmMax());
 
-			m_avgScore = util::ilerp<8>(avgScore, score, 1);
-		}
-		else m_avgScore = score;
+            m_avgScore = util::ilerp<8>(avgScore, score, 1);
+        } else
+            m_avgScore = score;
 
-		m_scale = std::max(scale, timeScaleMin());
-	}
+        m_scale = std::max(scale, timeScaleMin());
+    }
 
-	auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void
-	{
-		assert(move != NullMove);
-		m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
-	}
+    auto TimeManager::updateMoveNodes(Move move, usize nodes) -> void {
+        assert(move != NullMove);
+        m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
+    }
 
-	auto TimeManager::stop(const search::SearchData &data, bool allowSoftTimeout) -> bool
-	{
-		if (data.nodes == 0
-			|| (!allowSoftTimeout && (data.nodes % 1024) != 0))
-			return false;
+    auto TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) -> bool {
+        if (data.nodes == 0 || (!allowSoftTimeout && (data.nodes % 1024) != 0))
+            return false;
 
-		const auto elapsed = m_startTime.elapsed();
+        const auto elapsed = m_startTime.elapsed();
 
-		if (elapsed > m_maxTime || (allowSoftTimeout && elapsed > m_softTime * m_scale))
-		{
-			m_stopped.store(true, std::memory_order_release);
-			return true;
-		}
+        if (elapsed > m_maxTime || (allowSoftTimeout && elapsed > m_softTime * m_scale)) {
+            m_stopped.store(true, std::memory_order_release);
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	auto TimeManager::stopped() const -> bool
-	{
-		return m_stopped.load(std::memory_order_acquire);
-	}
-}
+    auto TimeManager::stopped() const -> bool {
+        return m_stopped.load(std::memory_order_acquire);
+    }
+} // namespace stormphrax::limit

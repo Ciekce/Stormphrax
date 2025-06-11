@@ -20,13 +20,18 @@
 
 #include "../types.h"
 
-#include <string>
-#include <limits>
 #include <functional>
+#include <limits>
 #include <optional>
+#include <string>
 
-namespace stormphrax::datagen
-{
-	auto run(const std::function<void()> &printUsage, const std::string &format,
-		bool dfrc, const std::string &output, i32 threads, std::optional<std::string> tbPath) -> i32;
+namespace stormphrax::datagen {
+    auto run(
+        const std::function<void()>& printUsage,
+        const std::string& format,
+        bool dfrc,
+        const std::string& output,
+        i32 threads,
+        std::optional<std::string> tbPath
+    ) -> i32;
 }

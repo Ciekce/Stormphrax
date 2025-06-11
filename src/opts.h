@@ -20,40 +20,37 @@
 
 #include "types.h"
 
-#include "wdl.h"
 #include "util/range.h"
+#include "wdl.h"
 
-namespace stormphrax
-{
-	namespace opts
-	{
-		constexpr u32 DefaultThreadCount = 1;
-		constexpr auto ThreadCountRange = util::Range<u32>{1,  2048};
+namespace stormphrax {
+    namespace opts {
+        constexpr u32 DefaultThreadCount = 1;
+        constexpr auto ThreadCountRange = util::Range<u32>{1, 2048};
 
-		constexpr i32 DefaultNormalizedContempt = 0;
+        constexpr i32 DefaultNormalizedContempt = 0;
 
-		struct GlobalOptions
-		{
-			u32 threads{DefaultThreadCount};
+        struct GlobalOptions {
+            u32 threads{DefaultThreadCount};
 
-			bool chess960{false};
-			bool showWdl{true};
-			bool showCurrMove{false};
+            bool chess960{false};
+            bool showWdl{true};
+            bool showCurrMove{false};
 
-			bool softNodes{false};
-			i32 softNodeHardLimitMultiplier{1678};
+            bool softNodes{false};
+            i32 softNodeHardLimitMultiplier{1678};
 
-			bool enableWeirdTcs{false};
+            bool enableWeirdTcs{false};
 
-			bool syzygyEnabled{false};
-			i32 syzygyProbeDepth{1};
-			i32 syzygyProbeLimit{7};
+            bool syzygyEnabled{false};
+            i32 syzygyProbeDepth{1};
+            i32 syzygyProbeLimit{7};
 
-			i32 contempt{wdl::unnormalizeScoreMaterial58(DefaultNormalizedContempt)};
-		};
+            i32 contempt{wdl::unnormalizeScoreMaterial58(DefaultNormalizedContempt)};
+        };
 
-		auto mutableOpts() -> GlobalOptions &;
-	}
+        auto mutableOpts() -> GlobalOptions&;
+    } // namespace opts
 
-	extern const opts::GlobalOptions &g_opts;
-}
+    extern const opts::GlobalOptions& g_opts;
+} // namespace stormphrax

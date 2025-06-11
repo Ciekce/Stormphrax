@@ -22,89 +22,68 @@
 
 #include <array>
 
-#include "../../core.h"
 #include "../../bitboard.h"
+#include "../../core.h"
 #include "../util.h"
 
 // ignore the duplication pls ty :3
-namespace stormphrax::attacks::bmi2
-{
-	struct RookSquareData
-	{
-		Bitboard srcMask;
-		Bitboard dstMask;
-		u32 offset;
-	};
+namespace stormphrax::attacks::bmi2 {
+    struct RookSquareData {
+        Bitboard srcMask;
+        Bitboard dstMask;
+        u32 offset;
+    };
 
-	struct RookData_
-	{
-		std::array<RookSquareData, 64> data;
-		u32 tableSize;
-	};
+    struct RookData_ {
+        std::array<RookSquareData, 64> data;
+        u32 tableSize;
+    };
 
-	struct BishopSquareData
-	{
-		Bitboard mask;
-		u32 offset;
-	};
+    struct BishopSquareData {
+        Bitboard mask;
+        u32 offset;
+    };
 
-	struct BishopData_
-	{
-		std::array<BishopSquareData, 64> data;
-		u32 tableSize;
-	};
+    struct BishopData_ {
+        std::array<BishopSquareData, 64> data;
+        u32 tableSize;
+    };
 
-	constexpr auto RookData = []
-	{
-		RookData_ dst{};
+    constexpr auto RookData = [] {
+        RookData_ dst{};
 
-		for (u32 i = 0; i < 64; ++i)
-		{
-			const auto square = static_cast<Square>(i);
+        for (u32 i = 0; i < 64; ++i) {
+            const auto square = static_cast<Square>(i);
 
-			for (const auto dir : {
-				offsets::Up,
-				offsets::Down,
-				offsets::Left,
-				offsets::Right
-			})
-			{
-				const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+            for (const auto dir : {offsets::Up, offsets::Down, offsets::Left, offsets::Right}) {
+                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
 
-				dst.data[i].srcMask |= attacks & ~internal::edges(dir);
-				dst.data[i].dstMask |= attacks;
-			}
+                dst.data[i].srcMask |= attacks & ~internal::edges(dir);
+                dst.data[i].dstMask |= attacks;
+            }
 
-			dst.data[i].offset = dst.tableSize;
-			dst.tableSize += 1 << dst.data[i].srcMask.popcount();
-		}
+            dst.data[i].offset = dst.tableSize;
+            dst.tableSize += 1 << dst.data[i].srcMask.popcount();
+        }
 
-		return dst;
-	}();
+        return dst;
+    }();
 
-	constexpr auto BishopData = []
-	{
-		BishopData_ dst{};
+    constexpr auto BishopData = [] {
+        BishopData_ dst{};
 
-		for (u32 i = 0; i < 64; ++i)
-		{
-			const auto square = static_cast<Square>(i);
+        for (u32 i = 0; i < 64; ++i) {
+            const auto square = static_cast<Square>(i);
 
-			for (const auto dir : {
-				offsets::UpLeft,
-				offsets::UpRight,
-				offsets::DownLeft,
-				offsets::DownRight
-			})
-			{
-				const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
-				dst.data[i].mask |= attacks & ~internal::edges(dir);
-			}
+            for (const auto dir : {offsets::UpLeft, offsets::UpRight, offsets::DownLeft, offsets::DownRight}) {
+                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+                dst.data[i].mask |= attacks & ~internal::edges(dir);
+            }
 
-			dst.data[i].offset = dst.tableSize;
-			dst.tableSize += 1 << dst.data[i].mask.popcount();
-		}
+            dst.data[i].offset = dst.tableSize;
+            dst.tableSize += 1 << dst.data[i].mask.popcount();
+        }
 
-		return dst;
-	}();
-}
+        return dst;
+    }();
+} // namespace stormphrax::attacks::bmi2

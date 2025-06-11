@@ -23,46 +23,76 @@
 #include <array>
 
 #include "nnue/activation.h"
-#include "nnue/output.h"
-#include "nnue/features.h"
-#include "nnue/arch/singlelayer.h"
 #include "nnue/arch/multilayer.h"
+#include "nnue/arch/singlelayer.h"
+#include "nnue/features.h"
+#include "nnue/output.h"
 
-namespace stormphrax::eval
-{
-	// current arch: (704x16hm->1792)x2->(16x2->32->1)x8
-	// pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
+namespace stormphrax::eval {
+    // current arch: (704x16hm->1792)x2->(16x2->32->1)x8
+    // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
 
-	constexpr u32 FtQBits = 8;
-	constexpr u32 L1QBits = 7;
+    constexpr u32 FtQBits = 8;
+    constexpr u32 L1QBits = 7;
 
-	constexpr u32 FtScaleBits = 7;
+    constexpr u32 FtScaleBits = 7;
 
-	constexpr u32 L1Size = 1792;
-	constexpr u32 L2Size = 16;
-	constexpr u32 L3Size = 32;
+    constexpr u32 L1Size = 1792;
+    constexpr u32 L2Size = 16;
+    constexpr u32 L3Size = 32;
 
-	using L1Activation = nnue::activation::ClippedReLU;
+    using L1Activation = nnue::activation::ClippedReLU;
 
-	constexpr bool DualActivation = true;
+    constexpr bool DualActivation = true;
 
-	constexpr i32 Scale = 400;
+    constexpr i32 Scale = 400;
 
-	// visually flipped upside down, a1 = 0
-	using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
-		nnue::features::MirroredKingSide::Abcd,
-		 0,  1,  2,  3,
-		 4,  5,  6,  7,
-		 8,  9, 10, 11,
-		 8,  9, 10, 11,
-		12, 12, 13, 13,
-		12, 12, 13, 13,
-		14, 14, 15, 15,
-		14, 14, 15, 15
-	>;
+    // visually flipped upside down, a1 = 0
+    using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
+        nnue::features::MirroredKingSide::Abcd,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        8,
+        9,
+        10,
+        11,
+        12,
+        12,
+        13,
+        13,
+        12,
+        12,
+        13,
+        13,
+        14,
+        14,
+        15,
+        15,
+        14,
+        14,
+        15,
+        15>;
 
-	using OutputBucketing = nnue::output::MaterialCount<8>;
+    using OutputBucketing = nnue::output::MaterialCount<8>;
 
-	using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
-		L1Size, L2Size, L3Size, FtScaleBits, FtQBits, L1QBits, DualActivation, OutputBucketing, Scale>;
-}
+    using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
+        L1Size,
+        L2Size,
+        L3Size,
+        FtScaleBits,
+        FtQBits,
+        L1QBits,
+        DualActivation,
+        OutputBucketing,
+        Scale>;
+} // namespace stormphrax::eval

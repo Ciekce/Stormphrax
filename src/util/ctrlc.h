@@ -22,10 +22,9 @@
 
 #include <functional>
 
-namespace stormphrax::util::signal
-{
-	using CtrlCHandler = std::function<void()>;
-	auto addCtrlCHandler(CtrlCHandler handler) -> void;
+namespace stormphrax::util::signal {
+    using CtrlCHandler = std::function<void()>;
+    auto addCtrlCHandler(CtrlCHandler handler) -> void;
 
-	auto init() -> void;
-}
+    auto init() -> void;
+} // namespace stormphrax::util::signal

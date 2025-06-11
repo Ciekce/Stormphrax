@@ -18,135 +18,122 @@
 
 #include "stats.h"
 
-#include <iostream>
 #include <atomic>
+#include <iostream>
 #include <limits>
 #include <utility>
 
 #include "util/multi_array.h"
 
-namespace stormphrax::stats
-{
-	namespace
-	{
-		constexpr usize Slots = 32;
+namespace stormphrax::stats {
+    namespace {
+        constexpr usize Slots = 32;
 
-		struct Range
-		{
-			std::atomic<i64> min{std::numeric_limits<i64>::max()};
-			std::atomic<i64> max{std::numeric_limits<i64>::min()};
-		};
+        struct Range {
+            std::atomic<i64> min{std::numeric_limits<i64>::max()};
+            std::atomic<i64> max{std::numeric_limits<i64>::min()};
+        };
 
-		util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
-		util::MultiArray<Range, Slots> s_ranges{};
-		util::MultiArray<std::pair<std::atomic<i64>, std::atomic<u64>>, Slots> s_means{};
+        util::MultiArray<std::atomic<u64>, Slots, 2> s_conditionHits{};
+        util::MultiArray<Range, Slots> s_ranges{};
+        util::MultiArray<std::pair<std::atomic<i64>, std::atomic<u64>>, Slots> s_means{};
 
-		std::atomic_bool s_anyUsed{false};
+        std::atomic_bool s_anyUsed{false};
 
-		template <typename T>
-		inline auto atomicMin(std::atomic<T> &v, T x)
-		{
-			auto curr = v.load();
-			while (x < curr && v.compare_exchange_weak(curr, x)) {}
-		}
+        template <typename T>
+        inline auto atomicMin(std::atomic<T>& v, T x) {
+            auto curr = v.load();
+            while (x < curr && v.compare_exchange_weak(curr, x)) {
+            }
+        }
 
-		template <typename T>
-		inline auto atomicMax(std::atomic<T> &v, T x)
-		{
-			auto curr = v.load();
-			while (x > curr && v.compare_exchange_weak(curr, x)) {}
-		}
-	}
+        template <typename T>
+        inline auto atomicMax(std::atomic<T>& v, T x) {
+            auto curr = v.load();
+            while (x > curr && v.compare_exchange_weak(curr, x)) {
+            }
+        }
+    } // namespace
 
-	auto conditionHit(bool condition, usize slot) -> void
-	{
-		if (slot >= Slots)
-		{
-			std::cerr << "tried to hit condition " << slot << " (max " << (Slots - 1) << ")" << std::endl;
-			return;
-		}
+    auto conditionHit(bool condition, usize slot) -> void {
+        if (slot >= Slots) {
+            std::cerr << "tried to hit condition " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+            return;
+        }
 
-		++s_conditionHits[slot][condition];
+        ++s_conditionHits[slot][condition];
 
-		s_anyUsed = true;
-	}
+        s_anyUsed = true;
+    }
 
-	auto range(i64 v, usize slot) -> void
-	{
-		if (slot >= Slots)
-		{
-			std::cerr << "tried to hit range " << slot << " (max " << (Slots - 1) << ")" << std::endl;
-			return;
-		}
+    auto range(i64 v, usize slot) -> void {
+        if (slot >= Slots) {
+            std::cerr << "tried to hit range " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+            return;
+        }
 
-		atomicMin(s_ranges[slot].min, v);
-		atomicMax(s_ranges[slot].max, v);
+        atomicMin(s_ranges[slot].min, v);
+        atomicMax(s_ranges[slot].max, v);
 
-		s_anyUsed = true;
-	}
+        s_anyUsed = true;
+    }
 
-	auto mean(i64 v, usize slot) -> void
-	{
-		if (slot >= Slots)
-		{
-			std::cerr << "tried to hit mean " << slot << " (max " << (Slots - 1) << ")" << std::endl;
-			return;
-		}
+    auto mean(i64 v, usize slot) -> void {
+        if (slot >= Slots) {
+            std::cerr << "tried to hit mean " << slot << " (max " << (Slots - 1) << ")" << std::endl;
+            return;
+        }
 
-		s_means[slot].first += v;
-		++s_means[slot].second;
+        s_means[slot].first += v;
+        ++s_means[slot].second;
 
-		s_anyUsed = true;
-	}
+        s_anyUsed = true;
+    }
 
-	auto print() -> void
-	{
-		if (!s_anyUsed.load())
-			return;
+    auto print() -> void {
+        if (!s_anyUsed.load())
+            return;
 
-		for (usize slot = 0; slot < Slots; ++slot)
-		{
-			const auto hits = s_conditionHits[slot][1].load();
-			const auto misses = s_conditionHits[slot][0].load();
+        for (usize slot = 0; slot < Slots; ++slot) {
+            const auto hits = s_conditionHits[slot][1].load();
+            const auto misses = s_conditionHits[slot][0].load();
 
-			if (hits == 0 && misses == 0)
-				continue;
+            if (hits == 0 && misses == 0)
+                continue;
 
-			const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
+            const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
 
-			std::cout << "condition " << slot << ":\n";
-			std::cout << "    hits: " << hits << "\n";
-			std::cout << "    misses: " << misses << "\n";
-			std::cout << "    hitrate: " << (hitrate * 100) << "%" << std::endl;
-		}
+            std::cout << "condition " << slot << ":\n";
+            std::cout << "    hits: " << hits << "\n";
+            std::cout << "    misses: " << misses << "\n";
+            std::cout << "    hitrate: " << (hitrate * 100) << "%" << std::endl;
+        }
 
-		for (usize slot = 0; slot < Slots; ++slot)
-		{
-			const auto min = s_ranges[slot].min.load();
-			const auto max = s_ranges[slot].max.load();
+        for (usize slot = 0; slot < Slots; ++slot) {
+            const auto min = s_ranges[slot].min.load();
+            const auto max = s_ranges[slot].max.load();
 
-			if (min == std::numeric_limits<i64>::max())
-				continue;
+            if (min == std::numeric_limits<i64>::max())
+                continue;
 
-			std::cout << "range " << slot << ":\n";
-			std::cout << "    min: " << min << "\n";
-			std::cout << "    max: " << max << std::endl;
-		}
+            std::cout << "range " << slot << ":\n";
+            std::cout << "    min: " << min << "\n";
+            std::cout << "    max: " << max << std::endl;
+        }
 
-		for (usize slot = 0; slot < Slots; ++slot)
-		{
-			const auto total = s_means[slot].first.load();
-			const auto count = s_means[slot].second.load();
+        for (usize slot = 0; slot < Slots; ++slot) {
+            const auto total = s_means[slot].first.load();
+            const auto count = s_means[slot].second.load();
 
-			if (count == 0)
-				continue;
+            if (count == 0)
+                continue;
 
-			const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
+            const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
 
-			std::cout << "mean " << slot << ":\n";
-			std::cout << "    mean: " << mean << "\n";
-			std::cout << "    total: " << total << "\n";
-			std::cout << "    count: " << count << std::endl;
-		}
-	}
-}
+            std::cout << "mean " << slot << ":\n";
+            std::cout << "    mean: " << mean << "\n";
+            std::cout << "    total: " << total << "\n";
+            std::cout << "    count: " << count << std::endl;
+        }
+    }
+} // namespace stormphrax::stats
