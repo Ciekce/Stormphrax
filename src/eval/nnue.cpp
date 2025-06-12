@@ -52,7 +52,7 @@ namespace stormphrax::eval {
             kPairwiseMul = 0x0008,
         };
 
-        constexpr u16 ExpectedHeaderVersion = 1;
+        constexpr u16 kExpectedHeaderVersion = 1;
 
         struct __attribute__((packed)) NetworkHeader {
             std::array<char, 4> magic{};
@@ -102,9 +102,9 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (header.version != ExpectedHeaderVersion) {
+            if (header.version != kExpectedHeaderVersion) {
                 std::cerr << "unsupported network format version " << header.version
-                          << " (expected: " << ExpectedHeaderVersion << ")" << std::endl;
+                          << " (expected: " << kExpectedHeaderVersion << ")" << std::endl;
                 return false;
             }
 
