@@ -324,12 +324,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Square color(Color c) const {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return kings[static_cast<i32>(c)];
         }
 
         [[nodiscard]] inline Square& color(Color c) {
-            assert(c != Color::None);
+            assert(c != Color::kNone);
             return kings[static_cast<i32>(c)];
         }
 
