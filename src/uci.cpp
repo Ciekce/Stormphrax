@@ -236,7 +236,7 @@ namespace stormphrax {
                 search::kSyzygyProbeDepthRange.max()
             );
             println(
-                "option name SyzygyProbeDepth type spin default {} min {} max {}",
+                "option name SyzygyProbeLimit type spin default {} min {} max {}",
                 defaultOpts.syzygyProbeLimit,
                 search::kSyzygyProbeLimitRange.min(),
                 search::kSyzygyProbeLimitRange.max()
