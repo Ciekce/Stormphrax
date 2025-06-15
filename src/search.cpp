@@ -889,8 +889,10 @@ namespace stormphrax::search {
             i32 extension{};
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttEntry.move && !curr.excluded) {
-                if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound) {
-                    const auto sBeta = std::max(-kScoreInf + 1, ttEntry.score - depth * sBetaMargin() / 16);
+                if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
+                    && std::abs(ttEntry.score) < kScoreWin)
+                {
+                    const auto sBeta = ttEntry.score - depth * sBetaMargin() / 16;
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
