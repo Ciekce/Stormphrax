@@ -32,8 +32,6 @@ namespace stormphrax::uci {
 
     i32 run();
 
-    [[nodiscard]] std::string moveToString(Move move);
-
 #if SP_EXTERNAL_TUNE
     void printWfTuningParams(std::span<const std::string> params);
     void printCttTuningParams(std::span<const std::string> params);

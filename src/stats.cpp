@@ -19,7 +19,6 @@
 #include "stats.h"
 
 #include <atomic>
-#include <iostream>
 #include <limits>
 #include <utility>
 
@@ -59,7 +58,7 @@ namespace stormphrax::stats {
 
     void conditionHit(bool condition, usize slot) {
         if (slot >= kSlots) {
-            std::cerr << "tried to hit condition " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
+            fmt::println(stderr, "tried to hit condition {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -70,7 +69,7 @@ namespace stormphrax::stats {
 
     void range(i64 v, usize slot) {
         if (slot >= kSlots) {
-            std::cerr << "tried to hit range " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
+            fmt::println(stderr, "tried to hit range {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -82,7 +81,7 @@ namespace stormphrax::stats {
 
     void mean(i64 v, usize slot) {
         if (slot >= kSlots) {
-            std::cerr << "tried to hit mean " << slot << " (max " << (kSlots - 1) << ")" << std::endl;
+            fmt::println(stderr, "tried to hit mean {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -107,10 +106,10 @@ namespace stormphrax::stats {
 
             const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
 
-            std::cout << "condition " << slot << ":\n";
-            std::cout << "    hits: " << hits << "\n";
-            std::cout << "    misses: " << misses << "\n";
-            std::cout << "    hitrate: " << (hitrate * 100) << "%" << std::endl;
+            fmt::println("condition {}:", slot);
+            fmt::println("    hits: {}", hits);
+            fmt::println("    misses: {}", misses);
+            fmt::println("    hitrate: {:.6g}%", hitrate * 100);
         }
 
         for (usize slot = 0; slot < kSlots; ++slot) {
@@ -121,9 +120,9 @@ namespace stormphrax::stats {
                 continue;
             }
 
-            std::cout << "range " << slot << ":\n";
-            std::cout << "    min: " << min << "\n";
-            std::cout << "    max: " << max << std::endl;
+            fmt::println("range {}:", slot);
+            fmt::println("    min: {}", min);
+            fmt::println("    max: {}", max);
         }
 
         for (usize slot = 0; slot < kSlots; ++slot) {
@@ -136,10 +135,10 @@ namespace stormphrax::stats {
 
             const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
 
-            std::cout << "mean " << slot << ":\n";
-            std::cout << "    mean: " << mean << "\n";
-            std::cout << "    total: " << total << "\n";
-            std::cout << "    count: " << count << std::endl;
+            fmt::println("mean {}:", slot);
+            fmt::println("    mean: {:.6g}", mean);
+            fmt::println("    total: {}", total);
+            fmt::println("    count: {}", count);
         }
     }
 } // namespace stormphrax::stats

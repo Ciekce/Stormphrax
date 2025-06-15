@@ -554,3 +554,22 @@ namespace stormphrax {
         }
     } // namespace boards
 } // namespace stormphrax
+
+template <>
+struct fmt::formatter<stormphrax::Bitboard> : fmt::formatter<std::string_view> {
+    constexpr auto format(const stormphrax::Bitboard& value, format_context& ctx) const {
+        for (stormphrax::i32 rank = 7; rank >= 0; --rank) {
+            for (stormphrax::i32 file = 0; file < 8; ++file) {
+                if (file > 0) {
+                    format_to(ctx.out(), " ");
+                }
+
+                format_to(ctx.out(), "{}", value[stormphrax::toSquare(rank, file)] ? '1' : '.');
+            }
+
+            format_to(ctx.out(), "\n");
+        }
+
+        return ctx.out();
+    }
+};

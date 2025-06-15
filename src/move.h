@@ -146,3 +146,8 @@ namespace stormphrax {
 
     using MoveList = StaticVector<Move, kDefaultMoveListCapacity>;
 } // namespace stormphrax
+
+template <>
+struct fmt::formatter<stormphrax::Move> : fmt::formatter<std::string_view> {
+    format_context::iterator format(stormphrax::Move value, format_context& ctx) const;
+};

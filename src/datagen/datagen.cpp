@@ -26,6 +26,8 @@
 #include <optional>
 #include <thread>
 
+#include <fmt/std.h>
+
 #include "../3rdparty/fathom/tbprobe.h"
 #include "../limit/limit.h"
 #include "../movegen.h"
@@ -58,8 +60,12 @@ namespace stormphrax::datagen {
 
             [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
                 if (data.nodes >= m_hardNodeLimit) {
-                    std::cout << "thread " << m_threadId << ": stopping search after " << data.nodes
-                              << " nodes (limit: " << m_hardNodeLimit << ")" << std::endl;
+                    fmt::println(
+                        "thread {}: stopping search after {} nodes (limit: {})",
+                        m_threadId,
+                        data.nodes.load(std::memory_order::relaxed),
+                        m_hardNodeLimit
+                    );
                     return true;
                 }
 
@@ -127,7 +133,7 @@ namespace stormphrax::datagen {
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
-                std::cerr << "failed to open output file " << outFile << std::endl;
+                fmt::println(stderr, "failed to open output file {}", outFile);
                 return;
             }
 
@@ -320,9 +326,14 @@ namespace stormphrax::datagen {
 
                 if (((game + 1) % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
                     const auto time = startTime.elapsed();
-                    std::cout << "thread " << id << ": wrote " << totalPositions << " positions from " << (game + 1)
-                              << " games in " << time << " sec (" << (static_cast<f64>(totalPositions) / time)
-                              << " positions/sec)" << std::endl;
+                    fmt::println(
+                        "thread {}: wrote {} positions from {} games in {} sec ({:.6g} positions/sec)",
+                        id,
+                        totalPositions,
+                        game + 1,
+                        time,
+                        static_cast<f64>(totalPositions) / time
+                    );
                 }
             }
         }
@@ -349,7 +360,7 @@ namespace stormphrax::datagen {
         } else if (format == "fen") {
             threadFunc = runThread<Fen>;
         } else {
-            std::cerr << "invalid output format " << format << std::endl;
+            fmt::println(stderr, "invalid output format {}", format);
             printUsage();
             return 1;
         }
@@ -357,24 +368,24 @@ namespace stormphrax::datagen {
         opts::mutableOpts().chess960 = dfrc;
 
         if (tbPath) {
-            std::cout << "looking for TBs in \"" << *tbPath << "\"" << std::endl;
+            fmt::println("looking for TBs in \"{}\"", *tbPath);
 
             if (!tb_init(tbPath->c_str())) {
-                std::cerr << "Failed to initialize Fathom" << std::endl;
+                fmt::println(stderr, "Failed to initialize Fathom");
                 return 2;
             }
 
             if (TB_LARGEST > 0) {
-                std::cout << "Found up to " << TB_LARGEST << "-man TBs" << std::endl;
+                fmt::println("Found up to {}-man TBs", TB_LARGEST);
                 opts::mutableOpts().syzygyEnabled = true;
             } else {
-                std::cerr << "No TBs found" << std::endl;
+                fmt::println(stderr, "No TBs found");
                 return 2;
             }
         }
 
         const auto baseSeed = util::rng::generateSingleSeed();
-        std::cout << "base seed: " << baseSeed << std::endl;
+        fmt::println("base seed: {}", baseSeed);
 
         util::rng::SeedGenerator seedGenerator{baseSeed};
 
@@ -385,7 +396,7 @@ namespace stormphrax::datagen {
         std::vector<std::thread> theThreads{};
         theThreads.reserve(threads);
 
-        std::cout << "generating on " << threads << " threads" << std::endl;
+        fmt::println("generating on {} threads", threads);
 
         for (u32 i = 0; i < threads; ++i) {
             const auto seed = seedGenerator.nextSeed();
@@ -400,7 +411,7 @@ namespace stormphrax::datagen {
             tb_free();
         }
 
-        std::cout << "done" << std::endl;
+        fmt::println("done");
 
         return 0;
     }

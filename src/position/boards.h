@@ -21,7 +21,6 @@
 #include "../types.h"
 
 #include <array>
-#include <iostream>
 
 #include "../bitboard.h"
 
