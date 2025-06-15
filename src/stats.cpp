@@ -58,7 +58,7 @@ namespace stormphrax::stats {
 
     void conditionHit(bool condition, usize slot) {
         if (slot >= kSlots) {
-            fmt::println(stderr, "tried to hit condition {} (max {})", slot, kSlots - 1);
+            eprintln("tried to hit condition {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -69,7 +69,7 @@ namespace stormphrax::stats {
 
     void range(i64 v, usize slot) {
         if (slot >= kSlots) {
-            fmt::println(stderr, "tried to hit range {} (max {})", slot, kSlots - 1);
+            eprintln("tried to hit range {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -81,7 +81,7 @@ namespace stormphrax::stats {
 
     void mean(i64 v, usize slot) {
         if (slot >= kSlots) {
-            fmt::println(stderr, "tried to hit mean {} (max {})", slot, kSlots - 1);
+            eprintln("tried to hit mean {} (max {})", slot, kSlots - 1);
             return;
         }
 
@@ -106,10 +106,10 @@ namespace stormphrax::stats {
 
             const auto hitrate = static_cast<f64>(hits) / static_cast<f64>(hits + misses);
 
-            fmt::println("condition {}:", slot);
-            fmt::println("    hits: {}", hits);
-            fmt::println("    misses: {}", misses);
-            fmt::println("    hitrate: {:.6g}%", hitrate * 100);
+            println("condition {}:", slot);
+            println("    hits: {}", hits);
+            println("    misses: {}", misses);
+            println("    hitrate: {:.6g}%", hitrate * 100);
         }
 
         for (usize slot = 0; slot < kSlots; ++slot) {
@@ -120,9 +120,9 @@ namespace stormphrax::stats {
                 continue;
             }
 
-            fmt::println("range {}:", slot);
-            fmt::println("    min: {}", min);
-            fmt::println("    max: {}", max);
+            println("range {}:", slot);
+            println("    min: {}", min);
+            println("    max: {}", max);
         }
 
         for (usize slot = 0; slot < kSlots; ++slot) {
@@ -135,10 +135,10 @@ namespace stormphrax::stats {
 
             const auto mean = static_cast<f64>(total) / static_cast<f64>(count);
 
-            fmt::println("mean {}:", slot);
-            fmt::println("    mean: {:.6g}", mean);
-            fmt::println("    total: {}", total);
-            fmt::println("    count: {}", count);
+            println("mean {}:", slot);
+            println("    mean: {:.6g}", mean);
+            println("    total: {}", total);
+            println("    count: {}", count);
         }
     }
 } // namespace stormphrax::stats

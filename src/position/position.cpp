@@ -1059,37 +1059,37 @@ namespace stormphrax {
         const auto tokens = split::split(fen, ' ');
 
         if (tokens.size() > 6) {
-            fmt::println(stderr, "excess tokens after fullmove number in fen {}", fen);
+            eprintln("excess tokens after fullmove number in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 5) {
-            fmt::println(stderr, "missing fullmove number in fen {}", fen);
+            eprintln("missing fullmove number in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 4) {
-            fmt::println(stderr, "missing halfmove clock in fen {}", fen);
+            eprintln("missing halfmove clock in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 3) {
-            fmt::println(stderr, "missing en passant square in fen {}", fen);
+            eprintln("missing en passant square in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 2) {
-            fmt::println(stderr, "missing castling availability in fen {}", fen);
+            eprintln("missing castling availability in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 1) {
-            fmt::println(stderr, "missing next move color in fen {}", fen);
+            eprintln("missing next move color in fen {}", fen);
             return {};
         }
 
         if (tokens.empty()) {
-            fmt::println(stderr, "missing ranks in fen {}", fen);
+            eprintln("missing ranks in fen {}", fen);
             return {};
         }
 
@@ -1101,7 +1101,7 @@ namespace stormphrax {
         const auto ranks = split::split(tokens[0], '/');
         for (const auto& rank : ranks) {
             if (rankIdx >= 8) {
-                fmt::println(stderr, "too many ranks in fen {}", fen);
+                eprintln("too many ranks in fen {}", fen);
                 return {};
             }
 
@@ -1109,7 +1109,7 @@ namespace stormphrax {
 
             for (const auto c : rank) {
                 if (fileIdx >= 8) {
-                    fmt::println(stderr, "too many files in rank {} in fen {}", rankIdx, fen);
+                    eprintln("too many files in rank {} in fen {}", rankIdx, fen);
                     return {};
                 }
 
@@ -1119,19 +1119,19 @@ namespace stormphrax {
                     pos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
                     ++fileIdx;
                 } else {
-                    fmt::println(stderr, "invalid piece character {} in fen {}", c, fen);
+                    eprintln("invalid piece character {} in fen {}", c, fen);
                     return {};
                 }
             }
 
             // last character was a digit
             if (fileIdx > 8) {
-                fmt::println(stderr, "too many files in rank {} in fen {}", rankIdx, fen);
+                eprintln("too many files in rank {} in fen {}", rankIdx, fen);
                 return {};
             }
 
             if (fileIdx < 8) {
-                fmt::println(stderr, "not enough files in rank {} in fen {}", rankIdx, fen);
+                eprintln("not enough files in rank {} in fen {}", rankIdx, fen);
                 return {};
             }
 
@@ -1139,24 +1139,24 @@ namespace stormphrax {
         }
 
         if (const auto blackKingCount = bbs.forPiece(Piece::kBlackKing).popcount(); blackKingCount != 1) {
-            fmt::println(stderr, "black must have exactly 1 king, {} in fen {}", blackKingCount, fen);
+            eprintln("black must have exactly 1 king, {} in fen {}", blackKingCount, fen);
             return {};
         }
 
         if (const auto whiteKingCount = bbs.forPiece(Piece::kWhiteKing).popcount(); whiteKingCount != 1) {
-            fmt::println(stderr, "white must have exactly 1 king, {} in fen {}", whiteKingCount, fen);
+            eprintln("white must have exactly 1 king, {} in fen {}", whiteKingCount, fen);
             return {};
         }
 
         if (bbs.occupancy().popcount() > 32) {
-            fmt::println(stderr, "too many pieces in fen {}", fen);
+            eprintln("too many pieces in fen {}", fen);
             return {};
         }
 
         const auto& color = tokens[1];
 
         if (color.length() != 1) {
-            fmt::println(stderr, "invalid next move color in fen {}", fen);
+            eprintln("invalid next move color in fen {}", fen);
             return {};
         }
 
@@ -1168,21 +1168,21 @@ namespace stormphrax {
                 pos.m_blackToMove = false;
                 break;
             default:
-                fmt::println(stderr, "invalid next move color in fen {}", fen);
+                eprintln("invalid next move color in fen {}", fen);
                 return {};
         }
 
         if (const auto stm = pos.toMove();
             pos.isAttacked<false>(stm, bbs.forPiece(PieceType::kKing, oppColor(stm)).lowestSquare(), stm))
         {
-            fmt::println(stderr, "opponent must not be in check");
+            eprintln("opponent must not be in check");
             return {};
         }
 
         const auto& castlingFlags = tokens[2];
 
         if (castlingFlags.length() > 4) {
-            fmt::println(stderr, "invalid castling availability in fen {}", fen);
+            eprintln("invalid castling availability in fen {}", fen);
             return {};
         }
 
@@ -1205,7 +1205,7 @@ namespace stormphrax {
                         const auto kingFile = squareFile(pos.m_kings.black());
 
                         if (file == kingFile) {
-                            fmt::println(stderr, "invalid castling availability in fen {}", fen);
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                         }
 
@@ -1219,7 +1219,7 @@ namespace stormphrax {
                         const auto kingFile = squareFile(pos.m_kings.white());
 
                         if (file == kingFile) {
-                            fmt::println(stderr, "invalid castling availability in fen {}", fen);
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                         }
 
@@ -1261,7 +1261,7 @@ namespace stormphrax {
                             }
                         }
                     } else {
-                        fmt::println(stderr, "invalid castling availability in fen {}", fen);
+                        eprintln("invalid castling availability in fen {}", fen);
                         return {};
                     }
                 }
@@ -1281,7 +1281,7 @@ namespace stormphrax {
                             pos.m_castlingRooks.white().queenside = Square::kA1;
                             break;
                         default:
-                            fmt::println(stderr, "invalid castling availability in fen {}", fen);
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                     }
                 }
@@ -1292,7 +1292,7 @@ namespace stormphrax {
 
         if (enPassant != "-") {
             if (pos.m_enPassant = squareFromString(enPassant); pos.m_enPassant == Square::kNone) {
-                fmt::println(stderr, "invalid en passant square in fen {}", fen);
+                eprintln("invalid en passant square in fen {}", fen);
                 return {};
             }
         }
@@ -1302,7 +1302,7 @@ namespace stormphrax {
         if (const auto halfmove = util::tryParseU32(halfmoveStr)) {
             pos.m_halfmove = *halfmove;
         } else {
-            fmt::println(stderr, "invalid halfmove clock in fen {}", fen);
+            eprintln("invalid halfmove clock in fen {}", fen);
             return {};
         }
 
@@ -1311,7 +1311,7 @@ namespace stormphrax {
         if (const auto fullmove = util::tryParseU32(fullmoveStr)) {
             pos.m_fullmove = *fullmove;
         } else {
-            fmt::println(stderr, "invalid fullmove number in fen {}", fen);
+            eprintln("invalid fullmove number in fen {}", fen);
             return {};
         }
 
@@ -1324,7 +1324,7 @@ namespace stormphrax {
         assert(g_opts.chess960);
 
         if (n >= 960) {
-            fmt::println(stderr, "invalid frc position index {}", n);
+            eprintln("invalid frc position index {}", n);
             return {};
         }
 
@@ -1373,7 +1373,7 @@ namespace stormphrax {
         assert(g_opts.chess960);
 
         if (n >= 960 * 960) {
-            fmt::println(stderr, "invalid dfrc position index {}", n);
+            eprintln("invalid dfrc position index {}", n);
             return {};
         }
 

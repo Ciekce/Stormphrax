@@ -45,6 +45,38 @@ namespace stormphrax {
     [[noreturn]] inline void unimplemented() {
         std::terminate();
     }
+
+    template <typename... Args>
+    inline void print(fmt::format_string<Args...> fmt, Args&&... args) {
+        fmt::print(fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    inline void println(fmt::format_string<Args...> fmt, Args&&... args) {
+        fmt::println(fmt, std::forward<Args>(args)...);
+        std::fflush(stdout);
+    }
+
+    inline void println() {
+        fmt::println("");
+        std::fflush(stdout);
+    }
+
+    template <typename... Args>
+    inline void eprint(fmt::format_string<Args...> fmt, Args&&... args) {
+        fmt::print(stderr, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    inline void eprintln(fmt::format_string<Args...> fmt, Args&&... args) {
+        fmt::println(stderr, fmt, std::forward<Args>(args)...);
+        std::fflush(stderr);
+    }
+
+    inline void eprintln() {
+        fmt::println(stderr, "");
+        std::fflush(stderr);
+    }
 } // namespace stormphrax
 
 #define I64(V) INT64_C(V)

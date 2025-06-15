@@ -186,66 +186,66 @@ namespace stormphrax {
             static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
-            fmt::println("id name {} {} {}", kName, kVersion, SP_STRINGIFY(SP_COMMIT_HASH));
+            println("id name {} {} {}", kName, kVersion, SP_STRINGIFY(SP_COMMIT_HASH));
 #else
-            fmt::println("id name {} {}", kName, kVersion);
+            println("id name {} {}", kName, kVersion);
 #endif
-            fmt::println("id author {}", kAuthor);
+            println("id author {}", kAuthor);
 
-            fmt::println(
+            println(
                 "option name Hash type spin default {} min {} max {}",
                 kDefaultTtSizeMib,
                 kTtSizeMibRange.min(),
                 kTtSizeMibRange.max()
             );
-            fmt::println("option name Clear Hash type button");
-            fmt::println(
+            println("option name Clear Hash type button");
+            println(
                 "option name Threads type spin default {} min {} max {}",
                 opts::kDefaultThreadCount,
                 opts::kThreadCountRange.min(),
                 opts::kThreadCountRange.max()
             );
-            fmt::println(
+            println(
                 "option name Contempt type spin default {} min {} max {}",
                 opts::kDefaultNormalizedContempt,
                 ContemptRange.min(),
                 ContemptRange.max()
             );
-            fmt::println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
-            fmt::println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
-            fmt::println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
-            fmt::println(
+            println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
+            println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
+            println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
+            println(
                 "option name Move Overhead type spin default {} min {} max {}",
                 limit::kDefaultMoveOverhead,
                 limit::kMoveOverheadRange.min(),
                 limit::kMoveOverheadRange.max()
             );
-            fmt::println("option name SoftNodes type check default {}", defaultOpts.softNodes);
-            fmt::println(
+            println("option name SoftNodes type check default {}", defaultOpts.softNodes);
+            println(
                 "option name SoftNodeHardLimitMultiplier type spin default {} min {} max {}",
                 defaultOpts.softNodeHardLimitMultiplier,
                 limit::SoftNodeHardLimitMultiplierRange.min(),
                 limit::SoftNodeHardLimitMultiplierRange.max()
             );
-            fmt::println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
-            fmt::println("option name SyzygyPath type string default <empty>");
-            fmt::println(
+            println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
+            println("option name SyzygyPath type string default <empty>");
+            println(
                 "option name SyzygyProbeDepth type spin default {} min {} max {}",
                 defaultOpts.syzygyProbeDepth,
                 search::kSyzygyProbeDepthRange.min(),
                 search::kSyzygyProbeDepthRange.max()
             );
-            fmt::println(
+            println(
                 "option name SyzygyProbeDepth type spin default {} min {} max {}",
                 defaultOpts.syzygyProbeLimit,
                 search::kSyzygyProbeLimitRange.min(),
                 search::kSyzygyProbeLimitRange.max()
             );
-            fmt::println("option name EvalFile type string default <internal>");
+            println("option name EvalFile type string default <internal>");
 
 #if SP_EXTERNAL_TUNE
             for (const auto& param : tunableParams()) {
-                fmt::println(
+                println(
                     "option name {} type spin default {} min {} max {}",
                     param.name,
                     param.defaultValue,
@@ -255,12 +255,12 @@ namespace stormphrax {
             }
 #endif
 
-            fmt::println("uciok");
+            println("uciok");
         }
 
         void UciHandler::handleUcinewgame() {
             if (m_searcher.searching()) {
-                fmt::println(stderr, "still searching");
+                eprintln("still searching");
             } else {
                 m_searcher.newGame();
             }
@@ -268,12 +268,12 @@ namespace stormphrax {
 
         void UciHandler::handleIsready() {
             m_searcher.ensureReady();
-            fmt::println("readyok");
+            println("readyok");
         }
 
         void UciHandler::handlePosition(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
-                fmt::println(stderr, "still searching");
+                eprintln("still searching");
             } else if (tokens.size() > 1) {
                 const auto& position = tokens[1];
 
@@ -298,7 +298,7 @@ namespace stormphrax {
                     }
                 } else if (position == "frc") {
                     if (!g_opts.chess960) {
-                        fmt::println(stderr, "Chess960 not enabled");
+                        eprintln("Chess960 not enabled");
                         return;
                     }
 
@@ -316,7 +316,7 @@ namespace stormphrax {
                     }
                 } else if (position == "dfrc") {
                     if (!g_opts.chess960) {
-                        fmt::println(stderr, "Chess960 not enabled");
+                        eprintln("Chess960 not enabled");
                         return;
                     }
 
@@ -349,7 +349,7 @@ namespace stormphrax {
 
         void UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) {
             if (m_searcher.searching()) {
-                fmt::println(stderr, "already searching");
+                eprintln("already searching");
             } else {
                 u32 depth = kMaxDepth;
                 auto limiter = std::make_unique<limit::CompoundLimiter>();
@@ -366,7 +366,7 @@ namespace stormphrax {
                 for (usize i = 1; i < tokens.size(); ++i) {
                     if (tokens[i] == "depth" && ++i < tokens.size()) {
                         if (!util::tryParseU32(depth, tokens[i])) {
-                            fmt::println(stderr, "invalid depth {}", tokens[i]);
+                            eprintln("invalid depth {}", tokens[i]);
                         }
                         continue;
                     }
@@ -379,14 +379,14 @@ namespace stormphrax {
                     if (tokens[i] == "nodes" && ++i < tokens.size()) {
                         usize nodes{};
                         if (!util::tryParseSize(nodes, tokens[i])) {
-                            fmt::println(stderr, "invalid node count {}", tokens[i]);
+                            eprintln("invalid node count {}", tokens[i]);
                         } else {
                             limiter->addLimiter<limit::NodeLimiter>(nodes);
                         }
                     } else if (tokens[i] == "movetime" && ++i < tokens.size()) {
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            fmt::println(stderr, "invalid time {}", tokens[i]);
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
@@ -398,7 +398,7 @@ namespace stormphrax {
 
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            fmt::println(stderr, "invalid time {}", tokens[i]);
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             timeRemaining = static_cast<i64>(time);
@@ -410,7 +410,7 @@ namespace stormphrax {
 
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            fmt::println(stderr, "invalid time {}", tokens[i]);
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             increment = static_cast<i64>(time);
@@ -420,7 +420,7 @@ namespace stormphrax {
 
                         u32 moves{};
                         if (!util::tryParseU32(moves, tokens[i])) {
-                            fmt::println(stderr, "invalid movestogo {}", tokens[i]);
+                            eprintln("invalid movestogo {}", tokens[i]);
                         } else {
                             moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
                             toGo = static_cast<i32>(moves);
@@ -441,7 +441,7 @@ namespace stormphrax {
                                     if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
                                         movesToSearch.push(move);
                                     } else {
-                                        fmt::println("info string ignoring illegal move {}", candidate);
+                                        println("info string ignoring illegal move {}", candidate);
                                     }
                                 }
 
@@ -454,13 +454,13 @@ namespace stormphrax {
                 }
 
                 if (!movesToSearch.empty()) {
-                    fmt::print("info string searching moves:");
+                    print("info string searching moves:");
 
                     for (const auto move : movesToSearch) {
-                        fmt::println(" {}", move);
+                        println(" {}", move);
                     }
 
-                    fmt::println("");
+                    println();
                 }
 
                 if (depth == 0) {
@@ -472,26 +472,26 @@ namespace stormphrax {
                 if (tournamentTime) {
                     if (toGo != 0) {
                         if (g_opts.enableWeirdTcs) {
-                            fmt::println(
+                            println(
                                 "info string Warning: Stormphrax does not officially support cyclic (movestogo) time controls"
                             );
                         } else {
-                            fmt::println(
+                            println(
                                 "info string Cyclic (movestogo) time controls not enabled, see the EnableWeirdTCs option"
                             );
-                            fmt::println("bestmove 0000");
+                            println("bestmove 0000");
                             return;
                         }
                     } else if (increment == 0) {
                         if (g_opts.enableWeirdTcs) {
-                            fmt::println(
+                            println(
                                 "info string Warning: Stormphrax does not officially support sudden death (0 increment) time controls"
                             );
                         } else {
-                            fmt::println(
+                            println(
                                 "info string Sudden death (0 increment) time controls not enabled, see the EnableWeirdTCs option"
                             );
-                            fmt::println("bestmove 0000");
+                            println("bestmove 0000");
                             return;
                         }
                     }
@@ -521,7 +521,7 @@ namespace stormphrax {
 
         void UciHandler::handleStop() {
             if (!m_searcher.searching()) {
-                fmt::println(stderr, "not searching");
+                eprintln("not searching");
             } else {
                 m_searcher.stop();
             }
@@ -576,13 +576,13 @@ namespace stormphrax {
                     }
                 } else if (name == "clear hash") {
                     if (m_searcher.searching()) {
-                        fmt::println(stderr, "still searching");
+                        eprintln("still searching");
                     }
 
                     m_searcher.newGame();
                 } else if (name == "threads") {
                     if (m_searcher.searching()) {
-                        fmt::println(stderr, "still searching");
+                        eprintln("still searching");
                     }
 
                     if (!value.empty()) {
@@ -643,7 +643,7 @@ namespace stormphrax {
                     }
                 } else if (name == "syzygypath") {
                     if (m_searcher.searching()) {
-                        fmt::println(stderr, "still searching");
+                        eprintln("still searching");
                     }
 
                     m_fathomInitialized = true;
@@ -654,7 +654,7 @@ namespace stormphrax {
                     } else {
                         opts::mutableOpts().syzygyEnabled = value != "<empty>";
                         if (!tb_init(value.c_str())) {
-                            fmt::println(stderr, "failed to initialize Fathom");
+                            eprintln("failed to initialize Fathom");
                         }
                     }
                 } else if (name == "syzygyprobedepth") {
@@ -673,13 +673,13 @@ namespace stormphrax {
                     }
                 } else if (name == "evalfile") {
                     if (m_searcher.searching()) {
-                        fmt::println(stderr, "still searching");
+                        eprintln("still searching");
                     }
 
                     if (!value.empty()) {
                         if (value == "<internal>") {
                             eval::loadDefaultNetwork();
-                            fmt::println("info string loaded embedded network {}", eval::defaultNetworkName());
+                            println("info string loaded embedded network {}", eval::defaultNetworkName());
                         } else {
                             eval::loadNetwork(value);
                         }
@@ -697,62 +697,62 @@ namespace stormphrax {
         }
 
         void UciHandler::handleD() {
-            fmt::println("");
-            fmt::println("{}", m_pos);
+            println();
+            println("{}", m_pos);
 
-            fmt::println("");
-            fmt::println("Fen: {}", m_pos.toFen());
+            println();
+            println("Fen: {}", m_pos.toFen());
 
-            fmt::println("Key: {:016x}", m_pos.key());
-            fmt::println("Pawn key: {:016x}", m_pos.pawnKey());
+            println("Key: {:016x}", m_pos.key());
+            println("Pawn key: {:016x}", m_pos.pawnKey());
 
-            fmt::print("Checkers:");
+            print("Checkers:");
 
             auto checkers = m_pos.checkers();
             while (checkers) {
-                fmt::print(" {}", checkers.popLowestSquare());
+                print(" {}", checkers.popLowestSquare());
             }
 
-            fmt::println("");
+            println();
 
-            fmt::print("Pinned:");
+            print("Pinned:");
 
             auto pinned = m_pos.pinned(m_pos.toMove());
             while (pinned) {
-                fmt::print(" {}", pinned.popLowestSquare());
+                print(" {}", pinned.popLowestSquare());
             }
 
-            fmt::println("");
+            println();
 
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
             const auto whitePerspective = m_pos.toMove() == Color::kBlack ? -normalized : normalized;
 
-            fmt::println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
+            println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
         }
 
         void UciHandler::handleFen() {
-            fmt::println("{}", m_pos.toFen());
+            println("{}", m_pos.toFen());
         }
 
         void UciHandler::handleEval() {
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
-            fmt::println("Static eval: {:+}.{:02}", normalized / 100, std::abs(normalized) % 100);
+            println("Static eval: {:+}.{:02}", normalized / 100, std::abs(normalized) % 100);
         }
 
         void UciHandler::handleRawEval() {
             const auto score = eval::staticEvalOnce<false>(m_pos);
-            fmt::println("{}", score);
+            println("{}", score);
         }
 
         void UciHandler::handleCheckers() {
-            fmt::println("{}", m_pos.checkers());
+            println("{}", m_pos.checkers());
         }
 
         void UciHandler::handleThreats() {
-            fmt::println("{}", m_pos.threats());
+            println("{}", m_pos.threats());
         }
 
         void UciHandler::handleRegen() {
@@ -765,13 +765,13 @@ namespace stormphrax {
 
             for (u32 i = 0; i < moves.size(); ++i) {
                 if (i > 0) {
-                    fmt::print(" {}", moves[i].move);
+                    print(" {}", moves[i].move);
                 } else {
-                    fmt::print("{}", moves[i].move);
+                    print("{}", moves[i].move);
                 }
             }
 
-            fmt::println("");
+            println();
         }
 
         void UciHandler::handlePerft(const std::vector<std::string>& tokens) {
@@ -779,7 +779,7 @@ namespace stormphrax {
 
             if (tokens.size() > 1) {
                 if (!util::tryParseU32(depth, tokens[1])) {
-                    fmt::println(stderr, "invalid depth {}", tokens[1]);
+                    eprintln("invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -792,7 +792,7 @@ namespace stormphrax {
 
             if (tokens.size() > 1) {
                 if (!util::tryParseU32(depth, tokens[1])) {
-                    fmt::println(stderr, "invalid depth {}", tokens[1]);
+                    eprintln("invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -802,7 +802,7 @@ namespace stormphrax {
 
         void UciHandler::handleBench(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
-                fmt::println(stderr, "already searching");
+                eprintln("already searching");
                 return;
             }
 
@@ -813,7 +813,7 @@ namespace stormphrax {
                 if (const auto newDepth = util::tryParseU32(tokens[1])) {
                     depth = static_cast<i32>(*newDepth);
                 } else {
-                    fmt::println("info string invalid depth {}", tokens[1]);
+                    println("info string invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -821,10 +821,10 @@ namespace stormphrax {
             if (tokens.size() > 2) {
                 if (const auto newThreads = util::tryParseU32(tokens[2])) {
                     if (*newThreads > 1) {
-                        fmt::println("info string multiple search threads not yet supported, using 1");
+                        println("info string multiple search threads not yet supported, using 1");
                     }
                 } else {
-                    fmt::println("info string invalid thread count {}", tokens[2]);
+                    println("info string invalid thread count {}", tokens[2]);
                     return;
                 }
             }
@@ -833,13 +833,13 @@ namespace stormphrax {
                 if (const auto newTtSize = util::tryParseSize(tokens[3])) {
                     ttSize = static_cast<i32>(*newTtSize);
                 } else {
-                    fmt::println("info string invalid tt size {}", tokens[3]);
+                    println("info string invalid tt size {}", tokens[3]);
                     return;
                 }
             }
 
             m_searcher.setTtSize(ttSize);
-            fmt::println("info string set tt size to {} MiB", ttSize);
+            println("info string set tt size to {} MiB", ttSize);
 
             if (depth == 0) {
                 depth = 1;
@@ -862,7 +862,7 @@ namespace stormphrax {
             auto& params = tunableParams();
 
             if (params.size() == params.capacity()) {
-                fmt::println(stderr, "Tunable vector full, cannot reallocate");
+                eprintln("Tunable vector full, cannot reallocate");
                 std::terminate();
             }
 
@@ -906,7 +906,7 @@ namespace stormphrax {
                     if (const auto* param = lookupTunableParam(paramName)) {
                         printParam(*param);
                     } else {
-                        fmt::println(stderr, "unknown parameter {}", paramName);
+                        eprintln("unknown parameter {}", paramName);
                         return;
                     }
                 }
@@ -914,50 +914,50 @@ namespace stormphrax {
         } // namespace
 
         void printWfTuningParams(std::span<const std::string> params) {
-            fmt::println("{{");
+            println("{{");
 
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
-                    fmt::println(",");
+                    println(",");
                 }
 
-                fmt::println("  \"{}\": {{", param.name);
-                fmt::println("    \"value\": {},", param.value);
-                fmt::println("    \"min_value\": {},", param.range.min());
-                fmt::println("    \"max_value\": {},", param.range.max());
-                fmt::println("    \"step\": {}", param.step);
-                fmt::println("  }}");
+                println("  \"{}\": {{", param.name);
+                println("    \"value\": {},", param.value);
+                println("    \"min_value\": {},", param.range.min());
+                println("    \"max_value\": {},", param.range.max());
+                println("    \"step\": {}", param.step);
+                println("  }}");
 
                 first = false;
             };
 
             printParams(params, printParam);
 
-            fmt::println("");
-            fmt::println("}}");
+            println();
+            println("}}");
         }
 
         void printCttTuningParams(std::span<const std::string> params) {
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
-                    fmt::println(",");
+                    println(",");
                 }
 
-                fmt::println("\"{}\": \"Integer({}, {})\"", param.name, param.range.min(), param.range.max());
+                println("\"{}\": \"Integer({}, {})\"", param.name, param.range.min(), param.range.max());
 
                 first = false;
             };
 
             printParams(params, printParam);
 
-            fmt::println("");
+            println();
         }
 
         void printObTuningParams(std::span<const std::string> params) {
             const auto printParam = [](const auto& param) {
-                fmt::println(
+                println(
                     "{}, int, {}.0, {}.0, {}.0, {}, 0.002",
                     param.name,
                     param.value,

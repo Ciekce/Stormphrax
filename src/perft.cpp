@@ -56,7 +56,7 @@ namespace stormphrax {
     } // namespace
 
     void perft(const Position& pos, i32 depth) {
-        fmt::println("{}", doPerft(pos, depth));
+        println("{}", doPerft(pos, depth));
     }
 
     void splitPerft(const Position& pos, i32 depth) {
@@ -78,13 +78,13 @@ namespace stormphrax {
             const auto value = doPerft(newPos, depth);
 
             total += value;
-            fmt::println("{}\t{}", move, value);
+            println("{}\t{}", move, value);
         }
 
         const auto nps = static_cast<usize>(static_cast<f64>(total) / start.elapsed());
 
-        fmt::println("");
-        fmt::println("total {}", total);
-        fmt::println("{} nps", nps);
+        println();
+        println("total {}", total);
+        println("{} nps", nps);
     }
 } // namespace stormphrax

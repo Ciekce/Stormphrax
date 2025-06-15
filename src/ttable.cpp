@@ -88,7 +88,7 @@ namespace stormphrax {
         m_clusters = util::alignedAlloc<Cluster>(kStorageAlignment, m_clusterCount);
 
         if (!m_clusters) {
-            fmt::println("info string Failed to reallocate TT - out of memory?");
+            println("info string Failed to reallocate TT - out of memory?");
             std::terminate();
         }
 

@@ -60,7 +60,7 @@ namespace stormphrax::datagen {
 
             [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
                 if (data.nodes >= m_hardNodeLimit) {
-                    fmt::println(
+                    println(
                         "thread {}: stopping search after {} nodes (limit: {})",
                         m_threadId,
                         data.nodes.load(std::memory_order::relaxed),
@@ -133,7 +133,7 @@ namespace stormphrax::datagen {
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
-                fmt::println(stderr, "failed to open output file {}", outFile);
+                eprintln("failed to open output file {}", outFile);
                 return;
             }
 
@@ -326,7 +326,7 @@ namespace stormphrax::datagen {
 
                 if (((game + 1) % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
                     const auto time = startTime.elapsed();
-                    fmt::println(
+                    println(
                         "thread {}: wrote {} positions from {} games in {} sec ({:.6g} positions/sec)",
                         id,
                         totalPositions,
@@ -360,7 +360,7 @@ namespace stormphrax::datagen {
         } else if (format == "fen") {
             threadFunc = runThread<Fen>;
         } else {
-            fmt::println(stderr, "invalid output format {}", format);
+            eprintln("invalid output format {}", format);
             printUsage();
             return 1;
         }
@@ -368,24 +368,24 @@ namespace stormphrax::datagen {
         opts::mutableOpts().chess960 = dfrc;
 
         if (tbPath) {
-            fmt::println("looking for TBs in \"{}\"", *tbPath);
+            println("looking for TBs in \"{}\"", *tbPath);
 
             if (!tb_init(tbPath->c_str())) {
-                fmt::println(stderr, "Failed to initialize Fathom");
+                eprintln("Failed to initialize Fathom");
                 return 2;
             }
 
             if (TB_LARGEST > 0) {
-                fmt::println("Found up to {}-man TBs", TB_LARGEST);
+                println("Found up to {}-man TBs", TB_LARGEST);
                 opts::mutableOpts().syzygyEnabled = true;
             } else {
-                fmt::println(stderr, "No TBs found");
+                eprintln("No TBs found");
                 return 2;
             }
         }
 
         const auto baseSeed = util::rng::generateSingleSeed();
-        fmt::println("base seed: {}", baseSeed);
+        println("base seed: {}", baseSeed);
 
         util::rng::SeedGenerator seedGenerator{baseSeed};
 
@@ -396,7 +396,7 @@ namespace stormphrax::datagen {
         std::vector<std::thread> theThreads{};
         theThreads.reserve(threads);
 
-        fmt::println("generating on {} threads", threads);
+        println("generating on {} threads", threads);
 
         for (u32 i = 0; i < threads; ++i) {
             const auto seed = seedGenerator.nextSeed();
@@ -411,7 +411,7 @@ namespace stormphrax::datagen {
             tb_free();
         }
 
-        fmt::println("done");
+        println("done");
 
         return 0;
     }

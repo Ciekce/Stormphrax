@@ -93,8 +93,8 @@ namespace stormphrax::bench {
             time += data.time;
         }
 
-        fmt::println("info string {:.5g} seconds", time);
-        fmt::println("{} nodes {} nps", nodes, static_cast<usize>(static_cast<f64>(nodes) / time));
+        println("info string {:.5g} seconds", time);
+        println("{} nodes {} nps", nodes, static_cast<usize>(static_cast<f64>(nodes) / time));
 
         stats::print();
     }

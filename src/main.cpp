@@ -16,8 +16,6 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cstdio>
-
 #include "bench.h"
 #include "cuckoo.h"
 #include "datagen/datagen.h"
@@ -34,8 +32,6 @@
 using namespace stormphrax;
 
 i32 main(i32 argc, const char* argv[]) {
-    std::setvbuf(stdout, nullptr, _IONBF, 0);
-
     util::signal::init();
 
     tunable::init();
@@ -53,8 +49,7 @@ i32 main(i32 argc, const char* argv[]) {
             return 0;
         } else if (mode == "datagen") {
             const auto printUsage = [&]() {
-                fmt::println(
-                    stderr,
+                eprintln(
                     "usage: {} datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]",
                     argv[0]
                 );
@@ -70,14 +65,14 @@ i32 main(i32 argc, const char* argv[]) {
             if (std::string{argv[3]} == "dfrc") {
                 dfrc = true;
             } else if (std::string{argv[3]} != "standard") {
-                fmt::println(stderr, "invalid variant {}", argv[3]);
+                eprintln("invalid variant {}", argv[3]);
                 printUsage();
                 return 1;
             }
 
             u32 threads = 1;
             if (argc > 5 && !util::tryParseU32(threads, argv[5])) {
-                fmt::println(stderr, "invalid number of threads {}", argv[5]);
+                eprintln("invalid number of threads {}", argv[5]);
                 printUsage();
                 return 1;
             }

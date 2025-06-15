@@ -63,7 +63,7 @@ namespace stormphrax::eval::nnue {
 
             if (ZSTD_isError(m_result)) {
                 const auto code = ZSTD_getErrorCode(m_result);
-                fmt::println(stderr, "zstd error: {}", ZSTD_getErrorString(code));
+                eprintln("zstd error: {}", ZSTD_getErrorString(code));
 
                 m_fail = true;
                 return false;

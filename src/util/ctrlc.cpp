@@ -53,7 +53,7 @@ namespace stormphrax::util::signal {
         );
 
         if (!result) {
-            fmt::println(stderr, "failed to set ctrl+c handler");
+            eprintln("failed to set ctrl+c handler");
         }
 #else
         struct sigaction action{.sa_flags = SA_RESTART};
@@ -66,11 +66,11 @@ namespace stormphrax::util::signal {
         };
 
         if (sigaction(SIGINT, &action, nullptr)) {
-            fmt::println(stderr, "failed to set SIGINT handler");
+            eprintln("failed to set SIGINT handler");
         }
 
         if (sigaction(SIGTERM, &action, nullptr)) {
-            fmt::println(stderr, "failed to set SIGTERM handler");
+            eprintln("failed to set SIGTERM handler");
         }
 #endif
     }
