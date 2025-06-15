@@ -27,9 +27,6 @@
 namespace stormphrax {
     class BitboardSet {
     public:
-        BitboardSet() = default;
-        ~BitboardSet() = default;
-
         [[nodiscard]] inline Bitboard& forColor(Color color) {
             return m_colors[static_cast<i32>(color)];
         }
@@ -313,8 +310,6 @@ namespace stormphrax {
             m_mailbox.fill(Piece::kNone);
         }
 
-        ~PositionBoards() = default;
-
         [[nodiscard]] inline const BitboardSet& bbs() const {
             return m_bbs;
         }
@@ -330,20 +325,20 @@ namespace stormphrax {
             return piece == Piece::kNone ? PieceType::kNone : pieceType(piece);
         }
 
-        [[nodiscard]] inline Piece pieceAt(Square square) const {
+        [[nodiscard]] inline Piece pieceOn(Square square) const {
             assert(square != Square::kNone);
             return m_mailbox[static_cast<i32>(square)];
         }
 
         [[nodiscard]] inline Piece pieceAt(u32 rank, u32 file) const {
-            return pieceAt(toSquare(rank, file));
+            return pieceOn(toSquare(rank, file));
         }
 
         inline void setPiece(Square square, Piece piece) {
             assert(square != Square::kNone);
             assert(piece != Piece::kNone);
 
-            assert(pieceAt(square) == Piece::kNone);
+            assert(pieceOn(square) == Piece::kNone);
 
             slot(square) = piece;
 
@@ -377,7 +372,7 @@ namespace stormphrax {
             assert(moving != Piece::kNone);
             assert(promo != PieceType::kNone);
 
-            assert(pieceAt(src) == moving);
+            assert(pieceOn(src) == moving);
             assert(slot(src) == moving);
 
             slot(src) = Piece::kNone;
@@ -394,7 +389,7 @@ namespace stormphrax {
             assert(square != Square::kNone);
             assert(piece != Piece::kNone);
 
-            assert(pieceAt(square) == piece);
+            assert(pieceOn(square) == piece);
 
             slot(square) = Piece::kNone;
 

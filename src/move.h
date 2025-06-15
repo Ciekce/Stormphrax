@@ -33,37 +33,36 @@ namespace stormphrax {
     class Move {
     public:
         constexpr Move() = default;
-        constexpr ~Move() = default;
 
-        [[nodiscard]] constexpr usize srcIdx() const {
+        [[nodiscard]] constexpr usize fromSqIdx() const {
             return m_move >> 10;
         }
 
-        [[nodiscard]] constexpr Square src() const {
-            return static_cast<Square>(srcIdx());
+        [[nodiscard]] constexpr Square fromSq() const {
+            return static_cast<Square>(fromSqIdx());
         }
 
-        [[nodiscard]] constexpr i32 srcRank() const {
+        [[nodiscard]] constexpr i32 fromSqRank() const {
             return m_move >> 13;
         }
 
-        [[nodiscard]] constexpr i32 srcFile() const {
+        [[nodiscard]] constexpr i32 fromSqFile() const {
             return (m_move >> 10) & 0x7;
         }
 
-        [[nodiscard]] constexpr usize dstIdx() const {
+        [[nodiscard]] constexpr usize toSqIdx() const {
             return (m_move >> 4) & 0x3F;
         }
 
-        [[nodiscard]] constexpr Square dst() const {
-            return static_cast<Square>(dstIdx());
+        [[nodiscard]] constexpr Square toSq() const {
+            return static_cast<Square>(toSqIdx());
         }
 
-        [[nodiscard]] constexpr i32 dstRank() const {
+        [[nodiscard]] constexpr i32 toSqRank() const {
             return (m_move >> 7) & 0x7;
         }
 
-        [[nodiscard]] constexpr i32 dstFile() const {
+        [[nodiscard]] constexpr i32 toSqFile() const {
             return (m_move >> 4) & 0x7;
         }
 
@@ -80,32 +79,18 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr bool isNull() const {
-            return /*src() == dst()*/ m_move == 0;
+            return m_move == 0;
         }
 
         [[nodiscard]] constexpr u16 data() const {
             return m_move;
         }
 
-        // returns the king's actual destination square for non-FRC
-        // castling moves, otherwise just the move's destination
-        // used to avoid inflating the history of the generally
-        // bad moves of putting the king in a corner when castling
-        [[nodiscard]] constexpr Square historyDst() const {
-            if (type() == MoveType::kCastling && !g_opts.chess960) {
-                return toSquare(srcRank(), srcFile() < dstFile() ? 6 : 2);
-            } else {
-                return dst();
-            }
-        }
-
         [[nodiscard]] explicit constexpr operator bool() const {
             return !isNull();
         }
 
-        constexpr bool operator==(Move other) const {
-            return m_move == other.m_move;
-        }
+        constexpr bool operator==(const Move& other) const = default;
 
         [[nodiscard]] static constexpr Move standard(Square src, Square dst) {
             return Move{static_cast<u16>(

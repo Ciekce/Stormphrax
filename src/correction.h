@@ -33,9 +33,6 @@
 namespace stormphrax {
     class CorrectionHistoryTable {
     public:
-        CorrectionHistoryTable() = default;
-        ~CorrectionHistoryTable() = default;
-
         inline void clear() {
             std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
             std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
@@ -54,7 +51,7 @@ namespace stormphrax {
         ) {
             const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
-            const auto stm = static_cast<i32>(pos.toMove());
+            const auto stm = static_cast<i32>(pos.stm());
 
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
             m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
@@ -81,11 +78,11 @@ namespace stormphrax {
         ) const {
             using namespace tunable;
 
-            const auto stm = static_cast<i32>(pos.toMove());
+            const auto stm = static_cast<i32>(pos.stm());
 
             const auto [blackNpWeight, whiteNpWeight] =
-                pos.toMove() == Color::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                              : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
+                pos.stm() == Color::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
+                                           : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
 
             i32 correction{};
 

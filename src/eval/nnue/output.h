@@ -53,8 +53,8 @@ namespace stormphrax::eval::nnue::output {
         static constexpr u32 kBucketCount = kCount;
 
         static inline u32 getBucket(const BitboardSet& bbs) {
-            constexpr auto Div = 32 / kCount;
-            return (bbs.occupancy().popcount() - 2) / Div;
+            static constexpr auto kDiv = 32 / kCount;
+            return (bbs.occupancy().popcount() - 2) / kDiv;
         }
     };
 

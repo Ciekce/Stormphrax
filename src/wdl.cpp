@@ -23,15 +23,14 @@
 
 namespace stormphrax::wdl {
     std::pair<f64, f64> wdlParams(i32 material) {
-        static constexpr auto As = std::array{-21.62471742, 57.27533161, -196.12706447, 419.75122408};
+        static constexpr auto kAs = std::array{-21.62471742, 57.27533161, -196.12706447, 419.75122408};
+        static constexpr auto kBs = std::array{-41.67494726, 81.27819509, 10.83073229, 48.03832274};
 
-        static constexpr auto Bs = std::array{-41.67494726, 81.27819509, 10.83073229, 48.03832274};
-
-        static_assert(Material58NormalizationK == static_cast<i32>(std::reduce(As.begin(), As.end())));
+        static_assert(kMaterial58NormalizationK == static_cast<i32>(std::reduce(kAs.begin(), kAs.end())));
 
         const auto m = static_cast<f64>(std::clamp(material, 17, 78)) / 58.0;
 
-        return {(((As[0] * m + As[1]) * m + As[2]) * m) + As[3], (((Bs[0] * m + Bs[1]) * m + Bs[2]) * m) + Bs[3]};
+        return {((kAs[0] * m + kAs[1]) * m + kAs[2]) * m + kAs[3], ((kBs[0] * m + kBs[1]) * m + kBs[2]) * m + kBs[3]};
     }
 
     std::pair<i32, i32> wdlModel(Score povScore, i32 material) {

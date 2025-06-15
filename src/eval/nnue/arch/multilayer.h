@@ -81,25 +81,25 @@ namespace stormphrax::eval::nnue::arch {
         ) const {
             using namespace util::simd;
 
-            static constexpr auto PairCount = kL1Size / 2;
-            static_assert(PairCount % (util::simd::kChunkSize<i16> * 4) == 0);
+            static constexpr auto kPairCount = kL1Size / 2;
+            static_assert(kPairCount % (util::simd::kChunkSize<i16> * 4) == 0);
 
-            static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+            static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
             const auto zero_ = zero<i16>();
             const auto one = set1<i16>((1 << kFtQBits) - 1);
 
             const auto activatePerspective = [&](std::span<const i16, kL1Size> inputs, u32 outputOffset) {
-                for (u32 inputIdx = 0; inputIdx < PairCount; inputIdx += kChunkSize<i16> * 4) {
+                for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 4) {
                     auto i1_0 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 0]);
                     auto i1_1 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 1]);
                     auto i1_2 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 2]);
                     auto i1_3 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 3]);
 
-                    auto i2_0 = load<i16>(&inputs[inputIdx + PairCount + kChunkSize<i16> * 0]);
-                    auto i2_1 = load<i16>(&inputs[inputIdx + PairCount + kChunkSize<i16> * 1]);
-                    auto i2_2 = load<i16>(&inputs[inputIdx + PairCount + kChunkSize<i16> * 2]);
-                    auto i2_3 = load<i16>(&inputs[inputIdx + PairCount + kChunkSize<i16> * 3]);
+                    auto i2_0 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
+                    auto i2_1 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
+                    auto i2_2 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 2]);
+                    auto i2_3 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 3]);
 
                     i1_0 = min<i16>(i1_0, one);
                     i1_1 = min<i16>(i1_1, one);
@@ -130,14 +130,14 @@ namespace stormphrax::eval::nnue::arch {
             };
 
             activatePerspective(stmInputs, 0);
-            activatePerspective(nstmInputs, PairCount);
+            activatePerspective(nstmInputs, kPairCount);
         }
 
         inline void propagateL1(u32 bucket, std::span<const u8, kL1Size> inputs, std::span<i32, kL2SizeFull> outputs)
             const {
             using namespace util::simd;
 
-            static constexpr auto I8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+            static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
             static constexpr i32 Shift = 16 + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
 
@@ -149,21 +149,21 @@ namespace stormphrax::eval::nnue::arch {
 
             SP_SIMD_ALIGNAS util::MultiArray<Vector<i32>, kL2Size / kChunkSize<i32>, 4> intermediate{};
 
-            for (u32 inputIdx = 0; inputIdx < kL1Size; inputIdx += I8ChunkSizeI32 * 4) {
+            for (u32 inputIdx = 0; inputIdx < kL1Size; inputIdx += kI8ChunkSizeI32 * 4) {
                 const auto weightsStart = weightOffset + inputIdx * kL2Size;
 
-                const auto i_0 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 0]);
-                const auto i_1 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 1]);
-                const auto i_2 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 2]);
-                const auto i_3 = set1<i32>(inI32s[inputIdx / I8ChunkSizeI32 + 3]);
+                const auto i_0 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 0]);
+                const auto i_1 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 1]);
+                const auto i_2 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 2]);
+                const auto i_3 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 3]);
 
                 for (u32 outputIdx = 0; outputIdx < kL2Size; outputIdx += kChunkSize<i32>) {
                     auto& v = intermediate[outputIdx / kChunkSize<i32>];
 
-                    const auto w_0 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + kL2Size * 0)]);
-                    const auto w_1 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + kL2Size * 1)]);
-                    const auto w_2 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + kL2Size * 2)]);
-                    const auto w_3 = load<i8>(&l1Weights[weightsStart + I8ChunkSizeI32 * (outputIdx + kL2Size * 3)]);
+                    const auto w_0 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 0)]);
+                    const auto w_1 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 1)]);
+                    const auto w_2 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 2)]);
+                    const auto w_3 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 3)]);
 
                     v[0] = dpbusd<i32>(v[0], i_0, w_0);
                     v[1] = dpbusd<i32>(v[1], i_1, w_1);

@@ -29,7 +29,6 @@ namespace stormphrax {
     class StaticVector {
     public:
         StaticVector() = default;
-        ~StaticVector() = default;
 
         StaticVector(const StaticVector<T, kCapacity>& other) {
             *this = other;

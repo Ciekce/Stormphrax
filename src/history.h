@@ -72,18 +72,15 @@ namespace stormphrax {
 
     class ContinuationSubtable {
     public:
-        ContinuationSubtable() = default;
-        ~ContinuationSubtable() = default;
-
         //TODO take two args when c++23 is usable
         inline HistoryScore operator[](std::pair<Piece, Move> move) const {
             const auto [piece, mv] = move;
-            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
+            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.toSq())];
         }
 
         inline HistoryEntry& operator[](std::pair<Piece, Move> move) {
             const auto [piece, mv] = move;
-            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.dst())];
+            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.toSq())];
         }
 
     private:
@@ -93,9 +90,6 @@ namespace stormphrax {
 
     class HistoryTables {
     public:
-        HistoryTables() = default;
-        ~HistoryTables() = default;
-
         inline void clear() {
             std::memset(&m_butterfly, 0, sizeof(m_butterfly));
             std::memset(&m_pieceTo, 0, sizeof(m_pieceTo));
@@ -137,7 +131,7 @@ namespace stormphrax {
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
-            noisyEntry(move, captured, threats[move.dst()]).update(bonus);
+            noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
         }
 
         [[nodiscard]] inline i32 quietScore(
@@ -159,7 +153,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline i32 noisyScore(Move move, Piece captured, Bitboard threats) const {
-            return noisyEntry(move, captured, threats[move.dst()]);
+            return noisyEntry(move, captured, threats[move.toSq()]);
         }
 
     private:
@@ -202,19 +196,19 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
-            return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] inline HistoryEntry& butterflyEntry(Bitboard threats, Move move) {
-            return m_butterfly[move.srcIdx()][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] inline const HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) const {
-            return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+            return m_pieceTo[static_cast<i32>(moving)][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] inline HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) {
-            return m_pieceTo[static_cast<i32>(moving)][move.dstIdx()][threats[move.src()]][threats[move.dst()]];
+            return m_pieceTo[static_cast<i32>(moving)][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] static inline const ContinuationSubtable& conthistEntry(
@@ -234,11 +228,11 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const HistoryEntry& noisyEntry(Move move, Piece captured, bool defended) const {
-            return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)][defended];
+            return m_noisy[move.fromSqIdx()][move.toSqIdx()][static_cast<i32>(captured)][defended];
         }
 
         [[nodiscard]] inline HistoryEntry& noisyEntry(Move move, Piece captured, bool defended) {
-            return m_noisy[move.srcIdx()][move.dstIdx()][static_cast<i32>(captured)][defended];
+            return m_noisy[move.fromSqIdx()][move.toSqIdx()][static_cast<i32>(captured)][defended];
         }
     };
 } // namespace stormphrax

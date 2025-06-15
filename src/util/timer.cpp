@@ -30,7 +30,6 @@ namespace stormphrax::util {
         class Timer {
         public:
             Timer();
-            ~Timer() = default;
 
             [[nodiscard]] f64 time() const;
 

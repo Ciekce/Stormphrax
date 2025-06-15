@@ -73,7 +73,7 @@ namespace stormphrax::limit {
         auto scale = 1.0;
 
         const auto bestMoveNodeFraction =
-            static_cast<f64>(m_moveNodeCounts[bestMove.srcIdx()][bestMove.dstIdx()]) / static_cast<f64>(totalNodes);
+            static_cast<f64>(m_moveNodeCounts[bestMove.fromSqIdx()][bestMove.toSqIdx()]) / static_cast<f64>(totalNodes);
         scale *= std::max(nodeTmBase() - bestMoveNodeFraction * nodeTmScale(), nodeTmScaleMin());
 
         if (data.rootDepth >= 6) {
@@ -104,7 +104,7 @@ namespace stormphrax::limit {
 
     void TimeManager::updateMoveNodes(Move move, usize nodes) {
         assert(move != kNullMove);
-        m_moveNodeCounts[move.srcIdx()][move.dstIdx()] += nodes;
+        m_moveNodeCounts[move.fromSqIdx()][move.toSqIdx()] += nodes;
     }
 
     bool TimeManager::stop(const search::SearchData& data, bool allowSoftTimeout) {

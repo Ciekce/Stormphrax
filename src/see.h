@@ -46,7 +46,7 @@ namespace stormphrax::see {
             return value(PieceType::kPawn);
         }
 
-        auto score = value(boards.pieceAt(move.dst()));
+        auto score = value(boards.pieceOn(move.toSq()));
 
         if (type == MoveType::kPromotion) {
             score += value(move.promo()) - value(PieceType::kPawn);
@@ -79,7 +79,7 @@ namespace stormphrax::see {
         const auto& boards = pos.boards();
         const auto& bbs = boards.bbs();
 
-        const auto color = pos.toMove();
+        const auto color = pos.stm();
 
         auto score = gain(boards, move) - threshold;
 
@@ -87,7 +87,7 @@ namespace stormphrax::see {
             return false;
         }
 
-        auto next = move.type() == MoveType::kPromotion ? move.promo() : pieceType(boards.pieceAt(move.src()));
+        auto next = move.type() == MoveType::kPromotion ? move.promo() : pieceType(boards.pieceOn(move.fromSq()));
 
         score -= value(next);
 
@@ -95,9 +95,9 @@ namespace stormphrax::see {
             return true;
         }
 
-        const auto square = move.dst();
+        const auto square = move.toSq();
 
-        auto occupancy = bbs.occupancy() ^ squareBit(move.src()) ^ squareBit(square);
+        auto occupancy = bbs.occupancy() ^ squareBit(move.fromSq()) ^ squareBit(square);
 
         const auto queens = bbs.queens();
 

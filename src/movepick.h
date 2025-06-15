@@ -76,8 +76,6 @@ namespace stormphrax {
 
     class MoveGenerator {
     public:
-        ~MoveGenerator() = default;
-
         [[nodiscard]] inline Move next() {
             using namespace tunable;
 
@@ -370,7 +368,7 @@ namespace stormphrax {
                 m_continuations,
                 m_ply,
                 m_pos.threats(),
-                m_pos.boards().pieceAt(move.move.src()),
+                m_pos.boards().pieceOn(move.move.fromSq()),
                 move.move
             );
         }

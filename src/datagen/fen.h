@@ -30,7 +30,6 @@ namespace stormphrax::datagen {
     class Fen {
     public:
         Fen();
-        ~Fen() = default;
 
         static constexpr auto kExtension = "txt";
 

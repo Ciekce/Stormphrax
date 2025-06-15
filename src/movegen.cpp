@@ -77,46 +77,46 @@ namespace stormphrax {
             }
         }
 
-        template <Color Us>
+        template <Color kUs>
         void generatePawnsNoisy_(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
-            constexpr auto Them = oppColor(Us);
+            static constexpr auto kThem = oppColor(kUs);
 
-            constexpr auto PromotionRank = boards::promotionRank<Us>();
+            static constexpr auto kPromotionRank = boards::promotionRank<kUs>();
 
-            constexpr auto ForwardOffset = offsets::up<Us>();
-            constexpr auto LeftOffset = offsets::upLeft<Us>();
-            constexpr auto RightOffset = offsets::upRight<Us>();
+            static constexpr auto kForwardOffset = offsets::up<kUs>();
+            static constexpr auto kLeftOffset = offsets::upLeft<kUs>();
+            static constexpr auto kRightOffset = offsets::upRight<kUs>();
 
             const auto& bbs = pos.bbs();
 
-            const auto theirs = bbs.occupancy<Them>();
+            const auto theirs = bbs.occupancy<kThem>();
 
-            const auto forwardDstMask = dstMask & PromotionRank & ~theirs;
+            const auto forwardDstMask = dstMask & kPromotionRank & ~theirs;
 
-            const auto pawns = bbs.pawns<Us>();
+            const auto pawns = bbs.pawns<kUs>();
 
-            const auto leftAttacks = pawns.template shiftUpLeftRelative<Us>() & dstMask;
-            const auto rightAttacks = pawns.template shiftUpRightRelative<Us>() & dstMask;
+            const auto leftAttacks = pawns.template shiftUpLeftRelative<kUs>() & dstMask;
+            const auto rightAttacks = pawns.template shiftUpRightRelative<kUs>() & dstMask;
 
-            pushQueenPromotions(noisy, LeftOffset, leftAttacks & theirs & PromotionRank);
-            pushQueenPromotions(noisy, RightOffset, rightAttacks & theirs & PromotionRank);
+            pushQueenPromotions(noisy, kLeftOffset, leftAttacks & theirs & kPromotionRank);
+            pushQueenPromotions(noisy, kRightOffset, rightAttacks & theirs & kPromotionRank);
 
-            const auto forwards = pawns.template shiftUpRelative<Us>() & forwardDstMask;
-            pushQueenPromotions(noisy, ForwardOffset, forwards);
+            const auto forwards = pawns.template shiftUpRelative<kUs>() & forwardDstMask;
+            pushQueenPromotions(noisy, kForwardOffset, forwards);
 
-            pushStandards(noisy, LeftOffset, leftAttacks & theirs & ~PromotionRank);
-            pushStandards(noisy, RightOffset, rightAttacks & theirs & ~PromotionRank);
+            pushStandards(noisy, kLeftOffset, leftAttacks & theirs & ~kPromotionRank);
+            pushStandards(noisy, kRightOffset, rightAttacks & theirs & ~kPromotionRank);
 
             if (pos.enPassant() != Square::kNone) {
                 const auto epMask = Bitboard::fromSquare(pos.enPassant());
 
-                pushEnPassants(noisy, LeftOffset, leftAttacks & epMask);
-                pushEnPassants(noisy, RightOffset, rightAttacks & epMask);
+                pushEnPassants(noisy, kLeftOffset, leftAttacks & epMask);
+                pushEnPassants(noisy, kRightOffset, rightAttacks & epMask);
             }
         }
 
         inline void generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
-            if (pos.toMove() == Color::kBlack) {
+            if (pos.stm() == Color::kBlack) {
                 generatePawnsNoisy_<Color::kBlack>(noisy, pos, dstMask);
             } else {
                 generatePawnsNoisy_<Color::kWhite>(noisy, pos, dstMask);
@@ -125,18 +125,18 @@ namespace stormphrax {
 
         template <Color kUs>
         void generatePawnsQuiet_(ScoredMoveList& quiet, const BitboardSet& bbs, Bitboard dstMask, Bitboard occ) {
-            constexpr auto Them = oppColor(kUs);
+            static constexpr auto kThem = oppColor(kUs);
 
-            constexpr auto PromotionRank = boards::promotionRank<kUs>();
-            constexpr auto ThirdRank = boards::rank<kUs>(2);
+            static constexpr auto kPromotionRank = boards::promotionRank<kUs>();
+            static constexpr auto kThirdRank = boards::rank<kUs>(2);
 
-            const auto ForwardOffset = offsets::up<kUs>();
-            const auto DoubleOffset = ForwardOffset * 2;
+            static constexpr auto kForwardOffset = offsets::up<kUs>();
+            static constexpr auto kDoubleOffset = kForwardOffset * 2;
 
-            constexpr auto LeftOffset = offsets::upLeft<kUs>();
-            constexpr auto RightOffset = offsets::upRight<kUs>();
+            static constexpr auto kLeftOffset = offsets::upLeft<kUs>();
+            static constexpr auto kRightOffset = offsets::upRight<kUs>();
 
-            const auto theirs = bbs.occupancy<Them>();
+            const auto theirs = bbs.occupancy<kThem>();
 
             const auto forwardDstMask = dstMask & ~theirs;
 
@@ -145,24 +145,24 @@ namespace stormphrax {
             const auto leftAttacks = pawns.template shiftUpLeftRelative<kUs>() & dstMask;
             const auto rightAttacks = pawns.template shiftUpRightRelative<kUs>() & dstMask;
 
-            pushUnderpromotions(quiet, LeftOffset, leftAttacks & theirs & PromotionRank);
-            pushUnderpromotions(quiet, RightOffset, rightAttacks & theirs & PromotionRank);
+            pushUnderpromotions(quiet, kLeftOffset, leftAttacks & theirs & kPromotionRank);
+            pushUnderpromotions(quiet, kRightOffset, rightAttacks & theirs & kPromotionRank);
 
             auto forwards = pawns.template shiftUpRelative<kUs>() & ~occ;
 
             auto singles = forwards & forwardDstMask;
-            pushUnderpromotions(quiet, ForwardOffset, singles & PromotionRank);
-            singles &= ~PromotionRank;
+            pushUnderpromotions(quiet, kForwardOffset, singles & kPromotionRank);
+            singles &= ~kPromotionRank;
 
-            forwards &= ThirdRank;
+            forwards &= kThirdRank;
             const auto doubles = forwards.template shiftUpRelative<kUs>() & forwardDstMask;
 
-            pushStandards(quiet, DoubleOffset, doubles);
-            pushStandards(quiet, ForwardOffset, singles);
+            pushStandards(quiet, kDoubleOffset, doubles);
+            pushStandards(quiet, kForwardOffset, singles);
         }
 
         inline void generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
-            if (pos.toMove() == Color::kBlack) {
+            if (pos.stm() == Color::kBlack) {
                 generatePawnsQuiet_<Color::kBlack>(quiet, pos.bbs(), dstMask, occ);
             } else {
                 generatePawnsQuiet_<Color::kWhite>(quiet, pos.bbs(), dstMask, occ);
@@ -171,7 +171,7 @@ namespace stormphrax {
 
         template <PieceType kPiece, const std::array<Bitboard, 64>& kAttacks>
         inline void precalculated(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            const auto us = pos.toMove();
+            const auto us = pos.stm();
 
             auto pieces = pos.bbs().forPiece(kPiece, us);
             while (!pieces.empty()) {
@@ -201,7 +201,7 @@ namespace stormphrax {
             const auto occ = occupancy ^ squareBit(king) ^ squareBit(rook);
 
             if ((occ & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
-                && !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.opponent()))
+                && !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.nstm()))
             {
                 pushCastling(dst, king, rook);
             }
@@ -218,7 +218,7 @@ namespace stormphrax {
 
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
                     if (g_opts.chess960) {
-                        if (pos.toMove() == Color::kBlack) {
+                        if (pos.stm() == Color::kBlack) {
                             if (castlingRooks.black().kingside != Square::kNone) {
                                 generateFrcCastling(
                                     dst,
@@ -266,7 +266,7 @@ namespace stormphrax {
                             }
                         }
                     } else {
-                        if (pos.toMove() == Color::kBlack) {
+                        if (pos.stm() == Color::kBlack) {
                             if (castlingRooks.black().kingside != Square::kNone
                                 && (occupancy & U64(0x6000000000000000)).empty()
                                 && !pos.isAttacked(Square::kF8, Color::kWhite))
@@ -303,7 +303,7 @@ namespace stormphrax {
         void generateSliders(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto& bbs = pos.bbs();
 
-            const auto us = pos.toMove();
+            const auto us = pos.stm();
             const auto them = oppColor(us);
 
             const auto ours = bbs.forColor(us);
@@ -335,7 +335,7 @@ namespace stormphrax {
     void generateNoisy(ScoredMoveList& noisy, const Position& pos) {
         const auto& bbs = pos.bbs();
 
-        const auto us = pos.toMove();
+        const auto us = pos.stm();
         const auto them = oppColor(us);
 
         const auto ours = bbs.forColor(us);
@@ -382,7 +382,7 @@ namespace stormphrax {
     void generateQuiet(ScoredMoveList& quiet, const Position& pos) {
         const auto& bbs = pos.bbs();
 
-        const auto us = pos.toMove();
+        const auto us = pos.stm();
         const auto them = oppColor(us);
 
         const auto ours = bbs.forColor(us);
@@ -416,9 +416,9 @@ namespace stormphrax {
     void generateAll(ScoredMoveList& dst, const Position& pos) {
         const auto& bbs = pos.bbs();
 
-        const auto us = pos.toMove();
+        const auto us = pos.stm();
 
-        const auto kingDstMask = ~bbs.forColor(pos.toMove());
+        const auto kingDstMask = ~bbs.forColor(pos.stm());
 
         auto dstMask = kingDstMask;
 
@@ -427,7 +427,7 @@ namespace stormphrax {
 
         if (pos.enPassant() != Square::kNone) {
             epMask = Bitboard::fromSquare(pos.enPassant());
-            epPawn = pos.toMove() == Color::kBlack ? epMask.shiftUp() : epMask.shiftDown();
+            epPawn = pos.stm() == Color::kBlack ? epMask.shiftUp() : epMask.shiftDown();
         }
 
         auto pawnDstMask = kingDstMask;

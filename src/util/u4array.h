@@ -58,9 +58,6 @@ namespace stormphrax::util {
         static_assert(kSize % 2 == 0);
 
     public:
-        U4Array() = default;
-        ~U4Array() = default;
-
         constexpr u8 operator[](usize i) const {
             assert(i < kSize);
             return m_data[i / 2] >> ((i % 2) * 4);

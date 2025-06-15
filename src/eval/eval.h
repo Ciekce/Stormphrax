@@ -71,14 +71,14 @@ namespace stormphrax::eval {
             eval = eval * (materialScalingBase() + npMaterial) / 32768;
         }
 
-        eval += contempt[static_cast<i32>(pos.toMove())];
+        eval += contempt[static_cast<i32>(pos.stm())];
 
         return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }
 
     template <bool kScale = true>
     inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
-        auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.toMove());
+        auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 
@@ -97,7 +97,7 @@ namespace stormphrax::eval {
 
     template <bool kScale = true>
     inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
-        auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.toMove());
+        auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 } // namespace stormphrax::eval

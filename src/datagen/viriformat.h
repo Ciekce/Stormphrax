@@ -30,7 +30,6 @@ namespace stormphrax::datagen {
     class Viriformat {
     public:
         Viriformat();
-        ~Viriformat() = default;
 
         static constexpr auto kExtension = "vf";
 

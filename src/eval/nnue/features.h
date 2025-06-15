@@ -127,7 +127,7 @@ namespace stormphrax::eval::nnue::features {
 
     private:
         static constexpr auto kBuckets = [] {
-            constexpr auto HalfBuckets = std::array{kBucketIndices...};
+            constexpr auto kHalfBuckets = std::array{kBucketIndices...};
 
             std::array<u32, 64> dst{};
 
@@ -136,8 +136,8 @@ namespace stormphrax::eval::nnue::features {
                     const auto srcIdx = rank * 4 + file;
                     const auto dstIdx = rank * 8 + file;
 
-                    dst[dstIdx] = HalfBuckets[srcIdx];
-                    dst[dstIdx ^ 0x7] = HalfBuckets[srcIdx];
+                    dst[dstIdx] = kHalfBuckets[srcIdx];
+                    dst[dstIdx ^ 0x7] = kHalfBuckets[srcIdx];
                 }
             }
 

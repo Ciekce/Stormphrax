@@ -63,7 +63,7 @@ namespace stormphrax::tb {
             pos.halfmove(),
             0,
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.toMove() == Color::kWhite,
+            pos.stm() == Color::kWhite,
             false /*TODO*/,
             true,
             &tbRootMoves
@@ -82,7 +82,7 @@ namespace stormphrax::tb {
                 pos.halfmove(),
                 0,
                 epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-                pos.toMove() == Color::kWhite,
+                pos.stm() == Color::kWhite,
                 true,
                 &tbRootMoves
             );
@@ -137,7 +137,7 @@ namespace stormphrax::tb {
             0,
             0,
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.toMove() == Color::kWhite
+            pos.stm() == Color::kWhite
         );
 
         if (wdl == TB_RESULT_FAILED) {

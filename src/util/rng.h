@@ -36,8 +36,6 @@ namespace stormphrax::util::rng {
             }
         }
 
-        ~Jsf64Rng() = default;
-
         constexpr u64 nextU64() {
             const auto e = m_a - std::rotl(m_b, 7);
             m_a = m_b ^ std::rotl(m_c, 13);
@@ -110,8 +108,6 @@ namespace stormphrax::util::rng {
     public:
         explicit SeedGenerator(u64 seed = generateSingleSeed()) :
                 m_state{seed} {}
-
-        ~SeedGenerator() = default;
 
         constexpr u64 nextSeed() {
             m_state += U64(0x9E3779B97F4A7C15);

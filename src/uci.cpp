@@ -80,7 +80,6 @@ namespace stormphrax {
 
         class UciHandler {
         public:
-            UciHandler() = default;
             ~UciHandler();
 
             i32 run();
@@ -208,8 +207,8 @@ namespace stormphrax {
             println(
                 "option name Contempt type spin default {} min {} max {}",
                 opts::kDefaultNormalizedContempt,
-                ContemptRange.min(),
-                ContemptRange.max()
+                kContemptRange.min(),
+                kContemptRange.max()
             );
             println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
             println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
@@ -224,8 +223,8 @@ namespace stormphrax {
             println(
                 "option name SoftNodeHardLimitMultiplier type spin default {} min {} max {}",
                 defaultOpts.softNodeHardLimitMultiplier,
-                limit::SoftNodeHardLimitMultiplierRange.min(),
-                limit::SoftNodeHardLimitMultiplierRange.max()
+                limit::kSoftNodeHardLimitMultiplierRange.min(),
+                limit::kSoftNodeHardLimitMultiplierRange.max()
             );
             println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
             println("option name SyzygyPath type string default <empty>");
@@ -392,7 +391,7 @@ namespace stormphrax {
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
                         }
                     } else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.toMove() == Color::kBlack ? "btime" : "wtime"))
+                               && tokens[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
                     {
                         tournamentTime = true;
 
@@ -404,7 +403,7 @@ namespace stormphrax {
                             timeRemaining = static_cast<i64>(time);
                         }
                     } else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.toMove() == Color::kBlack ? "binc" : "winc"))
+                               && tokens[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
                     {
                         tournamentTime = true;
 
@@ -595,7 +594,7 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newContempt = util::tryParseI32(value)) {
                             opts::mutableOpts().contempt =
-                                wdl::unnormalizeScoreMaterial58(ContemptRange.clamp(*newContempt));
+                                wdl::unnormalizeScoreMaterial58(kContemptRange.clamp(*newContempt));
                         }
                     }
                 } else if (name == "uci_chess960") {
@@ -632,7 +631,7 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(value)) {
                             opts::mutableOpts().softNodeHardLimitMultiplier =
-                                limit::SoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
+                                limit::kSoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
                         }
                     }
                 } else if (name == "enableweirdtcs") {
@@ -717,7 +716,7 @@ namespace stormphrax {
 
             print("Pinned:");
 
-            auto pinned = m_pos.pinned(m_pos.toMove());
+            auto pinned = m_pos.pinned(m_pos.stm());
             while (pinned) {
                 print(" {}", pinned.popLowestSquare());
             }
@@ -726,7 +725,7 @@ namespace stormphrax {
 
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
-            const auto whitePerspective = m_pos.toMove() == Color::kBlack ? -normalized : normalized;
+            const auto whitePerspective = m_pos.stm() == Color::kBlack ? -normalized : normalized;
 
             println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
         }

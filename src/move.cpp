@@ -29,18 +29,18 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(stormphra
         return format_to(ctx.out(), "????");
     }
 
-    format_to(ctx.out(), "{}", value.src());
+    format_to(ctx.out(), "{}", value.fromSq());
 
     const auto type = value.type();
 
     if (type != MoveType::kCastling || g_opts.chess960) {
-        format_to(ctx.out(), "{}", value.dst());
+        format_to(ctx.out(), "{}", value.toSq());
         if (type == MoveType::kPromotion) {
             format_to(ctx.out(), "{}", value.promo());
         }
     } else {
         const auto dst =
-            value.srcFile() < value.dstFile() ? toSquare(value.srcRank(), 6) : toSquare(value.srcRank(), 2);
+            value.fromSqFile() < value.toSqFile() ? toSquare(value.fromSqRank(), 6) : toSquare(value.fromSqRank(), 2);
         format_to(ctx.out(), "{}", dst);
     }
 

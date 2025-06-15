@@ -182,11 +182,11 @@ namespace stormphrax::search {
         ) {
             assert(ply <= kMaxDepth);
 
-            const auto moving = pos.boards().pieceAt(move.src());
+            const auto moving = pos.boards().pieceOn(move.fromSq());
 
             stack[ply].move = move;
-            conthist[ply] = &history.contTable(moving, move.dst());
-            contMoves[ply] = {moving, move.dst()};
+            conthist[ply] = &history.contTable(moving, move.toSq());
+            contMoves[ply] = {moving, move.toSq()};
 
             keyHistory.push_back(pos.key());
 

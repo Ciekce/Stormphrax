@@ -28,7 +28,7 @@
 #include "tunable.h"
 
 namespace stormphrax::uci {
-    constexpr auto ContemptRange = util::Range<i32>{-1000, 1000};
+    constexpr auto kContemptRange = util::Range<i32>{-1000, 1000};
 
     i32 run();
 

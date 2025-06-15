@@ -40,7 +40,7 @@ namespace stormphrax::datagen {
             [[maybe_unused]] u8 extra;
 
             [[nodiscard]] static PackedBoard pack(const Position& pos, i16 score) {
-                static constexpr u8 UnmovedRook = 6;
+                static constexpr u8 kUnmovedRook = 6;
 
                 PackedBoard board{};
 
@@ -53,7 +53,7 @@ namespace stormphrax::datagen {
                 usize i = 0;
                 while (occupancy) {
                     const auto square = occupancy.popLowestSquare();
-                    const auto piece = boards.pieceAt(square);
+                    const auto piece = boards.pieceOn(square);
 
                     auto pieceId = static_cast<u8>(pieceType(piece));
 
@@ -61,7 +61,7 @@ namespace stormphrax::datagen {
                         && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
                             || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
                     {
-                        pieceId = UnmovedRook;
+                        pieceId = kUnmovedRook;
                     }
 
                     const u8 colorId = pieceColor(piece) == Color::kBlack ? (1 << 3) : 0;
@@ -69,12 +69,12 @@ namespace stormphrax::datagen {
                     board.pieces[i++] = pieceId | colorId;
                 }
 
-                const u8 stm = pos.toMove() == Color::kBlack ? (1 << 7) : 0;
+                const u8 stm = pos.stm() == Color::kBlack ? (1 << 7) : 0;
 
                 const Square relativeEpSquare =
                     pos.enPassant() == Square::kNone
                         ? Square::kNone
-                        : toSquare(pos.toMove() == Color::kBlack ? 2 : 5, squareFile(pos.enPassant()));
+                        : toSquare(pos.stm() == Color::kBlack ? 2 : 5, squareFile(pos.enPassant()));
 
                 board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
                 board.halfmoveClock = pos.halfmove();
@@ -89,7 +89,6 @@ namespace stormphrax::datagen {
     class Marlinformat {
     public:
         Marlinformat();
-        ~Marlinformat() = default;
 
         static constexpr auto kExtension = "bin";
 

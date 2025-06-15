@@ -40,8 +40,8 @@ namespace stormphrax::datagen {
 
         u16 viriMove{};
 
-        viriMove |= move.srcIdx();
-        viriMove |= move.dstIdx() << 6;
+        viriMove |= move.fromSqIdx();
+        viriMove |= move.toSqIdx() << 6;
         viriMove |= move.promoIdx() << 12;
         viriMove |= kMoveTypes[static_cast<i32>(move.type())];
 

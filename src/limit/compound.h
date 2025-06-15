@@ -28,7 +28,6 @@
 namespace stormphrax::limit {
     class CompoundLimiter final : public ISearchLimiter {
     public:
-        CompoundLimiter() = default;
         ~CompoundLimiter() final = default;
 
         template <typename T, typename... Args>

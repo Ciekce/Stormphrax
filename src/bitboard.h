@@ -38,7 +38,7 @@ namespace stormphrax {
         constexpr auto kDownRight = kDown + kRight;
 
         template <Color kC>
-        constexpr auto up() {
+        constexpr i32 up() {
             if constexpr (kC == Color::kBlack) {
                 return kDown;
             } else {
@@ -47,7 +47,7 @@ namespace stormphrax {
         }
 
         template <Color kC>
-        constexpr auto upLeft() {
+        constexpr i32 upLeft() {
             if constexpr (kC == Color::kBlack) {
                 return kDownLeft;
             } else {
@@ -56,7 +56,7 @@ namespace stormphrax {
         }
 
         template <Color kC>
-        constexpr auto upRight() {
+        constexpr i32 upRight() {
             if constexpr (kC == Color::kBlack) {
                 return kDownRight;
             } else {
@@ -65,7 +65,7 @@ namespace stormphrax {
         }
 
         template <Color C>
-        constexpr auto down() {
+        constexpr i32 down() {
             if constexpr (C == Color::kBlack) {
                 return kUp;
             } else {
@@ -74,7 +74,7 @@ namespace stormphrax {
         }
 
         template <Color kC>
-        constexpr auto downLeft() {
+        constexpr i32 downLeft() {
             if constexpr (kC == Color::kBlack) {
                 return kUpLeft;
             } else {
@@ -83,7 +83,7 @@ namespace stormphrax {
         }
 
         template <Color kC>
-        constexpr auto downRight() {
+        constexpr i32 downRight() {
             if constexpr (kC == Color::kBlack) {
                 return kUpRight;
             } else {

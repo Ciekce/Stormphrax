@@ -50,7 +50,7 @@ namespace stormphrax::search {
             return result;
         }();
 
-        [[nodiscard]] inline Score drawScore(usize nodes) {
+        [[nodiscard]] constexpr Score drawScore(usize nodes) {
             return 2 - static_cast<Score>(nodes % 4);
         }
 
@@ -148,8 +148,8 @@ namespace stormphrax::search {
 
         const auto contempt = g_opts.contempt;
 
-        m_contempt[static_cast<i32>(pos.toMove())] = contempt;
-        m_contempt[static_cast<i32>(pos.opponent())] = -contempt;
+        m_contempt[static_cast<i32>(pos.stm())] = contempt;
+        m_contempt[static_cast<i32>(pos.nstm())] = -contempt;
 
         m_setupInfo.rootPos = pos;
 
@@ -192,7 +192,7 @@ namespace stormphrax::search {
 
         m_ttable.age();
 
-        const auto whitePovScore = thread.rootPos.toMove() == Color::kBlack ? -score : score;
+        const auto whitePovScore = thread.rootPos.stm() == Color::kBlack ? -score : score;
         return {whitePovScore, wdl::normalizeScore(whitePovScore, thread.rootPos.classicalMaterial())};
     }
 
@@ -524,7 +524,7 @@ namespace stormphrax::search {
                              );
         }
 
-        const auto us = pos.toMove();
+        const auto us = pos.stm();
         const auto them = oppColor(us);
 
         assert(!kPvNode || !cutnode);
@@ -555,7 +555,7 @@ namespace stormphrax::search {
                             thread.conthist,
                             ply,
                             pos.threats(),
-                            boards.pieceAt(ttEntry.move.src()),
+                            boards.pieceOn(ttEntry.move.fromSq()),
                             ttEntry.move,
                             bonus
                         );
@@ -830,7 +830,7 @@ namespace stormphrax::search {
             const bool quietOrLosing = generator.stage() > MovegenStage::kGoodNoisy;
 
             const bool noisy = pos.isNoisy(move);
-            const auto moving = boards.pieceAt(move.src());
+            const auto moving = boards.pieceOn(move.fromSq());
 
             const auto captured = pos.captureTarget(move);
 
@@ -1070,7 +1070,7 @@ namespace stormphrax::search {
                     thread.conthist,
                     ply,
                     pos.threats(),
-                    pos.boards().pieceAt(bestMove.src()),
+                    pos.boards().pieceOn(bestMove.fromSq()),
                     bestMove,
                     bonus
                 );
@@ -1080,7 +1080,7 @@ namespace stormphrax::search {
                         thread.conthist,
                         ply,
                         pos.threats(),
-                        pos.boards().pieceAt(prevQuiet.src()),
+                        pos.boards().pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
                         penalty
                     );
