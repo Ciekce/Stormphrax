@@ -18,8 +18,6 @@
 
 #include "perft.h"
 
-#include <iostream>
-
 #include "movegen.h"
 #include "uci.h"
 #include "util/timer.h"
@@ -58,7 +56,7 @@ namespace stormphrax {
     } // namespace
 
     void perft(const Position& pos, i32 depth) {
-        std::cout << doPerft(pos, depth) << std::endl;
+        println("{}", doPerft(pos, depth));
     }
 
     void splitPerft(const Position& pos, i32 depth) {
@@ -80,12 +78,13 @@ namespace stormphrax {
             const auto value = doPerft(newPos, depth);
 
             total += value;
-            std::cout << uci::moveToString(move) << '\t' << value << '\n';
+            println("{}\t{}", move, value);
         }
 
         const auto nps = static_cast<usize>(static_cast<f64>(total) / start.elapsed());
 
-        std::cout << "\ntotal " << total << '\n';
-        std::cout << nps << " nps" << std::endl;
+        println();
+        println("total {}", total);
+        println("{} nps", nps);
     }
 } // namespace stormphrax

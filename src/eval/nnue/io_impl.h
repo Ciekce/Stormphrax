@@ -21,7 +21,6 @@
 #include "../../types.h"
 
 #include <cassert>
-#include <iostream>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -123,7 +122,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline bool writeI8s(std::span<const i8> src) final {
-            std::cerr << "ZstdParamStream::writeI8s" << std::endl;
+            eprintln("ZstdParamStream::writeI8s");
             std::terminate();
         }
 
@@ -132,7 +131,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline bool writeI16s(std::span<const i16> src) final {
-            std::cerr << "ZstdParamStream::writeI16s" << std::endl;
+            eprintln("ZstdParamStream::writeI16s");
             std::terminate();
         }
 
@@ -141,7 +140,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline bool writeI32s(std::span<const i32> src) final {
-            std::cerr << "ZstdParamStream::writeI32s" << std::endl;
+            eprintln("ZstdParamStream::writeI32s");
             std::terminate();
         }
 

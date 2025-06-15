@@ -160,39 +160,6 @@ namespace stormphrax {
         }
     }
 
-    [[nodiscard]] constexpr char pieceToChar(Piece piece) {
-        switch (piece) {
-            case Piece::kNone:
-                return ' ';
-            case Piece::kBlackPawn:
-                return 'p';
-            case Piece::kWhitePawn:
-                return 'P';
-            case Piece::kBlackKnight:
-                return 'n';
-            case Piece::kWhiteKnight:
-                return 'N';
-            case Piece::kBlackBishop:
-                return 'b';
-            case Piece::kWhiteBishop:
-                return 'B';
-            case Piece::kBlackRook:
-                return 'r';
-            case Piece::kWhiteRook:
-                return 'R';
-            case Piece::kBlackQueen:
-                return 'q';
-            case Piece::kWhiteQueen:
-                return 'Q';
-            case Piece::kBlackKing:
-                return 'k';
-            case Piece::kWhiteKing:
-                return 'K';
-            default:
-                return ' ';
-        }
-    }
-
     [[nodiscard]] constexpr PieceType pieceTypeFromChar(char c) {
         switch (c) {
             case 'p':
@@ -209,27 +176,6 @@ namespace stormphrax {
                 return PieceType::kKing;
             default:
                 return PieceType::kNone;
-        }
-    }
-
-    [[nodiscard]] constexpr char pieceTypeToChar(PieceType piece) {
-        switch (piece) {
-            case PieceType::kNone:
-                return ' ';
-            case PieceType::kPawn:
-                return 'p';
-            case PieceType::kKnight:
-                return 'n';
-            case PieceType::kBishop:
-                return 'b';
-            case PieceType::kRook:
-                return 'r';
-            case PieceType::kQueen:
-                return 'q';
-            case PieceType::kKing:
-                return 'k';
-            default:
-                return ' ';
         }
     }
 
@@ -407,3 +353,18 @@ namespace stormphrax {
 
     constexpr auto kScoreMaxMate = kScoreMate - kMaxDepth;
 } // namespace stormphrax
+
+template <>
+struct fmt::formatter<stormphrax::Piece> : fmt::formatter<std::string_view> {
+    format_context::iterator format(stormphrax::Piece value, format_context& ctx) const;
+};
+
+template <>
+struct fmt::formatter<stormphrax::PieceType> : fmt::formatter<std::string_view> {
+    format_context::iterator format(stormphrax::PieceType value, format_context& ctx) const;
+};
+
+template <>
+struct fmt::formatter<stormphrax::Square> : fmt::nested_formatter<char> {
+    format_context::iterator format(stormphrax::Square value, format_context& ctx) const;
+};

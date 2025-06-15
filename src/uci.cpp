@@ -24,7 +24,6 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -39,7 +38,6 @@
 #include "opts.h"
 #include "perft.h"
 #include "position/position.h"
-#include "pretty.h"
 #include "search.h"
 #include "ttable.h"
 #include "tunable.h"
@@ -188,54 +186,81 @@ namespace stormphrax {
             static const opts::GlobalOptions defaultOpts{};
 
 #ifdef SP_COMMIT_HASH
-            std::cout << "id name " << kName << ' ' << kVersion << ' ' << SP_STRINGIFY(SP_COMMIT_HASH) << '\n';
+            println("id name {} {} {}", kName, kVersion, SP_STRINGIFY(SP_COMMIT_HASH));
 #else
-            std::cout << "id name " << kName << ' ' << kVersion << '\n';
+            println("id name {} {}", kName, kVersion);
 #endif
-            std::cout << "id author " << kAuthor << '\n';
+            println("id author {}", kAuthor);
 
-            std::cout << std::boolalpha;
-
-            std::cout << "option name Hash type spin default " << kDefaultTtSizeMib << " min " << kTtSizeMibRange.min()
-                      << " max " << kTtSizeMibRange.max() << '\n';
-            std::cout << "option name Clear Hash type button\n";
-            std::cout << "option name Threads type spin default " << opts::kDefaultThreadCount << " min "
-                      << opts::kThreadCountRange.min() << " max " << opts::kThreadCountRange.max() << '\n';
-            std::cout << "option name Contempt type spin default " << opts::kDefaultNormalizedContempt << " min "
-                      << ContemptRange.min() << " max " << ContemptRange.max() << '\n';
-            std::cout << "option name UCI_Chess960 type check default " << defaultOpts.chess960 << '\n';
-            std::cout << "option name UCI_ShowWDL type check default " << defaultOpts.showWdl << '\n';
-            std::cout << "option name ShowCurrMove type check default " << defaultOpts.showCurrMove << '\n';
-            std::cout << "option name Move Overhead type spin default " << limit::kDefaultMoveOverhead << " min "
-                      << limit::kMoveOverheadRange.min() << " max " << limit::kMoveOverheadRange.max() << '\n';
-            std::cout << "option name SoftNodes type check default " << defaultOpts.softNodes << std::endl;
-            std::cout << "option name SoftNodeHardLimitMultiplier type spin default "
-                      << defaultOpts.softNodeHardLimitMultiplier << " min "
-                      << limit::SoftNodeHardLimitMultiplierRange.min() << " max "
-                      << limit::SoftNodeHardLimitMultiplierRange.max() << '\n';
-            std::cout << "option name EnableWeirdTCs type check default " << defaultOpts.enableWeirdTcs << std::endl;
-            std::cout << "option name SyzygyPath type string default <empty>\n";
-            std::cout << "option name SyzygyProbeDepth type spin default " << defaultOpts.syzygyProbeDepth << " min "
-                      << search::kSyzygyProbeDepthRange.min() << " max " << search::kSyzygyProbeDepthRange.max()
-                      << '\n';
-            std::cout << "option name SyzygyProbeLimit type spin default " << defaultOpts.syzygyProbeLimit << " min "
-                      << search::kSyzygyProbeLimitRange.min() << " max " << search::kSyzygyProbeLimitRange.max()
-                      << '\n';
-            std::cout << "option name EvalFile type string default <internal>" << std::endl;
+            println(
+                "option name Hash type spin default {} min {} max {}",
+                kDefaultTtSizeMib,
+                kTtSizeMibRange.min(),
+                kTtSizeMibRange.max()
+            );
+            println("option name Clear Hash type button");
+            println(
+                "option name Threads type spin default {} min {} max {}",
+                opts::kDefaultThreadCount,
+                opts::kThreadCountRange.min(),
+                opts::kThreadCountRange.max()
+            );
+            println(
+                "option name Contempt type spin default {} min {} max {}",
+                opts::kDefaultNormalizedContempt,
+                ContemptRange.min(),
+                ContemptRange.max()
+            );
+            println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
+            println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
+            println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
+            println(
+                "option name Move Overhead type spin default {} min {} max {}",
+                limit::kDefaultMoveOverhead,
+                limit::kMoveOverheadRange.min(),
+                limit::kMoveOverheadRange.max()
+            );
+            println("option name SoftNodes type check default {}", defaultOpts.softNodes);
+            println(
+                "option name SoftNodeHardLimitMultiplier type spin default {} min {} max {}",
+                defaultOpts.softNodeHardLimitMultiplier,
+                limit::SoftNodeHardLimitMultiplierRange.min(),
+                limit::SoftNodeHardLimitMultiplierRange.max()
+            );
+            println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
+            println("option name SyzygyPath type string default <empty>");
+            println(
+                "option name SyzygyProbeDepth type spin default {} min {} max {}",
+                defaultOpts.syzygyProbeDepth,
+                search::kSyzygyProbeDepthRange.min(),
+                search::kSyzygyProbeDepthRange.max()
+            );
+            println(
+                "option name SyzygyProbeLimit type spin default {} min {} max {}",
+                defaultOpts.syzygyProbeLimit,
+                search::kSyzygyProbeLimitRange.min(),
+                search::kSyzygyProbeLimitRange.max()
+            );
+            println("option name EvalFile type string default <internal>");
 
 #if SP_EXTERNAL_TUNE
             for (const auto& param : tunableParams()) {
-                std::cout << "option name " << param.name << " type spin default " << param.defaultValue << " min "
-                          << param.range.min() << " max " << param.range.max() << std::endl;
+                println(
+                    "option name {} type spin default {} min {} max {}",
+                    param.name,
+                    param.defaultValue,
+                    param.range.min(),
+                    param.range.max()
+                );
             }
 #endif
 
-            std::cout << "uciok" << std::endl;
+            println("uciok");
         }
 
         void UciHandler::handleUcinewgame() {
             if (m_searcher.searching()) {
-                std::cerr << "still searching" << std::endl;
+                eprintln("still searching");
             } else {
                 m_searcher.newGame();
             }
@@ -243,12 +268,12 @@ namespace stormphrax {
 
         void UciHandler::handleIsready() {
             m_searcher.ensureReady();
-            std::cout << "readyok" << std::endl;
+            println("readyok");
         }
 
         void UciHandler::handlePosition(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
-                std::cerr << "still searching" << std::endl;
+                eprintln("still searching");
             } else if (tokens.size() > 1) {
                 const auto& position = tokens[1];
 
@@ -258,13 +283,14 @@ namespace stormphrax {
                     m_pos = Position::starting();
                     m_keyHistory.clear();
                 } else if (position == "fen") {
-                    std::ostringstream fen{};
+                    std::string fen{};
+                    auto itr = std::back_inserter(fen);
 
                     for (usize i = 0; i < 6 && next < tokens.size(); ++i, ++next) {
-                        fen << tokens[next] << ' ';
+                        fmt::format_to(itr, "{} ", tokens[next]);
                     }
 
-                    if (const auto newPos = Position::fromFen(fen.str())) {
+                    if (const auto newPos = Position::fromFen(fen)) {
                         m_pos = *newPos;
                         m_keyHistory.clear();
                     } else {
@@ -272,7 +298,7 @@ namespace stormphrax {
                     }
                 } else if (position == "frc") {
                     if (!g_opts.chess960) {
-                        std::cerr << "Chess960 not enabled" << std::endl;
+                        eprintln("Chess960 not enabled");
                         return;
                     }
 
@@ -290,7 +316,7 @@ namespace stormphrax {
                     }
                 } else if (position == "dfrc") {
                     if (!g_opts.chess960) {
-                        std::cerr << "Chess960 not enabled" << std::endl;
+                        eprintln("Chess960 not enabled");
                         return;
                     }
 
@@ -323,7 +349,7 @@ namespace stormphrax {
 
         void UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) {
             if (m_searcher.searching()) {
-                std::cerr << "already searching" << std::endl;
+                eprintln("already searching");
             } else {
                 u32 depth = kMaxDepth;
                 auto limiter = std::make_unique<limit::CompoundLimiter>();
@@ -340,7 +366,7 @@ namespace stormphrax {
                 for (usize i = 1; i < tokens.size(); ++i) {
                     if (tokens[i] == "depth" && ++i < tokens.size()) {
                         if (!util::tryParseU32(depth, tokens[i])) {
-                            std::cerr << "invalid depth " << tokens[i] << std::endl;
+                            eprintln("invalid depth {}", tokens[i]);
                         }
                         continue;
                     }
@@ -353,14 +379,14 @@ namespace stormphrax {
                     if (tokens[i] == "nodes" && ++i < tokens.size()) {
                         usize nodes{};
                         if (!util::tryParseSize(nodes, tokens[i])) {
-                            std::cerr << "invalid node count " << tokens[i] << std::endl;
+                            eprintln("invalid node count {}", tokens[i]);
                         } else {
                             limiter->addLimiter<limit::NodeLimiter>(nodes);
                         }
                     } else if (tokens[i] == "movetime" && ++i < tokens.size()) {
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            std::cerr << "invalid time " << tokens[i] << std::endl;
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
@@ -372,7 +398,7 @@ namespace stormphrax {
 
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            std::cerr << "invalid time " << tokens[i] << std::endl;
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             timeRemaining = static_cast<i64>(time);
@@ -384,7 +410,7 @@ namespace stormphrax {
 
                         i64 time{};
                         if (!util::tryParseI64(time, tokens[i])) {
-                            std::cerr << "invalid time " << tokens[i] << std::endl;
+                            eprintln("invalid time {}", tokens[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             increment = static_cast<i64>(time);
@@ -394,7 +420,7 @@ namespace stormphrax {
 
                         u32 moves{};
                         if (!util::tryParseU32(moves, tokens[i])) {
-                            std::cerr << "invalid movestogo " << tokens[i] << std::endl;
+                            eprintln("invalid movestogo {}", tokens[i]);
                         } else {
                             moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
                             toGo = static_cast<i32>(moves);
@@ -415,7 +441,7 @@ namespace stormphrax {
                                     if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
                                         movesToSearch.push(move);
                                     } else {
-                                        std::cout << "info string ignoring illegal move " << candidate << std::endl;
+                                        println("info string ignoring illegal move {}", candidate);
                                     }
                                 }
 
@@ -428,13 +454,13 @@ namespace stormphrax {
                 }
 
                 if (!movesToSearch.empty()) {
-                    std::cout << "info string searching moves:";
+                    print("info string searching moves:");
 
                     for (const auto move : movesToSearch) {
-                        std::cout << " " << moveToString(move);
+                        println(" {}", move);
                     }
 
-                    std::cout << std::endl;
+                    println();
                 }
 
                 if (depth == 0) {
@@ -446,26 +472,26 @@ namespace stormphrax {
                 if (tournamentTime) {
                     if (toGo != 0) {
                         if (g_opts.enableWeirdTcs) {
-                            std::cout << "info string Warning: Stormphrax does not officially"
-                                         " support cyclic (movestogo) time controls"
-                                      << std::endl;
+                            println(
+                                "info string Warning: Stormphrax does not officially support cyclic (movestogo) time controls"
+                            );
                         } else {
-                            std::cout << "info string Cyclic (movestogo) time controls"
-                                         " not enabled, see the EnableWeirdTCs option"
-                                      << std::endl;
-                            std::cout << "bestmove 0000" << std::endl;
+                            println(
+                                "info string Cyclic (movestogo) time controls not enabled, see the EnableWeirdTCs option"
+                            );
+                            println("bestmove 0000");
                             return;
                         }
                     } else if (increment == 0) {
                         if (g_opts.enableWeirdTcs) {
-                            std::cout << "info string Warning: Stormphrax does not officially"
-                                         " support sudden death (0 increment) time controls"
-                                      << std::endl;
+                            println(
+                                "info string Warning: Stormphrax does not officially support sudden death (0 increment) time controls"
+                            );
                         } else {
-                            std::cout << "info string Sudden death (0 increment) time controls"
-                                         " not enabled, see the EnableWeirdTCs option"
-                                      << std::endl;
-                            std::cout << "bestmove 0000" << std::endl;
+                            println(
+                                "info string Sudden death (0 increment) time controls not enabled, see the EnableWeirdTCs option"
+                            );
+                            println("bestmove 0000");
                             return;
                         }
                     }
@@ -495,7 +521,7 @@ namespace stormphrax {
 
         void UciHandler::handleStop() {
             if (!m_searcher.searching()) {
-                std::cerr << "not searching" << std::endl;
+                eprintln("not searching");
             } else {
                 m_searcher.stop();
             }
@@ -513,165 +539,156 @@ namespace stormphrax {
                 return;
             }
 
-            bool nameEmpty = true;
-            std::ostringstream name{};
+            std::string name{};
+            auto nameItr = std::back_inserter(name);
 
             for (; i < tokens.size() && tokens[i] != "value"; ++i) {
-                if (!nameEmpty) {
-                    name << ' ';
-                } else {
-                    nameEmpty = false;
+                if (!name.empty()) {
+                    fmt::format_to(nameItr, " ");
                 }
 
-                name << tokens[i];
+                fmt::format_to(nameItr, "{}", tokens[i]);
             }
 
             if (++i == tokens.size()) {
                 return;
             }
 
-            bool valueEmpty = true;
-            std::ostringstream value{};
+            std::string value{};
+            auto valueItr = std::back_inserter(value);
 
             for (; i < tokens.size(); ++i) {
-                if (!valueEmpty) {
-                    value << ' ';
-                } else {
-                    valueEmpty = false;
+                if (!value.empty()) {
+                    fmt::format_to(valueItr, " ");
                 }
 
-                value << tokens[i];
+                fmt::format_to(valueItr, "{}", tokens[i]);
             }
 
-            auto nameStr = name.str();
+            if (!name.empty()) {
+                std::transform(name.begin(), name.end(), name.begin(), [](auto c) { return std::tolower(c); });
 
-            const auto valueStr = value.str();
-
-            if (!nameEmpty) {
-                std::transform(nameStr.begin(), nameStr.end(), nameStr.begin(), [](auto c) { return std::tolower(c); });
-
-                if (nameStr == "hash") {
-                    if (!valueEmpty) {
-                        if (const auto newTtSize = util::tryParseSize(valueStr)) {
+                if (name == "hash") {
+                    if (!value.empty()) {
+                        if (const auto newTtSize = util::tryParseSize(value)) {
                             m_searcher.setTtSize(kTtSizeMibRange.clamp(*newTtSize));
                         }
                     }
-                } else if (nameStr == "clear hash") {
+                } else if (name == "clear hash") {
                     if (m_searcher.searching()) {
-                        std::cerr << "still searching" << std::endl;
+                        eprintln("still searching");
                     }
 
                     m_searcher.newGame();
-                } else if (nameStr == "threads") {
+                } else if (name == "threads") {
                     if (m_searcher.searching()) {
-                        std::cerr << "still searching" << std::endl;
+                        eprintln("still searching");
                     }
 
-                    if (!valueEmpty) {
-                        if (const auto newThreads = util::tryParseU32(valueStr)) {
+                    if (!value.empty()) {
+                        if (const auto newThreads = util::tryParseU32(value)) {
                             opts::mutableOpts().threads = *newThreads;
                             m_searcher.setThreads(opts::kThreadCountRange.clamp(*newThreads));
                         }
                     }
-                } else if (nameStr == "contempt") {
-                    if (!valueEmpty) {
-                        if (const auto newContempt = util::tryParseI32(valueStr)) {
+                } else if (name == "contempt") {
+                    if (!value.empty()) {
+                        if (const auto newContempt = util::tryParseI32(value)) {
                             opts::mutableOpts().contempt =
                                 wdl::unnormalizeScoreMaterial58(ContemptRange.clamp(*newContempt));
                         }
                     }
-                } else if (nameStr == "uci_chess960") {
-                    if (!valueEmpty) {
-                        if (const auto newChess960 = util::tryParseBool(valueStr)) {
+                } else if (name == "uci_chess960") {
+                    if (!value.empty()) {
+                        if (const auto newChess960 = util::tryParseBool(value)) {
                             opts::mutableOpts().chess960 = *newChess960;
                         }
                     }
-                } else if (nameStr == "uci_showwdl") {
-                    if (!valueEmpty) {
-                        if (const auto newShowWdl = util::tryParseBool(valueStr)) {
+                } else if (name == "uci_showwdl") {
+                    if (!value.empty()) {
+                        if (const auto newShowWdl = util::tryParseBool(value)) {
                             opts::mutableOpts().showWdl = *newShowWdl;
                         }
                     }
-                } else if (nameStr == "showcurrmove") {
-                    if (!valueEmpty) {
-                        if (const auto newShowCurrMove = util::tryParseBool(valueStr)) {
+                } else if (name == "showcurrmove") {
+                    if (!value.empty()) {
+                        if (const auto newShowCurrMove = util::tryParseBool(value)) {
                             opts::mutableOpts().showCurrMove = *newShowCurrMove;
                         }
                     }
-                } else if (nameStr == "move overhead") {
-                    if (!valueEmpty) {
-                        if (const auto newMoveOverhead = util::tryParseI32(valueStr)) {
+                } else if (name == "move overhead") {
+                    if (!value.empty()) {
+                        if (const auto newMoveOverhead = util::tryParseI32(value)) {
                             m_moveOverhead = limit::kMoveOverheadRange.clamp(*newMoveOverhead);
                         }
                     }
-                } else if (nameStr == "softnodes") {
-                    if (!valueEmpty) {
-                        if (const auto newSoftNodes = util::tryParseBool(valueStr)) {
+                } else if (name == "softnodes") {
+                    if (!value.empty()) {
+                        if (const auto newSoftNodes = util::tryParseBool(value)) {
                             opts::mutableOpts().softNodes = *newSoftNodes;
                         }
                     }
-                } else if (nameStr == "softnodehardlimitmultiplier") {
-                    if (!valueEmpty) {
-                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(valueStr)) {
+                } else if (name == "softnodehardlimitmultiplier") {
+                    if (!value.empty()) {
+                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(value)) {
                             opts::mutableOpts().softNodeHardLimitMultiplier =
                                 limit::SoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
                         }
                     }
-                } else if (nameStr == "enableweirdtcs") {
-                    if (!valueEmpty) {
-                        if (const auto newEnableWeirdTcs = util::tryParseBool(valueStr)) {
+                } else if (name == "enableweirdtcs") {
+                    if (!value.empty()) {
+                        if (const auto newEnableWeirdTcs = util::tryParseBool(value)) {
                             opts::mutableOpts().enableWeirdTcs = *newEnableWeirdTcs;
                         }
                     }
-                } else if (nameStr == "syzygypath") {
+                } else if (name == "syzygypath") {
                     if (m_searcher.searching()) {
-                        std::cerr << "still searching" << std::endl;
+                        eprintln("still searching");
                     }
 
                     m_fathomInitialized = true;
 
-                    if (valueEmpty) {
+                    if (value.empty()) {
                         opts::mutableOpts().syzygyEnabled = false;
                         tb_init("");
                     } else {
-                        opts::mutableOpts().syzygyEnabled = valueStr != "<empty>";
-                        if (!tb_init(valueStr.c_str())) {
-                            std::cerr << "failed to initialize Fathom" << std::endl;
+                        opts::mutableOpts().syzygyEnabled = value != "<empty>";
+                        if (!tb_init(value.c_str())) {
+                            eprintln("failed to initialize Fathom");
                         }
                     }
-                } else if (nameStr == "syzygyprobedepth") {
-                    if (!valueEmpty) {
-                        if (const auto newSyzygyProbeDepth = util::tryParseI32(valueStr)) {
+                } else if (name == "syzygyprobedepth") {
+                    if (!value.empty()) {
+                        if (const auto newSyzygyProbeDepth = util::tryParseI32(value)) {
                             opts::mutableOpts().syzygyProbeDepth =
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
                         }
                     }
-                } else if (nameStr == "syzygyprobelimit") {
-                    if (!valueEmpty) {
-                        if (const auto newSyzygyProbeLimit = util::tryParseI32(valueStr)) {
+                } else if (name == "syzygyprobelimit") {
+                    if (!value.empty()) {
+                        if (const auto newSyzygyProbeLimit = util::tryParseI32(value)) {
                             opts::mutableOpts().syzygyProbeLimit =
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
                         }
                     }
-                } else if (nameStr == "evalfile") {
+                } else if (name == "evalfile") {
                     if (m_searcher.searching()) {
-                        std::cerr << "still searching" << std::endl;
+                        eprintln("still searching");
                     }
 
-                    if (!valueEmpty) {
-                        if (valueStr == "<internal>") {
+                    if (!value.empty()) {
+                        if (value == "<internal>") {
                             eval::loadDefaultNetwork();
-                            std::cout << "info string loaded embedded network " << eval::defaultNetworkName()
-                                      << std::endl;
+                            println("info string loaded embedded network {}", eval::defaultNetworkName());
                         } else {
-                            eval::loadNetwork(valueStr);
+                            eval::loadNetwork(value);
                         }
                     }
                 }
 #if SP_EXTERNAL_TUNE
-                else if (auto* param = lookupTunableParam(nameStr))
+                else if (auto* param = lookupTunableParam(name))
                 {
-                    if (!valueEmpty && util::tryParseI32(param->value, valueStr) && param->callback) {
+                    if (!value.empty() && util::tryParseI32(param->value, value) && param->callback) {
                         param->callback();
                     }
                 }
@@ -680,70 +697,62 @@ namespace stormphrax {
         }
 
         void UciHandler::handleD() {
-            std::cout << '\n';
+            println();
+            println("{}", m_pos);
 
-            printBoard(std::cout, m_pos);
-            std::cout << "\nFen: " << m_pos.toFen() << std::endl;
+            println();
+            println("Fen: {}", m_pos.toFen());
 
-            std::ostringstream key{};
-            key << std::hex << std::setw(16) << std::setfill('0') << m_pos.key();
-            std::cout << "Key: " << key.str() << std::endl;
+            println("Key: {:016x}", m_pos.key());
+            println("Pawn key: {:016x}", m_pos.pawnKey());
 
-            std::ostringstream pawnKey{};
-            pawnKey << std::hex << std::setw(16) << std::setfill('0') << m_pos.pawnKey();
-            std::cout << "Pawn key: " << pawnKey.str() << std::endl;
-
-            std::cout << "Checkers:";
+            print("Checkers:");
 
             auto checkers = m_pos.checkers();
             while (checkers) {
-                std::cout << ' ' << squareToString(checkers.popLowestSquare());
+                print(" {}", checkers.popLowestSquare());
             }
 
-            std::cout << std::endl;
+            println();
 
-            std::cout << "Pinned:";
+            print("Pinned:");
 
             auto pinned = m_pos.pinned(m_pos.toMove());
             while (pinned) {
-                std::cout << ' ' << squareToString(pinned.popLowestSquare());
+                print(" {}", pinned.popLowestSquare());
             }
 
-            std::cout << std::endl;
+            println();
 
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
+            const auto whitePerspective = m_pos.toMove() == Color::kBlack ? -normalized : normalized;
 
-            std::cout << "Static eval: ";
-            printScore(std::cout, m_pos.toMove() == Color::kBlack ? -normalized : normalized);
-            std::cout << std::endl;
+            println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
         }
 
         void UciHandler::handleFen() {
-            std::cout << m_pos.toFen() << std::endl;
+            println("{}", m_pos.toFen());
         }
 
         void UciHandler::handleEval() {
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
-            printScore(std::cout, normalized);
-            std::cout << std::endl;
+            println("Static eval: {:+}.{:02}", normalized / 100, std::abs(normalized) % 100);
         }
 
         void UciHandler::handleRawEval() {
             const auto score = eval::staticEvalOnce<false>(m_pos);
-            std::cout << score << std::endl;
+            println("{}", score);
         }
 
         void UciHandler::handleCheckers() {
-            std::cout << '\n';
-            printBitboard(std::cout, m_pos.checkers());
+            println("{}", m_pos.checkers());
         }
 
         void UciHandler::handleThreats() {
-            std::cout << '\n';
-            printBitboard(std::cout, m_pos.threats());
+            println("{}", m_pos.threats());
         }
 
         void UciHandler::handleRegen() {
@@ -756,12 +765,13 @@ namespace stormphrax {
 
             for (u32 i = 0; i < moves.size(); ++i) {
                 if (i > 0) {
-                    std::cout << ' ';
+                    print(" {}", moves[i].move);
+                } else {
+                    print("{}", moves[i].move);
                 }
-                std::cout << moveToString(moves[i].move);
             }
 
-            std::cout << std::endl;
+            println();
         }
 
         void UciHandler::handlePerft(const std::vector<std::string>& tokens) {
@@ -769,7 +779,7 @@ namespace stormphrax {
 
             if (tokens.size() > 1) {
                 if (!util::tryParseU32(depth, tokens[1])) {
-                    std::cerr << "invalid depth " << tokens[1] << std::endl;
+                    eprintln("invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -782,7 +792,7 @@ namespace stormphrax {
 
             if (tokens.size() > 1) {
                 if (!util::tryParseU32(depth, tokens[1])) {
-                    std::cerr << "invalid depth " << tokens[1] << std::endl;
+                    eprintln("invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -792,7 +802,7 @@ namespace stormphrax {
 
         void UciHandler::handleBench(const std::vector<std::string>& tokens) {
             if (m_searcher.searching()) {
-                std::cerr << "already searching" << std::endl;
+                eprintln("already searching");
                 return;
             }
 
@@ -803,7 +813,7 @@ namespace stormphrax {
                 if (const auto newDepth = util::tryParseU32(tokens[1])) {
                     depth = static_cast<i32>(*newDepth);
                 } else {
-                    std::cout << "info string invalid depth " << tokens[1] << std::endl;
+                    println("info string invalid depth {}", tokens[1]);
                     return;
                 }
             }
@@ -811,10 +821,10 @@ namespace stormphrax {
             if (tokens.size() > 2) {
                 if (const auto newThreads = util::tryParseU32(tokens[2])) {
                     if (*newThreads > 1) {
-                        std::cout << "info string multiple search threads not yet supported, using 1" << std::endl;
+                        println("info string multiple search threads not yet supported, using 1");
                     }
                 } else {
-                    std::cout << "info string invalid thread count " << tokens[2] << std::endl;
+                    println("info string invalid thread count {}", tokens[2]);
                     return;
                 }
             }
@@ -823,13 +833,13 @@ namespace stormphrax {
                 if (const auto newTtSize = util::tryParseSize(tokens[3])) {
                     ttSize = static_cast<i32>(*newTtSize);
                 } else {
-                    std::cout << "info string invalid tt size " << tokens[3] << std::endl;
+                    println("info string invalid tt size {}", tokens[3]);
                     return;
                 }
             }
 
             m_searcher.setTtSize(ttSize);
-            std::cout << "info string set tt size to " << ttSize << " MB" << std::endl;
+            println("info string set tt size to {} MiB", ttSize);
 
             if (depth == 0) {
                 depth = 1;
@@ -852,7 +862,7 @@ namespace stormphrax {
             auto& params = tunableParams();
 
             if (params.size() == params.capacity()) {
-                std::cerr << "Tunable vector full, cannot reallocate" << std::endl;
+                eprintln("Tunable vector full, cannot reallocate");
                 std::terminate();
             }
 
@@ -872,31 +882,6 @@ namespace stormphrax {
         i32 run() {
             UciHandler handler{};
             return handler.run();
-        }
-
-        std::string moveToString(Move move) {
-            if (!move) {
-                return "0000";
-            }
-
-            std::ostringstream str{};
-
-            str << squareToString(move.src());
-
-            const auto type = move.type();
-
-            if (type != MoveType::kCastling || g_opts.chess960) {
-                str << squareToString(move.dst());
-                if (type == MoveType::kPromotion) {
-                    str << pieceTypeToChar(move.promo());
-                }
-            } else {
-                const auto dst =
-                    move.srcFile() < move.dstFile() ? toSquare(move.srcRank(), 6) : toSquare(move.srcRank(), 2);
-                str << squareToString(dst);
-            }
-
-            return str.str();
         }
 
 #if SP_EXTERNAL_TUNE
@@ -921,7 +906,7 @@ namespace stormphrax {
                     if (const auto* param = lookupTunableParam(paramName)) {
                         printParam(*param);
                     } else {
-                        std::cerr << "unknown parameter " << paramName << std::endl;
+                        eprintln("unknown parameter {}", paramName);
                         return;
                     }
                 }
@@ -929,51 +914,57 @@ namespace stormphrax {
         } // namespace
 
         void printWfTuningParams(std::span<const std::string> params) {
-            std::cout << "{\n";
+            println("{{");
 
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
-                    std::cout << ",\n";
+                    println(",");
                 }
 
-                std::cout << "  \"" << param.name << "\": {\n";
-                std::cout << "    \"value\": " << param.value << ",\n";
-                std::cout << "    \"min_value\": " << param.range.min() << ",\n";
-                std::cout << "    \"max_value\": " << param.range.max() << ",\n";
-                std::cout << "    \"step\": " << param.step << "\n";
-                std::cout << "  }";
+                println("  \"{}\": {{", param.name);
+                println("    \"value\": {},", param.value);
+                println("    \"min_value\": {},", param.range.min());
+                println("    \"max_value\": {},", param.range.max());
+                println("    \"step\": {}", param.step);
+                println("  }}");
 
                 first = false;
             };
 
             printParams(params, printParam);
 
-            std::cout << "\n}" << std::endl;
+            println();
+            println("}}");
         }
 
         void printCttTuningParams(std::span<const std::string> params) {
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
-                    std::cout << ",\n";
+                    println(",");
                 }
 
-                std::cout << "\"" << param.name << "\": \"Integer(" << param.range.min() << ", " << param.range.max()
-                          << ")\"";
+                println("\"{}\": \"Integer({}, {})\"", param.name, param.range.min(), param.range.max());
 
                 first = false;
             };
 
             printParams(params, printParam);
 
-            std::cout << std::endl;
+            println();
         }
 
         void printObTuningParams(std::span<const std::string> params) {
             const auto printParam = [](const auto& param) {
-                std::cout << param.name << ", int, " << param.value << ".0, " << param.range.min() << ".0, "
-                          << param.range.max() << ".0, " << param.step << ", 0.002" << std::endl;
+                println(
+                    "{}, int, {}.0, {}.0, {}.0, {}, 0.002",
+                    param.name,
+                    param.value,
+                    param.range.min(),
+                    param.range.max(),
+                    param.step
+                );
             };
 
             printParams(params, printParam);

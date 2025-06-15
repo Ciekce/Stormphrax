@@ -119,14 +119,6 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const Keys& other) const = default;
     };
 
-    [[nodiscard]] inline std::string squareToString(Square square) {
-        constexpr auto Files = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        constexpr auto Ranks = std::array{'1', '2', '3', '4', '5', '6', '7', '8'};
-
-        const auto s = static_cast<u32>(square);
-        return std::string{Files[s % 8], Ranks[s / 8]};
-    }
-
     enum class NnueUpdateAction {
         kNone = 0,
         kQueue,
@@ -589,3 +581,8 @@ namespace stormphrax {
 
     [[nodiscard]] Square squareFromString(const std::string& str);
 } // namespace stormphrax
+
+template <>
+struct fmt::formatter<stormphrax::Position> : fmt::formatter<std::string_view> {
+    format_context::iterator format(const stormphrax::Position& value, format_context& ctx) const;
+};

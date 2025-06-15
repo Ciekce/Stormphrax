@@ -18,15 +18,8 @@
 
 #include "position.h"
 
-#ifndef NDEBUG
-    #include "../pretty.h"
-    #include "../uci.h"
-    #include <iomanip>
-    #include <iostream>
-#endif
 #include <algorithm>
 #include <cassert>
-#include <sstream>
 
 #include "../attacks/attacks.h"
 #include "../cuckoo.h"
@@ -592,7 +585,8 @@ namespace stormphrax {
     }
 
     std::string Position::toFen() const {
-        std::ostringstream fen{};
+        std::string fen{};
+        auto itr = std::back_inserter(fen);
 
         for (i32 rank = 7; rank >= 0; --rank) {
             for (i32 file = 0; file < 8; ++file) {
@@ -601,62 +595,61 @@ namespace stormphrax {
                     for (; file < 7 && m_boards.pieceAt(rank, file + 1) == Piece::kNone; ++file, ++emptySquares) {
                     }
 
-                    fen << static_cast<char>('0' + emptySquares);
+                    fmt::format_to(itr, "{}", static_cast<char>('0' + emptySquares));
                 } else {
-                    fen << pieceToChar(m_boards.pieceAt(rank, file));
+                    fmt::format_to(itr, "{}", m_boards.pieceAt(rank, file));
                 }
             }
 
             if (rank > 0) {
-                fen << '/';
+                fmt::format_to(itr, "/");
             }
         }
 
-        fen << (toMove() == Color::kWhite ? " w " : " b ");
+        fmt::format_to(itr, "{}", toMove() == Color::kWhite ? " w " : " b ");
 
         if (m_castlingRooks == CastlingRooks{}) {
-            fen << '-';
+            fmt::format_to(itr, "-");
         } else if (g_opts.chess960) {
-            constexpr auto BlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-            constexpr auto WhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+            constexpr auto kBlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+            constexpr auto kWhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 
             if (m_castlingRooks.white().kingside != Square::kNone) {
-                fen << WhiteFiles[squareFile(m_castlingRooks.white().kingside)];
+                fmt::format_to(itr, "{}", kWhiteFiles[squareFile(m_castlingRooks.white().kingside)]);
             }
             if (m_castlingRooks.white().queenside != Square::kNone) {
-                fen << WhiteFiles[squareFile(m_castlingRooks.white().queenside)];
+                fmt::format_to(itr, "{}", kWhiteFiles[squareFile(m_castlingRooks.white().queenside)]);
             }
             if (m_castlingRooks.black().kingside != Square::kNone) {
-                fen << BlackFiles[squareFile(m_castlingRooks.black().kingside)];
+                fmt::format_to(itr, "{}", kBlackFiles[squareFile(m_castlingRooks.black().kingside)]);
             }
             if (m_castlingRooks.black().queenside != Square::kNone) {
-                fen << BlackFiles[squareFile(m_castlingRooks.black().queenside)];
+                fmt::format_to(itr, "{}", kBlackFiles[squareFile(m_castlingRooks.black().queenside)]);
             }
         } else {
             if (m_castlingRooks.white().kingside != Square::kNone) {
-                fen << 'K';
+                fmt::format_to(itr, "K");
             }
             if (m_castlingRooks.white().queenside != Square::kNone) {
-                fen << 'Q';
+                fmt::format_to(itr, "Q");
             }
             if (m_castlingRooks.black().kingside != Square::kNone) {
-                fen << 'k';
+                fmt::format_to(itr, "k");
             }
             if (m_castlingRooks.black().queenside != Square::kNone) {
-                fen << 'q';
+                fmt::format_to(itr, "q");
             }
         }
 
         if (m_enPassant != Square::kNone) {
-            fen << ' ' << squareToString(m_enPassant);
+            fmt::format_to(itr, " {}", m_enPassant);
         } else {
-            fen << " -";
+            fmt::format_to(itr, " -");
         }
 
-        fen << ' ' << m_halfmove;
-        fen << ' ' << m_fullmove;
+        fmt::format_to(itr, " {} {}", m_halfmove, m_fullmove);
 
-        return fen.str();
+        return fen;
     }
 
     template <bool kUpdateKey>
@@ -1066,37 +1059,37 @@ namespace stormphrax {
         const auto tokens = split::split(fen, ' ');
 
         if (tokens.size() > 6) {
-            std::cerr << "excess tokens after fullmove number in fen " << fen << std::endl;
+            eprintln("excess tokens after fullmove number in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 5) {
-            std::cerr << "missing fullmove number in fen " << fen << std::endl;
+            eprintln("missing fullmove number in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 4) {
-            std::cerr << "missing halfmove clock in fen " << fen << std::endl;
+            eprintln("missing halfmove clock in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 3) {
-            std::cerr << "missing en passant square in fen " << fen << std::endl;
+            eprintln("missing en passant square in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 2) {
-            std::cerr << "missing castling availability in fen " << fen << std::endl;
+            eprintln("missing castling availability in fen {}", fen);
             return {};
         }
 
         if (tokens.size() == 1) {
-            std::cerr << "missing next move color in fen " << fen << std::endl;
+            eprintln("missing next move color in fen {}", fen);
             return {};
         }
 
         if (tokens.empty()) {
-            std::cerr << "missing ranks in fen " << fen << std::endl;
+            eprintln("missing ranks in fen {}", fen);
             return {};
         }
 
@@ -1108,7 +1101,7 @@ namespace stormphrax {
         const auto ranks = split::split(tokens[0], '/');
         for (const auto& rank : ranks) {
             if (rankIdx >= 8) {
-                std::cerr << "too many ranks in fen " << fen << std::endl;
+                eprintln("too many ranks in fen {}", fen);
                 return {};
             }
 
@@ -1116,7 +1109,7 @@ namespace stormphrax {
 
             for (const auto c : rank) {
                 if (fileIdx >= 8) {
-                    std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
+                    eprintln("too many files in rank {} in fen {}", rankIdx, fen);
                     return {};
                 }
 
@@ -1126,19 +1119,19 @@ namespace stormphrax {
                     pos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
                     ++fileIdx;
                 } else {
-                    std::cerr << "invalid piece character " << c << " in fen " << fen << std::endl;
+                    eprintln("invalid piece character {} in fen {}", c, fen);
                     return {};
                 }
             }
 
             // last character was a digit
             if (fileIdx > 8) {
-                std::cerr << "too many files in rank " << rankIdx << " in fen " << fen << std::endl;
+                eprintln("too many files in rank {} in fen {}", rankIdx, fen);
                 return {};
             }
 
             if (fileIdx < 8) {
-                std::cerr << "not enough files in rank " << rankIdx << " in fen " << fen << std::endl;
+                eprintln("not enough files in rank {} in fen {}", rankIdx, fen);
                 return {};
             }
 
@@ -1146,24 +1139,24 @@ namespace stormphrax {
         }
 
         if (const auto blackKingCount = bbs.forPiece(Piece::kBlackKing).popcount(); blackKingCount != 1) {
-            std::cerr << "black must have exactly 1 king, " << blackKingCount << " in fen " << fen << std::endl;
+            eprintln("black must have exactly 1 king, {} in fen {}", blackKingCount, fen);
             return {};
         }
 
         if (const auto whiteKingCount = bbs.forPiece(Piece::kWhiteKing).popcount(); whiteKingCount != 1) {
-            std::cerr << "white must have exactly 1 king, " << whiteKingCount << " in fen " << fen << std::endl;
+            eprintln("white must have exactly 1 king, {} in fen {}", whiteKingCount, fen);
             return {};
         }
 
         if (bbs.occupancy().popcount() > 32) {
-            std::cerr << "too many pieces in fen " << fen << std::endl;
+            eprintln("too many pieces in fen {}", fen);
             return {};
         }
 
         const auto& color = tokens[1];
 
         if (color.length() != 1) {
-            std::cerr << "invalid next move color in fen " << fen << std::endl;
+            eprintln("invalid next move color in fen {}", fen);
             return {};
         }
 
@@ -1175,21 +1168,21 @@ namespace stormphrax {
                 pos.m_blackToMove = false;
                 break;
             default:
-                std::cerr << "invalid next move color in fen " << fen << std::endl;
+                eprintln("invalid next move color in fen {}", fen);
                 return {};
         }
 
         if (const auto stm = pos.toMove();
             pos.isAttacked<false>(stm, bbs.forPiece(PieceType::kKing, oppColor(stm)).lowestSquare(), stm))
         {
-            std::cerr << "opponent must not be in check" << std::endl;
+            eprintln("opponent must not be in check");
             return {};
         }
 
         const auto& castlingFlags = tokens[2];
 
         if (castlingFlags.length() > 4) {
-            std::cerr << "invalid castling availability in fen " << fen << std::endl;
+            eprintln("invalid castling availability in fen {}", fen);
             return {};
         }
 
@@ -1212,7 +1205,7 @@ namespace stormphrax {
                         const auto kingFile = squareFile(pos.m_kings.black());
 
                         if (file == kingFile) {
-                            std::cerr << "invalid castling availability in fen " << fen << std::endl;
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                         }
 
@@ -1226,7 +1219,7 @@ namespace stormphrax {
                         const auto kingFile = squareFile(pos.m_kings.white());
 
                         if (file == kingFile) {
-                            std::cerr << "invalid castling availability in fen " << fen << std::endl;
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                         }
 
@@ -1268,7 +1261,7 @@ namespace stormphrax {
                             }
                         }
                     } else {
-                        std::cerr << "invalid castling availability in fen " << fen << std::endl;
+                        eprintln("invalid castling availability in fen {}", fen);
                         return {};
                     }
                 }
@@ -1288,7 +1281,7 @@ namespace stormphrax {
                             pos.m_castlingRooks.white().queenside = Square::kA1;
                             break;
                         default:
-                            std::cerr << "invalid castling availability in fen " << fen << std::endl;
+                            eprintln("invalid castling availability in fen {}", fen);
                             return {};
                     }
                 }
@@ -1299,7 +1292,7 @@ namespace stormphrax {
 
         if (enPassant != "-") {
             if (pos.m_enPassant = squareFromString(enPassant); pos.m_enPassant == Square::kNone) {
-                std::cerr << "invalid en passant square in fen " << fen << std::endl;
+                eprintln("invalid en passant square in fen {}", fen);
                 return {};
             }
         }
@@ -1309,7 +1302,7 @@ namespace stormphrax {
         if (const auto halfmove = util::tryParseU32(halfmoveStr)) {
             pos.m_halfmove = *halfmove;
         } else {
-            std::cerr << "invalid halfmove clock in fen " << fen << std::endl;
+            eprintln("invalid halfmove clock in fen {}", fen);
             return {};
         }
 
@@ -1318,7 +1311,7 @@ namespace stormphrax {
         if (const auto fullmove = util::tryParseU32(fullmoveStr)) {
             pos.m_fullmove = *fullmove;
         } else {
-            std::cerr << "invalid fullmove number in fen " << fen << std::endl;
+            eprintln("invalid fullmove number in fen {}", fen);
             return {};
         }
 
@@ -1331,7 +1324,7 @@ namespace stormphrax {
         assert(g_opts.chess960);
 
         if (n >= 960) {
-            std::cerr << "invalid frc position index " << n << std::endl;
+            eprintln("invalid frc position index {}", n);
             return {};
         }
 
@@ -1380,7 +1373,7 @@ namespace stormphrax {
         assert(g_opts.chess960);
 
         if (n >= 960 * 960) {
-            std::cerr << "invalid dfrc position index " << n << std::endl;
+            eprintln("invalid dfrc position index {}", n);
             return {};
         }
 
@@ -1450,3 +1443,32 @@ namespace stormphrax {
         return toSquare(static_cast<u32>(rank - '1'), static_cast<u32>(file - 'a'));
     }
 } // namespace stormphrax
+
+fmt::format_context::iterator fmt::formatter<stormphrax::Position>::format(
+    const stormphrax::Position& value,
+    format_context& ctx
+) const {
+    using namespace stormphrax;
+
+    const auto& boards = value.boards();
+
+    for (i32 rank = 7; rank >= 0; --rank) {
+        format_to(ctx.out(), " +---+---+---+---+---+---+---+---+\n");
+
+        for (i32 file = 0; file < 8; ++file) {
+            const auto piece = boards.pieceAt(rank, file);
+            format_to(ctx.out(), " | {}", piece);
+        }
+
+        format_to(ctx.out(), " | {}\n", rank + 1);
+    }
+
+    format_to(ctx.out(), " +---+---+---+---+---+---+---+---+\n");
+    format_to(ctx.out(), "   a   b   c   d   e   f   g   h\n");
+
+    format_to(ctx.out(), "\n");
+
+    format_to(ctx.out(), "{} to move", value.toMove() == Color::kBlack ? "Black" : "White");
+
+    return ctx.out();
+}

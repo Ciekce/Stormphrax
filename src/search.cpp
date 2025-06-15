@@ -19,7 +19,6 @@
 #include "search.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "3rdparty/fathom/tbprobe.h"
 #include "limit/trivial.h"
@@ -105,7 +104,7 @@ namespace stormphrax::search {
         bool infinite
     ) {
         if (!m_limiter && !limiter) {
-            std::cerr << "missing limiter" << std::endl;
+            eprintln("mising limiter");
             return;
         }
 
@@ -113,9 +112,10 @@ namespace stormphrax::search {
 
         if (m_ttable.finalize()) {
             const auto initTime = initStart.elapsed();
-
-            std::cout << "info string No ucinewgame or isready before go, lost " << static_cast<u32>(initTime * 1000.0)
-                      << " ms to TT initialization" << std::endl;
+            println(
+                "info string No ucinewgame or isready before go, lost {} ms to TT initialization",
+                static_cast<u32>(initTime * 1000.0)
+            );
         }
 
         m_resetBarrier.arriveAndWait();
@@ -135,7 +135,7 @@ namespace stormphrax::search {
             m_rootStatus = initRootMoves(pos);
 
             if (m_rootStatus == RootStatus::kNoLegalMoves) {
-                std::cout << "info string no legal moves" << std::endl;
+                println("info string no legal moves");
                 return;
             }
         }
@@ -883,8 +883,7 @@ namespace stormphrax::search {
             ++legalMoves;
 
             if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
-                std::cout << "info depth " << depth << " currmove " << uci::moveToString(move) << " currmovenumber "
-                          << legalMoves << std::endl;
+                println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
             }
 
             i32 extension{};
@@ -1314,8 +1313,7 @@ namespace stormphrax::search {
         const auto ms = static_cast<usize>(time * 1000.0);
         const auto nps = static_cast<usize>(static_cast<f64>(nodes) / time);
 
-        std::cout << "info depth " << depth << " seldepth " << seldepth << " time " << ms << " nodes " << nodes
-                  << " nps " << nps << " score ";
+        print("info depth {} seldepth {} time {} nodes {} nps {} score ", depth, seldepth, ms, nodes, nps);
 
         const bool upperbound = score <= alpha;
         const bool lowerbound = score >= beta;
@@ -1332,38 +1330,38 @@ namespace stormphrax::search {
         // mates
         if (std::abs(score) >= kScoreMaxMate) {
             if (score > 0) {
-                std::cout << "mate " << ((kScoreMate - score + 1) / 2);
+                print("mate {}", (kScoreMate - score + 1) / 2);
             } else {
-                std::cout << "mate " << (-(kScoreMate + score) / 2);
+                print("mate {}", -(kScoreMate + score) / 2);
             }
         } else {
             // adjust score to 100cp == 50% win probability
             const auto normScore = wdl::normalizeScore(score, material);
-            std::cout << "cp " << normScore;
+            print("cp {}", normScore);
         }
 
         if (upperbound) {
-            std::cout << " upperbound";
+            print(" upperbound");
         }
         if (lowerbound) {
-            std::cout << " lowerbound";
+            print(" lowerbound");
         }
 
         // wdl display
         if (g_opts.showWdl) {
             if (score > kScoreWin) {
-                std::cout << " wdl 1000 0 0";
+                print(" wdl 1000 0 0");
             } else if (score < -kScoreWin) {
-                std::cout << " wdl 0 0 1000";
+                print(" wdl 0 0 1000");
             } else {
                 const auto [wdlWin, wdlLoss] = wdl::wdlModel(score, material);
                 const auto wdlDraw = 1000 - wdlWin - wdlLoss;
 
-                std::cout << " wdl " << wdlWin << " " << wdlDraw << " " << wdlLoss;
+                print(" wdl {} {} {}", wdlWin, wdlDraw, wdlLoss);
             }
         }
 
-        std::cout << " hashfull " << m_ttable.full();
+        print(" hashfull {}", m_ttable.full());
 
         if (g_opts.syzygyEnabled) {
             usize tbhits = 0;
@@ -1376,16 +1374,16 @@ namespace stormphrax::search {
                 tbhits += thread.search.loadTbHits();
             }
 
-            std::cout << " tbhits " << tbhits;
+            print(" tbhits {}", tbhits);
         }
 
-        std::cout << " pv";
+        print(" pv");
 
         for (u32 i = 0; i < pv.length; ++i) {
-            std::cout << ' ' << uci::moveToString(pv.moves[i]);
+            print(" {}", pv.moves[i]);
         }
 
-        std::cout << std::endl;
+        println();
     }
 
     void Searcher::finalReport(
@@ -1396,6 +1394,6 @@ namespace stormphrax::search {
         Score score
     ) {
         report(mainThread, pv, depthCompleted, time, score);
-        std::cout << "bestmove " << uci::moveToString(pv.moves[0]) << std::endl;
+        println("bestmove {}", pv.moves[0]);
     }
 } // namespace stormphrax::search

@@ -20,7 +20,6 @@
 
 #include <bit>
 #include <cstring>
-#include <iostream>
 #include <thread>
 
 #include "util/align.h"
@@ -89,7 +88,7 @@ namespace stormphrax {
         m_clusters = util::alignedAlloc<Cluster>(kStorageAlignment, m_clusterCount);
 
         if (!m_clusters) {
-            std::cout << "info string Failed to reallocate TT - out of memory?" << std::endl;
+            println("info string Failed to reallocate TT - out of memory?");
             std::terminate();
         }
 

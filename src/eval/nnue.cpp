@@ -98,27 +98,33 @@ namespace stormphrax::eval {
         //TODO better error messages
         bool validate(const NetworkHeader& header) {
             if (header.magic != std::array{'C', 'B', 'N', 'F'}) {
-                std::cerr << "invalid magic bytes in network header" << std::endl;
+                println("invalid magic bytes in network header");
                 return false;
             }
 
             if (header.version != kExpectedHeaderVersion) {
-                std::cerr << "unsupported network format version " << header.version
-                          << " (expected: " << kExpectedHeaderVersion << ")" << std::endl;
+                eprintln(
+                    "unsupported network format version {} (expected: {})",
+                    header.version,
+                    kExpectedHeaderVersion
+                );
                 return false;
             }
 
             if (header.arch != LayeredArch::kArchId) {
-                std::cerr << "wrong network architecture " << archName(header.arch)
-                          << " (expected: " << archName(LayeredArch::kArchId) << ")" << std::endl;
+                eprintln(
+                    "wrong network architecture {} (expected: {})",
+                    archName(header.arch),
+                    archName(LayeredArch::kArchId)
+                );
                 return false;
             }
 
             if (testFlags(header.flags, NetworkFlags::kHorizontallyMirrored) != InputFeatureSet::kIsMirrored) {
                 if constexpr (InputFeatureSet::kIsMirrored) {
-                    std::cerr << "unmirrored network, expected horizontally mirrored" << std::endl;
+                    eprintln("unmirrored network, expected horizontally mirrored");
                 } else {
-                    std::cerr << "horizontally mirrored network, expected unmirrored" << std::endl;
+                    eprintln("horizontally mirrored network, expected unmirrored");
                 }
 
                 return false;
@@ -126,9 +132,9 @@ namespace stormphrax::eval {
 
             if (testFlags(header.flags, NetworkFlags::kMergedKings) != InputFeatureSet::kMergedKings) {
                 if constexpr (InputFeatureSet::kMergedKings) {
-                    std::cerr << "network does not have merged king planes, expected merged" << std::endl;
+                    eprintln("network does not have merged king planes, expected merged");
                 } else {
-                    std::cerr << "network has merged king planes, expected unmerged" << std::endl;
+                    eprintln("network has merged king planes, expected unmerged");
                 }
 
                 return false;
@@ -136,35 +142,43 @@ namespace stormphrax::eval {
 
             if (testFlags(header.flags, NetworkFlags::kPairwiseMul) != LayeredArch::kPairwise) {
                 if constexpr (LayeredArch::kPairwise) {
-                    std::cerr << "network L1 does not require pairwise multiplication, expected paired" << std::endl;
+                    eprintln("network L1 does not require pairwise multiplication, expected paired");
                 } else {
-                    std::cerr << "network L1 requires pairwise multiplication, expected unpaired" << std::endl;
+                    eprintln("network L1 requires pairwise multiplication, expected unpaired");
                 }
 
                 return false;
             }
 
             if (header.activation != L1Activation::kId) {
-                std::cerr << "wrong network l1 activation function (" << activationFuncName(header.activation)
-                          << ", expected: " << activationFuncName(L1Activation::kId) << ")" << std::endl;
+                eprintln(
+                    "wrong l1 activation function {} (expected: {})",
+                    activationFuncName(header.activation),
+                    activationFuncName(L1Activation::kId)
+                );
                 return false;
             }
 
             if (header.hiddenSize != kL1Size) {
-                std::cerr << "wrong number of hidden neurons (" << header.hiddenSize << ", expected: " << kL1Size << ")"
-                          << std::endl;
+                eprintln("wrong number of hidden neurons {} (expected: {})", header.hiddenSize, kL1Size);
                 return false;
             }
 
             if (header.inputBuckets != InputFeatureSet::kBucketCount) {
-                std::cerr << "wrong number of input buckets (" << static_cast<u32>(header.inputBuckets)
-                          << ", expected: " << InputFeatureSet::kBucketCount << ")" << std::endl;
+                eprintln(
+                    "wrong number of input buckets {} (expected: {})",
+                    header.inputBuckets,
+                    InputFeatureSet::kBucketCount
+                );
                 return false;
             }
 
             if (header.outputBuckets != OutputBucketing::kBucketCount) {
-                std::cerr << "wrong number of output buckets (" << static_cast<u32>(header.outputBuckets)
-                          << ", expected: " << OutputBucketing::kBucketCount << ")" << std::endl;
+                eprintln(
+                    "wrong number of output buckets {} (expected: {})",
+                    header.outputBuckets,
+                    OutputBucketing::kBucketCount
+                );
                 return false;
             }
 
@@ -192,14 +206,14 @@ namespace stormphrax::eval {
 
     void loadDefaultNetwork() {
         if (g_defaultNetSize < sizeof(NetworkHeader)) {
-            std::cerr << "Missing default network?" << std::endl;
+            eprintln("Missing default network?");
             return;
         }
 
         const auto& header = *reinterpret_cast<const NetworkHeader*>(g_defaultNetData);
 
         if (!validate(header)) {
-            std::cerr << "Failed to validate default network header" << std::endl;
+            eprintln("Failed to validate default network header");
             return;
         }
 
@@ -209,7 +223,7 @@ namespace stormphrax::eval {
         util::MemoryIstream stream{{begin, end}};
 
         if (!loadNetworkFrom(s_network, stream, header)) {
-            std::cerr << "Failed to load default network" << std::endl;
+            eprintln("Failed to load default network");
             return;
         }
     }
@@ -218,7 +232,7 @@ namespace stormphrax::eval {
         std::ifstream stream{name, std::ios::binary};
 
         if (!stream) {
-            std::cerr << "failed to open network file \"" << name << "\"" << std::endl;
+            eprintln("failed to open network file \"{}\"", name);
             return;
         }
 
@@ -226,7 +240,7 @@ namespace stormphrax::eval {
         stream.read(reinterpret_cast<char*>(&header), sizeof(NetworkHeader));
 
         if (!stream) {
-            std::cerr << "failed to read network file header" << std::endl;
+            eprintln("failed to read network file header");
             return;
         }
 
@@ -235,12 +249,12 @@ namespace stormphrax::eval {
         }
 
         if (!loadNetworkFrom(s_network, stream, header)) {
-            std::cerr << "failed to read network parameters" << std::endl;
+            eprintln("failed to read network parameters");
             return;
         }
 
         const std::string_view netName{header.name.data(), header.nameLen};
-        std::cout << "info string loaded network " << netName << std::endl;
+        println("info string loaded network {}", netName);
     }
 
     std::string_view defaultNetworkName() {

@@ -49,9 +49,10 @@ i32 main(i32 argc, const char* argv[]) {
             return 0;
         } else if (mode == "datagen") {
             const auto printUsage = [&]() {
-                std::cerr << "usage: " << argv[0]
-                          << " datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]"
-                          << std::endl;
+                eprintln(
+                    "usage: {} datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]",
+                    argv[0]
+                );
             };
 
             if (argc < 5) {
@@ -64,14 +65,14 @@ i32 main(i32 argc, const char* argv[]) {
             if (std::string{argv[3]} == "dfrc") {
                 dfrc = true;
             } else if (std::string{argv[3]} != "standard") {
-                std::cerr << "invalid variant " << argv[3] << std::endl;
+                eprintln("invalid variant {}", argv[3]);
                 printUsage();
                 return 1;
             }
 
             u32 threads = 1;
             if (argc > 5 && !util::tryParseU32(threads, argv[5])) {
-                std::cerr << "invalid number of threads " << argv[5] << std::endl;
+                eprintln("invalid number of threads {}", argv[5]);
                 printUsage();
                 return 1;
             }
