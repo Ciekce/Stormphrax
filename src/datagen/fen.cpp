@@ -30,7 +30,7 @@ namespace stormphrax::datagen {
 
     void Fen::push(bool filtered, Move move, Score score) {
         if (!filtered) {
-            m_positions.push_back(m_curr.toFen() + " | " + std::to_string(score));
+            m_positions.push_back(fmt::format("{} | {}", m_curr.toFen(), score));
         }
         m_curr = m_curr.applyMove(move);
     }

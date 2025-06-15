@@ -129,7 +129,7 @@ namespace stormphrax::datagen {
 
         template <OutputFormat Format>
         void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
-            const auto outFile = outDir / (std::to_string(id) + "." + Format::kExtension);
+            const auto outFile = outDir / fmt::format("{}.{}", id, Format::kExtension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
