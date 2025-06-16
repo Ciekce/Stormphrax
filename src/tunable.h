@@ -188,7 +188,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(noisyHistPruningMargin, -1000, -4000, -1000, 175)
     SP_TUNABLE_PARAM(noisyHistPruningOffset, -1000, -4000, 4000, 400)
 
-    SP_TUNABLE_PARAM(seePruningThresholdQuiet, -16, -80, -15, 12)
+    SP_TUNABLE_PARAM(seePruningThresholdQuiet, -16, -80, -1, 12)
     SP_TUNABLE_PARAM(seePruningThresholdNoisy, -112, -120, -40, 20)
 
     SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
