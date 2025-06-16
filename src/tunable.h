@@ -49,7 +49,7 @@ namespace stormphrax::tunable {
     static_assert((Default) >= (Min)); \
     static_assert((Default) <= (Max)); \
     static_assert((Min) < (Max)); \
-    static_assert((Min) + (Step) <= Max); \
+    static_assert((Min) + (Step) <= (Max)); \
     static_assert((Step) >= 0.5);
 
 #define SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
@@ -60,7 +60,7 @@ namespace stormphrax::tunable {
         static_cast<i32>((Step) * (Q)) \
     ) \
     static_assert((Q) > 0); \
-    static_assert(static_cast<f64>(static_cast<i32>(Q)) == Q);
+    static_assert(static_cast<f64>(static_cast<i32>(Q)) == (Q));
 
 #if SP_EXTERNAL_TUNE
     struct TunableParam {
@@ -193,8 +193,6 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
 
-    SP_TUNABLE_PARAM(multiExtLimit, 9, 4, 24, 4)
-
     SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
     SP_TUNABLE_PARAM(tripleExtMargin, 105, 10, 150, 7)
 
@@ -233,7 +231,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(historyPenaltyOffset, 161, 128, 768, 64)
 
     SP_TUNABLE_PARAM(qsearchFpMargin, 135, 50, 400, 17)
-    SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 100)
+    SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 30)
 
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
