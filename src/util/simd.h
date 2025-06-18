@@ -43,7 +43,7 @@ namespace stormphrax::util::simd {
     using Array = AlignedArray<kAlignment, T, kN>;
 
     template <typename T = void>
-    auto isAligned(const T* ptr) {
+    [[nodiscard]] constexpr bool isAligned(const T* ptr) {
         return util::isAligned<kAlignment>(ptr);
     }
 
@@ -242,12 +242,12 @@ namespace stormphrax::util::simd {
         return impl::shiftRightI32(v, shift);
     }
 
-    template <typename T, i32 Shift>
+    template <typename T, i32 kShift>
     SP_ALWAYS_INLINE_NDEBUG inline auto shift(Vector<T> v) {
-        if constexpr (Shift > 0) {
-            return shiftLeft<T>(v, Shift);
-        } else if constexpr (Shift < 0) {
-            return shiftRight<T>(v, -Shift);
+        if constexpr (kShift > 0) {
+            return shiftLeft<T>(v, kShift);
+        } else if constexpr (kShift < 0) {
+            return shiftRight<T>(v, -kShift);
         } else {
             return v;
         }
