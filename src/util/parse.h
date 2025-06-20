@@ -20,28 +20,43 @@
 
 #include "../types.h"
 
+#include <charconv>
+#include <concepts>
 #include <optional>
-#include <string>
+#include <string_view>
 
 namespace stormphrax::util {
-    [[nodiscard]] inline std::optional<u32> tryParseDigit(char c) {
+    namespace detail {
+        template <typename T>
+        concept NonBoolInt = std::integral<T> && !std::same_as<T, bool>;
+    }
+
+    template <typename T = u32>
+    [[nodiscard]] constexpr std::optional<T> tryParseDigit(char c) {
         if (c >= '0' && c <= '9') {
-            return static_cast<u32>(c - '0');
+            return static_cast<T>(c - '0');
         } else {
             return {};
         }
     }
 
-    [[nodiscard]] inline std::optional<u32> tryParseU32(const std::string& value, u32 radix = 10) {
-        try {
-            return std::stoul(value, nullptr, static_cast<i32>(radix));
-        } catch (...) {
+    template <detail::NonBoolInt T>
+    [[nodiscard]] inline std::optional<T> tryParse(std::string_view value, u32 radix = 10) {
+        T result{};
+
+        const auto [ptr, err] =
+            std::from_chars(value.data(), value.data() + value.size(), result, static_cast<i32>(radix));
+
+        if (err == std::errc{}) {
+            return result;
+        } else {
             return {};
         }
     }
 
-    inline bool tryParseU32(u32& dst, const std::string& value, u32 radix = 10) {
-        if (const auto parsed = tryParseU32(value, radix)) {
+    template <detail::NonBoolInt T>
+    inline bool tryParse(T& dst, std::string_view value, u32 radix = 10) {
+        if (const auto parsed = tryParse<T>(value, radix)) {
             dst = *parsed;
             return true;
         } else {
@@ -49,16 +64,22 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline std::optional<i32> tryParseI32(const std::string& value, u32 radix = 10) {
-        try {
-            return std::stol(value, nullptr, static_cast<i32>(radix));
-        } catch (...) {
+    template <std::floating_point T>
+    [[nodiscard]] inline std::optional<T> tryParse(std::string_view value) {
+        T result{};
+
+        const auto [ptr, err] = std::from_chars(value.data(), value.data() + value.size(), result);
+
+        if (err == std::errc{}) {
+            return result;
+        } else {
             return {};
         }
     }
 
-    inline bool tryParseI32(i32& dst, const std::string& value, u32 radix = 10) {
-        if (const auto parsed = tryParseI32(value, radix)) {
+    template <std::floating_point T>
+    inline bool tryParse(T& dst, std::string_view value) {
+        if (const auto parsed = tryParse<T>(value)) {
             dst = *parsed;
             return true;
         } else {
@@ -66,58 +87,7 @@ namespace stormphrax::util {
         }
     }
 
-    [[nodiscard]] inline std::optional<u64> tryParseU64(const std::string& value, u32 radix = 10) {
-        try {
-            return std::stoull(value, nullptr, static_cast<i32>(radix));
-        } catch (...) {
-            return {};
-        }
-    }
-
-    inline bool tryParseU64(u64& dst, const std::string& value, u32 radix = 10) {
-        if (const auto parsed = tryParseU64(value, radix)) {
-            dst = *parsed;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    [[nodiscard]] inline std::optional<i64> tryParseI64(const std::string& value, u32 radix = 10) {
-        try {
-            return std::stoll(value, nullptr, static_cast<i32>(radix));
-        } catch (...) {
-            return {};
-        }
-    }
-
-    inline bool tryParseI64(i64& dst, const std::string& value, u32 radix = 10) {
-        if (const auto parsed = tryParseI64(value, radix)) {
-            dst = *parsed;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    [[nodiscard]] inline std::optional<usize> tryParseSize(const std::string& value, u32 radix = 10) {
-        if constexpr (sizeof(usize) == 8) {
-            return tryParseU64(value, radix);
-        } else {
-            return tryParseU32(value, radix);
-        }
-    }
-
-    inline bool tryParseSize(usize& dst, const std::string& value, u32 radix = 10) {
-        if (const auto parsed = tryParseSize(value, radix)) {
-            dst = *parsed;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    [[nodiscard]] inline std::optional<bool> tryParseBool(const std::string& value) {
+    [[nodiscard]] constexpr std::optional<bool> tryParseBool(std::string_view value) {
         if (value == "true") {
             return true;
         } else if (value == "false") {
@@ -127,42 +97,8 @@ namespace stormphrax::util {
         }
     }
 
-    inline bool tryParseBool(bool& dst, const std::string& value) {
+    constexpr bool tryParseBool(bool& dst, std::string_view value) {
         if (const auto parsed = tryParseBool(value)) {
-            dst = *parsed;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    [[nodiscard]] inline std::optional<f32> tryParseF32(const std::string& value) {
-        try {
-            return std::stof(value, nullptr);
-        } catch (...) {
-            return {};
-        }
-    }
-
-    inline bool tryParseF32(f32& dst, const std::string& value) {
-        if (const auto parsed = tryParseF32(value)) {
-            dst = *parsed;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    [[nodiscard]] inline std::optional<f64> tryParseF64(const std::string& value) {
-        try {
-            return std::stod(value, nullptr);
-        } catch (...) {
-            return {};
-        }
-    }
-
-    inline bool tryParseF64(f64& dst, const std::string& value) {
-        if (const auto parsed = tryParseF64(value)) {
             dst = *parsed;
             return true;
         } else {

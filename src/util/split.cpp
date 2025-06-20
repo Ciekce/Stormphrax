@@ -18,22 +18,27 @@
 
 #include "split.h"
 
-#include <sstream>
+#include <algorithm>
 
 namespace stormphrax::split {
-    std::vector<std::string> split(const std::string& str, char delim) {
-        std::vector<std::string> result{};
-
-        std::istringstream stream{str};
-
-        for (std::string token{}; std::getline(stream, token, delim);) {
-            if (token.empty()) {
-                continue;
+    void split(std::vector<std::string_view>& dst, std::string_view str, char delim) {
+        while (true) {
+            if (str.empty()) {
+                break;
             }
 
-            result.push_back(token);
-        }
+            const auto end = std::ranges::find(str, delim);
 
-        return result;
+            if (end == str.begin()) {
+                str = str.substr(1);
+                continue;
+            } else if (end == str.end()) {
+                dst.push_back(str);
+                break;
+            }
+
+            dst.emplace_back(str.begin(), end);
+            str = std::string_view{end, str.end()};
+        }
     }
 } // namespace stormphrax::split

@@ -22,7 +22,7 @@
 
 #include <array>
 #include <functional>
-#include <string>
+#include <string_view>
 
 #include "util/multi_array.h"
 #include "util/range.h"
@@ -74,7 +74,7 @@ namespace stormphrax::tunable {
     };
 
     TunableParam& addTunableParam(
-        const std::string& name,
+        std::string_view name,
         i32 value,
         i32 min,
         i32 max,
@@ -85,14 +85,14 @@ namespace stormphrax::tunable {
     #define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
         inline TunableParam& param_##Name = addTunableParam(#Name, Default, Min, Max, Step, nullptr); \
-        inline i32 Name() { \
+        [[nodiscard]] inline i32 Name() { \
             return param_##Name.value; \
         }
 
     #define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
         inline TunableParam& param_##Name = addTunableParam(#Name, Default, Min, Max, Step, Callback); \
-        inline i32 Name() { \
+        [[nodiscard]] inline i32 Name() { \
             return param_##Name.value; \
         }
 
@@ -101,13 +101,13 @@ namespace stormphrax::tunable {
         SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
         inline TunableParam& param_##Name = \
             addTunableParam(#Name, (Default) * (Q), (Min) * (Q), (Max) * (Q), (Step) * (Q), nullptr); \
-        inline f64 Name() { \
+        [[nodiscard]] inline f64 Name() { \
             return static_cast<f64>(param_##Name.value) / (Q); \
         }
 #else
     #define SP_TUNABLE_PARAM(Name, Default, Min, Max, Step) \
         SP_TUNABLE_ASSERTS(Default, Min, Max, Step) \
-        constexpr i32 Name() { \
+        [[nodiscard]] constexpr i32 Name() { \
             return Default; \
         }
     #define SP_TUNABLE_PARAM_CALLBACK(Name, Default, Min, Max, Step, Callback) \
@@ -115,7 +115,7 @@ namespace stormphrax::tunable {
 
     #define SP_TUNABLE_PARAM_F64(Name, Default, Min, Max, Step, Q) \
         SP_TUNABLE_ASSERTS_F64(Default, Min, Max, Step, Q) \
-        constexpr f64 Name() { \
+        [[nodiscard]] constexpr f64 Name() { \
             return Default; \
         }
 #endif

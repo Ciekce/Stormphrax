@@ -228,8 +228,8 @@ namespace stormphrax::eval {
         }
     }
 
-    void loadNetwork(const std::string& name) {
-        std::ifstream stream{name, std::ios::binary};
+    void loadNetwork(std::string_view name) {
+        std::ifstream stream{std::string{name}, std::ios::binary};
 
         if (!stream) {
             eprintln("failed to open network file \"{}\"", name);

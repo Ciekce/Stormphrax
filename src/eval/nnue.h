@@ -39,7 +39,7 @@ namespace stormphrax::eval {
     extern const Network& g_network;
 
     void loadDefaultNetwork();
-    void loadNetwork(const std::string& name);
+    void loadNetwork(std::string_view name);
 
     [[nodiscard]] std::string_view defaultNetworkName();
 

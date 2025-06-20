@@ -993,7 +993,7 @@ namespace stormphrax {
         }
     }
 
-    Move Position::moveFromUci(const std::string& move) const {
+    Move Position::moveFromUci(std::string_view move) const {
         if (move.length() < 4 || move.length() > 5) {
             return kNullMove;
         }
@@ -1055,41 +1055,39 @@ namespace stormphrax {
         return pos;
     }
 
-    std::optional<Position> Position::fromFen(const std::string& fen) {
-        const auto tokens = split::split(fen, ' ');
-
-        if (tokens.size() > 6) {
-            eprintln("excess tokens after fullmove number in fen {}", fen);
+    std::optional<Position> Position::fromFenParts(std::span<const std::string_view> fen) {
+        if (fen.size() > 6) {
+            eprintln("excess tokens after fullmove number");
             return {};
         }
 
-        if (tokens.size() == 5) {
-            eprintln("missing fullmove number in fen {}", fen);
+        if (fen.size() == 5) {
+            eprintln("missing fullmove number");
             return {};
         }
 
-        if (tokens.size() == 4) {
-            eprintln("missing halfmove clock in fen {}", fen);
+        if (fen.size() == 4) {
+            eprintln("missing halfmove clock");
             return {};
         }
 
-        if (tokens.size() == 3) {
-            eprintln("missing en passant square in fen {}", fen);
+        if (fen.size() == 3) {
+            eprintln("missing en passant square");
             return {};
         }
 
-        if (tokens.size() == 2) {
-            eprintln("missing castling rights in fen {}", fen);
+        if (fen.size() == 2) {
+            eprintln("missing castling rights");
             return {};
         }
 
-        if (tokens.size() == 1) {
-            eprintln("missing side to move in fen {}", fen);
+        if (fen.size() == 1) {
+            eprintln("missing side to move");
             return {};
         }
 
-        if (tokens.empty()) {
-            eprintln("missing ranks in fen {}", fen);
+        if (fen.empty()) {
+            eprintln("missing ranks");
             return {};
         }
 
@@ -1098,10 +1096,12 @@ namespace stormphrax {
 
         u32 rankIdx = 0;
 
-        const auto ranks = split::split(tokens[0], '/');
-        for (const auto& rank : ranks) {
+        std::vector<std::string_view> ranks{};
+        split::split(ranks, fen[0], '/');
+
+        for (const auto rank : ranks) {
             if (rankIdx >= 8) {
-                eprintln("too many ranks in fen {}", fen);
+                eprintln("too many ranks");
                 return {};
             }
 
@@ -1109,7 +1109,7 @@ namespace stormphrax {
 
             for (const auto c : rank) {
                 if (fileIdx >= 8) {
-                    eprintln("too many files in rank {} in fen {}", rankIdx, fen);
+                    eprintln("too many files in rank {}", rankIdx);
                     return {};
                 }
 
@@ -1119,19 +1119,19 @@ namespace stormphrax {
                     pos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
                     ++fileIdx;
                 } else {
-                    eprintln("invalid piece character {} in fen {}", c, fen);
+                    eprintln("invalid piece character {}", c);
                     return {};
                 }
             }
 
             // last character was a digit
             if (fileIdx > 8) {
-                eprintln("too many files in rank {} in fen {}", rankIdx, fen);
+                eprintln("too many files in rank {}", rankIdx);
                 return {};
             }
 
             if (fileIdx < 8) {
-                eprintln("not enough files in rank {} in fen {}", rankIdx, fen);
+                eprintln("not enough files in rank {}", rankIdx);
                 return {};
             }
 
@@ -1139,24 +1139,24 @@ namespace stormphrax {
         }
 
         if (const auto blackKingCount = bbs.forPiece(Piece::kBlackKing).popcount(); blackKingCount != 1) {
-            eprintln("black must have exactly 1 king, {} in fen {}", blackKingCount, fen);
+            eprintln("black must have exactly 1 king, but has {}", blackKingCount);
             return {};
         }
 
         if (const auto whiteKingCount = bbs.forPiece(Piece::kWhiteKing).popcount(); whiteKingCount != 1) {
-            eprintln("white must have exactly 1 king, {} in fen {}", whiteKingCount, fen);
+            eprintln("white must have exactly 1 king, but has {}", whiteKingCount);
             return {};
         }
 
         if (bbs.occupancy().popcount() > 32) {
-            eprintln("too many pieces in fen {}", fen);
+            eprintln("too many pieces");
             return {};
         }
 
-        const auto& color = tokens[1];
+        const auto color = fen[1];
 
         if (color.length() != 1) {
-            eprintln("invalid side to move in fen {}", fen);
+            eprintln("invalid side to move");
             return {};
         }
 
@@ -1168,7 +1168,7 @@ namespace stormphrax {
                 pos.m_stm = Color::kWhite;
                 break;
             default:
-                eprintln("invalid side to move in fen {}", fen);
+                eprintln("invalid side to move");
                 return {};
         }
 
@@ -1179,14 +1179,14 @@ namespace stormphrax {
             return {};
         }
 
-        const auto& castlingFlags = tokens[2];
+        const auto castlingRights = fen[2];
 
-        if (castlingFlags.length() > 4) {
-            eprintln("invalid castling rights in fen {}", fen);
+        if (castlingRights.length() > 4) {
+            eprintln("invalid castling rights");
             return {};
         }
 
-        if (castlingFlags.length() != 1 || castlingFlags[0] != '-') {
+        if (castlingRights != "-") {
             if (g_opts.chess960) {
                 for (i32 rank = 0; rank < 8; ++rank) {
                     for (i32 file = 0; file < 8; ++file) {
@@ -1199,13 +1199,13 @@ namespace stormphrax {
                     }
                 }
 
-                for (const auto flag : castlingFlags) {
+                for (const auto flag : castlingRights) {
                     if (flag >= 'a' && flag <= 'h') {
                         const auto file = static_cast<i32>(flag - 'a');
                         const auto kingFile = squareFile(pos.m_kings.black());
 
                         if (file == kingFile) {
-                            eprintln("invalid castling rights in fen {}", fen);
+                            eprintln("invalid castling rights");
                             return {};
                         }
 
@@ -1219,7 +1219,7 @@ namespace stormphrax {
                         const auto kingFile = squareFile(pos.m_kings.white());
 
                         if (file == kingFile) {
-                            eprintln("invalid castling rights in fen {}", fen);
+                            eprintln("invalid castling rights");
                             return {};
                         }
 
@@ -1261,12 +1261,12 @@ namespace stormphrax {
                             }
                         }
                     } else {
-                        eprintln("invalid castling rights in fen {}", fen);
+                        eprintln("invalid castling rights");
                         return {};
                     }
                 }
             } else {
-                for (const auto flag : castlingFlags) {
+                for (const auto flag : castlingRights) {
                     switch (flag) {
                         case 'k':
                             pos.m_castlingRooks.black().kingside = Square::kH8;
@@ -1281,43 +1281,46 @@ namespace stormphrax {
                             pos.m_castlingRooks.white().queenside = Square::kA1;
                             break;
                         default:
-                            eprintln("invalid castling rights in fen {}", fen);
+                            eprintln("invalid castling rights");
                             return {};
                     }
                 }
             }
         }
 
-        const auto& enPassant = tokens[3];
+        const auto enPassant = fen[3];
 
         if (enPassant != "-") {
             if (pos.m_enPassant = squareFromString(enPassant); pos.m_enPassant == Square::kNone) {
-                eprintln("invalid en passant square in fen {}", fen);
+                eprintln("invalid en passant square");
                 return {};
             }
         }
 
-        const auto& halfmoveStr = tokens[4];
-
-        if (const auto halfmove = util::tryParseU32(halfmoveStr)) {
-            pos.m_halfmove = *halfmove;
-        } else {
-            eprintln("invalid halfmove clock in fen {}", fen);
+        const auto halfmove = fen[4];
+        if (!util::tryParse(pos.m_halfmove, halfmove)) {
+            eprintln("invalid halfmove clock");
             return {};
         }
 
-        const auto& fullmoveStr = tokens[5];
-
-        if (const auto fullmove = util::tryParseU32(fullmoveStr)) {
-            pos.m_fullmove = *fullmove;
-        } else {
-            eprintln("invalid fullmove number in fen {}", fen);
+        const auto fullmove = fen[5];
+        if (!util::tryParse(pos.m_fullmove, fullmove)) {
+            eprintln("invalid fullmove number");
             return {};
         }
 
         pos.regen();
 
         return pos;
+    }
+
+    std::optional<Position> Position::fromFen(std::string_view fen) {
+        std::vector<std::string_view> parts{};
+        parts.reserve(6);
+
+        split::split(parts, fen, ' ');
+
+        return fromFenParts(parts);
     }
 
     std::optional<Position> Position::fromFrcIndex(u32 n) {
@@ -1428,7 +1431,7 @@ namespace stormphrax {
         return pos;
     }
 
-    Square squareFromString(const std::string& str) {
+    Square squareFromString(std::string_view str) {
         if (str.length() != 2) {
             return Square::kNone;
         }

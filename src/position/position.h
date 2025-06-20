@@ -23,7 +23,7 @@
 #include <array>
 #include <optional>
 #include <stack>
-#include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -439,7 +439,7 @@ namespace stormphrax {
 
         void regen();
 
-        [[nodiscard]] Move moveFromUci(const std::string& move) const;
+        [[nodiscard]] Move moveFromUci(std::string_view move) const;
 
         [[nodiscard]] inline u32 plyFromStartpos() const {
             return m_fullmove * 2 - (m_stm == Color::kBlack ? 0 : 1) - 1;
@@ -453,7 +453,10 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static Position starting();
-        [[nodiscard]] static std::optional<Position> fromFen(const std::string& fen);
+
+        [[nodiscard]] static std::optional<Position> fromFenParts(std::span<const std::string_view> fen);
+        [[nodiscard]] static std::optional<Position> fromFen(std::string_view fen);
+
         [[nodiscard]] static std::optional<Position> fromFrcIndex(u32 n);
         [[nodiscard]] static std::optional<Position> fromDfrcIndex(u32 n);
 
@@ -579,7 +582,7 @@ namespace stormphrax {
 
     static_assert(sizeof(Position) == 216);
 
-    [[nodiscard]] Square squareFromString(const std::string& str);
+    [[nodiscard]] Square squareFromString(std::string_view str);
 } // namespace stormphrax
 
 template <>
