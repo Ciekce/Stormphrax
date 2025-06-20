@@ -22,7 +22,7 @@
 
 #include <concepts>
 #include <ostream>
-#include <string>
+#include <string_view>
 
 #include "../core.h"
 #include "../move.h"
@@ -42,7 +42,7 @@ namespace stormphrax::datagen {
     ) {
         {
             T::kExtension
-        } -> std::convertible_to<const std::string&>;
+        } -> std::convertible_to<std::string_view>;
         t.start(initialPosition);
         t.push(filtered, move, score);
         {

@@ -345,9 +345,9 @@ namespace stormphrax::datagen {
 
     i32 run(
         const std::function<void()>& printUsage,
-        const std::string& format,
+        std::string_view format,
         bool dfrc,
-        const std::string& output,
+        std::string_view output,
         i32 threads,
         std::optional<std::string> tbPath
     ) {

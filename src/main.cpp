@@ -71,7 +71,7 @@ i32 main(i32 argc, const char* argv[]) {
             }
 
             u32 threads = 1;
-            if (argc > 5 && !util::tryParseU32(threads, argv[5])) {
+            if (argc > 5 && !util::tryParse<u32>(threads, argv[5])) {
                 eprintln("invalid number of threads {}", argv[5]);
                 printUsage();
                 return 1;
@@ -91,7 +91,8 @@ i32 main(i32 argc, const char* argv[]) {
                 return 0;
             }
 
-            const auto params = split::split(argv[2], ',');
+            std::vector<std::string_view> params{};
+            split::split(params, argv[2], ',');
 
             if (mode == "printwf") {
                 uci::printWfTuningParams(params);

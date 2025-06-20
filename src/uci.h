@@ -21,7 +21,7 @@
 #include "types.h"
 
 #include <span>
-#include <string>
+#include <string_view>
 
 #include "core.h"
 #include "move.h"
@@ -33,8 +33,8 @@ namespace stormphrax::uci {
     i32 run();
 
 #if SP_EXTERNAL_TUNE
-    void printWfTuningParams(std::span<const std::string> params);
-    void printCttTuningParams(std::span<const std::string> params);
-    void printObTuningParams(std::span<const std::string> params);
+    void printWfTuningParams(std::span<const std::string_view> params);
+    void printCttTuningParams(std::span<const std::string_view> params);
+    void printObTuningParams(std::span<const std::string_view> params);
 #endif
 } // namespace stormphrax::uci

@@ -19,13 +19,10 @@
 #include "uci.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cctype>
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "3rdparty/fathom/tbprobe.h"
@@ -67,7 +64,7 @@ namespace stormphrax {
             return params;
         }
 
-        inline tunable::TunableParam* lookupTunableParam(const std::string& name) {
+        inline tunable::TunableParam* lookupTunableParam(std::string_view name) {
             for (auto& param : tunableParams()) {
                 if (param.lowerName == name) {
                     return &param;
@@ -88,10 +85,10 @@ namespace stormphrax {
             void handleUci();
             void handleUcinewgame();
             void handleIsready();
-            void handlePosition(const std::vector<std::string>& tokens);
-            void handleGo(const std::vector<std::string>& tokens, Instant startTime);
+            void handlePosition(std::span<const std::string_view> args);
+            void handleGo(std::span<const std::string_view> args, Instant startTime);
             void handleStop();
-            void handleSetoption(const std::vector<std::string>& tokens);
+            void handleSetoption(std::span<const std::string_view> args);
             // V ======= NONSTANDARD ======= V
             void handleD();
             void handleFen();
@@ -101,9 +98,9 @@ namespace stormphrax {
             void handleRawEval();
             void handleRegen();
             void handleMoves();
-            void handlePerft(const std::vector<std::string>& tokens);
-            void handleSplitperft(const std::vector<std::string>& tokens);
-            void handleBench(const std::vector<std::string>& tokens);
+            void handlePerft(std::span<const std::string_view> args);
+            void handleSplitperft(std::span<const std::string_view> args);
+            void handleBench(std::span<const std::string_view> args);
 
             bool m_fathomInitialized{false};
 
@@ -125,16 +122,20 @@ namespace stormphrax {
         }
 
         i32 UciHandler::run() {
+            std::vector<std::string_view> tokens{};
+
             for (std::string line{}; std::getline(std::cin, line);) {
                 const auto startTime = Instant::now();
 
-                const auto tokens = split::split(line, ' ');
+                tokens.clear();
+                split::split(tokens, line, ' ');
 
                 if (tokens.empty()) {
                     continue;
                 }
 
-                const auto& command = tokens[0];
+                const auto command = tokens[0];
+                const auto args = std::span{tokens}.subspan<1>();
 
                 if (command == "quit") {
                     return 0;
@@ -145,13 +146,13 @@ namespace stormphrax {
                 } else if (command == "isready") {
                     handleIsready();
                 } else if (command == "position") {
-                    handlePosition(tokens);
+                    handlePosition(args);
                 } else if (command == "go") {
-                    handleGo(tokens, startTime);
+                    handleGo(args, startTime);
                 } else if (command == "stop") {
                     handleStop();
                 } else if (command == "setoption") {
-                    handleSetoption(tokens);
+                    handleSetoption(args);
                     // V ======= NONSTANDARD ======= V
                 } else if (command == "d") {
                     handleD();
@@ -170,11 +171,11 @@ namespace stormphrax {
                 } else if (command == "moves") {
                     handleMoves();
                 } else if (command == "perft") {
-                    handlePerft(tokens);
+                    handlePerft(args);
                 } else if (command == "splitperft") {
-                    handleSplitperft(tokens);
+                    handleSplitperft(args);
                 } else if (command == "bench") {
-                    handleBench(tokens);
+                    handleBench(args);
                 }
             }
 
@@ -270,83 +271,100 @@ namespace stormphrax {
             println("readyok");
         }
 
-        void UciHandler::handlePosition(const std::vector<std::string>& tokens) {
+        void UciHandler::handlePosition(std::span<const std::string_view> args) {
             if (m_searcher.searching()) {
                 eprintln("still searching");
-            } else if (tokens.size() > 1) {
-                const auto& position = tokens[1];
+                return;
+            }
 
-                usize next = 2;
+            if (args.empty()) {
+                return;
+            }
 
-                if (position == "startpos") {
-                    m_pos = Position::starting();
-                    m_keyHistory.clear();
-                } else if (position == "fen") {
-                    std::string fen{};
-                    auto itr = std::back_inserter(fen);
+            const auto type = args[0];
+            args = args.subspan<1>();
 
-                    for (usize i = 0; i < 6 && next < tokens.size(); ++i, ++next) {
-                        fmt::format_to(itr, "{} ", tokens[next]);
-                    }
+            usize next = 0;
 
-                    if (const auto newPos = Position::fromFen(fen)) {
-                        m_pos = *newPos;
-                        m_keyHistory.clear();
-                    } else {
-                        return;
-                    }
-                } else if (position == "frc") {
-                    if (!g_opts.chess960) {
-                        eprintln("Chess960 not enabled");
-                        return;
-                    }
+            if (type == "startpos") {
+                m_pos = Position::starting();
+                m_keyHistory.clear();
 
-                    if (next < tokens.size()) {
-                        if (const auto frcIndex = util::tryParseU32(tokens[next++])) {
-                            if (const auto newPos = Position::fromFrcIndex(*frcIndex)) {
-                                m_pos = *newPos;
-                                m_keyHistory.clear();
-                            } else {
-                                return;
-                            }
-                        } else {
-                            return;
-                        }
-                    }
-                } else if (position == "dfrc") {
-                    if (!g_opts.chess960) {
-                        eprintln("Chess960 not enabled");
-                        return;
-                    }
+                ++next;
+            } else if (type == "fen") {
+                const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
 
-                    if (next < tokens.size()) {
-                        if (const auto dfrcIndex = util::tryParseU32(tokens[next++])) {
-                            if (const auto newPos = Position::fromDfrcIndex(*dfrcIndex)) {
-                                m_pos = *newPos;
-                                m_keyHistory.clear();
-                            } else {
-                                return;
-                            }
-                        } else {
-                            return;
-                        }
-                    }
-                } else {
+                if (count == 0) {
+                    eprintln("Missing fen");
                     return;
                 }
 
-                if (next < tokens.size() && tokens[next++] == "moves") {
-                    for (; next < tokens.size(); ++next) {
-                        if (const auto move = m_pos.moveFromUci(tokens[next])) {
-                            m_keyHistory.push_back(m_pos.key());
-                            m_pos = m_pos.applyMove(move);
-                        }
-                    }
+                const auto parts = args.subspan(0, count);
+                const auto newPos = Position::fromFenParts(parts);
+
+                if (!newPos) {
+                    return;
+                }
+
+                m_pos = *newPos;
+                m_keyHistory.clear();
+
+                next += count;
+            } else if (type == "frc" || type == "dfrc") {
+                if (!g_opts.chess960) {
+                    eprintln("Chess960 not enabled");
+                    return;
+                }
+
+                const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
+
+                const bool dfrc = type == "dfrc";
+
+                if (count == 0) {
+                    eprintln("Missing {} index", dfrc ? "DFRC" : "FRC");
+                    return;
+                }
+
+                const auto index = util::tryParse<u32>(args[1]);
+
+                if (!index) {
+                    eprintln("Invalid {} index {}", dfrc ? "DFRC" : "FRC", args[1]);
+                    return;
+                }
+
+                const auto newPos = dfrc ? Position::fromDfrcIndex(*index) : Position::fromFrcIndex(*index);
+
+                if (!newPos) {
+                    return;
+                }
+
+                m_pos = *newPos;
+                m_keyHistory.clear();
+
+                next += count;
+            } else {
+                eprintln("Invalid position type {}", type);
+                return;
+            }
+
+            assert(next <= args.size());
+
+            if (next >= args.size() || args[next] != "moves") {
+                return;
+            }
+
+            for (usize i = next + 1; i < args.size(); ++i) {
+                if (const auto move = m_pos.moveFromUci(args[i])) {
+                    m_keyHistory.push_back(m_pos.key());
+                    m_pos = m_pos.applyMove(move);
+                } else {
+                    eprintln("Invalid move {}", args[i]);
+                    break;
                 }
             }
         }
 
-        void UciHandler::handleGo(const std::vector<std::string>& tokens, Instant startTime) {
+        void UciHandler::handleGo(std::span<const std::string_view> args, Instant startTime) {
             if (m_searcher.searching()) {
                 eprintln("already searching");
             } else {
@@ -362,71 +380,71 @@ namespace stormphrax {
                 i64 increment{};
                 i32 toGo{};
 
-                for (usize i = 1; i < tokens.size(); ++i) {
-                    if (tokens[i] == "depth" && ++i < tokens.size()) {
-                        if (!util::tryParseU32(depth, tokens[i])) {
-                            eprintln("invalid depth {}", tokens[i]);
+                for (usize i = 0; i < args.size(); ++i) {
+                    if (args[i] == "depth" && ++i < args.size()) {
+                        if (!util::tryParse<u32>(depth, args[i])) {
+                            eprintln("invalid depth {}", args[i]);
                         }
                         continue;
                     }
 
-                    if (tokens[i] == "infinite") {
+                    if (args[i] == "infinite") {
                         infinite = true;
                         continue;
                     }
 
-                    if (tokens[i] == "nodes" && ++i < tokens.size()) {
+                    if (args[i] == "nodes" && ++i < args.size()) {
                         usize nodes{};
-                        if (!util::tryParseSize(nodes, tokens[i])) {
-                            eprintln("invalid node count {}", tokens[i]);
+                        if (!util::tryParse<usize>(nodes, args[i])) {
+                            eprintln("invalid node count {}", args[i]);
                         } else {
                             limiter->addLimiter<limit::NodeLimiter>(nodes);
                         }
-                    } else if (tokens[i] == "movetime" && ++i < tokens.size()) {
+                    } else if (args[i] == "movetime" && ++i < args.size()) {
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i])) {
-                            eprintln("invalid time {}", tokens[i]);
+                        if (!util::tryParse<i64>(time, args[i])) {
+                            eprintln("invalid time {}", args[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
                         }
-                    } else if ((tokens[i] == "btime" || tokens[i] == "wtime") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
+                    } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
+                               && args[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
                     {
                         tournamentTime = true;
 
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i])) {
-                            eprintln("invalid time {}", tokens[i]);
+                        if (!util::tryParse<i64>(time, args[i])) {
+                            eprintln("invalid time {}", args[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             timeRemaining = static_cast<i64>(time);
                         }
-                    } else if ((tokens[i] == "binc" || tokens[i] == "winc") && ++i < tokens.size()
-                               && tokens[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
+                    } else if ((args[i] == "binc" || args[i] == "winc") && ++i < args.size()
+                               && args[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
                     {
                         tournamentTime = true;
 
                         i64 time{};
-                        if (!util::tryParseI64(time, tokens[i])) {
-                            eprintln("invalid time {}", tokens[i]);
+                        if (!util::tryParse<i64>(time, args[i])) {
+                            eprintln("invalid time {}", args[i]);
                         } else {
                             time = std::max<i64>(time, 1);
                             increment = static_cast<i64>(time);
                         }
-                    } else if (tokens[i] == "movestogo" && ++i < tokens.size()) {
+                    } else if (args[i] == "movestogo" && ++i < args.size()) {
                         tournamentTime = true;
 
                         u32 moves{};
-                        if (!util::tryParseU32(moves, tokens[i])) {
-                            eprintln("invalid movestogo {}", tokens[i]);
+                        if (!util::tryParse<u32>(moves, args[i])) {
+                            eprintln("invalid movestogo {}", args[i]);
                         } else {
                             moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
                             toGo = static_cast<i32>(moves);
                         }
-                    } else if (tokens[i] == "searchmoves" && i + 1 < tokens.size()) {
-                        while (i + 1 < tokens.size()) {
-                            const auto& candidate = tokens[i + 1];
+                    } else if (args[i] == "searchmoves" && i + 1 < args.size()) {
+                        while (i + 1 < args.size()) {
+                            const auto& candidate = args[i + 1];
 
                             if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
                                 && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8'
@@ -527,41 +545,41 @@ namespace stormphrax {
         }
 
         //TODO refactor
-        void UciHandler::handleSetoption(const std::vector<std::string>& tokens) {
-            usize i = 1;
+        void UciHandler::handleSetoption(std::span<const std::string_view> args) {
+            usize i = 0;
 
-            for (; i < tokens.size() - 1 && tokens[i] != "name"; ++i) {
+            for (; i < args.size() - 1 && args[i] != "name"; ++i) {
                 //
             }
 
-            if (++i == tokens.size()) {
+            if (++i == args.size()) {
                 return;
             }
 
             std::string name{};
             auto nameItr = std::back_inserter(name);
 
-            for (; i < tokens.size() && tokens[i] != "value"; ++i) {
+            for (; i < args.size() && args[i] != "value"; ++i) {
                 if (!name.empty()) {
                     fmt::format_to(nameItr, " ");
                 }
 
-                fmt::format_to(nameItr, "{}", tokens[i]);
+                fmt::format_to(nameItr, "{}", args[i]);
             }
 
-            if (++i == tokens.size()) {
+            if (++i == args.size()) {
                 return;
             }
 
             std::string value{};
             auto valueItr = std::back_inserter(value);
 
-            for (; i < tokens.size(); ++i) {
+            for (; i < args.size(); ++i) {
                 if (!value.empty()) {
                     fmt::format_to(valueItr, " ");
                 }
 
-                fmt::format_to(valueItr, "{}", tokens[i]);
+                fmt::format_to(valueItr, "{}", args[i]);
             }
 
             if (!name.empty()) {
@@ -569,7 +587,7 @@ namespace stormphrax {
 
                 if (name == "hash") {
                     if (!value.empty()) {
-                        if (const auto newTtSize = util::tryParseSize(value)) {
+                        if (const auto newTtSize = util::tryParse<usize>(value)) {
                             m_searcher.setTtSize(kTtSizeMibRange.clamp(*newTtSize));
                         }
                     }
@@ -585,14 +603,14 @@ namespace stormphrax {
                     }
 
                     if (!value.empty()) {
-                        if (const auto newThreads = util::tryParseU32(value)) {
+                        if (const auto newThreads = util::tryParse<u32>(value)) {
                             opts::mutableOpts().threads = *newThreads;
                             m_searcher.setThreads(opts::kThreadCountRange.clamp(*newThreads));
                         }
                     }
                 } else if (name == "contempt") {
                     if (!value.empty()) {
-                        if (const auto newContempt = util::tryParseI32(value)) {
+                        if (const auto newContempt = util::tryParse<i32>(value)) {
                             opts::mutableOpts().contempt =
                                 wdl::unnormalizeScoreMaterial58(kContemptRange.clamp(*newContempt));
                         }
@@ -617,7 +635,7 @@ namespace stormphrax {
                     }
                 } else if (name == "move overhead") {
                     if (!value.empty()) {
-                        if (const auto newMoveOverhead = util::tryParseI32(value)) {
+                        if (const auto newMoveOverhead = util::tryParse<i32>(value)) {
                             m_moveOverhead = limit::kMoveOverheadRange.clamp(*newMoveOverhead);
                         }
                     }
@@ -629,7 +647,7 @@ namespace stormphrax {
                     }
                 } else if (name == "softnodehardlimitmultiplier") {
                     if (!value.empty()) {
-                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParseI32(value)) {
+                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParse<i32>(value)) {
                             opts::mutableOpts().softNodeHardLimitMultiplier =
                                 limit::kSoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
                         }
@@ -658,14 +676,14 @@ namespace stormphrax {
                     }
                 } else if (name == "syzygyprobedepth") {
                     if (!value.empty()) {
-                        if (const auto newSyzygyProbeDepth = util::tryParseI32(value)) {
+                        if (const auto newSyzygyProbeDepth = util::tryParse<i32>(value)) {
                             opts::mutableOpts().syzygyProbeDepth =
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
                         }
                     }
                 } else if (name == "syzygyprobelimit") {
                     if (!value.empty()) {
-                        if (const auto newSyzygyProbeLimit = util::tryParseI32(value)) {
+                        if (const auto newSyzygyProbeLimit = util::tryParse<i32>(value)) {
                             opts::mutableOpts().syzygyProbeLimit =
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
                         }
@@ -687,7 +705,7 @@ namespace stormphrax {
 #if SP_EXTERNAL_TUNE
                 else if (auto* param = lookupTunableParam(name))
                 {
-                    if (!value.empty() && util::tryParseI32(param->value, value) && param->callback) {
+                    if (!value.empty() && util::tryParse<i32>(param->value, value) && param->callback) {
                         param->callback();
                     }
                 }
@@ -773,12 +791,12 @@ namespace stormphrax {
             println();
         }
 
-        void UciHandler::handlePerft(const std::vector<std::string>& tokens) {
+        void UciHandler::handlePerft(std::span<const std::string_view> args) {
             u32 depth = 6;
 
-            if (tokens.size() > 1) {
-                if (!util::tryParseU32(depth, tokens[1])) {
-                    eprintln("invalid depth {}", tokens[1]);
+            if (!args.empty()) {
+                if (!util::tryParse(depth, args[0])) {
+                    eprintln("invalid depth {}", args[0]);
                     return;
                 }
             }
@@ -786,12 +804,12 @@ namespace stormphrax {
             perft(m_pos, static_cast<i32>(depth));
         }
 
-        void UciHandler::handleSplitperft(const std::vector<std::string>& tokens) {
+        void UciHandler::handleSplitperft(std::span<const std::string_view> args) {
             u32 depth = 6;
 
-            if (tokens.size() > 1) {
-                if (!util::tryParseU32(depth, tokens[1])) {
-                    eprintln("invalid depth {}", tokens[1]);
+            if (!args.empty()) {
+                if (!util::tryParse(depth, args[0])) {
+                    eprintln("invalid depth {}", args[0]);
                     return;
                 }
             }
@@ -799,7 +817,7 @@ namespace stormphrax {
             splitPerft(m_pos, static_cast<i32>(depth));
         }
 
-        void UciHandler::handleBench(const std::vector<std::string>& tokens) {
+        void UciHandler::handleBench(std::span<const std::string_view> args) {
             if (m_searcher.searching()) {
                 eprintln("already searching");
                 return;
@@ -808,31 +826,31 @@ namespace stormphrax {
             i32 depth = bench::kDefaultBenchDepth;
             usize ttSize = bench::kDefaultBenchTtSize;
 
-            if (tokens.size() > 1) {
-                if (const auto newDepth = util::tryParseU32(tokens[1])) {
+            if (args.size() > 0) {
+                if (const auto newDepth = util::tryParse<u32>(args[0])) {
                     depth = static_cast<i32>(*newDepth);
                 } else {
-                    println("info string invalid depth {}", tokens[1]);
+                    println("info string invalid depth {}", args[0]);
                     return;
                 }
             }
 
-            if (tokens.size() > 2) {
-                if (const auto newThreads = util::tryParseU32(tokens[2])) {
+            if (args.size() > 1) {
+                if (const auto newThreads = util::tryParse<u32>(args[1])) {
                     if (*newThreads > 1) {
                         println("info string multiple search threads not yet supported, using 1");
                     }
                 } else {
-                    println("info string invalid thread count {}", tokens[2]);
+                    println("info string invalid thread count {}", args[1]);
                     return;
                 }
             }
 
-            if (tokens.size() > 3) {
-                if (const auto newTtSize = util::tryParseSize(tokens[3])) {
+            if (args.size() > 2) {
+                if (const auto newTtSize = util::tryParse<usize>(args[2])) {
                     ttSize = static_cast<i32>(*newTtSize);
                 } else {
-                    println("info string invalid tt size {}", tokens[3]);
+                    println("info string invalid tt size {}", args[2]);
                     return;
                 }
             }
@@ -851,7 +869,7 @@ namespace stormphrax {
 #if SP_EXTERNAL_TUNE
     namespace tunable {
         TunableParam& addTunableParam(
-            const std::string& name,
+            std::string_view name,
             i32 value,
             i32 min,
             i32 max,
@@ -865,14 +883,22 @@ namespace stormphrax {
                 std::terminate();
             }
 
-            auto lowerName = name;
+            std::string strName{name};
+
+            auto lowerName = strName;
             std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](auto c) {
                 return std::tolower(c);
             });
 
-            return params.emplace_back(
-                TunableParam{name, std::move(lowerName), value, value, {min, max}, step, std::move(callback)}
-            );
+            return params.emplace_back(TunableParam{
+                std::move(strName),
+                std::move(lowerName),
+                value,
+                value,
+                {min, max},
+                step,
+                std::move(callback)
+            });
         }
     } // namespace tunable
 #endif
@@ -886,7 +912,7 @@ namespace stormphrax {
 #if SP_EXTERNAL_TUNE
         namespace {
             void printParams(
-                std::span<const std::string> params,
+                std::span<const std::string_view> params,
                 const std::function<void(const tunable::TunableParam&)>& printParam
             ) {
                 if (std::ranges::find(params, "<all>") != params.end()) {
@@ -897,8 +923,9 @@ namespace stormphrax {
                     return;
                 }
 
-                for (auto paramName : params) {
-                    std::transform(paramName.begin(), paramName.end(), paramName.begin(), [](auto c) {
+                for (const auto paramName : params) {
+                    std::string lowerName{paramName};
+                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](auto c) {
                         return std::tolower(c);
                     });
 
@@ -912,7 +939,7 @@ namespace stormphrax {
             }
         } // namespace
 
-        void printWfTuningParams(std::span<const std::string> params) {
+        void printWfTuningParams(std::span<const std::string_view> params) {
             println("{{");
 
             bool first = true;
@@ -937,7 +964,7 @@ namespace stormphrax {
             println("}}");
         }
 
-        void printCttTuningParams(std::span<const std::string> params) {
+        void printCttTuningParams(std::span<const std::string_view> params) {
             bool first = true;
             const auto printParam = [&first](const auto& param) {
                 if (!first) {
@@ -954,7 +981,7 @@ namespace stormphrax {
             println();
         }
 
-        void printObTuningParams(std::span<const std::string> params) {
+        void printObTuningParams(std::span<const std::string_view> params) {
             const auto printParam = [](const auto& param) {
                 println(
                     "{}, int, {}.0, {}.0, {}.0, {}, 0.002",
