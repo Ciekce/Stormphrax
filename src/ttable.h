@@ -34,7 +34,12 @@ namespace stormphrax {
     constexpr usize kDefaultTtSizeMib = 64;
     constexpr util::Range<usize> kTtSizeMibRange{1, 67108864};
 
-    enum class TtFlag : u8 { kNone = 0, kUpperBound, kLowerBound, kExact };
+    enum class TtFlag : u8 {
+        kNone = 0,
+        kUpperBound,
+        kLowerBound,
+        kExact,
+    };
 
     struct ProbedTTableEntry {
         Score score;

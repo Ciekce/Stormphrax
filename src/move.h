@@ -28,7 +28,12 @@
 #include "util/static_vector.h"
 
 namespace stormphrax {
-    enum class MoveType { kStandard = 0, kPromotion, kCastling, kEnPassant };
+    enum class MoveType {
+        kStandard = 0,
+        kPromotion,
+        kCastling,
+        kEnPassant,
+    };
 
     class Move {
     public:

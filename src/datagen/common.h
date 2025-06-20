@@ -21,5 +21,9 @@
 #include "../types.h"
 
 namespace stormphrax::datagen {
-    enum class Outcome : u8 { kWhiteLoss = 0, kDraw, kWhiteWin };
+    enum class Outcome : u8 {
+        kWhiteLoss = 0,
+        kDraw,
+        kWhiteWin,
+    };
 }
