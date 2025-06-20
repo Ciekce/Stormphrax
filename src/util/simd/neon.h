@@ -202,7 +202,7 @@ namespace stormphrax::util::simd {
             return vdupq_n_s32(v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline VectorI32I32(const void* ptr) {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI32 loadI32(const void* ptr) {
             assert(isAligned<kAlignment>(ptr));
             return vld1q_s32(static_cast<const i32*>(ptr));
         }
