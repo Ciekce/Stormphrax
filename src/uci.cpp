@@ -299,7 +299,7 @@ namespace stormphrax {
                     return;
                 }
 
-                const auto parts = args.subspan(1, count);
+                const auto parts = args.subspan(0, count);
                 const auto newPos = Position::fromFenParts(parts);
 
                 if (!newPos) {
