@@ -41,7 +41,7 @@ namespace stormphrax::util {
     }
 
     template <detail::NonBoolInt T>
-    [[nodiscard]] inline std::optional<T> tryParse(std::string_view value, u32 radix = 10) {
+    [[nodiscard]] constexpr std::optional<T> tryParse(std::string_view value, u32 radix = 10) {
         T result{};
 
         const auto [ptr, err] =
@@ -55,7 +55,7 @@ namespace stormphrax::util {
     }
 
     template <detail::NonBoolInt T>
-    inline bool tryParse(T& dst, std::string_view value, u32 radix = 10) {
+    constexpr bool tryParse(T& dst, std::string_view value, u32 radix = 10) {
         if (const auto parsed = tryParse<T>(value, radix)) {
             dst = *parsed;
             return true;
@@ -65,7 +65,7 @@ namespace stormphrax::util {
     }
 
     template <std::floating_point T>
-    [[nodiscard]] inline std::optional<T> tryParse(std::string_view value) {
+    [[nodiscard]] constexpr std::optional<T> tryParse(std::string_view value) {
         T result{};
 
         const auto [ptr, err] = std::from_chars(value.data(), value.data() + value.size(), result);
@@ -78,7 +78,7 @@ namespace stormphrax::util {
     }
 
     template <std::floating_point T>
-    inline bool tryParse(T& dst, std::string_view value) {
+    constexpr bool tryParse(T& dst, std::string_view value) {
         if (const auto parsed = tryParse<T>(value)) {
             dst = *parsed;
             return true;

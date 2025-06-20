@@ -40,12 +40,12 @@
 
 namespace stormphrax {
     template <typename T>
-    constexpr bool testFlags(T field, T flags) {
+    [[nodiscard]] constexpr bool testFlags(T field, T flags) {
         return (field & flags) != T::kNone;
     }
 
     template <typename T>
-    constexpr T setFlags(T field, T flags, bool v) {
+    [[nodiscard]] constexpr T setFlags(T field, T flags, bool v) {
         if (v) {
             field |= flags;
         } else {
@@ -56,7 +56,7 @@ namespace stormphrax {
     }
 
     template <typename T>
-    constexpr T flipFlags(T field, T flags) {
+    [[nodiscard]] constexpr T flipFlags(T field, T flags) {
         return field ^ flags;
     }
 } // namespace stormphrax

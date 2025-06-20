@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 file(STRINGS version.txt SP_VERSION LIMIT_COUNT 1)
 project(stormphrax VERSION ${SP_VERSION})
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 file(STRINGS network.txt SP_DEFAULT_NET_NAME LIMIT_COUNT 1)
 

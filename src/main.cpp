@@ -48,7 +48,7 @@ i32 main(i32 argc, const char* argv[]) {
 
             return 0;
         } else if (mode == "datagen") {
-            const auto printUsage = [&]() {
+            const auto printUsage = [&] {
                 eprintln(
                     "usage: {} datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]",
                     argv[0]

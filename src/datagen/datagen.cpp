@@ -150,7 +150,7 @@ namespace stormphrax::datagen {
 
             auto& pos = thread->rootPos;
 
-            const auto resetSearch = [&searcher, &thread]() {
+            const auto resetSearch = [&searcher, &thread] {
                 searcher.newGame();
 
                 thread->search = search::SearchData{};
@@ -400,7 +400,7 @@ namespace stormphrax::datagen {
 
         for (u32 i = 0; i < threads; ++i) {
             const auto seed = seedGenerator.nextSeed();
-            theThreads.emplace_back([&, i, seed]() { threadFunc(i, dfrc, seed, outDir); });
+            theThreads.emplace_back([&, i, seed] { threadFunc(i, dfrc, seed, outDir); });
         }
 
         for (auto& thread : theThreads) {

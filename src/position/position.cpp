@@ -611,8 +611,8 @@ namespace stormphrax {
         if (m_castlingRooks == CastlingRooks{}) {
             fmt::format_to(itr, "-");
         } else if (g_opts.chess960) {
-            constexpr auto kBlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-            constexpr auto kWhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+            static constexpr auto kBlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+            static constexpr auto kWhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 
             if (m_castlingRooks.white().kingside != Square::kNone) {
                 fmt::format_to(itr, "{}", kWhiteFiles[squareFile(m_castlingRooks.white().kingside)]);

@@ -43,7 +43,7 @@ namespace stormphrax::keys {
     } // namespace offsets
 
     constexpr auto kKeys = [] {
-        constexpr auto kSeed = U64(0xD06C659954EC904A);
+        static constexpr auto kSeed = U64(0xD06C659954EC904A);
 
         std::array<u64, sizes::kTotal> keys{};
 
@@ -74,24 +74,24 @@ namespace stormphrax::keys {
     }
 
     inline u64 castling(const CastlingRooks& castlingRooks) {
-        constexpr usize BlackShort = 0x01;
-        constexpr usize BlackLong = 0x02;
-        constexpr usize WhiteShort = 0x04;
-        constexpr usize WhiteLong = 0x08;
+        static constexpr usize kBlackShort = 0x01;
+        static constexpr usize kBlackLong = 0x02;
+        static constexpr usize kWhiteShort = 0x04;
+        static constexpr usize kWhiteLong = 0x08;
 
         usize flags{};
 
         if (castlingRooks.black().kingside != Square::kNone) {
-            flags |= BlackShort;
+            flags |= kBlackShort;
         }
         if (castlingRooks.black().queenside != Square::kNone) {
-            flags |= BlackLong;
+            flags |= kBlackLong;
         }
         if (castlingRooks.white().kingside != Square::kNone) {
-            flags |= WhiteShort;
+            flags |= kWhiteShort;
         }
         if (castlingRooks.white().queenside != Square::kNone) {
-            flags |= WhiteLong;
+            flags |= kWhiteLong;
         }
 
         return kKeys[offsets::kCastling + flags];

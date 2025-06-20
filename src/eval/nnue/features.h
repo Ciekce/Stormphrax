@@ -127,7 +127,7 @@ namespace stormphrax::eval::nnue::features {
 
     private:
         static constexpr auto kBuckets = [] {
-            constexpr auto kHalfBuckets = std::array{kBucketIndices...};
+            static constexpr auto kHalfBuckets = std::array{kBucketIndices...};
 
             std::array<u32, 64> dst{};
 

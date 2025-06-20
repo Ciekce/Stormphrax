@@ -388,12 +388,12 @@ namespace stormphrax::eval {
             assert(sq != Square::kNone);
             assert(king != Square::kNone);
 
-            constexpr u32 kColorStride = 64 * 6;
-            constexpr u32 kPieceStride = 64;
+            static constexpr u32 kColorStride = 64 * 6;
+            static constexpr u32 kPieceStride = 64;
 
             const auto type = static_cast<u32>(pieceType(piece));
 
-            const auto color = [piece, c]() -> u32 {
+            const auto color = [piece, c] -> u32 {
                 if (InputFeatureSet::kMergedKings && pieceType(piece) == PieceType::kKing) {
                     return 0;
                 }

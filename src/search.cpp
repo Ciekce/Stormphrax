@@ -153,7 +153,7 @@ namespace stormphrax::search {
 
         m_setupInfo.rootPos = pos;
 
-        m_setupInfo.keyHistorySize = util::pad<usize{256}>(keyHistory.size());
+        m_setupInfo.keyHistorySize = util::pad<256uz>(keyHistory.size());
         m_setupInfo.keyHistory = keyHistory;
 
         m_startTime = startTime;

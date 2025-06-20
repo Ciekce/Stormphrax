@@ -58,12 +58,12 @@ namespace stormphrax::util {
         static_assert(kSize % 2 == 0);
 
     public:
-        constexpr u8 operator[](usize i) const {
+        [[nodiscard]] constexpr u8 operator[](usize i) const {
             assert(i < kSize);
             return m_data[i / 2] >> ((i % 2) * 4);
         }
 
-        constexpr IndexedU4 operator[](usize i) {
+        [[nodiscard]] constexpr IndexedU4 operator[](usize i) {
             assert(i < kSize);
             return IndexedU4{m_data[i / 2], (i % 2) == 1};
         }

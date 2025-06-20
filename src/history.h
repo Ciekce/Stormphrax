@@ -72,15 +72,12 @@ namespace stormphrax {
 
     class ContinuationSubtable {
     public:
-        //TODO take two args when c++23 is usable
-        inline HistoryScore operator[](std::pair<Piece, Move> move) const {
-            const auto [piece, mv] = move;
-            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.toSq())];
+        inline HistoryScore operator[](Piece piece, Move move) const {
+            return m_data[static_cast<i32>(piece)][static_cast<i32>(move.toSq())];
         }
 
-        inline HistoryEntry& operator[](std::pair<Piece, Move> move) {
-            const auto [piece, mv] = move;
-            return m_data[static_cast<i32>(piece)][static_cast<i32>(mv.toSq())];
+        inline HistoryEntry& operator[](Piece piece, Move move) {
+            return m_data[static_cast<i32>(piece)][static_cast<i32>(move.toSq())];
         }
 
     private:
@@ -177,7 +174,7 @@ namespace stormphrax {
             i32 offset
         ) {
             if (offset <= ply) {
-                conthistEntry(continuations, ply, offset)[{moving, move}].update(bonus);
+                conthistEntry(continuations, ply, offset)[moving, move].update(bonus);
             }
         }
 
@@ -189,7 +186,7 @@ namespace stormphrax {
             i32 offset
         ) {
             if (offset <= ply) {
-                return conthistEntry(continuations, ply, offset)[{moving, move}];
+                return conthistEntry(continuations, ply, offset)[moving, move];
             }
 
             return 0;

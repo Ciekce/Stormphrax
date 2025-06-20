@@ -96,7 +96,7 @@ namespace stormphrax::tb {
             return a.tbRank > b.tbRank;
         });
 
-        const auto [wdl, minRank] = [&]() -> std::pair<ProbeResult, i32> {
+        const auto [wdl, minRank] = [&] -> std::pair<ProbeResult, i32> {
             const auto best = tbRootMoves.moves[0];
 
             if (best.tbRank >= 900) {
