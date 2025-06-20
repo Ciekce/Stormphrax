@@ -1056,38 +1056,8 @@ namespace stormphrax {
     }
 
     std::optional<Position> Position::fromFenParts(std::span<const std::string_view> fen) {
-        if (fen.size() > 6) {
-            eprintln("excess tokens after fullmove number");
-            return {};
-        }
-
-        if (fen.size() == 5) {
-            eprintln("missing fullmove number");
-            return {};
-        }
-
-        if (fen.size() == 4) {
-            eprintln("missing halfmove clock");
-            return {};
-        }
-
-        if (fen.size() == 3) {
-            eprintln("missing en passant square");
-            return {};
-        }
-
-        if (fen.size() == 2) {
-            eprintln("missing castling rights");
-            return {};
-        }
-
-        if (fen.size() == 1) {
-            eprintln("missing side to move");
-            return {};
-        }
-
-        if (fen.empty()) {
-            eprintln("missing ranks");
+        if (fen.size() < 4 || fen.size() > 6) {
+            eprintln("wrong number of FEN parts");
             return {};
         }
 
@@ -1297,16 +1267,20 @@ namespace stormphrax {
             }
         }
 
-        const auto halfmove = fen[4];
-        if (!util::tryParse(pos.m_halfmove, halfmove)) {
-            eprintln("invalid halfmove clock");
-            return {};
+        if (fen.size() >= 5) {
+            const auto halfmove = fen[4];
+            if (!util::tryParse(pos.m_halfmove, halfmove)) {
+                eprintln("invalid halfmove clock");
+                return {};
+            }
         }
 
-        const auto fullmove = fen[5];
-        if (!util::tryParse(pos.m_fullmove, fullmove)) {
-            eprintln("invalid fullmove number");
-            return {};
+        if (fen.size() >= 6) {
+            const auto fullmove = fen[5];
+            if (!util::tryParse(pos.m_fullmove, fullmove)) {
+                eprintln("invalid fullmove number");
+                return {};
+            }
         }
 
         pos.regen();

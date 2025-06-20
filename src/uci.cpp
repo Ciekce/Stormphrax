@@ -281,73 +281,85 @@ namespace stormphrax {
                 return;
             }
 
-            const auto& position = args[0];
+            const auto type = args[0];
+            args = args.subspan<1>();
 
-            usize next = 1;
+            usize next = 0;
 
-            if (position == "startpos") {
+            if (type == "startpos") {
                 m_pos = Position::starting();
                 m_keyHistory.clear();
-            } else if (position == "fen") {
-                std::string fen{};
-                auto itr = std::back_inserter(fen);
 
-                for (usize i = 0; i < 6 && next < args.size(); ++i, ++next) {
-                    fmt::format_to(itr, "{} ", args[next]);
-                }
+                ++next;
+            } else if (type == "fen") {
+                const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
 
-                if (const auto newPos = Position::fromFen(fen)) {
-                    m_pos = *newPos;
-                    m_keyHistory.clear();
-                } else {
+                if (count == 0) {
+                    eprintln("Missing fen");
                     return;
                 }
-            } else if (position == "frc") {
+
+                const auto parts = args.subspan(1, count);
+                const auto newPos = Position::fromFenParts(parts);
+
+                if (!newPos) {
+                    return;
+                }
+
+                m_pos = *newPos;
+                m_keyHistory.clear();
+
+                next += count;
+            } else if (type == "frc" || type == "dfrc") {
                 if (!g_opts.chess960) {
                     eprintln("Chess960 not enabled");
                     return;
                 }
 
-                if (next < args.size()) {
-                    if (const auto frcIndex = util::tryParse<u32>(args[next++])) {
-                        if (const auto newPos = Position::fromFrcIndex(*frcIndex)) {
-                            m_pos = *newPos;
-                            m_keyHistory.clear();
-                        } else {
-                            return;
-                        }
-                    } else {
-                        return;
-                    }
-                }
-            } else if (position == "dfrc") {
-                if (!g_opts.chess960) {
-                    eprintln("Chess960 not enabled");
+                const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
+
+                const bool dfrc = type == "dfrc";
+
+                if (count == 0) {
+                    eprintln("Missing {} index", dfrc ? "DFRC" : "FRC");
                     return;
                 }
 
-                if (next < args.size()) {
-                    if (const auto dfrcIndex = util::tryParse<u32>(args[next++])) {
-                        if (const auto newPos = Position::fromDfrcIndex(*dfrcIndex)) {
-                            m_pos = *newPos;
-                            m_keyHistory.clear();
-                        } else {
-                            return;
-                        }
-                    } else {
-                        return;
-                    }
+                const auto index = util::tryParse<u32>(args[1]);
+
+                if (!index) {
+                    eprintln("Invalid {} index {}", dfrc ? "DFRC" : "FRC", args[1]);
+                    return;
                 }
+
+                const auto newPos = dfrc ? Position::fromDfrcIndex(*index) : Position::fromFrcIndex(*index);
+
+                if (!newPos) {
+                    return;
+                }
+
+                m_pos = *newPos;
+                m_keyHistory.clear();
+
+                next += count;
             } else {
+                eprintln("Invalid position type {}", type);
                 return;
             }
 
-            if (next < args.size() && args[next++] == "moves") {
-                for (; next < args.size(); ++next) {
-                    if (const auto move = m_pos.moveFromUci(args[next])) {
-                        m_keyHistory.push_back(m_pos.key());
-                        m_pos = m_pos.applyMove(move);
-                    }
+            assert(next <= args.size());
+
+            if (next >= args.size() || args[next] != "moves") {
+                return;
+            }
+
+            for (usize i = next + 1; i < args.size(); ++i) {
+                if (const auto move = m_pos.moveFromUci(args[i])) {
+                    m_keyHistory.push_back(m_pos.key());
+                    m_pos = m_pos.applyMove(move);
+                } else {
+                    eprintln("Invalid move {}", args[i]);
+                    break;
                 }
             }
         }
