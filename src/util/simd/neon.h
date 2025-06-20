@@ -83,7 +83,7 @@ namespace stormphrax::util::simd {
             return vdupq_n_s8(0);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline void set1I8(i8 v) {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 set1I8(i8 v) {
             return vdupq_n_s8(v);
         }
 
