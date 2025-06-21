@@ -36,6 +36,7 @@
 #include "perft.h"
 #include "position/position.h"
 #include "search.h"
+#include "tb.h"
 #include "ttable.h"
 #include "tunable.h"
 #include "util/parse.h"
@@ -101,6 +102,7 @@ namespace stormphrax {
             void handlePerft(std::span<const std::string_view> args);
             void handleSplitperft(std::span<const std::string_view> args);
             void handleBench(std::span<const std::string_view> args);
+            void handleProbeWdl();
 
             bool m_fathomInitialized{false};
 
@@ -176,6 +178,8 @@ namespace stormphrax {
                     handleSplitperft(args);
                 } else if (command == "bench") {
                     handleBench(args);
+                } else if (command == "probewdl") {
+                    handleProbeWdl();
                 }
             }
 
@@ -863,6 +867,35 @@ namespace stormphrax {
             }
 
             bench::run(m_searcher, depth);
+        }
+
+        void UciHandler::handleProbeWdl() {
+            if (!m_fathomInitialized || !g_opts.syzygyEnabled) {
+                eprintln("no TBs loaded");
+                return;
+            }
+
+            if (m_pos.bbs().occupancy().popcount() > TB_LARGEST) {
+                eprintln("too many pieces");
+                return;
+            }
+
+            const auto wdl = tb::probeRoot(nullptr, m_pos);
+
+            switch (wdl) {
+                case tb::ProbeResult::kFailed:
+                    println("failed");
+                    break;
+                case tb::ProbeResult::kWin:
+                    println("win");
+                    break;
+                case tb::ProbeResult::kDraw:
+                    println("draw");
+                    break;
+                case tb::ProbeResult::kLoss:
+                    println("loss");
+                    break;
+            }
         }
     } // namespace
 

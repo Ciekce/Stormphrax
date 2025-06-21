@@ -32,6 +32,6 @@ namespace stormphrax::tb {
         kLoss,
     };
 
-    ProbeResult probeRoot(MoveList& rootMoves, const Position& pos);
+    ProbeResult probeRoot(MoveList* rootMoves, const Position& pos);
     ProbeResult probe(const Position& pos);
 } // namespace stormphrax::tb

@@ -262,7 +262,7 @@ namespace stormphrax::search {
         {
             bool success = true;
 
-            switch (tb::probeRoot(m_rootMoves, pos)) {
+            switch (tb::probeRoot(&m_rootMoves, pos)) {
                 case tb::ProbeResult::kWin:
                     m_minRootScore = kScoreTbWin;
                     break;

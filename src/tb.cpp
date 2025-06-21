@@ -22,7 +22,7 @@
 #include "move.h"
 
 namespace stormphrax::tb {
-    ProbeResult probeRoot(MoveList& rootMoves, const Position& pos) {
+    ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
         const auto moveFromTb = [&pos](auto tbMove) {
             static constexpr auto kPromoPieces = std::array{
                 PieceType::kNone,
@@ -108,6 +108,10 @@ namespace stormphrax::tb {
             }
         }();
 
+        if (!rootMoves) {
+            return wdl;
+        }
+
         for (u32 i = 0; i < tbRootMoves.size; ++i) {
             const auto move = tbRootMoves.moves[i];
 
@@ -115,7 +119,7 @@ namespace stormphrax::tb {
                 break;
             }
 
-            rootMoves.push(moveFromTb(move.move));
+            rootMoves->push(moveFromTb(move.move));
         }
 
         return wdl;
