@@ -145,11 +145,11 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM_F64(timeScaleMin, 0.07, 0.001, 1.0, 0.1, 1000)
 
-    SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 100, 50, 200, 7.5, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 450, 300, 700, 25, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueBishop, 450, 300, 700, 25, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 650, 400, 1000, 30, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1250, 800, 1600, 40, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 125, 50, 200, 7.5, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 424, 300, 700, 25, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueBishop, 410, 300, 700, 25, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 670, 400, 1000, 30, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1223, 800, 1600, 40, updateSeeValueTable)
 
     SP_TUNABLE_PARAM(scalingValueKnight, 450, 300, 700, 25)
     SP_TUNABLE_PARAM(scalingValueBishop, 450, 300, 700, 25)
@@ -158,80 +158,80 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(materialScalingBase, 26500, 10000, 40000, 1500)
 
-    SP_TUNABLE_PARAM(pawnCorrhistWeight, 133, 32, 384, 18)
-    SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 142, 32, 384, 18)
-    SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 142, 32, 384, 18)
-    SP_TUNABLE_PARAM(majorCorrhistWeight, 129, 32, 384, 18)
-    SP_TUNABLE_PARAM(contCorrhistWeight, 134, 32, 384, 18)
+    SP_TUNABLE_PARAM(pawnCorrhistWeight, 131, 32, 384, 18)
+    SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 134, 32, 384, 18)
+    SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 154, 32, 384, 18)
+    SP_TUNABLE_PARAM(majorCorrhistWeight, 100, 32, 384, 18)
+    SP_TUNABLE_PARAM(contCorrhistWeight, 108, 32, 384, 18)
 
     SP_TUNABLE_PARAM(initialAspWindow, 16, 4, 50, 4)
-    SP_TUNABLE_PARAM(aspWideningFactor, 17, 1, 24, 1)
+    SP_TUNABLE_PARAM(aspWideningFactor, 14, 1, 24, 1)
 
-    SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
+    SP_TUNABLE_PARAM(goodNoisySeeOffset, 48, -384, 384, 40)
 
     SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
-    SP_TUNABLE_PARAM(rfpCorrplexityScale, 64, 16, 128, 5)
+    SP_TUNABLE_PARAM(rfpCorrplexityScale, 91, 16, 128, 5)
 
-    SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
+    SP_TUNABLE_PARAM(razoringMargin, 279, 100, 350, 40)
 
-    SP_TUNABLE_PARAM(nmpEvalReductionScale, 206, 50, 300, 25)
+    SP_TUNABLE_PARAM(nmpEvalReductionScale, 221, 50, 300, 25)
 
-    SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
-    SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
+    SP_TUNABLE_PARAM(probcutMargin, 348, 150, 400, 13)
+    SP_TUNABLE_PARAM(probcutSeeScale, 16, 6, 24, 1)
 
-    SP_TUNABLE_PARAM(fpMargin, 261, 120, 350, 45)
-    SP_TUNABLE_PARAM(fpScale, 68, 40, 80, 8)
+    SP_TUNABLE_PARAM(fpMargin, 299, 120, 350, 45)
+    SP_TUNABLE_PARAM(fpScale, 80, 40, 120, 8)
 
-    SP_TUNABLE_PARAM(quietHistPruningMargin, -2314, -4000, -1000, 175)
-    SP_TUNABLE_PARAM(quietHistPruningOffset, -1157, -4000, 4000, 400)
+    SP_TUNABLE_PARAM(quietHistPruningMargin, -2731, -4000, -1000, 175)
+    SP_TUNABLE_PARAM(quietHistPruningOffset, -1040, -4000, 4000, 400)
 
-    SP_TUNABLE_PARAM(noisyHistPruningMargin, -1000, -4000, -1000, 175)
-    SP_TUNABLE_PARAM(noisyHistPruningOffset, -1000, -4000, 4000, 400)
+    SP_TUNABLE_PARAM(noisyHistPruningMargin, -1092, -4000, -1000, 175)
+    SP_TUNABLE_PARAM(noisyHistPruningOffset, 8, -4000, 4000, 400)
 
-    SP_TUNABLE_PARAM(seePruningThresholdQuiet, -16, -80, -1, 12)
-    SP_TUNABLE_PARAM(seePruningThresholdNoisy, -112, -120, -40, 20)
+    SP_TUNABLE_PARAM(seePruningThresholdQuiet, -69, -80, -1, 12)
+    SP_TUNABLE_PARAM(seePruningThresholdNoisy, -102, -120, -40, 20)
 
     SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
 
     SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
     SP_TUNABLE_PARAM(tripleExtMargin, 105, 10, 150, 7)
 
-    SP_TUNABLE_PARAM(ldseMargin, 26, 10, 60, 3)
+    SP_TUNABLE_PARAM(ldseMargin, 24, 10, 60, 3)
 
-    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 83, 50, 120, 15, updateQuietLmrTable)
-    SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 218, 100, 300, 10, updateQuietLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 108, 50, 120, 15, updateQuietLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 229, 100, 300, 10, updateQuietLmrTable)
 
-    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -12, -50, 75, 10, updateNoisyLmrTable)
-    SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 248, 150, 350, 10, updateNoisyLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -21, -50, 75, 10, updateNoisyLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 260, 150, 350, 10, updateNoisyLmrTable)
 
-    SP_TUNABLE_PARAM(lmrNonPvReductionScale, 131, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrTtpvReductionScale, 130, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrImprovingReductionScale, 148, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrCheckReductionScale, 111, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 257, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 128, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrHighComplexityReductionScale, 128, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrNonPvReductionScale, 141, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrTtpvReductionScale, 127, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrImprovingReductionScale, 154, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrCheckReductionScale, 70, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 251, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 132, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrHighComplexityReductionScale, 121, 32, 384, 12)
 
-    SP_TUNABLE_PARAM(lmrQuietHistoryDivisor, 10835, 4096, 16384, 650)
-    SP_TUNABLE_PARAM(lmrNoisyHistoryDivisor, 10835, 4096, 16384, 650)
+    SP_TUNABLE_PARAM(lmrQuietHistoryDivisor, 12113, 4096, 16384, 650)
+    SP_TUNABLE_PARAM(lmrNoisyHistoryDivisor, 11511, 4096, 16384, 650)
 
-    SP_TUNABLE_PARAM(lmrHighComplexityThreshold, 70, 30, 120, 5)
+    SP_TUNABLE_PARAM(lmrHighComplexityThreshold, 47, 30, 120, 5)
 
-    SP_TUNABLE_PARAM(lmrDeeperBase, 38, 20, 100, 6)
-    SP_TUNABLE_PARAM(lmrDeeperScale, 4, 3, 12, 1)
+    SP_TUNABLE_PARAM(lmrDeeperBase, 21, 20, 100, 6)
+    SP_TUNABLE_PARAM(lmrDeeperScale, 3, 3, 12, 1)
 
-    SP_TUNABLE_PARAM(maxHistory, 15769, 8192, 32768, 256)
+    SP_TUNABLE_PARAM(maxHistory, 15654, 8192, 32768, 256)
 
-    SP_TUNABLE_PARAM(maxHistoryBonus, 2576, 1024, 4096, 256)
-    SP_TUNABLE_PARAM(historyBonusDepthScale, 280, 128, 512, 32)
-    SP_TUNABLE_PARAM(historyBonusOffset, 432, 128, 768, 64)
+    SP_TUNABLE_PARAM(maxHistoryBonus, 2700, 1024, 4096, 256)
+    SP_TUNABLE_PARAM(historyBonusDepthScale, 329, 128, 512, 32)
+    SP_TUNABLE_PARAM(historyBonusOffset, 605, 128, 768, 64)
 
-    SP_TUNABLE_PARAM(maxHistoryPenalty, 1239, 1024, 4096, 256)
-    SP_TUNABLE_PARAM(historyPenaltyDepthScale, 343, 128, 512, 32)
-    SP_TUNABLE_PARAM(historyPenaltyOffset, 161, 128, 768, 64)
+    SP_TUNABLE_PARAM(maxHistoryPenalty, 1041, 1024, 4096, 256)
+    SP_TUNABLE_PARAM(historyPenaltyDepthScale, 407, 128, 512, 32)
+    SP_TUNABLE_PARAM(historyPenaltyOffset, 200, 128, 768, 64)
 
-    SP_TUNABLE_PARAM(qsearchFpMargin, 135, 50, 400, 17)
-    SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 30)
+    SP_TUNABLE_PARAM(qsearchFpMargin, 161, 50, 400, 17)
+    SP_TUNABLE_PARAM(qsearchSeeThreshold, -133, -2000, 200, 30)
 
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
