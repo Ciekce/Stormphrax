@@ -28,7 +28,7 @@
 
 #include <fmt/std.h>
 
-#include "../3rdparty/fathom/tbprobe.h"
+#include "../3rdparty/pyrrhic/tbprobe.h"
 #include "../limit/limit.h"
 #include "../movegen.h"
 #include "../opts.h"
@@ -370,18 +370,14 @@ namespace stormphrax::datagen {
         if (tbPath) {
             println("looking for TBs in \"{}\"", *tbPath);
 
-            if (!tb_init(tbPath->c_str())) {
-                eprintln("Failed to initialize Fathom");
-                return 2;
-            }
+            const auto status = tb::init(*tbPath);
 
-            if (TB_LARGEST > 0) {
-                println("Found up to {}-man TBs", TB_LARGEST);
-                opts::mutableOpts().syzygyEnabled = true;
-            } else {
+            if (status != tb::InitStatus::kSuccess) {
                 eprintln("No TBs found");
                 return 2;
             }
+
+            opts::mutableOpts().syzygyEnabled = true;
         }
 
         const auto baseSeed = util::rng::generateSingleSeed();
@@ -407,9 +403,7 @@ namespace stormphrax::datagen {
             thread.join();
         }
 
-        if (tbPath) {
-            tb_free();
-        }
+        tb::free();
 
         println("done");
 

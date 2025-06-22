@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "3rdparty/fathom/tbprobe.h"
+#include "3rdparty/pyrrhic/tbprobe.h"
 #include "bench.h"
 #include "eval/eval.h"
 #include "limit/compound.h"
@@ -104,7 +104,7 @@ namespace stormphrax {
             void handleBench(std::span<const std::string_view> args);
             void handleProbeWdl();
 
-            bool m_fathomInitialized{false};
+            bool m_tbInitialized{false};
 
             search::Searcher m_searcher{};
 
@@ -115,12 +115,9 @@ namespace stormphrax {
         };
 
         UciHandler::~UciHandler() {
-            // can't do this in a destructor, because it will run after tb_free is called
+            // can't do this in a destructor, because it will run after tb::free() is called
             m_searcher.quit();
-
-            if (m_fathomInitialized) {
-                tb_free();
-            }
+            tb::free();
         }
 
         i32 UciHandler::run() {
@@ -667,17 +664,9 @@ namespace stormphrax {
                         eprintln("still searching");
                     }
 
-                    m_fathomInitialized = true;
+                    m_tbInitialized = true;
 
-                    if (value.empty()) {
-                        opts::mutableOpts().syzygyEnabled = false;
-                        tb_init("");
-                    } else {
-                        opts::mutableOpts().syzygyEnabled = value != "<empty>";
-                        if (!tb_init(value.c_str())) {
-                            eprintln("failed to initialize Fathom");
-                        }
-                    }
+                    opts::mutableOpts().syzygyEnabled = tb::init(value) == tb::InitStatus::kSuccess;
                 } else if (name == "syzygyprobedepth") {
                     if (!value.empty()) {
                         if (const auto newSyzygyProbeDepth = util::tryParse<i32>(value)) {
@@ -870,7 +859,7 @@ namespace stormphrax {
         }
 
         void UciHandler::handleProbeWdl() {
-            if (!m_fathomInitialized || !g_opts.syzygyEnabled) {
+            if (!m_tbInitialized || !g_opts.syzygyEnabled) {
                 eprintln("no TBs loaded");
                 return;
             }

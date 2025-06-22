@@ -20,7 +20,7 @@
 
 #include <cmath>
 
-#include "3rdparty/fathom/tbprobe.h"
+#include "3rdparty/pyrrhic/tbprobe.h"
 #include "limit/trivial.h"
 #include "opts.h"
 #include "see.h"

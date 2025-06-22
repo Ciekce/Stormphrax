@@ -18,10 +18,34 @@
 
 #include "tb.h"
 
-#include "3rdparty/fathom/tbprobe.h"
+#include "3rdparty/pyrrhic/tbprobe.h"
 #include "move.h"
 
 namespace stormphrax::tb {
+    namespace {
+        bool s_initialized{false};
+    }
+
+    InitStatus init(std::string_view path) {
+        const std::string pathStr{path};
+
+        if (!tb_init(pathStr.c_str())) {
+            eprintln("failed to initialize Pyrrhic");
+            return InitStatus::kFailed;
+        }
+
+        println("info string Found {} WDL and {} DTZ files up to {}-man", TB_NUM_WDL, TB_NUM_DTZ, TB_LARGEST);
+
+        return TB_LARGEST == 0 ? InitStatus::kNoneFound : InitStatus::kSuccess;
+    }
+
+    void free() {
+        if (s_initialized) {
+            tb_free();
+            s_initialized = false;
+        }
+    }
+
     ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
         const auto moveFromTb = [&pos](auto tbMove) {
             static constexpr auto kPromoPieces = std::array{
@@ -29,20 +53,19 @@ namespace stormphrax::tb {
                 PieceType::kQueen,
                 PieceType::kRook,
                 PieceType::kBishop,
-                PieceType::kKnight
+                PieceType::kKnight,
             };
 
-            const auto src = static_cast<Square>(TB_MOVE_FROM(tbMove));
-            const auto dst = static_cast<Square>(TB_MOVE_TO(tbMove));
-            const auto promo = kPromoPieces[TB_MOVE_PROMOTES(tbMove)];
+            const auto from = static_cast<Square>(PYRRHIC_MOVE_FROM(tbMove));
+            const auto to = static_cast<Square>(PYRRHIC_MOVE_TO(tbMove));
+            const auto promo = kPromoPieces[PYRRHIC_MOVE_FLAGS(tbMove) & 0x3];
 
-            if (promo != PieceType::kNone) {
-                return Move::promotion(src, dst, promo);
-            } else if (dst == pos.enPassant() && pos.boards().pieceTypeAt(src) == PieceType::kPawn) {
-                return Move::enPassant(src, dst);
-                // Syzygy TBs do not encode positions with castling rights
+            if (PYRRHIC_MOVE_IS_ENPASS(tbMove)) {
+                return Move::enPassant(from, to);
+            } else if (promo != PieceType::kNone) {
+                return Move::promotion(from, to, promo);
             } else {
-                return Move::standard(src, dst);
+                return Move::standard(from, to);
             }
         };
 
@@ -61,15 +84,15 @@ namespace stormphrax::tb {
             bbs.knights(),
             bbs.pawns(),
             pos.halfmove(),
-            0,
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
             pos.stm() == Color::kWhite,
-            false /*TODO*/,
-            true,
+            false, // TODO
             &tbRootMoves
         );
 
         if (!result) { // DTZ tables unavailable, fall back to WDL
+            println("info string DTZ probe failed, falling back to WDL probe at root");
+
             result = tb_probe_root_wdl(
                 bbs.whiteOccupancy(),
                 bbs.blackOccupancy(),
@@ -80,31 +103,39 @@ namespace stormphrax::tb {
                 bbs.knights(),
                 bbs.pawns(),
                 pos.halfmove(),
-                0,
                 epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
                 pos.stm() == Color::kWhite,
                 true,
                 &tbRootMoves
             );
+
+            if (!result) {
+                println("info string WDL probe failed");
+            }
         }
 
         if (!result || tbRootMoves.size == 0) { // mate or stalemate at root, handled by search
             return ProbeResult::kFailed;
         }
 
-        std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](auto a, auto b) {
+        std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
             return a.tbRank > b.tbRank;
         });
 
         const auto [wdl, minRank] = [&]() -> std::pair<ProbeResult, i32> {
+            static constexpr i32 kMaxDtz = 262144;
+
+            static constexpr i32 kWinBound = kMaxDtz - 100;
+            static constexpr i32 kDrawBound = -kMaxDtz + 101;
+
             const auto best = tbRootMoves.moves[0];
 
-            if (best.tbRank >= 900) {
-                return {ProbeResult::kWin, 900};
-            } else if (best.tbRank >= -899) { // includes cursed wins and blessed losses
-                return {ProbeResult::kDraw, -899};
+            if (best.tbRank >= kWinBound) {
+                return {ProbeResult::kWin, kWinBound};
+            } else if (best.tbRank >= kDrawBound) { // includes cursed wins and blessed losses
+                return {ProbeResult::kDraw, kDrawBound};
             } else {
-                return {ProbeResult::kLoss, -1000};
+                return {ProbeResult::kLoss, kMaxDtz};
             }
         }();
 
@@ -113,7 +144,7 @@ namespace stormphrax::tb {
         }
 
         for (u32 i = 0; i < tbRootMoves.size; ++i) {
-            const auto move = tbRootMoves.moves[i];
+            const auto& move = tbRootMoves.moves[i];
 
             if (move.tbRank < minRank) {
                 break;
@@ -121,6 +152,14 @@ namespace stormphrax::tb {
 
             rootMoves->push(moveFromTb(move.move));
         }
+
+        print("info string Filtered root moves:");
+
+        for (const auto move : *rootMoves) {
+            print(" {}", move);
+        }
+
+        println();
 
         return wdl;
     }
@@ -138,8 +177,6 @@ namespace stormphrax::tb {
             bbs.bishops(),
             bbs.knights(),
             bbs.pawns(),
-            0,
-            0,
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
             pos.stm() == Color::kWhite
         );

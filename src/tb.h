@@ -25,6 +25,12 @@
 #include "ttable.h"
 
 namespace stormphrax::tb {
+    enum class InitStatus {
+        kFailed,
+        kNoneFound,
+        kSuccess,
+    };
+
     enum class ProbeResult {
         kFailed,
         kWin,
@@ -32,6 +38,9 @@ namespace stormphrax::tb {
         kLoss,
     };
 
+    InitStatus init(std::string_view path);
+    void free();
+
     ProbeResult probeRoot(MoveList* rootMoves, const Position& pos);
-    ProbeResult probe(const Position& pos);
+    [[nodiscard]] ProbeResult probe(const Position& pos);
 } // namespace stormphrax::tb
