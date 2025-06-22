@@ -265,6 +265,10 @@ namespace stormphrax::util::simd {
     #endif
         }
 
+        SP_ALWAYS_INLINE_NDEBUG inline u32 nonzeroMaskU8(VectorU8 v) {
+            return _mm512_cmpneq_epi32_mask(v, _mm512_setzero_si512());
+        }
+
         // Depends on addI32
         SP_ALWAYS_INLINE_NDEBUG inline VectorI32 mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) {
     #if SP_HAS_VNNI512

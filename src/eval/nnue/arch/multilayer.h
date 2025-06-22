@@ -30,6 +30,7 @@
 #include "../../../util/simd.h"
 #include "../io.h"
 #include "../output.h"
+#include "util/sparse.h"
 
 namespace stormphrax::eval::nnue::arch {
     // implements an (inputs->L1)x2->(L2->L3->1)xN network, with
@@ -58,6 +59,8 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr bool kRequiresFtPermute = util::simd::kPackNonSequential;
 
     private:
+        static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+
         static constexpr u32 kL2SizeFull = kL2Size * (1 + kDualActivation);
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
@@ -77,14 +80,13 @@ namespace stormphrax::eval::nnue::arch {
         inline void activateFt(
             std::span<const i16, kL1Size> stmInputs,
             std::span<const i16, kL1Size> nstmInputs,
-            std::span<u8, kL1Size> outputs
+            std::span<u8, kL1Size> outputs,
+            sparse::SparseContext<kL1Size>& sparseCtx
         ) const {
             using namespace util::simd;
 
             static constexpr auto kPairCount = kL1Size / 2;
-            static_assert(kPairCount % (util::simd::kChunkSize<i16> * 4) == 0);
-
-            static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
+            static_assert(kPairCount % (kChunkSize<i16> * 4) == 0);
 
             const auto zero_ = zero<i16>();
             const auto one = set1<i16>((1 << kFtQBits) - 1);
@@ -126,6 +128,8 @@ namespace stormphrax::eval::nnue::arch {
 
                     store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 0], packed_0);
                     store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 1], packed_1);
+
+                    sparseCtx.update(packed_0, packed_1);
                 }
             };
 
@@ -133,13 +137,15 @@ namespace stormphrax::eval::nnue::arch {
             activatePerspective(nstmInputs, kPairCount);
         }
 
-        inline void propagateL1(u32 bucket, std::span<const u8, kL1Size> inputs, std::span<i32, kL2SizeFull> outputs)
-            const {
+        inline void propagateL1(
+            u32 bucket,
+            std::span<const u8, kL1Size> inputs,
+            std::span<i32, kL2SizeFull> outputs,
+            const sparse::SparseContext<kL1Size>& sparseCtx
+        ) const {
             using namespace util::simd;
 
-            static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
-
-            static constexpr i32 Shift = 16 + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
+            static constexpr i32 kShift = 16 + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
 
             const auto weightOffset = bucket * kL2Size * kL1Size;
             const auto biasOffset = bucket * kL2Size;
@@ -149,26 +155,50 @@ namespace stormphrax::eval::nnue::arch {
 
             SP_SIMD_ALIGNAS util::MultiArray<Vector<i32>, kL2Size / kChunkSize<i32>, 4> intermediate{};
 
-            for (u32 inputIdx = 0; inputIdx < kL1Size; inputIdx += kI8ChunkSizeI32 * 4) {
-                const auto weightsStart = weightOffset + inputIdx * kL2Size;
+            const auto quadChunks = sparseCtx.count() - (sparseCtx.count() % 4);
 
-                const auto i_0 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 0]);
-                const auto i_1 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 1]);
-                const auto i_2 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 2]);
-                const auto i_3 = set1<i32>(inI32s[inputIdx / kI8ChunkSizeI32 + 3]);
+            for (usize chunk = 0; chunk < quadChunks; chunk += 4) {
+                const auto idx_0 = sparseCtx.chunk(chunk + 0);
+                const auto idx_1 = sparseCtx.chunk(chunk + 1);
+                const auto idx_2 = sparseCtx.chunk(chunk + 2);
+                const auto idx_3 = sparseCtx.chunk(chunk + 3);
+
+                const auto ws_0 = weightOffset + idx_0 * kI8ChunkSizeI32 * kL2Size;
+                const auto ws_1 = weightOffset + idx_1 * kI8ChunkSizeI32 * kL2Size;
+                const auto ws_2 = weightOffset + idx_2 * kI8ChunkSizeI32 * kL2Size;
+                const auto ws_3 = weightOffset + idx_3 * kI8ChunkSizeI32 * kL2Size;
+
+                const auto i_0 = set1<i32>(inI32s[idx_0]);
+                const auto i_1 = set1<i32>(inI32s[idx_1]);
+                const auto i_2 = set1<i32>(inI32s[idx_2]);
+                const auto i_3 = set1<i32>(inI32s[idx_3]);
 
                 for (u32 outputIdx = 0; outputIdx < kL2Size; outputIdx += kChunkSize<i32>) {
                     auto& v = intermediate[outputIdx / kChunkSize<i32>];
 
-                    const auto w_0 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 0)]);
-                    const auto w_1 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 1)]);
-                    const auto w_2 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 2)]);
-                    const auto w_3 = load<i8>(&l1Weights[weightsStart + kI8ChunkSizeI32 * (outputIdx + kL2Size * 3)]);
+                    const auto w_0 = load<i8>(&l1Weights[ws_0 + kI8ChunkSizeI32 * outputIdx]);
+                    const auto w_1 = load<i8>(&l1Weights[ws_1 + kI8ChunkSizeI32 * outputIdx]);
+                    const auto w_2 = load<i8>(&l1Weights[ws_2 + kI8ChunkSizeI32 * outputIdx]);
+                    const auto w_3 = load<i8>(&l1Weights[ws_3 + kI8ChunkSizeI32 * outputIdx]);
 
                     v[0] = dpbusd<i32>(v[0], i_0, w_0);
                     v[1] = dpbusd<i32>(v[1], i_1, w_1);
                     v[2] = dpbusd<i32>(v[2], i_2, w_2);
                     v[3] = dpbusd<i32>(v[3], i_3, w_3);
+                }
+            }
+
+            for (usize chunk = quadChunks; chunk < sparseCtx.count(); ++chunk) {
+                const auto idx = sparseCtx.chunk(chunk);
+
+                const auto ws = weightOffset + idx * kI8ChunkSizeI32 * kL2Size;
+
+                const auto i = set1<i32>(inI32s[idx]);
+
+                for (u32 outputIdx = 0; outputIdx < kL2Size; outputIdx += kChunkSize<i32>) {
+                    auto& v = intermediate[outputIdx / kChunkSize<i32>];
+                    const auto w = load<i8>(&l1Weights[ws + kI8ChunkSizeI32 * outputIdx]);
+                    v[0] = dpbusd<i32>(v[0], i, w);
                 }
             }
 
@@ -181,7 +211,7 @@ namespace stormphrax::eval::nnue::arch {
                 const auto sums = add<i32>(halfSums_0, halfSums_1);
                 const auto biases = load<i32>(&l1Biases[biasOffset + idx]);
 
-                auto out = shift<i32, Shift>(sums);
+                auto out = shift<i32, kShift>(sums);
 
                 out = add<i32>(out, biases);
 
@@ -369,13 +399,15 @@ namespace stormphrax::eval::nnue::arch {
             assert(isAligned(nstmInputs.data()));
             assert(isAligned(outputs.data()));
 
+            sparse::SparseContext<kL1Size> sparseCtx;
+
             Array<u8, kL1Size> ftOut;
             Array<i32, kL2SizeFull> l1Out;
             Array<i32, kL3Size> l2Out;
             Array<i32, 1> l3Out;
 
-            activateFt(stmInputs, nstmInputs, ftOut);
-            propagateL1(bucket, ftOut, l1Out);
+            activateFt(stmInputs, nstmInputs, ftOut, sparseCtx);
+            propagateL1(bucket, ftOut, l1Out, sparseCtx);
             propagateL2(bucket, l1Out, l2Out);
             propagateL3(bucket, l2Out, l3Out);
 
@@ -403,7 +435,7 @@ namespace stormphrax::eval::nnue::arch {
             static constexpr usize kPackSize = kPackOrdering.size();
             static constexpr usize kChunkSize = kPackSize * kPackGrouping;
 
-            const auto permute = [&]<typename T, usize N>(std::span<T, N> values) {
+            const auto permute = [&]<typename T, usize kN>(std::span<T, kN> values) {
                 util::MultiArray<T, kPackSize, kPackGrouping> tmp;
 
                 for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
