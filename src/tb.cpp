@@ -58,7 +58,7 @@ namespace stormphrax::tb {
 
             const auto from = static_cast<Square>(PYRRHIC_MOVE_FROM(tbMove));
             const auto to = static_cast<Square>(PYRRHIC_MOVE_TO(tbMove));
-            const auto promo = kPromoPieces[PYRRHIC_MOVE_FLAGS(tbMove) & 0x3];
+            const auto promo = kPromoPieces[PYRRHIC_MOVE_FLAGS(tbMove) & 0x7];
 
             if (PYRRHIC_MOVE_IS_ENPASS(tbMove)) {
                 return Move::enPassant(from, to);
