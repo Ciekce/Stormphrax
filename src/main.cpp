@@ -40,7 +40,7 @@ i32 main(i32 argc, const char* argv[]) {
     eval::loadDefaultNetwork();
 
     if (argc > 1) {
-        const std::string mode{argv[1]};
+        const std::string_view mode{argv[1]};
 
         if (mode == "bench") {
             search::Searcher searcher{bench::kDefaultBenchTtSize};
@@ -62,9 +62,9 @@ i32 main(i32 argc, const char* argv[]) {
 
             bool dfrc = false;
 
-            if (std::string{argv[3]} == "dfrc") {
+            if (std::string_view{argv[3]} == "dfrc") {
                 dfrc = true;
-            } else if (std::string{argv[3]} != "standard") {
+            } else if (std::string_view{argv[3]} != "standard") {
                 eprintln("invalid variant {}", argv[3]);
                 printUsage();
                 return 1;
@@ -77,9 +77,9 @@ i32 main(i32 argc, const char* argv[]) {
                 return 1;
             }
 
-            std::optional<std::string> tbPath{};
+            std::optional<std::string_view> tbPath{};
             if (argc > 6) {
-                tbPath = std::string{argv[6]};
+                tbPath = std::string_view{argv[6]};
             }
 
             return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), tbPath);

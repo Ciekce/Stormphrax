@@ -23,7 +23,6 @@
 #include <functional>
 #include <limits>
 #include <optional>
-#include <string>
 #include <string_view>
 
 namespace stormphrax::datagen {
@@ -33,6 +32,6 @@ namespace stormphrax::datagen {
         bool dfrc,
         std::string_view output,
         i32 threads,
-        std::optional<std::string> tbPath
+        std::optional<std::string_view> tbPath
     );
 }
