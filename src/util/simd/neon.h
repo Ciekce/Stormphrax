@@ -268,7 +268,7 @@ namespace stormphrax::util::simd {
         }
 
         SP_ALWAYS_INLINE_NDEBUG inline u32 nonzeroMaskU8(VectorU8 v) {
-            alignas(kAlignment) static constexpr std::array<u32, 4> kMask = { 1, 2, 4, 8 };
+            alignas(kAlignment) static constexpr std::array<u32, 4> kMask = {1, 2, 4, 8};
             return vaddvq_u32(vandq_u32(vtstq_u32(v, v), vld1q_u32(kMask.data())));
         }
 
