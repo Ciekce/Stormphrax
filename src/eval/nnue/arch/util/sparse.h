@@ -55,6 +55,8 @@ namespace stormphrax::eval::nnue::arch::sparse {
                 m_base = add(m_base, set1(8));
                 m_count += std::popcount(byte);
             }
+
+            assert(m_count <= m_indices.size());
         }
 
         [[nodiscard]] inline usize count() const {
@@ -88,7 +90,7 @@ namespace stormphrax::eval::nnue::arch::sparse {
         static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(i8);
 
         static constexpr u32 kChunks = kL1Size / kI8ChunkSizeI32;
-        static constexpr u32 kChunkSize = std::max<u32>(util::simd::kChunkSize<i32>, 8) * 2;
+        static constexpr u32 kChunkSize = util::simd::kChunkSize<i32> * 2;
         static constexpr u32 kOutputsPerChunk = kChunkSize / 8;
 
 #if SP_HAS_NEON
