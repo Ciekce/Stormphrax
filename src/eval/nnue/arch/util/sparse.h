@@ -104,11 +104,11 @@ namespace stormphrax::eval::nnue::arch::sparse {
 
         SP_ALWAYS_INLINE_NDEBUG static Vector128I16 load(const void* ptr) {
             assert(util::isAligned<kAlignment>(ptr));
-            return vld1q_u16(reinterpret_cast<const i16*>(ptr));
+            return vld1q_u16(reinterpret_cast<const u16*>(ptr));
         }
 
         SP_ALWAYS_INLINE_NDEBUG static void ustore(void* ptr, Vector128I16 v) {
-            return vst1q_u16(reinterpret_cast<i16*>(ptr), v);
+            return vst1q_u16(reinterpret_cast<u16*>(ptr), v);
         }
 
         SP_ALWAYS_INLINE_NDEBUG static Vector128I16 add(Vector128I16 a, Vector128I16 b) {
