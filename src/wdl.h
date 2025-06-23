@@ -28,7 +28,7 @@
 namespace stormphrax::wdl {
     // Only used for unnormalisation, as a kind of best effort attempt
     // Normalisation goes through the wdl model so as to be independent of material
-    constexpr Score kMaterial58NormalizationK = 259;
+    constexpr Score kMaterial58NormalizationK = 276;
 
     [[nodiscard]] std::pair<f64, f64> wdlParams(i32 material);
     [[nodiscard]] std::pair<i32, i32> wdlModel(Score povScore, i32 material); // [win, loss]
