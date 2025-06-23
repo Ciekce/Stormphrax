@@ -47,7 +47,7 @@ namespace stormphrax::eval::nnue::arch::sparse {
             const auto mask =
                 (util::simd::nonzeroMask<u8>(b) << util::simd::kChunkSize<i32>) | util::simd::nonzeroMask<u8>(a);
 
-            for (u32 output = 0; output < kSparseOutputsPerChunk; ++output) {
+            for (u32 output = 0; output < kOutputsPerChunk; ++output) {
                 const auto byte = (mask >> (output * 8)) & 0xFF;
                 const auto nonzero = load(&kNonZeroIndices[byte]);
                 const auto indices = add(m_base, nonzero);
@@ -87,9 +87,9 @@ namespace stormphrax::eval::nnue::arch::sparse {
 
         static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(i8);
 
-        static constexpr u32 kSparseChunks = kL1Size / kI8ChunkSizeI32;
-        static constexpr u32 kSparseChunkSize = std::max<u32>(util::simd::kChunkSize<i32>, 8) * 2;
-        static constexpr u32 kSparseOutputsPerChunk = kSparseChunkSize / 8;
+        static constexpr u32 kChunks = kL1Size / kI8ChunkSizeI32;
+        static constexpr u32 kChunkSize = std::max<u32>(util::simd::kChunkSize<i32>, 8) * 2;
+        static constexpr u32 kOutputsPerChunk = kChunkSize / 8;
 
 #if SP_HAS_NEON
         using Vector128I16 = uint16x8_t;
@@ -98,7 +98,7 @@ namespace stormphrax::eval::nnue::arch::sparse {
             return vdupq_n_u16(0);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 set1(i16 v) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 set1(u16 v) {
             return vdupq_n_u16(v);
         }
 
@@ -139,7 +139,7 @@ namespace stormphrax::eval::nnue::arch::sparse {
         }
 #endif
 
-        util::simd::Array<u16, kSparseChunks> m_indices;
+        util::simd::Array<u16, kChunks> m_indices;
 
         Vector128I16 m_base = zero();
         usize m_count = 0;
