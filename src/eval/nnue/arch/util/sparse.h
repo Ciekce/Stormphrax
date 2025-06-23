@@ -92,56 +92,56 @@ namespace stormphrax::eval::nnue::arch::sparse {
         static constexpr u32 kOutputsPerChunk = kChunkSize / 8;
 
 #if SP_HAS_NEON
-        using Vector128I16 = uint16x8_t;
+        using Vector128U16 = uint16x8_t;
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 zero() {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 zero() {
             return vdupq_n_u16(0);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 set1(u16 v) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 set1(u16 v) {
             return vdupq_n_u16(v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 load(const void* ptr) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 load(const void* ptr) {
             assert(util::isAligned<kAlignment>(ptr));
             return vld1q_u16(reinterpret_cast<const u16*>(ptr));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static void ustore(void* ptr, Vector128I16 v) {
+        SP_ALWAYS_INLINE_NDEBUG static void ustore(void* ptr, Vector128U16 v) {
             return vst1q_u16(reinterpret_cast<u16*>(ptr), v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 add(Vector128I16 a, Vector128I16 b) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 add(Vector128U16 a, Vector128U16 b) {
             return vaddq_u16(a, b);
         }
 #else
-        using Vector128I16 = __m128i;
+        using Vector128U16 = __m128i;
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 zero() {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 zero() {
             return _mm_setzero_si128();
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 set1(i16 v) {
-            return _mm_set1_epi16(v);
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 set1(u16 v) {
+            return _mm_set1_epi16(static_cast<i16>(v));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 load(const void* ptr) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 load(const void* ptr) {
             assert(util::isAligned<kAlignment>(ptr));
             return _mm_load_si128(reinterpret_cast<const __m128i*>(ptr));
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static void ustore(void* ptr, Vector128I16 v) {
+        SP_ALWAYS_INLINE_NDEBUG static void ustore(void* ptr, Vector128U16 v) {
             _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr), v);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG static Vector128I16 add(Vector128I16 a, Vector128I16 b) {
+        SP_ALWAYS_INLINE_NDEBUG static Vector128U16 add(Vector128U16 a, Vector128U16 b) {
             return _mm_add_epi16(a, b);
         }
 #endif
 
         util::simd::Array<u16, kChunks> m_indices;
 
-        Vector128I16 m_base = zero();
+        Vector128U16 m_base = zero();
         usize m_count = 0;
     };
 } // namespace stormphrax::eval::nnue::arch::sparse
