@@ -20,6 +20,11 @@
 
 #include <array>
 
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+#include <fstream>
+#include <fmt/ostream.h>
+#endif
+
 #include "position/position.h"
 #include "stats.h"
 
@@ -120,5 +125,22 @@ namespace stormphrax::bench {
         println("{} nodes {} nps", nodes, static_cast<usize>(static_cast<f64>(nodes) / time));
 
         stats::print();
+
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+        std::ofstream stream{"activations.txt", std::ios::binary};
+
+        bool first = true;
+        for (const auto count : eval::nnue::arch::sparse::g_activationCounts) {
+            if (!first) {
+                fmt::print(stream, ", ");
+            }
+            fmt::print(stream, "{}", count);
+            first = false;
+        }
+
+        fmt::println(stream, "");
+
+        println("Wrote FT activation counts to activations.txt");
+#endif
     }
 } // namespace stormphrax::bench

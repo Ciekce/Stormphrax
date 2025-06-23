@@ -26,7 +26,20 @@
 #include "../../../../util/multi_array.h"
 #include "../../../../util/simd.h"
 
+#define SP_SPARSE_BENCH_FT_SIZE 0
+
 namespace stormphrax::eval::nnue::arch::sparse {
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+    inline std::array<usize, SP_SPARSE_BENCH_FT_SIZE / 2> g_activationCounts{};
+    inline void trackActivations(std::span<const u8, SP_SPARSE_BENCH_FT_SIZE> ftActivations) {
+        for (usize i = 0; i < SP_SPARSE_BENCH_FT_SIZE; ++i) {
+            if (ftActivations[i] != 0) {
+                ++g_activationCounts[i % (SP_SPARSE_BENCH_FT_SIZE / 2)];
+            }
+        }
+    }
+#endif
+
     template <u32 kL1Size>
     class SparseContext {
     public:

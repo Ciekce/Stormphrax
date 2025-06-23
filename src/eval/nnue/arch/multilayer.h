@@ -411,6 +411,10 @@ namespace stormphrax::eval::nnue::arch {
             propagateL2(bucket, l1Out, l2Out);
             propagateL3(bucket, l2Out, l3Out);
 
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+            sparse::trackActivations(ftOut);
+#endif
+
             outputs[0] = l3Out[0] * kScale / (kQ * kQ * kQ);
         }
 
