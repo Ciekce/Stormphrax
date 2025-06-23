@@ -290,8 +290,6 @@ namespace stormphrax {
             if (type == "startpos") {
                 m_pos = Position::starting();
                 m_keyHistory.clear();
-
-                ++next;
             } else if (type == "fen") {
                 const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
 
@@ -326,10 +324,10 @@ namespace stormphrax {
                     return;
                 }
 
-                const auto index = util::tryParse<u32>(args[1]);
+                const auto index = util::tryParse<u32>(args[0]);
 
                 if (!index) {
-                    eprintln("Invalid {} index {}", dfrc ? "DFRC" : "FRC", args[1]);
+                    eprintln("Invalid {} index {}", dfrc ? "DFRC" : "FRC", args[0]);
                     return;
                 }
 
