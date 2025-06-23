@@ -170,9 +170,8 @@ namespace stormphrax::search {
     void Searcher::stop() {
         m_stop.store(true, std::memory_order::relaxed);
 
-        // safe, always runs from uci thread
+        std::unique_lock lock{m_stopMutex};
         if (m_runningThreads.load() > 0) {
-            std::unique_lock lock{m_stopMutex};
             m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order::seq_cst) == 0; });
         }
     }
@@ -426,8 +425,11 @@ namespace stormphrax::search {
         }
 
         const auto waitForThreads = [&] {
-            --m_runningThreads;
-            m_stopSignal.notify_all();
+            {
+                const std::unique_lock lock{m_stopMutex};
+                --m_runningThreads;
+                m_stopSignal.notify_all();
+            }
 
             m_searchEndBarrier.arriveAndWait();
         };
