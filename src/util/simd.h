@@ -310,6 +310,13 @@ namespace stormphrax::util::simd {
         return impl::dpbusdI32(sum, u, i);
     }
 
+    template <typename T>
+    SP_ALWAYS_INLINE_NDEBUG inline auto nonzeroMask(Vector<T> v) = delete;
+    template <>
+    SP_ALWAYS_INLINE_NDEBUG inline auto nonzeroMask<u8>(Vector<u8> v) {
+        return impl::nonzeroMaskU8(v);
+    }
+
 #undef SP_SIMD_OP_0
 #undef SP_SIMD_OP_1_VALUE
 #undef SP_SIMD_OP_2_VECTORS

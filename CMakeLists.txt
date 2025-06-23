@@ -65,7 +65,7 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/util/simd/neon.h src/util/align.h src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h
 	src/eval/nnue/io_impl.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
 	src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp
-	src/3rdparty/fmt/src/format.cc)
+	src/3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h

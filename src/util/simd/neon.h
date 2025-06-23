@@ -267,6 +267,11 @@ namespace stormphrax::util::simd {
     #endif
         }
 
+        SP_ALWAYS_INLINE_NDEBUG inline u32 nonzeroMaskU8(VectorU8 v) {
+            alignas(kAlignment) static constexpr std::array<u32, 4> kMask = {1, 2, 4, 8};
+            return vaddvq_u32(vandq_u32(vtstq_u32(v, v), vld1q_u32(kMask.data())));
+        }
+
         // Depends on addI32
         SP_ALWAYS_INLINE_NDEBUG inline VectorI32 mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) {
             const auto products = mulAddAdjI16(a, b);

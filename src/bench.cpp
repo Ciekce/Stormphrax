@@ -20,6 +20,11 @@
 
 #include <array>
 
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+    #include <fmt/ostream.h>
+    #include <fstream>
+#endif
+
 #include "position/position.h"
 #include "stats.h"
 
@@ -79,7 +84,7 @@ namespace stormphrax::bench {
             "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
         };
 
-        static constexpr std::array kFrcFens = std::array {
+        static constexpr std::array kFrcFens = std::array{
             // from SF
             "bb1n1rkr/ppp1Q1pp/3n1p2/3p4/3P4/6Pq/PPP1PP1P/BB1NNRKR w HFhf - 0 5",
             "nqbnrkrb/pppppppp/8/8/8/8/PPPPPPPP/NQBNRKRB w GEge - 0 1",
@@ -120,5 +125,22 @@ namespace stormphrax::bench {
         println("{} nodes {} nps", nodes, static_cast<usize>(static_cast<f64>(nodes) / time));
 
         stats::print();
+
+#if SP_SPARSE_BENCH_FT_SIZE > 0
+        std::ofstream stream{"activations.txt", std::ios::binary};
+
+        bool first = true;
+        for (const auto count : eval::nnue::arch::sparse::g_activationCounts) {
+            if (!first) {
+                fmt::print(stream, ", ");
+            }
+            fmt::print(stream, "{}", count);
+            first = false;
+        }
+
+        fmt::println(stream, "");
+
+        println("Wrote FT activation counts to activations.txt");
+#endif
     }
 } // namespace stormphrax::bench

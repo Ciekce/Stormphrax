@@ -270,6 +270,11 @@ namespace stormphrax::util::simd {
     #endif
         }
 
+        SP_ALWAYS_INLINE_NDEBUG inline u32 nonzeroMaskU8(VectorU8 v) {
+            const auto nz = _mm256_cmpgt_epi32(v, _mm256_setzero_si256());
+            return _mm256_movemask_ps(_mm256_castsi256_ps(nz));
+        }
+
         // Depends on addI32
         SP_ALWAYS_INLINE_NDEBUG inline VectorI32 mulAddAdjAccI16(VectorI32 sum, VectorI16 a, VectorI16 b) {
     #if SP_HAS_VNNI256
