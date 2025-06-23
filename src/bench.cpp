@@ -84,7 +84,7 @@ namespace stormphrax::bench {
             "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
         };
 
-        static constexpr std::array kFrcFens = std::array{
+        static constexpr std::array kFrcFens = {
             // from SF
             "bb1n1rkr/ppp1Q1pp/3n1p2/3p4/3P4/6Pq/PPP1PP1P/BB1NNRKR w HFhf - 0 5",
             "nqbnrkrb/pppppppp/8/8/8/8/PPPPPPPP/NQBNRKRB w GEge - 0 1",
