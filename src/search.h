@@ -99,6 +99,16 @@ namespace stormphrax::search {
         StaticVector<Move, 32> failLowNoisies{};
     };
 
+    struct RootMove {
+        Score score{-kScoreInf};
+
+        bool upperbound{false};
+        bool lowerbound{false};
+
+        i32 seldepth{};
+        PvList pv{};
+    };
+
     template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
@@ -140,9 +150,10 @@ namespace stormphrax::search {
 
         i32 minNmpPly{};
 
-        PvList rootPv{};
-
         eval::NnueState nnueState{};
+
+        u32 pvIdx{};
+        std::vector<RootMove> rootMoves{};
 
         std::vector<SearchStackEntry> stack{};
         std::vector<MoveStackEntry> moveStack{};
@@ -200,6 +211,23 @@ namespace stormphrax::search {
 
         inline void clearContMove(i32 ply) {
             contMoves[ply] = {Piece::kNone, Square::kNone};
+        }
+
+        [[nodiscard]] inline RootMove* findRootMove(Move move) {
+            for (u32 idx = pvIdx; idx < rootMoves.size(); ++idx) {
+                auto& rootMove = rootMoves[idx];
+                assert(rootMove.pv.length > 0);
+
+                if (move == rootMove.pv.moves[0]) {
+                    return &rootMove;
+                }
+            }
+
+            return nullptr;
+        }
+
+        [[nodiscard]] inline bool isLegalRootMove(Move move) {
+            return findRootMove(move) != nullptr;
         }
     };
 
@@ -303,7 +331,8 @@ namespace stormphrax::search {
         bool m_infinite{};
         i32 m_maxDepth{kMaxDepth};
 
-        MoveList m_rootMoves{};
+        MoveList m_rootMoveList{};
+        u32 m_multiPv{};
 
         Score m_minRootScore{};
         Score m_maxRootScore{};
@@ -313,7 +342,7 @@ namespace stormphrax::search {
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        RootStatus initRootMoves(const Position& pos);
+        RootStatus initRootMoveList(const Position& pos);
 
         void stopThreads();
 
@@ -348,10 +377,6 @@ namespace stormphrax::search {
             return m_startTime.elapsed();
         }
 
-        [[nodiscard]] inline bool isLegalRootMove(Move move) const {
-            return std::ranges::find(m_rootMoves, move) != m_rootMoves.end();
-        }
-
         Score searchRoot(ThreadData& thread, bool actualSearch);
 
         template <bool kPvNode = false, bool kRootNode = false>
@@ -383,16 +408,9 @@ namespace stormphrax::search {
         template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        void report(
-            const ThreadData& mainThread,
-            const PvList& pv,
-            i32 depth,
-            f64 time,
-            Score score,
-            Score alpha = -kScoreInf,
-            Score beta = kScoreInf
-        );
+        void reportSingle(const ThreadData& mainThread, u32 pvIdx, const RootMove& move, i32 depth, f64 time);
 
-        void finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score);
+        void report(const ThreadData& mainThread, const RootMove& pvMove, i32 depth, f64 time);
+        void finalReport(const ThreadData& mainThread, const RootMove& pvMove, i32 depthCompleted, f64 time);
     };
 } // namespace stormphrax::search
