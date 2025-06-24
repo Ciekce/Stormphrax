@@ -28,6 +28,8 @@ namespace stormphrax {
         constexpr u32 kDefaultThreadCount = 1;
         constexpr auto kThreadCountRange = util::Range<u32>{1, 2048};
 
+        constexpr auto kMultiPvRange = util::Range<u32>{1, 256};
+
         constexpr i32 kDefaultNormalizedContempt = 0;
 
         struct GlobalOptions {
@@ -36,6 +38,8 @@ namespace stormphrax {
             bool chess960{false};
             bool showWdl{true};
             bool showCurrMove{false};
+
+            u32 multiPv{1};
 
             bool softNodes{false};
             i32 softNodeHardLimitMultiplier{1678};

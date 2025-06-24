@@ -207,6 +207,12 @@ namespace stormphrax {
                 opts::kThreadCountRange.max()
             );
             println(
+                "option name MultiPV type spin default {} min {} max {}",
+                defaultOpts.multiPv,
+                opts::kMultiPvRange.min(),
+                opts::kMultiPvRange.max()
+            );
+            println(
                 "option name Contempt type spin default {} min {} max {}",
                 opts::kDefaultNormalizedContempt,
                 kContemptRange.min(),
@@ -545,6 +551,11 @@ namespace stormphrax {
 
         //TODO refactor
         void UciHandler::handleSetoption(std::span<const std::string_view> args) {
+            if (m_searcher.searching()) {
+                eprintln("still searching");
+                return;
+            }
+
             usize i = 0;
 
             for (; i < args.size() - 1 && args[i] != "name"; ++i) {
@@ -597,14 +608,16 @@ namespace stormphrax {
 
                     m_searcher.newGame();
                 } else if (name == "threads") {
-                    if (m_searcher.searching()) {
-                        eprintln("still searching");
-                    }
-
                     if (!value.empty()) {
                         if (const auto newThreads = util::tryParse<u32>(value)) {
                             opts::mutableOpts().threads = *newThreads;
                             m_searcher.setThreads(opts::kThreadCountRange.clamp(*newThreads));
+                        }
+                    }
+                } else if (name == "multipv") {
+                    if (!value.empty()) {
+                        if (const auto newMultiPv = util::tryParse<i32>(value)) {
+                            opts::mutableOpts().multiPv = opts::kMultiPvRange.clamp(*newMultiPv);
                         }
                     }
                 } else if (name == "contempt") {
@@ -658,12 +671,7 @@ namespace stormphrax {
                         }
                     }
                 } else if (name == "syzygypath") {
-                    if (m_searcher.searching()) {
-                        eprintln("still searching");
-                    }
-
                     m_tbInitialized = true;
-
                     opts::mutableOpts().syzygyEnabled = tb::init(value) == tb::InitStatus::kSuccess;
                 } else if (name == "syzygyprobedepth") {
                     if (!value.empty()) {
@@ -680,10 +688,6 @@ namespace stormphrax {
                         }
                     }
                 } else if (name == "evalfile") {
-                    if (m_searcher.searching()) {
-                        eprintln("still searching");
-                    }
-
                     if (!value.empty()) {
                         if (value == "<internal>") {
                             eval::loadDefaultNetwork();

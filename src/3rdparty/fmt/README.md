@@ -477,7 +477,7 @@ incorrectly and we\'ll make it right.
 
 # Security Policy
 
-To report a security issue, please disclose it at [security
+To reportSingle a security issue, please disclose it at [security
 advisory](https://github.com/fmtlib/fmt/security/advisories/new).
 
 This project is maintained by a team of volunteers on a

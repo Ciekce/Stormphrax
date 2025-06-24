@@ -152,6 +152,7 @@ namespace stormphrax::search {
 
         eval::NnueState nnueState{};
 
+        u32 pvIdx{};
         std::vector<RootMove> rootMoves{};
 
         std::vector<SearchStackEntry> stack{};
@@ -213,14 +214,20 @@ namespace stormphrax::search {
         }
 
         [[nodiscard]] inline RootMove* findRootMove(Move move) {
-            for (auto& rootMove : rootMoves) {
+            for (u32 idx = pvIdx; idx < rootMoves.size(); ++idx) {
+                auto& rootMove = rootMoves[idx];
                 assert(rootMove.pv.length > 0);
+
                 if (move == rootMove.pv.moves[0]) {
                     return &rootMove;
                 }
             }
 
             return nullptr;
+        }
+
+        [[nodiscard]] inline bool isLegalRootMove(Move move) {
+            return findRootMove(move) != nullptr;
         }
     };
 
@@ -325,6 +332,7 @@ namespace stormphrax::search {
         i32 m_maxDepth{kMaxDepth};
 
         MoveList m_rootMoveList{};
+        u32 m_multiPv{};
 
         Score m_minRootScore{};
         Score m_maxRootScore{};
@@ -369,10 +377,6 @@ namespace stormphrax::search {
             return m_startTime.elapsed();
         }
 
-        [[nodiscard]] inline bool isLegalRootMove(Move move) const {
-            return std::ranges::find(m_rootMoveList, move) != m_rootMoveList.end();
-        }
-
         Score searchRoot(ThreadData& thread, bool actualSearch);
 
         template <bool kPvNode = false, bool kRootNode = false>
@@ -404,7 +408,9 @@ namespace stormphrax::search {
         template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        void report(const ThreadData& mainThread, const RootMove& move, i32 depth, f64 time);
-        void finalReport(const ThreadData& mainThread, const RootMove& move, i32 depthCompleted, f64 time);
+        void reportSingle(const ThreadData& mainThread, u32 pvIdx, const RootMove& move, i32 depth, f64 time);
+
+        void report(const ThreadData& mainThread, const RootMove& pvMove, i32 depth, f64 time);
+        void finalReport(const ThreadData& mainThread, const RootMove& pvMove, i32 depthCompleted, f64 time);
     };
 } // namespace stormphrax::search
