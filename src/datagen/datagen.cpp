@@ -241,7 +241,7 @@ namespace stormphrax::datagen {
                     const auto [score, normScore] = searcher.runDatagenSearch(*thread);
                     thread->search = search::SearchData{};
 
-                    const auto move = thread->rootPv.moves[0];
+                    const auto move = thread->rootMoves[0].pv.moves[0];
 
                     if (!move) {
                         if (pos.isCheck()) {

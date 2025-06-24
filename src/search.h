@@ -99,6 +99,16 @@ namespace stormphrax::search {
         StaticVector<Move, 32> failLowNoisies{};
     };
 
+    struct RootMove {
+        Score score{-kScoreInf};
+
+        bool upperbound{false};
+        bool lowerbound{false};
+
+        i32 seldepth{};
+        PvList pv{};
+    };
+
     template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
@@ -140,9 +150,9 @@ namespace stormphrax::search {
 
         i32 minNmpPly{};
 
-        PvList rootPv{};
-
         eval::NnueState nnueState{};
+
+        std::vector<RootMove> rootMoves{};
 
         std::vector<SearchStackEntry> stack{};
         std::vector<MoveStackEntry> moveStack{};
@@ -200,6 +210,17 @@ namespace stormphrax::search {
 
         inline void clearContMove(i32 ply) {
             contMoves[ply] = {Piece::kNone, Square::kNone};
+        }
+
+        [[nodiscard]] inline RootMove* findRootMove(Move move) {
+            for (auto& rootMove : rootMoves) {
+                assert(rootMove.pv.length > 0);
+                if (move == rootMove.pv.moves[0]) {
+                    return &rootMove;
+                }
+            }
+
+            return nullptr;
         }
     };
 
@@ -303,7 +324,7 @@ namespace stormphrax::search {
         bool m_infinite{};
         i32 m_maxDepth{kMaxDepth};
 
-        MoveList m_rootMoves{};
+        MoveList m_rootMoveList{};
 
         Score m_minRootScore{};
         Score m_maxRootScore{};
@@ -313,7 +334,7 @@ namespace stormphrax::search {
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        RootStatus initRootMoves(const Position& pos);
+        RootStatus initRootMoveList(const Position& pos);
 
         void stopThreads();
 
@@ -349,7 +370,7 @@ namespace stormphrax::search {
         }
 
         [[nodiscard]] inline bool isLegalRootMove(Move move) const {
-            return std::ranges::find(m_rootMoves, move) != m_rootMoves.end();
+            return std::ranges::find(m_rootMoveList, move) != m_rootMoveList.end();
         }
 
         Score searchRoot(ThreadData& thread, bool actualSearch);
@@ -383,16 +404,7 @@ namespace stormphrax::search {
         template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        void report(
-            const ThreadData& mainThread,
-            const PvList& pv,
-            i32 depth,
-            f64 time,
-            Score score,
-            Score alpha = -kScoreInf,
-            Score beta = kScoreInf
-        );
-
-        void finalReport(const ThreadData& mainThread, const PvList& pv, i32 depthCompleted, f64 time, Score score);
+        void report(const ThreadData& mainThread, const RootMove& move, i32 depth, f64 time);
+        void finalReport(const ThreadData& mainThread, const RootMove& move, i32 depthCompleted, f64 time);
     };
 } // namespace stormphrax::search
