@@ -106,11 +106,6 @@ ifneq ($(findstring __BMI2__, $(ARCH_DEFINES)),)
     endif
 endif
 
-# AVX-512 as a whole is slower on zen 4
-ifneq ($(findstring __znver4, $(ARCH_DEFINES)),)
-    CXXFLAGS_NATIVE += -DSP_DISABLE_AVX512
-endif
-
 ifneq ($(findstring __ARM_ARCH, $(ARCH_DEFINES)),)
     ifeq ($(DISABLE_NEON_DOTPROD),on)
         CXXFLAGS_NATIVE += -DSP_DISABLE_NEON_DOTPROD
