@@ -39,6 +39,7 @@ CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -O3 -flto -DNDEBUG -DSP_NETWOR
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
 CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver5 -mtune=znver5
+CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=skylake-avx512 -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
 
@@ -134,7 +135,7 @@ define build
 endef
 endif
 
-release: vnni512 avx2-bmi2 avx2
+release: vnni512 avx512 avx2-bmi2 avx2
 all: native release
 
 .PHONY: all
@@ -159,6 +160,9 @@ tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 
 vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,VNNI512,vnni512)
+
+avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+	$(call build,AVX512,avx512)
 
 avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX2_BMI2,avx2-bmi2)

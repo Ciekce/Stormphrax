@@ -63,7 +63,7 @@ In Chess960, it is the strongest in the UK, and the 7th strongest in the world.
 - NNUE
   - (704x16hm->1792)x2->(16x2->32->1)x8 architecture
   - trained from zero knowledge with reinforcement learning from a randomly-initialised network
-- BMI2 attacks in the `bmi2` build and up, otherwise fancy black magic
+- BMI2 attacks in the `avx2-bmi2` build and up, otherwise fancy black magic
   - `pext`/`pdep` for rooks
   - `pext` for bishops
 - lazy SMP
@@ -93,6 +93,7 @@ In Chess960, it is the strongest in the UK, and the 7th strongest in the world.
 
 ## Builds
 `vnni512`: requires BMI2, AVX-512 and VNNI (Zen 4/Cascade Lake-SP/Rocket Lake and up)  
+`avx512`: requires BMI2 and AVX-512 (primarily for Skylake-X and some Zen 4 machines)  
 `avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep` (i.e. no Bulldozer, Piledriver, Steamroller, Excavator, Zen 1, Zen+ or Zen 2)  
 `avx2`: requires BMI and AVX2 - primarily useful for pre-Zen 3 AMD CPUs back to Excavator
 
@@ -110,11 +111,11 @@ Requires Make and a competent C++20 compiler that supports LTO. GCC is not curre
 ```
 - replace `<COMPILER>` with your preferred compiler - for example, `clang++` or `icpx`
   - if not specified, the compiler defaults to `clang++`
-- replace `<BUILD>` with the binary you wish to build - `native`/`vnni512`/`avx2-bmi2`/`avx2`
+- replace `<BUILD>` with the binary you wish to build - `native`/`vnni512`/`avx512`/`avx2-bmi2`/`avx2`
   - if not specified, the default build is `native`
 - if you wish, you can have Stormphrax include the current git commit hash in its UCI version string - pass `COMMIT_HASH=on`
 
-By default, the makefile builds binaries with profile-guided optimisation (PGO). To disable this, pass `PGO=off`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
+By default, the makefile builds binaries without profile-guided optimisation (PGO). To enable it, though I do not measure a speedup from it, pass `PGO=on`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
 
 ## Credit
 Stormphrax makes use of the following libraries:

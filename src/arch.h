@@ -54,6 +54,15 @@
     #define SP_HAS_POPCNT 1
     #define SP_HAS_NEON 0
     #define SP_HAS_NEON_DOTPROD 0
+#elif defined(SP_AVX512)
+    #define SP_HAS_BMI2 1
+    #define SP_HAS_VNNI512 0
+    #define SP_HAS_AVX512 1
+    #define SP_HAS_VNNI256 0
+    #define SP_HAS_AVX2 1
+    #define SP_HAS_POPCNT 1
+    #define SP_HAS_NEON 0
+    #define SP_HAS_NEON_DOTPROD 0
 #elif defined(SP_AVX2_BMI2)
     #define SP_HAS_BMI2 1
     #define SP_HAS_VNNI512 0
