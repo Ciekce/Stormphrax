@@ -160,15 +160,15 @@ namespace stormphrax {
 
         auto entry = *entryPtr;
 
+        if (move || entry.key != newKey) {
+            entry.move = move;
+        }
+
         // Roughly the SF replacement scheme
         if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age || depth + 4 + pv * 2 > entry.depth
             ))
         {
             return;
-        }
-
-        if (move || entry.key != newKey) {
-            entry.move = move;
         }
 
         entry.key = newKey;
