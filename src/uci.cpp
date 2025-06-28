@@ -103,6 +103,7 @@ namespace stormphrax {
             void handleSplitperft(std::span<const std::string_view> args);
             void handleBench(std::span<const std::string_view> args);
             void handleProbeWdl();
+            void handleWait();
 
             bool m_tbInitialized{false};
 
@@ -177,6 +178,8 @@ namespace stormphrax {
                     handleBench(args);
                 } else if (command == "probewdl") {
                     handleProbeWdl();
+                } else if (command == "wait") {
+                    handleWait();
                 }
             }
 
@@ -268,9 +271,10 @@ namespace stormphrax {
         void UciHandler::handleUcinewgame() {
             if (m_searcher.searching()) {
                 eprintln("still searching");
-            } else {
-                m_searcher.newGame();
+                return;
             }
+
+            m_searcher.newGame();
         }
 
         void UciHandler::handleIsready() {
@@ -372,181 +376,184 @@ namespace stormphrax {
         void UciHandler::handleGo(std::span<const std::string_view> args, Instant startTime) {
             if (m_searcher.searching()) {
                 eprintln("already searching");
-            } else {
-                u32 depth = kMaxDepth;
-                auto limiter = std::make_unique<limit::CompoundLimiter>();
+                return;
+            }
 
-                MoveList movesToSearch{};
+            u32 depth = kMaxDepth;
+            auto limiter = std::make_unique<limit::CompoundLimiter>();
 
-                bool infinite = false;
-                bool tournamentTime = false;
+            MoveList movesToSearch{};
 
-                i64 timeRemaining{};
-                i64 increment{};
-                i32 toGo{};
+            bool infinite = false;
+            bool tournamentTime = false;
 
-                for (usize i = 0; i < args.size(); ++i) {
-                    if (args[i] == "depth" && ++i < args.size()) {
-                        if (!util::tryParse<u32>(depth, args[i])) {
-                            eprintln("invalid depth {}", args[i]);
-                        }
-                        continue;
+            i64 timeRemaining{};
+            i64 increment{};
+            i32 toGo{};
+
+            for (usize i = 0; i < args.size(); ++i) {
+                if (args[i] == "depth" && ++i < args.size()) {
+                    if (!util::tryParse<u32>(depth, args[i])) {
+                        eprintln("invalid depth {}", args[i]);
                     }
+                    continue;
+                }
 
-                    if (args[i] == "infinite") {
-                        infinite = true;
-                        continue;
+                if (args[i] == "infinite") {
+                    infinite = true;
+                    continue;
+                }
+
+                if (args[i] == "nodes" && ++i < args.size()) {
+                    usize nodes{};
+                    if (!util::tryParse<usize>(nodes, args[i])) {
+                        eprintln("invalid node count {}", args[i]);
+                    } else {
+                        limiter->addLimiter<limit::NodeLimiter>(nodes);
                     }
+                } else if (args[i] == "movetime" && ++i < args.size()) {
+                    i64 time{};
+                    if (!util::tryParse<i64>(time, args[i])) {
+                        eprintln("invalid time {}", args[i]);
+                    } else {
+                        time = std::max<i64>(time, 1);
+                        limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
+                    }
+                } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
+                           && args[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
+                {
+                    tournamentTime = true;
 
-                    if (args[i] == "nodes" && ++i < args.size()) {
-                        usize nodes{};
-                        if (!util::tryParse<usize>(nodes, args[i])) {
-                            eprintln("invalid node count {}", args[i]);
-                        } else {
-                            limiter->addLimiter<limit::NodeLimiter>(nodes);
-                        }
-                    } else if (args[i] == "movetime" && ++i < args.size()) {
-                        i64 time{};
-                        if (!util::tryParse<i64>(time, args[i])) {
-                            eprintln("invalid time {}", args[i]);
-                        } else {
-                            time = std::max<i64>(time, 1);
-                            limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
-                        }
-                    } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
-                               && args[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
-                    {
-                        tournamentTime = true;
+                    i64 time{};
+                    if (!util::tryParse<i64>(time, args[i])) {
+                        eprintln("invalid time {}", args[i]);
+                    } else {
+                        time = std::max<i64>(time, 1);
+                        timeRemaining = static_cast<i64>(time);
+                    }
+                } else if ((args[i] == "binc" || args[i] == "winc") && ++i < args.size()
+                           && args[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
+                {
+                    tournamentTime = true;
 
-                        i64 time{};
-                        if (!util::tryParse<i64>(time, args[i])) {
-                            eprintln("invalid time {}", args[i]);
-                        } else {
-                            time = std::max<i64>(time, 1);
-                            timeRemaining = static_cast<i64>(time);
-                        }
-                    } else if ((args[i] == "binc" || args[i] == "winc") && ++i < args.size()
-                               && args[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
-                    {
-                        tournamentTime = true;
+                    i64 time{};
+                    if (!util::tryParse<i64>(time, args[i])) {
+                        eprintln("invalid time {}", args[i]);
+                    } else {
+                        time = std::max<i64>(time, 1);
+                        increment = static_cast<i64>(time);
+                    }
+                } else if (args[i] == "movestogo" && ++i < args.size()) {
+                    tournamentTime = true;
 
-                        i64 time{};
-                        if (!util::tryParse<i64>(time, args[i])) {
-                            eprintln("invalid time {}", args[i]);
-                        } else {
-                            time = std::max<i64>(time, 1);
-                            increment = static_cast<i64>(time);
-                        }
-                    } else if (args[i] == "movestogo" && ++i < args.size()) {
-                        tournamentTime = true;
+                    u32 moves{};
+                    if (!util::tryParse<u32>(moves, args[i])) {
+                        eprintln("invalid movestogo {}", args[i]);
+                    } else {
+                        moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
+                        toGo = static_cast<i32>(moves);
+                    }
+                } else if (args[i] == "searchmoves" && i + 1 < args.size()) {
+                    while (i + 1 < args.size()) {
+                        const auto& candidate = args[i + 1];
 
-                        u32 moves{};
-                        if (!util::tryParse<u32>(moves, args[i])) {
-                            eprintln("invalid movestogo {}", args[i]);
-                        } else {
-                            moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-                            toGo = static_cast<i32>(moves);
-                        }
-                    } else if (args[i] == "searchmoves" && i + 1 < args.size()) {
-                        while (i + 1 < args.size()) {
-                            const auto& candidate = args[i + 1];
+                        if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
+                            && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8' && candidate[2] >= 'a'
+                            && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
+                            && (candidate.length() < 5 || isValidPromotion(pieceTypeFromChar(candidate[4]))))
+                        {
+                            const auto move = m_pos.moveFromUci(candidate);
 
-                            if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
-                                && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8'
-                                && candidate[2] >= 'a' && candidate[2] <= 'h' && candidate[3] >= '1'
-                                && candidate[3] <= '8'
-                                && (candidate.length() < 5 || isValidPromotion(pieceTypeFromChar(candidate[4]))))
-                            {
-                                const auto move = m_pos.moveFromUci(candidate);
-
-                                if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                    if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
-                                        movesToSearch.push(move);
-                                    } else {
-                                        println("info string ignoring illegal move {}", candidate);
-                                    }
+                            if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
+                                if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
+                                    movesToSearch.push(move);
+                                } else {
+                                    println("info string ignoring illegal move {}", candidate);
                                 }
-
-                                ++i;
-                            } else {
-                                break;
                             }
-                        }
-                    }
-                }
 
-                if (!movesToSearch.empty()) {
-                    print("info string searching moves:");
-
-                    for (const auto move : movesToSearch) {
-                        println(" {}", move);
-                    }
-
-                    println();
-                }
-
-                if (depth == 0) {
-                    return;
-                } else if (depth > kMaxDepth) {
-                    depth = kMaxDepth;
-                }
-
-                if (tournamentTime) {
-                    if (toGo != 0) {
-                        if (g_opts.enableWeirdTcs) {
-                            println(
-                                "info string Warning: Stormphrax does not officially support cyclic (movestogo) time controls"
-                            );
+                            ++i;
                         } else {
-                            println(
-                                "info string Cyclic (movestogo) time controls not enabled, see the EnableWeirdTCs option"
-                            );
-                            println("bestmove 0000");
-                            return;
-                        }
-                    } else if (increment == 0) {
-                        if (g_opts.enableWeirdTcs) {
-                            println(
-                                "info string Warning: Stormphrax does not officially support sudden death (0 increment) time controls"
-                            );
-                        } else {
-                            println(
-                                "info string Sudden death (0 increment) time controls not enabled, see the EnableWeirdTCs option"
-                            );
-                            println("bestmove 0000");
-                            return;
+                            break;
                         }
                     }
                 }
+            }
 
-                if (tournamentTime && timeRemaining > 0) {
-                    limiter->addLimiter<limit::TimeManager>(
-                        startTime,
-                        static_cast<f64>(timeRemaining) / 1000.0,
-                        static_cast<f64>(increment) / 1000.0,
-                        toGo,
-                        static_cast<f64>(m_moveOverhead) / 1000.0
-                    );
+            if (!movesToSearch.empty()) {
+                print("info string searching moves:");
+
+                for (const auto move : movesToSearch) {
+                    println(" {}", move);
                 }
 
-                m_searcher.startSearch(
-                    m_pos,
-                    m_keyHistory,
+                println();
+            }
+
+            if (depth == 0) {
+                return;
+            }
+
+            if (depth > kMaxDepth) {
+                depth = kMaxDepth;
+            }
+
+            if (tournamentTime) {
+                if (toGo != 0) {
+                    if (g_opts.enableWeirdTcs) {
+                        println(
+                            "info string Warning: Stormphrax does not officially support cyclic (movestogo) time controls"
+                        );
+                    } else {
+                        println(
+                            "info string Cyclic (movestogo) time controls not enabled, see the EnableWeirdTCs option"
+                        );
+                        println("bestmove 0000");
+                        return;
+                    }
+                } else if (increment == 0) {
+                    if (g_opts.enableWeirdTcs) {
+                        println(
+                            "info string Warning: Stormphrax does not officially support sudden death (0 increment) time controls"
+                        );
+                    } else {
+                        println(
+                            "info string Sudden death (0 increment) time controls not enabled, see the EnableWeirdTCs option"
+                        );
+                        println("bestmove 0000");
+                        return;
+                    }
+                }
+            }
+
+            if (tournamentTime && timeRemaining > 0) {
+                limiter->addLimiter<limit::TimeManager>(
                     startTime,
-                    static_cast<i32>(depth),
-                    movesToSearch,
-                    std::move(limiter),
-                    infinite
+                    static_cast<f64>(timeRemaining) / 1000.0,
+                    static_cast<f64>(increment) / 1000.0,
+                    toGo,
+                    static_cast<f64>(m_moveOverhead) / 1000.0
                 );
             }
+
+            m_searcher.startSearch(
+                m_pos,
+                m_keyHistory,
+                startTime,
+                static_cast<i32>(depth),
+                movesToSearch,
+                std::move(limiter),
+                infinite
+            );
         }
 
         void UciHandler::handleStop() {
             if (!m_searcher.searching()) {
                 eprintln("not searching");
-            } else {
-                m_searcher.stop();
+                return;
             }
+
+            m_searcher.stop();
         }
 
         //TODO refactor
@@ -887,6 +894,10 @@ namespace stormphrax {
                     println("loss");
                     break;
             }
+        }
+
+        void UciHandler::handleWait() {
+            m_searcher.waitForStop();
         }
     } // namespace
 

@@ -278,6 +278,7 @@ namespace stormphrax::search {
         );
 
         void stop();
+        void waitForStop();
 
         // -> [move, unnormalised, normalised]
         std::pair<Score, Score> runDatagenSearch(ThreadData& thread);

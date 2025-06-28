@@ -171,7 +171,10 @@ namespace stormphrax::search {
 
     void Searcher::stop() {
         m_stop.store(true, std::memory_order::relaxed);
+        waitForStop();
+    }
 
+    void Searcher::waitForStop() {
         std::unique_lock lock{m_stopMutex};
         if (m_runningThreads.load() > 0) {
             m_stopSignal.wait(lock, [this] { return m_runningThreads.load(std::memory_order::seq_cst) == 0; });
