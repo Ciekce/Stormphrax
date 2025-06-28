@@ -16,12 +16,12 @@ a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained
 this project is a continuation of my HCE engine [Polaris]
 
 ## Strength
-At the time of writing, Stormphrax 6.0.0 is the second strongest standard chess engine in the UK (to [Viridithas]), and the strongest in England.  
-In Chess960, it is the strongest in the UK, and the 7th strongest in the world.
+At the time of writing, Stormphrax 7.0.0 is the strongest standard chess and Chess960 engine in the UK.  
+If this is no longer true, it is likely to have been overtaken by the excellent [Viridithas].
 
 |    Version    | [SP-CC UHO-Top15][spcc] | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
 |:-------------:|:-----------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-| [7.0.0][sp7]  |            -            |            -            |            -             |               -               |           -           |            -            |    -    |
+| [7.0.0][sp7]  |       3682 (11th)       |            -            |            -             |               -               |           -           |            -            |    -    |
 | [6.0.0][sp6]  |          3621           |          3558           |           3686           |             3966              |         3566          |          3529           |    -    |
 | [5.0.0][sp5]  |            -            |          3505           |           3629           |             3869              |         3501          |          3461           |    -    |
 | [4.1.0][sp41] |            -            |          3488           |           3592           |             3811              |           -           |          3432           |    -    |
