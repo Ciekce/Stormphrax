@@ -100,6 +100,7 @@ namespace stormphrax::search {
     };
 
     struct RootMove {
+        Score displayScore{-kScoreInf};
         Score score{-kScoreInf};
 
         bool upperbound{false};
@@ -228,6 +229,14 @@ namespace stormphrax::search {
 
         [[nodiscard]] inline bool isLegalRootMove(Move move) {
             return findRootMove(move) != nullptr;
+        }
+
+        [[nodiscard]] inline RootMove& pvMove() {
+            return rootMoves[0];
+        }
+
+        [[nodiscard]] inline const RootMove& pvMove() const {
+            return rootMoves[0];
         }
     };
 
@@ -409,9 +418,9 @@ namespace stormphrax::search {
         template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        void reportSingle(const ThreadData& mainThread, u32 pvIdx, const RootMove& move, i32 depth, f64 time);
+        void reportSingle(const ThreadData& mainThread, u32 pvIdx, i32 depth, f64 time);
 
-        void report(const ThreadData& mainThread, const RootMove& pvMove, i32 depth, f64 time);
-        void finalReport(const ThreadData& mainThread, const RootMove& pvMove, i32 depthCompleted, f64 time);
+        void report(const ThreadData& mainThread, i32 depth, f64 time);
+        void finalReport(const ThreadData& mainThread, i32 depthCompleted, f64 time);
     };
 } // namespace stormphrax::search
