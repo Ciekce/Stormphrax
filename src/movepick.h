@@ -390,7 +390,7 @@ namespace stormphrax {
             auto best = toU64(m_data.moves[m_idx].score) | (256 - m_idx);
             for (auto i = m_idx + 1; i < m_end; ++i) {
                 const auto curr = toU64(m_data.moves[i].score) | (256 - i);
-                best = std::max(best, cur);
+                best = std::max(best, curr);
             }
             const auto bestIdx = 256 - (best & 0xFFFFFFFF);
             if (bestIdx != m_idx) {
