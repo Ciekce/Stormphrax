@@ -381,17 +381,18 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline u32 findNext() {
-            auto toU64 = [](i32 s) -> u64 {
+            const auto toU64 = [](i32 s) {
                 i64 widened = s;
                 widened -= std::numeric_limits<i32>::min();
                 return static_cast<u64>(widened) << 32;
             };
-            u64 best = toU64(m_data.moves[m_idx].score) | 256 - m_idx;
+
+            auto best = toU64(m_data.moves[m_idx].score) | (256 - m_idx);
             for (auto i = m_idx + 1; i < m_end; ++i) {
-                const auto cur = toU64(m_data.moves[i].score) | (256 - i);
+                const auto curr = toU64(m_data.moves[i].score) | (256 - i);
                 best = std::max(best, cur);
             }
-            const auto bestIdx = 256 - (best & 0xffffffff);
+            const auto bestIdx = 256 - (best & 0xFFFFFFFF);
             if (bestIdx != m_idx) {
                 std::swap(m_data.moves[m_idx], m_data.moves[bestIdx]);
             }
