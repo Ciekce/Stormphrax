@@ -1335,11 +1335,10 @@ namespace stormphrax::search {
                 alpha = score;
                 bestMove = move;
 
-                ttFlag = TtFlag::kExact;
+                ttFlag = TtFlag::kLowerBound;
             }
 
             if (score >= beta) {
-                ttFlag = TtFlag::kLowerBound;
                 break;
             }
         }
