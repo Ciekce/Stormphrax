@@ -20,12 +20,13 @@
 
 #include "types.h"
 
+#include <limits>
+
 #include "history.h"
 #include "movegen.h"
 #include "see.h"
 #include "stats.h"
 #include "tunable.h"
-#include <limits>
 
 namespace stormphrax {
     struct KillerTable {
