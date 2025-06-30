@@ -20,6 +20,8 @@
 
 #include "types.h"
 
+#include <limits>
+
 #include "history.h"
 #include "movegen.h"
 #include "see.h"
@@ -380,18 +382,20 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline u32 findNext() {
-            auto best = m_idx;
-            auto bestScore = m_data.moves[m_idx].score;
+            const auto toU64 = [](i32 s) {
+                i64 widened = s;
+                widened -= std::numeric_limits<i32>::min();
+                return static_cast<u64>(widened) << 32;
+            };
 
+            auto best = toU64(m_data.moves[m_idx].score) | (256 - m_idx);
             for (auto i = m_idx + 1; i < m_end; ++i) {
-                if (m_data.moves[i].score > bestScore) {
-                    best = i;
-                    bestScore = m_data.moves[i].score;
-                }
+                const auto curr = toU64(m_data.moves[i].score) | (256 - i);
+                best = std::max(best, curr);
             }
-
-            if (best != m_idx) {
-                std::swap(m_data.moves[m_idx], m_data.moves[best]);
+            const auto bestIdx = 256 - (best & 0xFFFFFFFF);
+            if (bestIdx != m_idx) {
+                std::swap(m_data.moves[m_idx], m_data.moves[bestIdx]);
             }
 
             return m_idx++;
