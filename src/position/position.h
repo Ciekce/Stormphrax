@@ -43,6 +43,7 @@ namespace stormphrax {
         u64 blackNonPawns;
         u64 whiteNonPawns;
         u64 majors;
+        u64 minors;
 
         inline void clear() {
             all = 0;
@@ -50,6 +51,7 @@ namespace stormphrax {
             blackNonPawns = 0;
             whiteNonPawns = 0;
             majors = 0;
+            minors = 0;
         }
 
         inline void flipStm() {
@@ -71,6 +73,8 @@ namespace stormphrax {
 
             if (isMajor(piece)) {
                 majors ^= key;
+            } else if (isMinor(piece)) {
+                minors ^= key;
             }
         }
 
@@ -89,6 +93,8 @@ namespace stormphrax {
 
             if (isMajor(piece)) {
                 majors ^= key;
+            } else if (isMinor(piece)) {
+                minors ^= key;
             }
         }
 
@@ -189,6 +195,10 @@ namespace stormphrax {
 
         [[nodiscard]] inline u64 majorKey() const {
             return m_keys.majors;
+        }
+
+        [[nodiscard]] inline u64 minorKey() const {
+            return m_keys.minors;
         }
 
         [[nodiscard]] inline u64 roughKeyAfter(Move move) const {
@@ -581,7 +591,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 216);
+    static_assert(sizeof(Position) == 224);
 
     [[nodiscard]] Square squareFromString(std::string_view str);
 } // namespace stormphrax

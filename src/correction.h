@@ -38,6 +38,7 @@ namespace stormphrax {
             std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
             std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
             std::memset(&m_majorTable, 0, sizeof(m_majorTable));
+            std::memset(&m_minorTable, 0, sizeof(m_minorTable));
             std::memset(&m_contTable, 0, sizeof(m_contTable));
         }
 
@@ -57,6 +58,7 @@ namespace stormphrax {
             m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
             m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries].update(bonus);
             m_majorTable[stm][pos.majorKey() % kEntries].update(bonus);
+            m_minorTable[stm][pos.minorKey() % kEntries].update(bonus);
 
             if (ply >= 2) {
                 const auto [moving2, dst2] = moves[ply - 2];
@@ -90,6 +92,7 @@ namespace stormphrax {
             correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries];
             correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries];
             correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % kEntries];
+            correction += 128 * m_minorTable[stm][pos.minorKey() % kEntries];
 
             if (ply >= 2) {
                 const auto [moving2, dst2] = moves[ply - 2];
@@ -129,6 +132,7 @@ namespace stormphrax {
         util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_majorTable{};
+        util::MultiArray<Entry, 2, kEntries> m_minorTable{};
         util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
     };
 } // namespace stormphrax
