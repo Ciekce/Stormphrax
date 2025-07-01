@@ -210,10 +210,6 @@ namespace stormphrax::search {
             };
         }
 
-        inline void clearContMove(i32 ply) {
-            contMoves[ply] = {Piece::kNone, Square::kNone};
-        }
-
         [[nodiscard]] inline RootMove* findRootMove(Move move) {
             for (u32 idx = pvIdx; idx < rootMoves.size(); ++idx) {
                 auto& rootMove = rootMoves[idx];

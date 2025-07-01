@@ -1203,8 +1203,6 @@ namespace stormphrax::search {
             thread.search.updateSeldepth(ply + 1);
         }
 
-        thread.clearContMove(ply);
-
         if (ply >= kMaxDepth) {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
