@@ -63,9 +63,18 @@ namespace stormphrax {
                 const auto [moving1, dst1] = moves[ply - 1];
 
                 if (moving2 != Piece::kNone && moving1 != Piece::kNone) {
-                    m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
+                    m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
                                [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
                                    .update(bonus);
+                }
+
+                if (ply >= 3) {
+                    const auto [moving3, dst3] = moves[ply - 3];
+                    if (moving3 != Piece::kNone && moving1 != Piece::kNone) {
+                        m_contTable[stm][static_cast<i32>(moving3)][static_cast<i32>(dst3)]
+                                   [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
+                                       .update(bonus);
+                    }
                 }
             }
         }
@@ -92,13 +101,23 @@ namespace stormphrax {
             correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % kEntries];
 
             if (ply >= 2) {
-                const auto [moving2, dst2] = moves[ply - 2];
                 const auto [moving1, dst1] = moves[ply - 1];
+                const auto [moving2, dst2] = moves[ply - 2];
 
                 if (moving2 != Piece::kNone && moving1 != Piece::kNone) {
                     correction += contCorrhistWeight()
-                                * m_contTable[stm][static_cast<i32>(pieceType(moving2))][static_cast<i32>(dst2)]
+                                * m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
                                              [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                }
+
+                if (ply >= 3) {
+                    const auto [moving3, dst3] = moves[ply - 3];
+
+                    if (moving3 != Piece::kNone && moving1 != Piece::kNone) {
+                        correction += 128
+                                    * m_contTable[stm][static_cast<i32>(moving3)][static_cast<i32>(dst3)]
+                                                 [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                    }
                 }
             }
 
@@ -129,6 +148,6 @@ namespace stormphrax {
         util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_majorTable{};
-        util::MultiArray<Entry, 2, 6, 64, 6, 64> m_contTable{};
+        util::MultiArray<Entry, 2, 12, 64, 6, 64> m_contTable{};
     };
 } // namespace stormphrax
