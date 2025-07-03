@@ -689,6 +689,14 @@ namespace stormphrax::search {
             }
         }
 
+        if (!kRootNode && parent->move && !parent->noisy && parent->staticEval != kScoreNone
+            && curr.staticEval != kScoreNone)
+        {
+            const auto improvement = curr.staticEval + parent->staticEval - 20;
+            const auto bonus = std::clamp(-improvement * 4, -100, 100);
+            thread.history.updateMainQuietScore(parent->threats, parent->moving, parent->move, bonus);
+        }
+
         const bool improving = [&] {
             if (inCheck) {
                 return false;
@@ -825,6 +833,7 @@ namespace stormphrax::search {
             }
         }
 
+        curr.threats = pos.threats();
         thread.stack[ply + 1].killers.clear();
 
         moveStack.failLowQuiets.clear();

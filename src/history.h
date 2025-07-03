@@ -105,6 +105,11 @@ namespace stormphrax {
             return m_continuation[static_cast<i32>(moving)][static_cast<i32>(to)];
         }
 
+        inline void updateMainQuietScore(Bitboard threats, Piece moving, Move move, HistoryScore bonus) {
+            butterflyEntry(threats, move).update(bonus);
+            pieceToEntry(threats, moving, move).update(bonus);
+        }
+
         inline void updateConthist(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
@@ -125,8 +130,7 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update(bonus);
-            pieceToEntry(threats, moving, move).update(bonus);
+            updateMainQuietScore(threats, moving, move, bonus);
             updateConthist(continuations, ply, moving, move, bonus);
         }
 
