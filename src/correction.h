@@ -76,6 +76,15 @@ namespace stormphrax {
                                        .update(bonus);
                     }
                 }
+
+                if (ply >= 5) {
+                    const auto [moving5, dst5] = moves[ply - 5];
+                    if (moving5 != Piece::kNone && moving1 != Piece::kNone) {
+                        m_contTable[stm][static_cast<i32>(moving5)][static_cast<i32>(dst5)]
+                                   [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
+                                       .update(bonus);
+                    }
+                }
             }
         }
 
@@ -116,6 +125,16 @@ namespace stormphrax {
                     if (moving3 != Piece::kNone && moving1 != Piece::kNone) {
                         correction += 128
                                     * m_contTable[stm][static_cast<i32>(moving3)][static_cast<i32>(dst3)]
+                                                 [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                    }
+                }
+
+                if (ply >= 5) {
+                    const auto [moving5, dst5] = moves[ply - 5];
+
+                    if (moving5 != Piece::kNone && moving1 != Piece::kNone) {
+                        correction += 128
+                                    * m_contTable[stm][static_cast<i32>(moving5)][static_cast<i32>(dst5)]
                                                  [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
                     }
                 }
