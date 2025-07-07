@@ -53,39 +53,31 @@ namespace stormphrax {
 
             const auto stm = static_cast<i32>(pos.stm());
 
+            const auto updateCont = [&](i32 i) {
+                if (ply <= i) {
+                    return;
+                }
+
+                const auto [moving1, dst1] = moves[ply - 1];
+                const auto [moving2, dst2] = moves[ply - 1 - i];
+
+                if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
+                    return;
+                }
+
+                m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
+                           [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
+                               .update(bonus);
+            };
+
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
             m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
             m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries].update(bonus);
             m_majorTable[stm][pos.majorKey() % kEntries].update(bonus);
 
-            if (ply >= 2) {
-                const auto [moving2, dst2] = moves[ply - 2];
-                const auto [moving1, dst1] = moves[ply - 1];
-
-                if (moving2 != Piece::kNone && moving1 != Piece::kNone) {
-                    m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
-                               [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
-                                   .update(bonus);
-                }
-
-                if (ply >= 3) {
-                    const auto [moving3, dst3] = moves[ply - 3];
-                    if (moving3 != Piece::kNone && moving1 != Piece::kNone) {
-                        m_contTable[stm][static_cast<i32>(moving3)][static_cast<i32>(dst3)]
-                                   [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
-                                       .update(bonus);
-                    }
-                }
-
-                if (ply >= 5) {
-                    const auto [moving5, dst5] = moves[ply - 5];
-                    if (moving5 != Piece::kNone && moving1 != Piece::kNone) {
-                        m_contTable[stm][static_cast<i32>(moving5)][static_cast<i32>(dst5)]
-                                   [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
-                                       .update(bonus);
-                    }
-                }
-            }
+            updateCont(1);
+            updateCont(2);
+            updateCont(4);
         }
 
         [[nodiscard]] inline Score correct(
