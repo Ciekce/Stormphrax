@@ -1156,7 +1156,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (bestScore >= beta && !isWin(bestScore) && !isWin(alpha)) {
+        if (bestScore >= beta && !isWin(bestScore) && !isWin(beta)) {
             bestScore = (bestScore * depth + beta) / (depth + 1);
         }
 
