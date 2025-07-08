@@ -1156,6 +1156,10 @@ namespace stormphrax::search {
             }
         }
 
+        if (bestScore >= beta && !isWin(bestScore) && !isWin(alpha)) {
+            bestScore = (bestScore * depth + beta) / (depth + 1);
+        }
+
         bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
         if (!curr.excluded) {
