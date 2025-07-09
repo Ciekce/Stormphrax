@@ -16,19 +16,19 @@ a work-in-progress UCI chess and [chess960] engine, with NNUE evaluation trained
 this project is a continuation of my HCE engine [Polaris]
 
 ## Strength
-At the time of writing, Stormphrax 7.0.0 is the strongest standard chess and Chess960 engine in the UK.  
+At the time of writing, Stormphrax 7.0.0 is the strongest standard chess and Chess960 engine in the UK, and the 4th strongest Chess960 engine in the world.  
 If this is no longer true, it is likely to have been overtaken by the excellent [Viridithas].
 
 |    Version    | [SP-CC UHO-Top15][spcc] | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
 |:-------------:|:-----------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-| [7.0.0][sp7]  |       3682 (11th)       |            -            |            -             |               -               |           -           |            -            |    -    |
-| [6.0.0][sp6]  |          3621           |          3558           |           3686           |             3966              |         3566          |          3529           |    -    |
-| [5.0.0][sp5]  |            -            |          3505           |           3629           |             3869              |         3501          |          3461           |    -    |
-| [4.1.0][sp41] |            -            |          3488           |           3592           |             3811              |           -           |          3432           |    -    |
-| [4.0.0][sp4]  |            -            |          3474           |           3572           |             3781              |         3440          |          3419           |  3542   |
-| [3.0.0][sp3]  |            -            |          3407           |           3499           |             3696              |           -           |          3354           |  3495   |
-| [2.0.0][sp2]  |            -            |          3397           |           3490           |             3675              |         3339          |            -            |  3482   |
-| [1.0.0][sp1]  |            -            |          3317           |           3380           |             3522              |         3235          |            -            |  3346   |
+| [7.0.0][sp7]  |       3682 (11th)       |  3584 (tied 9th-10th)   |       3718 (10th)        |          4010 (4th)           |           -           |            -            |    -    |
+| [6.0.0][sp6]  |          3621           |          3560           |           3680           |             3967              |         3566          |          3529           |    -    |
+| [5.0.0][sp5]  |            -            |          3506           |           3622           |             3870              |         3501          |          3461           |    -    |
+| [4.1.0][sp41] |            -            |          3488           |           3585           |             3812              |           -           |          3432           |    -    |
+| [4.0.0][sp4]  |            -            |          3474           |           3565           |             3782              |         3440          |          3419           |  3542   |
+| [3.0.0][sp3]  |            -            |          3407           |           3492           |             3697              |           -           |          3354           |  3495   |
+| [2.0.0][sp2]  |            -            |          3397           |           3483           |             3676              |         3339          |            -            |  3482   |
+| [1.0.0][sp1]  |            -            |          3317           |           3374           |             3523              |         3235          |            -            |  3346   |
 
 ## Features
 - standard PVS with quiescence search and iterative deepening
