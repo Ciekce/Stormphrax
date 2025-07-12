@@ -370,8 +370,10 @@ namespace stormphrax::search {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
-                    alpha = std::max(thread.pvMove().score - delta, -kScoreInf);
-                    beta = std::min(thread.pvMove().score + delta, kScoreInf);
+                    const auto lastScore = thread.rootMoves[thread.pvIdx].score;
+
+                    alpha = std::max(lastScore - delta, -kScoreInf);
+                    beta = std::min(lastScore + delta, kScoreInf);
                 }
 
                 Score newScore{};
