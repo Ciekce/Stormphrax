@@ -1457,10 +1457,10 @@ namespace stormphrax::search {
         }
 
         usize bestIdx = 0;
-        const auto* best = &m_threads[0];
+        auto* best = &m_threads[0];
 
         for (usize i = 1; i < m_threads.size(); ++i) {
-            const auto* candidate = &m_threads[i];
+            auto* candidate = &m_threads[i];
 
             const auto bestDepth = best->depthCompleted;
             const auto bestScore = best->pvMove().score;
@@ -1469,8 +1469,8 @@ namespace stormphrax::search {
             const auto candidateScore = candidate->pvMove().score;
 
             if ((candidateDepth == bestDepth && candidateScore > bestScore)
-                || (candidateScore > kScoreMaxMate && candidateScore > bestScore)
-                || (candidateDepth > bestDepth && (candidateScore > bestScore || bestScore < kScoreMaxMate)))
+                || (candidateScore > kScoreWin && candidateScore > bestScore)
+                || (candidateDepth > bestDepth && (candidateScore > bestScore || bestScore < kScoreWin)))
             {
                 best = candidate;
                 bestIdx = i;
@@ -1478,6 +1478,42 @@ namespace stormphrax::search {
         }
 
         println("info string Selected thread {}", bestIdx);
+
+        auto& pvMove = best->pvMove();
+
+        if (pvMove.score < kScoreWin && (pvMove.lowerbound || pvMove.upperbound)) {
+            const auto& original = best->pvMove();
+
+            usize replacementIdx{};
+            const RootMove* replacement = nullptr;
+
+            for (usize i = 0; i < m_threads.size(); ++i) {
+                if (i == bestIdx) {
+                    continue;
+                }
+
+                const auto& candidate = m_threads[i].pvMove();
+
+                if (candidate.lowerbound || candidate.upperbound || !candidate.pv.startsWith(original.pv)) {
+                    continue;
+                }
+
+                if (replacement
+                    && (replacement->pv.length >= candidate.pv.length
+                        || (replacement->pv.length == candidate.pv.length && replacement->score > candidate.score)))
+                {
+                    continue;
+                }
+
+                replacement = &candidate;
+                replacementIdx = i;
+            }
+
+            if (replacement) {
+                println("info string Extending PV from thread {}", replacementIdx);
+                pvMove.pv = replacement->pv;
+            }
+        }
 
         return *best;
     }

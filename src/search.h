@@ -67,6 +67,20 @@ namespace stormphrax::search {
             assert(length == 1 || moves[0] != moves[1]);
         }
 
+        [[nodiscard]] inline bool startsWith(const PvList& other) const {
+            if (other.length > length) {
+                return false;
+            }
+
+            for (usize i = 0; i < other.length; ++i) {
+                if (moves[i] != other.moves[i]) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         inline PvList& operator=(const PvList& other) {
             std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
             length = other.length;
@@ -419,7 +433,7 @@ namespace stormphrax::search {
         void reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time);
         void report(const ThreadData& thread, i32 depth, f64 time);
 
-        const ThreadData& selectThread();
+        [[nodiscard]] const ThreadData& selectThread();
         void finalReport();
     };
 } // namespace stormphrax::search
