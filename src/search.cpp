@@ -1452,7 +1452,34 @@ namespace stormphrax::search {
     }
 
     const ThreadData& Searcher::selectThread() {
-        return m_threads[0];
+        if (m_threads.size() == 1) {
+            return m_threads[0];
+        }
+
+        usize bestIdx = 0;
+        const auto* best = &m_threads[0];
+
+        for (usize i = 1; i < m_threads.size(); ++i) {
+            const auto* candidate = &m_threads[i];
+
+            const auto bestDepth = best->depthCompleted;
+            const auto bestScore = best->pvMove().score;
+
+            const auto candidateDepth = candidate->depthCompleted;
+            const auto candidateScore = candidate->pvMove().score;
+
+            if ((candidateDepth == bestDepth && candidateScore > bestScore)
+                || (candidateScore > kScoreMaxMate && candidateScore > bestScore)
+                || (candidateDepth > bestDepth && (candidateScore > bestScore || bestScore < kScoreMaxMate)))
+            {
+                best = candidate;
+                bestIdx = i;
+            }
+        }
+
+        println("info string Selected thread {}", bestIdx);
+
+        return *best;
     }
 
     void Searcher::finalReport() {
