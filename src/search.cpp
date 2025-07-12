@@ -1068,10 +1068,10 @@ namespace stormphrax::search {
                     rootMove->lowerbound = false;
 
                     if (score <= alpha) {
-                        rootMove->score = alpha;
+                        rootMove->displayScore = alpha;
                         rootMove->upperbound = true;
                     } else if (score >= beta) {
-                        rootMove->score = beta;
+                        rootMove->displayScore = beta;
                         rootMove->lowerbound = true;
                     }
 
