@@ -31,17 +31,22 @@
 
 namespace stormphrax::eval {
     // black, white
-    using Contempt = std::array<Score, 2>;
+    using SidedScore = std::array<Score, 2>;
 
-    template <bool kCorrect = true>
+    template <bool kApplyOptimism = true, bool kCorrect = true>
     inline Score adjustEval(
         const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
         const CorrectionHistoryTable* correction,
+        const SidedScore& optimism,
         i32 eval,
         i32* corrDelta = nullptr
     ) {
+        if constexpr (kApplyOptimism) {
+            eval = eval * (32768 + optimism[static_cast<usize>(pos.stm())]) / 32768;
+        }
+
         eval = eval * (200 - pos.halfmove()) / 200;
 
         if constexpr (kCorrect) {
@@ -58,7 +63,7 @@ namespace stormphrax::eval {
     }
 
     template <bool kScale>
-    inline Score adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
+    inline Score adjustStatic(const Position& pos, const SidedScore& contempt, Score eval) {
         using namespace tunable;
 
         if constexpr (kScale) {
@@ -77,7 +82,7 @@ namespace stormphrax::eval {
     }
 
     template <bool kScale = true>
-    inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
+    inline Score staticEval(const Position& pos, NnueState& nnueState, const SidedScore& contempt = {}) {
         auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
@@ -89,14 +94,15 @@ namespace stormphrax::eval {
         i32 ply,
         NnueState& nnueState,
         const CorrectionHistoryTable* correction,
-        const Contempt& contempt = {}
+        const SidedScore& optimism,
+        const SidedScore& contempt = {}
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<kCorrect>(pos, moves, ply, correction, eval);
+        return adjustEval<kCorrect>(pos, moves, ply, correction, optimism, eval);
     }
 
     template <bool kScale = true>
-    inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
+    inline Score staticEvalOnce(const Position& pos, const SidedScore& contempt = {}) {
         auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }

@@ -103,6 +103,8 @@ namespace stormphrax::search {
         Score displayScore{-kScoreInf};
         Score score{-kScoreInf};
 
+        Score averageScore{-kScoreInf};
+
         bool upperbound{false};
         bool lowerbound{false};
 
@@ -163,6 +165,8 @@ namespace stormphrax::search {
 
         HistoryTables history{};
         CorrectionHistoryTable correctionHistory{};
+
+        eval::SidedScore optimism{};
 
         Position rootPos{};
 
@@ -343,7 +347,7 @@ namespace stormphrax::search {
         Score m_minRootScore{};
         Score m_maxRootScore{};
 
-        eval::Contempt m_contempt{};
+        eval::SidedScore m_contempt{};
 
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};

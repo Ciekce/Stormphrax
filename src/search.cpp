@@ -374,6 +374,16 @@ namespace stormphrax::search {
                     beta = std::min(thread.pvMove().score + delta, kScoreInf);
                 }
 
+                if (depth == 1) {
+                    thread.optimism = {};
+                } else {
+                    const auto averageScore = thread.pvMove().averageScore;
+                    const auto optimism = 120 * averageScore / (std::abs(averageScore) + 160);
+
+                    thread.optimism[static_cast<usize>(thread.rootPos.stm())] = optimism;
+                    thread.optimism[static_cast<usize>(thread.rootPos.nstm())] = -optimism;
+                }
+
                 Score newScore{};
 
                 i32 aspReduction = 0;
@@ -683,8 +693,15 @@ namespace stormphrax::search {
                 curr.staticEval = kScoreNone;
             } else {
                 Score corrDelta{};
-                curr.staticEval =
-                    eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval, &corrDelta);
+                curr.staticEval = eval::adjustEval(
+                    pos,
+                    thread.contMoves,
+                    ply,
+                    &thread.correctionHistory,
+                    thread.optimism,
+                    rawStaticEval,
+                    &corrDelta
+                );
                 complexity = corrDelta;
             }
         }
@@ -1056,6 +1073,12 @@ namespace stormphrax::search {
                     std::terminate();
                 }
 
+                if (rootMove->averageScore == -kScoreInf) {
+                    rootMove->averageScore = score;
+                } else {
+                    rootMove->averageScore = (rootMove->averageScore + score) / 2;
+                }
+
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.search.loadSeldepth();
 
@@ -1249,7 +1272,7 @@ namespace stormphrax::search {
             }
 
             const auto staticEval =
-                eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
+                eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, thread.optimism, rawStaticEval);
 
             if (ttEntry.flag == TtFlag::kExact                                       //
                 || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval //
