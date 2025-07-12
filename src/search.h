@@ -156,6 +156,8 @@ namespace stormphrax::search {
         u32 pvIdx{};
         std::vector<RootMove> rootMoves{};
 
+        i32 depthCompleted{};
+
         std::vector<SearchStackEntry> stack{};
         std::vector<MoveStackEntry> moveStack{};
         std::vector<ContinuationSubtable*> conthist{};
@@ -414,9 +416,10 @@ namespace stormphrax::search {
         template <bool kPvNode = false>
         Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
 
-        void reportSingle(const ThreadData& mainThread, u32 pvIdx, i32 depth, f64 time);
+        void reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time);
+        void report(const ThreadData& thread, i32 depth, f64 time);
 
-        void report(const ThreadData& mainThread, i32 depth, f64 time);
-        void finalReport(const ThreadData& mainThread, i32 depthCompleted, f64 time);
+        const ThreadData& selectThread();
+        void finalReport();
     };
 } // namespace stormphrax::search
