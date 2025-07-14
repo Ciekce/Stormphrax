@@ -91,6 +91,7 @@ namespace stormphrax::search {
         KillerTable killers{};
 
         Move excluded{};
+        i32 reduction{};
     };
 
     struct MoveStackEntry {
