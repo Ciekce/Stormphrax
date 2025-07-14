@@ -699,6 +699,10 @@ namespace stormphrax::search {
         }();
 
         if (!kPvNode && !inCheck && !curr.excluded) {
+            if (depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 150) {
+                --depth;
+            }
+
             const auto rfpMargin = [&] {
                 auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
                 if (complexity) {
@@ -981,8 +985,11 @@ namespace stormphrax::search {
 
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r, 1), newDepth);
+
+                    curr.reduction = newDepth - reduced;
                     score =
                         -search(thread, newPos, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
+                    curr.reduction = 0;
 
                     if (score > alpha && reduced < newDepth) {
                         const bool doDeeperSearch = score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
