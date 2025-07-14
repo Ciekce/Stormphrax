@@ -135,7 +135,7 @@ namespace stormphrax::tb {
             } else if (best.tbRank >= kDrawBound) { // includes cursed wins and blessed losses
                 return {ProbeResult::kDraw, kDrawBound};
             } else {
-                return {ProbeResult::kLoss, kMaxDtz};
+                return {ProbeResult::kLoss, -kMaxDtz};
             }
         }();
 
