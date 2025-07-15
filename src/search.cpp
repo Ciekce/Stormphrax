@@ -700,8 +700,8 @@ namespace stormphrax::search {
         }();
 
         if (!kPvNode && !inCheck && !curr.excluded) {
-            if (depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 150) {
-                --depth;
+            if (parent->reduction >= 3 && curr.staticEval + parent->staticEval <= 0) {
+                ++depth;
             }
 
             const auto rfpMargin = [&] {
