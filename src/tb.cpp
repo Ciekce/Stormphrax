@@ -118,24 +118,24 @@ namespace stormphrax::tb {
             return ProbeResult::kFailed;
         }
 
-        std::sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
+        std::stable_sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
             return a.tbRank > b.tbRank;
         });
 
-        const auto [wdl, minRank] = [&]() -> std::pair<ProbeResult, i32> {
+        const auto bestRank = tbRootMoves.moves[0].tbRank;
+
+        const auto wdl = [&] {
             static constexpr i32 kMaxDtz = 262144;
 
             static constexpr i32 kWinBound = kMaxDtz - 100;
             static constexpr i32 kDrawBound = -kMaxDtz + 101;
 
-            const auto best = tbRootMoves.moves[0];
-
-            if (best.tbRank >= kWinBound) {
-                return {ProbeResult::kWin, kWinBound};
-            } else if (best.tbRank >= kDrawBound) { // includes cursed wins and blessed losses
-                return {ProbeResult::kDraw, kDrawBound};
+            if (bestRank >= kWinBound) {
+                return ProbeResult::kWin;
+            } else if (bestRank >= kDrawBound) { // includes cursed wins and blessed losses
+                return ProbeResult::kDraw;
             } else {
-                return {ProbeResult::kLoss, -kMaxDtz};
+                return ProbeResult::kLoss;
             }
         }();
 
@@ -146,7 +146,7 @@ namespace stormphrax::tb {
         for (u32 i = 0; i < tbRootMoves.size; ++i) {
             const auto& move = tbRootMoves.moves[i];
 
-            if (move.tbRank < minRank) {
+            if (move.tbRank < bestRank) {
                 break;
             }
 

@@ -283,6 +283,7 @@ namespace stormphrax::search {
             }
 
             if (success) {
+                assert(!m_rootMoveList.empty());
                 return RootStatus::kTablebase;
             }
         }
