@@ -115,6 +115,7 @@ namespace stormphrax {
             updateConthist(continuations, ply, moving, move, bonus, 1);
             updateConthist(continuations, ply, moving, move, bonus, 2);
             updateConthist(continuations, ply, moving, move, bonus, 4);
+            updateConthist(continuations, ply, moving, move, bonus / 2, 6);
         }
 
         inline void updateQuietScore(
@@ -148,6 +149,7 @@ namespace stormphrax {
             score += conthistScore(continuations, ply, moving, move, 1);
             score += conthistScore(continuations, ply, moving, move, 2);
             score += conthistScore(continuations, ply, moving, move, 4) / 2;
+            score += conthistScore(continuations, ply, moving, move, 6) / 2;
 
             return score;
         }
