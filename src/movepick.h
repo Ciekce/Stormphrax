@@ -366,10 +366,11 @@ namespace stormphrax {
         }
 
         inline void scoreQuiet(ScoredMove& move) {
-            move.score = m_history.quietScore(
+            move.score = m_history.quietOrderingScore(
                 m_continuations,
                 m_ply,
                 m_pos.threats(),
+                m_pos.majorKey(),
                 m_pos.boards().pieceOn(move.move.fromSq()),
                 move.move
             );
