@@ -948,7 +948,7 @@ namespace stormphrax::search {
                 } else if (depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
                            && ttEntry.flag == TtFlag::kLowerBound)
                 {
-                    extension = 1;
+                    extension = 1 + (!ttpv && !ttMoveNoisy && curr.staticEval <= alpha - 120);
                 }
             }
 
