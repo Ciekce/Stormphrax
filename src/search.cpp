@@ -366,7 +366,7 @@ namespace stormphrax::search {
                 // count the root node
                 searchData.incNodes();
 
-                auto delta = initialAspWindow();
+                auto delta = aspWindowBase() + std::abs(thread.rootMoves[thread.pvIdx].avgSquaredScore) / 14800;
 
                 auto alpha = -kScoreInf;
                 auto beta = kScoreInf;
@@ -1066,6 +1066,14 @@ namespace stormphrax::search {
 
                     rootMove->displayScore = score;
                     rootMove->score = score;
+
+                    const auto squaredScore = score * std::abs(score);
+
+                    if (rootMove->avgSquaredScore == -kScoreInf) {
+                        rootMove->avgSquaredScore = squaredScore;
+                    } else {
+                        rootMove->avgSquaredScore = (squaredScore + rootMove->avgSquaredScore) / 2;
+                    }
 
                     rootMove->upperbound = false;
                     rootMove->lowerbound = false;

@@ -102,7 +102,9 @@ namespace stormphrax::search {
 
     struct RootMove {
         Score displayScore{-kScoreInf};
+
         Score score{-kScoreInf};
+        Score avgSquaredScore{-kScoreInf};
 
         bool upperbound{false};
         bool lowerbound{false};

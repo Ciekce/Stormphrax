@@ -167,7 +167,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(contCorrhist2Weight, 128, 32, 384, 18)
     SP_TUNABLE_PARAM(contCorrhist4Weight, 128, 32, 384, 18)
 
-    SP_TUNABLE_PARAM(initialAspWindow, 16, 4, 50, 4)
+    SP_TUNABLE_PARAM(aspWindowBase, 11, 2, 30, 1.5)
     SP_TUNABLE_PARAM(aspWideningFactor, 17, 1, 24, 1)
 
     SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
