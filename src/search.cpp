@@ -975,7 +975,7 @@ namespace stormphrax::search {
                     r -= history * 128 / (noisy ? lmrNoisyHistoryDivisor() : lmrQuietHistoryDivisor());
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
-                    r += cutnode * lmrCutnodeReductionScale();
+                    r += (!ttpv && cutnode) * lmrCutnodeReductionScale();
                     r += (ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
 
                     if (complexity) {
