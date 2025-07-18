@@ -370,7 +370,7 @@ namespace stormphrax {
                 m_continuations,
                 m_ply,
                 m_pos.threats(),
-                m_pos.majorKey(),
+                m_pos.pawnKey(),
                 m_pos.boards().pieceOn(move.move.fromSq()),
                 move.move
             );

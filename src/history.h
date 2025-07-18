@@ -93,7 +93,7 @@ namespace stormphrax {
         inline void clear() {
             std::memset(&m_butterfly, 0, sizeof(m_butterfly));
             std::memset(&m_pieceTo, 0, sizeof(m_pieceTo));
-            std::memset(&m_major, 0, sizeof(m_major));
+            std::memset(&m_pawn, 0, sizeof(m_pawn));
             std::memset(&m_continuation, 0, sizeof(m_continuation));
             std::memset(&m_noisy, 0, sizeof(m_noisy));
         }
@@ -122,14 +122,14 @@ namespace stormphrax {
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
             Bitboard threats,
-            u64 majorKey,
+            u64 pawnKey,
             Piece moving,
             Move move,
             HistoryScore bonus
         ) {
             butterflyEntry(threats, move).update(bonus);
             pieceToEntry(threats, moving, move).update(bonus);
-            majorEntry(majorKey, moving, move).update(bonus);
+            pawnEntry(pawnKey, moving, move).update(bonus);
             updateConthist(continuations, ply, moving, move, bonus);
         }
 
@@ -159,13 +159,13 @@ namespace stormphrax {
             std::span<ContinuationSubtable* const> continuations,
             i32 ply,
             Bitboard threats,
-            u64 majorKey,
+            u64 pawnKey,
             Piece moving,
             Move move
         ) const {
             auto score = quietScore(continuations, ply, threats, moving, move);
 
-            score += majorEntry(majorKey, moving, move) / 2;
+            score += pawnEntry(pawnKey, moving, move) / 2;
 
             return score;
         }
@@ -175,15 +175,15 @@ namespace stormphrax {
         }
 
     private:
-        static constexpr usize kMajorBits = 9;
-        static constexpr usize kMajorSize = 1 << kMajorBits;
+        static constexpr usize kPawnBits = 9;
+        static constexpr usize kPawnSize = 1 << kPawnBits;
 
         // [from][to][from attacked][to attacked]
         util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
         // [piece][to]
         util::MultiArray<HistoryEntry, 12, 64, 2, 2> m_pieceTo{};
-        // [major key][piece][to]
-        util::MultiArray<HistoryEntry, kMajorSize, 12, 64> m_major;
+        // [pawn key][piece][to]
+        util::MultiArray<HistoryEntry, kPawnSize, 12, 64> m_pawn;
         // [prev piece][to][curr piece type][to]
         util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
 
@@ -234,12 +234,12 @@ namespace stormphrax {
             return m_pieceTo[static_cast<i32>(moving)][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
-        [[nodiscard]] inline const HistoryEntry& majorEntry(u64 majorKey, Piece moving, Move move) const {
-            return m_major[majorKey % kMajorSize][static_cast<i32>(moving)][move.toSqIdx()];
+        [[nodiscard]] inline const HistoryEntry& pawnEntry(u64 pawnKey, Piece moving, Move move) const {
+            return m_pawn[pawnKey % kPawnSize][static_cast<i32>(moving)][move.toSqIdx()];
         }
 
-        [[nodiscard]] inline HistoryEntry& majorEntry(u64 majorKey, Piece moving, Move move) {
-            return m_major[majorKey % kMajorSize][static_cast<i32>(moving)][move.toSqIdx()];
+        [[nodiscard]] inline HistoryEntry& pawnEntry(u64 pawnKey, Piece moving, Move move) {
+            return m_pawn[pawnKey % kPawnSize][static_cast<i32>(moving)][move.toSqIdx()];
         }
 
         [[nodiscard]] static inline const ContinuationSubtable& conthistEntry(

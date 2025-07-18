@@ -584,7 +584,7 @@ namespace stormphrax::search {
                             thread.conthist,
                             ply,
                             pos.threats(),
-                            pos.majorKey(),
+                            pos.pawnKey(),
                             boards.pieceOn(ttEntry.move.fromSq()),
                             ttEntry.move,
                             bonus
@@ -1135,7 +1135,7 @@ namespace stormphrax::search {
                     thread.conthist,
                     ply,
                     pos.threats(),
-                    pos.majorKey(),
+                    pos.pawnKey(),
                     pos.boards().pieceOn(bestMove.fromSq()),
                     bestMove,
                     bonus
@@ -1146,7 +1146,7 @@ namespace stormphrax::search {
                         thread.conthist,
                         ply,
                         pos.threats(),
-                        pos.majorKey(),
+                        pos.pawnKey(),
                         pos.boards().pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
                         penalty
