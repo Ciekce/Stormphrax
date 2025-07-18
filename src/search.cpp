@@ -705,6 +705,12 @@ namespace stormphrax::search {
                 ++depth;
             }
 
+            if (depth >= 2 && parent->reduction >= 1 && parent->staticEval != kScoreNone
+                && curr.staticEval + parent->staticEval > 75)
+            {
+                --depth;
+            }
+
             const auto rfpMargin = [&] {
                 auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
                 if (complexity) {
