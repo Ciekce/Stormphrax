@@ -149,6 +149,10 @@ namespace stormphrax::search {
             m_limiter = std::move(limiter);
         }
 
+        if (m_rootMoveList.size() == 1) {
+            m_limiter->signalOneLegalMove();
+        }
+
         const auto contempt = g_opts.contempt;
 
         m_contempt[static_cast<i32>(pos.stm())] = contempt;

@@ -30,6 +30,8 @@ namespace stormphrax::limit {
         virtual void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {}
         virtual void updateMoveNodes(Move move, usize nodes) {}
 
+        virtual void signalOneLegalMove() {}
+
         [[nodiscard]] virtual bool stop(const search::SearchData& data, bool allowSoftTimeout) = 0;
 
         [[nodiscard]] virtual bool stopped() const = 0;

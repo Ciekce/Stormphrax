@@ -47,6 +47,12 @@ namespace stormphrax::limit {
             }
         }
 
+        inline void signalOneLegalMove() final {
+            for (const auto& limiter : m_limiters) {
+                limiter->signalOneLegalMove();
+            }
+        }
+
         [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
             return std::ranges::any_of(m_limiters, [&](const auto& limiter) {
                 return limiter->stop(data, allowSoftTimeout);

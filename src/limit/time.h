@@ -55,6 +55,8 @@ namespace stormphrax::limit {
         void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) final;
         void updateMoveNodes(Move move, usize nodes) final;
 
+        void signalOneLegalMove() final;
+
         [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final;
 
         [[nodiscard]] bool stopped() const final;
