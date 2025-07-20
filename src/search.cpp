@@ -318,7 +318,7 @@ namespace stormphrax::search {
 
     void Searcher::run(u32 threadId) {
         // Ensure thread data is allocated on the correct
-        // NUMA node by allocating it from this thread
+        // NUMA node by initialising it from this thread
         m_threadData[threadId] = std::make_unique<ThreadData>();
 
         auto& thread = *m_threadData[threadId];
