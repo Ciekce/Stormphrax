@@ -73,10 +73,8 @@ namespace stormphrax::search {
 
     Searcher::Searcher(usize ttSizeMib) :
             m_ttable{ttSizeMib}, m_startTime{Instant::now()} {
-        auto& thread = m_threads.emplace_back();
-
-        thread.id = 0;
-        thread.thread = std::thread{[this, &thread] { run(thread); }};
+        m_threadData.resize(1);
+        m_threads.emplace_back([this] { run(0); });
     }
 
     void Searcher::newGame() {
@@ -85,9 +83,9 @@ namespace stormphrax::search {
             m_ttable.clear();
         }
 
-        for (auto& thread : m_threads) {
-            thread.history.clear();
-            thread.correctionHistory.clear();
+        for (auto& thread : m_threadData) {
+            thread->history.clear();
+            thread->correctionHistory.clear();
         }
     }
 
@@ -250,7 +248,13 @@ namespace stormphrax::search {
 
         m_threads.clear();
         m_threads.shrink_to_fit();
+
+        m_threadData.clear();
+        m_threadData.shrink_to_fit();
+
         m_threads.reserve(threadCount);
+
+        m_threadData.resize(threadCount);
 
         m_resetBarrier.reset(threadCount + 1);
         m_idleBarrier.reset(threadCount + 1);
@@ -259,10 +263,7 @@ namespace stormphrax::search {
         m_searchEndBarrier.reset(threadCount);
 
         for (u32 threadId = 0; threadId < threadCount; ++threadId) {
-            auto& thread = m_threads.emplace_back();
-
-            thread.id = threadId;
-            thread.thread = std::thread{[this, &thread] { run(thread); }};
+            auto& thread = m_threads.emplace_back([this, threadId] { run(threadId); });
         }
     }
 
@@ -311,11 +312,19 @@ namespace stormphrax::search {
         m_idleBarrier.arriveAndWait();
 
         for (auto& thread : m_threads) {
-            thread.thread.join();
+            thread.join();
         }
     }
 
-    void Searcher::run(ThreadData& thread) {
+    void Searcher::run(u32 threadId) {
+        // Ensure thread data is allocated on the correct
+        // NUMA node by initialising it from this thread
+        m_threadData[threadId] = std::make_unique<ThreadData>();
+
+        auto& thread = *m_threadData[threadId];
+
+        thread.id = threadId;
+
         while (true) {
             m_resetBarrier.arriveAndWait();
             m_idleBarrier.arriveAndWait();
@@ -1378,8 +1387,8 @@ namespace stormphrax::search {
 
         usize nodes = 0;
 
-        for (const auto& worker : m_threads) {
-            nodes += worker.search.loadNodes();
+        for (const auto& worker : m_threadData) {
+            nodes += worker->search.loadNodes();
         }
 
         const auto ms = static_cast<usize>(time * 1000.0);
@@ -1447,8 +1456,8 @@ namespace stormphrax::search {
                 ++tbhits;
             }
 
-            for (const auto& worker : m_threads) {
-                tbhits += worker.search.loadTbHits();
+            for (const auto& worker : m_threadData) {
+                tbhits += worker->search.loadTbHits();
             }
 
             print(" tbhits {}", tbhits);
@@ -1470,7 +1479,7 @@ namespace stormphrax::search {
     }
 
     const ThreadData& Searcher::selectThread() {
-        return m_threads[0];
+        return *m_threadData[0];
     }
 
     void Searcher::finalReport() {
