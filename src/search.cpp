@@ -381,10 +381,10 @@ namespace stormphrax::search {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
-                    const auto lastScore = thread.rootMoves[thread.pvIdx].score;
+                    const auto avgScore = thread.rootMoves[thread.pvIdx].avgScore;
 
-                    alpha = std::max(lastScore - delta, -kScoreInf);
-                    beta = std::min(lastScore + delta, kScoreInf);
+                    alpha = std::max(avgScore - delta, -kScoreInf);
+                    beta = std::min(avgScore + delta, kScoreInf);
                 }
 
                 Score newScore{};
@@ -1075,6 +1075,12 @@ namespace stormphrax::search {
 
                     rootMove->displayScore = score;
                     rootMove->score = score;
+
+                    if (rootMove->avgScore == -kScoreInf) {
+                        rootMove->avgScore = score;
+                    } else {
+                        rootMove->avgScore = (rootMove->avgScore + score) / 2;
+                    }
 
                     rootMove->upperbound = false;
                     rootMove->lowerbound = false;
