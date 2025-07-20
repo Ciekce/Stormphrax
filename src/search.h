@@ -145,7 +145,6 @@ namespace stormphrax::search {
         }
 
         u32 id{};
-        std::thread thread{};
 
         SearchData search{};
 
@@ -315,7 +314,8 @@ namespace stormphrax::search {
     private:
         TTable m_ttable;
 
-        std::vector<ThreadData> m_threads{};
+        std::vector<std::thread> m_threads{};
+        std::vector<std::unique_ptr<ThreadData>> m_threadData{};
 
         mutable std::mutex m_searchMutex{};
 
@@ -356,7 +356,7 @@ namespace stormphrax::search {
 
         void stopThreads();
 
-        void run(ThreadData& thread);
+        void run(u32 threadId);
 
         [[nodiscard]] inline bool hasStopped() const {
             return m_stop.load(std::memory_order::relaxed) != 0;
