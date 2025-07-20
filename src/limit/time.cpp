@@ -107,11 +107,11 @@ namespace stormphrax::limit {
         m_moveNodeCounts[move.fromSqIdx()][move.toSqIdx()] += nodes;
     }
 
-    void TimeManager::signalOneLegalMove() {
-        // Clamp max search time to 500ms with one legal move
+    void TimeManager::stopEarly() {
+        // Clamp max search time to 500ms with one legal move or in TB draws
         // Worth no elo, exists for TCEC viewer experience
-        // Note that instamoving without searching at all produces weird scores
-        println("info string One root move, stopping search after 500ms");
+        // Note that instamoving with one legal move without searching at all produces weird scores
+        println("info string Search signalled early stop, capping search time to 500ms");
         m_maxTime = std::min(m_maxTime, 0.5);
     }
 

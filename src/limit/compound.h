@@ -47,9 +47,9 @@ namespace stormphrax::limit {
             }
         }
 
-        inline void signalOneLegalMove() final {
+        inline void stopEarly() final {
             for (const auto& limiter : m_limiters) {
-                limiter->signalOneLegalMove();
+                limiter->stopEarly();
             }
         }
 

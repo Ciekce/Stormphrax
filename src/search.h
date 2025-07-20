@@ -41,6 +41,7 @@
 #include "movepick.h"
 #include "position/position.h"
 #include "search_fwd.h"
+#include "tb.h"
 #include "ttable.h"
 #include "util/barrier.h"
 #include "util/timer.h"
@@ -351,7 +352,7 @@ namespace stormphrax::search {
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        RootStatus initRootMoveList(const Position& pos);
+        std::pair<RootStatus, std::optional<tb::ProbeResult>> initRootMoveList(const Position& pos);
 
         void stopThreads();
 
