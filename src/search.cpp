@@ -845,6 +845,7 @@ namespace stormphrax::search {
             MoveGenerator::main(pos, moveStack.movegenData, ttMove, curr.killers, thread.history, thread.conthist, ply);
 
         u32 legalMoves = 0;
+        u32 quiets = 0;
 
         while (const auto move = generator.next()) {
             if (move == curr.excluded) {
@@ -914,7 +915,12 @@ namespace stormphrax::search {
             const auto prevNodes = thread.search.loadNodes();
 
             thread.search.incNodes();
+
             ++legalMoves;
+
+            if (!noisy) {
+                ++quiets;
+            }
 
             if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
                 println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
@@ -1126,22 +1132,26 @@ namespace stormphrax::search {
         }
 
         if (bestMove) {
+            const bool applyBonus = depth >= 4 || quiets > 0;
+
             const auto historyDepth = depth + (curr.staticEval <= bestScore);
 
             const auto bonus = historyBonus(historyDepth);
             const auto penalty = historyPenalty(historyDepth);
 
             if (!pos.isNoisy(bestMove)) {
-                curr.killers.push(bestMove);
+                if (applyBonus) {
+                    curr.killers.push(bestMove);
 
-                thread.history.updateQuietScore(
-                    thread.conthist,
-                    ply,
-                    pos.threats(),
-                    pos.boards().pieceOn(bestMove.fromSq()),
-                    bestMove,
-                    bonus
-                );
+                    thread.history.updateQuietScore(
+                        thread.conthist,
+                        ply,
+                        pos.threats(),
+                        pos.boards().pieceOn(bestMove.fromSq()),
+                        bestMove,
+                        bonus
+                    );
+                }
 
                 for (const auto prevQuiet : moveStack.failLowQuiets) {
                     thread.history.updateQuietScore(
@@ -1153,7 +1163,7 @@ namespace stormphrax::search {
                         penalty
                     );
                 }
-            } else {
+            } else if (applyBonus) {
                 const auto captured = pos.captureTarget(bestMove);
                 thread.history.updateNoisyScore(bestMove, captured, pos.threats(), bonus);
             }
