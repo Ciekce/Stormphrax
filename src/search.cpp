@@ -738,7 +738,7 @@ namespace stormphrax::search {
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + razoringMargin() * depth <= alpha) {
                 const auto score = qsearch(thread, pos, ply, moveStackIdx, alpha, alpha + 1);
                 if (score <= alpha) {
-                    return score;
+                    return !isWin(score) && !isWin(alpha) ? (score + alpha) / 2 : score;
                 }
             }
 
