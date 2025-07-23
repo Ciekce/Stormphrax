@@ -75,6 +75,7 @@ namespace stormphrax::search {
             m_ttable{ttSizeMib}, m_startTime{Instant::now()} {
         m_threadData.resize(1);
         m_threads.emplace_back([this] { run(0); });
+        m_initBarrier.arriveAndWait();
     }
 
     void Searcher::newGame() {
@@ -248,13 +249,13 @@ namespace stormphrax::search {
 
         m_threads.clear();
         m_threads.shrink_to_fit();
-
-        m_threadData.clear();
-        m_threadData.shrink_to_fit();
-
         m_threads.reserve(threadCount);
 
+        m_threadData.clear();
         m_threadData.resize(threadCount);
+        m_threadData.shrink_to_fit();
+
+        m_initBarrier.reset(threadCount + 1);
 
         m_resetBarrier.reset(threadCount + 1);
         m_idleBarrier.reset(threadCount + 1);
@@ -263,8 +264,10 @@ namespace stormphrax::search {
         m_searchEndBarrier.reset(threadCount);
 
         for (u32 threadId = 0; threadId < threadCount; ++threadId) {
-            auto& thread = m_threads.emplace_back([this, threadId] { run(threadId); });
+            m_threads.emplace_back([this, threadId] { run(threadId); });
         }
+
+        m_initBarrier.arriveAndWait();
     }
 
     std::pair<RootStatus, std::optional<tb::ProbeResult>> Searcher::initRootMoveList(const Position& pos) {
@@ -324,6 +327,8 @@ namespace stormphrax::search {
         auto& thread = *m_threadData[threadId];
 
         thread.id = threadId;
+
+        m_initBarrier.arriveAndWait();
 
         while (true) {
             m_resetBarrier.arriveAndWait();
