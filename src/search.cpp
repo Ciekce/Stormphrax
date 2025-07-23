@@ -1345,9 +1345,19 @@ namespace stormphrax::search {
 
             const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
-            const auto score = newPos.isDrawn(ply, thread.keyHistory)
-                                 ? drawScore(thread.search.loadNodes())
-                                 : -qsearch<kPvNode>(thread, newPos, ply + 1, moveStackIdx + 1, -beta, -alpha);
+            Score score;
+
+            if (newPos.isDrawn(ply, thread.keyHistory)) {
+                score = drawScore(thread.search.loadNodes());
+            } else {
+                if (!kPvNode || legalMoves > 1) {
+                    score = -qsearch(thread, newPos, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha);
+                }
+
+                if (kPvNode && (legalMoves == 1 || score > alpha)) {
+                    score = -qsearch<true>(thread, newPos, ply + 1, moveStackIdx + 1, -beta, -alpha);
+                }
+            }
 
             if (hasStopped()) {
                 return 0;
