@@ -324,6 +324,8 @@ namespace stormphrax::search {
 
         util::Instant m_startTime;
 
+        util::Barrier m_initBarrier{2};
+
         util::Barrier m_resetBarrier{2};
         util::Barrier m_idleBarrier{2};
         util::Barrier m_setupBarrier{2};
