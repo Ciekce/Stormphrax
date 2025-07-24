@@ -729,7 +729,7 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0) + parent->history / 300;
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
@@ -889,8 +889,8 @@ namespace stormphrax::search {
 
             const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-            const auto history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
-                                       : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+            curr.history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
+                                 : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
             if ((!kRootNode || thread.search.rootDepth == 1) && bestScore > -kScoreWin && (!kPvNode || !thread.datagen))
             {
@@ -902,7 +902,7 @@ namespace stormphrax::search {
                         continue;
                     }
 
-                    if (lmrDepth <= 5 && history < quietHistPruningMargin() * depth + quietHistPruningOffset()) {
+                    if (lmrDepth <= 5 && curr.history < quietHistPruningMargin() * depth + quietHistPruningOffset()) {
                         generator.skipQuiets();
                         continue;
                     }
@@ -913,7 +913,8 @@ namespace stormphrax::search {
                         generator.skipQuiets();
                         continue;
                     }
-                } else if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
+                } else if (depth <= 4
+                           && curr.history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
                 {
                     continue;
                 }
@@ -995,7 +996,7 @@ namespace stormphrax::search {
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= ttpv * lmrTtpvReductionScale();
-                    r -= history * 128 / (noisy ? lmrNoisyHistoryDivisor() : lmrQuietHistoryDivisor());
+                    r -= curr.history * 128 / (noisy ? lmrNoisyHistoryDivisor() : lmrQuietHistoryDivisor());
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
