@@ -709,7 +709,7 @@ namespace stormphrax::search {
             }
         }
 
-        const bool improving = [&] {
+        bool improving = [&] {
             if (inCheck) {
                 return false;
             }
@@ -722,6 +722,8 @@ namespace stormphrax::search {
             return true;
         }();
 
+        improving |= !kRootNode && parent->history < -12000;
+
         if (!kPvNode && !inCheck && !curr.excluded) {
             if (parent->reduction >= 3 && parent->staticEval != kScoreNone && curr.staticEval + parent->staticEval <= 0)
             {
@@ -729,7 +731,7 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0) + parent->history / 500;
+                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
