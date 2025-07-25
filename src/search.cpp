@@ -990,7 +990,7 @@ namespace stormphrax::search {
             } else {
                 auto newDepth = depth + extension - 1;
 
-                if (depth >= 2 && legalMoves >= 2 + kRootNode && (!ttpv || quietOrLosing)) {
+                if (depth >= 2 && legalMoves >= 2 + kRootNode) {
                     auto r = baseLmr;
 
                     r += !kPvNode * lmrNonPvReductionScale();
