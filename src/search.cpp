@@ -752,8 +752,7 @@ namespace stormphrax::search {
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
 
-                const auto R =
-                    4 + depth / 5 + std::min((curr.staticEval - beta) / nmpEvalReductionScale(), 2) + improving;
+                const auto R = 5 + depth / 5 + improving;
 
                 const auto score = [&] {
                     const auto [newPos, guard] = thread.applyNullmove(pos, ply);
