@@ -966,6 +966,8 @@ namespace stormphrax::search {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
                         extension = -1;
+                    } else if (!inCheck && curr.staticEval >= beta) {
+                        extension = -1;
                     }
                 } else if (depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
                            && ttEntry.flag == TtFlag::kLowerBound)
