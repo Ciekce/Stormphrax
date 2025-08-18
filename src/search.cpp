@@ -896,7 +896,9 @@ namespace stormphrax::search {
                 const auto lmrDepth = std::max(depth - baseLmr / 128, 0);
 
                 if (!noisy) {
-                    if (legalMoves >= kLmpTable[improving][std::min(depth, 15)]) {
+                    if (legalMoves
+                        >= kLmpTable[improving || (!inCheck && curr.staticEval >= beta)][std::min(depth, 15)])
+                    {
                         generator.skipQuiets();
                         continue;
                     }
