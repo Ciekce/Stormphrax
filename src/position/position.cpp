@@ -455,7 +455,11 @@ namespace stormphrax {
         }
 
         // multiple checks can only be evaded with a king move
-        if (m_checkers.multiple() || pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
+        if (m_checkers.multiple()) {
+            return false;
+        }
+
+        if (pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
             return false;
         }
 
