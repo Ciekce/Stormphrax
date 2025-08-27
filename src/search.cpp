@@ -419,7 +419,7 @@ namespace stormphrax::search {
                         break;
                     }
 
-                    if (mainThread) {
+                    if (mainThread && g_opts.multiPv == 1) {
                         const auto time = elapsed();
                         if (time >= kWidenReportDelay) {
                             reportSingle(thread, thread.pvIdx, depth, time);
