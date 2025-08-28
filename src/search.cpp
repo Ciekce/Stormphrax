@@ -848,8 +848,8 @@ namespace stormphrax::search {
                 }
             }
 
-            if (!ttpv && ttHit && std::abs(ttEntry.score) < kScoreWin && ttEntry.depth >= depth - 4
-                && pos.isPseudolegal(ttEntry.move))
+            if (!ttpv && ttHit && std::abs(ttEntry.score) < kScoreWin && ttEntry.score >= beta + 300
+                && ttEntry.depth >= depth - 4 && pos.isPseudolegal(ttEntry.move))
             {
                 return ttEntry.score;
             }
