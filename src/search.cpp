@@ -847,6 +847,12 @@ namespace stormphrax::search {
                     }
                 }
             }
+
+            if (!ttpv && ttHit && std::abs(ttEntry.score) < kScoreWin && ttEntry.depth >= depth - 4
+                && pos.isPseudolegal(ttEntry.move))
+            {
+                return ttEntry.score;
+            }
         }
 
         thread.stack[ply + 1].killers.clear();
