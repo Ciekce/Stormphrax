@@ -560,7 +560,7 @@ namespace stormphrax::search {
             return qsearch<kPvNode>(thread, pos, ply, moveStackIdx, alpha, beta);
         }
 
-        thread.search.updateSeldepth(ply + 1);
+        thread.search.updateSeldepth(ply);
 
         const bool inCheck = pos.isCheck();
 
@@ -1084,7 +1084,7 @@ namespace stormphrax::search {
                 }
 
                 if (legalMoves == 1 || score > alpha) {
-                    rootMove->seldepth = thread.search.loadSeldepth();
+                    rootMove->seldepth = thread.search.seldepth;
 
                     rootMove->displayScore = score;
                     rootMove->score = score;
@@ -1231,7 +1231,7 @@ namespace stormphrax::search {
         const bool inCheck = pos.isCheck();
 
         if constexpr (kPvNode) {
-            thread.search.updateSeldepth(ply + 1);
+            thread.search.updateSeldepth(ply);
         }
 
         if (ply >= kMaxDepth) {

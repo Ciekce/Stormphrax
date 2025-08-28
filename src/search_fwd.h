@@ -27,8 +27,8 @@
 namespace stormphrax::search {
     struct SearchData {
         i32 rootDepth{};
+        i32 seldepth{};
 
-        std::atomic<i32> seldepth{};
         std::atomic<usize> nodes{};
         std::atomic<usize> tbhits{};
 
@@ -38,14 +38,8 @@ namespace stormphrax::search {
             *this = other;
         }
 
-        [[nodiscard]] inline i32 loadSeldepth() const {
-            return seldepth.load(std::memory_order::relaxed);
-        }
-
-        inline void updateSeldepth(i32 v) {
-            if (v > loadSeldepth()) {
-                seldepth.store(v, std::memory_order::relaxed);
-            }
+        inline void updateSeldepth(i32 ply) {
+            seldepth = std::max(seldepth, ply + 1);
         }
 
         [[nodiscard]] inline usize loadNodes() const {
@@ -66,8 +60,8 @@ namespace stormphrax::search {
 
         SearchData& operator=(const SearchData& other) {
             rootDepth = other.rootDepth;
+            seldepth = other.seldepth;
 
-            seldepth.store(other.seldepth.load());
             nodes.store(other.nodes.load());
             tbhits.store(other.tbhits.load());
 
