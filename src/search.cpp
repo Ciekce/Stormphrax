@@ -386,9 +386,6 @@ namespace stormphrax::search {
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
                 searchData.seldepth = 0;
 
-                // count the root node
-                searchData.incNodes();
-
                 auto delta = initialAspWindow();
 
                 auto alpha = -kScoreInf;
@@ -406,6 +403,9 @@ namespace stormphrax::search {
                 i32 aspReduction = 0;
 
                 while (!hasStopped()) {
+                    // count the root node
+                    searchData.incNodes();
+
                     const auto aspDepth = std::max(depth - aspReduction, 1); // paranoia
                     newScore = search<true, true>(thread, thread.rootPos, rootPv, aspDepth, 0, 0, alpha, beta, false);
 
