@@ -912,9 +912,14 @@ namespace stormphrax::search {
                         generator.skipQuiets();
                         continue;
                     }
-                } else if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
-                {
-                    continue;
+                } else {
+                    if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset()) {
+                        continue;
+                    }
+
+                    if (depth <= 5 && quietOrLosing && !inCheck && curr.staticEval + 120 * depth <= alpha) {
+                        break;
+                    }
                 }
 
                 const auto seeThreshold =
