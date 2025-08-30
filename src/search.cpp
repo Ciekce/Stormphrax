@@ -913,12 +913,12 @@ namespace stormphrax::search {
                         continue;
                     }
                 } else {
-                    if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset()) {
-                        continue;
-                    }
-
                     if (depth <= 5 && quietOrLosing && !inCheck && curr.staticEval + 120 * depth <= alpha) {
                         break;
+                    }
+
+                    if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset()) {
+                        continue;
                     }
                 }
 
