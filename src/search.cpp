@@ -1144,7 +1144,7 @@ namespace stormphrax::search {
         }
 
         if (bestMove) {
-            const auto historyDepth = depth + (curr.staticEval <= bestScore);
+            const auto historyDepth = depth + (!inCheck && curr.staticEval <= bestScore);
 
             const auto bonus = historyBonus(historyDepth);
             const auto penalty = historyPenalty(historyDepth);
