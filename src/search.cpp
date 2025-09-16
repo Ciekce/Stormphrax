@@ -594,29 +594,26 @@ namespace stormphrax::search {
         if (!curr.excluded) {
             ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
-            if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)) {
-                if (ttEntry.flag == TtFlag::kExact                                   //
+            if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
+                && (ttEntry.flag == TtFlag::kExact                                   //
                     || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha //
-                    || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)
+                    || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta))
+            {
+                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
+                    && pos.isPseudolegal(ttEntry.move))
                 {
-                    if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
-                        && pos.isPseudolegal(ttEntry.move))
-                    {
-                        const auto bonus = historyBonus(depth);
-                        thread.history.updateQuietScore(
-                            thread.conthist,
-                            ply,
-                            pos.threats(),
-                            boards.pieceOn(ttEntry.move.fromSq()),
-                            ttEntry.move,
-                            bonus
-                        );
-                    }
-
-                    return ttEntry.score;
-                } else if (depth <= 6) {
-                    ++depth;
+                    const auto bonus = historyBonus(depth);
+                    thread.history.updateQuietScore(
+                        thread.conthist,
+                        ply,
+                        pos.threats(),
+                        boards.pieceOn(ttEntry.move.fromSq()),
+                        ttEntry.move,
+                        bonus
+                    );
                 }
+
+                return ttEntry.score;
             }
         }
 
