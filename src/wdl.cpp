@@ -36,7 +36,7 @@ namespace stormphrax::wdl {
     std::pair<i32, i32> wdlModel(Score povScore, i32 material) {
         const auto [a, b] = wdlParams(material);
 
-        const auto x = static_cast<f64>(povScore);
+        const auto x = static_cast<f64>(povScore) * 2.5;
 
         return {
             static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a - x) / b)))),

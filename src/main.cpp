@@ -19,7 +19,6 @@
 #include "bench.h"
 #include "cuckoo.h"
 #include "datagen/datagen.h"
-#include "eval/nnue.h"
 #include "tunable.h"
 #include "uci.h"
 #include "util/ctrlc.h"
@@ -36,8 +35,6 @@ i32 main(i32 argc, const char* argv[]) {
 
     tunable::init();
     cuckoo::init();
-
-    eval::loadDefaultNetwork();
 
     if (argc > 1) {
         const std::string_view mode{argv[1]};

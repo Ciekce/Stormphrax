@@ -112,26 +112,20 @@ namespace stormphrax::search {
         PvList pv{};
     };
 
-    template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
-        explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::NnueState& nnueState) :
-                m_keyHistory{keyHistory}, m_nnueState{nnueState} {}
+        explicit ThreadPosGuard(std::vector<u64>& keyHistory) :
+                m_keyHistory{keyHistory} {}
 
         ThreadPosGuard(const ThreadPosGuard&) = delete;
         ThreadPosGuard(ThreadPosGuard&&) = delete;
 
         inline ~ThreadPosGuard() {
             m_keyHistory.pop_back();
-
-            if constexpr (kUpdateNnue) {
-                m_nnueState.pop();
-            }
         }
 
     private:
         std::vector<u64>& m_keyHistory;
-        eval::NnueState& m_nnueState;
     };
 
     struct alignas(kCacheLineSize) ThreadData {
@@ -151,8 +145,6 @@ namespace stormphrax::search {
         bool datagen{false};
 
         i32 minNmpPly{};
-
-        eval::NnueState nnueState{};
 
         u32 pvIdx{};
         std::vector<RootMove> rootMoves{};
@@ -175,7 +167,7 @@ namespace stormphrax::search {
             return id == 0;
         }
 
-        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply) {
+        [[nodiscard]] inline std::pair<Position, ThreadPosGuard> applyNullmove(const Position& pos, i32 ply) {
             assert(ply <= kMaxDepth);
 
             stack[ply].move = kNullMove;
@@ -184,14 +176,14 @@ namespace stormphrax::search {
 
             keyHistory.push_back(pos.key());
 
-            return std::pair<Position, ThreadPosGuard<false>>{
+            return std::pair<Position, ThreadPosGuard>{
                 std::piecewise_construct,
                 std::forward_as_tuple(pos.applyNullMove()),
-                std::forward_as_tuple(keyHistory, nnueState)
+                std::forward_as_tuple(keyHistory)
             };
         }
 
-        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<true>> applyMove(
+        [[nodiscard]] inline std::pair<Position, ThreadPosGuard> applyMove(
             const Position& pos,
             i32 ply,
             Move move
@@ -206,10 +198,10 @@ namespace stormphrax::search {
 
             keyHistory.push_back(pos.key());
 
-            return std::pair<Position, ThreadPosGuard<true>>{
+            return std::pair<Position, ThreadPosGuard>{
                 std::piecewise_construct,
-                std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kQueue>(move, &nnueState)),
-                std::forward_as_tuple(keyHistory, nnueState)
+                std::forward_as_tuple(pos.applyMove(move)),
+                std::forward_as_tuple(keyHistory)
             };
         }
 

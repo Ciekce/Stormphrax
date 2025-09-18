@@ -50,7 +50,7 @@ namespace stormphrax {
     using util::Instant;
 
     namespace {
-        constexpr auto kName = "Stormphrax";
+        constexpr auto kName = "Pestophrax";
         constexpr auto kVersion = SP_STRINGIFY(SP_VERSION);
         constexpr auto kAuthor = "Ciekce";
 
@@ -251,7 +251,6 @@ namespace stormphrax {
                 search::kSyzygyProbeLimitRange.min(),
                 search::kSyzygyProbeLimitRange.max()
             );
-            println("option name EvalFile type string default <internal>");
 
 #if SP_EXTERNAL_TUNE
             for (const auto& param : tunableParams()) {
@@ -694,15 +693,6 @@ namespace stormphrax {
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
                         }
                     }
-                } else if (name == "evalfile") {
-                    if (!value.empty()) {
-                        if (value == "<internal>") {
-                            eval::loadDefaultNetwork();
-                            println("info string loaded embedded network {}", eval::defaultNetworkName());
-                        } else {
-                            eval::loadNetwork(value);
-                        }
-                    }
                 }
 #if SP_EXTERNAL_TUNE
                 else if (auto* param = lookupTunableParam(name))
@@ -743,7 +733,7 @@ namespace stormphrax {
 
             println();
 
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEval(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
             const auto whitePerspective = m_pos.stm() == Color::kBlack ? -normalized : normalized;
 
@@ -755,14 +745,14 @@ namespace stormphrax {
         }
 
         void UciHandler::handleEval() {
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEval(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
             println("Static eval: {:+}.{:02}", normalized / 100, std::abs(normalized) % 100);
         }
 
         void UciHandler::handleRawEval() {
-            const auto score = eval::staticEvalOnce<false>(m_pos);
+            const auto score = eval::staticEval<false>(m_pos);
             println("{}", score);
         }
 

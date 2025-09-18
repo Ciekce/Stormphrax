@@ -220,7 +220,6 @@ namespace stormphrax::search {
         auto thread = std::make_unique<ThreadData>();
 
         thread->rootPos = pos;
-        thread->nnueState.reset(thread->rootPos.bbs(), thread->rootPos.kings());
 
         if (initRootMoveList(thread->rootPos).first == RootStatus::kNoLegalMoves) {
             return;
@@ -351,8 +350,6 @@ namespace stormphrax::search {
             thread.keyHistory.reserve(m_setupInfo.keyHistorySize);
 
             std::ranges::copy(m_setupInfo.keyHistory, std::back_inserter(thread.keyHistory));
-
-            thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
 
             m_setupBarrier.arriveAndWait();
         }
@@ -565,15 +562,9 @@ namespace stormphrax::search {
         const bool inCheck = pos.isCheck();
 
         if (ply >= kMaxDepth) {
-            return inCheck ? 0
-                           : eval::adjustedStaticEval(
-                                 pos,
-                                 thread.contMoves,
-                                 ply,
-                                 thread.nnueState,
-                                 &thread.correctionHistory,
-                                 m_contempt
-                             );
+            return inCheck
+                     ? 0
+                     : eval::adjustedStaticEval(pos, thread.contMoves, ply, &thread.correctionHistory, m_contempt);
         }
 
         const auto us = pos.stm();
@@ -689,7 +680,7 @@ namespace stormphrax::search {
             } else if (ttHit && ttEntry.staticEval != kScoreNone) {
                 rawStaticEval = ttEntry.staticEval;
             } else {
-                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+                rawStaticEval = eval::staticEval(pos, m_contempt);
             }
 
             if (!ttHit) {
@@ -1232,15 +1223,9 @@ namespace stormphrax::search {
         }
 
         if (ply >= kMaxDepth) {
-            return inCheck ? 0
-                           : eval::adjustedStaticEval(
-                                 pos,
-                                 thread.contMoves,
-                                 ply,
-                                 thread.nnueState,
-                                 &thread.correctionHistory,
-                                 m_contempt
-                             );
+            return inCheck
+                     ? 0
+                     : eval::adjustedStaticEval(pos, thread.contMoves, ply, &thread.correctionHistory, m_contempt);
         }
 
         ProbedTTableEntry ttEntry{};
@@ -1265,7 +1250,7 @@ namespace stormphrax::search {
             if (ttHit && ttEntry.staticEval != kScoreNone) {
                 rawStaticEval = ttEntry.staticEval;
             } else {
-                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+                rawStaticEval = eval::staticEval(pos, m_contempt);
             }
 
             if (!ttHit) {

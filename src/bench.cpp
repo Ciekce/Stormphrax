@@ -125,22 +125,5 @@ namespace stormphrax::bench {
         println("{} nodes {} nps", nodes, static_cast<usize>(static_cast<f64>(nodes) / time));
 
         stats::print();
-
-#if SP_SPARSE_BENCH_FT_SIZE > 0
-        std::ofstream stream{"activations.txt", std::ios::binary};
-
-        bool first = true;
-        for (const auto count : eval::nnue::arch::sparse::g_activationCounts) {
-            if (!first) {
-                fmt::print(stream, ", ");
-            }
-            fmt::print(stream, "{}", count);
-            first = false;
-        }
-
-        fmt::println(stream, "");
-
-        println("Wrote FT activation counts to activations.txt");
-#endif
     }
 } // namespace stormphrax::bench

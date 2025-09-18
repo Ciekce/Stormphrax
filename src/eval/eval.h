@@ -21,13 +21,13 @@
 #include "../types.h"
 
 #include <array>
+#include <span>
 
 #include "../core.h"
 #include "../correction.h"
 #include "../position/position.h"
 #include "../see.h"
 #include "../tunable.h"
-#include "nnue.h"
 
 namespace stormphrax::eval {
     // black, white
@@ -77,8 +77,8 @@ namespace stormphrax::eval {
     }
 
     template <bool kScale = true>
-    inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
-        auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.stm());
+    inline Score staticEval(const Position& pos, const Contempt& contempt = {}) {
+        const auto eval = pos.material();
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 
@@ -87,17 +87,10 @@ namespace stormphrax::eval {
         const Position& pos,
         std::span<search::PlayedMove> moves,
         i32 ply,
-        NnueState& nnueState,
         const CorrectionHistoryTable* correction,
         const Contempt& contempt = {}
     ) {
-        const auto eval = staticEval(pos, nnueState, contempt);
+        const auto eval = staticEval(pos, contempt);
         return adjustEval<kCorrect>(pos, moves, ply, correction, eval);
-    }
-
-    template <bool kScale = true>
-    inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
-        auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.stm());
-        return adjustStatic<kScale>(pos, contempt, eval);
     }
 } // namespace stormphrax::eval

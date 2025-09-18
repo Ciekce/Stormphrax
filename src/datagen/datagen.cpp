@@ -212,8 +212,6 @@ namespace stormphrax::datagen {
 
                 output.start(pos);
 
-                thread->nnueState.reset(pos.bbs(), pos.kings());
-
                 searcher.setDatagenMaxDepth(10);
                 limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
                 limiter.setHardNodeLimit(kVerificationHardNodeLimit);
@@ -290,7 +288,7 @@ namespace stormphrax::datagen {
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
                     thread->keyHistory.push_back(pos.key());
-                    pos = pos.applyMove<NnueUpdateAction::kApply>(move, &thread->nnueState);
+                    pos = pos.applyMove(move);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
 

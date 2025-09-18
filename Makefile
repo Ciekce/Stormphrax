@@ -6,27 +6,20 @@ endif
 
 ifeq ($(DETECTED_OS),Darwin)
 VERSION := $(shell cat version.txt)
-DEFAULT_NET := $(shell cat network.txt)
 else
 VERSION := $(file < version.txt)
-DEFAULT_NET := $(file < network.txt)
 endif
 
 ifndef EXE
-    EXE = stormphrax-$(VERSION)
+    EXE = pestophrax-$(VERSION)
     NO_EXE_SET = true
-endif
-
-ifndef EVALFILE
-    EVALFILE = $(DEFAULT_NET).nnue
-    NO_EVALFILE_SET = true
 endif
 
 PGO = off
 COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 
-SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp
+SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/limit/time.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/util/ctrlc.cpp src/stats.cpp src/eval/material.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
 SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
 
@@ -34,7 +27,7 @@ SUFFIX :=
 
 CXX := clang++
 # silence warning for fathom
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -O3 -flto -DNDEBUG -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -O3 -flto -DNDEBUG -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
@@ -121,7 +114,7 @@ PROFILE_OUT = sp_profile$(SUFFIX)
 
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $^
 endef
 else
 define build
@@ -142,32 +135,24 @@ all: native release
 
 .DEFAULT_GOAL := native
 
-ifdef NO_EVALFILE_SET
-$(EVALFILE):
-	$(info Downloading default network $(DEFAULT_NET).nnue)
-	curl -sOL https://github.com/Ciekce/stormphrax-nets/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue
-
-download-net: $(EVALFILE)
-endif
-
-$(EXE): $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+$(EXE): $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,NATIVE,native)
 
 native: $(EXE)
 
-tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+tunable: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,TUNABLE,tunable)
 
-vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+vnni512: $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,VNNI512,vnni512)
 
-avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+avx512: $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX512,avx512)
 
-avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+avx2-bmi2: $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,AVX2_BMI2,avx2-bmi2)
 
-avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+avx2: $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,AVX2,avx2)
 
 clean:

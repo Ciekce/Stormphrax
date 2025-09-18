@@ -22,6 +22,7 @@
 
 #include <array>
 #include <optional>
+#include <span>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -29,7 +30,7 @@
 #include <vector>
 
 #include "../attacks/attacks.h"
-#include "../eval/nnue.h"
+#include "../eval/material.h"
 #include "../keys.h"
 #include "../move.h"
 #include "../rays.h"
@@ -120,17 +121,10 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const Keys& other) const = default;
     };
 
-    enum class NnueUpdateAction {
-        kNone = 0,
-        kQueue,
-        kApply,
-    };
-
     class Position {
     public:
         // Moves are assumed to be legal
-        template <NnueUpdateAction kNnueAction = NnueUpdateAction::kNone>
-        [[nodiscard]] Position applyMove(Move move, eval::NnueState* nnueState = nullptr) const;
+        [[nodiscard]] Position applyMove(Move move) const;
 
         [[nodiscard]] inline Position applyNullMove() const {
             return applyMove(kNullMove);
@@ -153,6 +147,11 @@ namespace stormphrax {
 
         [[nodiscard]] inline Color nstm() const {
             return oppColor(m_stm);
+        }
+
+        [[nodiscard]] inline Score material() const {
+            const auto material = m_material.get();
+            return m_stm == Color::kBlack ? -material : material;
         }
 
         [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
@@ -469,15 +468,15 @@ namespace stormphrax {
         template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
+        template <bool kUpdateKeys = true>
+        [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst);
 
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates);
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        void castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates);
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        Piece enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
+        template <bool kUpdateKeys = true>
+        Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo);
+        template <bool kUpdateKeys = true>
+        void castle(Piece king, Square kingSrc, Square rookSrc);
+        template <bool kUpdateKeys = true>
+        Piece enPassant(Piece pawn, Square src, Square dst);
 
         [[nodiscard]] inline Bitboard calcCheckers() const {
             const auto color = stm();
@@ -569,6 +568,8 @@ namespace stormphrax {
         std::array<Bitboard, 2> m_pinned{};
         Bitboard m_threats{};
 
+        eval::MaterialScore m_material{};
+
         CastlingRooks m_castlingRooks{};
 
         u16 m_halfmove{};
@@ -581,7 +582,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 216);
+    static_assert(sizeof(Position) == 224);
 
     [[nodiscard]] Square squareFromString(std::string_view str);
 } // namespace stormphrax

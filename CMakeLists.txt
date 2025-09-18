@@ -5,8 +5,6 @@ project(stormphrax VERSION ${SP_VERSION})
 
 set(CMAKE_CXX_STANDARD 20)
 
-file(STRINGS network.txt SP_DEFAULT_NET_NAME LIMIT_COUNT 1)
-
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 if(MSVC AND NOT SP_CLANG)
@@ -52,20 +50,20 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position/position.h src/position/position.cpp src/search.h
 	src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h
 	src/util/timer.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h
-	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
+	src/limit/time.cpp src/util/cemath.h src/util/range.h src/arch.h src/perft.h
 	src/perft.cpp src/search_fwd.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
 	src/opts.cpp src/position/boards.h src/3rdparty/pyrrhic/stdendian.h src/3rdparty/pyrrhic/tbconfig.h
 	src/3rdparty/pyrrhic/tbprobe.h src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.h src/datagen/datagen.cpp
-	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h
-	src/cuckoo.h src/cuckoo.cpp src/eval/nnue/network.h src/eval/nnue/activation.h src/eval/nnue/output.h
-	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h src/eval/nnue/features.h
+	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/wdl.h src/wdl.cpp
+	src/cuckoo.h src/cuckoo.cpp
+	src/util/memstream.h src/util/aligned_array.h
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
-	src/util/multi_array.h src/correction.h src/limit/compound.h src/util/simd/avx512.h src/util/simd/avx2.h
-	src/util/simd/neon.h src/util/align.h src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h
-	src/eval/nnue/io_impl.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
-	src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp
-	src/3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h)
+	src/util/multi_array.h src/correction.h src/limit/compound.h
+	src/util/align.h
+	src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
+	src/stats.h src/stats.cpp
+	src/3rdparty/fmt/src/format.cc src/eval/tapered.h src/eval/material.h src/eval/material.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
@@ -117,12 +115,11 @@ foreach(TARGET ${TARGETS})
 	string(REPLACE "-" "_" ARCH_NAME "${ARCH_NAME}")
 	string(TOUPPER ${ARCH_NAME} ARCH_NAME)
 
-	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION}
-		SP_${ARCH_NAME} SP_NETWORK_FILE="${PROJECT_SOURCE_DIR}/${SP_DEFAULT_NET_NAME}.nnue")
+	target_compile_definitions(${TARGET} PUBLIC SP_VERSION=${CMAKE_PROJECT_VERSION} SP_${ARCH_NAME})
 
 	target_include_directories(${TARGET} PUBLIC src/3rdparty/fmt/include)
 
-	string(REPLACE "stormphrax-" "stormphrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
+	string(REPLACE "stormphrax-" "pestophrax-${CMAKE_PROJECT_VERSION}-" TARGET_NAME "${TARGET}")
 	set_property(TARGET ${TARGET} PROPERTY OUTPUT_NAME "${TARGET_NAME}")
 
 	if(SP_EMBED_COMMIT_HASH)
