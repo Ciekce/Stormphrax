@@ -1059,6 +1059,10 @@ namespace stormphrax::search {
                 //   - alpha was raised by a previous zero-window search,
                 // then do a full-window search to get the true score of this node
                 if (kPvNode && (legalMoves == 1 || score > alpha)) {
+                    if (thread.search.rootDepth >= 9 && newDepth <= 0 && move == ttEntry.move && ttEntry.depth >= 3) {
+                        newDepth = 1;
+                    }
+
                     score = -search<
                         true>(thread, newPos, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
                 }
