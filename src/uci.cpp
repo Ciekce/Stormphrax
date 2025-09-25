@@ -563,6 +563,10 @@ namespace stormphrax {
                 return;
             }
 
+            if (args.empty()) {
+                return;
+            }
+
             usize i = 0;
 
             for (; i < args.size() - 1 && args[i] != "name"; ++i) {
