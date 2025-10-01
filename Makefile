@@ -33,8 +33,12 @@ SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
 SUFFIX :=
 
 CXX := clang++
+
 # silence warning for fathom
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -O3 -flto -DNDEBUG -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
+
+CXXFLAGS_RELEASE := -O3 -DNDEBUG
+CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
@@ -121,15 +125,15 @@ PROFILE_OUT = sp_profile$(SUFFIX)
 
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $(EVALFILE),$^)
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $(EVALFILE),$^)
     ./$(PROFILE_OUT) bench
     $(RM) $(PROFILE_OUT)
     $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$2)$(SUFFIX) $(PGO_USE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $(EVALFILE),$^)
     $(RM) *.profraw
     $(RM) sp.profdata
 endef
@@ -151,24 +155,27 @@ download-net: $(EVALFILE)
 endif
 
 $(EXE): $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,NATIVE,native)
+	$(call build,RELEASE,NATIVE,native)
 
 native: $(EXE)
 
 tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,TUNABLE,tunable)
+	$(call build,RELEASE,TUNABLE,tunable)
 
 vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,VNNI512,vnni512)
+	$(call build,RELEASE,VNNI512,vnni512)
 
 avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,AVX512,avx512)
+	$(call build,RELEASE,AVX512,avx512)
 
 avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,AVX2_BMI2,avx2-bmi2)
+	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,AVX2,avx2)
+	$(call build,RELEASE,AVX2,avx2)
+
+sanitizer: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+	$(call build,SANITIZER,NATIVE,native)
 
 clean:
 
