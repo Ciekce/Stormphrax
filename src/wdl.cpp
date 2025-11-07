@@ -58,7 +58,16 @@ namespace stormphrax::wdl {
 
         if (g_opts.evalSharpness != 100) {
             const auto power = static_cast<f64>(g_opts.evalSharpness) / 100.0;
-            normalized = std::copysign(std::pow(std::abs(normalized), power), normalized);
+
+            auto sharpened = std::pow(std::abs(normalized), power);
+
+            // Damp large evals so they don't enter win range
+            if (g_opts.evalSharpness > 100) {
+                const auto clamp = (std::abs(normalized) * 256.0) / (std::abs(normalized) + 28.0);
+                sharpened = std::min(sharpened, clamp);
+            }
+
+            normalized = std::copysign(sharpened, normalized);
         }
 
         return static_cast<Score>(std::round(100.0 * normalized));
