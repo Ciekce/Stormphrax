@@ -223,6 +223,12 @@ namespace stormphrax {
             );
             println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
             println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
+            println(
+                "option name EvalSharpness type spin default {} min {} max {}",
+                defaultOpts.evalSharpness,
+                opts::kEvalSharpnessRange.min(),
+                opts::kEvalSharpnessRange.max()
+            );
             println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
             println(
                 "option name Move Overhead type spin default {} min {} max {}",
@@ -648,6 +654,12 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newShowWdl = util::tryParseBool(value)) {
                             opts::mutableOpts().showWdl = *newShowWdl;
+                        }
+                    }
+                } else if (name == "evalsharpness") {
+                    if (!value.empty()) {
+                        if (const auto newEvalSharpness = util::tryParse<i32>(value)) {
+                            opts::mutableOpts().evalSharpness = opts::kEvalSharpnessRange.clamp(*newEvalSharpness);
                         }
                     }
                 } else if (name == "showcurrmove") {

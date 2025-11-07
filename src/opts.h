@@ -30,6 +30,9 @@ namespace stormphrax {
 
         constexpr auto kMultiPvRange = util::Range<u32>{1, 256};
 
+        constexpr i32 kDefaultEvalSharpness = 115;
+        constexpr auto kEvalSharpnessRange = util::Range<i32>{100, 120};
+
         constexpr i32 kDefaultNormalizedContempt = 0;
 
         struct GlobalOptions {
@@ -38,6 +41,8 @@ namespace stormphrax {
             bool chess960{false};
             bool showWdl{true};
             bool showCurrMove{false};
+
+            i32 evalSharpness{kDefaultEvalSharpness};
 
             u32 multiPv{1};
 
