@@ -366,6 +366,7 @@ namespace stormphrax::datagen {
         }
 
         opts::mutableOpts().chess960 = dfrc;
+        opts::mutableOpts().evalSharpness = 100;
 
         if (tbPath) {
             println("looking for TBs in \"{}\"", *tbPath);
