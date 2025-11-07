@@ -63,7 +63,7 @@ namespace stormphrax::wdl {
 
             // Damp large evals so they don't enter win range
             if (g_opts.evalSharpness > 100) {
-                const auto clamp = (std::abs(normalized) * 256.0) / (std::abs(normalized) + 28.0);
+                const auto clamp = (std::abs(normalized) * 300.0) / (std::abs(normalized) + 50.0);
                 sharpened = std::min(sharpened, clamp);
             }
 
