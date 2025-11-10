@@ -21,6 +21,8 @@
 #include <array>
 #include <numeric>
 
+#include "opts.h"
+
 namespace stormphrax::wdl {
     std::pair<f64, f64> wdlParams(i32 material) {
         static constexpr auto kAs = std::array{-96.02243718, 269.74715145, -333.86830676, 436.37312689};
@@ -43,4 +45,35 @@ namespace stormphrax::wdl {
             static_cast<i32>(std::round(1000.0 / (1.0 + std::exp((a + x) / b))))
         };
     }
+
+    template <bool kSharpen>
+    Score normalizeScore(Score score, i32 material) {
+        // don't normalise wins/losses, or zeroes that are pointless to normalise
+        if (score == 0 || std::abs(score) > kScoreWin) {
+            return score;
+        }
+
+        const auto [a, b] = wdlParams(material);
+
+        auto normalized = static_cast<f64>(score) / a;
+
+        if (kSharpen && g_opts.evalSharpness != 100) {
+            const auto power = static_cast<f64>(g_opts.evalSharpness) / 100.0;
+
+            auto sharpened = std::pow(std::abs(normalized), power);
+
+            // Damp large evals so they don't enter win range
+            if (g_opts.evalSharpness > 100) {
+                const auto clamp = (std::abs(normalized) * 300.0) / (std::abs(normalized) + 50.0);
+                sharpened = std::min(sharpened, clamp);
+            }
+
+            normalized = std::copysign(sharpened, normalized);
+        }
+
+        return static_cast<Score>(std::round(100.0 * normalized));
+    }
+
+    template Score normalizeScore<false>(Score, i32);
+    template Score normalizeScore<true>(Score, i32);
 } // namespace stormphrax::wdl

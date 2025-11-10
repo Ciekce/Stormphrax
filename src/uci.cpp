@@ -223,6 +223,12 @@ namespace stormphrax {
             );
             println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
             println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
+            println(
+                "option name EvalSharpness type spin default {} min {} max {}",
+                defaultOpts.evalSharpness,
+                opts::kEvalSharpnessRange.min(),
+                opts::kEvalSharpnessRange.max()
+            );
             println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
             println(
                 "option name Move Overhead type spin default {} min {} max {}",
@@ -650,6 +656,12 @@ namespace stormphrax {
                             opts::mutableOpts().showWdl = *newShowWdl;
                         }
                     }
+                } else if (name == "evalsharpness") {
+                    if (!value.empty()) {
+                        if (const auto newEvalSharpness = util::tryParse<i32>(value)) {
+                            opts::mutableOpts().evalSharpness = opts::kEvalSharpnessRange.clamp(*newEvalSharpness);
+                        }
+                    }
                 } else if (name == "showcurrmove") {
                     if (!value.empty()) {
                         if (const auto newShowCurrMove = util::tryParseBool(value)) {
@@ -748,10 +760,15 @@ namespace stormphrax {
             println();
 
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
-            const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
-            const auto whitePerspective = m_pos.stm() == Color::kBlack ? -normalized : normalized;
 
-            println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
+            const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
+            const auto whiteNormalized = m_pos.stm() == Color::kBlack ? -normalized : normalized;
+
+            const auto unsharpened = wdl::normalizeScore<false>(staticEval, m_pos.classicalMaterial());
+            const auto whiteUnsharpened = m_pos.stm() == Color::kBlack ? -unsharpened : unsharpened;
+
+            println("Static eval: {:+}.{:02}", whiteNormalized / 100, std::abs(whiteNormalized) % 100);
+            println("Unsharpened eval: {:+}.{:02}", whiteUnsharpened / 100, std::abs(whiteUnsharpened) % 100);
         }
 
         void UciHandler::handleFen() {
