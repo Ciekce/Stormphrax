@@ -760,10 +760,15 @@ namespace stormphrax {
             println();
 
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
-            const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
-            const auto whitePerspective = m_pos.stm() == Color::kBlack ? -normalized : normalized;
 
-            println("Static eval: {:+}.{:02}", whitePerspective / 100, std::abs(whitePerspective) % 100);
+            const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
+            const auto whiteNormalized = m_pos.stm() == Color::kBlack ? -normalized : normalized;
+
+            const auto unsharpened = wdl::normalizeScore<false>(staticEval, m_pos.classicalMaterial());
+            const auto whiteUnsharpened = m_pos.stm() == Color::kBlack ? -unsharpened : unsharpened;
+
+            println("Static eval: {:+}.{:02}", whiteNormalized / 100, std::abs(whiteNormalized) % 100);
+            println("Unsharpened eval: {:+}.{:02}", whiteUnsharpened / 100, std::abs(whiteUnsharpened) % 100);
         }
 
         void UciHandler::handleFen() {

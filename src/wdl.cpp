@@ -46,6 +46,7 @@ namespace stormphrax::wdl {
         };
     }
 
+    template <bool kSharpen>
     Score normalizeScore(Score score, i32 material) {
         // don't normalise wins/losses, or zeroes that are pointless to normalise
         if (score == 0 || std::abs(score) > kScoreWin) {
@@ -56,7 +57,7 @@ namespace stormphrax::wdl {
 
         auto normalized = static_cast<f64>(score) / a;
 
-        if (g_opts.evalSharpness != 100) {
+        if (kSharpen && g_opts.evalSharpness != 100) {
             const auto power = static_cast<f64>(g_opts.evalSharpness) / 100.0;
 
             auto sharpened = std::pow(std::abs(normalized), power);
@@ -72,4 +73,7 @@ namespace stormphrax::wdl {
 
         return static_cast<Score>(std::round(100.0 * normalized));
     }
+
+    template Score normalizeScore<false>(Score, i32);
+    template Score normalizeScore<true>(Score, i32);
 } // namespace stormphrax::wdl
