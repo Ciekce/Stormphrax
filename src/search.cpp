@@ -941,7 +941,9 @@ namespace stormphrax::search {
                 if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isWin(ttEntry.score))
                 {
-                    const auto sBeta = ttEntry.score - depth * sBetaMargin() / 16;
+                    const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (ttpv && !kPvNode);
+                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
+
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
