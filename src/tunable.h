@@ -192,7 +192,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(seePruningThresholdQuiet, -16, -80, -1, 12)
     SP_TUNABLE_PARAM(seePruningThresholdNoisy, -112, -120, -40, 20)
 
-    SP_TUNABLE_PARAM(sBetaMargin, 14, 4, 64, 12)
+    SP_TUNABLE_PARAM(sBetaBaseMargin, 14, 4, 64, 12)
+    SP_TUNABLE_PARAM(sBetaPrevPvMargin, 16, 2, 32, 2)
 
     SP_TUNABLE_PARAM(doubleExtMargin, 11, 0, 32, 5)
     SP_TUNABLE_PARAM(tripleExtMargin, 105, 10, 150, 7)
