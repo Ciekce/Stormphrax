@@ -20,7 +20,9 @@
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
-    #define NOMINMAX
+    #ifndef NOMINMAX // mingw
+        #define NOMINMAX
+    #endif
     #include <Windows.h>
 #else
     #include <signal.h>
@@ -56,10 +58,10 @@ namespace stormphrax::util::signal {
             eprintln("failed to set ctrl+c handler");
         }
 #else
-        struct sigaction action{.sa_flags = SA_RESTART};
+        struct sigaction action{};
 
-        // on some platforms this is a union, and C++ doesn't support nested designated initialisers
-        action.sa_handler = [](int signal) {
+        action.sa_flags = SA_RESTART;
+        action.sa_handler = []([[maybe_unused]] int signal) {
             for (auto& handler : s_handlers) {
                 handler();
             }

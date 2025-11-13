@@ -35,7 +35,7 @@ SUFFIX :=
 CXX := clang++
 
 # disable -Wunused-function and -Wunused-const-variable for zstd
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -Werror -Wno-error=deprecated -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
 
 CXXFLAGS_RELEASE := -O3 -DNDEBUG
 CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
