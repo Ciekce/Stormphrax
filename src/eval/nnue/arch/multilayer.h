@@ -44,10 +44,11 @@ namespace stormphrax::eval::nnue::arch {
         u32 kFtQBits,
         u32 kL1QBits,
         bool kDualActivation,
+        bool kSkip,
         output::OutputBucketing OutputBucketing,
         i32 kScale>
     struct PairwiseMultilayerCReLUSCReLUCReLU {
-        static constexpr u32 kArchId = kDualActivation ? 3 : 2;
+        static constexpr u32 kArchId = 2 + kDualActivation + 2 * kSkip;
 
         static_assert(kL2Size % 16 == 0);
         static_assert(kL3Size % 16 == 0);
@@ -62,6 +63,7 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
         static constexpr u32 kL2SizeFull = kL2Size * (1 + kDualActivation);
+        static constexpr u32 kL3SizeFull = kL3Size + (kDualActivation ? kL2SizeFull : 0);
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
@@ -71,7 +73,7 @@ namespace stormphrax::eval::nnue::arch {
         SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL2SizeFull * kL3Size> l2Weights{};
         SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL3Size> l2Biases{};
 
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL3Size> l3Weights{};
+        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL3SizeFull> l3Weights{};
         SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount> l3Biases{};
 
         static constexpr i32 kQuantBits = 6;
@@ -307,10 +309,15 @@ namespace stormphrax::eval::nnue::arch {
             }
         }
 
-        inline void propagateL3(u32 bucket, std::span<const i32, kL3Size> inputs, std::span<i32, 1> outputs) const {
+        inline void propagateL3(
+            u32 bucket,
+            std::span<const i32, kL3Size> inputs,
+            std::span<const i32, kL2SizeFull> skip,
+            std::span<i32, 1> outputs
+        ) const {
             using namespace util::simd;
 
-            const auto weightOffset = bucket * kL3Size;
+            const auto weightOffset = bucket * kL3SizeFull;
             const auto biasOffset = bucket;
 
             const auto one = set1<i32>(kQ * kQ * kQ);
@@ -383,7 +390,13 @@ namespace stormphrax::eval::nnue::arch {
                 s = add<i32>(s0, s1);
             }
 
-            outputs[0] = (l3Biases[biasOffset] + hsum<i32>(s)) / kQ;
+            i32 skipped = 0;
+
+            for (u32 idx = 0; idx < kL2SizeFull; ++idx) {
+                skipped += skip[idx] * l3Weights[weightOffset + kL3Size + idx];
+            }
+
+            outputs[0] = (l3Biases[biasOffset] + skipped + hsum<i32>(s)) / kQ;
         }
 
     public:
@@ -409,7 +422,7 @@ namespace stormphrax::eval::nnue::arch {
             activateFt(stmInputs, nstmInputs, ftOut, sparseCtx);
             propagateL1(bucket, ftOut, l1Out, sparseCtx);
             propagateL2(bucket, l1Out, l2Out);
-            propagateL3(bucket, l2Out, l3Out);
+            propagateL3(bucket, l2Out, l1Out, l3Out);
 
 #if SP_SPARSE_BENCH_FT_SIZE > 0
             sparse::trackActivations(ftOut);
