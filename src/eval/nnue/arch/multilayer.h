@@ -396,7 +396,7 @@ namespace stormphrax::eval::nnue::arch {
                 skipped += skip[idx] * l3Weights[weightOffset + kL3Size + idx];
             }
 
-            outputs[0] = (l3Biases[biasOffset] + skipped + hsum<i32>(s)) / kQ;
+            outputs[0] = (l3Biases[biasOffset] + hsum<i32>(s) + skipped) / kQ;
         }
 
     public:
