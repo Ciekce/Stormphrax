@@ -104,7 +104,7 @@ namespace stormphrax {
 
                 return weight
                      * m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
-                                  [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                                  [static_cast<i32>(moving1)][static_cast<i32>(dst1)];
             };
 
             const auto [blackNpWeight, whiteNpWeight] =
@@ -149,6 +149,6 @@ namespace stormphrax {
         util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_majorTable{};
-        util::MultiArray<Entry, 2, 12, 64, 6, 64> m_contTable{};
+        util::MultiArray<Entry, 2, 12, 64, 12, 64> m_contTable{};
     };
 } // namespace stormphrax
