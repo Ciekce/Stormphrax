@@ -125,15 +125,15 @@ PROFILE_OUT = sp_profile$(SUFFIX)
 
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out %.nnue,$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $(EVALFILE),$^)
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out %.nnue,$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $(EVALFILE),$^)
     ./$(PROFILE_OUT) bench
     $(RM) $(PROFILE_OUT)
     $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out %.nnue,$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $(EVALFILE),$^)
     $(RM) *.profraw
     $(RM) sp.profdata
 endef
