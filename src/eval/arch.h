@@ -39,11 +39,12 @@ namespace stormphrax::eval {
 
     constexpr u32 kL1Size = 1792;
     constexpr u32 kL2Size = 16;
-    constexpr u32 kL3Size = 32;
+    constexpr u32 kL3Size = 64;
 
     using L1Activation = nnue::activation::ClippedReLU;
 
     constexpr bool kDualActivation = true;
+    constexpr bool kSkip = true;
 
     constexpr i32 kScale = 400;
 
@@ -72,6 +73,7 @@ namespace stormphrax::eval {
         kFtQBits,
         kL1QBits,
         kDualActivation,
+        kSkip,
         OutputBucketing,
         kScale>;
 } // namespace stormphrax::eval
