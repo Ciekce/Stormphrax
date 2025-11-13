@@ -247,62 +247,11 @@ namespace stormphrax::eval::nnue::arch {
 
             std::memcpy(outputs.data(), &l2Biases[biasOffset], outputs.size_bytes());
 
-            // avx512
-            if constexpr (kChunkSize<i32> * 4 > kL3Size) {
-                for (u32 inputIdx = 0; inputIdx < kL2SizeFull; ++inputIdx) {
-                    const auto weightsStart = weightOffset + inputIdx * kL3Size;
-
-                    const auto i = set1<i32>(inputs[inputIdx]);
-
-                    for (u32 outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize<i32> * 2) {
-                        const auto w_0 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 0]);
-                        const auto w_1 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 1]);
-
-                        auto out_0 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 0]);
-                        auto out_1 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 1]);
-
-                        const auto p_0 = mulLo<i32>(i, w_0);
-                        const auto p_1 = mulLo<i32>(i, w_1);
-
-                        out_0 = add<i32>(out_0, p_0);
-                        out_1 = add<i32>(out_1, p_1);
-
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 0], out_0);
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 1], out_1);
-                    }
-                }
-            } else {
-                for (u32 inputIdx = 0; inputIdx < kL2SizeFull; ++inputIdx) {
-                    const auto weightsStart = weightOffset + inputIdx * kL3Size;
-
-                    const auto i = set1<i32>(inputs[inputIdx]);
-
-                    for (u32 outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize<i32> * 4) {
-                        const auto w_0 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 0]);
-                        const auto w_1 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 1]);
-                        const auto w_2 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 2]);
-                        const auto w_3 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 3]);
-
-                        auto out_0 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 0]);
-                        auto out_1 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 1]);
-                        auto out_2 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 2]);
-                        auto out_3 = load<i32>(&outputs[outputIdx + kChunkSize<i32> * 3]);
-
-                        const auto p_0 = mulLo<i32>(i, w_0);
-                        const auto p_1 = mulLo<i32>(i, w_1);
-                        const auto p_2 = mulLo<i32>(i, w_2);
-                        const auto p_3 = mulLo<i32>(i, w_3);
-
-                        out_0 = add<i32>(out_0, p_0);
-                        out_1 = add<i32>(out_1, p_1);
-                        out_2 = add<i32>(out_2, p_2);
-                        out_3 = add<i32>(out_3, p_3);
-
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 0], out_0);
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 1], out_1);
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 2], out_2);
-                        store<i32>(&outputs[outputIdx + kChunkSize<i32> * 3], out_3);
-                    }
+            for (usize inputIdx = 0; inputIdx < kL2SizeFull; ++inputIdx) {
+                const auto input = inputs[inputIdx];
+                for (usize outputIdx = 0; outputIdx < kL3Size; ++outputIdx) {
+                    const auto w = l2Weights[weightOffset + inputIdx * kL3Size + outputIdx];
+                    outputs[outputIdx] += input * w;
                 }
             }
         }
