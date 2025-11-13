@@ -68,13 +68,6 @@ namespace stormphrax::search {
             assert(length == 1 || moves[0] != moves[1]);
         }
 
-        inline PvList& operator=(const PvList& other) {
-            std::copy(other.moves.begin(), other.moves.begin() + other.length, moves.begin());
-            length = other.length;
-
-            return *this;
-        }
-
         inline void reset() {
             moves[0] = kNullMove;
             length = 0;

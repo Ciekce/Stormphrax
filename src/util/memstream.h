@@ -34,7 +34,8 @@ namespace stormphrax::util {
             setg(m_begin, m_begin, m_end);
         }
 
-        pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which) override {
+        pos_type seekoff(off_type off, std::ios_base::seekdir dir, [[maybe_unused]] std::ios_base::openmode which)
+            override {
             assert(off <= std::numeric_limits<i32>::max());
 
             switch (dir) {
@@ -63,6 +64,8 @@ namespace stormphrax::util {
         char* m_end;
     };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreorder-ctor"
     class MemoryIstream : public std::istream {
     public:
         explicit MemoryIstream(std::span<const std::byte> data) :
@@ -71,4 +74,5 @@ namespace stormphrax::util {
     private:
         MemoryBuffer m_buf;
     };
+#pragma clang diagnostic pop
 } // namespace stormphrax::util

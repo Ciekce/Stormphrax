@@ -30,7 +30,10 @@ namespace stormphrax::limit {
     public:
         ~InfiniteLimiter() final = default;
 
-        [[nodiscard]] inline bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
+        [[nodiscard]] inline bool stop(
+            [[maybe_unused]] const search::SearchData& data,
+            [[maybe_unused]] bool allowSoftTimeout
+        ) final {
             return false;
         }
 

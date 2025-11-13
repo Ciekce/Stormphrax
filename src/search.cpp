@@ -577,7 +577,6 @@ namespace stormphrax::search {
         }
 
         const auto us = pos.stm();
-        const auto them = oppColor(us);
 
         assert(!kPvNode || !cutnode);
 
@@ -596,8 +595,8 @@ namespace stormphrax::search {
 
             if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
                 && (ttEntry.flag == TtFlag::kExact                                   //
-                    || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha //
-                    || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta))
+                    || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
+                    || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
                 if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
                     && pos.isPseudolegal(ttEntry.move))
@@ -656,8 +655,8 @@ namespace stormphrax::search {
                 }
 
                 if (flag == TtFlag::kExact                           //
-                    || flag == TtFlag::kUpperBound && score <= alpha //
-                    || flag == TtFlag::kLowerBound && score >= beta)
+                    || (flag == TtFlag::kUpperBound && score <= alpha) //
+                    || (flag == TtFlag::kLowerBound && score >= beta))
                 {
                     m_ttable.put(pos.key(), score, kScoreNone, kNullMove, depth, ply, flag, ttpv);
                     return score;
@@ -1191,8 +1190,8 @@ namespace stormphrax::search {
         if (!curr.excluded) {
             if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove))
                 && (ttFlag == TtFlag::kExact                                        //
-                    || ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval //
-                    || ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval))
+                    || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
+                    || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
             {
                 thread.correctionHistory.update(pos, thread.contMoves, ply, depth, bestScore, curr.staticEval);
             }
@@ -1250,8 +1249,8 @@ namespace stormphrax::search {
 
         if (!kPvNode
             && (ttEntry.flag == TtFlag::kExact                                   //
-                || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha //
-                || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta))
+                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
+                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
         {
             return ttEntry.score;
         }
@@ -1278,8 +1277,8 @@ namespace stormphrax::search {
                 eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
 
             if (ttEntry.flag == TtFlag::kExact                                       //
-                || ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval //
-                || ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > staticEval)
+                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval) //
+                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > staticEval))
             {
                 eval = ttEntry.score;
             } else {

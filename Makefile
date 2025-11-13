@@ -34,7 +34,8 @@ SUFFIX :=
 
 CXX := clang++
 
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
+# disable -Wunused-function and -Wunused-const-variable for zstd
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -Werror -Wno-error=deprecated -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
 
 CXXFLAGS_RELEASE := -O3 -DNDEBUG
 CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
@@ -124,15 +125,15 @@ PROFILE_OUT = sp_profile$(SUFFIX)
 
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out %.nnue,$^)
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out %.nnue,$^)
     ./$(PROFILE_OUT) bench
     $(RM) $(PROFILE_OUT)
     $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out %.nnue,$^)
     $(RM) *.profraw
     $(RM) sp.profdata
 endef

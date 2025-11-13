@@ -28,11 +28,14 @@ if(SP_EMBED_COMMIT_HASH)
 	endif()
 endif()
 
+# disable -Wunused-function and -Wunused-const-variable for zstd
 if(MSVC)
-	add_compile_options(/EHsc)
+	add_compile_options(/EHsc /W4 /clang:-Wno-sign-compare /clang:-Wno-unused-function /clang:-Wno-unused-const-variable /WX)
 	# for pyrrhic
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+else()
+	add_compile_options(-Wall -Wextra -Wno-sign-compares -Wno-unused-function -Wno-unused-const-variable -Werror)
 endif()
 
 find_package(Threads REQUIRED)

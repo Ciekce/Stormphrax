@@ -32,7 +32,7 @@ namespace stormphrax::cuckoo {
     std::array<Move, 8192> moves{};
 
     void init() {
-        u32 count = 0;
+        [[maybe_unused]] u32 count = 0;
 
         // skip pawns
         for (u32 p = static_cast<u32>(Piece::kBlackKnight); p < static_cast<u32>(Piece::kNone); ++p) {

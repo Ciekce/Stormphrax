@@ -121,7 +121,7 @@ namespace stormphrax::eval::nnue {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline bool writeI8s(std::span<const i8> src) final {
+        inline bool writeI8s([[maybe_unused]] std::span<const i8> src) final {
             eprintln("ZstdParamStream::writeI8s");
             std::terminate();
         }
@@ -130,7 +130,7 @@ namespace stormphrax::eval::nnue {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline bool writeI16s(std::span<const i16> src) final {
+        inline bool writeI16s([[maybe_unused]] std::span<const i16> src) final {
             eprintln("ZstdParamStream::writeI16s");
             std::terminate();
         }
@@ -139,7 +139,7 @@ namespace stormphrax::eval::nnue {
             return read(reinterpret_cast<std::byte*>(dst.data()), dst.size_bytes());
         }
 
-        inline bool writeI32s(std::span<const i32> src) final {
+        inline bool writeI32s([[maybe_unused]] std::span<const i32> src) final {
             eprintln("ZstdParamStream::writeI32s");
             std::terminate();
         }

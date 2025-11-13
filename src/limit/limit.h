@@ -27,8 +27,13 @@ namespace stormphrax::limit {
     public:
         virtual ~ISearchLimiter() = default;
 
-        virtual void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {}
-        virtual void updateMoveNodes(Move move, usize nodes) {}
+        virtual void update(
+            [[maybe_unused]] const search::SearchData& data,
+            [[maybe_unused]] Score score,
+            [[maybe_unused]] Move bestMove,
+            [[maybe_unused]] usize totalNodes
+        ) {}
+        virtual void updateMoveNodes([[maybe_unused]] Move move, [[maybe_unused]] usize nodes) {}
 
         virtual void stopEarly() {}
 
