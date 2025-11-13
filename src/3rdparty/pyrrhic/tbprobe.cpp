@@ -563,7 +563,11 @@ static void init_tb(char *str)
     }
 
   for (int type = 0; type < 3; type++)
+#ifdef __cplusplus
+    be->ready[type] = false;
+#else
     atomic_init(&be->ready[type], false);
+#endif
 
   if (!be->hasPawns) {
     int j = 0;

@@ -34,8 +34,7 @@ SUFFIX :=
 
 CXX := clang++
 
-# silence warning for fathom
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION) -D_SILENCE_CXX20_ATOMIC_INIT_DEPRECATION_WARNING
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
 
 CXXFLAGS_RELEASE := -O3 -DNDEBUG
 CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
