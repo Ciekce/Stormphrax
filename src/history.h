@@ -52,6 +52,10 @@ namespace stormphrax {
         inline void update(HistoryScore bonus) {
             value += bonus - value * std::abs(bonus) / tunable::maxHistory();
         }
+
+        inline void updateWithBase(HistoryScore bonus, i32 base) {
+            value += bonus - base * std::abs(bonus) / tunable::maxHistory();
+        }
     };
 
     inline HistoryScore historyBonus(i32 depth) {
@@ -112,9 +116,11 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            updateConthist(continuations, ply, moving, move, bonus, 1);
-            updateConthist(continuations, ply, moving, move, bonus, 2);
-            updateConthist(continuations, ply, moving, move, bonus, 4);
+            const auto total = getConthist(continuations, ply, moving, move);
+
+            updateConthist(continuations, ply, moving, move, total, bonus, 1);
+            updateConthist(continuations, ply, moving, move, total, bonus, 2);
+            updateConthist(continuations, ply, moving, move, total, bonus, 4);
         }
 
         inline void updateQuietScore(
@@ -134,6 +140,21 @@ namespace stormphrax {
             noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
         }
 
+        [[nodiscard]] inline i32 getConthist(
+            std::span<ContinuationSubtable* const> continuations,
+            i32 ply,
+            Piece moving,
+            Move move
+        ) const {
+            i32 score{};
+
+            score += conthistScore(continuations, ply, moving, move, 1);
+            score += conthistScore(continuations, ply, moving, move, 2);
+            score += conthistScore(continuations, ply, moving, move, 4) / 2;
+
+            return score;
+        }
+
         [[nodiscard]] inline i32 quietScore(
             std::span<ContinuationSubtable* const> continuations,
             i32 ply,
@@ -144,10 +165,7 @@ namespace stormphrax {
             i32 score{};
 
             score += (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
-
-            score += conthistScore(continuations, ply, moving, move, 1);
-            score += conthistScore(continuations, ply, moving, move, 2);
-            score += conthistScore(continuations, ply, moving, move, 4) / 2;
+            score += getConthist(continuations, ply, moving, move);
 
             return score;
         }
@@ -173,11 +191,12 @@ namespace stormphrax {
             i32 ply,
             Piece moving,
             Move move,
+            i32 total,
             HistoryScore bonus,
             i32 offset
         ) {
             if (offset <= ply) {
-                conthistEntry(continuations, ply, offset)[{moving, move}].update(bonus);
+                conthistEntry(continuations, ply, offset)[{moving, move}].updateWithBase(bonus, total);
             }
         }
 
