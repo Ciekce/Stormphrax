@@ -49,12 +49,12 @@ namespace stormphrax {
             return *this;
         }
 
-        template <bool kConthist = false>
-        inline void update(HistoryScore bonus, i32 total = 0) {
-            if constexpr (!kConthist) {
-                total = value;
-            }
-            value += bonus - total * std::abs(bonus) / tunable::maxHistory();
+        inline void update(HistoryScore bonus) {
+            value += bonus - value * std::abs(bonus) / tunable::maxHistory();
+        }
+
+        inline void updateWithBase(HistoryScore bonus, i32 base) {
+            value += bonus - base * std::abs(bonus) / tunable::maxHistory();
         }
     };
 
@@ -131,13 +131,13 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update<false>(bonus);
-            pieceToEntry(threats, moving, move).update<false>(bonus);
+            butterflyEntry(threats, move).update(bonus);
+            pieceToEntry(threats, moving, move).update(bonus);
             updateConthist(continuations, ply, moving, move, bonus);
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
-            noisyEntry(move, captured, threats[move.toSq()]).update<false>(bonus);
+            noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
         }
 
         [[nodiscard]] inline i32 getConthist(
@@ -196,7 +196,7 @@ namespace stormphrax {
             i32 offset
         ) {
             if (offset <= ply) {
-                conthistEntry(continuations, ply, offset)[{moving, move}].update<true>(bonus, total);
+                conthistEntry(continuations, ply, offset)[{moving, move}].updateWithBase(bonus, total);
             }
         }
 
