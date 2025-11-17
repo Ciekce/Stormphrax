@@ -622,6 +622,16 @@ namespace stormphrax::search {
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
         const bool ttpv = kPvNode || ttEntry.wasPv;
 
+        const auto ttComplexity = [&] {
+            if (ttEntry.flag == TtFlag::kExact                                               //
+                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= curr.staticEval) //
+                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= curr.staticEval))
+            {
+                return std::abs(curr.staticEval - ttEntry.score);
+            }
+            return 0;
+        }();
+
         const auto pieceCount = bbs.occupancy().popcount();
 
         auto syzygyMin = -kScoreMate;
@@ -729,6 +739,7 @@ namespace stormphrax::search {
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
+                margin += ttComplexity;
                 return margin;
             };
 
