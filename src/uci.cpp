@@ -257,6 +257,7 @@ namespace stormphrax {
                 search::kSyzygyProbeLimitRange.min(),
                 search::kSyzygyProbeLimitRange.max()
             );
+            println("option name SyzygyProbeRootOnly type check default {}", defaultOpts.syzygyProbeRootOnly);
             println("option name EvalFile type string default <internal>");
 
 #if SP_EXTERNAL_TUNE
@@ -708,6 +709,12 @@ namespace stormphrax {
                         if (const auto newSyzygyProbeLimit = util::tryParse<i32>(value)) {
                             opts::mutableOpts().syzygyProbeLimit =
                                 search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
+                        }
+                    }
+                } else if (name == "syzygyproberootonly") {
+                    if (!value.empty()) {
+                        if (const auto newSyzygyProbeRootOnly = util::tryParseBool(value)) {
+                            opts::mutableOpts().syzygyProbeRootOnly = *newSyzygyProbeRootOnly;
                         }
                     }
                 } else if (name == "evalfile") {

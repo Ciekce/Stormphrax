@@ -54,6 +54,7 @@ namespace stormphrax {
             bool syzygyEnabled{false};
             i32 syzygyProbeDepth{1};
             i32 syzygyProbeLimit{7};
+            bool syzygyProbeRootOnly{false};
 
             i32 contempt{wdl::unnormalizeScoreMaterial58(kDefaultNormalizedContempt)};
         };

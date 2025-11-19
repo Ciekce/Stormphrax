@@ -631,9 +631,9 @@ namespace stormphrax::search {
 
         // Probe the Syzygy tablebases for a WDL result
         // if there are few enough pieces left on the board
-        if (!kRootNode && !curr.excluded && g_opts.syzygyEnabled && pieceCount <= syzygyPieceLimit
-            && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth) && pos.halfmove() == 0
-            && pos.castlingRooks() == CastlingRooks{})
+        if (!kRootNode && !curr.excluded && g_opts.syzygyEnabled && !g_opts.syzygyProbeRootOnly
+            && pieceCount <= syzygyPieceLimit && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
+            && pos.halfmove() == 0 && pos.castlingRooks() == CastlingRooks{})
         {
             const auto result = tb::probe(pos);
 
