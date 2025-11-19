@@ -622,6 +622,10 @@ namespace stormphrax::search {
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
         const bool ttpv = kPvNode || ttEntry.wasPv;
 
+        if (!curr.excluded) {
+            curr.ttpv = ttpv;
+        }
+
         const auto pieceCount = bbs.occupancy().popcount();
 
         auto syzygyMin = -kScoreMate;
@@ -1196,7 +1200,8 @@ namespace stormphrax::search {
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
-                m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
+                const bool newTtpv = ttpv || (!kRootNode && !bestMove && parent->ttpv);
+                m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, newTtpv);
             }
         }
 
