@@ -219,6 +219,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(lmrHighComplexityThreshold, 70, 30, 120, 5)
 
+    SP_TUNABLE_PARAM(lmrTtpvExtThreshold, -128, -384, 0, 19)
+
     SP_TUNABLE_PARAM(lmrDeeperBase, 38, 20, 100, 6)
     SP_TUNABLE_PARAM(lmrDeeperScale, 4, 3, 12, 1)
 
