@@ -913,7 +913,8 @@ namespace stormphrax::search {
                 }
 
                 const auto seeThreshold =
-                    noisy ? seePruningThresholdNoisy() * depth : seePruningThresholdQuiet() * lmrDepth * lmrDepth;
+                    noisy ? std::min(seePruningThresholdNoisy() * depth - history / seePruningNoisyHistDivisor(), 0)
+                          : seePruningThresholdQuiet() * lmrDepth * lmrDepth;
 
                 if (quietOrLosing && !see::see(pos, move, seeThreshold)) {
                     continue;
