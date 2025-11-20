@@ -593,7 +593,7 @@ namespace stormphrax::search {
             ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
             if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
-                && (ttEntry.flag == TtFlag::kExact                                   //
+                && (ttEntry.flag == TtFlag::kExact                                     //
                     || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
@@ -653,7 +653,7 @@ namespace stormphrax::search {
                     flag = TtFlag::kExact;
                 }
 
-                if (flag == TtFlag::kExact                           //
+                if (flag == TtFlag::kExact                             //
                     || (flag == TtFlag::kUpperBound && score <= alpha) //
                     || (flag == TtFlag::kLowerBound && score >= beta))
                 {
@@ -1187,7 +1187,7 @@ namespace stormphrax::search {
 
         if (!curr.excluded) {
             if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove))
-                && (ttFlag == TtFlag::kExact                                        //
+                && (ttFlag == TtFlag::kExact                                          //
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
             {
@@ -1246,7 +1246,7 @@ namespace stormphrax::search {
         const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
         if (!kPvNode
-            && (ttEntry.flag == TtFlag::kExact                                   //
+            && (ttEntry.flag == TtFlag::kExact                                     //
                 || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                 || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
         {
@@ -1274,7 +1274,7 @@ namespace stormphrax::search {
             const auto staticEval =
                 eval::adjustEval(pos, thread.contMoves, ply, &thread.correctionHistory, rawStaticEval);
 
-            if (ttEntry.flag == TtFlag::kExact                                       //
+            if (ttEntry.flag == TtFlag::kExact                                         //
                 || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval) //
                 || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > staticEval))
             {
