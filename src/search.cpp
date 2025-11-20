@@ -735,8 +735,11 @@ namespace stormphrax::search {
                 return !isWin(curr.staticEval) && !isWin(beta) ? (curr.staticEval + beta) / 2 : curr.staticEval;
             }
 
-            if (depth <= 6 && std::abs(alpha) < 2000 && curr.staticEval - rfpMargin / 2 >= beta) {
-                const auto score = qsearch(thread, pos, ply, moveStackIdx, beta - 1, beta);
+            if (depth <= 10 && std::abs(alpha) < 2000 && curr.staticEval - rfpMargin / 2 >= beta) {
+                auto score = qsearch(thread, pos, ply, moveStackIdx, beta - 1, beta);
+                if (depth >= 5 && score >= beta) {
+                    score = search(thread, pos, pv, depth - 3, ply, moveStackIdx, beta - 1, beta, true);
+                }
                 if (score >= beta) {
                     return score;
                 }
