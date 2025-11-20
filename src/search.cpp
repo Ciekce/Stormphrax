@@ -398,8 +398,6 @@ namespace stormphrax::search {
                     beta = std::min(lastScore + delta, kScoreInf);
                 }
 
-                Score newScore{};
-
                 i32 aspReduction = 0;
 
                 while (!hasStopped()) {
@@ -407,7 +405,8 @@ namespace stormphrax::search {
                     searchData.incNodes();
 
                     const auto aspDepth = std::max(depth - aspReduction, 1); // paranoia
-                    newScore = search<true, true>(thread, thread.rootPos, rootPv, aspDepth, 0, 0, alpha, beta, false);
+                    const auto score =
+                        search<true, true>(thread, thread.rootPos, rootPv, aspDepth, 0, 0, alpha, beta, false);
 
                     std::stable_sort(
                         thread.rootMoves.begin() + thread.pvIdx,
@@ -415,7 +414,7 @@ namespace stormphrax::search {
                         [](const RootMove& a, const RootMove& b) { return a.score > b.score; }
                     );
 
-                    if ((newScore > alpha && newScore < beta) || hasStopped()) {
+                    if ((score > alpha && score < beta) || hasStopped()) {
                         break;
                     }
 
@@ -426,14 +425,14 @@ namespace stormphrax::search {
                         }
                     }
 
-                    if (newScore <= alpha) {
+                    if (score <= alpha) {
                         aspReduction = 0;
 
                         beta = (alpha + beta) / 2;
-                        alpha = std::max(newScore - delta, -kScoreInf);
+                        alpha = std::max(score - delta, -kScoreInf);
                     } else {
                         aspReduction = std::min(aspReduction + 1, 3);
-                        beta = std::min(newScore + delta, kScoreInf);
+                        beta = std::min(score + delta, kScoreInf);
                     }
 
                     delta += delta * aspWideningFactor() / 16;
@@ -640,8 +639,8 @@ namespace stormphrax::search {
             if (result != tb::ProbeResult::kFailed) {
                 thread.search.incTbHits();
 
-                Score score{};
-                TtFlag flag{};
+                Score score;
+                TtFlag flag;
 
                 if (result == tb::ProbeResult::kWin) {
                     score = kScoreTbWin - ply;
