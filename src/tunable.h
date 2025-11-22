@@ -175,8 +175,6 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 64, 16, 128, 5)
 
-    SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
-
     SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
     SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
 
