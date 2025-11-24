@@ -613,13 +613,14 @@ namespace stormphrax::search {
 
                 return ttEntry.score;
             }
+
+            curr.ttpv = kPvNode || ttEntry.wasPv;
         }
 
         const auto ttMove =
             (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
-        const bool ttpv = kPvNode || ttEntry.wasPv;
 
         const auto pieceCount = bbs.occupancy().popcount();
 
@@ -657,7 +658,7 @@ namespace stormphrax::search {
                     || (flag == TtFlag::kUpperBound && score <= alpha) //
                     || (flag == TtFlag::kLowerBound && score >= beta))
                 {
-                    m_ttable.put(pos.key(), score, kScoreNone, kNullMove, depth, ply, flag, ttpv);
+                    m_ttable.put(pos.key(), score, kScoreNone, kNullMove, depth, ply, flag, curr.ttpv);
                     return score;
                 }
 
@@ -691,7 +692,7 @@ namespace stormphrax::search {
             }
 
             if (!ttHit) {
-                m_ttable.put(pos.key(), kScoreNone, rawStaticEval, kNullMove, 0, 0, TtFlag::kNone, ttpv);
+                m_ttable.put(pos.key(), kScoreNone, rawStaticEval, kNullMove, 0, 0, TtFlag::kNone, curr.ttpv);
             }
 
             if (inCheck) {
@@ -785,7 +786,7 @@ namespace stormphrax::search {
             const auto probcutBeta = beta + probcutMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
-            if (!ttpv && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
+            if (!curr.ttpv && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
                 && !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
             {
                 const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
@@ -940,7 +941,7 @@ namespace stormphrax::search {
                 if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isWin(ttEntry.score))
                 {
-                    const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (ttpv && !kPvNode);
+                    const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
                     const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
 
                     const auto sDepth = (depth - 1) / 2;
@@ -991,12 +992,12 @@ namespace stormphrax::search {
                     auto r = baseLmr;
 
                     r += !kPvNode * lmrNonPvReductionScale();
-                    r -= ttpv * lmrTtpvReductionScale();
+                    r -= curr.ttpv * lmrTtpvReductionScale();
                     r -= history * 128 / (noisy ? lmrNoisyHistoryDivisor() : lmrQuietHistoryDivisor());
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
-                    r += (ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
+                    r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
@@ -1005,7 +1006,7 @@ namespace stormphrax::search {
 
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
-                                       + (ttpv && r < lmrTtpvExtThreshold());
+                                       + (curr.ttpv && r < lmrTtpvExtThreshold());
 
                     curr.reduction = newDepth - reduced;
                     score =
@@ -1196,7 +1197,7 @@ namespace stormphrax::search {
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
-                m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, ttpv);
+                m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, depth, ply, ttFlag, curr.ttpv);
             }
         }
 
