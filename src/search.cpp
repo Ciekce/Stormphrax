@@ -1032,7 +1032,7 @@ namespace stormphrax::search {
 
                         if (!noisy && (score <= alpha || score >= beta)) {
                             const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
-                            thread.history.updateConthist(thread.conthist, ply, moving, move, bonus);
+                            thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
                         }
                     }
                 }
