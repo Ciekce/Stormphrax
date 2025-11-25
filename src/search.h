@@ -81,6 +81,7 @@ namespace stormphrax::search {
         Move move;
 
         Score staticEval;
+        bool ttpv;
 
         KillerTable killers{};
 
