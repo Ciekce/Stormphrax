@@ -34,8 +34,11 @@ namespace stormphrax::util {
             setg(m_begin, m_begin, m_end);
         }
 
-        pos_type seekoff(off_type off, std::ios_base::seekdir dir, [[maybe_unused]] std::ios_base::openmode which)
-            override {
+        pos_type seekoff(
+            off_type off,
+            std::ios_base::seekdir dir,
+            [[maybe_unused]] std::ios_base::openmode which
+        ) override {
             assert(off <= std::numeric_limits<i32>::max());
 
             switch (dir) {

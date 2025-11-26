@@ -238,8 +238,11 @@ namespace stormphrax::eval::nnue::arch {
 
         // Take activated L1 outputs and propagate L2
         // Does not activate outputs
-        inline void propagateL2(u32 bucket, std::span<const i32, kL2SizeFull> inputs, std::span<i32, kL3Size> outputs)
-            const {
+        inline void propagateL2(
+            u32 bucket,
+            std::span<const i32, kL2SizeFull> inputs,
+            std::span<i32, kL3Size> outputs
+        ) const {
             using namespace util::simd;
 
             const auto weightOffset = bucket * kL3Size * kL2SizeFull;

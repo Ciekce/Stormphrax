@@ -21,8 +21,10 @@
 #include "opts.h"
 #include "position/position.h"
 
-fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(stormphrax::Move value, format_context& ctx)
-    const {
+fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(
+    stormphrax::Move value,
+    format_context& ctx
+) const {
     using namespace stormphrax;
 
     if (value.isNull()) {

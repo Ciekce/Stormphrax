@@ -953,15 +953,17 @@ namespace stormphrax {
                 return std::tolower(c);
             });
 
-            return params.emplace_back(TunableParam{
-                std::move(strName),
-                std::move(lowerName),
-                value,
-                value,
-                {min, max},
-                step,
-                std::move(callback)
-            });
+            return params.emplace_back(
+                TunableParam{
+                    std::move(strName),
+                    std::move(lowerName),
+                    value,
+                    value,
+                    {min, max},
+                    step,
+                    std::move(callback)
+                }
+            );
         }
     } // namespace tunable
 #endif

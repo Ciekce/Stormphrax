@@ -18,8 +18,10 @@
 
 #include "core.h"
 
-fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(stormphrax::Piece value, format_context& ctx)
-    const {
+fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(
+    stormphrax::Piece value,
+    format_context& ctx
+) const {
     using namespace stormphrax;
 
     static constexpr auto kPieceChars = std::array{
@@ -68,8 +70,10 @@ fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
     return format_to(ctx.out(), "{}", kPieceTypeChars[static_cast<usize>(value)]);
 }
 
-fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(stormphrax::Square value, format_context& ctx)
-    const {
+fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(
+    stormphrax::Square value,
+    format_context& ctx
+) const {
     using namespace stormphrax;
 
     return write_padded(ctx, [=, this](auto out) {
