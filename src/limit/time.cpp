@@ -80,11 +80,6 @@ namespace stormphrax::limit {
                         std::min(6.67704, maxConstant + static_cast<f64>(gamePly) / 11.9847) * m_softTime
                     )
                   - 0.01;
-
-        println("info string remaining: {}", remaining);
-        println("info string increment: {}", increment);
-        println("soft: {}", m_softTime);
-        println("max: {}", m_maxTime);
     }
 
     void TimeManager::update(f64 scale) {
