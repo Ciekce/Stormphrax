@@ -743,7 +743,7 @@ namespace stormphrax::search {
                 }
             }
 
-            if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta && !parent->move.isNull()
+            if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + 32 && !parent->move.isNull()
                 && !(ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < beta) && !bbs.nonPk(us).empty())
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
