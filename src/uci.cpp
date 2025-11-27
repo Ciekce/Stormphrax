@@ -113,6 +113,8 @@ namespace stormphrax {
             Position m_pos{Position::starting()};
 
             i32 m_moveOverhead{limit::kDefaultMoveOverhead};
+
+            f64 m_originalTimeAdjust{-1.0};
         };
 
         UciHandler::~UciHandler() {
@@ -282,6 +284,8 @@ namespace stormphrax {
             }
 
             m_searcher.newGame();
+
+            m_originalTimeAdjust = -1.0;
         }
 
         void UciHandler::handleIsready() {
@@ -534,12 +538,15 @@ namespace stormphrax {
             }
 
             if (tournamentTime && timeRemaining > 0) {
+                const auto gamePly = 2 * (std::max<u32>(m_pos.fullmove(), 1) - 1) + (m_pos.stm() == Color::kBlack);
                 limiter->addLimiter<limit::TimeManager>(
                     startTime,
                     static_cast<f64>(timeRemaining) / 1000.0,
                     static_cast<f64>(increment) / 1000.0,
                     toGo,
-                    static_cast<f64>(m_moveOverhead) / 1000.0
+                    static_cast<f64>(m_moveOverhead) / 1000.0,
+                    gamePly,
+                    m_originalTimeAdjust
                 );
             }
 

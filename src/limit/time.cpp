@@ -19,6 +19,7 @@
 #include "time.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "../tunable.h"
 
@@ -43,68 +44,51 @@ namespace stormphrax::limit {
         return m_stopped.load(std::memory_order_acquire);
     }
 
-    TimeManager::TimeManager(Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead) :
+    TimeManager::TimeManager(
+        Instant start,
+        f64 remaining,
+        f64 increment,
+        [[maybe_unused]] i32 toGo,
+        f64 overhead,
+        u32 gamePly,
+        f64& originalTimeAdjust
+    ) :
             m_startTime{start} {
         assert(toGo >= 0);
 
-        const auto limit = std::max(0.001, remaining - overhead);
+        const auto centiMtg = remaining < 1.0 ? static_cast<u32>(remaining * 5051.0) : 5051;
+        const auto timeLeft =
+            std::max(0.001, remaining + (increment * (centiMtg - 100) - overhead * (centiMtg + 200)) / 100.0);
 
-        if (toGo == 0) {
-            toGo = defaultMovesToGo();
+        if (originalTimeAdjust < 0.0) {
+            originalTimeAdjust = 0.3128 * std::log10(timeLeft * 1000.0) - 0.4354;
         }
 
-        const auto baseTime = limit / static_cast<f64>(toGo) + increment * incrementScale();
+        const auto logTime = std::log10(remaining);
 
-        m_maxTime = limit * hardTimeScale();
-        m_softTime = std::min(baseTime * softTimeScale(), m_maxTime);
+        const auto optConstant = std::min(0.0032116 + 0.000321123 * logTime, 0.00508017);
+        const auto maxConstant = std::max(3.3977 + 3.03950 * logTime, 2.94761);
+
+        m_softTime = timeLeft
+                   * std::min(
+                         0.0121431 + std::pow(static_cast<f64>(gamePly) + 2.94693, 0.461073) * optConstant,
+                         0.213035 * remaining / timeLeft
+                   );
+
+        m_maxTime = std::min(
+                        0.825179 * remaining - overhead,
+                        std::min(6.67704, maxConstant + static_cast<f64>(gamePly) / 11.9847) * m_softTime
+                    )
+                  - 0.01;
+
+        println("info string remaining: {}", remaining);
+        println("info string increment: {}", increment);
+        println("soft: {}", m_softTime);
+        println("max: {}", m_maxTime);
     }
 
-    void TimeManager::update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) {
-        assert(bestMove != kNullMove);
-        assert(totalNodes > 0);
-
-        if (bestMove == m_prevBestMove) {
-            ++m_stability;
-        } else {
-            m_stability = 1;
-            m_prevBestMove = bestMove;
-        }
-
-        auto scale = 1.0;
-
-        const auto bestMoveNodeFraction =
-            static_cast<f64>(m_moveNodeCounts[bestMove.fromSqIdx()][bestMove.toSqIdx()]) / static_cast<f64>(totalNodes);
-        scale *= std::max(nodeTmBase() - bestMoveNodeFraction * nodeTmScale(), nodeTmScaleMin());
-
-        if (data.rootDepth >= 6) {
-            const auto stability = static_cast<f64>(m_stability);
-            scale *= std::min(
-                bmStabilityTmMax(),
-                bmStabilityTmMin()
-                    + bmStabilityTmScale() * std::pow(stability + bmStabilityTmOffset(), bmStabilityTmPower())
-            );
-        }
-
-        if (m_avgScore) {
-            const auto avgScore = *m_avgScore;
-
-            const auto scoreChange = static_cast<f64>(score - avgScore) / scoreTrendTmScoreScale();
-            const auto invScale = scoreChange * scoreTrendTmScale() / (std::abs(scoreChange) + scoreTrendTmStretch())
-                                * (scoreChange > 0 ? scoreTrendTmPositiveScale() : scoreTrendTmNegativeScale());
-
-            scale *= std::clamp(1.0 - invScale, scoreTrendTmMin(), scoreTrendTmMax());
-
-            m_avgScore = util::ilerp<8>(avgScore, score, 1);
-        } else {
-            m_avgScore = score;
-        }
-
-        m_scale = std::max(scale, timeScaleMin());
-    }
-
-    void TimeManager::updateMoveNodes(Move move, usize nodes) {
-        assert(move != kNullMove);
-        m_moveNodeCounts[move.fromSqIdx()][move.toSqIdx()] += nodes;
+    void TimeManager::update(f64 scale) {
+        m_scale = scale;
     }
 
     void TimeManager::stopEarly() {

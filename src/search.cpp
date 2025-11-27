@@ -88,6 +88,11 @@ namespace stormphrax::search {
             thread->history.clear();
             thread->correctionHistory.clear();
         }
+
+        m_bestPreviousScore = kScoreInf;
+        m_bestPreviousAverageScore = kScoreInf;
+
+        m_previousTimeReduction = 0.85;
     }
 
     void Searcher::ensureReady() {
@@ -373,6 +378,23 @@ namespace stormphrax::search {
 
         const bool mainThread = actualSearch && thread.isMainThread();
 
+        if (mainThread) {
+            if (m_bestPreviousScore == kScoreInf) {
+                m_iterValue.fill(0);
+            } else {
+                m_iterValue.fill(m_bestPreviousScore);
+            }
+        }
+
+        usize iterIdx{};
+
+        f64 totalBestMoveChanges{};
+
+        PvList lastBestPv{};
+        i32 lastBestPvDepth{};
+
+        f64 timeReduction{};
+
         PvList rootPv{};
 
         searchData.nodes = 0;
@@ -381,6 +403,10 @@ namespace stormphrax::search {
         thread.depthCompleted = 0;
 
         for (i32 depth = 1;; ++depth) {
+            if (mainThread) {
+                totalBestMoveChanges /= 2.0;
+            }
+
             searchData.rootDepth = depth;
 
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
@@ -463,12 +489,46 @@ namespace stormphrax::search {
             }
 
             if (mainThread) {
-                m_limiter->update(
-                    thread.search,
-                    thread.pvMove().score,
-                    thread.pvMove().pv.moves[0],
-                    thread.search.loadNodes()
+                if (lastBestPv.moves[0] != thread.rootMoves[0].pv.moves[0]) {
+                    lastBestPv = thread.rootMoves[0].pv;
+                    lastBestPvDepth = depth;
+                }
+
+                for (const auto& worker : m_threadData) {
+                    const auto bestMoveChanges = worker->search.bestMoveChanges.exchange(0);
+                    totalBestMoveChanges += static_cast<f64>(bestMoveChanges);
+                }
+
+                const auto bestScore = thread.rootMoves[0].score;
+
+                const auto nodes = thread.search.nodes.load(std::memory_order::relaxed);
+                const auto nodesEffort = thread.rootMoves[0].nodes * 100000 / std::max<usize>(1, nodes);
+
+                const auto fallingEval = std::clamp(
+                    (11.85 + 3.06 * static_cast<f64>(m_bestPreviousAverageScore - bestScore)
+                     + 1.27 * static_cast<f64>(m_iterValue[iterIdx] - bestScore))
+                        / 100.0,
+                    0.57,
+                    1.7
                 );
+
+                const auto center = static_cast<f64>(lastBestPvDepth) + 12.15;
+                timeReduction =
+                    0.66 + 0.85 / (0.98 + std::exp(-0.51 * (static_cast<f64>(thread.depthCompleted) - center)));
+
+                const auto reduction = (1.43 + m_previousTimeReduction) / (2.28 * timeReduction);
+
+                const auto bestMoveInstability =
+                    1.02 + 2.14 * totalBestMoveChanges / static_cast<f64>(m_threads.size());
+
+                const auto highBestMoveEffort = thread.depthCompleted >= 10 && nodesEffort >= 93337 ? 0.75 : 1.0;
+
+                const auto timeScale = fallingEval * reduction * bestMoveInstability * highBestMoveEffort;
+
+                m_limiter->update(timeScale);
+
+                m_iterValue[iterIdx] = bestScore;
+                iterIdx = (iterIdx + 1) % 4;
 
                 if (checkSoftTimeout(thread.search, true)) {
                     break;
@@ -507,6 +567,8 @@ namespace stormphrax::search {
 
             m_ttable.age();
             stats::print();
+
+            m_previousTimeReduction = timeReduction;
 
             m_searching.store(false, std::memory_order::relaxed);
         } else {
@@ -1070,10 +1132,6 @@ namespace stormphrax::search {
             }
 
             if constexpr (kRootNode) {
-                if (thread.isMainThread()) {
-                    m_limiter->updateMoveNodes(move, thread.search.loadNodes() - prevNodes);
-                }
-
                 auto* rootMove = thread.findRootMove(move);
 
                 if (!rootMove) {
@@ -1087,6 +1145,14 @@ namespace stormphrax::search {
                     rootMove->displayScore = score;
                     rootMove->score = score;
 
+                    if (rootMove->averageScore == -kScoreInf) {
+                        rootMove->averageScore = score;
+                    } else {
+                        rootMove->averageScore = (rootMove->averageScore + score) / 2;
+                    }
+
+                    rootMove->nodes += thread.search.loadNodes() - prevNodes;
+
                     rootMove->upperbound = false;
                     rootMove->lowerbound = false;
 
@@ -1099,6 +1165,10 @@ namespace stormphrax::search {
                     }
 
                     rootMove->pv.update(move, curr.pv);
+
+                    if (thread.pvIdx == 0 && legalMoves > 1) {
+                        ++thread.search.bestMoveChanges;
+                    }
                 } else {
                     rootMove->score = -kScoreInf;
                 }
@@ -1486,6 +1556,9 @@ namespace stormphrax::search {
 
     void Searcher::finalReport() {
         const auto& bestThread = selectThread();
+
+        m_bestPreviousScore = bestThread.rootMoves[0].score;
+        m_bestPreviousAverageScore = bestThread.rootMoves[0].averageScore;
 
         report(bestThread, bestThread.depthCompleted, elapsed());
         println("bestmove {}", bestThread.pvMove().pv.moves[0]);

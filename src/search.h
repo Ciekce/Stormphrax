@@ -99,6 +99,10 @@ namespace stormphrax::search {
         Score displayScore{-kScoreInf};
         Score score{-kScoreInf};
 
+        Score averageScore{-kScoreInf};
+
+        usize nodes{};
+
         bool upperbound{false};
         bool lowerbound{false};
 
@@ -344,6 +348,13 @@ namespace stormphrax::search {
         Score m_maxRootScore{};
 
         eval::Contempt m_contempt{};
+
+        std::array<Score, 4> m_iterValue{};
+
+        Score m_bestPreviousScore{kScoreInf};
+        Score m_bestPreviousAverageScore{kScoreInf};
+
+        f64 m_previousTimeReduction{0.85};
 
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};

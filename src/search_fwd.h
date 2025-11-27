@@ -32,6 +32,8 @@ namespace stormphrax::search {
         std::atomic<usize> nodes{};
         std::atomic<usize> tbhits{};
 
+        std::atomic<i32> bestMoveChanges{};
+
         SearchData() = default;
 
         SearchData(const SearchData& other) {
@@ -64,6 +66,8 @@ namespace stormphrax::search {
 
             nodes.store(other.nodes.load());
             tbhits.store(other.tbhits.load());
+
+            bestMoveChanges.store(other.bestMoveChanges.load());
 
             return *this;
         }

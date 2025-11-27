@@ -35,15 +35,9 @@ namespace stormphrax::limit {
             m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
         }
 
-        inline void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) final {
+        inline void update(f64 scale) final {
             for (const auto& limiter : m_limiters) {
-                limiter->update(data, score, bestMove, totalNodes);
-            }
-        }
-
-        inline void updateMoveNodes(Move move, usize nodes) final {
-            for (const auto& limiter : m_limiters) {
-                limiter->updateMoveNodes(move, nodes);
+                limiter->update(scale);
             }
         }
 
