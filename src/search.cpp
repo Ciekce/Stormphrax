@@ -126,7 +126,7 @@ namespace stormphrax::search {
         m_minRootScore = -kScoreInf;
         m_maxRootScore = kScoreInf;
 
-        std::optional<tb::ProbeResult> rootProbeResult{};
+        m_rootProbeResult = tb::ProbeResult::kFailed;
 
         if (!moves.empty()) {
             m_rootMoveList.resize(moves.size());
@@ -134,7 +134,7 @@ namespace stormphrax::search {
 
             m_rootStatus = RootStatus::kSearchmoves;
         } else {
-            std::tie(m_rootStatus, rootProbeResult) = initRootMoveList(pos);
+            m_rootStatus = initRootMoveList(pos);
 
             if (m_rootStatus == RootStatus::kNoLegalMoves) {
                 println("info string no legal moves");
@@ -151,7 +151,7 @@ namespace stormphrax::search {
         }
 
         // Cap search time if we have one legal move, or if we're in a TB draw at root
-        if (m_rootMoveList.size() == 1 || (rootProbeResult && *rootProbeResult == tb::ProbeResult::kDraw)) {
+        if (m_rootMoveList.size() == 1 || m_rootProbeResult == tb::ProbeResult::kDraw) {
             m_limiter->stopEarly();
         }
 
@@ -189,7 +189,7 @@ namespace stormphrax::search {
     }
 
     std::pair<Score, Score> Searcher::runDatagenSearch(ThreadData& thread) {
-        if (initRootMoveList(thread.rootPos).first == RootStatus::kNoLegalMoves) {
+        if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
             return {-kScoreMate, -kScoreMate};
         }
 
@@ -222,7 +222,7 @@ namespace stormphrax::search {
         thread->rootPos = pos;
         thread->nnueState.reset(thread->rootPos.bbs(), thread->rootPos.kings());
 
-        if (initRootMoveList(thread->rootPos).first == RootStatus::kNoLegalMoves) {
+        if (initRootMoveList(thread->rootPos) == RootStatus::kNoLegalMoves) {
             return;
         }
 
@@ -270,7 +270,7 @@ namespace stormphrax::search {
         m_initBarrier.arriveAndWait();
     }
 
-    std::pair<RootStatus, std::optional<tb::ProbeResult>> Searcher::initRootMoveList(const Position& pos) {
+    RootStatus Searcher::initRootMoveList(const Position& pos) {
         m_rootMoveList.clear();
 
         if (g_opts.syzygyEnabled
@@ -278,9 +278,9 @@ namespace stormphrax::search {
         {
             bool success = true;
 
-            const auto result = tb::probeRoot(&m_rootMoveList, pos);
+            m_rootProbeResult = tb::probeRoot(&m_rootMoveList, pos);
 
-            switch (result) {
+            switch (m_rootProbeResult) {
                 case tb::ProbeResult::kWin:
                     m_minRootScore = kScoreTbWin;
                     break;
@@ -297,7 +297,7 @@ namespace stormphrax::search {
 
             if (success) {
                 assert(!m_rootMoveList.empty());
-                return {RootStatus::kTablebase, result};
+                return RootStatus::kTablebase;
             }
         }
 
@@ -305,7 +305,7 @@ namespace stormphrax::search {
             generateLegal(m_rootMoveList, pos);
         }
 
-        return {m_rootMoveList.empty() ? RootStatus::kNoLegalMoves : RootStatus::kGenerated, tb::ProbeResult::kFailed};
+        return m_rootMoveList.empty() ? RootStatus::kNoLegalMoves : RootStatus::kGenerated;
     }
 
     void Searcher::stopThreads() {

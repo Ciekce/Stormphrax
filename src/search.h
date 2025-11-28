@@ -343,12 +343,14 @@ namespace stormphrax::search {
         Score m_minRootScore{};
         Score m_maxRootScore{};
 
+        tb::ProbeResult m_rootProbeResult{};
+
         eval::Contempt m_contempt{};
 
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        std::pair<RootStatus, std::optional<tb::ProbeResult>> initRootMoveList(const Position& pos);
+        RootStatus initRootMoveList(const Position& pos);
 
         void stopThreads();
 
