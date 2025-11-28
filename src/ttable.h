@@ -107,8 +107,8 @@ namespace stormphrax {
 
         static_assert(sizeof(Entry) == 10);
 
-        static constexpr usize kClusterAlignment = 32;
-        static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
+        static constexpr usize kSmallPageSize = 4096;
+        static constexpr auto kDefaultStorageAlignment = std::max(kCacheLineSize, kSmallPageSize);
 
         struct alignas(32) Cluster {
             static constexpr usize kEntriesPerCluster = 3;

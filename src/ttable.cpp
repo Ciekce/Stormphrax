@@ -22,6 +22,10 @@
 #include <cstring>
 #include <thread>
 
+#ifndef _WIN32
+    #include <sys/mman.h>
+#endif
+
 #include "util/align.h"
 #include "util/cemath.h"
 
@@ -84,13 +88,27 @@ namespace stormphrax {
             return false;
         }
 
+#ifdef MADV_HUGEPAGE
+        //TODO handle 1GiB huge pages?
+        static constexpr usize kHugePageSize = 2 * 1024 * 1024;
+
+        const auto size = m_clusterCount * sizeof(Cluster);
+        const auto alignment = size >= kHugePageSize ? kHugePageSize : kDefaultStorageAlignment;
+#else
+        const auto alignment = kDefaultStorageAlignment;
+#endif
+
         m_pendingInit = false;
-        m_clusters = util::alignedAlloc<Cluster>(kStorageAlignment, m_clusterCount);
+        m_clusters = util::alignedAlloc<Cluster>(alignment, m_clusterCount);
 
         if (!m_clusters) {
             println("info string Failed to reallocate TT - out of memory?");
             std::terminate();
         }
+
+#ifdef MADV_HUGEPAGE
+        madvise(m_clusters, size, MADV_HUGEPAGE);
+#endif
 
         clear();
 
@@ -161,8 +179,8 @@ namespace stormphrax {
         auto entry = *entryPtr;
 
         // Roughly the SF replacement scheme
-        if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age || depth + 4 + pv * 2 > entry.depth
-            ))
+        if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age
+              || depth + 4 + pv * 2 > entry.depth))
         {
             return;
         }
