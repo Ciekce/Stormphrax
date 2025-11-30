@@ -419,7 +419,7 @@ namespace stormphrax::search {
         void reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time);
         void report(const ThreadData& thread, i32 depth, f64 time);
 
-        const ThreadData& selectThread();
+        const ThreadData& selectThread() const;
         void finalReport();
     };
 } // namespace stormphrax::search
