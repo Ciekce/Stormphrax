@@ -1497,7 +1497,7 @@ namespace stormphrax::search {
         }
 
         const auto threadWeight = [&](const ThreadData& thread) {
-            return (thread.pvMove().score - lowestRootScore + 10) * thread.depthCompleted;
+            return (thread.pvMove().score - lowestRootScore + threadWeightScoreOffset()) * thread.depthCompleted;
         };
 
         std::unordered_map<u16, i32> moveVotes{};
@@ -1521,7 +1521,7 @@ namespace stormphrax::search {
         const auto acceptCandidateThread = [&](const ThreadData* thread) {
             bestThread = thread;
             bestRootScore = thread->pvMove().score;
-            bestVotes = moveVotes[thread->pvMove().pv.moves[0].data()];
+            bestVotes = bestMoveVotes(*thread);
         };
 
         for (usize threadIdx = 1; threadIdx < m_threadData.size(); ++threadIdx) {
