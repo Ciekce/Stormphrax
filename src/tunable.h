@@ -240,6 +240,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(qsearchFpMargin, 135, 50, 400, 17)
     SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 30)
 
+    SP_TUNABLE_PARAM(threadWeightScoreOffset, 10, 0, 20, 1)
+
 #undef SP_TUNABLE_PARAM
 #undef SP_TUNABLE_PARAM_CALLBACK
 #undef SP_TUNABLE_ASSERTS
