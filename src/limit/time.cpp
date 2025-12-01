@@ -27,8 +27,8 @@ namespace stormphrax::limit {
 
     using util::Instant;
 
-    MoveTimeLimiter::MoveTimeLimiter(i64 time, i64 overhead) :
-            m_endTime{Instant::now() + static_cast<f64>(std::max<i64>(1, time - overhead)) / 1000.0} {}
+    MoveTimeLimiter::MoveTimeLimiter(i64 time) :
+            m_endTime{Instant::now() + static_cast<f64>(std::max<i64>(1, time)) / 1000.0} {}
 
     bool MoveTimeLimiter::stop(const search::SearchData& data, [[maybe_unused]] bool allowSoftTimeout) {
         if (data.rootDepth > 2 && data.nodes > 0 && (data.nodes % 1024) == 0 && Instant::now() >= m_endTime) {

@@ -35,7 +35,7 @@ namespace stormphrax::limit {
 
     class MoveTimeLimiter final : public ISearchLimiter {
     public:
-        explicit MoveTimeLimiter(i64 time, i64 overhead = 0);
+        explicit MoveTimeLimiter(i64 time);
         ~MoveTimeLimiter() final = default;
 
         [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final;

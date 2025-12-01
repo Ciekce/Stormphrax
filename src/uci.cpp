@@ -424,7 +424,7 @@ namespace stormphrax {
                         eprintln("invalid time {}", args[i]);
                     } else {
                         time = std::max<i64>(time, 1);
-                        limiter->addLimiter<limit::MoveTimeLimiter>(time, m_moveOverhead);
+                        limiter->addLimiter<limit::MoveTimeLimiter>(time);
                     }
                 } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
                            && args[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
