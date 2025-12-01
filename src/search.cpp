@@ -1578,6 +1578,8 @@ namespace stormphrax::search {
             }
         }
 
+        println("info string Selected thread {}", bestThread->id);
+
         return *bestThread;
     }
 
