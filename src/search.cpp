@@ -1507,10 +1507,9 @@ namespace stormphrax::search {
         };
 
         for (const auto& thread : m_threadData) {
-            if (thread->pvMove().score == -kScoreInf) {
-                continue;
+            if (thread->pvMove().score != -kScoreInf) {
+                bestMoveVotes(*thread) += threadWeight(*thread);
             }
-            bestMoveVotes(*thread) += threadWeight(*thread);
         }
 
         const auto* bestThread = m_threadData[0].get();
