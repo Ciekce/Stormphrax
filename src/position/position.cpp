@@ -596,8 +596,7 @@ namespace stormphrax {
             for (i32 file = 0; file < 8; ++file) {
                 if (m_boards.pieceAt(rank, file) == Piece::kNone) {
                     u32 emptySquares = 1;
-                    for (; file < 7 && m_boards.pieceAt(rank, file + 1) == Piece::kNone; ++file, ++emptySquares) {
-                    }
+                    for (; file < 7 && m_boards.pieceAt(rank, file + 1) == Piece::kNone; ++file, ++emptySquares) {}
 
                     fmt::format_to(itr, "{}", static_cast<char>('0' + emptySquares));
                 } else {
@@ -1285,6 +1284,53 @@ namespace stormphrax {
                 eprintln("invalid fullmove number");
                 return {};
             }
+        }
+
+        // a couple of extra checks here
+        if (pos.m_enPassant != Square::kNone) {
+            [&] {
+                const auto epRank = pos.m_stm == Color::kBlack ? 2 : 5;
+                if (squareRank(pos.m_enPassant) != epRank) {
+                    pos.m_enPassant = Square::kNone;
+                    return;
+                }
+
+                const auto pawnSquare = toSquare(
+                    squareRank(pos.m_enPassant) + (pos.m_stm == Color::kBlack ? 1 : -1),
+                    squareFile(pos.m_enPassant)
+                );
+
+                const auto origSquare = toSquare(
+                    squareRank(pos.m_enPassant) - (pos.m_stm == Color::kBlack ? 1 : -1),
+                    squareFile(pos.m_enPassant)
+                );
+
+                const auto oppPawn = colorPiece(PieceType::kPawn, oppColor(pos.m_stm));
+
+                // make sure that there's actually a pawn there that could've moved
+                if (pos.m_boards.pieceOn(pawnSquare) != oppPawn              //
+                    || pos.m_boards.pieceOn(pos.m_enPassant) != Piece::kNone //
+                    || pos.m_boards.pieceOn(origSquare) != Piece::kNone)
+                {
+                    pos.m_enPassant = Square::kNone;
+                    return;
+                }
+
+                // and ensure that the previous position would've actually
+                // been legal if the previous move was a double push
+                pos.m_boards.movePiece(pawnSquare, origSquare, oppPawn);
+                const bool illegal = pos.isAttacked<false>(
+                    oppColor(pos.m_stm),
+                    bbs.forPiece(PieceType::kKing, pos.m_stm).lowestSquare(),
+                    oppColor(pos.m_stm)
+                );
+                pos.m_boards.movePiece(origSquare, pawnSquare, oppPawn);
+
+                if (illegal) {
+                    pos.m_enPassant = Square::kNone;
+                    return;
+                }
+            }();
         }
 
         pos.regen();
