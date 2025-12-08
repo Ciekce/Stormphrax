@@ -35,7 +35,7 @@ namespace stormphrax::eval {
     constexpr u32 kFtQBits = 8;
     constexpr u32 kL1QBits = 6;
 
-    constexpr u32 kL1Size = 1280;
+    constexpr u32 kL1Size = 1536;
 
     using L1Activation = nnue::activation::SquaredClippedReLU;
 
@@ -47,8 +47,8 @@ namespace stormphrax::eval {
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,
-         8,  9, 10, 11,
-         8,  9, 10, 11,
+         8,  8,  9,  9,
+        10, 10, 11, 11,
         12, 12, 13, 13,
         12, 12, 13, 13,
         14, 14, 15, 15,
@@ -56,7 +56,7 @@ namespace stormphrax::eval {
         // clang-format on
         >;
 
-    using OutputBucketing = nnue::output::Single;
+    using OutputBucketing = nnue::output::MaterialCount<8>;
 
     using LayeredArch =
         nnue::arch::SingleLayer<kL1Size, (1 << kFtQBits) - 1, 1 << kL1QBits, L1Activation, OutputBucketing, kScale>;
