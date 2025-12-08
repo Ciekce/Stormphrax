@@ -33,22 +33,16 @@ namespace stormphrax::eval {
     // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
 
     constexpr u32 kFtQBits = 8;
-    constexpr u32 kL1QBits = 7;
+    constexpr u32 kL1QBits = 6;
 
-    constexpr u32 kFtScaleBits = 7;
+    constexpr u32 kL1Size = 1280;
 
-    constexpr u32 kL1Size = 1792;
-    constexpr u32 kL2Size = 16;
-    constexpr u32 kL3Size = 32;
-
-    using L1Activation = nnue::activation::ClippedReLU;
-
-    constexpr bool kDualActivation = true;
+    using L1Activation = nnue::activation::SquaredClippedReLU;
 
     constexpr i32 kScale = 400;
 
     // visually flipped upside down, a1 = 0
-    using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
+    using InputFeatureSet = nnue::features::KingBucketsMirrored<
         nnue::features::MirroredKingSide::kAbcd,
         // clang-format off
          0,  1,  2,  3,
@@ -62,16 +56,8 @@ namespace stormphrax::eval {
         // clang-format on
         >;
 
-    using OutputBucketing = nnue::output::MaterialCount<8>;
+    using OutputBucketing = nnue::output::Single;
 
-    using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
-        kL1Size,
-        kL2Size,
-        kL3Size,
-        kFtScaleBits,
-        kFtQBits,
-        kL1QBits,
-        kDualActivation,
-        OutputBucketing,
-        kScale>;
+    using LayeredArch =
+        nnue::arch::SingleLayer<kL1Size, (1 << kFtQBits) - 1, 1 << kL1QBits, L1Activation, OutputBucketing, kScale>;
 } // namespace stormphrax::eval
