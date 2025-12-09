@@ -18,6 +18,8 @@
 
 #include "ctrlc.h"
 
+#include <cassert>
+
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #ifndef NOMINMAX // mingw
@@ -30,14 +32,15 @@
 
 namespace stormphrax::util::signal {
     namespace {
-        std::vector<CtrlCHandler> s_handlers{};
+        CtrlCHandler s_handler{};
     }
 
-    void addCtrlCHandler(CtrlCHandler handler) {
-        s_handlers.push_back(std::move(handler));
-    }
+    void setCtrlCHandler(CtrlCHandler handler) {
+        assert(!s_handler);
+        assert(handler);
 
-    void init() {
+        s_handler = std::move(handler);
+
 #ifdef _WIN32
         const auto result = SetConsoleCtrlHandler(
             [](DWORD dwCtrlType) -> BOOL {
@@ -45,10 +48,7 @@ namespace stormphrax::util::signal {
                     return FALSE;
                 }
 
-                for (auto& handler : s_handlers) {
-                    handler();
-                }
-
+                s_handler();
                 return TRUE;
             },
             TRUE
@@ -61,11 +61,7 @@ namespace stormphrax::util::signal {
         struct sigaction action{};
 
         action.sa_flags = SA_RESTART;
-        action.sa_handler = []([[maybe_unused]] int signal) {
-            for (auto& handler : s_handlers) {
-                handler();
-            }
-        };
+        action.sa_handler = []([[maybe_unused]] int signal) { s_handler(); };
 
         if (sigaction(SIGINT, &action, nullptr)) {
             eprintln("failed to set SIGINT handler");
@@ -73,6 +69,10 @@ namespace stormphrax::util::signal {
 
         if (sigaction(SIGTERM, &action, nullptr)) {
             eprintln("failed to set SIGTERM handler");
+        }
+
+        if (sigaction(SIGHUP, &action, nullptr)) {
+            eprintln("failed to set SIGHUP handler");
         }
 #endif
     }

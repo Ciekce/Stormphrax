@@ -49,7 +49,7 @@ namespace stormphrax::datagen {
         std::atomic_bool s_stop{false};
 
         void initCtrlCHandler() {
-            util::signal::addCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
+            util::signal::setCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
         }
 
         class DatagenNodeLimiter final : public limit::ISearchLimiter {

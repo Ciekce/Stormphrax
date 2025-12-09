@@ -24,7 +24,5 @@
 
 namespace stormphrax::util::signal {
     using CtrlCHandler = std::function<void()>;
-    void addCtrlCHandler(CtrlCHandler handler);
-
-    void init();
+    void setCtrlCHandler(CtrlCHandler handler);
 } // namespace stormphrax::util::signal

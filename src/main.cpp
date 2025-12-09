@@ -32,8 +32,6 @@
 using namespace stormphrax;
 
 i32 main(i32 argc, const char* argv[]) {
-    util::signal::init();
-
     tunable::init();
     cuckoo::init();
 
