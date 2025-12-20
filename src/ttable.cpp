@@ -88,27 +88,30 @@ namespace stormphrax {
             return false;
         }
 
-#ifdef MADV_HUGEPAGE
-        //TODO handle 1GiB huge pages?
-        static constexpr usize kHugePageSize = 2 * 1024 * 1024;
-
-        const auto size = m_clusterCount * sizeof(Cluster);
-        const auto alignment = size >= kHugePageSize ? kHugePageSize : kDefaultStorageAlignment;
-#else
-        const auto alignment = kDefaultStorageAlignment;
-#endif
-
         m_pendingInit = false;
-        m_clusters = util::alignedAlloc<Cluster>(alignment, m_clusterCount);
 
         if (!m_clusters) {
-            println("info string Failed to reallocate TT - out of memory?");
-            std::terminate();
-        }
+#ifdef MADV_HUGEPAGE
+            //TODO handle 1GiB huge pages?
+            static constexpr usize kHugePageSize = 2 * 1024 * 1024;
+
+            const auto size = m_clusterCount * sizeof(Cluster);
+            const auto alignment = size >= kHugePageSize ? kHugePageSize : kDefaultStorageAlignment;
+#else
+            const auto alignment = kDefaultStorageAlignment;
+#endif
+
+            m_clusters = util::alignedAlloc<Cluster>(alignment, m_clusterCount);
+
+            if (!m_clusters) {
+                println("info string Failed to reallocate TT - out of memory?");
+                std::terminate();
+            }
 
 #ifdef MADV_HUGEPAGE
-        madvise(m_clusters, size, MADV_HUGEPAGE);
+            madvise(m_clusters, size, MADV_HUGEPAGE);
 #endif
+        }
 
         clear();
 
