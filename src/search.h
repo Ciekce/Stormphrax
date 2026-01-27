@@ -96,9 +96,10 @@ namespace stormphrax::search {
     };
 
     struct RootMove {
-        Score displayScore{-kScoreInf};
         Score score{-kScoreInf};
+        Score windowScore{-kScoreInf};
 
+        Score displayScore{-kScoreInf};
         Score previousScore{-kScoreInf};
 
         bool upperbound{false};
