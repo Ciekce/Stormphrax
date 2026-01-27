@@ -99,6 +99,8 @@ namespace stormphrax::search {
         Score displayScore{-kScoreInf};
         Score score{-kScoreInf};
 
+        Score previousScore{-kScoreInf};
+
         bool upperbound{false};
         bool lowerbound{false};
 
