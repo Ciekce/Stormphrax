@@ -836,7 +836,7 @@ namespace stormphrax::search {
                         m_ttable.put(
                             pos.key(),
                             score,
-                            curr.staticEval,
+                            rawStaticEval,
                             move,
                             probcutDepth,
                             ply,
