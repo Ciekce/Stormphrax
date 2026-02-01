@@ -752,7 +752,7 @@ namespace stormphrax::search {
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
 
-                const auto R = 6 + depth / 5;
+                const auto R = 6 + depth / 3;
 
                 const auto score = [&] {
                     const auto [newPos, guard] = thread.applyNullmove(pos, ply);
@@ -833,16 +833,8 @@ namespace stormphrax::search {
                     }
 
                     if (score >= probcutBeta) {
-                        m_ttable.put(
-                            pos.key(),
-                            score,
-                            rawStaticEval,
-                            move,
-                            probcutDepth,
-                            ply,
-                            TtFlag::kLowerBound,
-                            false
-                        );
+                        m_ttable
+                            .put(pos.key(), score, rawStaticEval, move, probcutDepth, ply, TtFlag::kLowerBound, false);
                         return score;
                     }
                 }
