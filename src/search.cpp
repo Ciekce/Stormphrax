@@ -790,7 +790,7 @@ namespace stormphrax::search {
             const auto probcutBeta = beta + probcutMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
-            if (!curr.ttpv && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
+            if (!kPvNode && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
                 && !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
             {
                 const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
@@ -833,16 +833,8 @@ namespace stormphrax::search {
                     }
 
                     if (score >= probcutBeta) {
-                        m_ttable.put(
-                            pos.key(),
-                            score,
-                            rawStaticEval,
-                            move,
-                            probcutDepth,
-                            ply,
-                            TtFlag::kLowerBound,
-                            false
-                        );
+                        m_ttable
+                            .put(pos.key(), score, rawStaticEval, move, probcutDepth, ply, TtFlag::kLowerBound, false);
                         return score;
                     }
                 }
