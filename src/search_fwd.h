@@ -71,6 +71,7 @@ namespace stormphrax::search {
 
     struct PlayedMove {
         Piece moving;
+        Square src;
         Square dst;
     };
 } // namespace stormphrax::search

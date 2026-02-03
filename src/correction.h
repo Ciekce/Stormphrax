@@ -39,6 +39,7 @@ namespace stormphrax {
             std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
             std::memset(&m_majorTable, 0, sizeof(m_majorTable));
             std::memset(&m_contTable, 0, sizeof(m_contTable));
+            std::memset(&m_prevMoveTable, 0, sizeof(m_prevMoveTable));
         }
 
         inline void update(
@@ -58,8 +59,8 @@ namespace stormphrax {
                     return;
                 }
 
-                const auto [moving1, dst1] = moves[ply - 1];
-                const auto [moving2, dst2] = moves[ply - 1 - i];
+                const auto [moving1, _src1, dst1] = moves[ply - 1];
+                const auto [moving2, _src2, dst2] = moves[ply - 1 - i];
 
                 if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
                     return;
@@ -70,6 +71,21 @@ namespace stormphrax {
                                .update(bonus);
             };
 
+            const auto updatePrevMove = [&](i32 i) {
+                if (ply <= i) {
+                    return;
+                }
+
+                const auto [moving, src, dst] = moves[ply - i];
+
+                if (moving == Piece::kNone) {
+                    return;
+                }
+
+                m_prevMoveTable[stm][static_cast<i32>(pieceColor(moving))][static_cast<i32>(src)][static_cast<i32>(dst)]
+                    .update(bonus);
+            };
+
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
             m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
             m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries].update(bonus);
@@ -78,6 +94,8 @@ namespace stormphrax {
             updateCont(1);
             updateCont(2);
             updateCont(4);
+
+            updatePrevMove(1);
         }
 
         [[nodiscard]] inline Score correct(
@@ -95,8 +113,8 @@ namespace stormphrax {
                     return 0;
                 }
 
-                const auto [moving1, dst1] = moves[ply - 1];
-                const auto [moving2, dst2] = moves[ply - 1 - i];
+                const auto [moving1, _src1, dst1] = moves[ply - 1];
+                const auto [moving2, _src2, dst2] = moves[ply - 1 - i];
 
                 if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
                     return 0;
@@ -105,6 +123,22 @@ namespace stormphrax {
                 return weight
                      * m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
                                   [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+            };
+
+            const auto prevMoveAdjustment = [&](i32 i, i32 weight) {
+                if (ply <= i) {
+                    return 0;
+                }
+
+                const auto [moving, src, dst] = moves[ply - i];
+
+                if (moving == Piece::kNone) {
+                    return 0;
+                }
+
+                return weight
+                     * m_prevMoveTable[stm][static_cast<i32>(pieceColor(moving))][static_cast<i32>(src)]
+                                      [static_cast<i32>(dst)];
             };
 
             const auto [blackNpWeight, whiteNpWeight] =
@@ -121,6 +155,8 @@ namespace stormphrax {
             correction += contAdjustment(1, contCorrhist1Weight());
             correction += contAdjustment(2, contCorrhist2Weight());
             correction += contAdjustment(4, contCorrhist4Weight());
+
+            correction += prevMoveAdjustment(1, 128);
 
             score += correction / 2048;
 
@@ -150,5 +186,6 @@ namespace stormphrax {
         util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
         util::MultiArray<Entry, 2, kEntries> m_majorTable{};
         util::MultiArray<Entry, 2, 12, 64, 6, 64> m_contTable{};
+        util::MultiArray<Entry, 2, 2, 64, 64> m_prevMoveTable{};
     };
 } // namespace stormphrax
