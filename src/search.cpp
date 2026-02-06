@@ -436,6 +436,8 @@ namespace stormphrax::search {
                         alpha = std::max(score - delta, -kScoreInf);
                     } else {
                         aspReduction = std::min(aspReduction + 1, 3);
+
+                        alpha = std::max(beta - delta, alpha);
                         beta = std::min(score + delta, kScoreInf);
                     }
 
