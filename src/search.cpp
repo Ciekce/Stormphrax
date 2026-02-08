@@ -696,7 +696,7 @@ namespace stormphrax::search {
             }
 
             if (!ttHit) {
-                m_ttable.put(pos.key(), kScoreNone, rawStaticEval, kNullMove, 0, 0, TtFlag::kNone, curr.ttpv);
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, curr.ttpv);
             }
 
             if (inCheck) {
@@ -1276,7 +1276,7 @@ namespace stormphrax::search {
             }
 
             if (!ttHit) {
-                m_ttable.put(pos.key(), kScoreNone, rawStaticEval, kNullMove, 0, 0, TtFlag::kNone, ttpv);
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
             }
 
             const auto staticEval =

@@ -61,6 +61,11 @@ namespace stormphrax {
         bool probe(ProbedTTableEntry& dst, u64 key, i32 ply) const;
         void put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv);
 
+        inline void putStaticEval(u64 key, Score staticEval, bool pv) {
+            static constexpr i32 kStaticEvalDepth = -kDepthOffset + 1;
+            put(key, kScoreNone, staticEval, kNullMove, kStaticEvalDepth, 0, TtFlag::kNone, pv);
+        }
+
         inline void age() {
             m_age = (m_age + 1) % (1 << Entry::kAgeBits);
         }
@@ -74,6 +79,8 @@ namespace stormphrax {
         }
 
     private:
+        static constexpr i32 kDepthOffset = 7;
+
         struct Entry {
             static constexpr u32 kAgeBits = 5;
 
@@ -84,8 +91,20 @@ namespace stormphrax {
             i16 score;
             i16 staticEval;
             Move move;
-            u8 depth;
+            u8 offsetDepth;
             u8 agePvFlag;
+
+            [[nodiscard]] inline bool filled() const {
+                return offsetDepth != 0;
+            }
+
+            [[nodiscard]] inline i32 depth() const {
+                return offsetDepth - kDepthOffset;
+            }
+
+            inline void setDepth(i32 depth) {
+                offsetDepth = depth + kDepthOffset;
+            }
 
             [[nodiscard]] inline u32 age() const {
                 return static_cast<u32>(agePvFlag >> 3);
