@@ -163,7 +163,7 @@ namespace stormphrax {
 
         for (auto& candidate : cluster.entries) {
             // always take an empty entry, or one from the same position
-            if (candidate.key == newKey || candidate.flag() == TtFlag::kNone) {
+            if (!candidate.filled() || candidate.key == newKey) {
                 entryPtr = &candidate;
                 break;
             }
