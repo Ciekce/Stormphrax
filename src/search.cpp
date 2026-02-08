@@ -1085,7 +1085,7 @@ namespace stormphrax::search {
                     std::terminate();
                 }
 
-                rootMove->windowScore = score;
+                rootMove->windowScore = score * score / 8192;
 
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.search.seldepth;
