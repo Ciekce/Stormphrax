@@ -125,10 +125,10 @@ namespace stormphrax {
 
         const auto& cluster = m_clusters[index(key)];
         for (const auto entry : cluster.entries) {
-            if (packedKey == entry.key) {
+            if (entry.filled() && packedKey == entry.key) {
                 dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
                 dst.staticEval = static_cast<Score>(entry.staticEval);
-                dst.depth = entry.depth;
+                dst.depth = entry.depth();
                 dst.move = entry.move;
                 dst.wasPv = entry.pv();
                 dst.flag = entry.flag();
@@ -153,7 +153,7 @@ namespace stormphrax {
 
         const auto entryValue = [this](const auto& entry) {
             const i32 relativeAge = (Entry::kAgeCycle + m_age - entry.age()) & Entry::kAgeMask;
-            return entry.depth - relativeAge * 2;
+            return entry.depth() - relativeAge * 2;
         };
 
         auto& cluster = m_clusters[index(key)];
@@ -163,7 +163,7 @@ namespace stormphrax {
 
         for (auto& candidate : cluster.entries) {
             // always take an empty entry, or one from the same position
-            if (candidate.key == newKey || candidate.flag() == TtFlag::kNone) {
+            if (!candidate.filled() || candidate.key == newKey) {
                 entryPtr = &candidate;
                 break;
             }
@@ -183,7 +183,7 @@ namespace stormphrax {
 
         // Roughly the SF replacement scheme
         if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age
-              || depth + 4 + pv * 2 > entry.depth))
+              || depth + 4 + pv * 2 > entry.depth()))
         {
             return;
         }
@@ -195,7 +195,7 @@ namespace stormphrax {
         entry.key = newKey;
         entry.score = static_cast<i16>(scoreToTt(score, ply));
         entry.staticEval = static_cast<i16>(staticEval);
-        entry.depth = depth;
+        entry.setDepth(depth);
         entry.setAgePvFlag(m_age, pv, flag);
 
         *entryPtr = entry;
@@ -237,7 +237,7 @@ namespace stormphrax {
         for (u64 i = 0; i < 1000; ++i) {
             const auto cluster = m_clusters[i];
             for (const auto& entry : cluster.entries) {
-                if (entry.flag() != TtFlag::kNone && entry.age() == m_age) {
+                if (entry.filled() && entry.age() == m_age) {
                     ++filledEntries;
                 }
             }

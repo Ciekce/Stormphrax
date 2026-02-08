@@ -349,7 +349,7 @@ namespace stormphrax {
 
     constexpr auto kScoreNone = -kScoreInf;
 
-    constexpr i32 kMaxDepth = 255;
+    constexpr i32 kMaxDepth = 248;
 
     constexpr auto kScoreMaxMate = kScoreMate - kMaxDepth;
 } // namespace stormphrax
