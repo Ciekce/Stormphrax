@@ -398,7 +398,7 @@ namespace stormphrax::search {
                 if (depth >= 3) {
                     const auto lastScore = thread.rootMoves[thread.pvIdx].windowScore;
 
-                    delta += lastScore * lastScore / 8192;
+                    delta += lastScore * lastScore / 16384;
 
                     alpha = std::max(lastScore - delta, -kScoreInf);
                     beta = std::min(lastScore + delta, kScoreInf);
