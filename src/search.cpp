@@ -398,6 +398,8 @@ namespace stormphrax::search {
                 if (depth >= 3) {
                     const auto lastScore = thread.rootMoves[thread.pvIdx].windowScore;
 
+                    delta += lastScore * lastScore / 8192;
+
                     alpha = std::max(lastScore - delta, -kScoreInf);
                     beta = std::min(lastScore + delta, kScoreInf);
                 }
@@ -1085,7 +1087,7 @@ namespace stormphrax::search {
                     std::terminate();
                 }
 
-                rootMove->windowScore = score * score / 8192;
+                rootMove->windowScore = score;
 
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.search.seldepth;
