@@ -100,7 +100,7 @@ namespace stormphrax::bench {
             search::BenchData data{};
             searcher.runBench(data, pos, depth);
 
-            nodes += data.search.nodes;
+            nodes += data.search.loadNodes();
             time += data.time;
         };
 

@@ -47,7 +47,8 @@ namespace stormphrax::search {
         }
 
         inline void incNodes() {
-            nodes.fetch_add(1, std::memory_order::relaxed);
+            // avoid the performance penalty of atomicity (fetch_add), as there is only ever one writer
+            nodes.store(nodes.load(std::memory_order::relaxed) + 1, std::memory_order::relaxed);
         }
 
         [[nodiscard]] inline usize loadTbHits() const {
@@ -55,7 +56,8 @@ namespace stormphrax::search {
         }
 
         inline void incTbHits() {
-            tbhits.fetch_add(1, std::memory_order::relaxed);
+            // see above
+            tbhits.store(tbhits.load(std::memory_order::relaxed) + 1, std::memory_order::relaxed);
         }
 
         SearchData& operator=(const SearchData& other) {
