@@ -52,8 +52,7 @@ namespace stormphrax::limit {
         TimeManager(util::Instant start, f64 remaining, f64 increment, i32 toGo, f64 overhead);
         ~TimeManager() final = default;
 
-        void update(const search::SearchData& data, Score score, Move bestMove, usize totalNodes) final;
-        void updateMoveNodes(Move move, usize nodes) final;
+        void update(const search::SearchData& data, const search::RootMove& pvMove, usize totalNodes) final;
 
         void stopEarly() final;
 
@@ -68,8 +67,6 @@ namespace stormphrax::limit {
         f64 m_maxTime{};
 
         f64 m_scale{1.0};
-
-        util::MultiArray<usize, 64, 64> m_moveNodeCounts{};
 
         Move m_prevBestMove{};
         u32 m_stability{};

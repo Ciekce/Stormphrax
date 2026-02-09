@@ -73,4 +73,39 @@ namespace stormphrax::search {
         Piece moving;
         Square dst;
     };
+
+    struct PvList {
+        std::array<Move, kMaxDepth> moves{};
+        u32 length{};
+
+        inline void update(Move move, const PvList& child) {
+            moves[0] = move;
+            std::copy(child.moves.begin(), child.moves.begin() + child.length, moves.begin() + 1);
+
+            length = child.length + 1;
+
+            assert(length == 1 || moves[0] != moves[1]);
+        }
+
+        inline void reset() {
+            moves[0] = kNullMove;
+            length = 0;
+        }
+    };
+
+    struct RootMove {
+        Score score{-kScoreInf};
+        Score windowScore{-kScoreInf};
+
+        Score displayScore{-kScoreInf};
+        Score previousScore{-kScoreInf};
+
+        bool upperbound{false};
+        bool lowerbound{false};
+
+        i32 seldepth{};
+        PvList pv{};
+
+        usize nodes{};
+    };
 } // namespace stormphrax::search

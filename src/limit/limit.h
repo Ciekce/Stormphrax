@@ -29,11 +29,9 @@ namespace stormphrax::limit {
 
         virtual void update(
             [[maybe_unused]] const search::SearchData& data,
-            [[maybe_unused]] Score score,
-            [[maybe_unused]] Move bestMove,
+            [[maybe_unused]] const search::RootMove& pvMove,
             [[maybe_unused]] usize totalNodes
         ) {}
-        virtual void updateMoveNodes([[maybe_unused]] Move move, [[maybe_unused]] usize nodes) {}
 
         virtual void stopEarly() {}
 

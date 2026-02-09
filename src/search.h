@@ -55,27 +55,6 @@ namespace stormphrax::search {
     constexpr auto kSyzygyProbeDepthRange = util::Range<i32>{1, kMaxDepth};
     constexpr auto kSyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
-    struct PvList {
-        std::array<Move, kMaxDepth> moves{};
-        u32 length{};
-
-        inline void update(Move move, const PvList& child) {
-            moves[0] = move;
-            std::copy(child.moves.begin(), child.moves.begin() + child.length, moves.begin() + 1);
-
-            length = child.length + 1;
-
-            assert(length == 1 || moves[0] != moves[1]);
-        }
-
-        inline void reset() {
-            moves[0] = kNullMove;
-            length = 0;
-        }
-    };
-
-    struct ThreadData;
-
     struct SearchStackEntry {
         PvList pv{};
         Move move;
@@ -93,20 +72,6 @@ namespace stormphrax::search {
         MovegenData movegenData{};
         StaticVector<Move, 256> failLowQuiets{};
         StaticVector<Move, 32> failLowNoisies{};
-    };
-
-    struct RootMove {
-        Score score{-kScoreInf};
-        Score windowScore{-kScoreInf};
-
-        Score displayScore{-kScoreInf};
-        Score previousScore{-kScoreInf};
-
-        bool upperbound{false};
-        bool lowerbound{false};
-
-        i32 seldepth{};
-        PvList pv{};
     };
 
     template <bool kUpdateNnue>

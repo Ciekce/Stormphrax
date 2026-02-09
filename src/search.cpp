@@ -467,12 +467,7 @@ namespace stormphrax::search {
             }
 
             if (mainThread) {
-                m_limiter->update(
-                    thread.search,
-                    thread.pvMove().score,
-                    thread.pvMove().pv.moves[0],
-                    thread.search.loadNodes()
-                );
+                m_limiter->update(thread.search, thread.pvMove(), thread.search.loadNodes());
 
                 if (checkSoftTimeout(thread.search, true)) {
                     break;
@@ -833,16 +828,8 @@ namespace stormphrax::search {
                     }
 
                     if (score >= probcutBeta) {
-                        m_ttable.put(
-                            pos.key(),
-                            score,
-                            rawStaticEval,
-                            move,
-                            probcutDepth,
-                            ply,
-                            TtFlag::kLowerBound,
-                            false
-                        );
+                        m_ttable
+                            .put(pos.key(), score, rawStaticEval, move, probcutDepth, ply, TtFlag::kLowerBound, false);
                         return score;
                     }
                 }
@@ -1074,10 +1061,6 @@ namespace stormphrax::search {
             }
 
             if constexpr (kRootNode) {
-                if (thread.isMainThread()) {
-                    m_limiter->updateMoveNodes(move, thread.search.loadNodes() - prevNodes);
-                }
-
                 auto* rootMove = thread.findRootMove(move);
 
                 if (!rootMove) {
@@ -1086,6 +1069,7 @@ namespace stormphrax::search {
                 }
 
                 rootMove->windowScore = score;
+                rootMove->nodes += thread.search.loadNodes() - prevNodes;
 
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.search.seldepth;
