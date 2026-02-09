@@ -732,7 +732,7 @@ namespace stormphrax::search {
             };
 
             if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isWin(curr.staticEval) && !isWin(beta) ? (curr.staticEval + beta) / 2 : curr.staticEval;
+                return !isWin(curr.staticEval) && !isWin(beta) ? (curr.staticEval + 2 * beta) / 3 : curr.staticEval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + razoringMargin() * depth <= alpha) {
