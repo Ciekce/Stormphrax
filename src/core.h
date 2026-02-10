@@ -381,60 +381,190 @@ namespace stormphrax {
         static constexpr usize kCount = kNone.idx();
     };
 
-    // upside down
-    enum class Square : u8 {
-        // clang-format off
-        kA1, kB1, kC1, kD1, kE1, kF1, kG1, kH1,
-        kA2, kB2, kC2, kD2, kE2, kF2, kG2, kH2,
-        kA3, kB3, kC3, kD3, kE3, kF3, kG3, kH3,
-        kA4, kB4, kC4, kD4, kE4, kF4, kG4, kH4,
-        kA5, kB5, kC5, kD5, kE5, kF5, kG5, kH5,
-        kA6, kB6, kC6, kD6, kE6, kF6, kG6, kH6,
-        kA7, kB7, kC7, kD7, kE7, kF7, kG7, kH7,
-        kA8, kB8, kC8, kD8, kE8, kF8, kG8, kH8,
-        kNone,
-        // clang-format on
-    };
+    class Square {
+    public:
+        constexpr Square() = default;
 
-    [[nodiscard]] constexpr Square toSquare(u32 rank, u32 file) {
-        assert(rank < 8);
-        assert(file < 8);
+        constexpr Square(const Square&) = default;
+        constexpr Square(Square&&) = default;
 
-        return static_cast<Square>((rank << 3) | file);
-    }
-
-    [[nodiscard]] constexpr i32 squareRank(Square square) {
-        assert(square != Square::kNone);
-        return static_cast<i32>(square) >> 3;
-    }
-
-    [[nodiscard]] constexpr i32 squareFile(Square square) {
-        assert(square != Square::kNone);
-        return static_cast<i32>(square) & 0x7;
-    }
-
-    [[nodiscard]] constexpr Square flipSquareRank(Square square) {
-        assert(square != Square::kNone);
-        return static_cast<Square>(static_cast<i32>(square) ^ 0b111000);
-    }
-
-    [[nodiscard]] constexpr Square flipSquareFile(Square square) {
-        assert(square != Square::kNone);
-        return static_cast<Square>(static_cast<i32>(square) ^ 0b000111);
-    }
-
-    [[nodiscard]] constexpr u64 squareBit(Square square) {
-        assert(square != Square::kNone);
-        return U64(1) << static_cast<i32>(square);
-    }
-
-    [[nodiscard]] constexpr u64 squareBitChecked(Square square) {
-        if (square == Square::kNone) {
-            return U64(0);
+        [[nodiscard]] constexpr u8 raw() const {
+            return m_id;
         }
 
-        return U64(1) << static_cast<i32>(square);
-    }
+        [[nodiscard]] constexpr usize idx() const {
+            return static_cast<usize>(m_id);
+        }
+
+        [[nodiscard]] constexpr i32 rank() const {
+            assert(m_id != kNoneId);
+            return static_cast<i32>(m_id) / 8;
+        }
+
+        [[nodiscard]] constexpr i32 file() const {
+            assert(m_id != kNoneId);
+            return static_cast<i32>(m_id) % 8;
+        }
+
+        [[nodiscard]] constexpr Square flipFile() const {
+            assert(m_id != kNoneId);
+            return fromRaw(m_id ^ 0b000111);
+        }
+
+        [[nodiscard]] constexpr Square flipRank() const {
+            assert(m_id != kNoneId);
+            return fromRaw(m_id ^ 0b111000);
+        }
+
+        [[nodiscard]] constexpr Square relative(Color c) const {
+            assert(m_id != kNoneId);
+            if (c == Colors::kBlack) {
+                return *this;
+            } else {
+                return flipRank();
+            }
+        }
+
+        [[nodiscard]] constexpr u64 bit() const {
+            assert(m_id != kNoneId);
+            return u64{1} << m_id;
+        }
+
+        [[nodiscard]] constexpr Square offset(i32 offset) const {
+            assert(m_id + offset >= 0);
+            assert(m_id + offset < kNoneId);
+            return fromRaw(m_id + offset);
+        }
+
+        [[nodiscard]] static constexpr Square fromRaw(u8 id) {
+            assert(id <= kNoneId);
+            return Square{id};
+        }
+
+        [[nodiscard]] static constexpr Square fromFileRank(i32 file, i32 rank) {
+            assert(rank >= 0 && rank <= 7);
+            assert(file >= 0 && file <= 7);
+            return fromRaw(rank * 8 + file);
+        }
+
+        [[nodiscard]] static constexpr Square fromStr(std::string_view str) {
+            if (str.length() != 2) {
+                return Square{kNoneId};
+            }
+
+            if (str[0] < 'a' || str[0] > 'h' || str[1] < '1' || str[1] > '8') {
+                return Square{kNoneId};
+            }
+
+            const i32 file = str[0] - 'a';
+            const i32 rank = str[1] - '1';
+
+            return fromFileRank(file, rank);
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const {
+            return m_id != kNoneId;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const Square&) const = default;
+
+        constexpr Square& operator=(const Square&) = default;
+        constexpr Square& operator=(Square&&) = default;
+
+    private:
+        explicit constexpr Square(u8 id) :
+                m_id{id} {}
+
+        u8 m_id{};
+
+        enum : u8 {
+            // clang-format off
+            kA1Id, kB1Id, kC1Id, kD1Id, kE1Id, kF1Id, kG1Id, kH1Id,
+            kA2Id, kB2Id, kC2Id, kD2Id, kE2Id, kF2Id, kG2Id, kH2Id,
+            kA3Id, kB3Id, kC3Id, kD3Id, kE3Id, kF3Id, kG3Id, kH3Id,
+            kA4Id, kB4Id, kC4Id, kD4Id, kE4Id, kF4Id, kG4Id, kH4Id,
+            kA5Id, kB5Id, kC5Id, kD5Id, kE5Id, kF5Id, kG5Id, kH5Id,
+            kA6Id, kB6Id, kC6Id, kD6Id, kE6Id, kF6Id, kG6Id, kH6Id,
+            kA7Id, kB7Id, kC7Id, kD7Id, kE7Id, kF7Id, kG7Id, kH7Id,
+            kA8Id, kB8Id, kC8Id, kD8Id, kE8Id, kF8Id, kG8Id, kH8Id,
+            // clang-format on
+            kNoneId,
+        };
+
+        friend struct Squares;
+    };
+
+    struct Squares {
+        Squares() = delete;
+
+        static constexpr Square kA1{Square::kA1Id};
+        static constexpr Square kB1{Square::kB1Id};
+        static constexpr Square kC1{Square::kC1Id};
+        static constexpr Square kD1{Square::kD1Id};
+        static constexpr Square kE1{Square::kE1Id};
+        static constexpr Square kF1{Square::kF1Id};
+        static constexpr Square kG1{Square::kG1Id};
+        static constexpr Square kH1{Square::kH1Id};
+        static constexpr Square kA2{Square::kA2Id};
+        static constexpr Square kB2{Square::kB2Id};
+        static constexpr Square kC2{Square::kC2Id};
+        static constexpr Square kD2{Square::kD2Id};
+        static constexpr Square kE2{Square::kE2Id};
+        static constexpr Square kF2{Square::kF2Id};
+        static constexpr Square kG2{Square::kG2Id};
+        static constexpr Square kH2{Square::kH2Id};
+        static constexpr Square kA3{Square::kA3Id};
+        static constexpr Square kB3{Square::kB3Id};
+        static constexpr Square kC3{Square::kC3Id};
+        static constexpr Square kD3{Square::kD3Id};
+        static constexpr Square kE3{Square::kE3Id};
+        static constexpr Square kF3{Square::kF3Id};
+        static constexpr Square kG3{Square::kG3Id};
+        static constexpr Square kH3{Square::kH3Id};
+        static constexpr Square kA4{Square::kA4Id};
+        static constexpr Square kB4{Square::kB4Id};
+        static constexpr Square kC4{Square::kC4Id};
+        static constexpr Square kD4{Square::kD4Id};
+        static constexpr Square kE4{Square::kE4Id};
+        static constexpr Square kF4{Square::kF4Id};
+        static constexpr Square kG4{Square::kG4Id};
+        static constexpr Square kH4{Square::kH4Id};
+        static constexpr Square kA5{Square::kA5Id};
+        static constexpr Square kB5{Square::kB5Id};
+        static constexpr Square kC5{Square::kC5Id};
+        static constexpr Square kD5{Square::kD5Id};
+        static constexpr Square kE5{Square::kE5Id};
+        static constexpr Square kF5{Square::kF5Id};
+        static constexpr Square kG5{Square::kG5Id};
+        static constexpr Square kH5{Square::kH5Id};
+        static constexpr Square kA6{Square::kA6Id};
+        static constexpr Square kB6{Square::kB6Id};
+        static constexpr Square kC6{Square::kC6Id};
+        static constexpr Square kD6{Square::kD6Id};
+        static constexpr Square kE6{Square::kE6Id};
+        static constexpr Square kF6{Square::kF6Id};
+        static constexpr Square kG6{Square::kG6Id};
+        static constexpr Square kH6{Square::kH6Id};
+        static constexpr Square kA7{Square::kA7Id};
+        static constexpr Square kB7{Square::kB7Id};
+        static constexpr Square kC7{Square::kC7Id};
+        static constexpr Square kD7{Square::kD7Id};
+        static constexpr Square kE7{Square::kE7Id};
+        static constexpr Square kF7{Square::kF7Id};
+        static constexpr Square kG7{Square::kG7Id};
+        static constexpr Square kH7{Square::kH7Id};
+        static constexpr Square kA8{Square::kA8Id};
+        static constexpr Square kB8{Square::kB8Id};
+        static constexpr Square kC8{Square::kC8Id};
+        static constexpr Square kD8{Square::kD8Id};
+        static constexpr Square kE8{Square::kE8Id};
+        static constexpr Square kF8{Square::kF8Id};
+        static constexpr Square kG8{Square::kG8Id};
+        static constexpr Square kH8{Square::kH8Id};
+        static constexpr Square kNone{Square::kNoneId};
+
+        static constexpr usize kCount = kNone.idx();
+    };
 
     constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
@@ -473,27 +603,27 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
 
         [[nodiscard]] inline bool isValid() {
-            return black() != Square::kNone && white() != Square::kNone && black() != white();
+            return black() != Squares::kNone && white() != Squares::kNone && black() != white();
         }
     };
 
     struct CastlingRooks {
         struct RookPair {
-            Square kingside{Square::kNone};
-            Square queenside{Square::kNone};
+            Square kingside{Squares::kNone};
+            Square queenside{Squares::kNone};
 
             inline void clear() {
-                kingside = Square::kNone;
-                queenside = Square::kNone;
+                kingside = Squares::kNone;
+                queenside = Squares::kNone;
             }
 
             inline void unset(Square square) {
-                assert(square != Square::kNone);
+                assert(square != Squares::kNone);
 
                 if (square == kingside) {
-                    kingside = Square::kNone;
+                    kingside = Squares::kNone;
                 } else if (square == queenside) {
-                    queenside = Square::kNone;
+                    queenside = Squares::kNone;
                 }
             }
 

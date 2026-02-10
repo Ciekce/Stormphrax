@@ -59,7 +59,7 @@ namespace stormphrax::attacks {
             const bool right = dir < 0;
             const auto shift = util::abs(dir);
 
-            auto bit = squareBit(src);
+            auto bit = src.bit();
 
             if (!(blockers & bit).empty()) {
                 return dst;
@@ -85,7 +85,7 @@ namespace stormphrax::attacks {
 
         for (i32 square = 0; square < 64; ++square) {
             for (const auto dir : {Dirs...}) {
-                const auto attacks = internal::generateSlidingAttacks(static_cast<Square>(square), dir, 0);
+                const auto attacks = internal::generateSlidingAttacks(Square::fromRaw(square), dir, 0);
                 dst[square] |= attacks;
             }
         }

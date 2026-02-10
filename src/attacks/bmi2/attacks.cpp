@@ -36,7 +36,7 @@ namespace stormphrax::attacks {
                     Bitboard attacks{};
 
                     for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                        attacks |= internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                        attacks |= internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
                     }
 
                     dst[data.offset + i] = static_cast<u16>(util::pext(attacks, data.dstMask));
@@ -60,7 +60,7 @@ namespace stormphrax::attacks {
                          {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight})
                     {
                         dst[data.offset + i] |=
-                            internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
                     }
                 }
             }

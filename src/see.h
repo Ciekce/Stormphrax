@@ -97,7 +97,7 @@ namespace stormphrax::see {
 
         const auto square = move.toSq();
 
-        auto occupancy = bbs.occupancy() ^ squareBit(move.fromSq()) ^ squareBit(square);
+        auto occupancy = bbs.occupancy() ^ move.fromSq().bit() ^ square.bit();
 
         const auto queens = bbs.queens();
 

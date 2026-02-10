@@ -79,12 +79,12 @@ namespace stormphrax {
         //TODO take two args when c++23 is usable
         inline HistoryScore operator[](std::pair<Piece, Move> move) const {
             const auto [piece, mv] = move;
-            return m_data[piece.idx()][static_cast<i32>(mv.toSq())];
+            return m_data[piece.idx()][mv.toSq().idx()];
         }
 
         inline HistoryEntry& operator[](std::pair<Piece, Move> move) {
             const auto [piece, mv] = move;
-            return m_data[piece.idx()][static_cast<i32>(mv.toSq())];
+            return m_data[piece.idx()][mv.toSq().idx()];
         }
 
     private:
@@ -102,11 +102,11 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const ContinuationSubtable& contTable(Piece moving, Square to) const {
-            return m_continuation[moving.idx()][static_cast<i32>(to)];
+            return m_continuation[moving.idx()][to.idx()];
         }
 
         [[nodiscard]] inline ContinuationSubtable& contTable(Piece moving, Square to) {
-            return m_continuation[moving.idx()][static_cast<i32>(to)];
+            return m_continuation[moving.idx()][to.idx()];
         }
 
         inline void updateConthist(

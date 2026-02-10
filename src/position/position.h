@@ -214,7 +214,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -241,7 +241,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -272,7 +272,7 @@ namespace stormphrax {
         template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
             assert(toMove != Colors::kNone);
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
             assert(attacker != Colors::kNone);
 
             if constexpr (kThreatShortcut) {
@@ -318,7 +318,7 @@ namespace stormphrax {
 
         template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
             assert(attacker != Colors::kNone);
 
             return isAttacked<kThreatShortcut>(stm(), square, attacker);
@@ -565,7 +565,7 @@ namespace stormphrax {
         u16 m_halfmove{};
         u32 m_fullmove{1};
 
-        Square m_enPassant{Square::kNone};
+        Square m_enPassant{Squares::kNone};
 
         KingPair m_kings{};
 
@@ -573,8 +573,6 @@ namespace stormphrax {
     };
 
     static_assert(sizeof(Position) == 216);
-
-    [[nodiscard]] Square squareFromString(std::string_view str);
 } // namespace stormphrax
 
 template <>

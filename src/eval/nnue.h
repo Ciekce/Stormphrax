@@ -354,7 +354,7 @@ namespace stormphrax::eval {
 
         static inline void resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king) {
             assert(c != Colors::kNone);
-            assert(king != Square::kNone);
+            assert(king != Squares::kNone);
 
             // loop through each coloured piece, and activate the features
             // corresponding to that piece on each of the squares it occurs on
@@ -384,8 +384,8 @@ namespace stormphrax::eval {
         [[nodiscard]] static inline u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
             assert(c != Colors::kNone);
             assert(piece != Pieces::kNone);
-            assert(sq != Square::kNone);
-            assert(king != Square::kNone);
+            assert(sq != Squares::kNone);
+            assert(king != Squares::kNone);
 
             constexpr u32 kColorStride = 64 * 6;
             constexpr u32 kPieceStride = 64;
@@ -400,13 +400,13 @@ namespace stormphrax::eval {
             }();
 
             if (c == Colors::kBlack) {
-                sq = flipSquareRank(sq);
+                sq = sq.flipRank();
             }
 
             sq = InputFeatureSet::transformFeatureSquare(sq, king);
 
             const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputFeatureSet::kInputSize;
-            return bucketOffset + color * kColorStride + type * kPieceStride + static_cast<u32>(sq);
+            return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
         }
     };
 } // namespace stormphrax::eval

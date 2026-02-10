@@ -79,9 +79,9 @@ namespace stormphrax::eval::nnue::features {
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
             if (c == Colors::kBlack) {
-                kingSq = flipSquareRank(kingSq);
+                kingSq = kingSq.flipRank();
             }
-            return kBuckets[static_cast<i32>(kingSq)];
+            return kBuckets[kingSq.idx()];
         }
 
         static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
@@ -91,15 +91,15 @@ namespace stormphrax::eval::nnue::features {
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
             assert(c != Colors::kNone);
 
-            assert(prevKingSq != Square::kNone);
-            assert(kingSq != Square::kNone);
+            assert(prevKingSq != Squares::kNone);
+            assert(kingSq != Squares::kNone);
 
             if (c == Colors::kBlack) {
-                prevKingSq = flipSquareRank(prevKingSq);
-                kingSq = flipSquareRank(kingSq);
+                prevKingSq = prevKingSq.flipRank();
+                kingSq = kingSq.flipRank();
             }
 
-            return kBuckets[static_cast<i32>(prevKingSq)] != kBuckets[static_cast<i32>(kingSq)];
+            return kBuckets[prevKingSq.idx()] != kBuckets[kingSq.idx()];
         }
     };
 
@@ -146,9 +146,9 @@ namespace stormphrax::eval::nnue::features {
 
         static constexpr bool shouldFlip(Square kingSq) {
             if constexpr (kSide == MirroredKingSide::kAbcd) {
-                return squareFile(kingSq) > 3;
+                return kingSq.file() > 3;
             } else {
-                return squareFile(kingSq) <= 3;
+                return kingSq.file() <= 3;
             }
         }
 
@@ -163,29 +163,29 @@ namespace stormphrax::eval::nnue::features {
 
         static constexpr Square transformFeatureSquare(Square sq, Square kingSq) {
             const bool flipped = shouldFlip(kingSq);
-            return flipped ? flipSquareFile(sq) : sq;
+            return flipped ? sq.flipFile() : sq;
         }
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
             if (c == Colors::kBlack) {
-                kingSq = flipSquareRank(kingSq);
+                kingSq = kingSq.flipRank();
             }
-            return kBuckets[static_cast<i32>(kingSq)];
+            return kBuckets[kingSq.idx()];
         }
 
         static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
             if (c == Colors::kBlack) {
-                kingSq = flipSquareRank(kingSq);
+                kingSq = kingSq.flipRank();
             }
             const bool flipped = shouldFlip(kingSq);
-            return kBuckets[static_cast<i32>(kingSq)] * 2 + flipped;
+            return kBuckets[kingSq.idx()] * 2 + flipped;
         }
 
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
             assert(c != Colors::kNone);
 
-            assert(prevKingSq != Square::kNone);
-            assert(kingSq != Square::kNone);
+            assert(prevKingSq != Squares::kNone);
+            assert(kingSq != Squares::kNone);
 
             const bool prevFlipped = shouldFlip(prevKingSq);
             const bool flipped = shouldFlip(kingSq);
@@ -195,11 +195,11 @@ namespace stormphrax::eval::nnue::features {
             }
 
             if (c == Colors::kBlack) {
-                prevKingSq = flipSquareRank(prevKingSq);
-                kingSq = flipSquareRank(kingSq);
+                prevKingSq = prevKingSq.flipRank();
+                kingSq = kingSq.flipRank();
             }
 
-            return kBuckets[static_cast<i32>(prevKingSq)] != kBuckets[static_cast<i32>(kingSq)];
+            return kBuckets[prevKingSq.idx()] != kBuckets[kingSq.idx()];
         }
     };
 

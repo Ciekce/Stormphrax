@@ -72,11 +72,11 @@ namespace stormphrax::datagen {
                 const u8 stm = pos.stm() == Colors::kBlack ? (1 << 7) : 0;
 
                 const Square relativeEpSquare =
-                    pos.enPassant() == Square::kNone
-                        ? Square::kNone
-                        : toSquare(pos.stm() == Colors::kBlack ? 2 : 5, squareFile(pos.enPassant()));
+                    pos.enPassant() == Squares::kNone
+                        ? Squares::kNone
+                        : Square::fromFileRank(pos.enPassant().file(), pos.stm() == Colors::kBlack ? 2 : 5);
 
-                board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
+                board.stmEpSquare = stm | relativeEpSquare.raw();
                 board.halfmoveClock = pos.halfmove();
                 board.fullmoveNumber = pos.fullmove();
                 board.eval = score;

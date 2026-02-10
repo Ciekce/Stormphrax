@@ -33,8 +33,8 @@ namespace stormphrax {
             util::MultiArray<Bitboard, 64, 64> dst{};
 
             for (i32 from = 0; from < 64; ++from) {
-                const auto srcSquare = static_cast<Square>(from);
-                const auto srcMask = squareBit(srcSquare);
+                const auto srcSquare = Square::fromRaw(from);
+                const auto srcMask = srcSquare.bit();
 
                 const auto rookAttacks = attacks::kEmptyBoardRooks[from];
                 const auto bishopAttacks = attacks::kEmptyBoardBishops[from];
@@ -44,8 +44,8 @@ namespace stormphrax {
                         continue;
                     }
 
-                    const auto dstSquare = static_cast<Square>(to);
-                    const auto dstMask = squareBit(dstSquare);
+                    const auto dstSquare = Square::fromRaw(to);
+                    const auto dstMask = dstSquare.bit();
 
                     if (rookAttacks[dstSquare]) {
                         dst[from][to] =
@@ -64,8 +64,8 @@ namespace stormphrax {
             util::MultiArray<Bitboard, 64, 64> dst{};
 
             for (i32 from = 0; from < 64; ++from) {
-                const auto srcSquare = static_cast<Square>(from);
-                const auto srcMask = squareBit(srcSquare);
+                const auto srcSquare = Square::fromRaw(from);
+                const auto srcMask = srcSquare.bit();
 
                 const auto rookAttacks = attacks::kEmptyBoardRooks[from];
                 const auto bishopAttacks = attacks::kEmptyBoardBishops[from];
@@ -75,8 +75,8 @@ namespace stormphrax {
                         continue;
                     }
 
-                    const auto dstSquare = static_cast<Square>(to);
-                    const auto dstMask = squareBit(dstSquare);
+                    const auto dstSquare = Square::fromRaw(to);
+                    const auto dstMask = dstSquare.bit();
 
                     if (rookAttacks[dstSquare]) {
                         dst[from][to] = (srcMask | attacks::genRookAttacks(srcSquare, Bitboard{}))
@@ -96,10 +96,10 @@ namespace stormphrax {
     } // namespace detail
 
     constexpr Bitboard rayBetween(Square src, Square dst) {
-        return detail::kBetweenRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+        return detail::kBetweenRays[src.idx()][dst.idx()];
     }
 
     constexpr Bitboard rayIntersecting(Square src, Square dst) {
-        return detail::kIntersectingRays[static_cast<i32>(src)][static_cast<i32>(dst)];
+        return detail::kIntersectingRays[src.idx()][dst.idx()];
     }
 } // namespace stormphrax

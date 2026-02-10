@@ -77,15 +77,15 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(
     using namespace stormphrax;
 
     return write_padded(ctx, [=, this](auto out) {
-        if (value == Square::kNone) {
+        if (value == Squares::kNone) {
             return format_to(out, "??");
         }
 
         return format_to(
             out,
             "{}{}",
-            nested(static_cast<char>('a' + squareFile(value))),
-            nested(static_cast<char>('1' + squareRank(value)))
+            nested(static_cast<char>('a' + value.file())),
+            nested(static_cast<char>('1' + value.rank()))
         );
     });
 }

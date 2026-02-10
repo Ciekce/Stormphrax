@@ -33,7 +33,7 @@ namespace stormphrax::attacks {
     extern const std::array<Bitboard, black_magic::kBishopData.tableSize> g_bishopAttacks;
 
     [[nodiscard]] inline usize getRookIdx(Bitboard occupancy, Square src) {
-        const auto s = static_cast<i32>(src);
+        const auto s = src.idx();
 
         const auto& data = black_magic::kRookData.data[s];
 
@@ -44,7 +44,7 @@ namespace stormphrax::attacks {
     }
 
     [[nodiscard]] inline usize getBishopIdx(Bitboard occupancy, Square src) {
-        const auto s = static_cast<i32>(src);
+        const auto s = src.idx();
 
         const auto& data = black_magic::kBishopData.data[s];
 
@@ -55,7 +55,7 @@ namespace stormphrax::attacks {
     }
 
     [[nodiscard]] inline Bitboard getRookAttacks(Square src, Bitboard occupancy) {
-        const auto s = static_cast<i32>(src);
+        const auto s = src.idx();
 
         const auto& data = black_magic::kRookData.data[s];
         const auto idx = getRookIdx(occupancy, src);
@@ -64,7 +64,7 @@ namespace stormphrax::attacks {
     }
 
     [[nodiscard]] inline Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
-        const auto s = static_cast<i32>(src);
+        const auto s = src.idx();
 
         const auto& data = black_magic::kBishopData.data[s];
         const auto idx = getBishopIdx(occupancy, src);

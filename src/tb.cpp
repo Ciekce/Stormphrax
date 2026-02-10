@@ -56,8 +56,8 @@ namespace stormphrax::tb {
                 PieceTypes::kKnight,
             };
 
-            const auto from = static_cast<Square>(PYRRHIC_MOVE_FROM(tbMove));
-            const auto to = static_cast<Square>(PYRRHIC_MOVE_TO(tbMove));
+            const auto from = Square::fromRaw(PYRRHIC_MOVE_FROM(tbMove));
+            const auto to = Square::fromRaw(PYRRHIC_MOVE_TO(tbMove));
             const auto promo = kPromoPieces[PYRRHIC_MOVE_FLAGS(tbMove) & 0x7];
 
             if (PYRRHIC_MOVE_IS_ENPASS(tbMove)) {
@@ -84,7 +84,7 @@ namespace stormphrax::tb {
             bbs.knights(),
             bbs.pawns(),
             pos.halfmove(),
-            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+            epSq == Squares::kNone ? 0 : epSq.raw(),
             pos.stm() == Colors::kWhite,
             false, // TODO
             &tbRootMoves
@@ -103,7 +103,7 @@ namespace stormphrax::tb {
                 bbs.knights(),
                 bbs.pawns(),
                 pos.halfmove(),
-                epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+                epSq == Squares::kNone ? 0 : epSq.raw(),
                 pos.stm() == Colors::kWhite,
                 true,
                 &tbRootMoves
@@ -177,7 +177,7 @@ namespace stormphrax::tb {
             bbs.bishops(),
             bbs.knights(),
             bbs.pawns(),
-            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
+            epSq == Squares::kNone ? 0 : epSq.raw(),
             pos.stm() == Colors::kWhite
         );
 

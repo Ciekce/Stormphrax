@@ -31,7 +31,7 @@ namespace stormphrax {
         inline void pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
                 dst.push({Move::standard(srcSquare, dstSquare), 0});
             }
@@ -47,7 +47,7 @@ namespace stormphrax {
         inline void pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
                 noisy.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen), 0});
             }
@@ -56,7 +56,7 @@ namespace stormphrax {
         inline void pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight), 0});
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kRook), 0});
@@ -71,7 +71,7 @@ namespace stormphrax {
         inline void pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
+                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
 
                 noisy.push({Move::enPassant(srcSquare, dstSquare), 0});
             }
@@ -107,7 +107,7 @@ namespace stormphrax {
             pushStandards(noisy, leftOffset, leftAttacks & theirs & ~kPromotionRank);
             pushStandards(noisy, rightOffset, rightAttacks & theirs & ~kPromotionRank);
 
-            if (pos.enPassant() != Square::kNone) {
+            if (pos.enPassant() != Squares::kNone) {
                 const auto epMask = Bitboard::fromSquare(pos.enPassant());
 
                 pushEnPassants(noisy, leftOffset, leftAttacks & epMask);
@@ -162,7 +162,7 @@ namespace stormphrax {
             auto pieces = pos.bbs().forPiece(pt, us);
             while (!pieces.empty()) {
                 const auto srcSquare = pieces.popLowestSquare();
-                const auto attacks = kAttacks[static_cast<usize>(srcSquare)];
+                const auto attacks = kAttacks[srcSquare.idx()];
 
                 pushStandards(dst, srcSquare, attacks & dstMask);
             }
@@ -184,10 +184,10 @@ namespace stormphrax {
             const auto toKingDst = rayBetween(king, kingDst);
             const auto toRook = rayBetween(king, rook);
 
-            const auto occ = occupancy ^ squareBit(king) ^ squareBit(rook);
+            const auto occ = occupancy ^ king.bit() ^ rook.bit();
 
-            if ((occ & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
-                && !pos.anyAttacked(toKingDst | squareBit(kingDst), pos.nstm()))
+            if ((occ & (toKingDst | toRook | kingDst.bit() | rookDst.bit())).empty()
+                && !pos.anyAttacked(toKingDst | kingDst.bit(), pos.nstm()))
             {
                 pushCastling(dst, king, rook);
             }
@@ -205,80 +205,80 @@ namespace stormphrax {
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
                     if (g_opts.chess960) {
                         if (pos.stm() == Colors::kBlack) {
-                            if (castlingRooks.black().kingside != Square::kNone) {
+                            if (castlingRooks.black().kingside != Squares::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.blackKing(),
-                                    Square::kG8,
+                                    Squares::kG8,
                                     castlingRooks.black().kingside,
-                                    Square::kF8
+                                    Squares::kF8
                                 );
                             }
-                            if (castlingRooks.black().queenside != Square::kNone) {
+                            if (castlingRooks.black().queenside != Squares::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.blackKing(),
-                                    Square::kC8,
+                                    Squares::kC8,
                                     castlingRooks.black().queenside,
-                                    Square::kD8
+                                    Squares::kD8
                                 );
                             }
                         } else {
-                            if (castlingRooks.white().kingside != Square::kNone) {
+                            if (castlingRooks.white().kingside != Squares::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.whiteKing(),
-                                    Square::kG1,
+                                    Squares::kG1,
                                     castlingRooks.white().kingside,
-                                    Square::kF1
+                                    Squares::kF1
                                 );
                             }
-                            if (castlingRooks.white().queenside != Square::kNone) {
+                            if (castlingRooks.white().queenside != Squares::kNone) {
                                 generateFrcCastling(
                                     dst,
                                     pos,
                                     occupancy,
                                     pos.whiteKing(),
-                                    Square::kC1,
+                                    Squares::kC1,
                                     castlingRooks.white().queenside,
-                                    Square::kD1
+                                    Squares::kD1
                                 );
                             }
                         }
                     } else {
                         if (pos.stm() == Colors::kBlack) {
-                            if (castlingRooks.black().kingside != Square::kNone
+                            if (castlingRooks.black().kingside != Squares::kNone
                                 && (occupancy & U64(0x6000000000000000)).empty()
-                                && !pos.isAttacked(Square::kF8, Colors::kWhite))
+                                && !pos.isAttacked(Squares::kF8, Colors::kWhite))
                             {
-                                pushCastling(dst, pos.blackKing(), Square::kH8);
+                                pushCastling(dst, pos.blackKing(), Squares::kH8);
                             }
 
-                            if (castlingRooks.black().queenside != Square::kNone
+                            if (castlingRooks.black().queenside != Squares::kNone
                                 && (occupancy & U64(0x0E00000000000000)).empty()
-                                && !pos.isAttacked(Square::kD8, Colors::kWhite))
+                                && !pos.isAttacked(Squares::kD8, Colors::kWhite))
                             {
-                                pushCastling(dst, pos.blackKing(), Square::kA8);
+                                pushCastling(dst, pos.blackKing(), Squares::kA8);
                             }
                         } else {
-                            if (castlingRooks.white().kingside != Square::kNone
+                            if (castlingRooks.white().kingside != Squares::kNone
                                 && (occupancy & U64(0x0000000000000060)).empty()
-                                && !pos.isAttacked(Square::kF1, Colors::kBlack))
+                                && !pos.isAttacked(Squares::kF1, Colors::kBlack))
                             {
-                                pushCastling(dst, pos.whiteKing(), Square::kH1);
+                                pushCastling(dst, pos.whiteKing(), Squares::kH1);
                             }
 
-                            if (castlingRooks.white().queenside != Square::kNone
+                            if (castlingRooks.white().queenside != Squares::kNone
                                 && (occupancy & U64(0x000000000000000E)).empty()
-                                && !pos.isAttacked(Square::kD1, Colors::kBlack))
+                                && !pos.isAttacked(Squares::kD1, Colors::kBlack))
                             {
-                                pushCastling(dst, pos.whiteKing(), Square::kA1);
+                                pushCastling(dst, pos.whiteKing(), Squares::kA1);
                             }
                         }
                     }
@@ -333,7 +333,7 @@ namespace stormphrax {
         Bitboard epMask{};
         Bitboard epPawn{};
 
-        if (pos.enPassant() != Square::kNone) {
+        if (pos.enPassant() != Squares::kNone) {
             epMask = Bitboard::fromSquare(pos.enPassant());
             epPawn = us == Colors::kBlack ? epMask.shiftUp() : epMask.shiftDown();
         }
@@ -411,7 +411,7 @@ namespace stormphrax {
         Bitboard epMask{};
         Bitboard epPawn{};
 
-        if (pos.enPassant() != Square::kNone) {
+        if (pos.enPassant() != Squares::kNone) {
             epMask = Bitboard::fromSquare(pos.enPassant());
             epPawn = pos.stm() == Colors::kBlack ? epMask.shiftUp() : epMask.shiftDown();
         }

@@ -241,11 +241,11 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr bool operator[](Square s) const {
-            return m_board & squareBit(s);
+            return m_board & s.bit();
         }
 
         [[nodiscard]] constexpr BitboardSlot operator[](Square s) {
-            return BitboardSlot{m_board, static_cast<i32>(s)};
+            return BitboardSlot{m_board, s.raw()};
         }
 
         [[nodiscard]] constexpr i32 popcount() const {
@@ -265,7 +265,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr Square lowestSquare() const {
-            return static_cast<Square>(util::ctz(m_board));
+            return Square::fromRaw(util::ctz(m_board));
         }
 
         [[nodiscard]] constexpr Bitboard lowestBit() const {
@@ -457,11 +457,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr static Bitboard fromSquare(Square square) {
-            return squareBit(square);
-        }
-
-        [[nodiscard]] constexpr static Bitboard fromSquareChecked(Square square) {
-            return squareBitChecked(square);
+            return square.bit();
         }
 
     private:
@@ -516,7 +512,7 @@ struct fmt::formatter<stormphrax::Bitboard> : fmt::formatter<std::string_view> {
                     format_to(ctx.out(), " ");
                 }
 
-                format_to(ctx.out(), "{}", value[stormphrax::toSquare(rank, file)] ? '1' : '.');
+                format_to(ctx.out(), "{}", value[stormphrax::Square::fromFileRank(file, rank)] ? '1' : '.');
             }
 
             format_to(ctx.out(), "\n");

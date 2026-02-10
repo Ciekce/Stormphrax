@@ -233,23 +233,23 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline PieceType pieceTypeAt(Square square) const {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
 
-            const auto piece = m_mailbox[static_cast<i32>(square)];
+            const auto piece = m_mailbox[square.idx()];
             return piece == Pieces::kNone ? PieceTypes::kNone : piece.type();
         }
 
         [[nodiscard]] inline Piece pieceOn(Square square) const {
-            assert(square != Square::kNone);
-            return m_mailbox[static_cast<i32>(square)];
+            assert(square != Squares::kNone);
+            return m_mailbox[square.idx()];
         }
 
         [[nodiscard]] inline Piece pieceAt(u32 rank, u32 file) const {
-            return pieceOn(toSquare(rank, file));
+            return pieceOn(Square::fromFileRank(file, rank));
         }
 
         inline void setPiece(Square square, Piece piece) {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
             assert(piece != Pieces::kNone);
 
             assert(pieceOn(square) == Pieces::kNone);
@@ -263,8 +263,8 @@ namespace stormphrax {
         }
 
         inline void movePiece(Square src, Square dst, Piece piece) {
-            assert(src != Square::kNone);
-            assert(dst != Square::kNone);
+            assert(src != Squares::kNone);
+            assert(dst != Squares::kNone);
 
             if (slot(src) == piece) {
                 [[likely]] slot(src) = Pieces::kNone;
@@ -279,8 +279,8 @@ namespace stormphrax {
         }
 
         inline void moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo) {
-            assert(src != Square::kNone);
-            assert(dst != Square::kNone);
+            assert(src != Squares::kNone);
+            assert(dst != Squares::kNone);
             assert(src != dst);
 
             assert(moving != Pieces::kNone);
@@ -300,7 +300,7 @@ namespace stormphrax {
         }
 
         inline void removePiece(Square square, Piece piece) {
-            assert(square != Square::kNone);
+            assert(square != Squares::kNone);
             assert(piece != Pieces::kNone);
 
             assert(pieceOn(square) == piece);
@@ -330,7 +330,7 @@ namespace stormphrax {
 
     private:
         [[nodiscard]] inline Piece& slot(Square square) {
-            return m_mailbox[static_cast<i32>(square)];
+            return m_mailbox[square.idx()];
         }
 
         BitboardSet m_bbs{};

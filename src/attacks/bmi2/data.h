@@ -53,7 +53,7 @@ namespace stormphrax::attacks::bmi2 {
         RookData dst{};
 
         for (u32 i = 0; i < 64; ++i) {
-            const auto square = static_cast<Square>(i);
+            const auto square = Square::fromRaw(i);
 
             for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
                 const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
@@ -73,7 +73,7 @@ namespace stormphrax::attacks::bmi2 {
         BishopData dst{};
 
         for (u32 i = 0; i < 64; ++i) {
-            const auto square = static_cast<Square>(i);
+            const auto square = Square::fromRaw(i);
 
             for (const auto dir : {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight}) {
                 const auto attacks = internal::generateSlidingAttacks(square, dir, 0);

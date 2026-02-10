@@ -57,11 +57,11 @@ namespace stormphrax::keys {
     }();
 
     inline u64 pieceSquare(Piece piece, Square square) {
-        if (piece == Pieces::kNone || square == Square::kNone) {
+        if (piece == Pieces::kNone || square == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kPieceSquares + static_cast<usize>(square) * 12 + piece.idx()];
+        return kKeys[offsets::kPieceSquares + square.idx() * 12 + piece.idx()];
     }
 
     // for flipping
@@ -81,16 +81,16 @@ namespace stormphrax::keys {
 
         usize flags{};
 
-        if (castlingRooks.black().kingside != Square::kNone) {
+        if (castlingRooks.black().kingside != Squares::kNone) {
             flags |= BlackShort;
         }
-        if (castlingRooks.black().queenside != Square::kNone) {
+        if (castlingRooks.black().queenside != Squares::kNone) {
             flags |= BlackLong;
         }
-        if (castlingRooks.white().kingside != Square::kNone) {
+        if (castlingRooks.white().kingside != Squares::kNone) {
             flags |= WhiteShort;
         }
-        if (castlingRooks.white().queenside != Square::kNone) {
+        if (castlingRooks.white().queenside != Squares::kNone) {
             flags |= WhiteLong;
         }
 
@@ -102,10 +102,10 @@ namespace stormphrax::keys {
     }
 
     inline u64 enPassant(Square square) {
-        if (square == Square::kNone) {
+        if (square == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kEnPassant + squareFile(square)];
+        return kKeys[offsets::kEnPassant + square.file()];
     }
 } // namespace stormphrax::keys

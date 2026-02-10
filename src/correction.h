@@ -65,8 +65,7 @@ namespace stormphrax {
                     return;
                 }
 
-                m_contTable[stm][moving2.idx()][static_cast<i32>(dst2)][moving1.type().idx()][static_cast<i32>(dst1)]
-                    .update(bonus);
+                m_contTable[stm][moving2.idx()][dst2.idx()][moving1.type().idx()][dst1.idx()].update(bonus);
             };
 
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
@@ -101,9 +100,7 @@ namespace stormphrax {
                     return 0;
                 }
 
-                return weight
-                     * m_contTable[stm][moving2.idx()][static_cast<i32>(dst2)][moving1.type().idx()]
-                                  [static_cast<i32>(dst1)];
+                return weight * m_contTable[stm][moving2.idx()][dst2.idx()][moving1.type().idx()][dst1.idx()];
             };
 
             const auto [blackNpWeight, whiteNpWeight] =

@@ -34,7 +34,7 @@ namespace stormphrax::attacks {
 
                 for (u32 i = 0; i < maxEntries; ++i) {
                     const auto occupancy = util::pdep(i, invMask);
-                    const auto idx = getRookIdx(occupancy, static_cast<Square>(square));
+                    const auto idx = getRookIdx(occupancy, Square::fromRaw(square));
 
                     if (!dst[data.offset + idx].empty()) {
                         continue;
@@ -42,7 +42,7 @@ namespace stormphrax::attacks {
 
                     for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
                         dst[data.offset + idx] |=
-                            internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
                     }
                 }
             }
@@ -61,7 +61,7 @@ namespace stormphrax::attacks {
 
                 for (u32 i = 0; i < maxEntries; ++i) {
                     const auto occupancy = util::pdep(i, invMask);
-                    const auto idx = getBishopIdx(occupancy, static_cast<Square>(square));
+                    const auto idx = getBishopIdx(occupancy, Square::fromRaw(square));
 
                     if (!dst[data.offset + idx].empty()) {
                         continue;
@@ -71,7 +71,7 @@ namespace stormphrax::attacks {
                          {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight})
                     {
                         dst[data.offset + idx] |=
-                            internal::generateSlidingAttacks(static_cast<Square>(square), dir, occupancy);
+                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
                     }
                 }
             }
