@@ -996,8 +996,8 @@ namespace stormphrax {
                         return Move::standard(src, dst);
                     }
                 } else if (std::abs(src.file() - dst.file()) == 2) {
-                    const auto rookFile = src.file() < dst.file() ? 7 : 0;
-                    return Move::castling(src, Square::fromFileRank(rookFile, src.rank()));
+                    const auto dstSq = src.withFile(src.file() < dst.file() ? kFileH : kFileA);
+                    return Move::castling(src, dstSq);
                 }
             }
 
@@ -1162,9 +1162,9 @@ namespace stormphrax {
                         }
 
                         if (file < kingFile) {
-                            pos.m_castlingRooks.black().queenside = Square::fromFileRank(file, 7);
+                            pos.m_castlingRooks.black().queenside = Square::fromFileRank(file, kRank8);
                         } else {
-                            pos.m_castlingRooks.black().kingside = Square::fromFileRank(file, 7);
+                            pos.m_castlingRooks.black().kingside = Square::fromFileRank(file, kRank8);
                         }
                     } else if (flag >= 'A' && flag <= 'H') {
                         const auto file = static_cast<i32>(flag - 'A');
@@ -1176,13 +1176,13 @@ namespace stormphrax {
                         }
 
                         if (file < kingFile) {
-                            pos.m_castlingRooks.white().queenside = Square::fromFileRank(file, 0);
+                            pos.m_castlingRooks.white().queenside = Square::fromFileRank(file, kRank1);
                         } else {
-                            pos.m_castlingRooks.white().kingside = Square::fromFileRank(file, 0);
+                            pos.m_castlingRooks.white().kingside = Square::fromFileRank(file, kRank1);
                         }
                     } else if (flag == 'k') {
                         for (i32 file = pos.m_kings.black().file() + 1; file < 8; ++file) {
-                            const auto sq = Square::fromFileRank(file, 7);
+                            const auto sq = Square::fromFileRank(file, kRank8);
                             if (pos.m_boards.pieceOn(sq) == Pieces::kBlackRook) {
                                 pos.m_castlingRooks.black().kingside = sq;
                                 break;
@@ -1190,7 +1190,7 @@ namespace stormphrax {
                         }
                     } else if (flag == 'K') {
                         for (i32 file = pos.m_kings.white().file() + 1; file < 8; ++file) {
-                            const auto sq = Square::fromFileRank(file, 0);
+                            const auto sq = Square::fromFileRank(file, kRank1);
                             if (pos.m_boards.pieceOn(sq) == Pieces::kWhiteRook) {
                                 pos.m_castlingRooks.white().kingside = sq;
                                 break;
@@ -1198,7 +1198,7 @@ namespace stormphrax {
                         }
                     } else if (flag == 'q') {
                         for (i32 file = pos.m_kings.black().file() - 1; file >= 0; --file) {
-                            const auto sq = Square::fromFileRank(file, 7);
+                            const auto sq = Square::fromFileRank(file, kRank8);
                             if (pos.m_boards.pieceOn(sq) == Pieces::kBlackRook) {
                                 pos.m_castlingRooks.black().queenside = sq;
                                 break;
@@ -1206,7 +1206,7 @@ namespace stormphrax {
                         }
                     } else if (flag == 'Q') {
                         for (i32 file = pos.m_kings.white().file() - 1; file >= 0; --file) {
-                            const auto sq = Square::fromFileRank(file, 0);
+                            const auto sq = Square::fromFileRank(file, kRank1);
                             if (pos.m_boards.pieceOn(sq) == Pieces::kWhiteRook) {
                                 pos.m_castlingRooks.white().queenside = sq;
                                 break;
@@ -1340,14 +1340,14 @@ namespace stormphrax {
 
         bool firstRook = true;
 
-        for (i32 i = 0; i < 8; ++i) {
-            const auto blackSquare = Square::fromFileRank(i, 7);
-            const auto whiteSquare = Square::fromFileRank(i, 0);
+        for (i32 file = 0; file < 8; ++file) {
+            const auto blackSquare = Square::fromFileRank(file, kRank8);
+            const auto whiteSquare = Square::fromFileRank(file, kRank1);
 
-            pos.m_boards.setPiece(blackSquare, backrank[i].withColor(Colors::kBlack));
-            pos.m_boards.setPiece(whiteSquare, backrank[i].withColor(Colors::kWhite));
+            pos.m_boards.setPiece(blackSquare, backrank[file].withColor(Colors::kBlack));
+            pos.m_boards.setPiece(whiteSquare, backrank[file].withColor(Colors::kWhite));
 
-            if (backrank[i] == PieceTypes::kRook) {
+            if (backrank[file] == PieceTypes::kRook) {
                 if (firstRook) {
                     pos.m_castlingRooks.black().queenside = blackSquare;
                     pos.m_castlingRooks.white().queenside = whiteSquare;
@@ -1391,14 +1391,14 @@ namespace stormphrax {
         bool firstBlackRook = true;
         bool firstWhiteRook = true;
 
-        for (i32 i = 0; i < 8; ++i) {
-            const auto blackSquare = Square::fromFileRank(i, 7);
-            const auto whiteSquare = Square::fromFileRank(i, 0);
+        for (i32 file = 0; file < 8; ++file) {
+            const auto blackSquare = Square::fromFileRank(file, kRank8);
+            const auto whiteSquare = Square::fromFileRank(file, kRank1);
 
-            pos.m_boards.setPiece(blackSquare, blackBackrank[i].withColor(Colors::kBlack));
-            pos.m_boards.setPiece(whiteSquare, whiteBackrank[i].withColor(Colors::kWhite));
+            pos.m_boards.setPiece(blackSquare, blackBackrank[file].withColor(Colors::kBlack));
+            pos.m_boards.setPiece(whiteSquare, whiteBackrank[file].withColor(Colors::kWhite));
 
-            if (blackBackrank[i] == PieceTypes::kRook) {
+            if (blackBackrank[file] == PieceTypes::kRook) {
                 if (firstBlackRook) {
                     pos.m_castlingRooks.black().queenside = blackSquare;
                 } else {
@@ -1408,7 +1408,7 @@ namespace stormphrax {
                 firstBlackRook = false;
             }
 
-            if (whiteBackrank[i] == PieceTypes::kRook) {
+            if (whiteBackrank[file] == PieceTypes::kRook) {
                 if (firstWhiteRook) {
                     pos.m_castlingRooks.white().queenside = whiteSquare;
                 } else {
