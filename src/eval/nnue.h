@@ -298,8 +298,8 @@ namespace stormphrax::eval {
 
             StaticVector<u32, 32> adds;
             StaticVector<u32, 32> subs;
-            for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::kNone); ++pieceIdx) {
-                const auto piece = static_cast<Piece>(pieceIdx);
+            for (u32 pieceIdx = 0; pieceIdx < Pieces::kNone.raw(); ++pieceIdx) {
+                const auto piece = Piece::fromRaw(pieceIdx);
 
                 const auto prev = prevBoards.forPiece(piece);
                 const auto curr = bbs.forPiece(piece);
@@ -359,7 +359,7 @@ namespace stormphrax::eval {
             // loop through each coloured piece, and activate the features
             // corresponding to that piece on each of the squares it occurs on
             for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
-                const auto piece = static_cast<Piece>(pieceIdx);
+                const auto piece = Piece::fromRaw(pieceIdx);
 
                 auto board = bbs.forPiece(piece);
                 while (!board.empty()) {
@@ -383,20 +383,20 @@ namespace stormphrax::eval {
 
         [[nodiscard]] static inline u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
             assert(c != Colors::kNone);
-            assert(piece != Piece::kNone);
+            assert(piece != Pieces::kNone);
             assert(sq != Square::kNone);
             assert(king != Square::kNone);
 
             constexpr u32 kColorStride = 64 * 6;
             constexpr u32 kPieceStride = 64;
 
-            const u32 type = pieceType(piece).raw();
+            const u32 type = piece.type().raw();
 
             const auto color = [piece, c]() -> u32 {
-                if (InputFeatureSet::kMergedKings && pieceType(piece) == PieceTypes::kKing) {
+                if (InputFeatureSet::kMergedKings && piece.type() == PieceTypes::kKing) {
                     return 0;
                 }
-                return pieceColor(piece) == c ? 0 : 1;
+                return piece.color() == c ? 0 : 1;
             }();
 
             if (c == Colors::kBlack) {

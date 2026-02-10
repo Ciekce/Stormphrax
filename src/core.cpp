@@ -40,11 +40,11 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(
         ' ', // none
     };
 
-    if (static_cast<usize>(value) >= kPieceChars.size()) {
+    if (value.idx() >= kPieceChars.size()) {
         return format_to(ctx.out(), "?");
     }
 
-    return format_to(ctx.out(), "{}", kPieceChars[static_cast<usize>(value)]);
+    return format_to(ctx.out(), "{}", kPieceChars[value.idx()]);
 }
 
 fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(

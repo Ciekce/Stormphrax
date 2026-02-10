@@ -61,13 +61,12 @@ namespace stormphrax {
                 const auto [moving1, dst1] = moves[ply - 1];
                 const auto [moving2, dst2] = moves[ply - 1 - i];
 
-                if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
+                if (moving1 == Pieces::kNone || moving2 == Pieces::kNone) {
                     return;
                 }
 
-                m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)][pieceType(moving1).idx()]
-                           [static_cast<i32>(dst1)]
-                               .update(bonus);
+                m_contTable[stm][moving2.idx()][static_cast<i32>(dst2)][moving1.type().idx()][static_cast<i32>(dst1)]
+                    .update(bonus);
             };
 
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
@@ -98,12 +97,12 @@ namespace stormphrax {
                 const auto [moving1, dst1] = moves[ply - 1];
                 const auto [moving2, dst2] = moves[ply - 1 - i];
 
-                if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
+                if (moving1 == Pieces::kNone || moving2 == Pieces::kNone) {
                     return 0;
                 }
 
                 return weight
-                     * m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)][pieceType(moving1).idx()]
+                     * m_contTable[stm][moving2.idx()][static_cast<i32>(dst2)][moving1.type().idx()]
                                   [static_cast<i32>(dst1)];
             };
 

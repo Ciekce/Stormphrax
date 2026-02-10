@@ -30,7 +30,7 @@
 
 namespace stormphrax::see {
     constexpr i32 value(Piece piece) {
-        return tunable::g_seeValues[static_cast<i32>(piece)];
+        return tunable::g_seeValues[piece.idx()];
     }
 
     constexpr i32 value(PieceType piece) {
@@ -87,7 +87,7 @@ namespace stormphrax::see {
             return false;
         }
 
-        auto next = move.type() == MoveType::kPromotion ? move.promo() : pieceType(boards.pieceOn(move.fromSq()));
+        auto next = move.type() == MoveType::kPromotion ? move.promo() : boards.pieceOn(move.fromSq()).type();
 
         score -= value(next);
 

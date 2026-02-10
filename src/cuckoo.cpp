@@ -35,8 +35,8 @@ namespace stormphrax::cuckoo {
         [[maybe_unused]] u32 count = 0;
 
         // skip pawns
-        for (u32 p = static_cast<u32>(Piece::kBlackKnight); p < static_cast<u32>(Piece::kNone); ++p) {
-            const auto piece = static_cast<Piece>(p);
+        for (u32 p = Pieces::kBlackKnight.raw(); p < Pieces::kNone.raw(); ++p) {
+            const auto piece = Piece::fromRaw(p);
 
             for (u32 s0 = 0; s0 < 64; ++s0) {
                 const auto square0 = static_cast<Square>(s0);
@@ -44,7 +44,7 @@ namespace stormphrax::cuckoo {
                 for (u32 s1 = s0 + 1; s1 < 64; ++s1) {
                     const auto square1 = static_cast<Square>(s1);
 
-                    if (!attacks::getNonPawnPieceAttacks(pieceType(piece), square0)[square1]) {
+                    if (!attacks::getNonPawnPieceAttacks(piece.type(), square0)[square1]) {
                         continue;
                     }
 

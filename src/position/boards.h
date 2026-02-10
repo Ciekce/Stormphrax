@@ -48,7 +48,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard forPiece(Piece piece) const {
-            return forPiece(pieceType(piece), pieceColor(piece));
+            return forPiece(piece.type(), piece.color());
         }
 
         [[nodiscard]] inline Bitboard blackOccupancy() const {
@@ -221,7 +221,7 @@ namespace stormphrax {
     class PositionBoards {
     public:
         PositionBoards() {
-            m_mailbox.fill(Piece::kNone);
+            m_mailbox.fill(Pieces::kNone);
         }
 
         [[nodiscard]] inline const BitboardSet& bbs() const {
@@ -236,7 +236,7 @@ namespace stormphrax {
             assert(square != Square::kNone);
 
             const auto piece = m_mailbox[static_cast<i32>(square)];
-            return piece == Piece::kNone ? PieceTypes::kNone : pieceType(piece);
+            return piece == Pieces::kNone ? PieceTypes::kNone : piece.type();
         }
 
         [[nodiscard]] inline Piece pieceOn(Square square) const {
@@ -250,16 +250,16 @@ namespace stormphrax {
 
         inline void setPiece(Square square, Piece piece) {
             assert(square != Square::kNone);
-            assert(piece != Piece::kNone);
+            assert(piece != Pieces::kNone);
 
-            assert(pieceOn(square) == Piece::kNone);
+            assert(pieceOn(square) == Pieces::kNone);
 
             slot(square) = piece;
 
             const auto mask = Bitboard::fromSquare(square);
 
-            m_bbs.forPiece(pieceType(piece)) ^= mask;
-            m_bbs.forColor(pieceColor(piece)) ^= mask;
+            m_bbs.forPiece(piece.type()) ^= mask;
+            m_bbs.forColor(piece.color()) ^= mask;
         }
 
         inline void movePiece(Square src, Square dst, Piece piece) {
@@ -267,15 +267,15 @@ namespace stormphrax {
             assert(dst != Square::kNone);
 
             if (slot(src) == piece) {
-                [[likely]] slot(src) = Piece::kNone;
+                [[likely]] slot(src) = Pieces::kNone;
             }
 
             slot(dst) = piece;
 
             const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
 
-            m_bbs.forPiece(pieceType(piece)) ^= mask;
-            m_bbs.forColor(pieceColor(piece)) ^= mask;
+            m_bbs.forPiece(piece.type()) ^= mask;
+            m_bbs.forColor(piece.color()) ^= mask;
         }
 
         inline void moveAndChangePiece(Square src, Square dst, Piece moving, PieceType promo) {
@@ -283,44 +283,44 @@ namespace stormphrax {
             assert(dst != Square::kNone);
             assert(src != dst);
 
-            assert(moving != Piece::kNone);
+            assert(moving != Pieces::kNone);
             assert(promo != PieceTypes::kNone);
 
             assert(pieceOn(src) == moving);
             assert(slot(src) == moving);
 
-            slot(src) = Piece::kNone;
-            slot(dst) = copyPieceColor(moving, promo);
+            slot(src) = Pieces::kNone;
+            slot(dst) = moving.copyColor(promo);
 
-            m_bbs.forPiece(pieceType(moving))[src] = false;
+            m_bbs.forPiece(moving.type())[src] = false;
             m_bbs.forPiece(promo)[dst] = true;
 
             const auto mask = Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst);
-            m_bbs.forColor(pieceColor(moving)) ^= mask;
+            m_bbs.forColor(moving.color()) ^= mask;
         }
 
         inline void removePiece(Square square, Piece piece) {
             assert(square != Square::kNone);
-            assert(piece != Piece::kNone);
+            assert(piece != Pieces::kNone);
 
             assert(pieceOn(square) == piece);
 
-            slot(square) = Piece::kNone;
+            slot(square) = Pieces::kNone;
 
-            m_bbs.forPiece(pieceType(piece))[square] = false;
-            m_bbs.forColor(pieceColor(piece))[square] = false;
+            m_bbs.forPiece(piece.type())[square] = false;
+            m_bbs.forColor(piece.color())[square] = false;
         }
 
         inline void regenFromBbs() {
-            m_mailbox.fill(Piece::kNone);
+            m_mailbox.fill(Pieces::kNone);
 
             for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
-                const auto piece = static_cast<Piece>(pieceIdx);
+                const auto piece = Piece::fromRaw(pieceIdx);
 
                 auto board = m_bbs.forPiece(piece);
                 while (!board.empty()) {
                     const auto sq = board.popLowestSquare();
-                    assert(slot(sq) == Piece::kNone);
+                    assert(slot(sq) == Pieces::kNone);
                     slot(sq) = piece;
                 }
             }

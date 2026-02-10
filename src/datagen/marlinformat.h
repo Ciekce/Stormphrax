@@ -55,16 +55,16 @@ namespace stormphrax::datagen {
                     const auto square = occupancy.popLowestSquare();
                     const auto piece = boards.pieceOn(square);
 
-                    auto pieceId = pieceType(piece).raw();
+                    auto pieceId = piece.type().raw();
 
-                    if (pieceType(piece) == PieceTypes::kRook
+                    if (piece.type() == PieceTypes::kRook
                         && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
                             || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
                     {
                         pieceId = kUnmovedRook;
                     }
 
-                    const u8 colorId = pieceColor(piece) == Colors::kBlack ? (1 << 3) : 0;
+                    const u8 colorId = piece.color() == Colors::kBlack ? (1 << 3) : 0;
 
                     board.pieces[i++] = pieceId | colorId;
                 }

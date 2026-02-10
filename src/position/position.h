@@ -61,15 +61,15 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceTypes::kPawn) {
+            if (piece.type() == PieceTypes::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Colors::kBlack) {
+            } else if (piece.color() == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
             }
 
-            if (pieceType(piece).isMajor()) {
+            if (piece.type().isMajor()) {
                 majors ^= key;
             }
         }
@@ -79,15 +79,15 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceTypes::kPawn) {
+            if (piece.type() == PieceTypes::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Colors::kBlack) {
+            } else if (piece.color() == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
             }
 
-            if (pieceType(piece).isMajor()) {
+            if (piece.type().isMajor()) {
                 majors ^= key;
             }
         }
@@ -195,7 +195,7 @@ namespace stormphrax {
             assert(move);
 
             const auto moving = m_boards.pieceOn(move.fromSq());
-            assert(moving != Piece::kNone);
+            assert(moving != Pieces::kNone);
 
             const auto captured = m_boards.pieceOn(move.toSq());
 
@@ -204,7 +204,7 @@ namespace stormphrax {
             key ^= keys::pieceSquare(moving, move.fromSq());
             key ^= keys::pieceSquare(moving, move.toSq());
 
-            if (captured != Piece::kNone) {
+            if (captured != Pieces::kNone) {
                 key ^= keys::pieceSquare(captured, move.toSq());
             }
 
@@ -392,9 +392,9 @@ namespace stormphrax {
             const auto type = move.type();
 
             if (type == MoveType::kCastling) {
-                return Piece::kNone;
+                return Pieces::kNone;
             } else if (type == MoveType::kEnPassant) {
-                return flipPieceColor(boards().pieceOn(move.fromSq()));
+                return boards().pieceOn(move.fromSq()).flipColor();
             } else {
                 return boards().pieceOn(move.toSq());
             }
@@ -407,7 +407,7 @@ namespace stormphrax {
 
             return type != MoveType::kCastling
                 && (type == MoveType::kEnPassant || move.promo() == PieceTypes::kQueen
-                    || boards().pieceOn(move.toSq()) != Piece::kNone);
+                    || boards().pieceOn(move.toSq()) != Pieces::kNone);
         }
 
         [[nodiscard]] inline std::pair<bool, Piece> noisyCapturedPiece(Move move) const {
@@ -416,12 +416,12 @@ namespace stormphrax {
             const auto type = move.type();
 
             if (type == MoveType::kCastling) {
-                return {false, Piece::kNone};
+                return {false, Pieces::kNone};
             } else if (type == MoveType::kEnPassant) {
                 return {true, PieceTypes::kPawn.withColor(stm())};
             } else {
                 const auto captured = boards().pieceOn(move.toSq());
-                return {captured != Piece::kNone || move.promo() == PieceTypes::kQueen, captured};
+                return {captured != Pieces::kNone || move.promo() == PieceTypes::kQueen, captured};
             }
         }
 

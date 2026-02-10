@@ -90,7 +90,7 @@ namespace stormphrax {
         static constexpr usize kCount = kNone.idx();
     };
 
-    enum class Piece : u8;
+    class Piece;
 
     class PieceType {
     public:
@@ -215,88 +215,171 @@ namespace stormphrax {
         };
     };
 
-    enum class Piece : u8 {
-        kBlackPawn = 0,
-        kWhitePawn,
-        kBlackKnight,
-        kWhiteKnight,
-        kBlackBishop,
-        kWhiteBishop,
-        kBlackRook,
-        kWhiteRook,
-        kBlackQueen,
-        kWhiteQueen,
-        kBlackKing,
-        kWhiteKing,
-        kNone,
+    class Piece {
+    public:
+        constexpr Piece() = default;
+
+        constexpr Piece(const Piece&) = default;
+        constexpr Piece(Piece&&) = default;
+
+        [[nodiscard]] constexpr u8 raw() const {
+            return m_id;
+        }
+
+        [[nodiscard]] constexpr usize idx() const {
+            return static_cast<usize>(m_id);
+        }
+
+        [[nodiscard]] constexpr PieceType type() const {
+            assert(m_id != kNoneId);
+            return PieceType::fromRaw(m_id >> 1);
+        }
+
+        [[nodiscard]] constexpr PieceType typeOrNone() const {
+            return PieceType::fromRaw(m_id >> 1);
+        }
+
+        [[nodiscard]] constexpr Color color() const {
+            assert(m_id != kNoneId);
+            return Color::fromRaw(m_id & 0b1);
+        }
+
+        [[nodiscard]] constexpr Piece flipColor() const {
+            assert(m_id != kNoneId);
+            return fromRaw(m_id ^ 0b1);
+        }
+
+        [[nodiscard]] constexpr Piece copyColor(PieceType target) const {
+            return target.withColor(color());
+        }
+
+        [[nodiscard]] constexpr char asChar() const {
+            switch (m_id) {
+                case kBlackPawnId:
+                    return 'p';
+                case kWhitePawnId:
+                    return 'P';
+                case kBlackKnightId:
+                    return 'n';
+                case kWhiteKnightId:
+                    return 'N';
+                case kBlackBishopId:
+                    return 'b';
+                case kWhiteBishopId:
+                    return 'B';
+                case kBlackRookId:
+                    return 'r';
+                case kWhiteRookId:
+                    return 'R';
+                case kBlackQueenId:
+                    return 'q';
+                case kWhiteQueenId:
+                    return 'Q';
+                case kBlackKingId:
+                    return 'k';
+                case kWhiteKingId:
+                    return 'K';
+                default:
+                    return '?';
+            }
+        }
+
+        [[nodiscard]] static constexpr Piece fromRaw(u8 id) {
+            assert(id <= kNoneId);
+            return Piece{id};
+        }
+
+        [[nodiscard]] static constexpr Piece fromChar(char c) {
+            switch (c) {
+                case 'p':
+                    return Piece{kBlackPawnId};
+                case 'P':
+                    return Piece{kWhitePawnId};
+                case 'n':
+                    return Piece{kBlackKnightId};
+                case 'N':
+                    return Piece{kWhiteKnightId};
+                case 'b':
+                    return Piece{kBlackBishopId};
+                case 'B':
+                    return Piece{kWhiteBishopId};
+                case 'r':
+                    return Piece{kBlackRookId};
+                case 'R':
+                    return Piece{kWhiteRookId};
+                case 'q':
+                    return Piece{kBlackQueenId};
+                case 'Q':
+                    return Piece{kWhiteQueenId};
+                case 'k':
+                    return Piece{kBlackKingId};
+                case 'K':
+                    return Piece{kWhiteKingId};
+                default:
+                    return Piece{kNoneId};
+            }
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const {
+            return m_id != kNoneId;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const Piece&) const = default;
+
+        constexpr Piece& operator=(const Piece&) = default;
+        constexpr Piece& operator=(Piece&&) = default;
+
+    private:
+        explicit constexpr Piece(u8 id) :
+                m_id{id} {}
+
+        u8 m_id{};
+
+        enum : u8 {
+            kBlackPawnId = 0,
+            kWhitePawnId,
+            kBlackKnightId,
+            kWhiteKnightId,
+            kBlackBishopId,
+            kWhiteBishopId,
+            kBlackRookId,
+            kWhiteRookId,
+            kBlackQueenId,
+            kWhiteQueenId,
+            kBlackKingId,
+            kWhiteKingId,
+            kNoneId,
+        };
+
+        friend struct Pieces;
     };
 
     constexpr Piece PieceType::withColor(Color c) const {
         assert(*this != PieceTypes::kNone);
         assert(c != Colors::kNone);
 
-        return static_cast<Piece>((m_id << 1) | c.raw());
+        return Piece::fromRaw((m_id << 1) | c.raw());
     }
 
-    [[nodiscard]] constexpr PieceType pieceType(Piece piece) {
-        assert(piece != Piece::kNone);
-        return PieceType::fromRaw(static_cast<i32>(piece) >> 1);
-    }
+    struct Pieces {
+        Pieces() = delete;
 
-    [[nodiscard]] constexpr PieceType pieceTypeOrNone(Piece piece) {
-        if (piece == Piece::kNone) {
-            return PieceTypes::kNone;
-        }
-        return PieceType::fromRaw(static_cast<i32>(piece) >> 1);
-    }
+        static constexpr Piece kBlackPawn{Piece::kBlackPawnId};
+        static constexpr Piece kWhitePawn{Piece::kWhitePawnId};
+        static constexpr Piece kBlackKnight{Piece::kBlackKnightId};
+        static constexpr Piece kWhiteKnight{Piece::kWhiteKnightId};
+        static constexpr Piece kBlackBishop{Piece::kBlackBishopId};
+        static constexpr Piece kWhiteBishop{Piece::kWhiteBishopId};
+        static constexpr Piece kBlackRook{Piece::kBlackRookId};
+        static constexpr Piece kWhiteRook{Piece::kWhiteRookId};
+        static constexpr Piece kBlackQueen{Piece::kBlackQueenId};
+        static constexpr Piece kWhiteQueen{Piece::kWhiteQueenId};
+        static constexpr Piece kBlackKing{Piece::kBlackKingId};
+        static constexpr Piece kWhiteKing{Piece::kWhiteKingId};
+        static constexpr Piece kNone{Piece::kNoneId};
 
-    [[nodiscard]] constexpr Color pieceColor(Piece piece) {
-        assert(piece != Piece::kNone);
-        return Color::fromRaw(static_cast<u8>(piece) & 1);
-    }
-
-    [[nodiscard]] constexpr Piece flipPieceColor(Piece piece) {
-        assert(piece != Piece::kNone);
-        return static_cast<Piece>(static_cast<i32>(piece) ^ 0x1);
-    }
-
-    [[nodiscard]] constexpr Piece copyPieceColor(Piece piece, PieceType target) {
-        assert(piece != Piece::kNone);
-        assert(target != PieceTypes::kNone);
-
-        return target.withColor(pieceColor(piece));
-    }
-
-    [[nodiscard]] constexpr Piece pieceFromChar(char c) {
-        switch (c) {
-            case 'p':
-                return Piece::kBlackPawn;
-            case 'P':
-                return Piece::kWhitePawn;
-            case 'n':
-                return Piece::kBlackKnight;
-            case 'N':
-                return Piece::kWhiteKnight;
-            case 'b':
-                return Piece::kBlackBishop;
-            case 'B':
-                return Piece::kWhiteBishop;
-            case 'r':
-                return Piece::kBlackRook;
-            case 'R':
-                return Piece::kWhiteRook;
-            case 'q':
-                return Piece::kBlackQueen;
-            case 'Q':
-                return Piece::kWhiteQueen;
-            case 'k':
-                return Piece::kBlackKing;
-            case 'K':
-                return Piece::kWhiteKing;
-            default:
-                return Piece::kNone;
-        }
-    }
+        static constexpr usize kCount = kNone.idx();
+    };
 
     // upside down
     enum class Square : u8 {

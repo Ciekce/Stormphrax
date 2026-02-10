@@ -57,11 +57,11 @@ namespace stormphrax::keys {
     }();
 
     inline u64 pieceSquare(Piece piece, Square square) {
-        if (piece == Piece::kNone || square == Square::kNone) {
+        if (piece == Pieces::kNone || square == Square::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kPieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+        return kKeys[offsets::kPieceSquares + static_cast<usize>(square) * 12 + piece.idx()];
     }
 
     // for flipping
