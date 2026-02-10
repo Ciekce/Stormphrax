@@ -36,7 +36,7 @@
 
 namespace stormphrax::attacks {
     constexpr auto kKnightAttacks = [] {
-        std::array<Bitboard, 64> dst{};
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
             const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
@@ -57,7 +57,7 @@ namespace stormphrax::attacks {
     }();
 
     constexpr auto kKingAttacks = [] {
-        std::array<Bitboard, 64> dst{};
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
             const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
@@ -77,8 +77,8 @@ namespace stormphrax::attacks {
         return dst;
     }();
 
-    consteval std::array<Bitboard, 64> generatePawnAttacks(Color us) {
-        std::array<Bitboard, 64> dst{};
+    consteval std::array<Bitboard, Squares::kCount> generatePawnAttacks(Color us) {
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
             const auto bit = Bitboard::fromSquare(Square::fromRaw(i));

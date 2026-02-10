@@ -80,10 +80,10 @@ namespace stormphrax::attacks {
     } // namespace internal
 
     template <i32... Dirs>
-    consteval std::array<Bitboard, 64> generateEmptyBoardAttacks() {
-        std::array<Bitboard, 64> dst{};
+    consteval std::array<Bitboard, Squares::kCount> generateEmptyBoardAttacks() {
+        std::array<Bitboard, Squares::kCount> dst{};
 
-        for (i32 square = 0; square < 64; ++square) {
+        for (i32 square = 0; square < Squares::kCount; ++square) {
             for (const auto dir : {Dirs...}) {
                 const auto attacks = internal::generateSlidingAttacks(Square::fromRaw(square), dir, 0);
                 dst[square] |= attacks;

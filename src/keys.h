@@ -27,7 +27,7 @@
 
 namespace stormphrax::keys {
     namespace sizes {
-        constexpr usize kPieceSquares = 12 * 64;
+        constexpr usize kPieceSquares = Pieces::kCount * Squares::kCount;
         constexpr usize kColor = 1;
         constexpr usize kCastling = 16;
         constexpr usize kEnPassant = 8;
@@ -61,7 +61,7 @@ namespace stormphrax::keys {
             return 0;
         }
 
-        return kKeys[offsets::kPieceSquares + sq.idx() * 12 + piece.idx()];
+        return kKeys[offsets::kPieceSquares + sq.idx() * Pieces::kCount + piece.idx()];
     }
 
     // for flipping

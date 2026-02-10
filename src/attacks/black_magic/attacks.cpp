@@ -26,23 +26,22 @@ namespace stormphrax::attacks {
         std::array<Bitboard, kRookData.tableSize> generateRookAttacks() {
             std::array<Bitboard, kRookData.tableSize> dst{};
 
-            for (u32 square = 0; square < 64; ++square) {
-                const auto& data = kRookData.data[square];
+            for (u32 sq = 0; sq < Squares::kCount; ++sq) {
+                const auto& data = kRookData.data[sq];
 
                 const auto invMask = ~data.mask;
                 const auto maxEntries = 1 << invMask.popcount();
 
                 for (u32 i = 0; i < maxEntries; ++i) {
                     const auto occupancy = util::pdep(i, invMask);
-                    const auto idx = getRookIdx(occupancy, Square::fromRaw(square));
+                    const auto idx = getRookIdx(occupancy, Square::fromRaw(sq));
 
                     if (!dst[data.offset + idx].empty()) {
                         continue;
                     }
 
                     for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                        dst[data.offset + idx] |=
-                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
+                        dst[data.offset + idx] |= internal::generateSlidingAttacks(Square::fromRaw(sq), dir, occupancy);
                     }
                 }
             }
@@ -53,7 +52,7 @@ namespace stormphrax::attacks {
         std::array<Bitboard, kBishopData.tableSize> generateBishopAttacks() {
             std::array<Bitboard, kBishopData.tableSize> dst{};
 
-            for (u32 square = 0; square < 64; ++square) {
+            for (u32 square = 0; square < Squares::kCount; ++square) {
                 const auto& data = kBishopData.data[square];
 
                 const auto invMask = ~data.mask;

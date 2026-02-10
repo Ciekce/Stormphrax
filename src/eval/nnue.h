@@ -358,7 +358,7 @@ namespace stormphrax::eval {
 
             // loop through each coloured piece, and activate the features
             // corresponding to that piece on each of the squares it occurs on
-            for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
+            for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
                 const auto piece = Piece::fromRaw(pieceIdx);
 
                 auto board = bbs.forPiece(piece);
@@ -387,8 +387,8 @@ namespace stormphrax::eval {
             assert(sq != Squares::kNone);
             assert(king != Squares::kNone);
 
-            constexpr u32 kColorStride = 64 * 6;
-            constexpr u32 kPieceStride = 64;
+            constexpr u32 kColorStride = Squares::kCount * PieceTypes::kCount;
+            constexpr u32 kPieceStride = Squares::kCount;
 
             const u32 type = piece.type().raw();
 

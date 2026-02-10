@@ -422,6 +422,11 @@ namespace stormphrax {
             return fromRaw(m_id ^ 0b001000);
         }
 
+        [[nodiscard]] constexpr Square flipDoublePush() const {
+            assert(m_id != kNoneId);
+            return fromRaw(m_id ^ 0b010000);
+        }
+
         [[nodiscard]] constexpr Square relative(Color c) const {
             assert(m_id != kNoneId);
             if (c == Colors::kBlack) {
@@ -602,7 +607,7 @@ namespace stormphrax {
     static constexpr i32 kRank7 = 6;
     static constexpr i32 kRank8 = 7;
 
-    constexpr i32 relativeRank(Color c, i32 rank) {
+    [[nodiscard]] constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
         return c == Colors::kBlack ? 7 - rank : rank;
     }

@@ -314,7 +314,7 @@ namespace stormphrax {
         inline void regenFromBbs() {
             m_mailbox.fill(Pieces::kNone);
 
-            for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
+            for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
                 const auto piece = Piece::fromRaw(pieceIdx);
 
                 auto board = m_bbs.forPiece(piece);
@@ -334,6 +334,6 @@ namespace stormphrax {
         }
 
         BitboardSet m_bbs{};
-        std::array<Piece, 64> m_mailbox{};
+        std::array<Piece, Squares::kCount> m_mailbox{};
     };
 } // namespace stormphrax

@@ -31,7 +31,7 @@ namespace stormphrax {
         inline void pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
+                const auto srcSquare = dstSquare.offset(-offset);
 
                 dst.push({Move::standard(srcSquare, dstSquare), 0});
             }
@@ -47,7 +47,7 @@ namespace stormphrax {
         inline void pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
+                const auto srcSquare = dstSquare.offset(-offset);
 
                 noisy.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen), 0});
             }
@@ -56,7 +56,7 @@ namespace stormphrax {
         inline void pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
+                const auto srcSquare = dstSquare.offset(-offset);
 
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight), 0});
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kRook), 0});
@@ -71,7 +71,7 @@ namespace stormphrax {
         inline void pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
             while (!board.empty()) {
                 const auto dstSquare = board.popLowestSquare();
-                const auto srcSquare = Square::fromRaw(dstSquare.raw() - offset);
+                const auto srcSquare = dstSquare.offset(-offset);
 
                 noisy.push({Move::enPassant(srcSquare, dstSquare), 0});
             }
@@ -155,7 +155,7 @@ namespace stormphrax {
             pushStandards(quiet, forwardOffset, singles);
         }
 
-        template <const std::array<Bitboard, 64>& kAttacks>
+        template <const std::array<Bitboard, Squares::kCount>& kAttacks>
         inline void precalculated(ScoredMoveList& dst, PieceType pt, const Position& pos, Bitboard dstMask) {
             const auto us = pos.stm();
 

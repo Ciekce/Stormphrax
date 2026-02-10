@@ -57,7 +57,7 @@ namespace stormphrax::eval::nnue::features {
 
     template <u32... kBucketIndices>
     struct [[maybe_unused]] KingBuckets {
-        static_assert(sizeof...(kBucketIndices) == 64);
+        static_assert(sizeof...(kBucketIndices) == Squares::kCount);
 
     private:
         static constexpr std::array kBuckets = {kBucketIndices...};
@@ -123,13 +123,13 @@ namespace stormphrax::eval::nnue::features {
 
     template <MirroredKingSide kSide, u32... kBucketIndices>
     struct [[maybe_unused]] KingBucketsMirrored {
-        static_assert(sizeof...(kBucketIndices) == 32);
+        static_assert(sizeof...(kBucketIndices) == Squares::kCount / 2);
 
     private:
         static constexpr auto kBuckets = [] {
             constexpr std::array kHalfBuckets = {kBucketIndices...};
 
-            std::array<u32, 64> dst{};
+            std::array<u32, Squares::kCount> dst{};
 
             for (u32 rank = 0; rank < 8; ++rank) {
                 for (u32 file = 0; file < 4; ++file) {

@@ -98,14 +98,14 @@ namespace stormphrax::attacks::black_magic {
     };
 
     struct Data {
-        std::array<SquareData, 64> data;
+        std::array<SquareData, Squares::kCount> data;
         u32 tableSize;
     };
 
     constexpr auto kRookData = [] {
         Data dst{};
 
-        for (u32 i = 0; i < 64; ++i) {
+        for (u32 i = 0; i < Squares::kCount; ++i) {
             const auto sq = Square::fromRaw(i);
 
             dst.data[i].mask = boards::kAll;

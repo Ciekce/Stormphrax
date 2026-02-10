@@ -141,10 +141,11 @@ namespace stormphrax {
             }
         };
 
-        util::MultiArray<Entry, 2, kEntries> m_pawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_majorTable{};
-        util::MultiArray<Entry, 2, 12, 64, 6, 64> m_contTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_pawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_blackNonPawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_whiteNonPawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_majorTable{};
+        util::MultiArray<Entry, Colors::kCount, Pieces::kCount, Squares::kCount, PieceTypes::kCount, Squares::kCount>
+            m_contTable{};
     };
 } // namespace stormphrax

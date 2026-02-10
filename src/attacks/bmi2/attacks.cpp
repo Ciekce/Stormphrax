@@ -26,8 +26,8 @@ namespace stormphrax::attacks {
         std::array<u16, kRookData.tableSize> generateRookAttacks() {
             std::array<u16, kRookData.tableSize> dst{};
 
-            for (u32 square = 0; square < 64; ++square) {
-                const auto& data = kRookData.data[square];
+            for (u32 sq = 0; sq < Squares::kCount; ++sq) {
+                const auto& data = kRookData.data[sq];
                 const auto entries = 1 << data.srcMask.popcount();
 
                 for (u32 i = 0; i < entries; ++i) {
@@ -36,7 +36,7 @@ namespace stormphrax::attacks {
                     Bitboard attacks{};
 
                     for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                        attacks |= internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
+                        attacks |= internal::generateSlidingAttacks(Square::fromRaw(sq), dir, occupancy);
                     }
 
                     dst[data.offset + i] = static_cast<u16>(util::pext(attacks, data.dstMask));
@@ -49,8 +49,8 @@ namespace stormphrax::attacks {
         std::array<Bitboard, kBishopData.tableSize> generateBishopAttacks() {
             std::array<Bitboard, kBishopData.tableSize> dst{};
 
-            for (u32 square = 0; square < 64; ++square) {
-                const auto& data = kBishopData.data[square];
+            for (u32 sq = 0; sq < Squares::kCount; ++sq) {
+                const auto& data = kBishopData.data[sq];
                 const auto entries = 1 << data.mask.popcount();
 
                 for (u32 i = 0; i < entries; ++i) {
@@ -59,8 +59,7 @@ namespace stormphrax::attacks {
                     for (const auto dir :
                          {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight})
                     {
-                        dst[data.offset + i] |=
-                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
+                        dst[data.offset + i] |= internal::generateSlidingAttacks(Square::fromRaw(sq), dir, occupancy);
                     }
                 }
             }

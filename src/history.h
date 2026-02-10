@@ -89,7 +89,7 @@ namespace stormphrax {
 
     private:
         // [piece type][to]
-        util::MultiArray<HistoryEntry, 12, 64> m_data{};
+        util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount> m_data{};
     };
 
     class HistoryTables {
@@ -181,15 +181,15 @@ namespace stormphrax {
 
     private:
         // [from][to][from attacked][to attacked]
-        util::MultiArray<HistoryEntry, 64, 64, 2, 2> m_butterfly{};
+        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
         // [piece][to]
-        util::MultiArray<HistoryEntry, 12, 64, 2, 2> m_pieceTo{};
+        util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> m_pieceTo{};
         // [prev piece][to][curr piece type][to]
-        util::MultiArray<ContinuationSubtable, 12, 64> m_continuation{};
+        util::MultiArray<ContinuationSubtable, Pieces::kCount, Squares::kCount> m_continuation{};
 
         // [from][to][captured][defended]
         // additional slot for non-capture queen promos
-        util::MultiArray<HistoryEntry, 64, 64, 13, 2> m_noisy{};
+        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, Pieces::kCount + 1, 2> m_noisy{};
 
         static inline void updateConthist(
             std::span<ContinuationSubtable*> continuations,
