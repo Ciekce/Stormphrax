@@ -36,7 +36,7 @@ namespace stormphrax {
 
             // these are stored with the second knight moved left by an empty square,
             // because the first knight fills a square before the second knight is placed
-            static constexpr auto kN5n = std::array{
+            static constexpr std::array kN5n = {
                 std::pair{0, 0},
                 std::pair{0, 1},
                 std::pair{0, 2},
@@ -600,31 +600,34 @@ namespace stormphrax {
         if (m_castlingRooks == CastlingRooks{}) {
             fmt::format_to(itr, "-");
         } else if (g_opts.chess960) {
-            constexpr auto kBlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-            constexpr auto kWhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
-
             if (m_castlingRooks.white().kingside != Squares::kNone) {
-                fmt::format_to(itr, "{}", kWhiteFiles[m_castlingRooks.white().kingside.file()]);
+                fmt::format_to(itr, "{}", static_cast<char>('A' + m_castlingRooks.white().kingside.file()));
             }
+
             if (m_castlingRooks.white().queenside != Squares::kNone) {
-                fmt::format_to(itr, "{}", kWhiteFiles[m_castlingRooks.white().queenside.file()]);
+                fmt::format_to(itr, "{}", static_cast<char>('A' + m_castlingRooks.white().queenside.file()));
             }
+
             if (m_castlingRooks.black().kingside != Squares::kNone) {
-                fmt::format_to(itr, "{}", kBlackFiles[m_castlingRooks.black().kingside.file()]);
+                fmt::format_to(itr, "{}", static_cast<char>('a' + m_castlingRooks.black().kingside.file()));
             }
+
             if (m_castlingRooks.black().queenside != Squares::kNone) {
-                fmt::format_to(itr, "{}", kBlackFiles[m_castlingRooks.black().queenside.file()]);
+                fmt::format_to(itr, "{}", static_cast<char>('a' + m_castlingRooks.black().queenside.file()));
             }
         } else {
             if (m_castlingRooks.white().kingside != Squares::kNone) {
                 fmt::format_to(itr, "K");
             }
+
             if (m_castlingRooks.white().queenside != Squares::kNone) {
                 fmt::format_to(itr, "Q");
             }
+
             if (m_castlingRooks.black().kingside != Squares::kNone) {
                 fmt::format_to(itr, "k");
             }
+
             if (m_castlingRooks.black().queenside != Squares::kNone) {
                 fmt::format_to(itr, "q");
             }

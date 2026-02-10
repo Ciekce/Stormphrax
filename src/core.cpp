@@ -24,7 +24,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(
 ) const {
     using namespace stormphrax;
 
-    static constexpr auto kPieceChars = std::array{
+    static constexpr std::array kPieceChars = {
         'p', // black pawn
         'P', // white pawn
         'n', // black knight

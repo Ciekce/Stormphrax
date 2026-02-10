@@ -301,7 +301,7 @@ namespace stormphrax::datagen {
                     }
 
                     if (const auto tbOutcome = probeTb(pos)) {
-                        static constexpr auto kScores = std::array{
+                        static constexpr std::array kScores = {
                             -kScoreTbWin,
                             0,
                             kScoreTbWin,

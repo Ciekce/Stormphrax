@@ -71,7 +71,7 @@ namespace stormphrax::eval {
         static_assert(sizeof(NetworkHeader) == 64);
 
         inline std::string_view archName(u8 arch) {
-            static constexpr auto kNetworkArchNames = std::array{
+            static constexpr std::array kNetworkArchNames = {
                 "basic",
                 "perspective",
                 "perspective_multilayer",
@@ -86,7 +86,7 @@ namespace stormphrax::eval {
         }
 
         inline std::string_view activationFuncName(u8 func) {
-            static constexpr auto kActivationFunctionNames = std::array{"crelu", "screlu", "relu"};
+            static constexpr std::array kActivationFunctionNames = {"crelu", "screlu", "relu"};
 
             if (func < kActivationFunctionNames.size()) {
                 return kActivationFunctionNames[func];

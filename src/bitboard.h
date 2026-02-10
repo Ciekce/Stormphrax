@@ -483,8 +483,8 @@ namespace stormphrax {
         constexpr Bitboard kFileG{Bitboard::kFileG};
         constexpr Bitboard kFileH{Bitboard::kFileH};
 
-        constexpr auto kRanks = std::array{kRank1, kRank2, kRank3, kRank4, kRank5, kRank6, kRank7, kRank8};
-        constexpr auto kFiles = std::array{kFileA, kFileB, kFileC, kFileD, kFileE, kFileF, kFileG, kFileH};
+        constexpr std::array kRanks = {kRank1, kRank2, kRank3, kRank4, kRank5, kRank6, kRank7, kRank8};
+        constexpr std::array kFiles = {kFileA, kFileB, kFileC, kFileD, kFileE, kFileF, kFileG, kFileH};
 
         constexpr Bitboard kDarkSquares{Bitboard::kDarkSquares};
         constexpr Bitboard kLightSquares{Bitboard::kLightSquares};

@@ -60,7 +60,7 @@ namespace stormphrax::eval::nnue::features {
         static_assert(sizeof...(kBucketIndices) == 64);
 
     private:
-        static constexpr auto kBuckets = std::array{kBucketIndices...};
+        static constexpr std::array kBuckets = {kBucketIndices...};
 
     public:
         static constexpr u32 kInputSize = 768;
@@ -127,7 +127,7 @@ namespace stormphrax::eval::nnue::features {
 
     private:
         static constexpr auto kBuckets = [] {
-            constexpr auto kHalfBuckets = std::array{kBucketIndices...};
+            constexpr std::array kHalfBuckets = {kBucketIndices...};
 
             std::array<u32, 64> dst{};
 

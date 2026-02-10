@@ -31,7 +31,7 @@ namespace stormphrax::datagen {
     }
 
     void Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) {
-        static constexpr auto kMoveTypes = std::array{
+        static constexpr std::array kMoveTypes = {
             static_cast<u16>(0x0000), // normal
             static_cast<u16>(0xC000), // promo
             static_cast<u16>(0x8000), // castling

@@ -48,7 +48,7 @@ namespace stormphrax::tb {
 
     ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
         const auto moveFromTb = [](auto tbMove) {
-            static constexpr auto kPromoPieces = std::array{
+            static constexpr std::array kPromoPieces = {
                 PieceTypes::kNone,
                 PieceTypes::kQueen,
                 PieceTypes::kRook,
