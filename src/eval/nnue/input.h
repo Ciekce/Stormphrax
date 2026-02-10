@@ -53,8 +53,8 @@ namespace stormphrax::eval::nnue {
         }
 
         [[nodiscard]] inline std::span<const Type, kOutputCount> forColor(Color c) const {
-            assert(c != Color::kNone);
-            return m_outputs[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return m_outputs[c.idx()];
         }
 
         [[nodiscard]] inline std::span<Type, kOutputCount> black() {
@@ -66,8 +66,8 @@ namespace stormphrax::eval::nnue {
         }
 
         [[nodiscard]] inline std::span<Type, kOutputCount> forColor(Color c) {
-            assert(c != Color::kNone);
-            return m_outputs[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return m_outputs[c.idx()];
         }
 
         inline void initBoth(const Ft& featureTransformer) {
@@ -184,7 +184,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline void copyFrom(Color c, const Accumulator<Ft>& other) {
-            const auto idx = static_cast<i32>(c);
+            const auto idx = c.idx();
             std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
         }
 
@@ -312,7 +312,7 @@ namespace stormphrax::eval::nnue {
         std::array<BitboardSet, 2> bbs{};
 
         [[nodiscard]] BitboardSet& colorBbs(Color c) {
-            return bbs[static_cast<i32>(c)];
+            return bbs[c.idx()];
         }
     };
 

@@ -53,11 +53,11 @@ namespace stormphrax::eval {
         StaticVector<PieceSquare, 2> add{};
 
         inline void setRefresh(Color c) {
-            refresh[static_cast<i32>(c)] = true;
+            refresh[c.idx()] = true;
         }
 
         [[nodiscard]] inline bool requiresRefresh(Color c) const {
-            return refresh[static_cast<i32>(c)];
+            return refresh[c.idx()];
         }
 
         inline void pushSubAdd(Piece piece, Square src, Square dst) {
@@ -65,12 +65,12 @@ namespace stormphrax::eval {
             add.push({piece, dst});
         }
 
-        inline void pushSub(Piece piece, Square square) {
-            sub.push({piece, square});
+        inline void pushSub(Piece piece, Square sq) {
+            sub.push({piece, sq});
         }
 
-        inline void pushAdd(Piece piece, Square square) {
-            add.push({piece, square});
+        inline void pushAdd(Piece piece, Square sq) {
+            add.push({piece, sq});
         }
     };
 
@@ -92,13 +92,13 @@ namespace stormphrax::eval {
             }
 
             inline void setUpdated(Color c) {
-                assert(c != Color::kNone);
-                dirty[static_cast<i32>(c)] = false;
+                assert(c != Colors::kNone);
+                dirty[c.idx()] = false;
             }
 
             [[nodiscard]] inline bool isDirty(Color c) {
-                assert(c != Color::kNone);
-                return dirty[static_cast<i32>(c)];
+                assert(c != Colors::kNone);
+                return dirty[c.idx()];
             }
         };
 
@@ -114,7 +114,7 @@ namespace stormphrax::eval {
 
             m_curr = &m_accumulatorStack[0];
 
-            for (const auto c : {Color::kBlack, Color::kWhite}) {
+            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 const auto king = kings.color(c);
                 const auto entry = InputFeatureSet::getRefreshTableEntry(c, king);
 
@@ -146,7 +146,7 @@ namespace stormphrax::eval {
 
         [[nodiscard]] inline i32 evaluate(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
-            assert(stm != Color::kNone);
+            assert(stm != Colors::kNone);
 
             ensureUpToDate(bbs, kings);
 
@@ -155,14 +155,14 @@ namespace stormphrax::eval {
 
         [[nodiscard]] static inline i32 evaluateOnce(const BitboardSet& bbs, KingPair kings, Color stm) {
             assert(kings.isValid());
-            assert(stm != Color::kNone);
+            assert(stm != Colors::kNone);
 
             Accumulator accumulator{};
 
             accumulator.initBoth(g_network.featureTransformer());
 
-            resetAccumulator(accumulator, Color::kBlack, bbs, kings.black());
-            resetAccumulator(accumulator, Color::kWhite, bbs, kings.white());
+            resetAccumulator(accumulator, Colors::kBlack, bbs, kings.black());
+            resetAccumulator(accumulator, Colors::kWhite, bbs, kings.white());
 
             return evaluate(accumulator, bbs, stm);
         }
@@ -240,12 +240,12 @@ namespace stormphrax::eval {
             RefreshTable& refreshTable,
             const UpdateContext& ctx
         ) {
-            update(prev, curr, refreshTable, ctx, Color::kBlack);
-            update(prev, curr, refreshTable, ctx, Color::kWhite);
+            update(prev, curr, refreshTable, ctx, Colors::kBlack);
+            update(prev, curr, refreshTable, ctx, Colors::kWhite);
         }
 
         inline void ensureUpToDate(const BitboardSet& bbs, KingPair kings) {
-            for (const auto c : {Color::kBlack, Color::kWhite}) {
+            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 if (!m_curr->isDirty(c)) {
                     continue;
                 }
@@ -259,8 +259,7 @@ namespace stormphrax::eval {
                 // scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
                 // root accumulator is always up-to-date
                 auto* curr = m_curr - 1;
-                for (; curr->isDirty(c) && !curr->ctx.updates.requiresRefresh(c); --curr) {
-                }
+                for (; curr->isDirty(c) && !curr->ctx.updates.requiresRefresh(c); --curr) {}
 
                 assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresRefresh(c));
 
@@ -280,9 +279,9 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] static inline i32 evaluate(const Accumulator& accumulator, const BitboardSet& bbs, Color stm) {
-            assert(stm != Color::kNone);
-            return stm == Color::kBlack ? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
-                                        : g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
+            assert(stm != Colors::kNone);
+            return stm == Colors::kBlack ? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
+                                         : g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
         }
 
         static inline void refreshAccumulator(
@@ -299,8 +298,8 @@ namespace stormphrax::eval {
 
             StaticVector<u32, 32> adds;
             StaticVector<u32, 32> subs;
-            for (u32 pieceIdx = 0; pieceIdx < static_cast<u32>(Piece::kNone); ++pieceIdx) {
-                const auto piece = static_cast<Piece>(pieceIdx);
+            for (u32 pieceIdx = 0; pieceIdx < Pieces::kNone.raw(); ++pieceIdx) {
+                const auto piece = Piece::fromRaw(pieceIdx);
 
                 const auto prev = prevBoards.forPiece(piece);
                 const auto curr = bbs.forPiece(piece);
@@ -354,13 +353,13 @@ namespace stormphrax::eval {
         }
 
         static inline void resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king) {
-            assert(c != Color::kNone);
-            assert(king != Square::kNone);
+            assert(c != Colors::kNone);
+            assert(king != Squares::kNone);
 
             // loop through each coloured piece, and activate the features
             // corresponding to that piece on each of the squares it occurs on
-            for (u32 pieceIdx = 0; pieceIdx < 12; ++pieceIdx) {
-                const auto piece = static_cast<Piece>(pieceIdx);
+            for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
+                const auto piece = Piece::fromRaw(pieceIdx);
 
                 auto board = bbs.forPiece(piece);
                 while (!board.empty()) {
@@ -383,31 +382,31 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] static inline u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
-            assert(c != Color::kNone);
-            assert(piece != Piece::kNone);
-            assert(sq != Square::kNone);
-            assert(king != Square::kNone);
+            assert(c != Colors::kNone);
+            assert(piece != Pieces::kNone);
+            assert(sq != Squares::kNone);
+            assert(king != Squares::kNone);
 
-            constexpr u32 kColorStride = 64 * 6;
-            constexpr u32 kPieceStride = 64;
+            constexpr u32 kColorStride = Squares::kCount * PieceTypes::kCount;
+            constexpr u32 kPieceStride = Squares::kCount;
 
-            const auto type = static_cast<u32>(pieceType(piece));
+            const u32 type = piece.type().raw();
 
             const auto color = [piece, c]() -> u32 {
-                if (InputFeatureSet::kMergedKings && pieceType(piece) == PieceType::kKing) {
+                if (InputFeatureSet::kMergedKings && piece.type() == PieceTypes::kKing) {
                     return 0;
                 }
-                return pieceColor(piece) == c ? 0 : 1;
+                return piece.color() == c ? 0 : 1;
             }();
 
-            if (c == Color::kBlack) {
-                sq = flipSquareRank(sq);
+            if (c == Colors::kBlack) {
+                sq = sq.flipRank();
             }
 
             sq = InputFeatureSet::transformFeatureSquare(sq, king);
 
             const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputFeatureSet::kInputSize;
-            return bucketOffset + color * kColorStride + type * kPieceStride + static_cast<u32>(sq);
+            return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
         }
     };
 } // namespace stormphrax::eval

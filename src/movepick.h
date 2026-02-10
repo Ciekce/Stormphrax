@@ -355,7 +355,7 @@ namespace stormphrax {
             score += see::value(captured);
 
             if (move.type() == MoveType::kPromotion) {
-                score += see::value(PieceType::kQueen) - see::value(PieceType::kPawn);
+                score += see::value(PieceTypes::kQueen) - see::value(PieceTypes::kPawn);
             }
         }
 

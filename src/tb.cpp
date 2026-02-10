@@ -48,21 +48,21 @@ namespace stormphrax::tb {
 
     ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
         const auto moveFromTb = [](auto tbMove) {
-            static constexpr auto kPromoPieces = std::array{
-                PieceType::kNone,
-                PieceType::kQueen,
-                PieceType::kRook,
-                PieceType::kBishop,
-                PieceType::kKnight,
+            static constexpr std::array kPromoPieces = {
+                PieceTypes::kNone,
+                PieceTypes::kQueen,
+                PieceTypes::kRook,
+                PieceTypes::kBishop,
+                PieceTypes::kKnight,
             };
 
-            const auto from = static_cast<Square>(PYRRHIC_MOVE_FROM(tbMove));
-            const auto to = static_cast<Square>(PYRRHIC_MOVE_TO(tbMove));
+            const auto from = Square::fromRaw(PYRRHIC_MOVE_FROM(tbMove));
+            const auto to = Square::fromRaw(PYRRHIC_MOVE_TO(tbMove));
             const auto promo = kPromoPieces[PYRRHIC_MOVE_FLAGS(tbMove) & 0x7];
 
             if (PYRRHIC_MOVE_IS_ENPASS(tbMove)) {
                 return Move::enPassant(from, to);
-            } else if (promo != PieceType::kNone) {
+            } else if (promo != PieceTypes::kNone) {
                 return Move::promotion(from, to, promo);
             } else {
                 return Move::standard(from, to);
@@ -84,8 +84,8 @@ namespace stormphrax::tb {
             bbs.knights(),
             bbs.pawns(),
             pos.halfmove(),
-            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.stm() == Color::kWhite,
+            epSq == Squares::kNone ? 0 : epSq.raw(),
+            pos.stm() == Colors::kWhite,
             false, // TODO
             &tbRootMoves
         );
@@ -103,8 +103,8 @@ namespace stormphrax::tb {
                 bbs.knights(),
                 bbs.pawns(),
                 pos.halfmove(),
-                epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-                pos.stm() == Color::kWhite,
+                epSq == Squares::kNone ? 0 : epSq.raw(),
+                pos.stm() == Colors::kWhite,
                 true,
                 &tbRootMoves
             );
@@ -177,8 +177,8 @@ namespace stormphrax::tb {
             bbs.bishops(),
             bbs.knights(),
             bbs.pawns(),
-            epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.stm() == Color::kWhite
+            epSq == Squares::kNone ? 0 : epSq.raw(),
+            pos.stm() == Colors::kWhite
         );
 
         if (wdl == TB_RESULT_FAILED) {

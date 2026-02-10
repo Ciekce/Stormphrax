@@ -35,7 +35,7 @@ namespace stormphrax::attacks::bmi2 {
     };
 
     struct RookData {
-        std::array<RookSquareData, 64> data;
+        std::array<RookSquareData, Squares::kCount> data;
         u32 tableSize;
     };
 
@@ -45,18 +45,18 @@ namespace stormphrax::attacks::bmi2 {
     };
 
     struct BishopData {
-        std::array<BishopSquareData, 64> data;
+        std::array<BishopSquareData, Squares::kCount> data;
         u32 tableSize;
     };
 
     constexpr auto kRookData = [] {
         RookData dst{};
 
-        for (u32 i = 0; i < 64; ++i) {
-            const auto square = static_cast<Square>(i);
+        for (u32 i = 0; i < Squares::kCount; ++i) {
+            const auto sq = Square::fromRaw(i);
 
             for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+                const auto attacks = internal::generateSlidingAttacks(sq, dir, 0);
 
                 dst.data[i].srcMask |= attacks & ~internal::edges(dir);
                 dst.data[i].dstMask |= attacks;
@@ -72,11 +72,11 @@ namespace stormphrax::attacks::bmi2 {
     constexpr auto kBishopData = [] {
         BishopData dst{};
 
-        for (u32 i = 0; i < 64; ++i) {
-            const auto square = static_cast<Square>(i);
+        for (u32 i = 0; i < Squares::kCount; ++i) {
+            const auto sq = Square::fromRaw(i);
 
             for (const auto dir : {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight}) {
-                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+                const auto attacks = internal::generateSlidingAttacks(sq, dir, 0);
                 dst.data[i].mask |= attacks & ~internal::edges(dir);
             }
 

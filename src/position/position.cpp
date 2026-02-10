@@ -36,7 +36,7 @@ namespace stormphrax {
 
             // these are stored with the second knight moved left by an empty square,
             // because the first knight fills a square before the second knight is placed
-            static constexpr auto kN5n = std::array{
+            static constexpr std::array kN5n = {
                 std::pair{0, 0},
                 std::pair{0, 1},
                 std::pair{0, 2},
@@ -54,19 +54,19 @@ namespace stormphrax {
             std::array<PieceType, 8> dst{};
             // no need to fill with empty pieces, because pawns are impossible
 
-            const auto placeInNthFree = [&dst](u32 n, PieceType piece) {
+            const auto placeInNthFree = [&dst](u32 n, PieceType pt) {
                 for (i32 free = 0, i = 0; i < 8; ++i) {
-                    if (dst[i] == PieceType::kPawn && free++ == n) {
-                        dst[i] = piece;
+                    if (dst[i] == PieceTypes::kPawn && free++ == n) {
+                        dst[i] = pt;
                         break;
                     }
                 }
             };
 
-            const auto placeInFirstFree = [&dst](PieceType piece) {
+            const auto placeInFirstFree = [&dst](PieceType pt) {
                 for (i32 i = 0; i < 8; ++i) {
-                    if (dst[i] == PieceType::kPawn) {
-                        dst[i] = piece;
+                    if (dst[i] == PieceTypes::kPawn) {
+                        dst[i] = pt;
                         break;
                     }
                 }
@@ -81,19 +81,19 @@ namespace stormphrax {
             const auto n4 = n3 / 6;
             const auto q = n3 % 6;
 
-            dst[b1 * 2 + 1] = PieceType::kBishop;
-            dst[b2 * 2] = PieceType::kBishop;
+            dst[b1 * 2 + 1] = PieceTypes::kBishop;
+            dst[b2 * 2] = PieceTypes::kBishop;
 
-            placeInNthFree(q, PieceType::kQueen);
+            placeInNthFree(q, PieceTypes::kQueen);
 
             const auto [knight1, knight2] = kN5n[n4];
 
-            placeInNthFree(knight1, PieceType::kKnight);
-            placeInNthFree(knight2, PieceType::kKnight);
+            placeInNthFree(knight1, PieceTypes::kKnight);
+            placeInNthFree(knight2, PieceTypes::kKnight);
 
-            placeInFirstFree(PieceType::kRook);
-            placeInFirstFree(PieceType::kKing);
-            placeInFirstFree(PieceType::kRook);
+            placeInFirstFree(PieceTypes::kRook);
+            placeInFirstFree(PieceTypes::kKing);
+            placeInFirstFree(PieceTypes::kRook);
 
             return dst;
         }
@@ -142,18 +142,18 @@ namespace stormphrax {
 
         auto newPos = *this;
 
-        newPos.m_stm = oppColor(m_stm);
+        newPos.m_stm = m_stm.flip();
         newPos.m_keys.flipStm();
 
-        if (newPos.m_enPassant != Square::kNone) {
+        if (newPos.m_enPassant != Squares::kNone) {
             newPos.m_keys.flipEp(newPos.m_enPassant);
-            newPos.m_enPassant = Square::kNone;
+            newPos.m_enPassant = Squares::kNone;
         }
 
         const auto stm = newPos.nstm();
-        const auto nstm = oppColor(stm);
+        const auto nstm = stm.flip();
 
-        if (stm == Color::kBlack) {
+        if (stm == Colors::kBlack) {
             ++newPos.m_fullmove;
         }
 
@@ -170,10 +170,10 @@ namespace stormphrax {
         const auto moveDst = move.toSq();
 
         const auto moving = m_boards.pieceOn(moveSrc);
-        const auto movingType = pieceType(moving);
+        const auto movingType = moving.type();
 
         eval::NnueUpdates updates{};
-        auto captured = Piece::kNone;
+        auto captured = Pieces::kNone;
 
         switch (moveType) {
             case MoveType::kStandard:
@@ -190,37 +190,33 @@ namespace stormphrax {
                 break;
         }
 
-        assert(pieceTypeOrNone(captured) != PieceType::kKing);
+        assert(captured.typeOrNone() != PieceTypes::kKing);
 
         if constexpr (kUpdateNnue) {
             nnueState->pushUpdates<kNnueAction == NnueUpdateAction::kApply>(updates, m_boards.bbs(), m_kings);
         }
 
-        if (movingType == PieceType::kRook) {
+        if (movingType == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(stm).unset(moveSrc);
-        } else if (movingType == PieceType::kKing) {
+        } else if (movingType == PieceTypes::kKing) {
             newPos.m_castlingRooks.color(stm).clear();
-        } else if (moving == Piece::kBlackPawn && move.fromSqRank() == 6 && move.toSqRank() == 4) {
-            newPos.m_enPassant = toSquare(5, move.fromSqFile());
-            newPos.m_keys.flipEp(newPos.m_enPassant);
-        } else if (moving == Piece::kWhitePawn && move.fromSqRank() == 1 && move.toSqRank() == 3) {
-            newPos.m_enPassant = toSquare(2, move.fromSqFile());
+        } else if (movingType == PieceTypes::kPawn && std::abs(move.fromSqRank() - move.toSqRank()) == 2) {
+            newPos.m_enPassant = move.toSq().flipRankParity();
             newPos.m_keys.flipEp(newPos.m_enPassant);
         }
 
-        if (captured == Piece::kNone && pieceType(moving) != PieceType::kPawn) {
+        if (captured == Pieces::kNone && moving.type() != PieceTypes::kPawn) {
             ++newPos.m_halfmove;
         } else {
             newPos.m_halfmove = 0;
         }
 
-        if (captured != Piece::kNone && pieceType(captured) == PieceType::kRook) {
+        if (captured != Pieces::kNone && captured.type() == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(nstm).unset(moveDst);
         }
 
         if (newPos.m_castlingRooks != m_castlingRooks) {
             newPos.m_keys.switchCastling(m_castlingRooks, newPos.m_castlingRooks);
-            newPos.m_castlingRooks = newPos.m_castlingRooks;
         }
 
         newPos.m_checkers = newPos.calcCheckers();
@@ -240,7 +236,7 @@ namespace stormphrax {
         const auto src = move.fromSq();
         const auto srcPiece = m_boards.pieceOn(src);
 
-        if (srcPiece == Piece::kNone || pieceColor(srcPiece) != us) {
+        if (srcPiece == Pieces::kNone || srcPiece.color() != us) {
             return false;
         }
 
@@ -250,25 +246,25 @@ namespace stormphrax {
         const auto dstPiece = m_boards.pieceOn(dst);
 
         // we're capturing something
-        if (dstPiece != Piece::kNone
+        if (dstPiece != Pieces::kNone
             // we're capturing our own piece
-            && ((pieceColor(dstPiece) == us
+            && ((dstPiece.color() == us
                  //  and either not castling
                  && (type != MoveType::kCastling
                      // or trying to castle with a non-rook
-                     || dstPiece != colorPiece(PieceType::kRook, us)))
+                     || dstPiece != PieceTypes::kRook.withColor(us)))
                 // or trying to capture a king
-                || pieceType(dstPiece) == PieceType::kKing))
+                || dstPiece.type() == PieceTypes::kKing))
         {
             return false;
         }
 
-        const auto srcPieceType = pieceType(srcPiece);
-        const auto them = oppColor(us);
+        const auto srcPieceType = srcPiece.type();
+        const auto them = us.flip();
         const auto occ = m_boards.bbs().occupancy();
 
         if (type == MoveType::kCastling) {
-            if (srcPieceType != PieceType::kKing || isCheck()) {
+            if (srcPieceType != PieceTypes::kKing || isCheck()) {
                 return false;
             }
 
@@ -279,26 +275,24 @@ namespace stormphrax {
                 return false;
             }
 
-            const auto rank = squareRank(src);
-
             Square kingDst, rookDst;
 
-            if (squareFile(src) < squareFile(dst)) {
+            if (src.file() < dst.file()) {
                 // no castling rights
                 if (dst != m_castlingRooks.color(us).kingside) {
                     return false;
                 }
 
-                kingDst = toSquare(rank, 6);
-                rookDst = toSquare(rank, 5);
+                kingDst = src.withFile(kFileG);
+                rookDst = src.withFile(kFileF);
             } else {
                 // no castling rights
                 if (dst != m_castlingRooks.color(us).queenside) {
                     return false;
                 }
 
-                kingDst = toSquare(rank, 2);
-                rookDst = toSquare(rank, 3);
+                kingDst = src.withFile(kFileC);
+                rookDst = src.withFile(kFileD);
             }
 
             // same checks as for movegen
@@ -306,24 +300,24 @@ namespace stormphrax {
                 const auto toKingDst = rayBetween(src, kingDst);
                 const auto toRook = rayBetween(src, dst);
 
-                const auto castleOcc = occ ^ squareBit(src) ^ squareBit(dst);
+                const auto castleOcc = occ ^ src.bit() ^ dst.bit();
 
-                return (castleOcc & (toKingDst | toRook | squareBit(kingDst) | squareBit(rookDst))).empty()
-                    && !anyAttacked(toKingDst | squareBit(kingDst), them);
+                return (castleOcc & (toKingDst | toRook | kingDst.bit() | rookDst.bit())).empty()
+                    && !anyAttacked(toKingDst | kingDst.bit(), them);
             } else {
                 if (dst == m_castlingRooks.black().kingside) {
-                    return (occ & U64(0x6000000000000000)).empty() && !isAttacked(Square::kF8, Color::kWhite);
+                    return (occ & U64(0x6000000000000000)).empty() && !isAttacked(Squares::kF8, Colors::kWhite);
                 } else if (dst == m_castlingRooks.black().queenside) {
-                    return (occ & U64(0x0E00000000000000)).empty() && !isAttacked(Square::kD8, Color::kWhite);
+                    return (occ & U64(0x0E00000000000000)).empty() && !isAttacked(Squares::kD8, Colors::kWhite);
                 } else if (dst == m_castlingRooks.white().kingside) {
-                    return (occ & U64(0x0000000000000060)).empty() && !isAttacked(Square::kF1, Color::kBlack);
+                    return (occ & U64(0x0000000000000060)).empty() && !isAttacked(Squares::kF1, Colors::kBlack);
                 } else {
-                    return (occ & U64(0x000000000000000E)).empty() && !isAttacked(Square::kD1, Color::kBlack);
+                    return (occ & U64(0x000000000000000E)).empty() && !isAttacked(Squares::kD1, Colors::kBlack);
                 }
             }
         }
 
-        if (srcPieceType == PieceType::kPawn) {
+        if (srcPieceType == PieceTypes::kPawn) {
             if (type == MoveType::kEnPassant) {
                 return dst == m_enPassant && attacks::getPawnAttacks(m_enPassant, them)[src];
             }
@@ -332,7 +326,7 @@ namespace stormphrax {
             const auto dstRank = move.toSqRank();
 
             // backwards move
-            if ((us == Color::kBlack && dstRank >= srcRank) || (us == Color::kWhite && dstRank <= srcRank)) {
+            if ((us == Colors::kBlack && dstRank >= srcRank) || (us == Colors::kWhite && dstRank <= srcRank)) {
                 return false;
             }
 
@@ -349,29 +343,19 @@ namespace stormphrax {
                 if (!(attacks::getPawnAttacks(src, us) & m_boards.bbs().forColor(them))[dst]) {
                     return false;
                 }
-            } else if (dstPiece != Piece::kNone) {
+            } else if (dstPiece != Pieces::kNone) {
                 // forward move onto a piece
                 return false;
             }
 
             const auto delta = std::abs(dstRank - srcRank);
-
-            i32 maxDelta;
-            if (us == Color::kBlack) {
-                maxDelta = srcRank == 6 ? 2 : 1;
-            } else {
-                maxDelta = srcRank == 1 ? 2 : 1;
-            }
+            const auto maxDelta = 1 + (srcRank == relativeRank(us, kRank2));
 
             if (delta > maxDelta) {
                 return false;
             }
 
-            if (delta == 2
-                && occ[static_cast<Square>(
-                    static_cast<i32>(dst) + (us == Color::kWhite ? offsets::kDown : offsets::kUp)
-                )])
-            {
+            if (delta == 2 && occ[dst.flipRankParity()]) {
                 return false;
             }
         } else {
@@ -381,20 +365,20 @@ namespace stormphrax {
 
             Bitboard attacks{};
 
-            switch (srcPieceType) {
-                case PieceType::kKnight:
+            switch (srcPieceType.raw()) {
+                case PieceTypes::kKnight.raw():
                     attacks = attacks::getKnightAttacks(src);
                     break;
-                case PieceType::kBishop:
+                case PieceTypes::kBishop.raw():
                     attacks = attacks::getBishopAttacks(src, occ);
                     break;
-                case PieceType::kRook:
+                case PieceTypes::kRook.raw():
                     attacks = attacks::getRookAttacks(src, occ);
                     break;
-                case PieceType::kQueen:
+                case PieceTypes::kQueen.raw():
                     attacks = attacks::getQueenAttacks(src, occ);
                     break;
-                case PieceType::kKing:
+                case PieceTypes::kKing.raw():
                     attacks = attacks::getKingAttacks(src);
                     break;
                 default:
@@ -414,7 +398,7 @@ namespace stormphrax {
         assert(move != kNullMove);
 
         const auto us = stm();
-        const auto them = oppColor(us);
+        const auto them = us.flip();
 
         const auto& bbs = m_boards.bbs();
 
@@ -424,16 +408,10 @@ namespace stormphrax {
         const auto king = m_kings.color(us);
 
         if (move.type() == MoveType::kCastling) {
-            const auto kingDst = toSquare(move.fromSqRank(), move.fromSqFile() < move.toSqFile() ? 6 : 2);
+            const auto kingDst = move.fromSq().withFile(move.fromSqFile() < move.toSqFile() ? kFileG : kFileC);
             return !m_threats[kingDst] && !(g_opts.chess960 && pinned(us)[dst]);
         } else if (move.type() == MoveType::kEnPassant) {
-            auto rank = squareRank(dst);
-            const auto file = squareFile(dst);
-
-            rank = rank == 2 ? 3 : 4;
-
-            const auto captureSquare = toSquare(rank, file);
-
+            const auto captureSquare = dst.flipRankParity();
             const auto postEpOcc = bbs.occupancy() ^ Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst)
                                  ^ Bitboard::fromSquare(captureSquare);
 
@@ -445,7 +423,7 @@ namespace stormphrax {
 
         const auto moving = m_boards.pieceOn(src);
 
-        if (pieceType(moving) == PieceType::kKing) {
+        if (moving.type() == PieceTypes::kKing) {
             const auto kinglessOcc = bbs.occupancy() ^ bbs.kings(us);
             const auto theirQueens = bbs.queens(them);
 
@@ -515,13 +493,13 @@ namespace stormphrax {
                 }
 
                 auto piece = m_boards.pieceOn(move.fromSq());
-                if (piece == Piece::kNone) {
+                if (piece == Pieces::kNone) {
                     piece = m_boards.pieceOn(move.toSq());
                 }
 
-                assert(piece != Piece::kNone);
+                assert(piece != Pieces::kNone);
 
-                return pieceColor(piece) == stm();
+                return piece.color() == stm();
             }
         }
 
@@ -594,13 +572,13 @@ namespace stormphrax {
 
         for (i32 rank = 7; rank >= 0; --rank) {
             for (i32 file = 0; file < 8; ++file) {
-                if (m_boards.pieceAt(rank, file) == Piece::kNone) {
+                if (m_boards.pieceOn(rank, file) == Pieces::kNone) {
                     u32 emptySquares = 1;
-                    for (; file < 7 && m_boards.pieceAt(rank, file + 1) == Piece::kNone; ++file, ++emptySquares) {}
+                    for (; file < 7 && m_boards.pieceOn(rank, file + 1) == Pieces::kNone; ++file, ++emptySquares) {}
 
                     fmt::format_to(itr, "{}", static_cast<char>('0' + emptySquares));
                 } else {
-                    fmt::format_to(itr, "{}", m_boards.pieceAt(rank, file));
+                    fmt::format_to(itr, "{}", m_boards.pieceOn(rank, file));
                 }
             }
 
@@ -609,42 +587,45 @@ namespace stormphrax {
             }
         }
 
-        fmt::format_to(itr, "{}", stm() == Color::kWhite ? " w " : " b ");
+        fmt::format_to(itr, "{}", stm() == Colors::kWhite ? " w " : " b ");
 
         if (m_castlingRooks == CastlingRooks{}) {
             fmt::format_to(itr, "-");
         } else if (g_opts.chess960) {
-            constexpr auto kBlackFiles = std::array{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-            constexpr auto kWhiteFiles = std::array{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+            if (m_castlingRooks.white().kingside != Squares::kNone) {
+                fmt::format_to(itr, "{}", static_cast<char>('A' + m_castlingRooks.white().kingside.file()));
+            }
 
-            if (m_castlingRooks.white().kingside != Square::kNone) {
-                fmt::format_to(itr, "{}", kWhiteFiles[squareFile(m_castlingRooks.white().kingside)]);
+            if (m_castlingRooks.white().queenside != Squares::kNone) {
+                fmt::format_to(itr, "{}", static_cast<char>('A' + m_castlingRooks.white().queenside.file()));
             }
-            if (m_castlingRooks.white().queenside != Square::kNone) {
-                fmt::format_to(itr, "{}", kWhiteFiles[squareFile(m_castlingRooks.white().queenside)]);
+
+            if (m_castlingRooks.black().kingside != Squares::kNone) {
+                fmt::format_to(itr, "{}", static_cast<char>('a' + m_castlingRooks.black().kingside.file()));
             }
-            if (m_castlingRooks.black().kingside != Square::kNone) {
-                fmt::format_to(itr, "{}", kBlackFiles[squareFile(m_castlingRooks.black().kingside)]);
-            }
-            if (m_castlingRooks.black().queenside != Square::kNone) {
-                fmt::format_to(itr, "{}", kBlackFiles[squareFile(m_castlingRooks.black().queenside)]);
+
+            if (m_castlingRooks.black().queenside != Squares::kNone) {
+                fmt::format_to(itr, "{}", static_cast<char>('a' + m_castlingRooks.black().queenside.file()));
             }
         } else {
-            if (m_castlingRooks.white().kingside != Square::kNone) {
+            if (m_castlingRooks.white().kingside != Squares::kNone) {
                 fmt::format_to(itr, "K");
             }
-            if (m_castlingRooks.white().queenside != Square::kNone) {
+
+            if (m_castlingRooks.white().queenside != Squares::kNone) {
                 fmt::format_to(itr, "Q");
             }
-            if (m_castlingRooks.black().kingside != Square::kNone) {
+
+            if (m_castlingRooks.black().kingside != Squares::kNone) {
                 fmt::format_to(itr, "k");
             }
-            if (m_castlingRooks.black().queenside != Square::kNone) {
+
+            if (m_castlingRooks.black().queenside != Squares::kNone) {
                 fmt::format_to(itr, "q");
             }
         }
 
-        if (m_enPassant != Square::kNone) {
+        if (m_enPassant != Squares::kNone) {
             fmt::format_to(itr, " {}", m_enPassant);
         } else {
             fmt::format_to(itr, " -");
@@ -656,39 +637,39 @@ namespace stormphrax {
     }
 
     template <bool kUpdateKey>
-    void Position::setPiece(Piece piece, Square square) {
-        assert(piece != Piece::kNone);
-        assert(square != Square::kNone);
+    void Position::setPiece(Piece piece, Square sq) {
+        assert(piece != Pieces::kNone);
+        assert(sq != Squares::kNone);
 
-        assert(pieceType(piece) != PieceType::kKing);
+        assert(piece.type() != PieceTypes::kKing);
 
-        m_boards.setPiece(square, piece);
+        m_boards.setPiece(sq, piece);
 
         if constexpr (kUpdateKey) {
-            m_keys.flipPiece(piece, square);
+            m_keys.flipPiece(piece, sq);
         }
     }
 
     template <bool kUpdateKey>
-    void Position::removePiece(Piece piece, Square square) {
-        assert(piece != Piece::kNone);
-        assert(square != Square::kNone);
+    void Position::removePiece(Piece piece, Square sq) {
+        assert(piece != Pieces::kNone);
+        assert(sq != Squares::kNone);
 
-        assert(pieceType(piece) != PieceType::kKing);
+        assert(piece.type() != PieceTypes::kKing);
 
-        m_boards.removePiece(square, piece);
+        m_boards.removePiece(sq, piece);
 
         if constexpr (kUpdateKey) {
-            m_keys.flipPiece(piece, square);
+            m_keys.flipPiece(piece, sq);
         }
     }
 
     template <bool kUpdateKey>
     void Position::movePieceNoCap(Piece piece, Square src, Square dst) {
-        assert(piece != Piece::kNone);
+        assert(piece != Pieces::kNone);
 
-        assert(src != Square::kNone);
-        assert(dst != Square::kNone);
+        assert(src != Squares::kNone);
+        assert(dst != Squares::kNone);
 
         if (src == dst) {
             return;
@@ -696,8 +677,8 @@ namespace stormphrax {
 
         m_boards.movePiece(src, dst, piece);
 
-        if (pieceType(piece) == PieceType::kKing) {
-            const auto color = pieceColor(piece);
+        if (piece.type() == PieceTypes::kKing) {
+            const auto color = piece.color();
             m_kings.color(color) = dst;
         }
 
@@ -708,16 +689,16 @@ namespace stormphrax {
 
     template <bool kUpdateKey, bool kUpdateNnue>
     Piece Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
-        assert(piece != Piece::kNone);
+        assert(piece != Pieces::kNone);
 
-        assert(src != Square::kNone);
-        assert(dst != Square::kNone);
+        assert(src != Squares::kNone);
+        assert(dst != Squares::kNone);
         assert(src != dst);
 
         const auto captured = m_boards.pieceOn(dst);
 
-        if (captured != Piece::kNone) {
-            assert(pieceType(captured) != PieceType::kKing);
+        if (captured != Pieces::kNone) {
+            assert(captured.type() != PieceTypes::kKing);
 
             m_boards.removePiece(dst, captured);
 
@@ -730,8 +711,8 @@ namespace stormphrax {
 
         m_boards.movePiece(src, dst, piece);
 
-        if (pieceType(piece) == PieceType::kKing) {
-            const auto color = pieceColor(piece);
+        if (piece.type() == PieceTypes::kKing) {
+            const auto color = piece.color();
 
             if constexpr (kUpdateNnue) {
                 if (eval::InputFeatureSet::refreshRequired(color, m_kings.color(color), dst)) {
@@ -745,7 +726,7 @@ namespace stormphrax {
         if constexpr (kUpdateNnue) {
             nnueUpdates.pushSubAdd(piece, src, dst);
 
-            if (captured != Piece::kNone) {
+            if (captured != Pieces::kNone) {
                 nnueUpdates.pushSub(captured, dst);
             }
         }
@@ -759,22 +740,22 @@ namespace stormphrax {
 
     template <bool kUpdateKey, bool kUpdateNnue>
     Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates) {
-        assert(pawn != Piece::kNone);
-        assert(pieceType(pawn) == PieceType::kPawn);
+        assert(pawn != Pieces::kNone);
+        assert(pawn.type() == PieceTypes::kPawn);
 
-        assert(src != Square::kNone);
-        assert(dst != Square::kNone);
+        assert(src != Squares::kNone);
+        assert(dst != Squares::kNone);
         assert(src != dst);
 
-        assert(squareRank(dst) == relativeRank(pieceColor(pawn), 7));
-        assert(squareRank(src) == relativeRank(pieceColor(pawn), 6));
+        assert(dst.rank() == relativeRank(pawn.color(), 7));
+        assert(src.rank() == relativeRank(pawn.color(), 6));
 
-        assert(promo != PieceType::kNone);
+        assert(promo != PieceTypes::kNone);
 
         const auto captured = m_boards.pieceOn(dst);
 
-        if (captured != Piece::kNone) {
-            assert(pieceType(captured) != PieceType::kKing);
+        if (captured != Pieces::kNone) {
+            assert(captured.type() != PieceTypes::kKing);
 
             m_boards.removePiece(dst, captured);
 
@@ -790,7 +771,7 @@ namespace stormphrax {
         m_boards.moveAndChangePiece(src, dst, pawn, promo);
 
         if constexpr (kUpdateNnue || kUpdateKey) {
-            const auto coloredPromo = copyPieceColor(pawn, promo);
+            const auto coloredPromo = pawn.copyColor(promo);
 
             if constexpr (kUpdateNnue) {
                 nnueUpdates.pushSub(pawn, src);
@@ -808,34 +789,32 @@ namespace stormphrax {
 
     template <bool kUpdateKey, bool kUpdateNnue>
     void Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates) {
-        assert(king != Piece::kNone);
-        assert(pieceType(king) == PieceType::kKing);
+        assert(king != Pieces::kNone);
+        assert(king.type() == PieceTypes::kKing);
 
-        assert(kingSrc != Square::kNone);
-        assert(rookSrc != Square::kNone);
+        assert(kingSrc != Squares::kNone);
+        assert(rookSrc != Squares::kNone);
         assert(kingSrc != rookSrc);
-
-        const auto rank = squareRank(kingSrc);
 
         Square kingDst, rookDst;
 
-        if (squareFile(kingSrc) < squareFile(rookSrc)) {
+        if (kingSrc.file() < rookSrc.file()) {
             // short
-            kingDst = toSquare(rank, 6);
-            rookDst = toSquare(rank, 5);
+            kingDst = kingSrc.withFile(kFileG);
+            rookDst = kingSrc.withFile(kFileF);
         } else {
             // long
-            kingDst = toSquare(rank, 2);
-            rookDst = toSquare(rank, 3);
+            kingDst = kingSrc.withFile(kFileC);
+            rookDst = kingSrc.withFile(kFileD);
         }
 
-        const auto rook = copyPieceColor(king, PieceType::kRook);
+        const auto rook = king.copyColor(PieceTypes::kRook);
 
         movePieceNoCap<kUpdateKey>(king, kingSrc, kingDst);
         movePieceNoCap<kUpdateKey>(rook, rookSrc, rookDst);
 
         if constexpr (kUpdateNnue) {
-            const auto color = pieceColor(king);
+            const auto color = king.color();
 
             if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst)) {
                 nnueUpdates.setRefresh(color);
@@ -848,11 +827,11 @@ namespace stormphrax {
 
     template <bool kUpdateKey, bool kUpdateNnue>
     Piece Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
-        assert(pawn != Piece::kNone);
-        assert(pieceType(pawn) == PieceType::kPawn);
+        assert(pawn != Pieces::kNone);
+        assert(pawn.type() == PieceTypes::kPawn);
 
-        assert(src != Square::kNone);
-        assert(dst != Square::kNone);
+        assert(src != Squares::kNone);
+        assert(dst != Squares::kNone);
         assert(src != dst);
 
         m_boards.movePiece(src, dst, pawn);
@@ -865,13 +844,8 @@ namespace stormphrax {
             m_keys.movePiece(pawn, src, dst);
         }
 
-        auto rank = squareRank(dst);
-        const auto file = squareFile(dst);
-
-        rank = rank == 2 ? 3 : 4;
-
-        const auto captureSquare = toSquare(rank, file);
-        const auto enemyPawn = flipPieceColor(pawn);
+        const auto captureSquare = dst.flipRankParity();
+        const auto enemyPawn = pawn.flipColor();
 
         m_boards.removePiece(captureSquare, enemyPawn);
 
@@ -891,15 +865,15 @@ namespace stormphrax {
 
         m_keys.clear();
 
-        for (u32 rank = 0; rank < 8; ++rank) {
-            for (u32 file = 0; file < 8; ++file) {
-                const auto square = toSquare(rank, file);
-                if (const auto piece = m_boards.pieceOn(square); piece != Piece::kNone) {
-                    if (pieceType(piece) == PieceType::kKing) {
-                        m_kings.color(pieceColor(piece)) = square;
+        for (i32 rank = 0; rank < 8; ++rank) {
+            for (i32 file = 0; file < 8; ++file) {
+                const auto sq = Square::fromFileRank(file, rank);
+                if (const auto piece = m_boards.pieceOn(sq); piece != Pieces::kNone) {
+                    if (piece.type() == PieceTypes::kKing) {
+                        m_kings.color(piece.color()) = sq;
                     }
 
-                    m_keys.flipPiece(piece, toSquare(rank, file));
+                    m_keys.flipPiece(piece, Square::fromFileRank(file, rank));
                 }
             }
         }
@@ -907,7 +881,7 @@ namespace stormphrax {
         m_keys.flipCastling(m_castlingRooks);
         m_keys.flipEp(m_enPassant);
 
-        if (stm() == Color::kBlack) {
+        if (stm() == Colors::kBlack) {
             m_keys.flipStm();
         }
 
@@ -919,18 +893,18 @@ namespace stormphrax {
     }
 
     void Position::filterEp(Color capturing) {
-        if (m_enPassant == Square::kNone) {
+        if (m_enPassant == Squares::kNone) {
             return;
         }
 
         const auto unset = [this] {
             m_keys.flipEp(m_enPassant);
-            m_enPassant = Square::kNone;
+            m_enPassant = Squares::kNone;
         };
 
         const auto& bbs = m_boards.bbs();
 
-        const auto moved = oppColor(capturing);
+        const auto moved = capturing.flip();
 
         const auto king = m_kings.color(capturing);
 
@@ -938,7 +912,7 @@ namespace stormphrax {
         auto candidates = bbs.pawns(capturing) & attacks::getPawnAttacks(m_enPassant, moved);
 
         // vertically pinned pawns cannot capture at all
-        const auto vertPinned = pinnedPieces & boards::kFiles[squareFile(king)];
+        const auto vertPinned = pinnedPieces & boards::kFiles[king.file()];
         candidates &= ~vertPinned;
 
         if (!candidates) {
@@ -976,8 +950,7 @@ namespace stormphrax {
         }
 
         // also handle the annoying case where capturing en passant would cause discovered check
-        const auto movedPawn =
-            toSquare(squareRank(m_enPassant) + (moved == Color::kWhite ? 1 : -1), squareFile(m_enPassant));
+        const auto movedPawn = m_enPassant.flipRankParity();
         const auto capturingPawn = candidates.lowestSquare();
 
         const auto rank = rayIntersecting(movedPawn, capturingPawn);
@@ -988,7 +961,7 @@ namespace stormphrax {
             return;
         }
 
-        const auto pawnlessOcc = bbs.occupancy() ^ squareBit(movedPawn) ^ squareBit(capturingPawn);
+        const auto pawnlessOcc = bbs.occupancy() ^ movedPawn.bit() ^ capturingPawn.bit();
         const auto attacks = attacks::getRookAttacks(king, pawnlessOcc);
 
         if (attacks & oppRookCandidates) {
@@ -1001,28 +974,34 @@ namespace stormphrax {
             return kNullMove;
         }
 
-        const auto src = squareFromString(move.substr(0, 2));
-        const auto dst = squareFromString(move.substr(2, 2));
+        const auto src = Square::fromStr(move.substr(0, 2));
+        const auto dst = Square::fromStr(move.substr(2, 2));
 
         if (move.length() == 5) {
-            return Move::promotion(src, dst, pieceTypeFromChar(move[4]));
+            const auto promo = PieceType::fromChar(move[4]);
+
+            if (!promo.isValidPromotion()) {
+                return kNullMove;
+            }
+
+            return Move::promotion(src, dst, promo);
         } else {
             const auto srcPiece = m_boards.pieceOn(src);
 
-            if (srcPiece == Piece::kBlackKing || srcPiece == Piece::kWhiteKing) {
+            if (srcPiece == Pieces::kBlackKing || srcPiece == Pieces::kWhiteKing) {
                 if (g_opts.chess960) {
-                    if (m_boards.pieceOn(dst) == copyPieceColor(srcPiece, PieceType::kRook)) {
+                    if (m_boards.pieceOn(dst) == srcPiece.copyColor(PieceTypes::kRook)) {
                         return Move::castling(src, dst);
                     } else {
                         return Move::standard(src, dst);
                     }
-                } else if (std::abs(squareFile(src) - squareFile(dst)) == 2) {
-                    const auto rookFile = squareFile(src) < squareFile(dst) ? 7 : 0;
-                    return Move::castling(src, toSquare(squareRank(src), rookFile));
+                } else if (std::abs(src.file() - dst.file()) == 2) {
+                    const auto dstSq = src.withFile(src.file() < dst.file() ? kFileH : kFileA);
+                    return Move::castling(src, dstSq);
                 }
             }
 
-            if ((srcPiece == Piece::kBlackPawn || srcPiece == Piece::kWhitePawn) && dst == m_enPassant) {
+            if ((srcPiece == Pieces::kBlackPawn || srcPiece == Pieces::kWhitePawn) && dst == m_enPassant) {
                 return Move::enPassant(src, dst);
             }
 
@@ -1035,22 +1014,22 @@ namespace stormphrax {
 
         auto& bbs = pos.m_boards.bbs();
 
-        bbs.forPiece(PieceType::kPawn) = U64(0x00FF00000000FF00);
-        bbs.forPiece(PieceType::kKnight) = U64(0x4200000000000042);
-        bbs.forPiece(PieceType::kBishop) = U64(0x2400000000000024);
-        bbs.forPiece(PieceType::kRook) = U64(0x8100000000000081);
-        bbs.forPiece(PieceType::kQueen) = U64(0x0800000000000008);
-        bbs.forPiece(PieceType::kKing) = U64(0x1000000000000010);
+        bbs.forPiece(PieceTypes::kPawn) = U64(0x00FF00000000FF00);
+        bbs.forPiece(PieceTypes::kKnight) = U64(0x4200000000000042);
+        bbs.forPiece(PieceTypes::kBishop) = U64(0x2400000000000024);
+        bbs.forPiece(PieceTypes::kRook) = U64(0x8100000000000081);
+        bbs.forPiece(PieceTypes::kQueen) = U64(0x0800000000000008);
+        bbs.forPiece(PieceTypes::kKing) = U64(0x1000000000000010);
 
-        bbs.forColor(Color::kBlack) = U64(0xFFFF000000000000);
-        bbs.forColor(Color::kWhite) = U64(0x000000000000FFFF);
+        bbs.forColor(Colors::kBlack) = U64(0xFFFF000000000000);
+        bbs.forColor(Colors::kWhite) = U64(0x000000000000FFFF);
 
-        pos.m_castlingRooks.black().kingside = Square::kH8;
-        pos.m_castlingRooks.black().queenside = Square::kA8;
-        pos.m_castlingRooks.white().kingside = Square::kH1;
-        pos.m_castlingRooks.white().queenside = Square::kA1;
+        pos.m_castlingRooks.black().kingside = Squares::kH8;
+        pos.m_castlingRooks.black().queenside = Squares::kA8;
+        pos.m_castlingRooks.white().kingside = Squares::kH1;
+        pos.m_castlingRooks.white().queenside = Squares::kA1;
 
-        pos.m_stm = Color::kWhite;
+        pos.m_stm = Colors::kWhite;
         pos.m_fullmove = 1;
 
         pos.regen();
@@ -1067,7 +1046,7 @@ namespace stormphrax {
         Position pos{};
         const auto& bbs = pos.bbs();
 
-        u32 rankIdx = 0;
+        i32 rankIdx = 0;
 
         std::vector<std::string_view> ranks{};
         split::split(ranks, fen[0], '/');
@@ -1078,7 +1057,7 @@ namespace stormphrax {
                 return {};
             }
 
-            u32 fileIdx = 0;
+            i32 fileIdx = 0;
 
             for (const auto c : rank) {
                 if (fileIdx >= 8) {
@@ -1088,8 +1067,8 @@ namespace stormphrax {
 
                 if (const auto emptySquares = util::tryParseDigit(c)) {
                     fileIdx += *emptySquares;
-                } else if (const auto piece = pieceFromChar(c); piece != Piece::kNone) {
-                    pos.m_boards.setPiece(toSquare(7 - rankIdx, fileIdx), piece);
+                } else if (const auto piece = Piece::fromChar(c); piece != Pieces::kNone) {
+                    pos.m_boards.setPiece(Square::fromFileRank(fileIdx, 7 - rankIdx), piece);
                     ++fileIdx;
                 } else {
                     eprintln("invalid piece character {}", c);
@@ -1111,12 +1090,12 @@ namespace stormphrax {
             ++rankIdx;
         }
 
-        if (const auto blackKingCount = bbs.forPiece(Piece::kBlackKing).popcount(); blackKingCount != 1) {
+        if (const auto blackKingCount = bbs.forPiece(Pieces::kBlackKing).popcount(); blackKingCount != 1) {
             eprintln("black must have exactly 1 king, but has {}", blackKingCount);
             return {};
         }
 
-        if (const auto whiteKingCount = bbs.forPiece(Piece::kWhiteKing).popcount(); whiteKingCount != 1) {
+        if (const auto whiteKingCount = bbs.forPiece(Pieces::kWhiteKing).popcount(); whiteKingCount != 1) {
             eprintln("white must have exactly 1 king, but has {}", whiteKingCount);
             return {};
         }
@@ -1135,10 +1114,10 @@ namespace stormphrax {
 
         switch (color[0]) {
             case 'b':
-                pos.m_stm = Color::kBlack;
+                pos.m_stm = Colors::kBlack;
                 break;
             case 'w':
-                pos.m_stm = Color::kWhite;
+                pos.m_stm = Colors::kWhite;
                 break;
             default:
                 eprintln("invalid side to move");
@@ -1146,7 +1125,7 @@ namespace stormphrax {
         }
 
         if (const auto stm = pos.stm();
-            pos.isAttacked<false>(stm, bbs.forPiece(PieceType::kKing, oppColor(stm)).lowestSquare(), stm))
+            pos.isAttacked<false>(stm, bbs.forPiece(PieceTypes::kKing, stm.flip()).lowestSquare(), stm))
         {
             eprintln("opponent must not be in check");
             return {};
@@ -1163,11 +1142,11 @@ namespace stormphrax {
             if (g_opts.chess960) {
                 for (i32 rank = 0; rank < 8; ++rank) {
                     for (i32 file = 0; file < 8; ++file) {
-                        const auto square = toSquare(rank, file);
+                        const auto sq = Square::fromFileRank(file, rank);
 
-                        const auto piece = pos.m_boards.pieceOn(square);
-                        if (piece != Piece::kNone && pieceType(piece) == PieceType::kKing) {
-                            pos.m_kings.color(pieceColor(piece)) = square;
+                        const auto piece = pos.m_boards.pieceOn(sq);
+                        if (piece != Pieces::kNone && piece.type() == PieceTypes::kKing) {
+                            pos.m_kings.color(piece.color()) = sq;
                         }
                     }
                 }
@@ -1175,7 +1154,7 @@ namespace stormphrax {
                 for (const auto flag : castlingRights) {
                     if (flag >= 'a' && flag <= 'h') {
                         const auto file = static_cast<i32>(flag - 'a');
-                        const auto kingFile = squareFile(pos.m_kings.black());
+                        const auto kingFile = pos.m_kings.black().file();
 
                         if (file == kingFile) {
                             eprintln("invalid castling rights");
@@ -1183,13 +1162,13 @@ namespace stormphrax {
                         }
 
                         if (file < kingFile) {
-                            pos.m_castlingRooks.black().queenside = toSquare(7, file);
+                            pos.m_castlingRooks.black().queenside = Square::fromFileRank(file, kRank8);
                         } else {
-                            pos.m_castlingRooks.black().kingside = toSquare(7, file);
+                            pos.m_castlingRooks.black().kingside = Square::fromFileRank(file, kRank8);
                         }
                     } else if (flag >= 'A' && flag <= 'H') {
                         const auto file = static_cast<i32>(flag - 'A');
-                        const auto kingFile = squareFile(pos.m_kings.white());
+                        const auto kingFile = pos.m_kings.white().file();
 
                         if (file == kingFile) {
                             eprintln("invalid castling rights");
@@ -1197,39 +1176,39 @@ namespace stormphrax {
                         }
 
                         if (file < kingFile) {
-                            pos.m_castlingRooks.white().queenside = toSquare(0, file);
+                            pos.m_castlingRooks.white().queenside = Square::fromFileRank(file, kRank1);
                         } else {
-                            pos.m_castlingRooks.white().kingside = toSquare(0, file);
+                            pos.m_castlingRooks.white().kingside = Square::fromFileRank(file, kRank1);
                         }
                     } else if (flag == 'k') {
-                        for (i32 file = squareFile(pos.m_kings.black()) + 1; file < 8; ++file) {
-                            const auto square = toSquare(7, file);
-                            if (pos.m_boards.pieceOn(square) == Piece::kBlackRook) {
-                                pos.m_castlingRooks.black().kingside = square;
+                        for (i32 file = pos.m_kings.black().file() + 1; file < 8; ++file) {
+                            const auto sq = Square::fromFileRank(file, kRank8);
+                            if (pos.m_boards.pieceOn(sq) == Pieces::kBlackRook) {
+                                pos.m_castlingRooks.black().kingside = sq;
                                 break;
                             }
                         }
                     } else if (flag == 'K') {
-                        for (i32 file = squareFile(pos.m_kings.white()) + 1; file < 8; ++file) {
-                            const auto square = toSquare(0, file);
-                            if (pos.m_boards.pieceOn(square) == Piece::kWhiteRook) {
-                                pos.m_castlingRooks.white().kingside = square;
+                        for (i32 file = pos.m_kings.white().file() + 1; file < 8; ++file) {
+                            const auto sq = Square::fromFileRank(file, kRank1);
+                            if (pos.m_boards.pieceOn(sq) == Pieces::kWhiteRook) {
+                                pos.m_castlingRooks.white().kingside = sq;
                                 break;
                             }
                         }
                     } else if (flag == 'q') {
-                        for (i32 file = squareFile(pos.m_kings.black()) - 1; file >= 0; --file) {
-                            const auto square = toSquare(7, file);
-                            if (pos.m_boards.pieceOn(square) == Piece::kBlackRook) {
-                                pos.m_castlingRooks.black().queenside = square;
+                        for (i32 file = pos.m_kings.black().file() - 1; file >= 0; --file) {
+                            const auto sq = Square::fromFileRank(file, kRank8);
+                            if (pos.m_boards.pieceOn(sq) == Pieces::kBlackRook) {
+                                pos.m_castlingRooks.black().queenside = sq;
                                 break;
                             }
                         }
                     } else if (flag == 'Q') {
-                        for (i32 file = squareFile(pos.m_kings.white()) - 1; file >= 0; --file) {
-                            const auto square = toSquare(0, file);
-                            if (pos.m_boards.pieceOn(square) == Piece::kWhiteRook) {
-                                pos.m_castlingRooks.white().queenside = square;
+                        for (i32 file = pos.m_kings.white().file() - 1; file >= 0; --file) {
+                            const auto sq = Square::fromFileRank(file, kRank1);
+                            if (pos.m_boards.pieceOn(sq) == Pieces::kWhiteRook) {
+                                pos.m_castlingRooks.white().queenside = sq;
                                 break;
                             }
                         }
@@ -1242,16 +1221,16 @@ namespace stormphrax {
                 for (const auto flag : castlingRights) {
                     switch (flag) {
                         case 'k':
-                            pos.m_castlingRooks.black().kingside = Square::kH8;
+                            pos.m_castlingRooks.black().kingside = Squares::kH8;
                             break;
                         case 'q':
-                            pos.m_castlingRooks.black().queenside = Square::kA8;
+                            pos.m_castlingRooks.black().queenside = Squares::kA8;
                             break;
                         case 'K':
-                            pos.m_castlingRooks.white().kingside = Square::kH1;
+                            pos.m_castlingRooks.white().kingside = Squares::kH1;
                             break;
                         case 'Q':
-                            pos.m_castlingRooks.white().queenside = Square::kA1;
+                            pos.m_castlingRooks.white().queenside = Squares::kA1;
                             break;
                         default:
                             eprintln("invalid castling rights");
@@ -1264,7 +1243,7 @@ namespace stormphrax {
         const auto enPassant = fen[3];
 
         if (enPassant != "-") {
-            if (pos.m_enPassant = squareFromString(enPassant); pos.m_enPassant == Square::kNone) {
+            if (pos.m_enPassant = Square::fromStr(enPassant); pos.m_enPassant == Squares::kNone) {
                 eprintln("invalid en passant square");
                 return {};
             }
@@ -1287,32 +1266,25 @@ namespace stormphrax {
         }
 
         // a couple of extra checks here
-        if (pos.m_enPassant != Square::kNone) {
+        if (pos.m_enPassant != Squares::kNone) {
             [&] {
-                const auto epRank = pos.m_stm == Color::kBlack ? 2 : 5;
-                if (squareRank(pos.m_enPassant) != epRank) {
-                    pos.m_enPassant = Square::kNone;
+                const auto epRank = pos.m_stm == Colors::kBlack ? kRank3 : kRank6;
+                if (pos.m_enPassant.rank() != epRank) {
+                    pos.m_enPassant = Squares::kNone;
                     return;
                 }
 
-                const auto pawnSquare = toSquare(
-                    squareRank(pos.m_enPassant) + (pos.m_stm == Color::kBlack ? 1 : -1),
-                    squareFile(pos.m_enPassant)
-                );
+                const auto pawnSquare = pos.m_enPassant.flipRankParity();
+                const auto origSquare = pawnSquare.flipDoublePush();
 
-                const auto origSquare = toSquare(
-                    squareRank(pos.m_enPassant) - (pos.m_stm == Color::kBlack ? 1 : -1),
-                    squareFile(pos.m_enPassant)
-                );
-
-                const auto oppPawn = colorPiece(PieceType::kPawn, oppColor(pos.m_stm));
+                const auto oppPawn = PieceTypes::kPawn.withColor(pos.m_stm.flip());
 
                 // make sure that there's actually a pawn there that could've moved
-                if (pos.m_boards.pieceOn(pawnSquare) != oppPawn              //
-                    || pos.m_boards.pieceOn(pos.m_enPassant) != Piece::kNone //
-                    || pos.m_boards.pieceOn(origSquare) != Piece::kNone)
+                if (pos.m_boards.pieceOn(pawnSquare) != oppPawn               //
+                    || pos.m_boards.pieceOn(pos.m_enPassant) != Pieces::kNone //
+                    || pos.m_boards.pieceOn(origSquare) != Pieces::kNone)
                 {
-                    pos.m_enPassant = Square::kNone;
+                    pos.m_enPassant = Squares::kNone;
                     return;
                 }
 
@@ -1320,14 +1292,14 @@ namespace stormphrax {
                 // been legal if the previous move was a double push
                 pos.m_boards.movePiece(pawnSquare, origSquare, oppPawn);
                 const bool illegal = pos.isAttacked<false>(
-                    oppColor(pos.m_stm),
-                    bbs.forPiece(PieceType::kKing, pos.m_stm).lowestSquare(),
-                    oppColor(pos.m_stm)
+                    pos.m_stm.flip(),
+                    bbs.forPiece(PieceTypes::kKing, pos.m_stm).lowestSquare(),
+                    pos.m_stm.flip()
                 );
                 pos.m_boards.movePiece(origSquare, pawnSquare, oppPawn);
 
                 if (illegal) {
-                    pos.m_enPassant = Square::kNone;
+                    pos.m_enPassant = Squares::kNone;
                     return;
                 }
             }();
@@ -1359,23 +1331,23 @@ namespace stormphrax {
 
         auto& bbs = pos.m_boards.bbs();
 
-        bbs.forPiece(PieceType::kPawn) = U64(0x00FF00000000FF00);
+        bbs.forPiece(PieceTypes::kPawn) = U64(0x00FF00000000FF00);
 
-        bbs.forColor(Color::kBlack) = U64(0x00FF000000000000);
-        bbs.forColor(Color::kWhite) = U64(0x000000000000FF00);
+        bbs.forColor(Colors::kBlack) = U64(0x00FF000000000000);
+        bbs.forColor(Colors::kWhite) = U64(0x000000000000FF00);
 
         const auto backrank = scharnaglToBackrank(n);
 
         bool firstRook = true;
 
-        for (i32 i = 0; i < 8; ++i) {
-            const auto blackSquare = toSquare(7, i);
-            const auto whiteSquare = toSquare(0, i);
+        for (i32 file = 0; file < 8; ++file) {
+            const auto blackSquare = Square::fromFileRank(file, kRank8);
+            const auto whiteSquare = Square::fromFileRank(file, kRank1);
 
-            pos.m_boards.setPiece(blackSquare, colorPiece(backrank[i], Color::kBlack));
-            pos.m_boards.setPiece(whiteSquare, colorPiece(backrank[i], Color::kWhite));
+            pos.m_boards.setPiece(blackSquare, backrank[file].withColor(Colors::kBlack));
+            pos.m_boards.setPiece(whiteSquare, backrank[file].withColor(Colors::kWhite));
 
-            if (backrank[i] == PieceType::kRook) {
+            if (backrank[file] == PieceTypes::kRook) {
                 if (firstRook) {
                     pos.m_castlingRooks.black().queenside = blackSquare;
                     pos.m_castlingRooks.white().queenside = whiteSquare;
@@ -1388,7 +1360,7 @@ namespace stormphrax {
             }
         }
 
-        pos.m_stm = Color::kWhite;
+        pos.m_stm = Colors::kWhite;
         pos.m_fullmove = 1;
 
         pos.regen();
@@ -1408,10 +1380,10 @@ namespace stormphrax {
 
         auto& bbs = pos.m_boards.bbs();
 
-        bbs.forPiece(PieceType::kPawn) = U64(0x00FF00000000FF00);
+        bbs.forPiece(PieceTypes::kPawn) = U64(0x00FF00000000FF00);
 
-        bbs.forColor(Color::kBlack) = U64(0x00FF000000000000);
-        bbs.forColor(Color::kWhite) = U64(0x000000000000FF00);
+        bbs.forColor(Colors::kBlack) = U64(0x00FF000000000000);
+        bbs.forColor(Colors::kWhite) = U64(0x000000000000FF00);
 
         const auto blackBackrank = scharnaglToBackrank(n / 960);
         const auto whiteBackrank = scharnaglToBackrank(n % 960);
@@ -1419,14 +1391,14 @@ namespace stormphrax {
         bool firstBlackRook = true;
         bool firstWhiteRook = true;
 
-        for (i32 i = 0; i < 8; ++i) {
-            const auto blackSquare = toSquare(7, i);
-            const auto whiteSquare = toSquare(0, i);
+        for (i32 file = 0; file < 8; ++file) {
+            const auto blackSquare = Square::fromFileRank(file, kRank8);
+            const auto whiteSquare = Square::fromFileRank(file, kRank1);
 
-            pos.m_boards.setPiece(blackSquare, colorPiece(blackBackrank[i], Color::kBlack));
-            pos.m_boards.setPiece(whiteSquare, colorPiece(whiteBackrank[i], Color::kWhite));
+            pos.m_boards.setPiece(blackSquare, blackBackrank[file].withColor(Colors::kBlack));
+            pos.m_boards.setPiece(whiteSquare, whiteBackrank[file].withColor(Colors::kWhite));
 
-            if (blackBackrank[i] == PieceType::kRook) {
+            if (blackBackrank[file] == PieceTypes::kRook) {
                 if (firstBlackRook) {
                     pos.m_castlingRooks.black().queenside = blackSquare;
                 } else {
@@ -1436,7 +1408,7 @@ namespace stormphrax {
                 firstBlackRook = false;
             }
 
-            if (whiteBackrank[i] == PieceType::kRook) {
+            if (whiteBackrank[file] == PieceTypes::kRook) {
                 if (firstWhiteRook) {
                     pos.m_castlingRooks.white().queenside = whiteSquare;
                 } else {
@@ -1447,27 +1419,12 @@ namespace stormphrax {
             }
         }
 
-        pos.m_stm = Color::kWhite;
+        pos.m_stm = Colors::kWhite;
         pos.m_fullmove = 1;
 
         pos.regen();
 
         return pos;
-    }
-
-    Square squareFromString(std::string_view str) {
-        if (str.length() != 2) {
-            return Square::kNone;
-        }
-
-        const auto file = str[0];
-        const auto rank = str[1];
-
-        if (file < 'a' || file > 'h' || rank < '1' || rank > '8') {
-            return Square::kNone;
-        }
-
-        return toSquare(static_cast<u32>(rank - '1'), static_cast<u32>(file - 'a'));
     }
 } // namespace stormphrax
 
@@ -1479,11 +1436,11 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Position>::format(
 
     const auto& boards = value.boards();
 
-    for (i32 rank = 7; rank >= 0; --rank) {
+    for (i32 rank = kRank8; rank >= kRank1; --rank) {
         format_to(ctx.out(), " +---+---+---+---+---+---+---+---+\n");
 
-        for (i32 file = 0; file < 8; ++file) {
-            const auto piece = boards.pieceAt(rank, file);
+        for (i32 file = kFileA; file <= kFileH; ++file) {
+            const auto piece = boards.pieceOn(rank, file);
             format_to(ctx.out(), " | {}", piece);
         }
 
@@ -1495,7 +1452,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Position>::format(
 
     format_to(ctx.out(), "\n");
 
-    format_to(ctx.out(), "{} to move", value.stm() == Color::kBlack ? "Black" : "White");
+    format_to(ctx.out(), "{} to move", value.stm() == Colors::kBlack ? "Black" : "White");
 
     return ctx.out();
 }

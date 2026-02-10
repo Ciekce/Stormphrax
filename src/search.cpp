@@ -157,8 +157,8 @@ namespace stormphrax::search {
 
         const auto contempt = g_opts.contempt;
 
-        m_contempt[static_cast<i32>(pos.stm())] = contempt;
-        m_contempt[static_cast<i32>(pos.nstm())] = -contempt;
+        m_contempt[pos.stm().idx()] = contempt;
+        m_contempt[pos.nstm().idx()] = -contempt;
 
         m_setupInfo.rootPos = pos;
 
@@ -202,7 +202,7 @@ namespace stormphrax::search {
 
         m_ttable.age();
 
-        const auto whitePovScore = thread.rootPos.stm() == Color::kBlack ? -score : score;
+        const auto whitePovScore = thread.rootPos.stm() == Colors::kBlack ? -score : score;
         return {whitePovScore, wdl::normalizeScore(whitePovScore, thread.rootPos.classicalMaterial())};
     }
 

@@ -71,7 +71,7 @@ namespace stormphrax::eval {
             eval = eval * (materialScalingBase() + npMaterial) / 32768;
         }
 
-        eval += contempt[static_cast<i32>(pos.stm())];
+        eval += contempt[pos.stm().idx()];
 
         return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }

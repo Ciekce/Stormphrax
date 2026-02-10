@@ -24,7 +24,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(
 ) const {
     using namespace stormphrax;
 
-    static constexpr auto kPieceChars = std::array{
+    static constexpr std::array kPieceChars = {
         'p', // black pawn
         'P', // white pawn
         'n', // black knight
@@ -40,11 +40,11 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Piece>::format(
         ' ', // none
     };
 
-    if (static_cast<usize>(value) >= kPieceChars.size()) {
+    if (value.idx() >= kPieceChars.size()) {
         return format_to(ctx.out(), "?");
     }
 
-    return format_to(ctx.out(), "{}", kPieceChars[static_cast<usize>(value)]);
+    return format_to(ctx.out(), "{}", kPieceChars[value.idx()]);
 }
 
 fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
@@ -53,7 +53,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
 ) const {
     using namespace stormphrax;
 
-    static constexpr auto kPieceTypeChars = std::array{
+    static constexpr std::array kPieceTypeChars = {
         'p', // pawn
         'n', // knight
         'b', // bishop
@@ -63,11 +63,11 @@ fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
         ' ', // none
     };
 
-    if (static_cast<usize>(value) >= kPieceTypeChars.size()) {
+    if (value.idx() >= kPieceTypeChars.size()) {
         return format_to(ctx.out(), "?");
     }
 
-    return format_to(ctx.out(), "{}", kPieceTypeChars[static_cast<usize>(value)]);
+    return format_to(ctx.out(), "{}", kPieceTypeChars[value.idx()]);
 }
 
 fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(
@@ -77,15 +77,15 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(
     using namespace stormphrax;
 
     return write_padded(ctx, [=, this](auto out) {
-        if (value == Square::kNone) {
+        if (value == Squares::kNone) {
             return format_to(out, "??");
         }
 
         return format_to(
             out,
             "{}{}",
-            nested(static_cast<char>('a' + squareFile(value))),
-            nested(static_cast<char>('1' + squareRank(value)))
+            nested(static_cast<char>('a' + value.file())),
+            nested(static_cast<char>('1' + value.rank()))
         );
     });
 }

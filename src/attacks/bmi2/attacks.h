@@ -33,9 +33,7 @@ namespace stormphrax::attacks {
     extern const std::array<Bitboard, bmi2::kBishopData.tableSize> g_bishopAttacks;
 
     inline Bitboard getRookAttacks(Square src, Bitboard occupancy) {
-        const auto s = static_cast<i32>(src);
-
-        const auto& data = bmi2::kRookData.data[s];
+        const auto& data = bmi2::kRookData.data[src.idx()];
 
         const auto idx = util::pext(occupancy, data.srcMask);
         const auto attacks = util::pdep(g_rookAttacks[data.offset + idx], data.dstMask);
@@ -44,9 +42,7 @@ namespace stormphrax::attacks {
     }
 
     inline Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
-        const auto s = static_cast<i32>(src);
-
-        const auto& data = bmi2::kBishopData.data[s];
+        const auto& data = bmi2::kBishopData.data[src.idx()];
         const auto idx = util::pext(occupancy, data.mask);
 
         return g_bishopAttacks[data.offset + idx];

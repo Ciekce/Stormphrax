@@ -427,7 +427,7 @@ namespace stormphrax {
                         limiter->addLimiter<limit::MoveTimeLimiter>(time);
                     }
                 } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
-                           && args[i - 1] == (m_pos.stm() == Color::kBlack ? "btime" : "wtime"))
+                           && args[i - 1] == (m_pos.stm() == Colors::kBlack ? "btime" : "wtime"))
                 {
                     tournamentTime = true;
 
@@ -439,7 +439,7 @@ namespace stormphrax {
                         timeRemaining = static_cast<i64>(time);
                     }
                 } else if ((args[i] == "binc" || args[i] == "winc") && ++i < args.size()
-                           && args[i - 1] == (m_pos.stm() == Color::kBlack ? "binc" : "winc"))
+                           && args[i - 1] == (m_pos.stm() == Colors::kBlack ? "binc" : "winc"))
                 {
                     tournamentTime = true;
 
@@ -467,7 +467,7 @@ namespace stormphrax {
                         if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
                             && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8' && candidate[2] >= 'a'
                             && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
-                            && (candidate.length() < 5 || isValidPromotion(pieceTypeFromChar(candidate[4]))))
+                            && (candidate.length() < 5 || PieceType::fromChar(candidate[4]).isValidPromotion()))
                         {
                             const auto move = m_pos.moveFromUci(candidate);
 
@@ -769,10 +769,10 @@ namespace stormphrax {
             const auto staticEval = eval::adjustEval<false>(m_pos, {}, 0, nullptr, eval::staticEvalOnce(m_pos));
 
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
-            const auto whiteNormalized = m_pos.stm() == Color::kBlack ? -normalized : normalized;
+            const auto whiteNormalized = m_pos.stm() == Colors::kBlack ? -normalized : normalized;
 
             const auto unsharpened = wdl::normalizeScore<false>(staticEval, m_pos.classicalMaterial());
-            const auto whiteUnsharpened = m_pos.stm() == Color::kBlack ? -unsharpened : unsharpened;
+            const auto whiteUnsharpened = m_pos.stm() == Colors::kBlack ? -unsharpened : unsharpened;
 
             println("Static eval: {:+}", static_cast<f64>(whiteNormalized) / 100.0);
             println("Unsharpened eval: {:+}", static_cast<f64>(whiteUnsharpened) / 100.0);

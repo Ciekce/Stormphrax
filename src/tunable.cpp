@@ -58,7 +58,7 @@ namespace stormphrax::tunable {
         // king and none
         g_seeValues.fill(0);
 
-        const auto scores = std::array{
+        const std::array scores = {
             seeValuePawn(),
             seeValueKnight(),
             seeValueBishop(),

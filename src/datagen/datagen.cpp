@@ -102,11 +102,11 @@ namespace stormphrax::datagen {
                 case tb::ProbeResult::kFailed:
                     return {};
                 case tb::ProbeResult::kWin:
-                    return pos.stm() == Color::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
+                    return pos.stm() == Colors::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
                 case tb::ProbeResult::kDraw:
                     return Outcome::kDraw;
                 case tb::ProbeResult::kLoss:
-                    return pos.stm() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
+                    return pos.stm() == Colors::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
             }
         }
 
@@ -245,7 +245,7 @@ namespace stormphrax::datagen {
 
                     if (!move) {
                         if (pos.isCheck()) {
-                            outcome = pos.stm() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
+                            outcome = pos.stm() == Colors::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                         } else {
                             outcome = Outcome::kDraw; // stalemate
                         }
@@ -253,7 +253,7 @@ namespace stormphrax::datagen {
                         break;
                     }
 
-                    assert(pos.boards().pieceOn(move.fromSq()) != Piece::kNone);
+                    assert(pos.boards().pieceOn(move.fromSq()) != Pieces::kNone);
 
                     if (std::abs(score) > kScoreWin) {
                         outcome = score > 0 ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
@@ -301,7 +301,7 @@ namespace stormphrax::datagen {
                     }
 
                     if (const auto tbOutcome = probeTb(pos)) {
-                        static constexpr auto kScores = std::array{
+                        static constexpr std::array kScores = {
                             -kScoreTbWin,
                             0,
                             kScoreTbWin,

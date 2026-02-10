@@ -27,7 +27,7 @@
 
 namespace stormphrax::keys {
     namespace sizes {
-        constexpr usize kPieceSquares = 12 * 64;
+        constexpr usize kPieceSquares = Pieces::kCount * Squares::kCount;
         constexpr usize kColor = 1;
         constexpr usize kCastling = 16;
         constexpr usize kEnPassant = 8;
@@ -56,12 +56,12 @@ namespace stormphrax::keys {
         return keys;
     }();
 
-    inline u64 pieceSquare(Piece piece, Square square) {
-        if (piece == Piece::kNone || square == Square::kNone) {
+    inline u64 pieceSquare(Piece piece, Square sq) {
+        if (piece == Pieces::kNone || sq == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kPieceSquares + static_cast<usize>(square) * 12 + static_cast<usize>(piece)];
+        return kKeys[offsets::kPieceSquares + sq.idx() * Pieces::kCount + piece.idx()];
     }
 
     // for flipping
@@ -70,7 +70,7 @@ namespace stormphrax::keys {
     }
 
     inline u64 color(Color c) {
-        return c == Color::kWhite ? 0 : color();
+        return c == Colors::kWhite ? 0 : color();
     }
 
     inline u64 castling(const CastlingRooks& castlingRooks) {
@@ -81,16 +81,16 @@ namespace stormphrax::keys {
 
         usize flags{};
 
-        if (castlingRooks.black().kingside != Square::kNone) {
+        if (castlingRooks.black().kingside != Squares::kNone) {
             flags |= BlackShort;
         }
-        if (castlingRooks.black().queenside != Square::kNone) {
+        if (castlingRooks.black().queenside != Squares::kNone) {
             flags |= BlackLong;
         }
-        if (castlingRooks.white().kingside != Square::kNone) {
+        if (castlingRooks.white().kingside != Squares::kNone) {
             flags |= WhiteShort;
         }
-        if (castlingRooks.white().queenside != Square::kNone) {
+        if (castlingRooks.white().queenside != Squares::kNone) {
             flags |= WhiteLong;
         }
 
@@ -101,11 +101,11 @@ namespace stormphrax::keys {
         return kKeys[offsets::kEnPassant + file];
     }
 
-    inline u64 enPassant(Square square) {
-        if (square == Square::kNone) {
+    inline u64 enPassant(Square sq) {
+        if (sq == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kEnPassant + squareFile(square)];
+        return kKeys[offsets::kEnPassant + sq.file()];
     }
 } // namespace stormphrax::keys

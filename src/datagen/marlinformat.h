@@ -52,31 +52,31 @@ namespace stormphrax::datagen {
 
                 usize i = 0;
                 while (occupancy) {
-                    const auto square = occupancy.popLowestSquare();
-                    const auto piece = boards.pieceOn(square);
+                    const auto sq = occupancy.popLowestSquare();
+                    const auto piece = boards.pieceOn(sq);
 
-                    auto pieceId = static_cast<u8>(pieceType(piece));
+                    auto ptId = piece.type().raw();
 
-                    if (pieceType(piece) == PieceType::kRook
-                        && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
-                            || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
+                    if (piece.type() == PieceTypes::kRook
+                        && (sq == castlingRooks.black().kingside || sq == castlingRooks.black().queenside
+                            || sq == castlingRooks.white().kingside || sq == castlingRooks.white().queenside))
                     {
-                        pieceId = kUnmovedRook;
+                        ptId = kUnmovedRook;
                     }
 
-                    const u8 colorId = pieceColor(piece) == Color::kBlack ? (1 << 3) : 0;
+                    const u8 colorId = piece.color() == Colors::kBlack ? (1 << 3) : 0;
 
-                    board.pieces[i++] = pieceId | colorId;
+                    board.pieces[i++] = ptId | colorId;
                 }
 
-                const u8 stm = pos.stm() == Color::kBlack ? (1 << 7) : 0;
+                const u8 stm = pos.stm() == Colors::kBlack ? (1 << 7) : 0;
 
                 const Square relativeEpSquare =
-                    pos.enPassant() == Square::kNone
-                        ? Square::kNone
-                        : toSquare(pos.stm() == Color::kBlack ? 2 : 5, squareFile(pos.enPassant()));
+                    pos.enPassant() == Squares::kNone
+                        ? Squares::kNone
+                        : pos.enPassant().withRank(pos.stm() == Colors::kBlack ? kRank3 : kRank6);
 
-                board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
+                board.stmEpSquare = stm | relativeEpSquare.raw();
                 board.halfmoveClock = pos.halfmove();
                 board.fullmoveNumber = pos.fullmove();
                 board.eval = score;

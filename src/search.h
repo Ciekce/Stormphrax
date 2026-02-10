@@ -141,8 +141,8 @@ namespace stormphrax::search {
             assert(ply <= kMaxDepth);
 
             stack[ply].move = kNullMove;
-            conthist[ply] = &history.contTable(Piece::kWhitePawn, Square::kA1);
-            contMoves[ply] = {Piece::kNone, Square::kNone};
+            conthist[ply] = &history.contTable(Pieces::kWhitePawn, Squares::kA1);
+            contMoves[ply] = {Pieces::kNone, Squares::kNone};
 
             keyHistory.push_back(pos.key());
 

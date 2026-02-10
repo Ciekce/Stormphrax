@@ -40,9 +40,7 @@ namespace stormphrax::util::simd {
     constexpr bool kPackNonSequential = false;
 
     constexpr usize kPackGrouping = 1;
-    constexpr auto kPackOrdering = std::array{
-        0,
-    };
+    constexpr std::array kPackOrdering = {0};
 
     namespace impl {
         // ================================ u8 ================================

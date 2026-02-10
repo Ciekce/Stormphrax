@@ -40,13 +40,9 @@ namespace stormphrax::datagen {
         Outcome outcome,
         std::ostream& stream
     ) {
-        {
-            T::kExtension
-        } -> std::convertible_to<std::string_view>;
+        { T::kExtension } -> std::convertible_to<std::string_view>;
         t.start(initialPosition);
         t.push(filtered, move, score);
-        {
-            t.writeAllWithOutcome(stream, outcome)
-        } -> std::same_as<usize>;
+        { t.writeAllWithOutcome(stream, outcome) } -> std::same_as<usize>;
     };
 } // namespace stormphrax::datagen

@@ -56,20 +56,20 @@ namespace stormphrax {
             all ^= keys::color();
         }
 
-        inline void flipPiece(Piece piece, Square square) {
-            const auto key = keys::pieceSquare(piece, square);
+        inline void flipPiece(Piece piece, Square sq) {
+            const auto key = keys::pieceSquare(piece, sq);
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::kPawn) {
+            if (piece.type() == PieceTypes::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::kBlack) {
+            } else if (piece.color() == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
             }
 
-            if (isMajor(piece)) {
+            if (piece.type().isMajor()) {
                 majors ^= key;
             }
         }
@@ -79,15 +79,15 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::kPawn) {
+            if (piece.type() == PieceTypes::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::kBlack) {
+            } else if (piece.color() == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
             }
 
-            if (isMajor(piece)) {
+            if (piece.type().isMajor()) {
                 majors ^= key;
             }
         }
@@ -152,7 +152,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Color nstm() const {
-            return oppColor(m_stm);
+            return m_stm.flip();
         }
 
         [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
@@ -195,7 +195,7 @@ namespace stormphrax {
             assert(move);
 
             const auto moving = m_boards.pieceOn(move.fromSq());
-            assert(moving != Piece::kNone);
+            assert(moving != Pieces::kNone);
 
             const auto captured = m_boards.pieceOn(move.toSq());
 
@@ -204,7 +204,7 @@ namespace stormphrax {
             key ^= keys::pieceSquare(moving, move.fromSq());
             key ^= keys::pieceSquare(moving, move.toSq());
 
-            if (captured != Piece::kNone) {
+            if (captured != Pieces::kNone) {
                 key ^= keys::pieceSquare(captured, move.toSq());
             }
 
@@ -213,8 +213,8 @@ namespace stormphrax {
             return key;
         }
 
-        [[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const {
-            assert(square != Square::kNone);
+        [[nodiscard]] inline Bitboard allAttackersTo(Square sq, Bitboard occupancy) const {
+            assert(sq != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -223,25 +223,25 @@ namespace stormphrax {
             const auto queens = bbs.queens();
 
             const auto rooks = queens | bbs.rooks();
-            attackers |= rooks & attacks::getRookAttacks(square, occupancy);
+            attackers |= rooks & attacks::getRookAttacks(sq, occupancy);
 
             const auto bishops = queens | bbs.bishops();
-            attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
+            attackers |= bishops & attacks::getBishopAttacks(sq, occupancy);
 
-            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::kWhite);
-            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::kBlack);
+            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(sq, Colors::kWhite);
+            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(sq, Colors::kBlack);
 
             const auto knights = bbs.knights();
-            attackers |= knights & attacks::getKnightAttacks(square);
+            attackers |= knights & attacks::getKnightAttacks(sq);
 
             const auto kings = bbs.kings();
-            attackers |= kings & attacks::getKingAttacks(square);
+            attackers |= kings & attacks::getKingAttacks(sq);
 
             return attackers;
         }
 
-        [[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const {
-            assert(square != Square::kNone);
+        [[nodiscard]] inline Bitboard attackersTo(Square sq, Color attacker) const {
+            assert(sq != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -252,32 +252,32 @@ namespace stormphrax {
             const auto queens = bbs.queens(attacker);
 
             const auto rooks = queens | bbs.rooks(attacker);
-            attackers |= rooks & attacks::getRookAttacks(square, occ);
+            attackers |= rooks & attacks::getRookAttacks(sq, occ);
 
             const auto bishops = queens | bbs.bishops(attacker);
-            attackers |= bishops & attacks::getBishopAttacks(square, occ);
+            attackers |= bishops & attacks::getBishopAttacks(sq, occ);
 
             const auto pawns = bbs.pawns(attacker);
-            attackers |= pawns & attacks::getPawnAttacks(square, oppColor(attacker));
+            attackers |= pawns & attacks::getPawnAttacks(sq, attacker.flip());
 
             const auto knights = bbs.knights(attacker);
-            attackers |= knights & attacks::getKnightAttacks(square);
+            attackers |= knights & attacks::getKnightAttacks(sq);
 
             const auto kings = bbs.kings(attacker);
-            attackers |= kings & attacks::getKingAttacks(square);
+            attackers |= kings & attacks::getKingAttacks(sq);
 
             return attackers;
         }
 
         template <bool kThreatShortcut = true>
-        [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
-            assert(toMove != Color::kNone);
-            assert(square != Square::kNone);
-            assert(attacker != Color::kNone);
+        [[nodiscard]] inline bool isAttacked(Color toMove, Square sq, Color attacker) const {
+            assert(toMove != Colors::kNone);
+            assert(sq != Squares::kNone);
+            assert(attacker != Colors::kNone);
 
             if constexpr (kThreatShortcut) {
                 if (attacker != toMove) {
-                    return m_threats[square];
+                    return m_threats[sq];
                 }
             }
 
@@ -285,31 +285,28 @@ namespace stormphrax {
 
             const auto occ = bbs.occupancy();
 
-            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(square)).empty()) {
+            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(sq)).empty()) {
                 return true;
             }
 
-            if (const auto pawns = bbs.pawns(attacker);
-                !(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
+            if (const auto pawns = bbs.pawns(attacker); !(pawns & attacks::getPawnAttacks(sq, attacker.flip())).empty())
             {
                 return true;
             }
 
-            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(square)).empty()) {
+            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(sq)).empty()) {
                 return true;
             }
 
             const auto queens = bbs.queens(attacker);
 
             if (const auto bishops = queens | bbs.bishops(attacker);
-                !(bishops & attacks::getBishopAttacks(square, occ)).empty())
+                !(bishops & attacks::getBishopAttacks(sq, occ)).empty())
             {
                 return true;
             }
 
-            if (const auto rooks = queens | bbs.rooks(attacker);
-                !(rooks & attacks::getRookAttacks(square, occ)).empty())
-            {
+            if (const auto rooks = queens | bbs.rooks(attacker); !(rooks & attacks::getRookAttacks(sq, occ)).empty()) {
                 return true;
             }
 
@@ -317,23 +314,23 @@ namespace stormphrax {
         }
 
         template <bool kThreatShortcut = true>
-        [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
-            assert(square != Square::kNone);
-            assert(attacker != Color::kNone);
+        [[nodiscard]] inline bool isAttacked(Square sq, Color attacker) const {
+            assert(sq != Squares::kNone);
+            assert(attacker != Colors::kNone);
 
-            return isAttacked<kThreatShortcut>(stm(), square, attacker);
+            return isAttacked<kThreatShortcut>(stm(), sq, attacker);
         }
 
         [[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const {
-            assert(attacker != Color::kNone);
+            assert(attacker != Colors::kNone);
 
             if (attacker == nstm()) {
                 return !(squares & m_threats).empty();
             }
 
             while (squares) {
-                const auto square = squares.popLowestSquare();
-                if (isAttacked(square, attacker)) {
+                const auto sq = squares.popLowestSquare();
+                if (isAttacked(sq, attacker)) {
                     return true;
                 }
             }
@@ -353,24 +350,14 @@ namespace stormphrax {
             return m_kings.white();
         }
 
-        template <Color C>
-        [[nodiscard]] inline Square king() const {
-            return m_kings.color(C);
-        }
-
         [[nodiscard]] inline Square king(Color c) const {
-            assert(c != Color::kNone);
+            assert(c != Colors::kNone);
             return m_kings.color(c);
         }
 
-        template <Color C>
-        [[nodiscard]] inline Square oppKing() const {
-            return m_kings.color(oppColor(C));
-        }
-
         [[nodiscard]] inline Square oppKing(Color c) const {
-            assert(c != Color::kNone);
-            return m_kings.color(oppColor(c));
+            assert(c != Colors::kNone);
+            return m_kings.color(c.flip());
         }
 
         [[nodiscard]] inline bool isCheck() const {
@@ -380,8 +367,9 @@ namespace stormphrax {
         [[nodiscard]] inline Bitboard checkers() const {
             return m_checkers;
         }
+
         [[nodiscard]] inline Bitboard pinned(Color c) const {
-            return m_pinned[static_cast<i32>(c)];
+            return m_pinned[c.idx()];
         }
 
         [[nodiscard]] inline std::array<Bitboard, 2> pinned() const {
@@ -401,9 +389,9 @@ namespace stormphrax {
             const auto type = move.type();
 
             if (type == MoveType::kCastling) {
-                return Piece::kNone;
+                return Pieces::kNone;
             } else if (type == MoveType::kEnPassant) {
-                return flipPieceColor(boards().pieceOn(move.fromSq()));
+                return boards().pieceOn(move.fromSq()).flipColor();
             } else {
                 return boards().pieceOn(move.toSq());
             }
@@ -415,23 +403,8 @@ namespace stormphrax {
             const auto type = move.type();
 
             return type != MoveType::kCastling
-                && (type == MoveType::kEnPassant || move.promo() == PieceType::kQueen
-                    || boards().pieceOn(move.toSq()) != Piece::kNone);
-        }
-
-        [[nodiscard]] inline std::pair<bool, Piece> noisyCapturedPiece(Move move) const {
-            assert(move != kNullMove);
-
-            const auto type = move.type();
-
-            if (type == MoveType::kCastling) {
-                return {false, Piece::kNone};
-            } else if (type == MoveType::kEnPassant) {
-                return {true, colorPiece(PieceType::kPawn, stm())};
-            } else {
-                const auto captured = boards().pieceOn(move.toSq());
-                return {captured != Piece::kNone || move.promo() == PieceType::kQueen, captured};
-            }
+                && (type == MoveType::kEnPassant || move.promo() == PieceTypes::kQueen
+                    || boards().pieceOn(move.toSq()) != Pieces::kNone);
         }
 
         [[nodiscard]] std::string toFen() const;
@@ -443,7 +416,7 @@ namespace stormphrax {
         [[nodiscard]] Move moveFromUci(std::string_view move) const;
 
         [[nodiscard]] inline u32 plyFromStartpos() const {
-            return m_fullmove * 2 - (m_stm == Color::kBlack ? 0 : 1) - 1;
+            return m_fullmove * 2 - (m_stm == Colors::kBlack ? 0 : 1) - 1;
         }
 
         [[nodiscard]] inline i32 classicalMaterial() const {
@@ -463,9 +436,9 @@ namespace stormphrax {
 
     private:
         template <bool kUpdateKeys = true>
-        void setPiece(Piece piece, Square square);
+        void setPiece(Piece piece, Square sq);
         template <bool kUpdateKeys = true>
-        void removePiece(Piece piece, Square square);
+        void removePiece(Piece piece, Square sq);
         template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 
@@ -481,14 +454,14 @@ namespace stormphrax {
 
         [[nodiscard]] inline Bitboard calcCheckers() const {
             const auto color = stm();
-            return attackersTo(m_kings.color(color), oppColor(color));
+            return attackersTo(m_kings.color(color), color.flip());
         }
 
         [[nodiscard]] inline Bitboard calcPinned(Color c) const {
             Bitboard pinned{};
 
             const auto king = m_kings.color(c);
-            const auto opponent = oppColor(c);
+            const auto opponent = c.flip();
 
             const auto& bbs = m_boards.bbs();
 
@@ -513,12 +486,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline std::array<Bitboard, 2> calcPinned() const {
-            return {calcPinned(Color::kBlack), calcPinned(Color::kWhite)};
+            return {calcPinned(Colors::kBlack), calcPinned(Colors::kWhite)};
         }
 
         [[nodiscard]] inline Bitboard calcThreats() const {
             const auto us = stm();
-            const auto them = oppColor(us);
+            const auto them = us.flip();
 
             const auto& bbs = m_boards.bbs();
 
@@ -547,7 +520,7 @@ namespace stormphrax {
             }
 
             const auto pawns = bbs.pawns(them);
-            if (them == Color::kBlack) {
+            if (them == Colors::kBlack) {
                 threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
             } else {
                 threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
@@ -574,7 +547,7 @@ namespace stormphrax {
         u16 m_halfmove{};
         u32 m_fullmove{1};
 
-        Square m_enPassant{Square::kNone};
+        Square m_enPassant{Squares::kNone};
 
         KingPair m_kings{};
 
@@ -582,8 +555,6 @@ namespace stormphrax {
     };
 
     static_assert(sizeof(Position) == 216);
-
-    [[nodiscard]] Square squareFromString(std::string_view str);
 } // namespace stormphrax
 
 template <>

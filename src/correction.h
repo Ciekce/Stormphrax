@@ -51,7 +51,7 @@ namespace stormphrax {
         ) {
             const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
-            const auto stm = static_cast<i32>(pos.stm());
+            const auto stm = pos.stm().idx();
 
             const auto updateCont = [&](i32 i) {
                 if (ply <= i) {
@@ -61,13 +61,11 @@ namespace stormphrax {
                 const auto [moving1, dst1] = moves[ply - 1];
                 const auto [moving2, dst2] = moves[ply - 1 - i];
 
-                if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
+                if (moving1 == Pieces::kNone || moving2 == Pieces::kNone) {
                     return;
                 }
 
-                m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
-                           [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)]
-                               .update(bonus);
+                m_contTable[stm][moving2.idx()][dst2.idx()][moving1.type().idx()][dst1.idx()].update(bonus);
             };
 
             m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
@@ -88,7 +86,7 @@ namespace stormphrax {
         ) const {
             using namespace tunable;
 
-            const auto stm = static_cast<i32>(pos.stm());
+            const auto stm = pos.stm().idx();
 
             const auto contAdjustment = [&](i32 i, i32 weight) {
                 if (ply <= i) {
@@ -98,18 +96,16 @@ namespace stormphrax {
                 const auto [moving1, dst1] = moves[ply - 1];
                 const auto [moving2, dst2] = moves[ply - 1 - i];
 
-                if (moving1 == Piece::kNone || moving2 == Piece::kNone) {
+                if (moving1 == Pieces::kNone || moving2 == Pieces::kNone) {
                     return 0;
                 }
 
-                return weight
-                     * m_contTable[stm][static_cast<i32>(moving2)][static_cast<i32>(dst2)]
-                                  [static_cast<i32>(pieceType(moving1))][static_cast<i32>(dst1)];
+                return weight * m_contTable[stm][moving2.idx()][dst2.idx()][moving1.type().idx()][dst1.idx()];
             };
 
             const auto [blackNpWeight, whiteNpWeight] =
-                pos.stm() == Color::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                           : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
+                pos.stm() == Colors::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
+                                            : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
 
             i32 correction{};
 
@@ -145,10 +141,11 @@ namespace stormphrax {
             }
         };
 
-        util::MultiArray<Entry, 2, kEntries> m_pawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_blackNonPawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_whiteNonPawnTable{};
-        util::MultiArray<Entry, 2, kEntries> m_majorTable{};
-        util::MultiArray<Entry, 2, 12, 64, 6, 64> m_contTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_pawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_blackNonPawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_whiteNonPawnTable{};
+        util::MultiArray<Entry, Colors::kCount, kEntries> m_majorTable{};
+        util::MultiArray<Entry, Colors::kCount, Pieces::kCount, Squares::kCount, PieceTypes::kCount, Squares::kCount>
+            m_contTable{};
     };
 } // namespace stormphrax

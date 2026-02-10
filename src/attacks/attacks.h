@@ -36,10 +36,10 @@
 
 namespace stormphrax::attacks {
     constexpr auto kKnightAttacks = [] {
-        std::array<Bitboard, 64> dst{};
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
-            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+            const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
             auto& attacks = dst[i];
 
@@ -57,10 +57,10 @@ namespace stormphrax::attacks {
     }();
 
     constexpr auto kKingAttacks = [] {
-        std::array<Bitboard, 64> dst{};
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
-            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+            const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
             auto& attacks = dst[i];
 
@@ -77,54 +77,53 @@ namespace stormphrax::attacks {
         return dst;
     }();
 
-    template <Color Us>
-    consteval std::array<Bitboard, 64> generatePawnAttacks() {
-        std::array<Bitboard, 64> dst{};
+    consteval std::array<Bitboard, Squares::kCount> generatePawnAttacks(Color us) {
+        std::array<Bitboard, Squares::kCount> dst{};
 
         for (usize i = 0; i < dst.size(); ++i) {
-            const auto bit = Bitboard::fromSquare(static_cast<Square>(i));
+            const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
 
-            dst[i] |= bit.shiftUpLeftRelative<Us>();
-            dst[i] |= bit.shiftUpRightRelative<Us>();
+            dst[i] |= bit.shiftUpLeftRelative(us);
+            dst[i] |= bit.shiftUpRightRelative(us);
         }
 
         return dst;
     }
 
-    constexpr auto kBlackPawnAttacks = generatePawnAttacks<Color::kBlack>();
-    constexpr auto kWhitePawnAttacks = generatePawnAttacks<Color::kWhite>();
+    constexpr auto kBlackPawnAttacks = generatePawnAttacks(Colors::kBlack);
+    constexpr auto kWhitePawnAttacks = generatePawnAttacks(Colors::kWhite);
 
     constexpr Bitboard getKnightAttacks(Square src) {
-        return kKnightAttacks[static_cast<usize>(src)];
+        return kKnightAttacks[src.idx()];
     }
 
     constexpr Bitboard getKingAttacks(Square src) {
-        return kKingAttacks[static_cast<usize>(src)];
+        return kKingAttacks[src.idx()];
     }
 
     constexpr Bitboard getPawnAttacks(Square src, Color color) {
-        const auto& attacks = color == Color::kWhite ? kWhitePawnAttacks : kBlackPawnAttacks;
-        return attacks[static_cast<usize>(src)];
+        const auto& attacks = color == Colors::kWhite ? kWhitePawnAttacks : kBlackPawnAttacks;
+        return attacks[src.idx()];
     }
 
     inline Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
         return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
     }
 
-    inline Bitboard getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
-        assert(piece != PieceType::kNone);
-        assert(piece != PieceType::kPawn);
+    inline Bitboard getNonPawnPieceAttacks(PieceType pt, Square src, Bitboard occupancy = Bitboard{}) {
+        assert(pt != PieceTypes::kNone);
+        assert(pt != PieceTypes::kPawn);
 
-        switch (piece) {
-            case PieceType::kKnight:
+        switch (pt.raw()) {
+            case PieceTypes::kKnight.raw():
                 return getKnightAttacks(src);
-            case PieceType::kBishop:
+            case PieceTypes::kBishop.raw():
                 return getBishopAttacks(src, occupancy);
-            case PieceType::kRook:
+            case PieceTypes::kRook.raw():
                 return getRookAttacks(src, occupancy);
-            case PieceType::kQueen:
+            case PieceTypes::kQueen.raw():
                 return getQueenAttacks(src, occupancy);
-            case PieceType::kKing:
+            case PieceTypes::kKing.raw():
                 return getKingAttacks(src);
             default:
                 __builtin_unreachable();
