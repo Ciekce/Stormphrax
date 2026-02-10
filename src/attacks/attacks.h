@@ -110,11 +110,11 @@ namespace stormphrax::attacks {
         return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
     }
 
-    inline Bitboard getNonPawnPieceAttacks(PieceType piece, Square src, Bitboard occupancy = Bitboard{}) {
-        assert(piece != PieceTypes::kNone);
-        assert(piece != PieceTypes::kPawn);
+    inline Bitboard getNonPawnPieceAttacks(PieceType pt, Square src, Bitboard occupancy = Bitboard{}) {
+        assert(pt != PieceTypes::kNone);
+        assert(pt != PieceTypes::kPawn);
 
-        switch (piece.raw()) {
+        switch (pt.raw()) {
             case PieceTypes::kKnight.raw():
                 return getKnightAttacks(src);
             case PieceTypes::kBishop.raw():

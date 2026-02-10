@@ -33,8 +33,8 @@ namespace stormphrax::see {
         return tunable::g_seeValues[piece.idx()];
     }
 
-    constexpr i32 value(PieceType piece) {
-        return tunable::g_seeValues[piece.idx() * 2];
+    constexpr i32 value(PieceType pt) {
+        return tunable::g_seeValues[pt.idx() * 2];
     }
 
     inline i32 gain(const PositionBoards& boards, Move move) {
@@ -62,12 +62,12 @@ namespace stormphrax::see {
         Color color
     ) {
         for (i32 i = 0; i < 6; ++i) {
-            const auto piece = PieceType::fromRaw(i);
-            auto board = attackers & bbs.forPiece(piece, color);
+            const auto pt = PieceType::fromRaw(i);
+            const auto board = attackers & bbs.forPiece(pt, color);
 
             if (!board.empty()) {
                 occ ^= board.lowestBit();
-                return piece;
+                return pt;
             }
         }
 
@@ -95,9 +95,9 @@ namespace stormphrax::see {
             return true;
         }
 
-        const auto square = move.toSq();
+        const auto sq = move.toSq();
 
-        auto occupancy = bbs.occupancy() ^ move.fromSq().bit() ^ square.bit();
+        auto occupancy = bbs.occupancy() ^ move.fromSq().bit() ^ sq.bit();
 
         const auto queens = bbs.queens();
 
@@ -107,12 +107,12 @@ namespace stormphrax::see {
         const auto blackPinned = pos.pinned(Colors::kBlack);
         const auto whitePinned = pos.pinned(Colors::kWhite);
 
-        const auto blackKingRay = rayIntersecting(pos.blackKing(), square);
-        const auto whiteKingRay = rayIntersecting(pos.whiteKing(), square);
+        const auto blackKingRay = rayIntersecting(pos.blackKing(), sq);
+        const auto whiteKingRay = rayIntersecting(pos.whiteKing(), sq);
 
         const auto allowed = ~(blackPinned | whitePinned) | (blackPinned & blackKingRay) | (whitePinned & whiteKingRay);
 
-        auto attackers = pos.allAttackersTo(square, occupancy) & allowed;
+        auto attackers = pos.allAttackersTo(sq, occupancy) & allowed;
 
         auto us = color.flip();
 
@@ -126,11 +126,11 @@ namespace stormphrax::see {
             next = popLeastValuable(bbs, occupancy, ourAttackers, us);
 
             if (next == PieceTypes::kPawn || next == PieceTypes::kBishop || next == PieceTypes::kQueen) {
-                attackers |= attacks::getBishopAttacks(square, occupancy) & bishops;
+                attackers |= attacks::getBishopAttacks(sq, occupancy) & bishops;
             }
 
             if (next == PieceTypes::kRook || next == PieceTypes::kQueen) {
-                attackers |= attacks::getRookAttacks(square, occupancy) & rooks;
+                attackers |= attacks::getRookAttacks(sq, occupancy) & rooks;
             }
 
             attackers &= occupancy;

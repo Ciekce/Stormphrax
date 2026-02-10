@@ -416,6 +416,12 @@ namespace stormphrax {
             return fromRaw(m_id ^ 0b111000);
         }
 
+        // for en passant
+        [[nodiscard]] constexpr Square flipRankParity() const {
+            assert(m_id != kNoneId);
+            return fromRaw(m_id ^ 0b001000);
+        }
+
         [[nodiscard]] constexpr Square relative(Color c) const {
             assert(m_id != kNoneId);
             if (c == Colors::kBlack) {
@@ -434,6 +440,18 @@ namespace stormphrax {
             assert(m_id + offset >= 0);
             assert(m_id + offset < kNoneId);
             return fromRaw(m_id + offset);
+        }
+
+        [[nodiscard]] constexpr Square withFile(i32 file) const {
+            assert(m_id != kNoneId);
+            assert(file >= 0 && file < 8);
+            return fromFileRank(file, rank());
+        }
+
+        [[nodiscard]] constexpr Square withRank(i32 rank) const {
+            assert(m_id != kNoneId);
+            assert(rank >= 0 && rank < 8);
+            return fromFileRank(file(), rank);
         }
 
         [[nodiscard]] static constexpr Square fromRaw(u8 id) {
@@ -617,12 +635,12 @@ namespace stormphrax {
                 queenside = Squares::kNone;
             }
 
-            inline void unset(Square square) {
-                assert(square != Squares::kNone);
+            inline void unset(Square sq) {
+                assert(sq != Squares::kNone);
 
-                if (square == kingside) {
+                if (sq == kingside) {
                     kingside = Squares::kNone;
-                } else if (square == queenside) {
+                } else if (sq == queenside) {
                     queenside = Squares::kNone;
                 }
             }

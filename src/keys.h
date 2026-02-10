@@ -56,12 +56,12 @@ namespace stormphrax::keys {
         return keys;
     }();
 
-    inline u64 pieceSquare(Piece piece, Square square) {
-        if (piece == Pieces::kNone || square == Squares::kNone) {
+    inline u64 pieceSquare(Piece piece, Square sq) {
+        if (piece == Pieces::kNone || sq == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kPieceSquares + square.idx() * 12 + piece.idx()];
+        return kKeys[offsets::kPieceSquares + sq.idx() * 12 + piece.idx()];
     }
 
     // for flipping
@@ -101,11 +101,11 @@ namespace stormphrax::keys {
         return kKeys[offsets::kEnPassant + file];
     }
 
-    inline u64 enPassant(Square square) {
-        if (square == Squares::kNone) {
+    inline u64 enPassant(Square sq) {
+        if (sq == Squares::kNone) {
             return 0;
         }
 
-        return kKeys[offsets::kEnPassant + square.file()];
+        return kKeys[offsets::kEnPassant + sq.file()];
     }
 } // namespace stormphrax::keys

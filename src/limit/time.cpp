@@ -60,7 +60,6 @@ namespace stormphrax::limit {
     }
 
     void TimeManager::update(const search::SearchData& data, const search::RootMove& pvMove, usize totalNodes) {
-        assert(bestMove != kNullMove);
         assert(totalNodes > 0);
 
         const auto bestMove = pvMove.pv.moves[0];

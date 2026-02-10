@@ -41,8 +41,8 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(
             format_to(ctx.out(), "{}", value.promo());
         }
     } else {
-        const auto dst = value.fromSqFile() < value.toSqFile() ? Square::fromFileRank(6, value.fromSqRank())
-                                                               : Square::fromFileRank(2, value.fromSqRank());
+        const auto dst =
+            value.fromSqFile() < value.toSqFile() ? value.fromSq().withFile(6) : value.fromSq().withFile(2);
         format_to(ctx.out(), "{}", dst);
     }
 

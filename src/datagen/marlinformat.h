@@ -52,21 +52,21 @@ namespace stormphrax::datagen {
 
                 usize i = 0;
                 while (occupancy) {
-                    const auto square = occupancy.popLowestSquare();
-                    const auto piece = boards.pieceOn(square);
+                    const auto sq = occupancy.popLowestSquare();
+                    const auto piece = boards.pieceOn(sq);
 
-                    auto pieceId = piece.type().raw();
+                    auto ptId = piece.type().raw();
 
                     if (piece.type() == PieceTypes::kRook
-                        && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
-                            || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
+                        && (sq == castlingRooks.black().kingside || sq == castlingRooks.black().queenside
+                            || sq == castlingRooks.white().kingside || sq == castlingRooks.white().queenside))
                     {
-                        pieceId = kUnmovedRook;
+                        ptId = kUnmovedRook;
                     }
 
                     const u8 colorId = piece.color() == Colors::kBlack ? (1 << 3) : 0;
 
-                    board.pieces[i++] = pieceId | colorId;
+                    board.pieces[i++] = ptId | colorId;
                 }
 
                 const u8 stm = pos.stm() == Colors::kBlack ? (1 << 7) : 0;
@@ -74,7 +74,7 @@ namespace stormphrax::datagen {
                 const Square relativeEpSquare =
                     pos.enPassant() == Squares::kNone
                         ? Squares::kNone
-                        : Square::fromFileRank(pos.enPassant().file(), pos.stm() == Colors::kBlack ? 2 : 5);
+                                                  : pos.enPassant().withRank(pos.stm() == Colors::kBlack ? 2 : 5);
 
                 board.stmEpSquare = stm | relativeEpSquare.raw();
                 board.halfmoveClock = pos.halfmove();

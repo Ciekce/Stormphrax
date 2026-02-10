@@ -88,12 +88,12 @@ namespace stormphrax::attacks::black_magic {
         Data dst{};
 
         for (u32 i = 0; i < 64; ++i) {
-            const auto square = Square::fromRaw(i);
+            const auto sq = Square::fromRaw(i);
 
             dst.data[i].mask = boards::kAll;
 
             for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+                const auto attacks = internal::generateSlidingAttacks(sq, dir, 0);
                 dst.data[i].mask &= ~(attacks & ~internal::edges(dir));
             }
 
@@ -108,12 +108,12 @@ namespace stormphrax::attacks::black_magic {
         Data dst{};
 
         for (u32 i = 0; i < 64; ++i) {
-            const auto square = Square::fromRaw(i);
+            const auto sq = Square::fromRaw(i);
 
             dst.data[i].mask = boards::kAll;
 
             for (const auto dir : {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight}) {
-                const auto attacks = internal::generateSlidingAttacks(square, dir, 0);
+                const auto attacks = internal::generateSlidingAttacks(sq, dir, 0);
                 dst.data[i].mask &= ~(attacks & ~internal::edges(dir));
             }
 

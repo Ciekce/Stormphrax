@@ -273,9 +273,9 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr Square popLowestSquare() {
-            const auto square = lowestSquare();
+            const auto sq = lowestSquare();
             m_board = util::resetLsb(m_board);
-            return square;
+            return sq;
         }
 
         [[nodiscard]] constexpr Bitboard popLowestBit() {
@@ -456,8 +456,8 @@ namespace stormphrax {
             return m_board == other;
         }
 
-        [[nodiscard]] constexpr static Bitboard fromSquare(Square square) {
-            return square.bit();
+        [[nodiscard]] constexpr static Bitboard fromSquare(Square sq) {
+            return sq.bit();
         }
 
     private:

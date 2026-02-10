@@ -56,8 +56,8 @@ namespace stormphrax {
             all ^= keys::color();
         }
 
-        inline void flipPiece(Piece piece, Square square) {
-            const auto key = keys::pieceSquare(piece, square);
+        inline void flipPiece(Piece piece, Square sq) {
+            const auto key = keys::pieceSquare(piece, sq);
 
             all ^= key;
 
@@ -213,8 +213,8 @@ namespace stormphrax {
             return key;
         }
 
-        [[nodiscard]] inline Bitboard allAttackersTo(Square square, Bitboard occupancy) const {
-            assert(square != Squares::kNone);
+        [[nodiscard]] inline Bitboard allAttackersTo(Square sq, Bitboard occupancy) const {
+            assert(sq != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -223,25 +223,25 @@ namespace stormphrax {
             const auto queens = bbs.queens();
 
             const auto rooks = queens | bbs.rooks();
-            attackers |= rooks & attacks::getRookAttacks(square, occupancy);
+            attackers |= rooks & attacks::getRookAttacks(sq, occupancy);
 
             const auto bishops = queens | bbs.bishops();
-            attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
+            attackers |= bishops & attacks::getBishopAttacks(sq, occupancy);
 
-            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Colors::kWhite);
-            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Colors::kBlack);
+            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(sq, Colors::kWhite);
+            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(sq, Colors::kBlack);
 
             const auto knights = bbs.knights();
-            attackers |= knights & attacks::getKnightAttacks(square);
+            attackers |= knights & attacks::getKnightAttacks(sq);
 
             const auto kings = bbs.kings();
-            attackers |= kings & attacks::getKingAttacks(square);
+            attackers |= kings & attacks::getKingAttacks(sq);
 
             return attackers;
         }
 
-        [[nodiscard]] inline Bitboard attackersTo(Square square, Color attacker) const {
-            assert(square != Squares::kNone);
+        [[nodiscard]] inline Bitboard attackersTo(Square sq, Color attacker) const {
+            assert(sq != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
@@ -252,32 +252,32 @@ namespace stormphrax {
             const auto queens = bbs.queens(attacker);
 
             const auto rooks = queens | bbs.rooks(attacker);
-            attackers |= rooks & attacks::getRookAttacks(square, occ);
+            attackers |= rooks & attacks::getRookAttacks(sq, occ);
 
             const auto bishops = queens | bbs.bishops(attacker);
-            attackers |= bishops & attacks::getBishopAttacks(square, occ);
+            attackers |= bishops & attacks::getBishopAttacks(sq, occ);
 
             const auto pawns = bbs.pawns(attacker);
-            attackers |= pawns & attacks::getPawnAttacks(square, attacker.flip());
+            attackers |= pawns & attacks::getPawnAttacks(sq, attacker.flip());
 
             const auto knights = bbs.knights(attacker);
-            attackers |= knights & attacks::getKnightAttacks(square);
+            attackers |= knights & attacks::getKnightAttacks(sq);
 
             const auto kings = bbs.kings(attacker);
-            attackers |= kings & attacks::getKingAttacks(square);
+            attackers |= kings & attacks::getKingAttacks(sq);
 
             return attackers;
         }
 
         template <bool kThreatShortcut = true>
-        [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
+        [[nodiscard]] inline bool isAttacked(Color toMove, Square sq, Color attacker) const {
             assert(toMove != Colors::kNone);
-            assert(square != Squares::kNone);
+            assert(sq != Squares::kNone);
             assert(attacker != Colors::kNone);
 
             if constexpr (kThreatShortcut) {
                 if (attacker != toMove) {
-                    return m_threats[square];
+                    return m_threats[sq];
                 }
             }
 
@@ -285,31 +285,28 @@ namespace stormphrax {
 
             const auto occ = bbs.occupancy();
 
-            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(square)).empty()) {
+            if (const auto knights = bbs.knights(attacker); !(knights & attacks::getKnightAttacks(sq)).empty()) {
                 return true;
             }
 
-            if (const auto pawns = bbs.pawns(attacker);
-                !(pawns & attacks::getPawnAttacks(square, attacker.flip())).empty())
+            if (const auto pawns = bbs.pawns(attacker); !(pawns & attacks::getPawnAttacks(sq, attacker.flip())).empty())
             {
                 return true;
             }
 
-            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(square)).empty()) {
+            if (const auto kings = bbs.kings(attacker); !(kings & attacks::getKingAttacks(sq)).empty()) {
                 return true;
             }
 
             const auto queens = bbs.queens(attacker);
 
             if (const auto bishops = queens | bbs.bishops(attacker);
-                !(bishops & attacks::getBishopAttacks(square, occ)).empty())
+                !(bishops & attacks::getBishopAttacks(sq, occ)).empty())
             {
                 return true;
             }
 
-            if (const auto rooks = queens | bbs.rooks(attacker);
-                !(rooks & attacks::getRookAttacks(square, occ)).empty())
-            {
+            if (const auto rooks = queens | bbs.rooks(attacker); !(rooks & attacks::getRookAttacks(sq, occ)).empty()) {
                 return true;
             }
 
@@ -317,11 +314,11 @@ namespace stormphrax {
         }
 
         template <bool kThreatShortcut = true>
-        [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
-            assert(square != Squares::kNone);
+        [[nodiscard]] inline bool isAttacked(Square sq, Color attacker) const {
+            assert(sq != Squares::kNone);
             assert(attacker != Colors::kNone);
 
-            return isAttacked<kThreatShortcut>(stm(), square, attacker);
+            return isAttacked<kThreatShortcut>(stm(), sq, attacker);
         }
 
         [[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const {
@@ -332,8 +329,8 @@ namespace stormphrax {
             }
 
             while (squares) {
-                const auto square = squares.popLowestSquare();
-                if (isAttacked(square, attacker)) {
+                const auto sq = squares.popLowestSquare();
+                if (isAttacked(sq, attacker)) {
                     return true;
                 }
             }
@@ -410,21 +407,6 @@ namespace stormphrax {
                     || boards().pieceOn(move.toSq()) != Pieces::kNone);
         }
 
-        [[nodiscard]] inline std::pair<bool, Piece> noisyCapturedPiece(Move move) const {
-            assert(move != kNullMove);
-
-            const auto type = move.type();
-
-            if (type == MoveType::kCastling) {
-                return {false, Pieces::kNone};
-            } else if (type == MoveType::kEnPassant) {
-                return {true, PieceTypes::kPawn.withColor(stm())};
-            } else {
-                const auto captured = boards().pieceOn(move.toSq());
-                return {captured != Pieces::kNone || move.promo() == PieceTypes::kQueen, captured};
-            }
-        }
-
         [[nodiscard]] std::string toFen() const;
 
         [[nodiscard]] inline bool operator==(const Position& other) const = default;
@@ -454,9 +436,9 @@ namespace stormphrax {
 
     private:
         template <bool kUpdateKeys = true>
-        void setPiece(Piece piece, Square square);
+        void setPiece(Piece piece, Square sq);
         template <bool kUpdateKeys = true>
-        void removePiece(Piece piece, Square square);
+        void removePiece(Piece piece, Square sq);
         template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 

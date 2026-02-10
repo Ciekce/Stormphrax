@@ -65,12 +65,12 @@ namespace stormphrax::eval {
             add.push({piece, dst});
         }
 
-        inline void pushSub(Piece piece, Square square) {
-            sub.push({piece, square});
+        inline void pushSub(Piece piece, Square sq) {
+            sub.push({piece, sq});
         }
 
-        inline void pushAdd(Piece piece, Square square) {
-            add.push({piece, square});
+        inline void pushAdd(Piece piece, Square sq) {
+            add.push({piece, sq});
         }
     };
 

@@ -232,31 +232,31 @@ namespace stormphrax {
             return m_bbs;
         }
 
-        [[nodiscard]] inline PieceType pieceTypeAt(Square square) const {
-            assert(square != Squares::kNone);
+        [[nodiscard]] inline PieceType pieceTypeAt(Square sq) const {
+            assert(sq != Squares::kNone);
 
-            const auto piece = m_mailbox[square.idx()];
+            const auto piece = m_mailbox[sq.idx()];
             return piece == Pieces::kNone ? PieceTypes::kNone : piece.type();
         }
 
-        [[nodiscard]] inline Piece pieceOn(Square square) const {
-            assert(square != Squares::kNone);
-            return m_mailbox[square.idx()];
+        [[nodiscard]] inline Piece pieceOn(Square sq) const {
+            assert(sq != Squares::kNone);
+            return m_mailbox[sq.idx()];
         }
 
-        [[nodiscard]] inline Piece pieceAt(u32 rank, u32 file) const {
+        [[nodiscard]] inline Piece pieceOn(i32 rank, i32 file) const {
             return pieceOn(Square::fromFileRank(file, rank));
         }
 
-        inline void setPiece(Square square, Piece piece) {
-            assert(square != Squares::kNone);
+        inline void setPiece(Square sq, Piece piece) {
+            assert(sq != Squares::kNone);
             assert(piece != Pieces::kNone);
 
-            assert(pieceOn(square) == Pieces::kNone);
+            assert(pieceOn(sq) == Pieces::kNone);
 
-            slot(square) = piece;
+            slot(sq) = piece;
 
-            const auto mask = Bitboard::fromSquare(square);
+            const auto mask = Bitboard::fromSquare(sq);
 
             m_bbs.forPiece(piece.type()) ^= mask;
             m_bbs.forColor(piece.color()) ^= mask;
@@ -299,16 +299,16 @@ namespace stormphrax {
             m_bbs.forColor(moving.color()) ^= mask;
         }
 
-        inline void removePiece(Square square, Piece piece) {
-            assert(square != Squares::kNone);
+        inline void removePiece(Square sq, Piece piece) {
+            assert(sq != Squares::kNone);
             assert(piece != Pieces::kNone);
 
-            assert(pieceOn(square) == piece);
+            assert(pieceOn(sq) == piece);
 
-            slot(square) = Pieces::kNone;
+            slot(sq) = Pieces::kNone;
 
-            m_bbs.forPiece(piece.type())[square] = false;
-            m_bbs.forColor(piece.color())[square] = false;
+            m_bbs.forPiece(piece.type())[sq] = false;
+            m_bbs.forColor(piece.color())[sq] = false;
         }
 
         inline void regenFromBbs() {
@@ -329,8 +329,8 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const PositionBoards& other) const = default;
 
     private:
-        [[nodiscard]] inline Piece& slot(Square square) {
-            return m_mailbox[square.idx()];
+        [[nodiscard]] inline Piece& slot(Square sq) {
+            return m_mailbox[sq.idx()];
         }
 
         BitboardSet m_bbs{};
