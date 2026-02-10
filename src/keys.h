@@ -70,7 +70,7 @@ namespace stormphrax::keys {
     }
 
     inline u64 color(Color c) {
-        return c == Color::kWhite ? 0 : color();
+        return c == Colors::kWhite ? 0 : color();
     }
 
     inline u64 castling(const CastlingRooks& castlingRooks) {

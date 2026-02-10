@@ -104,8 +104,8 @@ namespace stormphrax::see {
         const auto bishops = queens | bbs.bishops();
         const auto rooks = queens | bbs.rooks();
 
-        const auto blackPinned = pos.pinned(Color::kBlack);
-        const auto whitePinned = pos.pinned(Color::kWhite);
+        const auto blackPinned = pos.pinned(Colors::kBlack);
+        const auto whitePinned = pos.pinned(Colors::kWhite);
 
         const auto blackKingRay = rayIntersecting(pos.blackKing(), square);
         const auto whiteKingRay = rayIntersecting(pos.whiteKing(), square);
@@ -114,7 +114,7 @@ namespace stormphrax::see {
 
         auto attackers = pos.allAttackersTo(square, occupancy) & allowed;
 
-        auto us = oppColor(color);
+        auto us = color.flip();
 
         while (true) {
             const auto ourAttackers = attackers & bbs.forColor(us);
@@ -136,12 +136,12 @@ namespace stormphrax::see {
             attackers &= occupancy;
 
             score = -score - 1 - value(next);
-            us = oppColor(us);
+            us = us.flip();
 
             if (score >= 0) {
                 // our only attacker is our king, but the opponent still has defenders
                 if (next == PieceType::kKing && !(attackers & bbs.forColor(us)).empty()) {
-                    us = oppColor(us);
+                    us = us.flip();
                 }
                 break;
             }

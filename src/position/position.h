@@ -63,7 +63,7 @@ namespace stormphrax {
 
             if (pieceType(piece) == PieceType::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::kBlack) {
+            } else if (pieceColor(piece) == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
@@ -81,7 +81,7 @@ namespace stormphrax {
 
             if (pieceType(piece) == PieceType::kPawn) {
                 pawns ^= key;
-            } else if (pieceColor(piece) == Color::kBlack) {
+            } else if (pieceColor(piece) == Colors::kBlack) {
                 blackNonPawns ^= key;
             } else {
                 whiteNonPawns ^= key;
@@ -152,7 +152,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Color nstm() const {
-            return oppColor(m_stm);
+            return m_stm.flip();
         }
 
         [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
@@ -228,8 +228,8 @@ namespace stormphrax {
             const auto bishops = queens | bbs.bishops();
             attackers |= bishops & attacks::getBishopAttacks(square, occupancy);
 
-            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Color::kWhite);
-            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Color::kBlack);
+            attackers |= bbs.blackPawns() & attacks::getPawnAttacks(square, Colors::kWhite);
+            attackers |= bbs.whitePawns() & attacks::getPawnAttacks(square, Colors::kBlack);
 
             const auto knights = bbs.knights();
             attackers |= knights & attacks::getKnightAttacks(square);
@@ -258,7 +258,7 @@ namespace stormphrax {
             attackers |= bishops & attacks::getBishopAttacks(square, occ);
 
             const auto pawns = bbs.pawns(attacker);
-            attackers |= pawns & attacks::getPawnAttacks(square, oppColor(attacker));
+            attackers |= pawns & attacks::getPawnAttacks(square, attacker.flip());
 
             const auto knights = bbs.knights(attacker);
             attackers |= knights & attacks::getKnightAttacks(square);
@@ -271,9 +271,9 @@ namespace stormphrax {
 
         template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Color toMove, Square square, Color attacker) const {
-            assert(toMove != Color::kNone);
+            assert(toMove != Colors::kNone);
             assert(square != Square::kNone);
-            assert(attacker != Color::kNone);
+            assert(attacker != Colors::kNone);
 
             if constexpr (kThreatShortcut) {
                 if (attacker != toMove) {
@@ -290,7 +290,7 @@ namespace stormphrax {
             }
 
             if (const auto pawns = bbs.pawns(attacker);
-                !(pawns & attacks::getPawnAttacks(square, oppColor(attacker))).empty())
+                !(pawns & attacks::getPawnAttacks(square, attacker.flip())).empty())
             {
                 return true;
             }
@@ -319,13 +319,13 @@ namespace stormphrax {
         template <bool kThreatShortcut = true>
         [[nodiscard]] inline bool isAttacked(Square square, Color attacker) const {
             assert(square != Square::kNone);
-            assert(attacker != Color::kNone);
+            assert(attacker != Colors::kNone);
 
             return isAttacked<kThreatShortcut>(stm(), square, attacker);
         }
 
         [[nodiscard]] inline bool anyAttacked(Bitboard squares, Color attacker) const {
-            assert(attacker != Color::kNone);
+            assert(attacker != Colors::kNone);
 
             if (attacker == nstm()) {
                 return !(squares & m_threats).empty();
@@ -353,24 +353,14 @@ namespace stormphrax {
             return m_kings.white();
         }
 
-        template <Color C>
-        [[nodiscard]] inline Square king() const {
-            return m_kings.color(C);
-        }
-
         [[nodiscard]] inline Square king(Color c) const {
-            assert(c != Color::kNone);
+            assert(c != Colors::kNone);
             return m_kings.color(c);
         }
 
-        template <Color C>
-        [[nodiscard]] inline Square oppKing() const {
-            return m_kings.color(oppColor(C));
-        }
-
         [[nodiscard]] inline Square oppKing(Color c) const {
-            assert(c != Color::kNone);
-            return m_kings.color(oppColor(c));
+            assert(c != Colors::kNone);
+            return m_kings.color(c.flip());
         }
 
         [[nodiscard]] inline bool isCheck() const {
@@ -380,8 +370,9 @@ namespace stormphrax {
         [[nodiscard]] inline Bitboard checkers() const {
             return m_checkers;
         }
+
         [[nodiscard]] inline Bitboard pinned(Color c) const {
-            return m_pinned[static_cast<i32>(c)];
+            return m_pinned[c.idx()];
         }
 
         [[nodiscard]] inline std::array<Bitboard, 2> pinned() const {
@@ -443,7 +434,7 @@ namespace stormphrax {
         [[nodiscard]] Move moveFromUci(std::string_view move) const;
 
         [[nodiscard]] inline u32 plyFromStartpos() const {
-            return m_fullmove * 2 - (m_stm == Color::kBlack ? 0 : 1) - 1;
+            return m_fullmove * 2 - (m_stm == Colors::kBlack ? 0 : 1) - 1;
         }
 
         [[nodiscard]] inline i32 classicalMaterial() const {
@@ -481,14 +472,14 @@ namespace stormphrax {
 
         [[nodiscard]] inline Bitboard calcCheckers() const {
             const auto color = stm();
-            return attackersTo(m_kings.color(color), oppColor(color));
+            return attackersTo(m_kings.color(color), color.flip());
         }
 
         [[nodiscard]] inline Bitboard calcPinned(Color c) const {
             Bitboard pinned{};
 
             const auto king = m_kings.color(c);
-            const auto opponent = oppColor(c);
+            const auto opponent = c.flip();
 
             const auto& bbs = m_boards.bbs();
 
@@ -513,12 +504,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline std::array<Bitboard, 2> calcPinned() const {
-            return {calcPinned(Color::kBlack), calcPinned(Color::kWhite)};
+            return {calcPinned(Colors::kBlack), calcPinned(Colors::kWhite)};
         }
 
         [[nodiscard]] inline Bitboard calcThreats() const {
             const auto us = stm();
-            const auto them = oppColor(us);
+            const auto them = us.flip();
 
             const auto& bbs = m_boards.bbs();
 
@@ -547,7 +538,7 @@ namespace stormphrax {
             }
 
             const auto pawns = bbs.pawns(them);
-            if (them == Color::kBlack) {
+            if (them == Colors::kBlack) {
                 threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
             } else {
                 threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();

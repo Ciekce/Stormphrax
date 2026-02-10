@@ -85,7 +85,7 @@ namespace stormphrax::tb {
             bbs.pawns(),
             pos.halfmove(),
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.stm() == Color::kWhite,
+            pos.stm() == Colors::kWhite,
             false, // TODO
             &tbRootMoves
         );
@@ -104,7 +104,7 @@ namespace stormphrax::tb {
                 bbs.pawns(),
                 pos.halfmove(),
                 epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-                pos.stm() == Color::kWhite,
+                pos.stm() == Colors::kWhite,
                 true,
                 &tbRootMoves
             );
@@ -178,7 +178,7 @@ namespace stormphrax::tb {
             bbs.knights(),
             bbs.pawns(),
             epSq == Square::kNone ? 0 : static_cast<i32>(epSq),
-            pos.stm() == Color::kWhite
+            pos.stm() == Colors::kWhite
         );
 
         if (wdl == TB_RESULT_FAILED) {

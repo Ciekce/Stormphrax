@@ -31,6 +31,65 @@
 #include "util/cemath.h"
 
 namespace stormphrax {
+    class Color {
+    public:
+        constexpr Color() = default;
+
+        constexpr Color(const Color&) = default;
+        constexpr Color(Color&&) = default;
+
+        [[nodiscard]] constexpr u8 raw() const {
+            return m_id;
+        }
+
+        [[nodiscard]] constexpr usize idx() const {
+            return static_cast<usize>(m_id);
+        }
+
+        [[nodiscard]] constexpr Color flip() const {
+            assert(m_id != kNoneId);
+            return Color{static_cast<u8>(m_id ^ 1)};
+        }
+
+        [[nodiscard]] static constexpr Color fromRaw(u8 id) {
+            assert(id <= kNoneId);
+            return Color{id};
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const {
+            return m_id != kNoneId;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const Color&) const = default;
+
+        constexpr Color& operator=(const Color&) = default;
+        constexpr Color& operator=(Color&&) = default;
+
+    private:
+        explicit constexpr Color(u8 id) :
+                m_id{id} {}
+
+        u8 m_id{};
+
+        enum : u8 {
+            kBlackId = 0,
+            kWhiteId,
+            kNoneId,
+        };
+
+        friend struct Colors;
+    };
+
+    struct Colors {
+        Colors() = delete;
+
+        static constexpr Color kBlack{Color::kBlackId};
+        static constexpr Color kWhite{Color::kWhiteId};
+        static constexpr Color kNone{Color::kNoneId};
+
+        static constexpr usize kCount = kNone.idx();
+    };
+
     enum class Piece : u8 {
         kBlackPawn = 0,
         kWhitePawn,
@@ -57,22 +116,11 @@ namespace stormphrax {
         kNone,
     };
 
-    enum class Color : i8 {
-        kBlack = 0,
-        kWhite,
-        kNone,
-    };
-
-    [[nodiscard]] constexpr Color oppColor(Color color) {
-        assert(color != Color::kNone);
-        return static_cast<Color>(!static_cast<i32>(color));
-    }
-
     [[nodiscard]] constexpr Piece colorPiece(PieceType piece, Color color) {
         assert(piece != PieceType::kNone);
-        assert(color != Color::kNone);
+        assert(color != Colors::kNone);
 
-        return static_cast<Piece>((static_cast<i32>(piece) << 1) + static_cast<i32>(color));
+        return static_cast<Piece>((static_cast<i32>(piece) << 1) + color.raw());
     }
 
     [[nodiscard]] constexpr PieceType pieceType(Piece piece) {
@@ -89,7 +137,7 @@ namespace stormphrax {
 
     [[nodiscard]] constexpr Color pieceColor(Piece piece) {
         assert(piece != Piece::kNone);
-        return static_cast<Color>(static_cast<i32>(piece) & 1);
+        return Color::fromRaw(static_cast<u8>(piece) & 1);
     }
 
     [[nodiscard]] constexpr Piece flipPieceColor(Piece piece) {
@@ -234,20 +282,9 @@ namespace stormphrax {
         return U64(1) << static_cast<i32>(square);
     }
 
-    template <Color C>
-    constexpr i32 relativeRank(i32 rank) {
-        assert(rank >= 0 && rank < 8);
-
-        if constexpr (C == Color::kBlack) {
-            return 7 - rank;
-        } else {
-            return rank;
-        }
-    }
-
     constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
-        return c == Color::kBlack ? 7 - rank : rank;
+        return c == Colors::kBlack ? 7 - rank : rank;
     }
 
     struct KingPair {
@@ -270,13 +307,13 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Square color(Color c) const {
-            assert(c != Color::kNone);
-            return kings[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return kings[c.idx()];
         }
 
         [[nodiscard]] inline Square& color(Color c) {
-            assert(c != Color::kNone);
-            return kings[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return kings[c.idx()];
         }
 
         [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
@@ -328,13 +365,13 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const RookPair& color(Color c) const {
-            assert(c != Color::kNone);
-            return rooks[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return rooks[c.idx()];
         }
 
         [[nodiscard]] inline RookPair& color(Color c) {
-            assert(c != Color::kNone);
-            return rooks[static_cast<i32>(c)];
+            assert(c != Colors::kNone);
+            return rooks[c.idx()];
         }
 
         [[nodiscard]] inline bool operator==(const CastlingRooks&) const = default;

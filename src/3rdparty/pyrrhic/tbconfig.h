@@ -41,7 +41,7 @@ namespace stormphrax::util::detail {
 #define PYRRHIC_LSB(x)                   (stormphrax::util::ctz(x))
 #define PYRRHIC_POPLSB(x)                (stormphrax::util::detail::popLsb(x))
 
-#define PYRRHIC_PAWN_ATTACKS(sq, c)      (stormphrax::attacks::getPawnAttacks(static_cast<stormphrax::Square>(sq), static_cast<stormphrax::Color>(c)))
+#define PYRRHIC_PAWN_ATTACKS(sq, c)      (stormphrax::attacks::getPawnAttacks(static_cast<stormphrax::Square>(sq), stormphrax::Color::fromRaw(c)))
 #define PYRRHIC_KNIGHT_ATTACKS(sq)       (stormphrax::attacks::getKnightAttacks(static_cast<stormphrax::Square>(sq)))
 #define PYRRHIC_BISHOP_ATTACKS(sq, occ)  (stormphrax::attacks::getBishopAttacks(static_cast<stormphrax::Square>(sq), occ))
 #define PYRRHIC_ROOK_ATTACKS(sq, occ)    (stormphrax::attacks::getRookAttacks(static_cast<stormphrax::Square>(sq), occ))

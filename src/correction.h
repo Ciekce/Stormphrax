@@ -51,7 +51,7 @@ namespace stormphrax {
         ) {
             const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
-            const auto stm = static_cast<i32>(pos.stm());
+            const auto stm = pos.stm().idx();
 
             const auto updateCont = [&](i32 i) {
                 if (ply <= i) {
@@ -88,7 +88,7 @@ namespace stormphrax {
         ) const {
             using namespace tunable;
 
-            const auto stm = static_cast<i32>(pos.stm());
+            const auto stm = pos.stm().idx();
 
             const auto contAdjustment = [&](i32 i, i32 weight) {
                 if (ply <= i) {
@@ -108,8 +108,8 @@ namespace stormphrax {
             };
 
             const auto [blackNpWeight, whiteNpWeight] =
-                pos.stm() == Color::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                           : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
+                pos.stm() == Colors::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
+                                            : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
 
             i32 correction{};
 

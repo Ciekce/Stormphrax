@@ -78,7 +78,7 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
-            if (c == Color::kBlack) {
+            if (c == Colors::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
             return kBuckets[static_cast<i32>(kingSq)];
@@ -89,12 +89,12 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
-            assert(c != Color::kNone);
+            assert(c != Colors::kNone);
 
             assert(prevKingSq != Square::kNone);
             assert(kingSq != Square::kNone);
 
-            if (c == Color::kBlack) {
+            if (c == Colors::kBlack) {
                 prevKingSq = flipSquareRank(prevKingSq);
                 kingSq = flipSquareRank(kingSq);
             }
@@ -167,14 +167,14 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr u32 getBucket(Color c, Square kingSq) {
-            if (c == Color::kBlack) {
+            if (c == Colors::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
             return kBuckets[static_cast<i32>(kingSq)];
         }
 
         static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
-            if (c == Color::kBlack) {
+            if (c == Colors::kBlack) {
                 kingSq = flipSquareRank(kingSq);
             }
             const bool flipped = shouldFlip(kingSq);
@@ -182,7 +182,7 @@ namespace stormphrax::eval::nnue::features {
         }
 
         static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
-            assert(c != Color::kNone);
+            assert(c != Colors::kNone);
 
             assert(prevKingSq != Square::kNone);
             assert(kingSq != Square::kNone);
@@ -194,7 +194,7 @@ namespace stormphrax::eval::nnue::features {
                 return true;
             }
 
-            if (c == Color::kBlack) {
+            if (c == Colors::kBlack) {
                 prevKingSq = flipSquareRank(prevKingSq);
                 kingSq = flipSquareRank(kingSq);
             }

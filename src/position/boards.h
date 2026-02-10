@@ -28,11 +28,11 @@ namespace stormphrax {
     class BitboardSet {
     public:
         [[nodiscard]] inline Bitboard& forColor(Color color) {
-            return m_colors[static_cast<i32>(color)];
+            return m_colors[color.idx()];
         }
 
         [[nodiscard]] inline Bitboard forColor(Color color) const {
-            return m_colors[static_cast<i32>(color)];
+            return m_colors[color.idx()];
         }
 
         [[nodiscard]] inline Bitboard& forPiece(PieceType piece) {
@@ -59,13 +59,8 @@ namespace stormphrax {
             return m_colors[1];
         }
 
-        template <Color kC>
-        [[nodiscard]] inline Bitboard occupancy() const {
-            return m_colors[static_cast<i32>(kC)];
-        }
-
         [[nodiscard]] inline Bitboard occupancy(Color c) const {
-            return m_colors[static_cast<i32>(c)];
+            return m_colors[c.idx()];
         }
 
         [[nodiscard]] inline Bitboard occupancy() const {
@@ -180,87 +175,6 @@ namespace stormphrax {
             return whiteOccupancy() ^ (pawns() | kings()) & whiteOccupancy();
         }
 
-        template <Color kC>
-        [[nodiscard]] inline Bitboard pawns() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackPawns();
-            } else {
-                return whitePawns();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard knights() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackKnights();
-            } else {
-                return whiteKnights();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard bishops() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackBishops();
-            } else {
-                return whiteBishops();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard rooks() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackRooks();
-            } else {
-                return whiteRooks();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard queens() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackQueens();
-            } else {
-                return whiteQueens();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard kings() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackKings();
-            } else {
-                return whiteKings();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard minors() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackMinors();
-            } else {
-                return whiteMinors();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard majors() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackMajors();
-            } else {
-                return whiteMajors();
-            }
-        }
-
-        template <Color kC>
-        [[nodiscard]] inline Bitboard nonPk() const {
-            if constexpr (kC == Color::kBlack) {
-                return blackNonPk();
-            } else {
-                return whiteNonPk();
-            }
-        }
-
         [[nodiscard]] inline Bitboard pawns(Color color) const {
             return forPiece(PieceType::kPawn, color);
         }
@@ -286,15 +200,15 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard minors(Color color) const {
-            return color == Color::kBlack ? blackMinors() : whiteMinors();
+            return color == Colors::kBlack ? blackMinors() : whiteMinors();
         }
 
         [[nodiscard]] inline Bitboard majors(Color color) const {
-            return color == Color::kBlack ? blackMajors() : whiteMajors();
+            return color == Colors::kBlack ? blackMajors() : whiteMajors();
         }
 
         [[nodiscard]] inline Bitboard nonPk(Color color) const {
-            return color == Color::kBlack ? blackNonPk() : whiteNonPk();
+            return color == Colors::kBlack ? blackNonPk() : whiteNonPk();
         }
 
         [[nodiscard]] inline bool operator==(const BitboardSet& other) const = default;

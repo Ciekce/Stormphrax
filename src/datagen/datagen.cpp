@@ -102,11 +102,11 @@ namespace stormphrax::datagen {
                 case tb::ProbeResult::kFailed:
                     return {};
                 case tb::ProbeResult::kWin:
-                    return pos.stm() == Color::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
+                    return pos.stm() == Colors::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
                 case tb::ProbeResult::kDraw:
                     return Outcome::kDraw;
                 case tb::ProbeResult::kLoss:
-                    return pos.stm() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
+                    return pos.stm() == Colors::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
             }
         }
 
@@ -245,7 +245,7 @@ namespace stormphrax::datagen {
 
                     if (!move) {
                         if (pos.isCheck()) {
-                            outcome = pos.stm() == Color::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
+                            outcome = pos.stm() == Colors::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                         } else {
                             outcome = Outcome::kDraw; // stalemate
                         }

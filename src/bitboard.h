@@ -37,58 +37,28 @@ namespace stormphrax {
         constexpr auto kDownLeft = kDown + kLeft;
         constexpr auto kDownRight = kDown + kRight;
 
-        template <Color kC>
-        constexpr i32 up() {
-            if constexpr (kC == Color::kBlack) {
-                return kDown;
-            } else {
-                return kUp;
-            }
+        constexpr i32 up(Color c) {
+            return c == Colors::kBlack ? kDown : kUp;
         }
 
-        template <Color kC>
-        constexpr i32 upLeft() {
-            if constexpr (kC == Color::kBlack) {
-                return kDownLeft;
-            } else {
-                return kUpLeft;
-            }
+        constexpr i32 upLeft(Color c) {
+            return c == Colors::kBlack ? kDownLeft : kUpLeft;
         }
 
-        template <Color kC>
-        constexpr i32 upRight() {
-            if constexpr (kC == Color::kBlack) {
-                return kDownRight;
-            } else {
-                return kUpRight;
-            }
+        constexpr i32 upRight(Color c) {
+            return c == Colors::kBlack ? kDownRight : kUpRight;
         }
 
-        template <Color C>
-        constexpr i32 down() {
-            if constexpr (C == Color::kBlack) {
-                return kUp;
-            } else {
-                return kDown;
-            }
+        constexpr i32 down(Color c) {
+            return c == Colors::kBlack ? kUp : kDown;
         }
 
-        template <Color kC>
-        constexpr i32 downLeft() {
-            if constexpr (kC == Color::kBlack) {
-                return kUpLeft;
-            } else {
-                return kDownLeft;
-            }
+        constexpr i32 downLeft(Color c) {
+            return c == Colors::kBlack ? kUpLeft : kDownLeft;
         }
 
-        template <Color kC>
-        constexpr i32 downRight() {
-            if constexpr (kC == Color::kBlack) {
-                return kUpRight;
-            } else {
-                return kDownRight;
-            }
+        constexpr i32 downRight(Color c) {
+            return c == Colors::kBlack ? kUpRight : kDownRight;
         }
     } // namespace offsets
 
@@ -390,54 +360,48 @@ namespace stormphrax {
             return (m_board >> shifts::kDiagonal12LR) & ~kFileA;
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftUpRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftUpRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftDown();
             } else {
                 return shiftUp();
             }
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftUpLeftRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftUpLeftRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftDownLeft();
             } else {
                 return shiftUpLeft();
             }
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftUpRightRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftUpRightRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftDownRight();
             } else {
                 return shiftUpRight();
             }
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftDownRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftDownRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftUp();
             } else {
                 return shiftDown();
             }
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftDownLeftRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftDownLeftRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftUpLeft();
             } else {
                 return shiftDownLeft();
             }
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard shiftDownRightRelative() const {
-            if constexpr (kC == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard shiftDownRightRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return shiftUpRight();
             } else {
                 return shiftDownRight();
@@ -460,18 +424,16 @@ namespace stormphrax {
             return b;
         }
 
-        template <Color C>
-        [[nodiscard]] constexpr Bitboard fillUpRelative() const {
-            if constexpr (C == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard fillUpRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return fillDown();
             } else {
                 return fillUp();
             }
         }
 
-        template <Color C>
-        [[nodiscard]] constexpr Bitboard fillDownRelative() const {
-            if constexpr (C == Color::kBlack) {
+        [[nodiscard]] constexpr Bitboard fillDownRelative(Color c) const {
+            if (c == Colors::kBlack) {
                 return fillUp();
             } else {
                 return fillDown();
@@ -535,22 +497,12 @@ namespace stormphrax {
 
         constexpr Bitboard kAll{Bitboard::kAll};
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard promotionRank() {
-            if constexpr (kC == Color::kBlack) {
-                return kRank1;
-            } else {
-                return kRank8;
-            }
-        }
-
         [[nodiscard]] constexpr Bitboard promotionRank(Color c) {
-            return c == Color::kBlack ? kRank1 : kRank8;
+            return c == Colors::kBlack ? kRank1 : kRank8;
         }
 
-        template <Color kC>
-        [[nodiscard]] constexpr Bitboard rank(i32 idx) {
-            return kRanks[relativeRank<kC>(idx)];
+        [[nodiscard]] constexpr Bitboard rank(Color c, i32 idx) {
+            return kRanks[relativeRank(c, idx)];
         }
     } // namespace boards
 } // namespace stormphrax

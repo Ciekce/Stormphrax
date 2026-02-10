@@ -64,17 +64,17 @@ namespace stormphrax::datagen {
                         pieceId = kUnmovedRook;
                     }
 
-                    const u8 colorId = pieceColor(piece) == Color::kBlack ? (1 << 3) : 0;
+                    const u8 colorId = pieceColor(piece) == Colors::kBlack ? (1 << 3) : 0;
 
                     board.pieces[i++] = pieceId | colorId;
                 }
 
-                const u8 stm = pos.stm() == Color::kBlack ? (1 << 7) : 0;
+                const u8 stm = pos.stm() == Colors::kBlack ? (1 << 7) : 0;
 
                 const Square relativeEpSquare =
                     pos.enPassant() == Square::kNone
                         ? Square::kNone
-                        : toSquare(pos.stm() == Color::kBlack ? 2 : 5, squareFile(pos.enPassant()));
+                        : toSquare(pos.stm() == Colors::kBlack ? 2 : 5, squareFile(pos.enPassant()));
 
                 board.stmEpSquare = stm | static_cast<u8>(relativeEpSquare);
                 board.halfmoveClock = pos.halfmove();
