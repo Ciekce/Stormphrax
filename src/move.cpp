@@ -42,7 +42,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(
         }
     } else {
         const auto dst =
-            value.fromSqFile() < value.toSqFile() ? value.fromSq().withFile(6) : value.fromSq().withFile(2);
+            value.fromSqFile() < value.toSqFile() ? value.fromSq().withFile(kFileG) : value.fromSq().withFile(kFileC);
         format_to(ctx.out(), "{}", dst);
     }
 

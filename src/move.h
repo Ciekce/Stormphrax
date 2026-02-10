@@ -109,13 +109,12 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static constexpr Move castling(Square src, Square dst) {
-            return Move{static_cast<u16>(
-                (src.raw() << 10) | (dst.raw() << 4) | static_cast<u16>(MoveType::kCastling))};
+            return Move{static_cast<u16>((src.raw() << 10) | (dst.raw() << 4) | static_cast<u16>(MoveType::kCastling))};
         }
 
         [[nodiscard]] static constexpr Move enPassant(Square src, Square dst) {
-            return Move{static_cast<u16>(
-                (src.raw() << 10) | (dst.raw() << 4) | static_cast<u16>(MoveType::kEnPassant))
+            return Move{
+                static_cast<u16>((src.raw() << 10) | (dst.raw() << 4) | static_cast<u16>(MoveType::kEnPassant))
             };
         }
 

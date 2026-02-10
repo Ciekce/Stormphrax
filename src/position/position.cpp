@@ -284,16 +284,16 @@ namespace stormphrax {
                     return false;
                 }
 
-                kingDst = src.withFile(6);
-                rookDst = src.withFile(5);
+                kingDst = src.withFile(kFileG);
+                rookDst = src.withFile(kFileF);
             } else {
                 // no castling rights
                 if (dst != m_castlingRooks.color(us).queenside) {
                     return false;
                 }
 
-                kingDst = src.withFile(2);
-                rookDst = src.withFile(3);
+                kingDst = src.withFile(kFileC);
+                rookDst = src.withFile(kFileD);
             }
 
             // same checks as for movegen
@@ -416,7 +416,7 @@ namespace stormphrax {
         const auto king = m_kings.color(us);
 
         if (move.type() == MoveType::kCastling) {
-            const auto kingDst = move.fromSq().withFile(move.fromSqFile() < move.toSqFile() ? 6 : 2);
+            const auto kingDst = move.fromSq().withFile(move.fromSqFile() < move.toSqFile() ? kFileG : kFileC);
             return !m_threats[kingDst] && !(g_opts.chess960 && pinned(us)[dst]);
         } else if (move.type() == MoveType::kEnPassant) {
             const auto captureSquare = dst.flipRankParity();

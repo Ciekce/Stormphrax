@@ -29,12 +29,8 @@
 namespace stormphrax::eval::nnue::output {
     template <typename T>
     concept OutputBucketing = requires {
-        {
-            T::kBucketCount
-        } -> std::same_as<const u32&>;
-        {
-            T::getBucket(BitboardSet{})
-        } -> std::same_as<u32>;
+        { T::kBucketCount } -> std::same_as<const u32&>;
+        { T::getBucket(BitboardSet{}) } -> std::same_as<u32>;
     };
 
     struct [[maybe_unused]] Single {

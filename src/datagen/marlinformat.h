@@ -74,7 +74,7 @@ namespace stormphrax::datagen {
                 const Square relativeEpSquare =
                     pos.enPassant() == Squares::kNone
                         ? Squares::kNone
-                                                  : pos.enPassant().withRank(pos.stm() == Colors::kBlack ? 2 : 5);
+                        : pos.enPassant().withRank(pos.stm() == Colors::kBlack ? kRank3 : kRank6);
 
                 board.stmEpSquare = stm | relativeEpSquare.raw();
                 board.halfmoveClock = pos.halfmove();

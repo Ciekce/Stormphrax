@@ -584,6 +584,24 @@ namespace stormphrax {
         static constexpr usize kCount = kNone.idx();
     };
 
+    static constexpr i32 kFileA = 0;
+    static constexpr i32 kFileB = 1;
+    static constexpr i32 kFileC = 2;
+    static constexpr i32 kFileD = 3;
+    static constexpr i32 kFileE = 4;
+    static constexpr i32 kFileF = 5;
+    static constexpr i32 kFileG = 6;
+    static constexpr i32 kFileH = 7;
+
+    static constexpr i32 kRank1 = 0;
+    static constexpr i32 kRank2 = 1;
+    static constexpr i32 kRank3 = 2;
+    static constexpr i32 kRank4 = 3;
+    static constexpr i32 kRank5 = 4;
+    static constexpr i32 kRank6 = 5;
+    static constexpr i32 kRank7 = 6;
+    static constexpr i32 kRank8 = 7;
+
     constexpr i32 relativeRank(Color c, i32 rank) {
         assert(rank >= 0 && rank < 8);
         return c == Colors::kBlack ? 7 - rank : rank;
