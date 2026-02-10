@@ -35,16 +35,16 @@ namespace stormphrax {
             return m_colors[color.idx()];
         }
 
-        [[nodiscard]] inline Bitboard& forPiece(PieceType piece) {
-            return m_pieces[static_cast<i32>(piece)];
+        [[nodiscard]] inline Bitboard& forPiece(PieceType pt) {
+            return m_pieces[pt.idx()];
         }
 
-        [[nodiscard]] inline Bitboard forPiece(PieceType piece) const {
-            return m_pieces[static_cast<i32>(piece)];
+        [[nodiscard]] inline Bitboard forPiece(PieceType pt) const {
+            return m_pieces[pt.idx()];
         }
 
-        [[nodiscard]] inline Bitboard forPiece(PieceType piece, Color c) const {
-            return m_pieces[static_cast<i32>(piece)] & forColor(c);
+        [[nodiscard]] inline Bitboard forPiece(PieceType pt, Color c) const {
+            return m_pieces[pt.idx()] & forColor(c);
         }
 
         [[nodiscard]] inline Bitboard forPiece(Piece piece) const {
@@ -68,27 +68,27 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard pawns() const {
-            return forPiece(PieceType::kPawn);
+            return forPiece(PieceTypes::kPawn);
         }
 
         [[nodiscard]] inline Bitboard knights() const {
-            return forPiece(PieceType::kKnight);
+            return forPiece(PieceTypes::kKnight);
         }
 
         [[nodiscard]] inline Bitboard bishops() const {
-            return forPiece(PieceType::kBishop);
+            return forPiece(PieceTypes::kBishop);
         }
 
         [[nodiscard]] inline Bitboard rooks() const {
-            return forPiece(PieceType::kRook);
+            return forPiece(PieceTypes::kRook);
         }
 
         [[nodiscard]] inline Bitboard queens() const {
-            return forPiece(PieceType::kQueen);
+            return forPiece(PieceTypes::kQueen);
         }
 
         [[nodiscard]] inline Bitboard kings() const {
-            return forPiece(PieceType::kKing);
+            return forPiece(PieceTypes::kKing);
         }
 
         [[nodiscard]] inline Bitboard blackPawns() const {
@@ -176,27 +176,27 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline Bitboard pawns(Color color) const {
-            return forPiece(PieceType::kPawn, color);
+            return forPiece(PieceTypes::kPawn, color);
         }
 
         [[nodiscard]] inline Bitboard knights(Color color) const {
-            return forPiece(PieceType::kKnight, color);
+            return forPiece(PieceTypes::kKnight, color);
         }
 
         [[nodiscard]] inline Bitboard bishops(Color color) const {
-            return forPiece(PieceType::kBishop, color);
+            return forPiece(PieceTypes::kBishop, color);
         }
 
         [[nodiscard]] inline Bitboard rooks(Color color) const {
-            return forPiece(PieceType::kRook, color);
+            return forPiece(PieceTypes::kRook, color);
         }
 
         [[nodiscard]] inline Bitboard queens(Color color) const {
-            return forPiece(PieceType::kQueen, color);
+            return forPiece(PieceTypes::kQueen, color);
         }
 
         [[nodiscard]] inline Bitboard kings(Color color) const {
-            return forPiece(PieceType::kKing, color);
+            return forPiece(PieceTypes::kKing, color);
         }
 
         [[nodiscard]] inline Bitboard minors(Color color) const {
@@ -236,7 +236,7 @@ namespace stormphrax {
             assert(square != Square::kNone);
 
             const auto piece = m_mailbox[static_cast<i32>(square)];
-            return piece == Piece::kNone ? PieceType::kNone : pieceType(piece);
+            return piece == Piece::kNone ? PieceTypes::kNone : pieceType(piece);
         }
 
         [[nodiscard]] inline Piece pieceOn(Square square) const {
@@ -284,7 +284,7 @@ namespace stormphrax {
             assert(src != dst);
 
             assert(moving != Piece::kNone);
-            assert(promo != PieceType::kNone);
+            assert(promo != PieceTypes::kNone);
 
             assert(pieceOn(src) == moving);
             assert(slot(src) == moving);

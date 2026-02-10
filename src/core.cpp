@@ -53,7 +53,7 @@ fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
 ) const {
     using namespace stormphrax;
 
-    static constexpr auto kPieceTypeChars = std::array{
+    static constexpr std::array kPieceTypeChars = {
         'p', // pawn
         'n', // knight
         'b', // bishop
@@ -63,11 +63,11 @@ fmt::format_context::iterator fmt::formatter<stormphrax::PieceType>::format(
         ' ', // none
     };
 
-    if (static_cast<usize>(value) >= kPieceTypeChars.size()) {
+    if (value.idx() >= kPieceTypeChars.size()) {
         return format_to(ctx.out(), "?");
     }
 
-    return format_to(ctx.out(), "{}", kPieceTypeChars[static_cast<usize>(value)]);
+    return format_to(ctx.out(), "{}", kPieceTypeChars[value.idx()]);
 }
 
 fmt::format_context::iterator fmt::formatter<stormphrax::Square>::format(

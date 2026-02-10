@@ -61,7 +61,7 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::kPawn) {
+            if (pieceType(piece) == PieceTypes::kPawn) {
                 pawns ^= key;
             } else if (pieceColor(piece) == Colors::kBlack) {
                 blackNonPawns ^= key;
@@ -69,7 +69,7 @@ namespace stormphrax {
                 whiteNonPawns ^= key;
             }
 
-            if (isMajor(piece)) {
+            if (pieceType(piece).isMajor()) {
                 majors ^= key;
             }
         }
@@ -79,7 +79,7 @@ namespace stormphrax {
 
             all ^= key;
 
-            if (pieceType(piece) == PieceType::kPawn) {
+            if (pieceType(piece) == PieceTypes::kPawn) {
                 pawns ^= key;
             } else if (pieceColor(piece) == Colors::kBlack) {
                 blackNonPawns ^= key;
@@ -87,7 +87,7 @@ namespace stormphrax {
                 whiteNonPawns ^= key;
             }
 
-            if (isMajor(piece)) {
+            if (pieceType(piece).isMajor()) {
                 majors ^= key;
             }
         }
@@ -406,7 +406,7 @@ namespace stormphrax {
             const auto type = move.type();
 
             return type != MoveType::kCastling
-                && (type == MoveType::kEnPassant || move.promo() == PieceType::kQueen
+                && (type == MoveType::kEnPassant || move.promo() == PieceTypes::kQueen
                     || boards().pieceOn(move.toSq()) != Piece::kNone);
         }
 
@@ -418,10 +418,10 @@ namespace stormphrax {
             if (type == MoveType::kCastling) {
                 return {false, Piece::kNone};
             } else if (type == MoveType::kEnPassant) {
-                return {true, colorPiece(PieceType::kPawn, stm())};
+                return {true, PieceTypes::kPawn.withColor(stm())};
             } else {
                 const auto captured = boards().pieceOn(move.toSq());
-                return {captured != Piece::kNone || move.promo() == PieceType::kQueen, captured};
+                return {captured != Piece::kNone || move.promo() == PieceTypes::kQueen, captured};
             }
         }
 

@@ -55,9 +55,9 @@ namespace stormphrax::datagen {
                     const auto square = occupancy.popLowestSquare();
                     const auto piece = boards.pieceOn(square);
 
-                    auto pieceId = static_cast<u8>(pieceType(piece));
+                    auto pieceId = pieceType(piece).raw();
 
-                    if (pieceType(piece) == PieceType::kRook
+                    if (pieceType(piece) == PieceTypes::kRook
                         && (square == castlingRooks.black().kingside || square == castlingRooks.black().queenside
                             || square == castlingRooks.white().kingside || square == castlingRooks.white().queenside))
                     {

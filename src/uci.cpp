@@ -467,7 +467,7 @@ namespace stormphrax {
                         if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
                             && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8' && candidate[2] >= 'a'
                             && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
-                            && (candidate.length() < 5 || isValidPromotion(pieceTypeFromChar(candidate[4]))))
+                            && (candidate.length() < 5 || PieceType::fromChar(candidate[4]).isValidPromotion()))
                         {
                             const auto move = m_pos.moveFromUci(candidate);
 

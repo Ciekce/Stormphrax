@@ -90,6 +90,131 @@ namespace stormphrax {
         static constexpr usize kCount = kNone.idx();
     };
 
+    enum class Piece : u8;
+
+    class PieceType {
+    public:
+        constexpr PieceType() = default;
+
+        constexpr PieceType(const PieceType&) = default;
+        constexpr PieceType(PieceType&&) = default;
+
+        [[nodiscard]] constexpr u8 raw() const {
+            return m_id;
+        }
+
+        [[nodiscard]] constexpr usize idx() const {
+            return static_cast<usize>(m_id);
+        }
+
+        [[nodiscard]] constexpr Piece withColor(Color c) const;
+
+        [[nodiscard]] constexpr bool isMajor() const {
+            return m_id == kRookId || m_id == kQueenId;
+        }
+
+        [[nodiscard]] constexpr bool isMinor() const {
+            return m_id == kKnightId || m_id == kBishopId;
+        }
+
+        [[nodiscard]] constexpr bool isValidPromotion() const {
+            return m_id == kKnightId || m_id == kBishopId || m_id == kRookId || m_id == kQueenId;
+        }
+
+        [[nodiscard]] constexpr char asChar() const {
+            switch (m_id) {
+                case kPawnId:
+                    return 'P';
+                case kKnightId:
+                    return 'N';
+                case kBishopId:
+                    return 'B';
+                case kRookId:
+                    return 'R';
+                case kQueenId:
+                    return 'Q';
+                case kKingId:
+                    return 'K';
+                default:
+                    return '?';
+            }
+        }
+
+        [[nodiscard]] static constexpr PieceType fromRaw(u8 id) {
+            assert(id <= kNoneId);
+            return PieceType{id};
+        }
+
+        [[nodiscard]] static constexpr PieceType fromChar(char c) {
+            switch (c) {
+                case 'P':
+                    return PieceType{kPawnId};
+                case 'N':
+                    return PieceType{kKnightId};
+                case 'B':
+                    return PieceType{kBishopId};
+                case 'R':
+                    return PieceType{kRookId};
+                case 'Q':
+                    return PieceType{kQueenId};
+                case 'K':
+                    return PieceType{kKingId};
+                default:
+                    return PieceType{kNoneId};
+            }
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const {
+            return m_id != kNoneId;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const PieceType&) const = default;
+
+        constexpr PieceType& operator=(const PieceType&) = default;
+        constexpr PieceType& operator=(PieceType&&) = default;
+
+    private:
+        explicit constexpr PieceType(u8 id) :
+                m_id{id} {}
+
+        u8 m_id{};
+
+        enum : u8 {
+            kPawnId = 0,
+            kKnightId,
+            kBishopId,
+            kRookId,
+            kQueenId,
+            kKingId,
+            kNoneId,
+        };
+
+        friend struct PieceTypes;
+    };
+
+    struct PieceTypes {
+        PieceTypes() = delete;
+
+        static constexpr PieceType kPawn{PieceType::kPawnId};
+        static constexpr PieceType kKnight{PieceType::kKnightId};
+        static constexpr PieceType kBishop{PieceType::kBishopId};
+        static constexpr PieceType kRook{PieceType::kRookId};
+        static constexpr PieceType kQueen{PieceType::kQueenId};
+        static constexpr PieceType kKing{PieceType::kKingId};
+        static constexpr PieceType kNone{PieceType::kNoneId};
+
+        static constexpr usize kCount = kNone.idx();
+
+        static constexpr std::array kAll = {
+            kPawn,
+            kKnight,
+            kBishop,
+            kRook,
+            kQueen,
+            kKing,
+        };
+    };
+
     enum class Piece : u8 {
         kBlackPawn = 0,
         kWhitePawn,
@@ -106,33 +231,23 @@ namespace stormphrax {
         kNone,
     };
 
-    enum class PieceType {
-        kPawn = 0,
-        kKnight,
-        kBishop,
-        kRook,
-        kQueen,
-        kKing,
-        kNone,
-    };
+    constexpr Piece PieceType::withColor(Color c) const {
+        assert(*this != PieceTypes::kNone);
+        assert(c != Colors::kNone);
 
-    [[nodiscard]] constexpr Piece colorPiece(PieceType piece, Color color) {
-        assert(piece != PieceType::kNone);
-        assert(color != Colors::kNone);
-
-        return static_cast<Piece>((static_cast<i32>(piece) << 1) + color.raw());
+        return static_cast<Piece>((m_id << 1) | c.raw());
     }
 
     [[nodiscard]] constexpr PieceType pieceType(Piece piece) {
         assert(piece != Piece::kNone);
-        return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+        return PieceType::fromRaw(static_cast<i32>(piece) >> 1);
     }
 
     [[nodiscard]] constexpr PieceType pieceTypeOrNone(Piece piece) {
         if (piece == Piece::kNone) {
-            return PieceType::kNone;
+            return PieceTypes::kNone;
         }
-        return static_cast<PieceType>(static_cast<i32>(piece) >> 1);
+        return PieceType::fromRaw(static_cast<i32>(piece) >> 1);
     }
 
     [[nodiscard]] constexpr Color pieceColor(Piece piece) {
@@ -147,34 +262,9 @@ namespace stormphrax {
 
     [[nodiscard]] constexpr Piece copyPieceColor(Piece piece, PieceType target) {
         assert(piece != Piece::kNone);
-        assert(target != PieceType::kNone);
+        assert(target != PieceTypes::kNone);
 
-        return colorPiece(target, pieceColor(piece));
-    }
-
-    [[nodiscard]] constexpr bool isMajor(PieceType piece) {
-        assert(piece != PieceType::kNone);
-        return piece == PieceType::kRook || piece == PieceType::kQueen;
-    }
-
-    [[nodiscard]] constexpr bool isMajor(Piece piece) {
-        assert(piece != Piece::kNone);
-        return isMajor(pieceType(piece));
-    }
-
-    [[nodiscard]] constexpr bool isMinor(PieceType piece) {
-        assert(piece != PieceType::kNone);
-        return piece == PieceType::kKnight || piece == PieceType::kBishop;
-    }
-
-    [[nodiscard]] constexpr bool isMinor(Piece piece) {
-        assert(piece != Piece::kNone);
-        return isMinor(pieceType(piece));
-    }
-
-    [[nodiscard]] constexpr bool isValidPromotion(PieceType piece) {
-        return piece == PieceType::kKnight || piece == PieceType::kBishop || piece == PieceType::kRook
-            || piece == PieceType::kQueen;
+        return target.withColor(pieceColor(piece));
     }
 
     [[nodiscard]] constexpr Piece pieceFromChar(char c) {
@@ -205,25 +295,6 @@ namespace stormphrax {
                 return Piece::kWhiteKing;
             default:
                 return Piece::kNone;
-        }
-    }
-
-    [[nodiscard]] constexpr PieceType pieceTypeFromChar(char c) {
-        switch (c) {
-            case 'p':
-                return PieceType::kPawn;
-            case 'n':
-                return PieceType::kKnight;
-            case 'b':
-                return PieceType::kBishop;
-            case 'r':
-                return PieceType::kRook;
-            case 'q':
-                return PieceType::kQueen;
-            case 'k':
-                return PieceType::kKing;
-            default:
-                return PieceType::kNone;
         }
     }
 

@@ -76,7 +76,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] constexpr PieceType promo() const {
-            return static_cast<PieceType>(promoIdx() + 1);
+            return PieceType::fromRaw(promoIdx() + 1);
         }
 
         [[nodiscard]] constexpr MoveType type() const {
@@ -104,8 +104,9 @@ namespace stormphrax {
         }
 
         [[nodiscard]] static constexpr Move promotion(Square src, Square dst, PieceType promo) {
+            assert(promo.isValidPromotion());
             return Move{static_cast<u16>(
-                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | ((static_cast<u16>(promo) - 1) << 2)
+                (static_cast<u16>(src) << 10) | (static_cast<u16>(dst) << 4) | ((promo.raw() - 1) << 2)
                 | static_cast<u16>(MoveType::kPromotion)
             )};
         }

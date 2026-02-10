@@ -49,11 +49,11 @@ namespace stormphrax::tb {
     ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
         const auto moveFromTb = [](auto tbMove) {
             static constexpr auto kPromoPieces = std::array{
-                PieceType::kNone,
-                PieceType::kQueen,
-                PieceType::kRook,
-                PieceType::kBishop,
-                PieceType::kKnight,
+                PieceTypes::kNone,
+                PieceTypes::kQueen,
+                PieceTypes::kRook,
+                PieceTypes::kBishop,
+                PieceTypes::kKnight,
             };
 
             const auto from = static_cast<Square>(PYRRHIC_MOVE_FROM(tbMove));
@@ -62,7 +62,7 @@ namespace stormphrax::tb {
 
             if (PYRRHIC_MOVE_IS_ENPASS(tbMove)) {
                 return Move::enPassant(from, to);
-            } else if (promo != PieceType::kNone) {
+            } else if (promo != PieceTypes::kNone) {
                 return Move::promotion(from, to, promo);
             } else {
                 return Move::standard(from, to);

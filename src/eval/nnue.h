@@ -390,10 +390,10 @@ namespace stormphrax::eval {
             constexpr u32 kColorStride = 64 * 6;
             constexpr u32 kPieceStride = 64;
 
-            const auto type = static_cast<u32>(pieceType(piece));
+            const u32 type = pieceType(piece).raw();
 
             const auto color = [piece, c]() -> u32 {
-                if (InputFeatureSet::kMergedKings && pieceType(piece) == PieceType::kKing) {
+                if (InputFeatureSet::kMergedKings && pieceType(piece) == PieceTypes::kKing) {
                     return 0;
                 }
                 return pieceColor(piece) == c ? 0 : 1;

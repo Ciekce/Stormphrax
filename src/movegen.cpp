@@ -49,7 +49,7 @@ namespace stormphrax {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-                noisy.push({Move::promotion(srcSquare, dstSquare, PieceType::kQueen), 0});
+                noisy.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen), 0});
             }
         }
 
@@ -58,9 +58,9 @@ namespace stormphrax {
                 const auto dstSquare = board.popLowestSquare();
                 const auto srcSquare = static_cast<Square>(static_cast<i32>(dstSquare) - offset);
 
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kKnight), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kRook), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceType::kBishop), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kRook), 0});
+                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kBishop), 0});
             }
         }
 
@@ -155,11 +155,11 @@ namespace stormphrax {
             pushStandards(quiet, forwardOffset, singles);
         }
 
-        template <PieceType kPiece, const std::array<Bitboard, 64>& kAttacks>
-        inline void precalculated(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        template <const std::array<Bitboard, 64>& kAttacks>
+        inline void precalculated(ScoredMoveList& dst, PieceType pt, const Position& pos, Bitboard dstMask) {
             const auto us = pos.stm();
 
-            auto pieces = pos.bbs().forPiece(kPiece, us);
+            auto pieces = pos.bbs().forPiece(pt, us);
             while (!pieces.empty()) {
                 const auto srcSquare = pieces.popLowestSquare();
                 const auto attacks = kAttacks[static_cast<usize>(srcSquare)];
@@ -169,7 +169,7 @@ namespace stormphrax {
         }
 
         void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<PieceType::kKnight, attacks::kKnightAttacks>(dst, pos, dstMask);
+            precalculated<attacks::kKnightAttacks>(dst, PieceTypes::kKnight, pos, dstMask);
         }
 
         inline void generateFrcCastling(
@@ -195,7 +195,7 @@ namespace stormphrax {
 
         template <bool kCastling>
         void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<PieceType::kKing, attacks::kKingAttacks>(dst, pos, dstMask);
+            precalculated<attacks::kKingAttacks>(dst, PieceTypes::kKing, pos, dstMask);
 
             if constexpr (kCastling) {
                 if (!pos.isCheck()) {
