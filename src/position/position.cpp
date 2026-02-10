@@ -978,7 +978,13 @@ namespace stormphrax {
         const auto dst = Square::fromStr(move.substr(2, 2));
 
         if (move.length() == 5) {
-            return Move::promotion(src, dst, PieceType::fromChar(move[4]));
+            const auto promo = PieceType::fromChar(move[4]);
+
+            if (!promo.isValidPromotion()) {
+                return kNullMove;
+            }
+
+            return Move::promotion(src, dst, promo);
         } else {
             const auto srcPiece = m_boards.pieceOn(src);
 

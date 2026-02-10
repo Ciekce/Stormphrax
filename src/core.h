@@ -147,17 +147,17 @@ namespace stormphrax {
 
         [[nodiscard]] static constexpr PieceType fromChar(char c) {
             switch (c) {
-                case 'P':
+                case 'p':
                     return PieceType{kPawnId};
-                case 'N':
+                case 'n':
                     return PieceType{kKnightId};
-                case 'B':
+                case 'b':
                     return PieceType{kBishopId};
-                case 'R':
+                case 'r':
                     return PieceType{kRookId};
-                case 'Q':
+                case 'q':
                     return PieceType{kQueenId};
-                case 'K':
+                case 'k':
                     return PieceType{kKingId};
                 default:
                     return PieceType{kNoneId};
