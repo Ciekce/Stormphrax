@@ -412,11 +412,7 @@ namespace stormphrax::search {
                     const auto score =
                         search<true, true>(thread, thread.rootPos, rootPv, aspDepth, 0, 0, alpha, beta, false);
 
-                    std::stable_sort(
-                        thread.rootMoves.begin() + thread.pvIdx,
-                        thread.rootMoves.end(),
-                        [](const RootMove& a, const RootMove& b) { return a.score > b.score; }
-                    );
+                    thread.sortRemainingRootMoves();
 
                     if ((score > alpha && score < beta) || hasStopped()) {
                         break;
@@ -442,9 +438,7 @@ namespace stormphrax::search {
                     delta += delta * aspWideningFactor() / 16;
                 }
 
-                std::ranges::stable_sort(thread.rootMoves, [](const RootMove& a, const RootMove& b) {
-                    return a.score > b.score;
-                });
+                thread.sortRootMoves();
 
                 assert(thread.pvMove().pv.length > 0);
 

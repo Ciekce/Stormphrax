@@ -25,12 +25,16 @@
 
 #include "core.h"
 #include "position/position.h"
-#include "search_fwd.h"
 #include "tunable.h"
 #include "util/cemath.h"
 #include "util/multi_array.h"
 
 namespace stormphrax {
+    struct PlayedMove {
+        Piece moving;
+        Square dst;
+    };
+
     class CorrectionHistoryTable {
     public:
         inline void clear() {
@@ -43,7 +47,7 @@ namespace stormphrax {
 
         inline void update(
             const Position& pos,
-            std::span<search::PlayedMove> moves,
+            std::span<PlayedMove> moves,
             i32 ply,
             i32 depth,
             Score searchScore,
@@ -80,7 +84,7 @@ namespace stormphrax {
 
         [[nodiscard]] inline Score correct(
             const Position& pos,
-            std::span<search::PlayedMove> moves,
+            std::span<PlayedMove> moves,
             i32 ply,
             Score score
         ) const {

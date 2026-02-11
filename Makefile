@@ -26,7 +26,7 @@ PGO = off
 COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 
-SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp
+SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/limit/time.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
 SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
 

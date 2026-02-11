@@ -22,7 +22,10 @@
 
 #include <atomic>
 
+#include "correction.h"
+#include "history.h"
 #include "move.h"
+#include "movepick.h"
 
 namespace stormphrax::search {
     struct SearchData {
@@ -71,18 +74,13 @@ namespace stormphrax::search {
         }
     };
 
-    struct PlayedMove {
-        Piece moving;
-        Square dst;
-    };
-
     struct PvList {
         std::array<Move, kMaxDepth> moves{};
         u32 length{};
 
         inline void update(Move move, const PvList& child) {
             moves[0] = move;
-            std::copy(child.moves.begin(), child.moves.begin() + child.length, moves.begin() + 1);
+            std::copy_n(child.moves.begin(), child.length, moves.begin() + 1);
 
             length = child.length + 1;
 
@@ -109,5 +107,108 @@ namespace stormphrax::search {
         PvList pv{};
 
         usize nodes{};
+    };
+
+    struct SearchStackEntry {
+        PvList pv{};
+        Move move;
+
+        Score staticEval{};
+        bool ttpv{};
+
+        KillerTable killers{};
+
+        Move excluded{};
+        i32 reduction{};
+    };
+
+    struct MoveStackEntry {
+        MovegenData movegenData{};
+        StaticVector<Move, 256> failLowQuiets{};
+        StaticVector<Move, 32> failLowNoisies{};
+    };
+
+    template <bool kUpdateNnue>
+    class ThreadPosGuard {
+    public:
+        explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::NnueState& nnueState) :
+                m_keyHistory{keyHistory}, m_nnueState{nnueState} {}
+
+        ThreadPosGuard(const ThreadPosGuard&) = delete;
+        ThreadPosGuard(ThreadPosGuard&&) = delete;
+
+        inline ~ThreadPosGuard() {
+            m_keyHistory.pop_back();
+
+            if constexpr (kUpdateNnue) {
+                m_nnueState.pop();
+            }
+        }
+
+    private:
+        std::vector<u64>& m_keyHistory;
+        eval::NnueState& m_nnueState;
+    };
+
+    struct alignas(kCacheLineSize) ThreadData {
+        ThreadData() {
+            stack.resize(kMaxDepth + 4);
+            moveStack.resize(kMaxDepth * 2);
+            conthist.resize(kMaxDepth + 4);
+            contMoves.resize(kMaxDepth + 4);
+
+            keyHistory.reserve(1024);
+        }
+
+        u32 id{};
+
+        SearchData search{};
+
+        bool datagen{false};
+
+        i32 minNmpPly{};
+
+        eval::NnueState nnueState{};
+
+        u32 pvIdx{};
+        std::vector<RootMove> rootMoves{};
+
+        i32 depthCompleted{};
+
+        std::vector<SearchStackEntry> stack{};
+        std::vector<MoveStackEntry> moveStack{};
+        std::vector<ContinuationSubtable*> conthist{};
+        std::vector<PlayedMove> contMoves{};
+
+        HistoryTables history{};
+        CorrectionHistoryTable correctionHistory{};
+
+        Position rootPos{};
+
+        std::vector<u64> keyHistory{};
+
+        [[nodiscard]] inline bool isMainThread() const {
+            return id == 0;
+        }
+
+        [[nodiscard]] std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply);
+        [[nodiscard]] std::pair<Position, ThreadPosGuard<true>> applyMove(const Position& pos, i32 ply, Move move);
+
+        [[nodiscard]] RootMove* findRootMove(Move move);
+
+        [[nodiscard]] inline bool isLegalRootMove(Move move) {
+            return findRootMove(move) != nullptr;
+        }
+
+        void sortRootMoves();
+        void sortRemainingRootMoves();
+
+        [[nodiscard]] inline RootMove& pvMove() {
+            return rootMoves[0];
+        }
+
+        [[nodiscard]] inline const RootMove& pvMove() const {
+            return rootMoves[0];
+        }
     };
 } // namespace stormphrax::search

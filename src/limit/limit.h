@@ -20,7 +20,7 @@
 
 #include "../types.h"
 
-#include "../search_fwd.h"
+#include "../thread.h"
 
 namespace stormphrax::limit {
     class ISearchLimiter {

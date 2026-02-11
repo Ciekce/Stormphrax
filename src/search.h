@@ -34,14 +34,11 @@
 #include <utility>
 #include <vector>
 
-#include "correction.h"
 #include "eval/eval.h"
-#include "history.h"
 #include "limit/limit.h"
-#include "movepick.h"
 #include "position/position.h"
-#include "search_fwd.h"
 #include "tb.h"
+#include "thread.h"
 #include "ttable.h"
 #include "util/barrier.h"
 #include "util/timer.h"
@@ -55,150 +52,11 @@ namespace stormphrax::search {
     constexpr auto kSyzygyProbeDepthRange = util::Range<i32>{1, kMaxDepth};
     constexpr auto kSyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
-    struct SearchStackEntry {
-        PvList pv{};
-        Move move;
-
-        Score staticEval;
-        bool ttpv;
-
-        KillerTable killers{};
-
-        Move excluded{};
-        i32 reduction{};
-    };
-
-    struct MoveStackEntry {
-        MovegenData movegenData{};
-        StaticVector<Move, 256> failLowQuiets{};
-        StaticVector<Move, 32> failLowNoisies{};
-    };
-
-    template <bool kUpdateNnue>
-    class ThreadPosGuard {
-    public:
-        explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::NnueState& nnueState) :
-                m_keyHistory{keyHistory}, m_nnueState{nnueState} {}
-
-        ThreadPosGuard(const ThreadPosGuard&) = delete;
-        ThreadPosGuard(ThreadPosGuard&&) = delete;
-
-        inline ~ThreadPosGuard() {
-            m_keyHistory.pop_back();
-
-            if constexpr (kUpdateNnue) {
-                m_nnueState.pop();
-            }
-        }
-
-    private:
-        std::vector<u64>& m_keyHistory;
-        eval::NnueState& m_nnueState;
-    };
-
-    struct alignas(kCacheLineSize) ThreadData {
-        ThreadData() {
-            stack.resize(kMaxDepth + 4);
-            moveStack.resize(kMaxDepth * 2);
-            conthist.resize(kMaxDepth + 4);
-            contMoves.resize(kMaxDepth + 4);
-
-            keyHistory.reserve(1024);
-        }
-
-        u32 id{};
-
-        SearchData search{};
-
-        bool datagen{false};
-
-        i32 minNmpPly{};
-
-        eval::NnueState nnueState{};
-
-        u32 pvIdx{};
-        std::vector<RootMove> rootMoves{};
-
-        i32 depthCompleted{};
-
-        std::vector<SearchStackEntry> stack{};
-        std::vector<MoveStackEntry> moveStack{};
-        std::vector<ContinuationSubtable*> conthist{};
-        std::vector<PlayedMove> contMoves{};
-
-        HistoryTables history{};
-        CorrectionHistoryTable correctionHistory{};
-
-        Position rootPos{};
-
-        std::vector<u64> keyHistory{};
-
-        [[nodiscard]] inline bool isMainThread() const {
-            return id == 0;
-        }
-
-        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply) {
-            assert(ply <= kMaxDepth);
-
-            stack[ply].move = kNullMove;
-            conthist[ply] = &history.contTable(Pieces::kWhitePawn, Squares::kA1);
-            contMoves[ply] = {Pieces::kNone, Squares::kNone};
-
-            keyHistory.push_back(pos.key());
-
-            return std::pair<Position, ThreadPosGuard<false>>{
-                std::piecewise_construct,
-                std::forward_as_tuple(pos.applyNullMove()),
-                std::forward_as_tuple(keyHistory, nnueState)
-            };
-        }
-
-        [[nodiscard]] inline std::pair<Position, ThreadPosGuard<true>> applyMove(
-            const Position& pos,
-            i32 ply,
-            Move move
-        ) {
-            assert(ply <= kMaxDepth);
-
-            const auto moving = pos.boards().pieceOn(move.fromSq());
-
-            stack[ply].move = move;
-            conthist[ply] = &history.contTable(moving, move.toSq());
-            contMoves[ply] = {moving, move.toSq()};
-
-            keyHistory.push_back(pos.key());
-
-            return std::pair<Position, ThreadPosGuard<true>>{
-                std::piecewise_construct,
-                std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kQueue>(move, &nnueState)),
-                std::forward_as_tuple(keyHistory, nnueState)
-            };
-        }
-
-        [[nodiscard]] inline RootMove* findRootMove(Move move) {
-            for (u32 idx = pvIdx; idx < rootMoves.size(); ++idx) {
-                auto& rootMove = rootMoves[idx];
-                assert(rootMove.pv.length > 0);
-
-                if (move == rootMove.pv.moves[0]) {
-                    return &rootMove;
-                }
-            }
-
-            return nullptr;
-        }
-
-        [[nodiscard]] inline bool isLegalRootMove(Move move) {
-            return findRootMove(move) != nullptr;
-        }
-
-        [[nodiscard]] inline RootMove& pvMove() {
-            return rootMoves[0];
-        }
-
-        [[nodiscard]] inline const RootMove& pvMove() const {
-            return rootMoves[0];
-        }
+    enum class RootStatus {
+        kNoLegalMoves = 0,
+        kTablebase,
+        kGenerated,
+        kSearchmoves,
     };
 
     struct SetupInfo {
@@ -206,13 +64,6 @@ namespace stormphrax::search {
 
         usize keyHistorySize{};
         std::span<const u64> keyHistory{};
-    };
-
-    enum class RootStatus {
-        kNoLegalMoves = 0,
-        kTablebase,
-        kGenerated,
-        kSearchmoves,
     };
 
     class Searcher {

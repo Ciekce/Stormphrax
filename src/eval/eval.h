@@ -36,7 +36,7 @@ namespace stormphrax::eval {
     template <bool kCorrect = true>
     inline Score adjustEval(
         const Position& pos,
-        std::span<search::PlayedMove> moves,
+        std::span<PlayedMove> moves,
         i32 ply,
         const CorrectionHistoryTable* correction,
         i32 eval,
@@ -85,7 +85,7 @@ namespace stormphrax::eval {
     template <bool kCorrect = true>
     inline Score adjustedStaticEval(
         const Position& pos,
-        std::span<search::PlayedMove> moves,
+        std::span<PlayedMove> moves,
         i32 ply,
         NnueState& nnueState,
         const CorrectionHistoryTable* correction,
