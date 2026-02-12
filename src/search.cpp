@@ -102,7 +102,7 @@ namespace stormphrax::search {
         bool infinite
     ) {
         if (!m_limiter) {
-            eprintln("mising limiter");
+            eprintln("missing limiter");
             return;
         }
 
