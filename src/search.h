@@ -35,7 +35,7 @@
 #include <vector>
 
 #include "eval/eval.h"
-#include "limit/limit.h"
+#include "limit.h"
 #include "position/position.h"
 #include "tb.h"
 #include "thread.h"
@@ -79,7 +79,7 @@ namespace stormphrax::search {
         void newGame();
         void ensureReady();
 
-        inline void setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter) {
+        inline void setLimiter(limit::SearchLimiter limiter) {
             m_limiter = std::move(limiter);
         }
 
@@ -94,7 +94,6 @@ namespace stormphrax::search {
             util::Instant startTime,
             i32 maxDepth,
             std::span<Move> moves,
-            std::unique_ptr<limit::ISearchLimiter> limiter,
             bool infinite
         );
 
@@ -151,7 +150,7 @@ namespace stormphrax::search {
         std::condition_variable m_stopSignal{};
         std::atomic_int m_runningThreads{};
 
-        std::unique_ptr<limit::ISearchLimiter> m_limiter{};
+        std::optional<limit::SearchLimiter> m_limiter{};
 
         bool m_infinite{};
         i32 m_maxDepth{kMaxDepth};
@@ -177,27 +176,6 @@ namespace stormphrax::search {
 
         [[nodiscard]] inline bool hasStopped() const {
             return m_stop.load(std::memory_order::relaxed) != 0;
-        }
-
-        [[nodiscard]] inline bool checkStop(const SearchData& data, bool mainThread, bool allowSoft) {
-            if (hasStopped()) {
-                return true;
-            }
-
-            if (mainThread && m_limiter->stop(data, allowSoft)) {
-                m_stop.store(1, std::memory_order::relaxed);
-                return true;
-            }
-
-            return false;
-        }
-
-        [[nodiscard]] inline bool checkHardTimeout(const SearchData& data, bool mainThread) {
-            return checkStop(data, mainThread, false);
-        }
-
-        [[nodiscard]] inline bool checkSoftTimeout(const SearchData& data, bool mainThread) {
-            return checkStop(data, mainThread, true);
         }
 
         [[nodiscard]] inline f64 elapsed() const {

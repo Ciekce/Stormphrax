@@ -28,6 +28,8 @@ namespace stormphrax {
         constexpr u32 kDefaultThreadCount = 1;
         constexpr auto kThreadCountRange = util::Range<u32>{1, 2048};
 
+        constexpr auto kSoftNodeHardLimitMultiplierRange = util::Range<i32>{1, 5000};
+
         constexpr auto kMultiPvRange = util::Range<u32>{1, 256};
 
         constexpr i32 kDefaultEvalSharpness = 115;

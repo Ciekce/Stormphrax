@@ -23,7 +23,6 @@
 #include <tuple>
 
 #include "3rdparty/pyrrhic/tbprobe.h"
-#include "limit/trivial.h"
 #include "opts.h"
 #include "see.h"
 #include "stats.h"
@@ -100,10 +99,9 @@ namespace stormphrax::search {
         Instant startTime,
         i32 maxDepth,
         std::span<Move> moves,
-        std::unique_ptr<limit::ISearchLimiter> limiter,
         bool infinite
     ) {
-        if (!m_limiter && !limiter) {
+        if (!m_limiter) {
             eprintln("mising limiter");
             return;
         }
@@ -145,10 +143,6 @@ namespace stormphrax::search {
         assert(!m_rootMoveList.empty());
 
         m_multiPv = std::min<u32>(g_opts.multiPv, m_rootMoveList.size());
-
-        if (limiter) {
-            m_limiter = std::move(limiter);
-        }
 
         // Cap search time if we have one legal move, or if we're in a TB draw at root
         if (m_rootMoveList.size() == 1 || m_rootProbeResult == tb::ProbeResult::kDraw) {
@@ -207,7 +201,7 @@ namespace stormphrax::search {
     }
 
     void Searcher::runBench(BenchData& data, const Position& pos, i32 depth) {
-        m_limiter = std::make_unique<limit::InfiniteLimiter>();
+        m_limiter = limit::SearchLimiter{Instant::now()};
         m_infinite = false;
 
         m_contempt = {};
@@ -461,17 +455,15 @@ namespace stormphrax::search {
             }
 
             if (mainThread) {
-                m_limiter->update(thread.search, thread.pvMove(), thread.search.loadNodes());
+                const auto nodes = searchData.loadNodes();
 
-                if (checkSoftTimeout(thread.search, true)) {
+                m_limiter->update(depth, nodes, thread.pvMove());
+
+                if (m_limiter->stopSoft(nodes)) {
                     break;
                 }
 
-                if (!g_opts.minimal) {
-                    report(thread, searchData.rootDepth, elapsed());
-                }
-            } else if (checkSoftTimeout(thread.search, thread.isMainThread())) {
-                break;
+                report(thread, searchData.rootDepth, elapsed());
             }
         }
 
@@ -527,8 +519,11 @@ namespace stormphrax::search {
         assert(kRootNode || ply > 0);
         assert(kPvNode || alpha + 1 == beta);
 
-        if (ply > 0 && checkHardTimeout(thread.search, thread.isMainThread())) {
-            return 0;
+        if (!kRootNode && thread.isMainThread() && thread.search.rootDepth > 1) {
+            if (m_limiter->stopHard(thread.search.loadNodes())) {
+                m_stop.store(true, std::memory_order::relaxed);
+                return 0;
+            }
         }
 
         const auto& boards = pos.boards();
@@ -1201,8 +1196,11 @@ namespace stormphrax::search {
     ) {
         assert(ply > 0 && ply <= kMaxDepth);
 
-        if (checkHardTimeout(thread.search, thread.isMainThread())) {
-            return 0;
+        if (thread.isMainThread() && thread.search.rootDepth > 1) {
+            if (m_limiter->stopHard(thread.search.loadNodes())) {
+                m_stop.store(true, std::memory_order::relaxed);
+                return 0;
+            }
         }
 
         if (alpha < 0 && pos.hasCycle(ply, thread.keyHistory)) {
@@ -1568,9 +1566,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (!g_opts.minimal) {
-            println("info string Selected thread {}", bestThread->id);
-        }
+        println("info string Selected thread {}", bestThread->id);
 
         return *bestThread;
     }

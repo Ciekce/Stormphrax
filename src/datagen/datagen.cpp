@@ -29,7 +29,7 @@
 #include <fmt/std.h>
 
 #include "../3rdparty/pyrrhic/tbprobe.h"
-#include "../limit/limit.h"
+#include "../limit.h"
 #include "../movegen.h"
 #include "../opts.h"
 #include "../search.h"
@@ -51,45 +51,6 @@ namespace stormphrax::datagen {
         void initCtrlCHandler() {
             util::signal::setCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
         }
-
-        class DatagenNodeLimiter final : public limit::ISearchLimiter {
-        public:
-            explicit DatagenNodeLimiter(u32 threadId) :
-                    m_threadId{threadId} {}
-            ~DatagenNodeLimiter() final = default;
-
-            [[nodiscard]] bool stop(const search::SearchData& data, bool allowSoftTimeout) final {
-                if (data.nodes >= m_hardNodeLimit) {
-                    println(
-                        "thread {}: stopping search after {} nodes (limit: {})",
-                        m_threadId,
-                        data.nodes.load(std::memory_order::relaxed),
-                        m_hardNodeLimit
-                    );
-                    return true;
-                }
-
-                return allowSoftTimeout && data.nodes >= m_softNodeLimit;
-            }
-
-            [[nodiscard]] bool stopped() const final {
-                // doesn't matter
-                return false;
-            }
-
-            inline void setSoftNodeLimit(usize nodes) {
-                m_softNodeLimit = nodes;
-            }
-
-            inline void setHardNodeLimit(usize nodes) {
-                m_hardNodeLimit = nodes;
-            }
-
-        private:
-            u32 m_threadId;
-            usize m_softNodeLimit{};
-            usize m_hardNodeLimit{};
-        };
 
         [[nodiscard]] std::optional<Outcome> probeTb(const Position& pos) {
             if (pos.bbs().occupancy().popcount() > TB_LARGEST || pos.halfmove() != 0
@@ -139,11 +100,17 @@ namespace stormphrax::datagen {
 
             util::rng::Jsf64Rng rng{seed};
 
-            auto limiterPtr = std::make_unique<DatagenNodeLimiter>(id);
-            auto& limiter = *limiterPtr;
+            const auto createLimiter = [](usize hardNodes, usize softNodes = std::numeric_limits<usize>::max()) {
+                limit::SearchLimiter limiter{Instant::now()};
+                limiter.setHardNodes(hardNodes);
+                limiter.setSoftNodes(softNodes);
+                return limiter;
+            };
+
+            const auto verifLimiter = createLimiter(kVerificationHardNodeLimit);
+            const auto datagenLimiter = createLimiter(kDatagenHardNodeLimit, kDatagenSoftNodeLimit);
 
             search::Searcher searcher{};
-            searcher.setLimiter(std::move(limiterPtr));
 
             auto thread = std::make_unique<search::ThreadData>();
             thread->datagen = true;
@@ -215,14 +182,12 @@ namespace stormphrax::datagen {
                 thread->nnueState.reset(pos.bbs(), pos.kings());
 
                 searcher.setDatagenMaxDepth(10);
-                limiter.setSoftNodeLimit(std::numeric_limits<usize>::max());
-                limiter.setHardNodeLimit(kVerificationHardNodeLimit);
+                searcher.setLimiter(verifLimiter);
 
                 const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
 
                 searcher.setDatagenMaxDepth(kMaxDepth);
-                limiter.setSoftNodeLimit(kDatagenSoftNodeLimit);
-                limiter.setHardNodeLimit(kDatagenHardNodeLimit);
+                searcher.setLimiter(datagenLimiter);
 
                 if (std::abs(normFirstScore) > kVerificationScoreLimit) {
                     --game;

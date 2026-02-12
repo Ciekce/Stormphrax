@@ -51,8 +51,8 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h
 	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position/position.h src/position/position.cpp src/search.h
 	src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h
-	src/util/timer.cpp src/rays.h src/ttable.h src/ttable.cpp src/limit/limit.h src/limit/trivial.h src/limit/time.h
-	src/limit/time.cpp src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
+	src/util/timer.cpp src/rays.h src/ttable.h src/ttable.cpp
+	src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
 	src/perft.cpp src/thread.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
 	src/opts.cpp src/position/boards.h src/3rdparty/pyrrhic/stdendian.h src/3rdparty/pyrrhic/tbconfig.h
 	src/3rdparty/pyrrhic/tbprobe.h src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.h src/datagen/datagen.cpp
@@ -61,11 +61,12 @@ set(STORMPHRAX_COMMON_SRC src/types.h src/main.cpp src/uci.h src/uci.cpp src/cor
 	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/io.h src/eval/nnue/features.h
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
-	src/util/multi_array.h src/correction.h src/limit/compound.h src/util/simd/avx512.h src/util/simd/avx2.h
+	src/util/multi_array.h src/correction.h src/util/simd/avx512.h src/util/simd/avx2.h
 	src/util/simd/neon.h src/util/align.h src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.h
 	src/eval/nnue/io_impl.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
 	src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp
-	src/3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h src/thread.cpp)
+	src/3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h src/thread.cpp src/root_move.h src/pv.h src/limit.h
+	src/limit.cpp)
 
 set(STORMPHRAX_BMI2_SRC src/attacks/bmi2/data.h src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp)
 set(STORMPHRAX_NON_BMI2_SRC src/attacks/black_magic/data.h src/attacks/black_magic/attacks.h
