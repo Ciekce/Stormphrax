@@ -244,6 +244,7 @@ namespace stormphrax {
                 limit::kSoftNodeHardLimitMultiplierRange.max()
             );
             println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
+            println("option name Minimal type check default {}", defaultOpts.minimal);
             println("option name SyzygyPath type string default <empty>");
             println(
                 "option name SyzygyProbeDepth type spin default {} min {} max {}",
@@ -692,6 +693,12 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newEnableWeirdTcs = util::tryParseBool(value)) {
                             opts::mutableOpts().enableWeirdTcs = *newEnableWeirdTcs;
+                        }
+                    }
+                } else if (name == "minimal") {
+                    if (!value.empty()) {
+                        if (const auto newMinimal = util::tryParseBool(value)) {
+                            opts::mutableOpts().minimal = *newMinimal;
                         }
                     }
                 } else if (name == "syzygypath") {

@@ -51,6 +51,8 @@ namespace stormphrax {
 
             bool enableWeirdTcs{false};
 
+            bool minimal{false};
+
             bool syzygyEnabled{false};
             i32 syzygyProbeDepth{1};
             i32 syzygyProbeLimit{7};

@@ -418,7 +418,7 @@ namespace stormphrax::search {
                         break;
                     }
 
-                    if (mainThread && g_opts.multiPv == 1) {
+                    if (mainThread && !g_opts.minimal && g_opts.multiPv == 1) {
                         const auto time = elapsed();
                         if (time >= kWidenReportDelay) {
                             reportSingle(thread, thread.pvIdx, depth, time);
@@ -467,7 +467,9 @@ namespace stormphrax::search {
                     break;
                 }
 
-                report(thread, searchData.rootDepth, elapsed());
+                if (!g_opts.minimal) {
+                    report(thread, searchData.rootDepth, elapsed());
+                }
             } else if (checkSoftTimeout(thread.search, thread.isMainThread())) {
                 break;
             }
@@ -1566,7 +1568,9 @@ namespace stormphrax::search {
             }
         }
 
-        println("info string Selected thread {}", bestThread->id);
+        if (!g_opts.minimal) {
+            println("info string Selected thread {}", bestThread->id);
+        }
 
         return *bestThread;
     }
