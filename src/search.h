@@ -155,6 +155,8 @@ namespace stormphrax::search {
         bool m_infinite{};
         i32 m_maxDepth{kMaxDepth};
 
+        std::atomic<u32> m_softStoppedThreads{};
+
         MoveList m_rootMoveList{};
         u32 m_multiPv{};
 
@@ -169,6 +171,8 @@ namespace stormphrax::search {
         SetupInfo m_setupInfo{};
 
         RootStatus initRootMoveList(const Position& pos);
+
+        void signalThreadSoftStopped();
 
         void stopThreads();
 

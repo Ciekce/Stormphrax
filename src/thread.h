@@ -24,11 +24,11 @@
 
 #include "correction.h"
 #include "history.h"
+#include "limit.h"
 #include "move.h"
 #include "movepick.h"
 #include "pv.h"
 #include "root_move.h"
-#include "limit.h"
 
 namespace stormphrax::search {
     struct SearchData {
@@ -133,6 +133,7 @@ namespace stormphrax::search {
         SearchData search{};
 
         std::optional<limit::SearchLimiter> limiter{};
+        bool stoppedSoft{};
 
         bool datagen{false};
 

@@ -302,6 +302,14 @@ namespace stormphrax::search {
         return m_rootMoveList.empty() ? RootStatus::kNoLegalMoves : RootStatus::kGenerated;
     }
 
+    void Searcher::signalThreadSoftStopped() {
+        const auto stopped = ++m_softStoppedThreads;
+        const auto voteThreshold = (m_threadData.size() + 1) / 2;
+        if (stopped >= voteThreshold) {
+            m_stop.store(true);
+        }
+    }
+
     void Searcher::stopThreads() {
         m_quit.store(true, std::memory_order::release);
 
@@ -354,6 +362,7 @@ namespace stormphrax::search {
         assert(!m_rootMoveList.empty());
 
         thread.limiter = m_limiter;
+        thread.stoppedSoft = false;
 
         thread.rootMoves.clear();
         thread.rootMoves.reserve(m_rootMoveList.size());
@@ -456,18 +465,20 @@ namespace stormphrax::search {
                 break;
             }
 
-            if (mainThread) {
-                const auto nodes = searchData.loadNodes();
+            const auto nodes = searchData.loadNodes();
 
-                thread.limiter->update(depth, nodes, thread.pvMove());
+            thread.limiter->update(depth, nodes, thread.pvMove());
 
-                if (thread.limiter->stopSoft(nodes)) {
+            if (!thread.stoppedSoft && thread.limiter->stopSoft(nodes)) {
+                thread.stoppedSoft = true;
+                signalThreadSoftStopped();
+                if (hasStopped()) {
                     break;
                 }
+            }
 
-                if (!g_opts.minimal) {
-                    report(thread, searchData.rootDepth, elapsed());
-                }
+            if (mainThread && !g_opts.minimal) {
+                report(thread, searchData.rootDepth, elapsed());
             }
         }
 
