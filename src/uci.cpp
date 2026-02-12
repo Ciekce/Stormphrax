@@ -28,9 +28,7 @@
 #include "3rdparty/pyrrhic/tbprobe.h"
 #include "bench.h"
 #include "eval/eval.h"
-#include "limit/compound.h"
-#include "limit/time.h"
-#include "limit/trivial.h"
+#include "limit.h"
 #include "movegen.h"
 #include "opts.h"
 #include "perft.h"
@@ -112,7 +110,7 @@ namespace stormphrax {
             std::vector<u64> m_keyHistory{};
             Position m_pos{Position::starting()};
 
-            i32 m_moveOverhead{limit::kDefaultMoveOverhead};
+            i32 m_moveOverhead{limit::kDefaultMoveOverheadMs};
         };
 
         UciHandler::~UciHandler() {
@@ -232,7 +230,7 @@ namespace stormphrax {
             println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
             println(
                 "option name Move Overhead type spin default {} min {} max {}",
-                limit::kDefaultMoveOverhead,
+                limit::kDefaultMoveOverheadMs,
                 limit::kMoveOverheadRange.min(),
                 limit::kMoveOverheadRange.max()
             );
@@ -240,8 +238,8 @@ namespace stormphrax {
             println(
                 "option name SoftNodeHardLimitMultiplier type spin default {} min {} max {}",
                 defaultOpts.softNodeHardLimitMultiplier,
-                limit::kSoftNodeHardLimitMultiplierRange.min(),
-                limit::kSoftNodeHardLimitMultiplierRange.max()
+                opts::kSoftNodeHardLimitMultiplierRange.min(),
+                opts::kSoftNodeHardLimitMultiplierRange.max()
             );
             println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
             println("option name Minimal type check default {}", defaultOpts.minimal);
@@ -387,87 +385,142 @@ namespace stormphrax {
                 return;
             }
 
-            u32 depth = kMaxDepth;
-            auto limiter = std::make_unique<limit::CompoundLimiter>();
-
             MoveList movesToSearch{};
 
+            limit::SearchLimiter limiter{startTime};
+
             bool infinite = false;
-            bool tournamentTime = false;
 
-            i64 timeRemaining{};
-            i64 increment{};
-            i32 toGo{};
+            auto maxDepth = kMaxDepth;
 
-            for (usize i = 0; i < args.size(); ++i) {
-                if (args[i] == "depth" && ++i < args.size()) {
-                    if (!util::tryParse<u32>(depth, args[i])) {
-                        eprintln("invalid depth {}", args[i]);
-                    }
-                    continue;
-                }
+            std::optional<f64> wtime{};
+            std::optional<f64> btime{};
 
-                if (args[i] == "infinite") {
+            std::optional<f64> winc{};
+            std::optional<f64> binc{};
+
+            std::optional<u32> movesToGo{};
+
+            for (i32 i = 0; i < args.size(); ++i) {
+                const auto limitStr = args[i];
+
+                if (limitStr == "infinite") {
                     infinite = true;
-                    continue;
-                }
+                } else if (limitStr == "depth") {
+                    if (++i == args.size()) {
+                        eprintln("Missing depth");
+                        return;
+                    }
 
-                if (args[i] == "nodes" && ++i < args.size()) {
+                    if (!util::tryParse(maxDepth, args[i])) {
+                        eprintln("Invalid depth '{}'", args[i]);
+                        return;
+                    }
+                } else if (limitStr == "nodes") {
+                    if (++i == args.size()) {
+                        eprintln("Missing node limit");
+                        return;
+                    }
+
                     usize nodes{};
-                    if (!util::tryParse<usize>(nodes, args[i])) {
-                        eprintln("invalid node count {}", args[i]);
-                    } else {
-                        limiter->addLimiter<limit::NodeLimiter>(nodes);
-                    }
-                } else if (args[i] == "movetime" && ++i < args.size()) {
-                    i64 time{};
-                    if (!util::tryParse<i64>(time, args[i])) {
-                        eprintln("invalid time {}", args[i]);
-                    } else {
-                        time = std::max<i64>(time, 1);
-                        limiter->addLimiter<limit::MoveTimeLimiter>(time);
-                    }
-                } else if ((args[i] == "btime" || args[i] == "wtime") && ++i < args.size()
-                           && args[i - 1] == (m_pos.stm() == Colors::kBlack ? "btime" : "wtime"))
-                {
-                    tournamentTime = true;
 
-                    i64 time{};
-                    if (!util::tryParse<i64>(time, args[i])) {
-                        eprintln("invalid time {}", args[i]);
-                    } else {
-                        time = std::max<i64>(time, 1);
-                        timeRemaining = static_cast<i64>(time);
+                    if (!util::tryParse(nodes, args[i])) {
+                        eprintln("Invalid node limit '{}'", args[i]);
+                        return;
                     }
-                } else if ((args[i] == "binc" || args[i] == "winc") && ++i < args.size()
-                           && args[i - 1] == (m_pos.stm() == Colors::kBlack ? "binc" : "winc"))
-                {
-                    tournamentTime = true;
 
-                    i64 time{};
-                    if (!util::tryParse<i64>(time, args[i])) {
-                        eprintln("invalid time {}", args[i]);
-                    } else {
-                        time = std::max<i64>(time, 1);
-                        increment = static_cast<i64>(time);
-                    }
-                } else if (args[i] == "movestogo" && ++i < args.size()) {
-                    tournamentTime = true;
+                    auto hardNodes = nodes;
 
-                    u32 moves{};
-                    if (!util::tryParse<u32>(moves, args[i])) {
-                        eprintln("invalid movestogo {}", args[i]);
-                    } else {
-                        moves = std::min<u32>(moves, static_cast<u32>(std::numeric_limits<i32>::max()));
-                        toGo = static_cast<i32>(moves);
+                    if (g_opts.softNodes) {
+                        hardNodes *= g_opts.softNodeHardLimitMultiplier;
+                        limiter.setSoftNodes(nodes);
                     }
-                } else if (args[i] == "searchmoves" && i + 1 < args.size()) {
+
+                    if (!limiter.setHardNodes(hardNodes)) {
+                        eprintln("Duplicate node limits");
+                        return;
+                    }
+                } else if (limitStr == "movetime") {
+                    if (++i == args.size()) {
+                        eprintln("Missing move time limit");
+                        return;
+                    }
+
+                    i64 maxTimeMs{};
+
+                    if (!util::tryParse(maxTimeMs, args[i])) {
+                        eprintln("Invalid move time limit '{}'", args[i]);
+                        return;
+                    }
+
+                    maxTimeMs = std::max<i64>(maxTimeMs, 1);
+
+                    const auto maxTimeSec = static_cast<f64>(maxTimeMs) / 1000.0;
+
+                    if (!limiter.setMoveTime(maxTimeSec)) {
+                        eprintln("Duplicate movetime limits");
+                        return;
+                    }
+                } else if (limitStr == "btime" || limitStr == "wtime" || limitStr == "binc" || limitStr == "winc") {
+                    if (++i == args.size()) {
+                        eprintln("Missing {} limit", limitStr);
+                        return;
+                    }
+
+                    auto& limit = [&]() -> std::optional<f64>& {
+                        if (limitStr == "wtime") {
+                            return wtime;
+                        } else if (limitStr == "btime") {
+                            return btime;
+                        } else if (limitStr == "winc") {
+                            return winc;
+                        } else if (limitStr == "binc") {
+                            return binc;
+                        }
+                        __builtin_unreachable();
+                    }();
+
+                    i64 ms{};
+
+                    if (!util::tryParse(ms, args[i])) {
+                        eprintln("Invalid {} limit '{}'", limitStr, args[i]);
+                        return;
+                    }
+
+                    if (limit) {
+                        eprintln("Duplicate {} limits", limitStr);
+                        return;
+                    }
+
+                    limit = static_cast<f64>(ms) / 1000.0;
+                } else if (limitStr == "movestogo") {
+                    if (++i == args.size()) {
+                        eprintln("Missing move time limit");
+                        return;
+                    }
+
+                    u32 mtg{};
+
+                    if (!util::tryParse(mtg, args[i])) {
+                        eprintln("Invalid moves to go '{}'", args[i]);
+                        return;
+                    }
+
+                    if (mtg > 0) {
+                        if (movesToGo) {
+                            eprintln("Duplicate moves to go");
+                            return;
+                        }
+
+                        movesToGo = mtg;
+                    }
+                } else if (limitStr == "searchmoves" && i + 1 < args.size()) {
                     while (i + 1 < args.size()) {
                         const auto& candidate = args[i + 1];
 
-                        if (candidate.length() >= 4 && candidate.length() <= 5 && candidate[0] >= 'a'
-                            && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8' && candidate[2] >= 'a'
-                            && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
+                        if (candidate.length() >= 4 && candidate.length() <= 5 //
+                            && candidate[0] >= 'a' && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8'
+                            && candidate[2] >= 'a' && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
                             && (candidate.length() < 5 || PieceType::fromChar(candidate[4]).isValidPromotion()))
                         {
                             const auto move = m_pos.moveFromUci(candidate);
@@ -498,16 +551,29 @@ namespace stormphrax {
                 println();
             }
 
-            if (depth == 0) {
+            if (maxDepth == 0) {
                 return;
             }
 
-            if (depth > kMaxDepth) {
-                depth = kMaxDepth;
+            if (maxDepth > kMaxDepth) {
+                maxDepth = kMaxDepth;
             }
 
-            if (tournamentTime) {
-                if (toGo != 0) {
+            const auto time = m_pos.stm() == Colors::kBlack ? btime : wtime;
+            const auto inc = m_pos.stm() == Colors::kBlack ? binc : winc;
+
+            if (inc && !time) {
+                println("info string Warning: increment given but no time, ignoring");
+            }
+
+            if (time) {
+                const limit::TimeLimits limits{
+                    .remaining = std::max(*time, 0.001),
+                    .increment = inc.value_or(0.0),
+                    .movesToGo = movesToGo,
+                };
+
+                if (movesToGo) {
                     if (g_opts.enableWeirdTcs) {
                         println(
                             "info string Warning: Stormphrax does not officially support cyclic (movestogo) time controls"
@@ -519,7 +585,7 @@ namespace stormphrax {
                         println("bestmove 0000");
                         return;
                     }
-                } else if (increment == 0) {
+                } else if (limits.increment == 0) {
                     if (g_opts.enableWeirdTcs) {
                         println(
                             "info string Warning: Stormphrax does not officially support sudden death (0 increment) time controls"
@@ -532,27 +598,12 @@ namespace stormphrax {
                         return;
                     }
                 }
+
+                limiter.setTournamentTime(limits, m_moveOverhead);
             }
 
-            if (tournamentTime && timeRemaining > 0) {
-                limiter->addLimiter<limit::TimeManager>(
-                    startTime,
-                    static_cast<f64>(timeRemaining) / 1000.0,
-                    static_cast<f64>(increment) / 1000.0,
-                    toGo,
-                    static_cast<f64>(m_moveOverhead) / 1000.0
-                );
-            }
-
-            m_searcher.startSearch(
-                m_pos,
-                m_keyHistory,
-                startTime,
-                static_cast<i32>(depth),
-                movesToSearch,
-                std::move(limiter),
-                infinite
-            );
+            m_searcher.setLimiter(limiter);
+            m_searcher.startSearch(m_pos, m_keyHistory, startTime, maxDepth, movesToSearch, infinite);
         }
 
         void UciHandler::handleStop() {
@@ -686,7 +737,7 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newSoftNodeHardLimitMultiplier = util::tryParse<i32>(value)) {
                             opts::mutableOpts().softNodeHardLimitMultiplier =
-                                limit::kSoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
+                                opts::kSoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
                         }
                     }
                 } else if (name == "enableweirdtcs") {

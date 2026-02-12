@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,27 @@
 
 #pragma once
 
-#include "../types.h"
+#include "types.h"
 
-#include "../thread.h"
+#include "move.h"
 
-namespace stormphrax::limit {
-    class ISearchLimiter {
-    public:
-        virtual ~ISearchLimiter() = default;
+namespace stormphrax::search {
+    struct PvList {
+        std::array<Move, kMaxDepth> moves{};
+        u32 length{};
 
-        virtual void update(
-            [[maybe_unused]] const search::SearchData& data,
-            [[maybe_unused]] const search::RootMove& pvMove,
-            [[maybe_unused]] usize totalNodes
-        ) {}
+        inline void update(Move move, const PvList& child) {
+            moves[0] = move;
+            std::copy_n(child.moves.begin(), child.length, moves.begin() + 1);
 
-        virtual void stopEarly() {}
+            length = child.length + 1;
 
-        [[nodiscard]] virtual bool stop(const search::SearchData& data, bool allowSoftTimeout) = 0;
+            assert(length == 1 || moves[0] != moves[1]);
+        }
 
-        [[nodiscard]] virtual bool stopped() const = 0;
+        inline void reset() {
+            moves[0] = kNullMove;
+            length = 0;
+        }
     };
-} // namespace stormphrax::limit
+} // namespace stormphrax::search
