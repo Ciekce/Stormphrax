@@ -353,6 +353,8 @@ namespace stormphrax::search {
 
         assert(!m_rootMoveList.empty());
 
+        thread.limiter = m_limiter;
+
         thread.rootMoves.clear();
         thread.rootMoves.reserve(m_rootMoveList.size());
 
@@ -457,9 +459,9 @@ namespace stormphrax::search {
             if (mainThread) {
                 const auto nodes = searchData.loadNodes();
 
-                m_limiter->update(depth, nodes, thread.pvMove());
+                thread.limiter->update(depth, nodes, thread.pvMove());
 
-                if (m_limiter->stopSoft(nodes)) {
+                if (thread.limiter->stopSoft(nodes)) {
                     break;
                 }
 
@@ -522,7 +524,7 @@ namespace stormphrax::search {
         assert(kPvNode || alpha + 1 == beta);
 
         if (!kRootNode && thread.isMainThread() && thread.search.rootDepth > 1) {
-            if (m_limiter->stopHard(thread.search.loadNodes())) {
+            if (thread.limiter->stopHard(thread.search.loadNodes())) {
                 m_stop.store(true, std::memory_order::relaxed);
                 return 0;
             }
@@ -1199,7 +1201,7 @@ namespace stormphrax::search {
         assert(ply > 0 && ply <= kMaxDepth);
 
         if (thread.isMainThread() && thread.search.rootDepth > 1) {
-            if (m_limiter->stopHard(thread.search.loadNodes())) {
+            if (thread.limiter->stopHard(thread.search.loadNodes())) {
                 m_stop.store(true, std::memory_order::relaxed);
                 return 0;
             }

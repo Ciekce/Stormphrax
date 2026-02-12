@@ -28,6 +28,7 @@
 #include "movepick.h"
 #include "pv.h"
 #include "root_move.h"
+#include "limit.h"
 
 namespace stormphrax::search {
     struct SearchData {
@@ -130,6 +131,8 @@ namespace stormphrax::search {
         u32 id{};
 
         SearchData search{};
+
+        std::optional<limit::SearchLimiter> limiter{};
 
         bool datagen{false};
 
