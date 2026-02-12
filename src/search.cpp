@@ -463,7 +463,9 @@ namespace stormphrax::search {
                     break;
                 }
 
-                report(thread, searchData.rootDepth, elapsed());
+                if (!g_opts.minimal) {
+                    report(thread, searchData.rootDepth, elapsed());
+                }
             }
         }
 
@@ -1566,7 +1568,9 @@ namespace stormphrax::search {
             }
         }
 
-        println("info string Selected thread {}", bestThread->id);
+        if (g_opts.minimal) {
+            println("info string Selected thread {}", bestThread->id);
+        }
 
         return *bestThread;
     }
