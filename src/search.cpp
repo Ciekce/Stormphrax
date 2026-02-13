@@ -953,8 +953,8 @@ namespace stormphrax::search {
                         } else {
                             extension = 1;
                         }
-                    } else if (sBeta >= beta) {
-                        return sBeta;
+                    } else if (score >= beta) {
+                        return score;
                     } else if (cutnode) {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
