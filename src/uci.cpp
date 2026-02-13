@@ -103,6 +103,8 @@ namespace stormphrax {
             void handleProbeWdl();
             void handleWait();
 
+            bool m_quit{false};
+
             bool m_tbInitialized{false};
 
             search::Searcher m_searcher{};
@@ -178,6 +180,10 @@ namespace stormphrax {
                     handleProbeWdl();
                 } else if (command == "wait") {
                     handleWait();
+                }
+
+                if (m_quit) {
+                    break;
                 }
             }
 
@@ -603,7 +609,9 @@ namespace stormphrax {
             }
 
             m_searcher.setLimiter(limiter);
-            m_searcher.startSearch(m_pos, m_keyHistory, startTime, maxDepth, movesToSearch, infinite);
+            m_searcher.setMaxDepth(maxDepth);
+
+            m_searcher.startSearch(m_pos, m_keyHistory, startTime, movesToSearch, infinite);
         }
 
         void UciHandler::handleStop() {
@@ -918,39 +926,27 @@ namespace stormphrax {
                 if (const auto newDepth = util::tryParse<u32>(args[0])) {
                     depth = static_cast<i32>(*newDepth);
                 } else {
-                    println("info string invalid depth {}", args[0]);
+                    eprintln("invalid depth {}", args[0]);
                     return;
                 }
             }
 
             if (args.size() > 1) {
-                if (const auto newThreads = util::tryParse<u32>(args[1])) {
-                    if (*newThreads > 1) {
-                        println("info string multiple search threads not yet supported, using 1");
-                    }
-                } else {
-                    println("info string invalid thread count {}", args[1]);
-                    return;
-                }
-            }
-
-            if (args.size() > 2) {
                 if (const auto newTtSize = util::tryParse<usize>(args[2])) {
                     ttSize = static_cast<i32>(*newTtSize);
                 } else {
-                    println("info string invalid tt size {}", args[2]);
+                    eprintln("invalid tt size {}", args[2]);
                     return;
                 }
             }
-
-            m_searcher.setTtSize(ttSize);
-            println("info string set tt size to {} MiB", ttSize);
 
             if (depth == 0) {
                 depth = 1;
             }
 
-            bench::run(m_searcher, depth);
+            bench::run(depth, ttSize);
+
+            m_quit = true;
         }
 
         void UciHandler::handleProbeWdl() {

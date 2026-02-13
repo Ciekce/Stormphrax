@@ -33,5 +33,5 @@ namespace stormphrax::bench {
 
     constexpr usize kDefaultBenchTtSize = 16;
 
-    void run(search::Searcher& searcher, i32 depth = kDefaultBenchDepth);
+    void run(i32 depth = kDefaultBenchDepth, usize ttSize = kDefaultBenchTtSize);
 } // namespace stormphrax::bench

@@ -97,7 +97,6 @@ namespace stormphrax::search {
         const Position& pos,
         std::span<const u64> keyHistory,
         Instant startTime,
-        i32 maxDepth,
         std::span<Move> moves,
         bool infinite
     ) {
@@ -119,7 +118,6 @@ namespace stormphrax::search {
         m_resetBarrier.arriveAndWait();
 
         m_infinite = infinite;
-        m_maxDepth = maxDepth;
 
         m_minRootScore = -kScoreInf;
         m_maxRootScore = kScoreInf;
@@ -182,7 +180,26 @@ namespace stormphrax::search {
         }
     }
 
-    std::pair<Score, Score> Searcher::runDatagenSearch(ThreadData& thread) {
+    ThreadData& Searcher::take() {
+        stopThreads();
+
+        m_resetBarrier.reset(1);
+        m_idleBarrier.reset(1);
+
+        m_threads.clear();
+        m_threads.shrink_to_fit();
+
+        m_threadData.resize(1);
+        m_threadData.shrink_to_fit();
+
+        m_threadData[0] = std::make_unique<ThreadData>();
+
+        return *m_threadData[0];
+    }
+
+    std::pair<Score, Score> Searcher::runDatagenSearch() {
+        auto& thread = *m_threadData[0];
+
         if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
             return {-kScoreMate, -kScoreMate};
         }
@@ -190,46 +207,41 @@ namespace stormphrax::search {
         m_multiPv = 1;
         m_infinite = false;
 
+        m_runningThreads.store(1);
         m_stop.store(false, std::memory_order::seq_cst);
 
         const auto score = searchRoot(thread, false);
-
-        m_ttable.age();
 
         const auto whitePovScore = thread.rootPos.stm() == Colors::kBlack ? -score : score;
         return {whitePovScore, wdl::normalizeScore(whitePovScore, thread.rootPos.classicalMaterial())};
     }
 
-    void Searcher::runBench(BenchData& data, const Position& pos, i32 depth) {
-        m_limiter = limit::SearchLimiter{Instant::now()};
-        m_infinite = false;
+    void Searcher::runBenchSearch(BenchData& data) {
+        auto& thread = *m_threadData[0];
 
-        m_contempt = {};
-
-        m_maxDepth = depth;
-        m_multiPv = 1;
-
-        // this struct is a small boulder the size of a large boulder
-        // and overflows the stack if not on the heap
-        auto thread = std::make_unique<ThreadData>();
-
-        thread->rootPos = pos;
-        thread->nnueState.reset(thread->rootPos.bbs(), thread->rootPos.kings());
-
-        if (initRootMoveList(thread->rootPos) == RootStatus::kNoLegalMoves) {
+        if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
+            println("no legal moves");
             return;
         }
 
+        m_infinite = false;
+        m_multiPv = 1;
+        m_contempt = {};
+
+        m_minRootScore = -kScoreInf;
+        m_maxRootScore = kScoreInf;
+
+        thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
+
+        m_runningThreads.store(1);
         m_stop.store(false, std::memory_order::seq_cst);
 
-        const auto start = Instant::now();
+        m_startTime = Instant::now();
 
-        searchRoot(*thread, false);
+        searchRoot(thread, false);
 
-        m_ttable.age();
-
-        data.search = thread->search;
-        data.time = start.elapsed();
+        data.time = m_startTime.elapsed();
+        data.nodes = thread.search.loadNodes();
     }
 
     void Searcher::setThreads(u32 threadCount) {
@@ -365,8 +377,6 @@ namespace stormphrax::search {
 
         auto& searchData = thread.search;
 
-        const bool mainThread = actualSearch && thread.isMainThread();
-
         PvList rootPv{};
 
         searchData.nodes = 0;
@@ -412,7 +422,7 @@ namespace stormphrax::search {
                         break;
                     }
 
-                    if (mainThread && !g_opts.minimal && g_opts.multiPv == 1) {
+                    if (thread.isMainThread() && !m_silent && !g_opts.minimal && g_opts.multiPv == 1) {
                         const auto time = elapsed();
                         if (time >= kWidenReportDelay) {
                             reportSingle(thread, thread.pvIdx, depth, time);
@@ -448,13 +458,13 @@ namespace stormphrax::search {
             thread.depthCompleted = depth;
 
             if (depth >= m_maxDepth) {
-                if (mainThread && m_infinite) {
+                if (thread.isMainThread() && m_infinite) {
                     report(thread, searchData.rootDepth, elapsed());
                 }
                 break;
             }
 
-            if (mainThread) {
+            if (thread.isMainThread()) {
                 const auto nodes = searchData.loadNodes();
 
                 m_limiter->update(depth, nodes, thread.pvMove());
@@ -463,7 +473,7 @@ namespace stormphrax::search {
                     break;
                 }
 
-                if (!g_opts.minimal) {
+                if (!m_silent && !g_opts.minimal) {
                     report(thread, searchData.rootDepth, elapsed());
                 }
             }
@@ -479,7 +489,7 @@ namespace stormphrax::search {
             m_searchEndBarrier.arriveAndWait();
         };
 
-        if (mainThread) {
+        if (thread.isMainThread()) {
             if (m_infinite) {
                 // don't print bestmove until stopped when go infinite'ing
                 while (!hasStopped()) {
@@ -1368,6 +1378,10 @@ namespace stormphrax::search {
     }
 
     void Searcher::reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time) {
+        if (m_silent) {
+            return;
+        }
+
         const auto& move = thread.rootMoves[pvIdx];
 
         auto score = move.displayScore;
@@ -1465,6 +1479,10 @@ namespace stormphrax::search {
     }
 
     void Searcher::report(const ThreadData& thread, i32 depth, f64 time) {
+        if (m_silent) {
+            return;
+        }
+
         for (u32 pvIdx = 0; pvIdx < m_multiPv; ++pvIdx) {
             reportSingle(thread, pvIdx, depth, time);
         }
@@ -1576,6 +1594,10 @@ namespace stormphrax::search {
     }
 
     void Searcher::finalReport() {
+        if (m_silent) {
+            return;
+        }
+
         const auto& bestThread = selectThread();
 
         report(bestThread, bestThread.depthCompleted, elapsed());

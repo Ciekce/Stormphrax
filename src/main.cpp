@@ -41,9 +41,7 @@ i32 main(i32 argc, const char* argv[]) {
         const std::string_view mode{argv[1]};
 
         if (mode == "bench") {
-            search::Searcher searcher{bench::kDefaultBenchTtSize};
-            bench::run(searcher);
-
+            bench::run();
             return 0;
         } else if (mode == "datagen") {
             const auto printUsage = [&]() {

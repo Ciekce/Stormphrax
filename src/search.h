@@ -45,8 +45,8 @@
 
 namespace stormphrax::search {
     struct BenchData {
-        SearchData search{};
         f64 time{};
+        usize nodes{};
     };
 
     constexpr auto kSyzygyProbeDepthRange = util::Range<i32>{1, kMaxDepth};
@@ -80,11 +80,10 @@ namespace stormphrax::search {
         void ensureReady();
 
         inline void setLimiter(limit::SearchLimiter limiter) {
-            m_limiter = std::move(limiter);
+            m_limiter = limiter;
         }
 
-        // ignored for bench and real searches
-        inline void setDatagenMaxDepth(i32 maxDepth) {
+        inline void setMaxDepth(i32 maxDepth) {
             m_maxDepth = maxDepth;
         }
 
@@ -92,7 +91,6 @@ namespace stormphrax::search {
             const Position& pos,
             std::span<const u64> keyHistory,
             util::Instant startTime,
-            i32 maxDepth,
             std::span<Move> moves,
             bool infinite
         );
@@ -100,10 +98,14 @@ namespace stormphrax::search {
         void stop();
         void waitForStop();
 
-        // -> [move, unnormalised, normalised]
-        std::pair<Score, Score> runDatagenSearch(ThreadData& thread);
+        // Clears all threads, and reallocates main thread data on the current NUMA node.
+        // Makes this object unusable for normal searches, just for benching or datagen
+        [[nodiscard]] ThreadData& take();
 
-        void runBench(BenchData& data, const Position& pos, i32 depth);
+        // -> [move, unnormalised, normalised]
+        std::pair<Score, Score> runDatagenSearch();
+
+        void runBenchSearch(BenchData& data);
 
         [[nodiscard]] inline bool searching() const {
             const std::unique_lock lock{m_searchMutex};
@@ -112,8 +114,16 @@ namespace stormphrax::search {
 
         void setThreads(u32 threadCount);
 
+        [[nodiscard]] u32 threadCount() const {
+            return m_threadData.size();
+        }
+
         inline void setTtSize(usize mib) {
             m_ttable.resize(mib);
+        }
+
+        inline void setSilent(bool silent) {
+            m_silent = silent;
         }
 
         inline void quit() {
@@ -128,6 +138,8 @@ namespace stormphrax::search {
 
         std::vector<std::thread> m_threads{};
         std::vector<std::unique_ptr<ThreadData>> m_threadData{};
+
+        bool m_silent{};
 
         mutable std::mutex m_searchMutex{};
 

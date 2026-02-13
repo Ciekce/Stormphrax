@@ -111,21 +111,18 @@ namespace stormphrax::datagen {
             const auto datagenLimiter = createLimiter(kDatagenHardNodeLimit, kDatagenSoftNodeLimit);
 
             search::Searcher searcher{};
+            searcher.setSilent(true);
 
-            auto thread = std::make_unique<search::ThreadData>();
-            thread->datagen = true;
+            auto& thread = searcher.take();
+            thread.datagen = true;
 
-            auto& pos = thread->rootPos;
+            auto& pos = thread.rootPos;
 
             const auto resetSearch = [&searcher, &thread]() {
                 searcher.newGame();
 
-                thread->search = search::SearchData{};
-
-                thread->history.clear();
-                thread->correctionHistory.clear();
-
-                thread->keyHistory.clear();
+                thread.search = search::SearchData{};
+                thread.keyHistory.clear();
             };
 
             Format output{};
@@ -158,7 +155,7 @@ namespace stormphrax::datagen {
 
                     for (const auto [move, score] : moves) {
                         if (pos.isLegal(move)) {
-                            thread->keyHistory.push_back(pos.key());
+                            thread.keyHistory.push_back(pos.key());
                             pos = pos.applyMove(move);
 
                             legalFound = true;
@@ -179,14 +176,14 @@ namespace stormphrax::datagen {
 
                 output.start(pos);
 
-                thread->nnueState.reset(pos.bbs(), pos.kings());
+                thread.nnueState.reset(pos.bbs(), pos.kings());
 
-                searcher.setDatagenMaxDepth(10);
+                searcher.setMaxDepth(10);
                 searcher.setLimiter(verifLimiter);
 
-                const auto [firstScore, normFirstScore] = searcher.runDatagenSearch(*thread);
+                const auto [firstScore, normFirstScore] = searcher.runDatagenSearch();
 
-                searcher.setDatagenMaxDepth(kMaxDepth);
+                searcher.setMaxDepth(kMaxDepth);
                 searcher.setLimiter(datagenLimiter);
 
                 if (std::abs(normFirstScore) > kVerificationScoreLimit) {
@@ -203,10 +200,10 @@ namespace stormphrax::datagen {
                 std::optional<Outcome> outcome{};
 
                 while (true) {
-                    const auto [score, normScore] = searcher.runDatagenSearch(*thread);
-                    thread->search = search::SearchData{};
+                    const auto [score, normScore] = searcher.runDatagenSearch();
+                    thread.search = search::SearchData{};
 
-                    const auto move = thread->rootMoves[0].pv.moves[0];
+                    const auto move = thread.rootMoves[0].pv.moves[0];
 
                     if (!move) {
                         if (pos.isCheck()) {
@@ -231,8 +228,7 @@ namespace stormphrax::datagen {
                             winPlies = 0;
                             ++lossPlies;
                             drawPlies = 0;
-                        } else if (thread->rootPos.plyFromStartpos() >= kDrawAdjMinPlies
-                                   && std::abs(normScore) < kDrawAdjMaxScore)
+                        } else if (pos.plyFromStartpos() >= kDrawAdjMinPlies && std::abs(normScore) < kDrawAdjMaxScore)
                         {
                             winPlies = 0;
                             lossPlies = 0;
@@ -254,12 +250,12 @@ namespace stormphrax::datagen {
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
-                    thread->keyHistory.push_back(pos.key());
-                    pos = pos.applyMove<NnueUpdateAction::kApply>(move, &thread->nnueState);
+                    thread.keyHistory.push_back(pos.key());
+                    pos = pos.applyMove<NnueUpdateAction::kApply>(move, &thread.nnueState);
 
-                    assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread->nnueState));
+                    assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 
-                    if (pos.isDrawn(0, thread->keyHistory)) {
+                    if (pos.isDrawn(0, thread.keyHistory)) {
                         outcome = Outcome::kDraw;
                         output.push(true, move, 0);
                         break;
