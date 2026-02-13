@@ -23,7 +23,7 @@
 #include "search.h"
 
 namespace stormphrax::bench {
-#if SP_SPARSE_BENCH_FT_SIZE > 0
+#if SP_SPARSE_BENCH_L1_SIZE > 0
     constexpr i32 kDefaultBenchDepth = 18;
 #elif defined(SP_PGO_PROFILE)
     constexpr i32 kDefaultBenchDepth = 10;

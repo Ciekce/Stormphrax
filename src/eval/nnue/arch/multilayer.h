@@ -414,7 +414,7 @@ namespace stormphrax::eval::nnue::arch {
             propagateL2(bucket, l1Out, l2Out);
             propagateL3(bucket, l2Out, l3Out);
 
-#if SP_SPARSE_BENCH_FT_SIZE > 0
+#if SP_SPARSE_BENCH_L1_SIZE > 0
             sparse::trackActivations(ftOut);
 #endif
 

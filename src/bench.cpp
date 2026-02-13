@@ -21,7 +21,7 @@
 #include <array>
 #include <string_view>
 
-#if SP_SPARSE_BENCH_FT_SIZE > 0
+#if SP_SPARSE_BENCH_L1_SIZE > 0
     #include <fmt/ostream.h>
     #include <fstream>
 #endif
@@ -143,7 +143,7 @@ namespace stormphrax::bench {
 
         stats::print();
 
-#if SP_SPARSE_BENCH_FT_SIZE > 0
+#if SP_SPARSE_BENCH_L1_SIZE > 0
         std::ofstream stream{"activations.txt", std::ios::binary};
 
         bool first = true;
