@@ -31,9 +31,13 @@
     #endif
     #if !defined(SP_DISABLE_AVX512)
         #define SP_HAS_VNNI512 __AVX512VNNI__
+        #define SP_HAS_VBMI2 __AVX512VBMI2__
+        #define SP_HAS_AVX512VL __AVX512VL__
         #define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
     #else
         #define SP_HAS_VNNI512 0
+        #define SP_HAS_VBMI2 0
+        #define SP_HAS_AVX512VL 0
         #define SP_HAS_AVX512 0
     #endif
     #define SP_HAS_VNNI256 0 // slowdown on any cpu that would use it
@@ -48,6 +52,8 @@
 #elif defined(SP_VNNI512)
     #define SP_HAS_BMI2 1
     #define SP_HAS_VNNI512 1
+    #define SP_HAS_VBMI2 0
+    #define SP_HAS_AVX512VL 0
     #define SP_HAS_AVX512 1
     #define SP_HAS_VNNI256 1
     #define SP_HAS_AVX2 1
@@ -57,6 +63,8 @@
 #elif defined(SP_AVX512)
     #define SP_HAS_BMI2 1
     #define SP_HAS_VNNI512 0
+    #define SP_HAS_VBMI2 0
+    #define SP_HAS_AVX512VL 0
     #define SP_HAS_AVX512 1
     #define SP_HAS_VNNI256 0
     #define SP_HAS_AVX2 1
@@ -66,6 +74,8 @@
 #elif defined(SP_AVX2_BMI2)
     #define SP_HAS_BMI2 1
     #define SP_HAS_VNNI512 0
+    #define SP_HAS_VBMI2 0
+    #define SP_HAS_AVX512VL 0
     #define SP_HAS_AVX512 0
     #define SP_HAS_VNNI256 0
     #define SP_HAS_AVX2 1
@@ -75,6 +85,8 @@
 #elif defined(SP_AVX2)
     #define SP_HAS_BMI2 0
     #define SP_HAS_VNNI512 0
+    #define SP_HAS_VBMI2 0
+    #define SP_HAS_AVX512VL 0
     #define SP_HAS_AVX512 0
     #define SP_HAS_VNNI256 0
     #define SP_HAS_AVX2 1
