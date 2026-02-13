@@ -29,7 +29,6 @@
 #if SP_HAS_AVX512 && SP_HAS_VBMI2 && SP_HAS_AVX512VL
     #include "sparse_vbmi2.h"
 #else
-    #error guard
     #include "sparse_default.h"
 #endif
 
