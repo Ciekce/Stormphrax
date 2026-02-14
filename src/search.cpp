@@ -717,7 +717,7 @@ namespace stormphrax::search {
             if (ply > 3 && thread.stack[ply - 4].staticEval != kScoreNone) {
                 return curr.staticEval > thread.stack[ply - 4].staticEval;
             }
-            return true;
+            return thread.id % 2 == 0;
         }();
 
         if (!kPvNode && !inCheck && !curr.excluded) {
