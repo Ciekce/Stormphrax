@@ -966,6 +966,8 @@ namespace stormphrax::search {
                            && ttEntry.flag == TtFlag::kLowerBound)
                 {
                     extension = 1;
+                } else if (kPvNode && move.toSq() == prevTo) {
+                    extension = 1;
                 }
             }
 
@@ -994,7 +996,6 @@ namespace stormphrax::search {
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
-                    r -= (move.toSq() == prevTo) * 128;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
