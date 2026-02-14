@@ -844,6 +844,8 @@ namespace stormphrax::search {
         moveStack.failLowQuiets.clear();
         moveStack.failLowNoisies.clear();
 
+        const auto prevTo = kRootNode || parent->move.isNull() ? Squares::kNone : parent->move.toSq();
+
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
 
@@ -992,6 +994,7 @@ namespace stormphrax::search {
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
+                    r -= (move.toSq() == prevTo) * 128;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
