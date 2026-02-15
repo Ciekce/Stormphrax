@@ -50,7 +50,7 @@ namespace stormphrax::search {
 
         return std::pair<Position, ThreadPosGuard<true>>{
             std::piecewise_construct,
-            std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kQueue>(move, &nnueState)),
+            std::forward_as_tuple(pos.applyMove(move, nnueState.push())),
             std::forward_as_tuple(keyHistory, nnueState)
         };
     }

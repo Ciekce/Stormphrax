@@ -23,6 +23,7 @@
 #include <atomic>
 
 #include "correction.h"
+#include "eval/eval.h"
 #include "history.h"
 #include "move.h"
 #include "movepick.h"
