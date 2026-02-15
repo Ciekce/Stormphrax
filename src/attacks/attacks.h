@@ -35,6 +35,22 @@
 #endif
 
 namespace stormphrax::attacks {
+    consteval std::array<Bitboard, Squares::kCount> generatePawnAttacks(Color us) {
+        std::array<Bitboard, Squares::kCount> dst{};
+
+        for (usize i = 0; i < dst.size(); ++i) {
+            const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
+
+            dst[i] |= bit.shiftUpLeftRelative(us);
+            dst[i] |= bit.shiftUpRightRelative(us);
+        }
+
+        return dst;
+    }
+
+    constexpr auto kBlackPawnAttacks = generatePawnAttacks(Colors::kBlack);
+    constexpr auto kWhitePawnAttacks = generatePawnAttacks(Colors::kWhite);
+
     constexpr auto kKnightAttacks = [] {
         std::array<Bitboard, Squares::kCount> dst{};
 
@@ -77,44 +93,47 @@ namespace stormphrax::attacks {
         return dst;
     }();
 
-    consteval std::array<Bitboard, Squares::kCount> generatePawnAttacks(Color us) {
-        std::array<Bitboard, Squares::kCount> dst{};
-
-        for (usize i = 0; i < dst.size(); ++i) {
-            const auto bit = Bitboard::fromSquare(Square::fromRaw(i));
-
-            dst[i] |= bit.shiftUpLeftRelative(us);
-            dst[i] |= bit.shiftUpRightRelative(us);
+    [[nodiscard]] constexpr Bitboard getPawnAttacks(Square src, Color color) {
+        if (color == Colors::kBlack) {
+            return kBlackPawnAttacks[src.idx()];
+        } else {
+            return kWhitePawnAttacks[src.idx()];
         }
-
-        return dst;
     }
 
-    constexpr auto kBlackPawnAttacks = generatePawnAttacks(Colors::kBlack);
-    constexpr auto kWhitePawnAttacks = generatePawnAttacks(Colors::kWhite);
-
-    constexpr Bitboard getKnightAttacks(Square src) {
+    [[nodiscard]] constexpr Bitboard getKnightAttacks(Square src) {
         return kKnightAttacks[src.idx()];
     }
 
-    constexpr Bitboard getKingAttacks(Square src) {
+    [[nodiscard]] constexpr Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
+        if (std::is_constant_evaluated()) {
+            return occupancy.empty() ? kEmptyBoardBishops[src.idx()] : genBishopAttacks(src, occupancy);
+        }
+        return lookup::getBishopAttacks(src, occupancy);
+    }
+
+    [[nodiscard]] constexpr Bitboard getKingAttacks(Square src) {
         return kKingAttacks[src.idx()];
     }
 
-    constexpr Bitboard getPawnAttacks(Square src, Color color) {
-        const auto& attacks = color == Colors::kWhite ? kWhitePawnAttacks : kBlackPawnAttacks;
-        return attacks[src.idx()];
+    [[nodiscard]] constexpr Bitboard getRookAttacks(Square src, Bitboard occupancy) {
+        if (std::is_constant_evaluated()) {
+            return occupancy.empty() ? kEmptyBoardRooks[src.idx()] : genRookAttacks(src, occupancy);
+        }
+        return lookup::getRookAttacks(src, occupancy);
     }
 
-    inline Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
         return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
     }
 
-    inline Bitboard getNonPawnPieceAttacks(PieceType pt, Square src, Bitboard occupancy = Bitboard{}) {
+    [[nodiscard]] constexpr Bitboard getAttacks(Piece piece, Square src, Bitboard occupancy = Bitboard{}) {
         assert(pt != PieceTypes::kNone);
         assert(pt != PieceTypes::kPawn);
 
-        switch (pt.raw()) {
+        switch (piece.type().raw()) {
+            case PieceTypes::kPawn.raw():
+                return getPawnAttacks(src, piece.color());
             case PieceTypes::kKnight.raw():
                 return getKnightAttacks(src);
             case PieceTypes::kBishop.raw():
@@ -126,7 +145,28 @@ namespace stormphrax::attacks {
             case PieceTypes::kKing.raw():
                 return getKingAttacks(src);
             default:
-                __builtin_unreachable();
+                return Bitboard{};
+        }
+    }
+
+    [[nodiscard]] constexpr Bitboard getPseudoAttacks(Piece piece, Square src) {
+        assert(piece != Piece::kNone);
+
+        switch (piece.raw()) {
+            case PieceTypes::kPawn.raw():
+                return getPawnAttacks(src, piece.color());
+            case PieceTypes::kKnight.raw():
+                return getKnightAttacks(src);
+            case PieceTypes::kBishop.raw():
+                return getBishopAttacks(src, Bitboard{});
+            case PieceTypes::kRook.raw():
+                return getRookAttacks(src, Bitboard{});
+            case PieceTypes::kQueen.raw():
+                return getQueenAttacks(src, Bitboard{});
+            case PieceTypes::kKing.raw():
+                return getKingAttacks(src);
+            default:
+                return Bitboard{};
         }
     }
 } // namespace stormphrax::attacks

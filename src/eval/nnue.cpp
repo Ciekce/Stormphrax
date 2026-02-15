@@ -21,6 +21,7 @@
 #include <fstream>
 #include <string_view>
 
+#include "../attacks/attacks.h"
 #include "../util/memstream.h"
 #include "nnue/io_impl.h"
 
@@ -40,7 +41,7 @@
 
 namespace {
     INCBIN(std::byte, defaultNet, SP_NETWORK_FILE);
-}
+} // namespace
 
 namespace stormphrax::eval {
     namespace {
@@ -164,7 +165,20 @@ namespace stormphrax::eval {
                 return false;
             }
 
-            if (header.inputBuckets != InputFeatureSet::kBucketCount) {
+            const bool headerThreatInputs = (header.inputBuckets & 0b10000000) != 0;
+            const auto headerInputBuckets = header.inputBuckets & ~0b10000000;
+
+            if (headerThreatInputs != InputFeatureSet::kThreatInputs) {
+                if constexpr (InputFeatureSet::kThreatInputs) {
+                    eprintln("network does not have the expected threat inputs");
+                } else {
+                    eprintln("network unexpectedly has threat inputs");
+                }
+
+                return false;
+            }
+
+            if (headerInputBuckets != InputFeatureSet::kBucketCount) {
                 eprintln(
                     "wrong number of input buckets {} (expected: {})",
                     header.inputBuckets,
@@ -260,5 +274,36 @@ namespace stormphrax::eval {
     std::string_view defaultNetworkName() {
         const auto& header = *reinterpret_cast<const NetworkHeader*>(g_defaultNetData);
         return {header.name.data(), header.nameLen};
+    }
+
+    void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king) {
+        const auto activateFeature = [&](u32 feature) {
+            const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+            for (i32 i = 0; i < kL1Size; ++i) {
+                acc[i] += start[i];
+            }
+        };
+
+        const auto occ = boards.bbs().occupancy();
+
+        for (u8 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
+            auto piece = Piece::fromRaw(pieceIdx);
+            if (c == Colors::kBlack) {
+                piece = piece.flipColor();
+            }
+
+            auto bb = boards.bbs().forPiece(piece);
+            while (bb) {
+                const auto from = bb.popLowestSquare();
+
+                auto attacks = occ & attacks::getAttacks(piece, from, occ);
+                while (attacks) {
+                    const auto to = attacks.popLowestSquare();
+                    const auto attacked = boards.pieceOn(to);
+                    const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
+                    activateFeature(feature);
+                }
+            }
+        }
     }
 } // namespace stormphrax::eval

@@ -78,7 +78,7 @@ namespace stormphrax::eval {
 
     template <bool kScale = true>
     inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
-        auto eval = nnueState.evaluate(pos.bbs(), pos.kings(), pos.stm());
+        auto eval = nnueState.evaluate(pos.boards(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 
@@ -97,7 +97,7 @@ namespace stormphrax::eval {
 
     template <bool kScale = true>
     inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
-        auto eval = NnueState::evaluateOnce(pos.bbs(), pos.kings(), pos.stm());
+        const auto eval = NnueState::evaluateOnce(pos.boards(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 } // namespace stormphrax::eval

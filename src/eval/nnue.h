@@ -30,11 +30,13 @@
 #include "nnue/network.h"
 
 namespace stormphrax::eval {
-    using FeatureTransformer = nnue::FeatureTransformer<i16, kL1Size, InputFeatureSet>;
+    using FeatureTransformer = nnue::FeatureTransformer<i16, i8, kL1Size, InputFeatureSet>;
     using Network = nnue::PerspectiveNetwork<FeatureTransformer, OutputBucketing, LayeredArch>;
 
     using Accumulator = FeatureTransformer::Accumulator;
     using RefreshTable = FeatureTransformer::RefreshTable;
+
+    using NnueUpdates = InputFeatureSet::Updates;
 
     extern const Network& g_network;
 
@@ -43,42 +45,13 @@ namespace stormphrax::eval {
 
     [[nodiscard]] std::string_view defaultNetworkName();
 
-    struct NnueUpdates {
-        using PieceSquare = std::pair<Piece, Square>;
-
-        // [black, white]
-        std::array<bool, 2> refresh{};
-
-        StaticVector<PieceSquare, 2> sub{};
-        StaticVector<PieceSquare, 2> add{};
-
-        inline void setRefresh(Color c) {
-            refresh[c.idx()] = true;
-        }
-
-        [[nodiscard]] inline bool requiresRefresh(Color c) const {
-            return refresh[c.idx()];
-        }
-
-        inline void pushSubAdd(Piece piece, Square src, Square dst) {
-            sub.push({piece, src});
-            add.push({piece, dst});
-        }
-
-        inline void pushSub(Piece piece, Square sq) {
-            sub.push({piece, sq});
-        }
-
-        inline void pushAdd(Piece piece, Square sq) {
-            add.push({piece, sq});
-        }
-    };
-
     struct UpdateContext {
         NnueUpdates updates{};
         BitboardSet bbs{};
         KingPair kings{};
     };
+
+    void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king);
 
     class NnueState {
     private:
@@ -144,16 +117,16 @@ namespace stormphrax::eval {
             --m_curr;
         }
 
-        [[nodiscard]] inline i32 evaluate(const BitboardSet& bbs, KingPair kings, Color stm) {
+        [[nodiscard]] inline i32 evaluate(const PositionBoards& boards, KingPair kings, Color stm) {
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
             assert(stm != Colors::kNone);
 
-            ensureUpToDate(bbs, kings);
+            ensureUpToDate(boards.bbs(), kings);
 
-            return evaluate(m_curr->acc, bbs, stm);
+            return evaluate(m_curr->acc, boards, kings, stm);
         }
 
-        [[nodiscard]] static inline i32 evaluateOnce(const BitboardSet& bbs, KingPair kings, Color stm) {
+        [[nodiscard]] static inline i32 evaluateOnce(const PositionBoards& boards, KingPair kings, Color stm) {
             assert(kings.isValid());
             assert(stm != Colors::kNone);
 
@@ -161,10 +134,10 @@ namespace stormphrax::eval {
 
             accumulator.initBoth(g_network.featureTransformer());
 
-            resetAccumulator(accumulator, Colors::kBlack, bbs, kings.black());
-            resetAccumulator(accumulator, Colors::kWhite, bbs, kings.white());
+            resetAccumulator(accumulator, Colors::kBlack, boards.bbs(), kings.black());
+            resetAccumulator(accumulator, Colors::kWhite, boards.bbs(), kings.white());
 
-            return evaluate(accumulator, bbs, stm);
+            return evaluate(accumulator, boards, kings, stm);
         }
 
     private:
@@ -199,8 +172,8 @@ namespace stormphrax::eval {
                 const auto [subPiece, subSquare] = ctx.updates.sub[0];
                 const auto [addPiece, addSquare] = ctx.updates.add[0];
 
-                const auto sub = featureIndex(c, subPiece, subSquare, king);
-                const auto add = featureIndex(c, addPiece, addSquare, king);
+                const auto sub = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece, subSquare, king);
+                const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
                 curr.acc.subAddFrom(prev, g_network.featureTransformer(), c, sub, add);
             } else if (addCount == 1 && subCount == 2) // any capture
@@ -209,9 +182,9 @@ namespace stormphrax::eval {
                 const auto [subPiece1, subSquare1] = ctx.updates.sub[1];
                 const auto [addPiece, addSquare] = ctx.updates.add[0];
 
-                const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
-                const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
-                const auto add = featureIndex(c, addPiece, addSquare, king);
+                const auto sub0 = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece0, subSquare0, king);
+                const auto sub1 = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece1, subSquare1, king);
+                const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
                 curr.acc.subSubAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add);
             } else if (addCount == 2 && subCount == 2) // castling
@@ -221,10 +194,10 @@ namespace stormphrax::eval {
                 const auto [addPiece0, addSquare0] = ctx.updates.add[0];
                 const auto [addPiece1, addSquare1] = ctx.updates.add[1];
 
-                const auto sub0 = featureIndex(c, subPiece0, subSquare0, king);
-                const auto sub1 = featureIndex(c, subPiece1, subSquare1, king);
-                const auto add0 = featureIndex(c, addPiece0, addSquare0, king);
-                const auto add1 = featureIndex(c, addPiece1, addSquare1, king);
+                const auto sub0 = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece0, subSquare0, king);
+                const auto sub1 = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece1, subSquare1, king);
+                const auto add0 = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece0, addSquare0, king);
+                const auto add1 = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece1, addSquare1, king);
 
                 curr.acc.subSubAddAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
             } else {
@@ -278,10 +251,31 @@ namespace stormphrax::eval {
             }
         }
 
-        [[nodiscard]] static inline i32 evaluate(const Accumulator& accumulator, const BitboardSet& bbs, Color stm) {
+        [[nodiscard]] static inline i32 evaluate(
+            const Accumulator& accumulator,
+            const PositionBoards& boards,
+            const KingPair& kings,
+            Color stm
+        ) {
             assert(stm != Colors::kNone);
-            return stm == Colors::kBlack ? g_network.propagate(bbs, accumulator.black(), accumulator.white())[0]
-                                         : g_network.propagate(bbs, accumulator.white(), accumulator.black())[0];
+
+            if constexpr (InputFeatureSet::kThreatInputs) {
+                util::simd::Array<i16, kL1Size> black;
+                util::simd::Array<i16, kL1Size> white;
+
+                std::ranges::copy(accumulator.black(), black.begin());
+                std::ranges::copy(accumulator.white(), white.begin());
+
+                addThreatFeatures(black, Colors::kBlack, boards, kings.black());
+                addThreatFeatures(white, Colors::kWhite, boards, kings.white());
+
+                return stm == Colors::kBlack ? g_network.propagate(boards.bbs(), black, white)[0]
+                                             : g_network.propagate(boards.bbs(), white, black)[0];
+            }
+
+            return stm == Colors::kBlack
+                     ? g_network.propagate(boards.bbs(), accumulator.black(), accumulator.white())[0]
+                     : g_network.propagate(boards.bbs(), accumulator.white(), accumulator.black())[0];
         }
 
         static inline void refreshAccumulator(
@@ -309,13 +303,13 @@ namespace stormphrax::eval {
 
                 while (added) {
                     const auto sq = added.popLowestSquare();
-                    const auto feature = featureIndex(c, piece, sq, king);
+                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
                     adds.push(feature);
                 }
 
                 while (removed) {
                     const auto sq = removed.popLowestSquare();
-                    const auto feature = featureIndex(c, piece, sq, king);
+                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
                     subs.push(feature);
                 }
             }
@@ -365,7 +359,7 @@ namespace stormphrax::eval {
                 while (!board.empty()) {
                     const auto sq = board.popLowestSquare();
 
-                    const auto feature = featureIndex(c, piece, sq, king);
+                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
                     accumulator.activateFeature(g_network.featureTransformer(), c, feature);
                 }
             }
@@ -379,34 +373,6 @@ namespace stormphrax::eval {
         ) {
             resetAccumulator(accumulator.acc, c, bbs, king);
             accumulator.setUpdated(c);
-        }
-
-        [[nodiscard]] static inline u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
-            assert(c != Colors::kNone);
-            assert(piece != Pieces::kNone);
-            assert(sq != Squares::kNone);
-            assert(king != Squares::kNone);
-
-            constexpr u32 kColorStride = Squares::kCount * PieceTypes::kCount;
-            constexpr u32 kPieceStride = Squares::kCount;
-
-            const u32 type = piece.type().raw();
-
-            const auto color = [piece, c]() -> u32 {
-                if (InputFeatureSet::kMergedKings && piece.type() == PieceTypes::kKing) {
-                    return 0;
-                }
-                return piece.color() == c ? 0 : 1;
-            }();
-
-            if (c == Colors::kBlack) {
-                sq = sq.flipRank();
-            }
-
-            sq = InputFeatureSet::transformFeatureSquare(sq, king);
-
-            const auto bucketOffset = InputFeatureSet::getBucket(c, king) * InputFeatureSet::kInputSize;
-            return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
         }
     };
 } // namespace stormphrax::eval

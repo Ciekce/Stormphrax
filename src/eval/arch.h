@@ -25,7 +25,8 @@
 #include "nnue/activation.h"
 #include "nnue/arch/multilayer.h"
 #include "nnue/arch/singlelayer.h"
-#include "nnue/features.h"
+#include "nnue/features/psq.h"
+#include "nnue/features/threats.h"
 #include "nnue/output.h"
 
 namespace stormphrax::eval {
@@ -37,7 +38,7 @@ namespace stormphrax::eval {
 
     constexpr u32 kFtScaleBits = 7;
 
-    constexpr u32 kL1Size = 1792;
+    constexpr u32 kL1Size = 512;
     constexpr u32 kL2Size = 16;
     constexpr u32 kL3Size = 32;
 
@@ -48,8 +49,8 @@ namespace stormphrax::eval {
     constexpr i32 kScale = 400;
 
     // visually flipped upside down, a1 = 0
-    using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
-        nnue::features::MirroredKingSide::kAbcd,
+    using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
+        nnue::features::psq::MirroredKingSide::kAbcd,
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,
@@ -61,6 +62,9 @@ namespace stormphrax::eval {
         14, 14, 15, 15
         // clang-format on
         >;
+
+    //using InputFeatureSet = PsqFeatureSet;
+    using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
 
     using OutputBucketing = nnue::output::MaterialCount<8>;
 

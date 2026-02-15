@@ -19,7 +19,7 @@
 #include "../attacks.h"
 
 #if !SP_HAS_BMI2
-namespace stormphrax::attacks {
+namespace stormphrax::attacks::lookup {
     using namespace black_magic;
 
     namespace {

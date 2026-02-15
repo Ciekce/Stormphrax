@@ -431,8 +431,8 @@ namespace stormphrax::eval::nnue::arch {
                 && stream.write(l2Biases) && stream.write(l3Weights) && stream.write(l3Biases);
         }
 
-        template <typename W, typename B>
-        static inline void permuteFt(std::span<W> weights, std::span<B> biases) {
+        template <typename W, typename T, typename B>
+        static inline void permuteFt(std::span<W> psqWeights, std::span<T> threatWeights, std::span<B> biases) {
             using namespace util::simd;
 
             if constexpr (!kPackNonSequential) {
@@ -442,8 +442,8 @@ namespace stormphrax::eval::nnue::arch {
             static constexpr usize kPackSize = kPackOrdering.size();
             static constexpr usize kChunkSize = kPackSize * kPackGrouping;
 
-            const auto permute = [&]<typename T, usize kN>(std::span<T, kN> values) {
-                util::MultiArray<T, kPackSize, kPackGrouping> tmp;
+            const auto permute = [&]<typename P, usize kN>(std::span<P, kN> values) {
+                util::MultiArray<P, kPackSize, kPackGrouping> tmp;
 
                 for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
                     std::copy(&values[offset], &values[offset] + kChunkSize, &tmp[0][0]);
@@ -454,7 +454,8 @@ namespace stormphrax::eval::nnue::arch {
                 }
             };
 
-            permute(weights);
+            permute(psqWeights);
+            permute(threatWeights);
             permute(biases);
         }
     };

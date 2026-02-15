@@ -30,7 +30,8 @@
 #include "../../position/boards.h"
 #include "../../util/multi_array.h"
 #include "../../util/simd.h"
-#include "features.h"
+#include "features/psq.h"
+#include "features/threats.h"
 #include "io.h"
 
 namespace stormphrax::eval::nnue {
@@ -39,8 +40,8 @@ namespace stormphrax::eval::nnue {
     private:
         using Type = typename Ft::OutputType;
 
-        static constexpr auto kInputCount = Ft::kInputCount;
-        static constexpr auto kWeightCount = Ft::kWeightCount;
+        static constexpr auto kInputCount = Ft::kPsqInputCount;
+        static constexpr auto kWeightCount = Ft::kPsqWeightCount;
         static constexpr auto kOutputCount = Ft::kOutputCount;
 
     public:
@@ -75,15 +76,15 @@ namespace stormphrax::eval::nnue {
             std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
         }
 
-        inline void subAddFrom(const Accumulator<Ft>& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
+        inline void subAddFrom(const Accumulator& src, const Ft& featureTransformer, Color c, u32 sub, u32 add) {
             assert(sub < kInputCount);
             assert(add < kInputCount);
 
-            subAdd(src.forColor(c), forColor(c), featureTransformer.weights, sub * kOutputCount, add * kOutputCount);
+            subAdd(src.forColor(c), forColor(c), featureTransformer.psqWeights, sub * kOutputCount, add * kOutputCount);
         }
 
         inline void subSubAddFrom(
-            const Accumulator<Ft>& src,
+            const Accumulator& src,
             const Ft& featureTransformer,
             Color c,
             u32 sub0,
@@ -97,7 +98,7 @@ namespace stormphrax::eval::nnue {
             subSubAdd(
                 src.forColor(c),
                 forColor(c),
-                featureTransformer.weights,
+                featureTransformer.psqWeights,
                 sub0 * kOutputCount,
                 sub1 * kOutputCount,
                 add * kOutputCount
@@ -105,7 +106,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline void subSubAddAddFrom(
-            const Accumulator<Ft>& src,
+            const Accumulator& src,
             const Ft& featureTransformer,
             Color c,
             u32 sub0,
@@ -121,7 +122,7 @@ namespace stormphrax::eval::nnue {
             subSubAddAdd(
                 src.forColor(c),
                 forColor(c),
-                featureTransformer.weights,
+                featureTransformer.psqWeights,
                 sub0 * kOutputCount,
                 sub1 * kOutputCount,
                 add0 * kOutputCount,
@@ -131,12 +132,12 @@ namespace stormphrax::eval::nnue {
 
         inline void activateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < kInputCount);
-            add(forColor(c), featureTransformer.weights, feature * kOutputCount);
+            add(forColor(c), featureTransformer.psqWeights, feature * kOutputCount);
         }
 
         inline void deactivateFeature(const Ft& featureTransformer, Color c, u32 feature) {
             assert(feature < kInputCount);
-            sub(forColor(c), featureTransformer.weights, feature * kOutputCount);
+            sub(forColor(c), featureTransformer.psqWeights, feature * kOutputCount);
         }
 
         inline void activateFourFeatures(
@@ -153,7 +154,7 @@ namespace stormphrax::eval::nnue {
             assert(feature3 < kInputCount);
             addAddAddAdd(
                 forColor(c),
-                featureTransformer.weights,
+                featureTransformer.psqWeights,
                 feature0 * kOutputCount,
                 feature1 * kOutputCount,
                 feature2 * kOutputCount,
@@ -175,7 +176,7 @@ namespace stormphrax::eval::nnue {
             assert(feature3 < kInputCount);
             subSubSubSub(
                 forColor(c),
-                featureTransformer.weights,
+                featureTransformer.psqWeights,
                 feature0 * kOutputCount,
                 feature1 * kOutputCount,
                 feature2 * kOutputCount,
@@ -183,7 +184,7 @@ namespace stormphrax::eval::nnue {
             );
         }
 
-        inline void copyFrom(Color c, const Accumulator<Ft>& other) {
+        inline void copyFrom(Color c, const Accumulator& other) {
             const auto idx = c.idx();
             std::ranges::copy(other.m_outputs[idx], m_outputs[idx].begin());
         }
@@ -328,35 +329,37 @@ namespace stormphrax::eval::nnue {
         }
     };
 
-    template <typename Type, u32 kOutputs, typename FeatureSet = features::SingleBucket>
+    template <typename Type, typename ThreatType, u32 kOutputs, typename FeatureSet>
     struct FeatureTransformer {
-        using WeightType = Type;
+        using PsqWeightType = Type;
+        using ThreatWeightType = ThreatType;
         using OutputType = Type;
 
         using InputFeatureSet = FeatureSet;
 
-        using Accumulator = Accumulator<FeatureTransformer<Type, kOutputs, FeatureSet>>;
-        using RefreshTable =
-            RefreshTable<FeatureTransformer<Type, kOutputs, FeatureSet>, FeatureSet::kRefreshTableSize>;
+        using Accumulator = Accumulator<FeatureTransformer>;
+        using RefreshTable = RefreshTable<FeatureTransformer, FeatureSet::kRefreshTableSize>;
 
-        static constexpr auto kInputCount = InputFeatureSet::kBucketCount * FeatureSet::kInputSize;
+        static constexpr auto kPsqInputCount = InputFeatureSet::kBucketCount * FeatureSet::kInputSize;
         static constexpr auto kOutputCount = kOutputs;
 
-        static constexpr auto kWeightCount = kInputCount * kOutputCount;
+        static constexpr auto kPsqWeightCount = kPsqInputCount * kOutputCount;
+        static constexpr auto kThreatWeightCount = FeatureSet::kThreatFeatures * kOutputCount;
         static constexpr auto kBiasCount = kOutputCount;
 
-        static_assert(kInputCount > 0);
+        static_assert(kPsqInputCount > 0);
         static_assert(kOutputCount > 0);
 
-        SP_SIMD_ALIGNAS std::array<WeightType, kWeightCount> weights;
+        SP_SIMD_ALIGNAS std::array<PsqWeightType, kPsqWeightCount> psqWeights;
+        SP_SIMD_ALIGNAS std::array<ThreatWeightType, kThreatWeightCount> threatWeights;
         SP_SIMD_ALIGNAS std::array<OutputType, kBiasCount> biases;
 
         inline bool readFrom(IParamStream& stream) {
-            return stream.read(weights) && stream.read(biases);
+            return stream.read(psqWeights) && stream.read(threatWeights) && stream.read(biases);
         }
 
         inline bool writeTo(IParamStream& stream) const {
-            return stream.write(weights) && stream.write(biases);
+            return stream.write(psqWeights) && stream.read(threatWeights) && stream.write(biases);
         }
     };
 } // namespace stormphrax::eval::nnue

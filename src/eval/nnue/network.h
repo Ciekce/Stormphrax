@@ -54,8 +54,12 @@ namespace stormphrax::eval::nnue {
             }
 
             if constexpr (Arch::kRequiresFtPermute) {
-                Arch::template permuteFt<typename Ft::WeightType, typename Ft::OutputType>(
-                    m_featureTransformer.weights,
+                Arch::template permuteFt<
+                    typename Ft::PsqWeightType,
+                    typename Ft::ThreatWeightType,
+                    typename Ft::OutputType>(
+                    m_featureTransformer.psqWeights,
+                    m_featureTransformer.threatWeights,
                     m_featureTransformer.biases
                 );
             }
