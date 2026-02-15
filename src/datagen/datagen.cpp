@@ -250,8 +250,10 @@ namespace stormphrax::datagen {
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
+                    eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
-                    pos = pos.applyMove<NnueUpdateAction::kApply>(move, &thread.nnueState);
+                    pos = pos.applyMove(move, eval::BoardObserver{ctx});
+                    thread.nnueState.apply(ctx);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 
