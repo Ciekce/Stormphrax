@@ -86,55 +86,45 @@ namespace stormphrax::eval::nnue::arch {
             using namespace util::simd;
 
             static constexpr auto kPairCount = kL1Size / 2;
-            static_assert(kPairCount % (kChunkSize<i16> * 4) == 0);
+            static_assert(kPairCount % (kChunkSize<i16> * 2) == 0);
 
             const auto zero_ = zero<i16>();
             const auto one = set1<i16>((1 << kFtQBits) - 1);
 
             const auto activatePerspective = [&](std::span<const i16, kL1Size> inputs, u32 outputOffset) {
-                for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 4) {
+                for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 2) {
                     auto i1_0 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 0]);
                     auto i1_1 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 1]);
-                    auto i1_2 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 2]);
-                    auto i1_3 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 3]);
 
                     auto i2_0 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
                     auto i2_1 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
-                    auto i2_2 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 2]);
-                    auto i2_3 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 3]);
 
                     i1_0 = min<i16>(i1_0, one);
                     i1_1 = min<i16>(i1_1, one);
-                    i1_2 = min<i16>(i1_2, one);
-                    i1_3 = min<i16>(i1_3, one);
 
                     i2_0 = min<i16>(i2_0, one);
                     i2_1 = min<i16>(i2_1, one);
-                    i2_2 = min<i16>(i2_2, one);
-                    i2_3 = min<i16>(i2_3, one);
 
                     i1_0 = max<i16>(i1_0, zero_);
                     i1_1 = max<i16>(i1_1, zero_);
-                    i1_2 = max<i16>(i1_2, zero_);
-                    i1_3 = max<i16>(i1_3, zero_);
 
                     const auto p_0 = shiftLeftMulHi<i16>(i1_0, i2_0, kFtScaleBits);
                     const auto p_1 = shiftLeftMulHi<i16>(i1_1, i2_1, kFtScaleBits);
-                    const auto p_2 = shiftLeftMulHi<i16>(i1_2, i2_2, kFtScaleBits);
-                    const auto p_3 = shiftLeftMulHi<i16>(i1_3, i2_3, kFtScaleBits);
 
                     const auto packed_0 = packUnsigned<i16>(p_0, p_1);
-                    const auto packed_1 = packUnsigned<i16>(p_2, p_3);
 
                     store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 0], packed_0);
-                    store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 1], packed_1);
-
-                    sparseCtx.update(packed_0, packed_1);
                 }
             };
 
             activatePerspective(stmInputs, 0);
             activatePerspective(nstmInputs, kPairCount);
+
+            for (u32 output = 0; output < kL1Size; output += kChunkSize<i8> * 2) {
+                const auto a = load<u8>(&outputs[output + kChunkSize<i8> * 0]);
+                const auto b = load<u8>(&outputs[output + kChunkSize<i8> * 1]);
+                sparseCtx.update(a, b);
+            }
         }
 
         inline void propagateL1(
