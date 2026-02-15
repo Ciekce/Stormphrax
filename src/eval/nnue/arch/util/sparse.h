@@ -26,7 +26,7 @@
 
 #define SP_SPARSE_BENCH_L1_SIZE 0
 
-#if SP_HAS_AVX512 && SP_HAS_VBMI2 && SP_HAS_AVX512VL
+#if SP_HAS_AVX512 && SP_HAS_VBMI2
     #include "sparse_vbmi2.h"
 #else
     #include "sparse_default.h"
