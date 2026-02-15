@@ -36,8 +36,7 @@ namespace stormphrax::eval {
     template <bool kCorrect = true>
     inline Score adjustEval(
         const Position& pos,
-        std::span<PlayedMove> moves,
-        i32 ply,
+        std::span<const u64> keyHistory,
         const CorrectionHistoryTable* correction,
         i32 eval,
         i32* corrDelta = nullptr
@@ -45,7 +44,7 @@ namespace stormphrax::eval {
         eval = eval * (200 - pos.halfmove()) / 200;
 
         if constexpr (kCorrect) {
-            const auto corrected = correction->correct(pos, moves, ply, eval);
+            const auto corrected = correction->correct(pos, keyHistory, eval);
 
             if (corrDelta) {
                 *corrDelta = std::abs(eval - corrected);
@@ -85,14 +84,13 @@ namespace stormphrax::eval {
     template <bool kCorrect = true>
     inline Score adjustedStaticEval(
         const Position& pos,
-        std::span<PlayedMove> moves,
-        i32 ply,
+        std::span<const u64> keyHistory,
         NnueState& nnueState,
         const CorrectionHistoryTable* correction,
         const Contempt& contempt = {}
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<kCorrect>(pos, moves, ply, correction, eval);
+        return adjustEval<kCorrect>(pos, keyHistory, correction, eval);
     }
 
     template <bool kScale = true>

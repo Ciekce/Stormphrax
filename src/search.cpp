@@ -580,8 +580,7 @@ namespace stormphrax::search {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
-                                 thread.contMoves,
-                                 ply,
+                                 thread.keyHistory,
                                  thread.nnueState,
                                  thread.correctionHistory,
                                  m_contempt
@@ -713,7 +712,7 @@ namespace stormphrax::search {
             } else {
                 Score corrDelta{};
                 curr.staticEval =
-                    eval::adjustEval(pos, thread.contMoves, ply, thread.correctionHistory, rawStaticEval, &corrDelta);
+                    eval::adjustEval(pos, thread.keyHistory, thread.correctionHistory, rawStaticEval, &corrDelta);
                 complexity = corrDelta;
             }
         }
@@ -1201,7 +1200,7 @@ namespace stormphrax::search {
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.correctionHistory->update(pos, thread.contMoves, ply, depth, bestScore, curr.staticEval);
+                thread.correctionHistory->update(pos, thread.keyHistory, depth, bestScore, curr.staticEval);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -1247,8 +1246,7 @@ namespace stormphrax::search {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
-                                 thread.contMoves,
-                                 ply,
+                                 thread.keyHistory,
                                  thread.nnueState,
                                  thread.correctionHistory,
                                  m_contempt
@@ -1284,8 +1282,7 @@ namespace stormphrax::search {
                 m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
             }
 
-            const auto staticEval =
-                eval::adjustEval(pos, thread.contMoves, ply, thread.correctionHistory, rawStaticEval);
+            const auto staticEval = eval::adjustEval(pos, thread.keyHistory, thread.correctionHistory, rawStaticEval);
 
             if (ttEntry.flag == TtFlag::kExact                                         //
                 || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval) //
