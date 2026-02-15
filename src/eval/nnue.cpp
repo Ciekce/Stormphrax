@@ -286,21 +286,17 @@ namespace stormphrax::eval {
 
         const auto occ = boards.bbs().occupancy();
 
-        for (u8 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
-            auto piece = Piece::fromRaw(pieceIdx);
-            if (c == Colors::kBlack) {
-                piece = piece.flipColor();
-            }
+        auto bb = occ;
+        while (bb) {
+            const auto from = bb.popLowestSquare();
+            const auto piece = boards.pieceOn(from);
 
-            auto bb = boards.bbs().forPiece(piece);
-            while (bb) {
-                const auto from = bb.popLowestSquare();
-
-                auto attacks = occ & attacks::getAttacks(piece, from, occ);
-                while (attacks) {
-                    const auto to = attacks.popLowestSquare();
-                    const auto attacked = boards.pieceOn(to);
-                    const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
+            auto threats = occ & attacks::getAttacks(piece, from, occ);
+            while (threats) {
+                const auto to = threats.popLowestSquare();
+                const auto attacked = boards.pieceOn(to);
+                const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
+                if (feature < nnue::features::threats::kTotalThreatFeatures) {
                     activateFeature(feature);
                 }
             }

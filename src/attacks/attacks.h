@@ -152,7 +152,7 @@ namespace stormphrax::attacks {
     [[nodiscard]] constexpr Bitboard getPseudoAttacks(Piece piece, Square src) {
         assert(piece != Piece::kNone);
 
-        switch (piece.raw()) {
+        switch (piece.type().raw()) {
             case PieceTypes::kPawn.raw():
                 return getPawnAttacks(src, piece.color());
             case PieceTypes::kKnight.raw():

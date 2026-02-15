@@ -80,21 +80,24 @@ namespace stormphrax::eval::nnue::features::threats {
             } dst{};
 
             i32 offset{};
-            for (u8 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
-                const auto piece = Piece::fromRaw(pieceIdx);
 
-                i32 pieceOffset{};
-                for (u8 sqIdx = 0; sqIdx < Squares::kCount; ++sqIdx) {
-                    const auto sq = Square::fromRaw(sqIdx);
-                    dst.offsets[piece.idx()][sq.idx()] = pieceOffset;
-                    if (piece.type() != PieceTypes::kPawn || (sq.file() > kRank1 && sq.file() < kRank8)) {
-                        const auto attacks = attacks::getPseudoAttacks(piece, sq);
-                        pieceOffset += attacks.popcount();
+            for (const auto color : {Colors::kWhite, Colors::kBlack}) {
+                for (u8 ptIdx = 0; ptIdx < PieceTypes::kCount; ++ptIdx) {
+                    const auto piece = PieceType::fromRaw(ptIdx).withColor(color);
+
+                    i32 pieceOffset{};
+                    for (u8 sqIdx = 0; sqIdx < Squares::kCount; ++sqIdx) {
+                        const auto sq = Square::fromRaw(sqIdx);
+                        dst.offsets[piece.idx()][sq.idx()] = pieceOffset;
+                        if (piece.type() != PieceTypes::kPawn || (sq.rank() > kRank1 && sq.rank() < kRank8)) {
+                            const auto attacks = attacks::getPseudoAttacks(piece.flipColor(), sq);
+                            pieceOffset += attacks.popcount();
+                        }
                     }
-                }
 
-                dst.indices[piece.idx()] = {pieceOffset, offset};
-                offset += kPieceTargetCount[piece.type().idx()] * pieceOffset;
+                    dst.indices[piece.idx()] = {pieceOffset, offset};
+                    offset += kPieceTargetCount[piece.type().idx()] * pieceOffset;
+                }
             }
 
             return dst;
@@ -108,19 +111,19 @@ namespace stormphrax::eval::nnue::features::threats {
                 for (u8 attackedIdx = 0; attackedIdx < Pieces::kCount; ++attackedIdx) {
                     const auto attacked = Piece::fromRaw(attackedIdx);
 
-                    const bool sameTypeEnemy =
-                        attacker.type() == attacked.type() && attacker.color() != attacked.color();
+                    const bool enemy = attacker.color() != attacked.color();
                     const auto map = kPieceTargetMap[attacker.type().idx()][attacked.type().idx()];
 
                     const bool semiExcluded =
-                        attacker.type() == attacked.type() && (sameTypeEnemy || attacker.type() != PieceTypes::kPawn);
+                        attacker.type() == attacked.type() && (enemy || attacker.type() != PieceTypes::kPawn);
                     const bool excluded = map < 0;
 
                     const auto [pieceOffset, offset] = kOffsets.indices[attacker.idx()];
 
                     const auto feature =
                         offset
-                        + (attacked.color().raw() * (kPieceTargetCount[attacker.type().idx()] / 2) + map) * pieceOffset;
+                        + (attacked.color().flip().raw() * (kPieceTargetCount[attacker.type().idx()] / 2) + map)
+                              * pieceOffset;
 
                     dst[attacker.idx()][attacked.idx()][0] = excluded ? kTotalThreatFeatures : feature;
                     dst[attacker.idx()][attacked.idx()][1] = excluded || semiExcluded ? kTotalThreatFeatures : feature;
