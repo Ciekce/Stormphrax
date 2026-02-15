@@ -185,6 +185,10 @@ namespace stormphrax::util::simd {
     template <typename T>
     SP_ALWAYS_INLINE_NDEBUG inline auto load(const void* ptr) = delete;
     template <>
+    SP_ALWAYS_INLINE_NDEBUG inline auto load<u8>(const void* ptr) {
+        return impl::loadU8(ptr);
+    }
+    template <>
     SP_ALWAYS_INLINE_NDEBUG inline auto load<i8>(const void* ptr) {
         return impl::loadI8(ptr);
     }

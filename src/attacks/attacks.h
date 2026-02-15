@@ -128,8 +128,7 @@ namespace stormphrax::attacks {
     }
 
     [[nodiscard]] constexpr Bitboard getAttacks(Piece piece, Square src, Bitboard occupancy = Bitboard{}) {
-        assert(pt != PieceTypes::kNone);
-        assert(pt != PieceTypes::kPawn);
+        assert(piece != Pieces::kNone);
 
         switch (piece.type().raw()) {
             case PieceTypes::kPawn.raw():
@@ -150,7 +149,7 @@ namespace stormphrax::attacks {
     }
 
     [[nodiscard]] constexpr Bitboard getPseudoAttacks(Piece piece, Square src) {
-        assert(piece != Piece::kNone);
+        assert(piece != Pieces::kNone);
 
         switch (piece.type().raw()) {
             case PieceTypes::kPawn.raw():
