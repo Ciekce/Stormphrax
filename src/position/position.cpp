@@ -23,6 +23,7 @@
 
 #include "../attacks/attacks.h"
 #include "../cuckoo.h"
+#include "../eval/nnue.h"
 #include "../movegen.h"
 #include "../opts.h"
 #include "../rays.h"
@@ -99,9 +100,10 @@ namespace stormphrax {
         }
     } // namespace
 
-    template Position Position::applyMove<NnueUpdateAction::kNone>(Move, eval::NnueState*) const;
-    template Position Position::applyMove<NnueUpdateAction::kQueue>(Move, eval::NnueState*) const;
-    template Position Position::applyMove<NnueUpdateAction::kApply>(Move, eval::NnueState*) const;
+    using NnueObserver = eval::BoardObserver;
+
+    template Position Position::applyMove<NullObserver>(Move, NullObserver) const;
+    template Position Position::applyMove<NnueObserver>(Move, NnueObserver) const;
 
     template void Position::setPiece<false>(Piece, Square);
     template void Position::setPiece<true>(Piece, Square);
@@ -112,34 +114,28 @@ namespace stormphrax {
     template void Position::movePieceNoCap<false>(Piece, Square, Square);
     template void Position::movePieceNoCap<true>(Piece, Square, Square);
 
-    template Piece Position::movePiece<false, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::movePiece<true, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::movePiece<false, true>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::movePiece<true, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::movePiece<false, NullObserver>(Piece, Square, Square, NullObserver);
+    template Piece Position::movePiece<true, NullObserver>(Piece, Square, Square, NullObserver);
+    template Piece Position::movePiece<false, NnueObserver>(Piece, Square, Square, NnueObserver);
+    template Piece Position::movePiece<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
-    template Piece Position::promotePawn<false, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
-    template Piece Position::promotePawn<true, false>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
-    template Piece Position::promotePawn<false, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
-    template Piece Position::promotePawn<true, true>(Piece, Square, Square, PieceType, eval::NnueUpdates&);
+    template Piece Position::promotePawn<false, NullObserver>(Piece, Square, Square, PieceType, NullObserver);
+    template Piece Position::promotePawn<true, NullObserver>(Piece, Square, Square, PieceType, NullObserver);
+    template Piece Position::promotePawn<false, NnueObserver>(Piece, Square, Square, PieceType, NnueObserver);
+    template Piece Position::promotePawn<true, NnueObserver>(Piece, Square, Square, PieceType, NnueObserver);
 
-    template void Position::castle<false, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template void Position::castle<true, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template void Position::castle<false, true>(Piece, Square, Square, eval::NnueUpdates&);
-    template void Position::castle<true, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template void Position::castle<false, NullObserver>(Piece, Square, Square, NullObserver);
+    template void Position::castle<true, NullObserver>(Piece, Square, Square, NullObserver);
+    template void Position::castle<false, NnueObserver>(Piece, Square, Square, NnueObserver);
+    template void Position::castle<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
-    template Piece Position::enPassant<false, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::enPassant<true, false>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::enPassant<false, true>(Piece, Square, Square, eval::NnueUpdates&);
-    template Piece Position::enPassant<true, true>(Piece, Square, Square, eval::NnueUpdates&);
+    template Piece Position::enPassant<false, NullObserver>(Piece, Square, Square, NullObserver);
+    template Piece Position::enPassant<true, NullObserver>(Piece, Square, Square, NullObserver);
+    template Piece Position::enPassant<false, NnueObserver>(Piece, Square, Square, NnueObserver);
+    template Piece Position::enPassant<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
-    template <NnueUpdateAction kNnueAction>
-    Position Position::applyMove(Move move, eval::NnueState* nnueState) const {
-        static constexpr bool kUpdateNnue = kNnueAction != NnueUpdateAction::kNone;
-
-        if constexpr (kUpdateNnue) {
-            assert(nnueState != nullptr);
-        }
-
+    template <class Observer>
+    Position Position::applyMove(Move move, Observer observer) const {
         auto newPos = *this;
 
         newPos.m_stm = m_stm.flip();
@@ -172,29 +168,26 @@ namespace stormphrax {
         const auto moving = m_boards.pieceOn(moveSrc);
         const auto movingType = moving.type();
 
-        eval::NnueUpdates updates{};
         auto captured = Pieces::kNone;
 
         switch (moveType) {
             case MoveType::kStandard:
-                captured = newPos.movePiece<true, kUpdateNnue>(moving, moveSrc, moveDst, updates);
+                captured = newPos.movePiece<true, Observer>(moving, moveSrc, moveDst, observer);
                 break;
             case MoveType::kPromotion:
-                captured = newPos.promotePawn<true, kUpdateNnue>(moving, moveSrc, moveDst, move.promo(), updates);
+                captured = newPos.promotePawn<true, Observer>(moving, moveSrc, moveDst, move.promo(), observer);
                 break;
             case MoveType::kCastling:
-                newPos.castle<true, kUpdateNnue>(moving, moveSrc, moveDst, updates);
+                newPos.castle<true, Observer>(moving, moveSrc, moveDst, observer);
                 break;
             case MoveType::kEnPassant:
-                captured = newPos.enPassant<true, kUpdateNnue>(moving, moveSrc, moveDst, updates);
+                captured = newPos.enPassant<true, Observer>(moving, moveSrc, moveDst, observer);
                 break;
         }
 
         assert(captured.typeOrNone() != PieceTypes::kKing);
 
-        if constexpr (kUpdateNnue) {
-            nnueState->pushUpdates<kNnueAction == NnueUpdateAction::kApply>(updates, m_boards.bbs(), m_kings);
-        }
+        observer.finalize(m_boards.bbs(), m_kings);
 
         if (movingType == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(stm).unset(moveSrc);
@@ -687,8 +680,8 @@ namespace stormphrax {
         }
     }
 
-    template <bool kUpdateKey, bool kUpdateNnue>
-    Piece Position::movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
+    template <bool kUpdateKey, class Observer>
+    Piece Position::movePiece(Piece piece, Square src, Square dst, Observer observer) {
         assert(piece != Pieces::kNone);
 
         assert(src != Squares::kNone);
@@ -702,8 +695,6 @@ namespace stormphrax {
 
             m_boards.removePiece(dst, captured);
 
-            // NNUE update done below
-
             if constexpr (kUpdateKey) {
                 m_keys.flipPiece(captured, dst);
             }
@@ -714,21 +705,15 @@ namespace stormphrax {
         if (piece.type() == PieceTypes::kKing) {
             const auto color = piece.color();
 
-            if constexpr (kUpdateNnue) {
-                if (eval::InputFeatureSet::refreshRequired(color, m_kings.color(color), dst)) {
-                    nnueUpdates.setRefresh(color);
-                }
-            }
+            observer.prepareKingMove(color, m_kings.color(color), dst);
 
             m_kings.color(color) = dst;
         }
 
-        if constexpr (kUpdateNnue) {
-            nnueUpdates.pushSubAdd(piece, src, dst);
-
-            if (captured != Pieces::kNone) {
-                nnueUpdates.pushSub(captured, dst);
-            }
+        if (captured == Pieces::kNone) {
+            observer.pieceMoved(piece, src, dst);
+        } else {
+            observer.pieceCaptured(piece, src, dst, captured);
         }
 
         if constexpr (kUpdateKey) {
@@ -738,8 +723,8 @@ namespace stormphrax {
         return captured;
     }
 
-    template <bool kUpdateKey, bool kUpdateNnue>
-    Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates) {
+    template <bool kUpdateKey, class Observer>
+    Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, Observer observer) {
         assert(pawn != Pieces::kNone);
         assert(pawn.type() == PieceTypes::kPawn);
 
@@ -753,32 +738,27 @@ namespace stormphrax {
         assert(promo != PieceTypes::kNone);
 
         const auto captured = m_boards.pieceOn(dst);
+        const auto coloredPromo = pawn.copyColor(promo);
 
-        if (captured != Pieces::kNone) {
+        if (captured == Pieces::kNone) {
+            m_boards.moveAndChangePiece(src, dst, pawn, promo);
+
+            observer.pawnPromoted(pawn, src, dst, coloredPromo);
+
+            if constexpr (kUpdateKey) {
+                m_keys.flipPiece(pawn, src);
+                m_keys.flipPiece(coloredPromo, dst);
+            }
+        } else {
             assert(captured.type() != PieceTypes::kKing);
 
             m_boards.removePiece(dst, captured);
+            m_boards.moveAndChangePiece(src, dst, pawn, promo);
 
-            if constexpr (kUpdateNnue) {
-                nnueUpdates.pushSub(captured, dst);
-            }
+            observer.pawnPromoteCaptured(pawn, src, dst, coloredPromo, captured);
 
             if constexpr (kUpdateKey) {
                 m_keys.flipPiece(captured, dst);
-            }
-        }
-
-        m_boards.moveAndChangePiece(src, dst, pawn, promo);
-
-        if constexpr (kUpdateNnue || kUpdateKey) {
-            const auto coloredPromo = pawn.copyColor(promo);
-
-            if constexpr (kUpdateNnue) {
-                nnueUpdates.pushSub(pawn, src);
-                nnueUpdates.pushAdd(coloredPromo, dst);
-            }
-
-            if constexpr (kUpdateKey) {
                 m_keys.flipPiece(pawn, src);
                 m_keys.flipPiece(coloredPromo, dst);
             }
@@ -787,8 +767,8 @@ namespace stormphrax {
         return captured;
     }
 
-    template <bool kUpdateKey, bool kUpdateNnue>
-    void Position::castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates) {
+    template <bool kUpdateKey, class Observer>
+    void Position::castle(Piece king, Square kingSrc, Square rookSrc, Observer observer) {
         assert(king != Pieces::kNone);
         assert(king.type() == PieceTypes::kKing);
 
@@ -813,20 +793,11 @@ namespace stormphrax {
         movePieceNoCap<kUpdateKey>(king, kingSrc, kingDst);
         movePieceNoCap<kUpdateKey>(rook, rookSrc, rookDst);
 
-        if constexpr (kUpdateNnue) {
-            const auto color = king.color();
-
-            if (eval::InputFeatureSet::refreshRequired(color, kingSrc, kingDst)) {
-                nnueUpdates.setRefresh(color);
-            }
-
-            nnueUpdates.pushSubAdd(king, kingSrc, kingDst);
-            nnueUpdates.pushSubAdd(rook, rookSrc, rookDst);
-        }
+        observer.castled(king, kingSrc, kingDst, rook, rookSrc, rookDst);
     }
 
-    template <bool kUpdateKey, bool kUpdateNnue>
-    Piece Position::enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates) {
+    template <bool kUpdateKey, class Observer>
+    Piece Position::enPassant(Piece pawn, Square src, Square dst, Observer observer) {
         assert(pawn != Pieces::kNone);
         assert(pawn.type() == PieceTypes::kPawn);
 
@@ -834,26 +805,16 @@ namespace stormphrax {
         assert(dst != Squares::kNone);
         assert(src != dst);
 
-        m_boards.movePiece(src, dst, pawn);
-
-        if constexpr (kUpdateNnue) {
-            nnueUpdates.pushSubAdd(pawn, src, dst);
-        }
-
-        if constexpr (kUpdateKey) {
-            m_keys.movePiece(pawn, src, dst);
-        }
-
         const auto captureSquare = dst.flipRankParity();
         const auto enemyPawn = pawn.flipColor();
 
+        m_boards.movePiece(src, dst, pawn);
         m_boards.removePiece(captureSquare, enemyPawn);
 
-        if constexpr (kUpdateNnue) {
-            nnueUpdates.pushSub(enemyPawn, captureSquare);
-        }
+        observer.enPassanted(pawn, src, dst, enemyPawn, captureSquare);
 
         if constexpr (kUpdateKey) {
+            m_keys.movePiece(pawn, src, dst);
             m_keys.flipPiece(enemyPawn, captureSquare);
         }
 

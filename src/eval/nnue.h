@@ -80,6 +80,19 @@ namespace stormphrax::eval {
         KingPair kings{};
     };
 
+    struct BoardObserver {
+        UpdateContext& ctx;
+
+        void prepareKingMove(Color color, Square src, Square dst);
+        void pieceMoved(Piece piece, Square src, Square dst);
+        void pieceCaptured(Piece piece, Square src, Square dst, Piece captured);
+        void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo);
+        void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured);
+        void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst);
+        void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare);
+        void finalize(BitboardSet bbs, KingPair kings);
+    };
+
     class NnueState {
     private:
         struct UpdatableAccumulator {
@@ -126,17 +139,17 @@ namespace stormphrax::eval {
             }
         }
 
-        template <bool ApplyImmediately>
-        inline void pushUpdates(const NnueUpdates& updates, const BitboardSet& bbs, KingPair kings) {
-            if constexpr (ApplyImmediately) {
-                const UpdateContext ctx{updates, bbs, kings};
-                updateBoth(m_curr->acc, *m_curr, m_refreshTable, ctx);
-            } else {
-                ++m_curr;
+        inline BoardObserver push() {
+            ++m_curr;
 
-                m_curr->ctx = {updates, bbs, kings};
-                m_curr->setDirty();
-            }
+            m_curr->ctx = {};
+            m_curr->setDirty();
+
+            return BoardObserver{m_curr->ctx};
+        }
+
+        inline void apply(const UpdateContext& ctx) {
+            updateBoth(m_curr->acc, *m_curr, m_refreshTable, ctx);
         }
 
         inline void pop() {
@@ -409,4 +422,53 @@ namespace stormphrax::eval {
             return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
         }
     };
+
+    inline void BoardObserver::prepareKingMove(Color color, Square src, Square dst) {
+        if (InputFeatureSet::refreshRequired(color, src, dst)) {
+            ctx.updates.setRefresh(color);
+        }
+    }
+
+    inline void BoardObserver::pieceMoved(Piece piece, Square src, Square dst) {
+        ctx.updates.pushSubAdd(piece, src, dst);
+    }
+
+    inline void BoardObserver::pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
+        ctx.updates.pushSubAdd(piece, src, dst);
+        ctx.updates.pushSub(captured, dst);
+    }
+
+    inline void BoardObserver::pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
+        ctx.updates.pushSub(pawn, src);
+        ctx.updates.pushAdd(promo, dst);
+    }
+
+    inline void BoardObserver::pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
+        ctx.updates.pushSub(captured, dst);
+        ctx.updates.pushSub(pawn, src);
+        ctx.updates.pushAdd(promo, dst);
+    }
+
+    inline void BoardObserver::castled(
+        Piece king,
+        Square kingSrc,
+        Square kingDst,
+        Piece rook,
+        Square rookSrc,
+        Square rookDst
+    ) {
+        prepareKingMove(king.color(), kingSrc, kingDst);
+        ctx.updates.pushSubAdd(king, kingSrc, kingDst);
+        ctx.updates.pushSubAdd(rook, rookSrc, rookDst);
+    }
+
+    inline void BoardObserver::enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
+        ctx.updates.pushSubAdd(pawn, src, dst);
+        ctx.updates.pushSub(enemyPawn, captureSquare);
+    }
+
+    inline void BoardObserver::finalize(BitboardSet bbs, KingPair kings) {
+        ctx.bbs = bbs;
+        ctx.kings = kings;
+    }
 } // namespace stormphrax::eval
