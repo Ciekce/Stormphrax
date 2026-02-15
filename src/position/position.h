@@ -122,35 +122,35 @@ namespace stormphrax {
 
     struct NullObserver {
         void prepareKingMove(Color color, Square src, Square dst) {
-            UNUSED(color, src, dst);
+            SP_UNUSED(color, src, dst);
         }
         void pieceMoved(Piece piece, Square src, Square dst) {
-            UNUSED(piece, src, dst);
+            SP_UNUSED(piece, src, dst);
         }
         void pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
-            UNUSED(piece, src, dst, captured);
+            SP_UNUSED(piece, src, dst, captured);
         }
         void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
-            UNUSED(pawn, src, dst, promo);
+            SP_UNUSED(pawn, src, dst, promo);
         }
         void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
-            UNUSED(pawn, src, dst, promo, captured);
+            SP_UNUSED(pawn, src, dst, promo, captured);
         }
         void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst) {
-            UNUSED(king, kingSrc, kingDst, rook, rookSrc, rookDst);
+            SP_UNUSED(king, kingSrc, kingDst, rook, rookSrc, rookDst);
         }
         void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
-            UNUSED(pawn, src, dst, enemyPawn, captureSquare);
+            SP_UNUSED(pawn, src, dst, enemyPawn, captureSquare);
         }
         void finalize(BitboardSet bbs, KingPair kings) {
-            UNUSED(bbs, kings);
+            SP_UNUSED(bbs, kings);
         }
     };
 
     class Position {
     public:
         // Moves are assumed to be legal
-        template <class Observer>
+        template <typename Observer>
         [[nodiscard]] Position applyMove(Move move, Observer observer) const;
 
         [[nodiscard]] Position applyMove(Move move) const {
@@ -467,14 +467,14 @@ namespace stormphrax {
         template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 
-        template <bool kUpdateKeys = true, class Observer = NullObserver>
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
         [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, Observer observer);
 
-        template <bool kUpdateKeys = true, class Observer = NullObserver>
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, Observer observer);
-        template <bool kUpdateKeys = true, class Observer = NullObserver>
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
         void castle(Piece king, Square kingSrc, Square rookSrc, Observer observer);
-        template <bool kUpdateKeys = true, class Observer = NullObserver>
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
         [[nodiscard]] inline Bitboard calcCheckers() const {

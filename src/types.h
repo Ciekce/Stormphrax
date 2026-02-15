@@ -85,7 +85,7 @@ namespace stormphrax {
 #define SP_STRINGIFY_(S) #S
 #define SP_STRINGIFY(S) SP_STRINGIFY_(S)
 
-#define UNUSED(...) (void)sizeof(__VA_ARGS__)
+#define SP_UNUSED(...) (void)sizeof(__VA_ARGS__)
 
 #ifndef NDEBUG
     #define SP_ALWAYS_INLINE_NDEBUG

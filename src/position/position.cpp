@@ -134,7 +134,7 @@ namespace stormphrax {
     template Piece Position::enPassant<false, NnueObserver>(Piece, Square, Square, NnueObserver);
     template Piece Position::enPassant<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
-    template <class Observer>
+    template <typename Observer>
     Position Position::applyMove(Move move, Observer observer) const {
         auto newPos = *this;
 
@@ -680,7 +680,7 @@ namespace stormphrax {
         }
     }
 
-    template <bool kUpdateKey, class Observer>
+    template <bool kUpdateKey, typename Observer>
     Piece Position::movePiece(Piece piece, Square src, Square dst, Observer observer) {
         assert(piece != Pieces::kNone);
 
@@ -723,7 +723,7 @@ namespace stormphrax {
         return captured;
     }
 
-    template <bool kUpdateKey, class Observer>
+    template <bool kUpdateKey, typename Observer>
     Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, Observer observer) {
         assert(pawn != Pieces::kNone);
         assert(pawn.type() == PieceTypes::kPawn);
@@ -767,7 +767,7 @@ namespace stormphrax {
         return captured;
     }
 
-    template <bool kUpdateKey, class Observer>
+    template <bool kUpdateKey, typename Observer>
     void Position::castle(Piece king, Square kingSrc, Square rookSrc, Observer observer) {
         assert(king != Pieces::kNone);
         assert(king.type() == PieceTypes::kKing);
@@ -796,7 +796,7 @@ namespace stormphrax {
         observer.castled(king, kingSrc, kingDst, rook, rookSrc, rookDst);
     }
 
-    template <bool kUpdateKey, class Observer>
+    template <bool kUpdateKey, typename Observer>
     Piece Position::enPassant(Piece pawn, Square src, Square dst, Observer observer) {
         assert(pawn != Pieces::kNone);
         assert(pawn.type() == PieceTypes::kPawn);
