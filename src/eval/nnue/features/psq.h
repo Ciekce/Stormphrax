@@ -26,6 +26,14 @@
 #include "../../../util/static_vector.h"
 
 namespace stormphrax::eval::nnue::features::psq {
+    struct UpdatedThreat {
+        Piece attacker;
+        Square attackerSq;
+        Piece attacked;
+        Square attackedSq;
+        bool operator==(const UpdatedThreat&) const = default;
+    };
+
     struct PsqFeaturesBase {
         static constexpr bool kThreatInputs = false;
         static constexpr u32 kThreatFeatures = 0;
@@ -38,6 +46,9 @@ namespace stormphrax::eval::nnue::features::psq {
 
             StaticVector<PieceSquare, 2> sub{};
             StaticVector<PieceSquare, 2> add{};
+
+            std::array<UpdatedThreat, 0> threatsAdded{};
+            std::array<UpdatedThreat, 0> threatsRemoved{};
 
             inline void setRefresh(Color c) {
                 refresh[c.idx()] = true;
@@ -58,6 +69,14 @@ namespace stormphrax::eval::nnue::features::psq {
 
             inline void pushAdd(Piece piece, Square sq) {
                 add.push({piece, sq});
+            }
+
+            inline void addThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                SP_UNUSED(attacker, attackerSq, attacked, attackedSq);
+            }
+
+            inline void removeThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                SP_UNUSED(attacker, attackerSq, attacked, attackedSq);
             }
         };
     };

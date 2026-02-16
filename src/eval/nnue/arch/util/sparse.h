@@ -34,11 +34,11 @@
 
 namespace stormphrax::eval::nnue::arch::sparse {
 #if SP_SPARSE_BENCH_L1_SIZE > 0
-    inline std::array<usize, SP_SPARSE_BENCH_FT_SIZE / 2> g_activationCounts{};
-    inline void trackActivations(std::span<const u8, SP_SPARSE_BENCH_FT_SIZE> ftActivations) {
-        for (usize i = 0; i < SP_SPARSE_BENCH_FT_SIZE; ++i) {
+    inline std::array<usize, SP_SPARSE_BENCH_L1_SIZE / 2> g_activationCounts{};
+    inline void trackActivations(std::span<const u8, SP_SPARSE_BENCH_L1_SIZE> ftActivations) {
+        for (usize i = 0; i < SP_SPARSE_BENCH_L1_SIZE; ++i) {
             if (ftActivations[i] != 0) {
-                ++g_activationCounts[i % (SP_SPARSE_BENCH_FT_SIZE / 2)];
+                ++g_activationCounts[i % (SP_SPARSE_BENCH_L1_SIZE / 2)];
             }
         }
     }

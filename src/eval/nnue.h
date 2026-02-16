@@ -47,23 +47,43 @@ namespace stormphrax::eval {
 
     struct UpdateContext {
         NnueUpdates updates{};
-        BitboardSet bbs{};
+        PositionBoards boards{};
         KingPair kings{};
     };
 
     void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king);
 
+    template <bool kAdd>
+    void updatePieceThreats(
+        NnueUpdates& updates,
+        const PositionBoards& boards,
+        Piece piece,
+        Square sq,
+        bool discovery = true,
+        Bitboard discoveryMask = Bitboard::kAll
+    );
+
     struct BoardObserver {
         UpdateContext& ctx;
 
         void prepareKingMove(Color color, Square src, Square dst);
-        void pieceMoved(Piece piece, Square src, Square dst);
-        void pieceCaptured(Piece piece, Square src, Square dst, Piece captured);
-        void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo);
-        void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured);
-        void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst);
-        void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare);
-        void finalize(BitboardSet bbs, KingPair kings);
+
+        void pieceAdded(
+            const PositionBoards& boards,
+            Piece piece,
+            Square sq,
+            bool discovery,
+            Bitboard discoveryMask = Bitboard::kAll
+        );
+        void pieceRemoved(
+            const PositionBoards& boards,
+            Piece piece,
+            Square sq,
+            bool discovery,
+            Bitboard discoveryMask = Bitboard::kAll
+        );
+
+        void finalize(const PositionBoards& boards, KingPair kings);
     };
 
     class NnueState {
@@ -93,7 +113,7 @@ namespace stormphrax::eval {
             m_accumulatorStack.resize(256);
         }
 
-        inline void reset(const BitboardSet& bbs, KingPair kings) {
+        inline void reset(const PositionBoards& boards, KingPair kings) {
             assert(kings.isValid());
 
             m_refreshTable.init(g_network.featureTransformer());
@@ -105,10 +125,14 @@ namespace stormphrax::eval {
                 const auto entry = InputFeatureSet::getRefreshTableEntry(c, king);
 
                 auto& rtEntry = m_refreshTable.table[entry];
-                resetAccumulator(rtEntry.accumulator, c, bbs, king);
+                resetAccumulator<false>(rtEntry.accumulator, c, boards, king);
 
                 m_curr->acc.copyFrom(c, rtEntry.accumulator);
-                rtEntry.colorBbs(c) = bbs;
+                rtEntry.colorBbs(c) = boards.bbs();
+
+                if constexpr (InputFeatureSet::kThreatInputs) {
+                    addThreatFeatures(m_curr->acc.forColor(c), c, boards, king);
+                }
             }
         }
 
@@ -134,9 +158,9 @@ namespace stormphrax::eval {
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
             assert(stm != Colors::kNone);
 
-            ensureUpToDate(boards.bbs(), kings);
+            ensureUpToDate(boards, kings);
 
-            return evaluate(m_curr->acc, boards, kings, stm);
+            return evaluate(m_curr->acc, boards, stm);
         }
 
         [[nodiscard]] static inline i32 evaluateOnce(const PositionBoards& boards, KingPair kings, Color stm) {
@@ -147,10 +171,10 @@ namespace stormphrax::eval {
 
             accumulator.initBoth(g_network.featureTransformer());
 
-            resetAccumulator(accumulator, Colors::kBlack, boards.bbs(), kings.black());
-            resetAccumulator(accumulator, Colors::kWhite, boards.bbs(), kings.white());
+            resetAccumulator(accumulator, Colors::kBlack, boards, kings.black());
+            resetAccumulator(accumulator, Colors::kWhite, boards, kings.white());
 
-            return evaluate(accumulator, boards, kings, stm);
+            return evaluate(accumulator, boards, stm);
         }
 
     private:
@@ -167,7 +191,7 @@ namespace stormphrax::eval {
             Color c
         ) {
             if (ctx.updates.requiresRefresh(c)) {
-                refreshAccumulator(curr, c, ctx.bbs, refreshTable, ctx.kings.color(c));
+                refreshAccumulator(curr, c, ctx.boards, refreshTable, ctx.kings.color(c));
                 return;
             }
 
@@ -217,6 +241,32 @@ namespace stormphrax::eval {
                 assert(false && "Materialising a piece from nowhere?");
             }
 
+            if constexpr (InputFeatureSet::kThreatInputs) {
+                auto acc = curr.acc.forColor(c);
+                for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
+                    const auto feature =
+                        nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                    if (feature >= nnue::features::threats::kTotalThreatFeatures) {
+                        continue;
+                    }
+                    const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+                    for (i32 i = 0; i < kL1Size; ++i) {
+                        acc[i] += start[i];
+                    }
+                }
+                for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
+                    const auto feature =
+                        nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                    if (feature >= nnue::features::threats::kTotalThreatFeatures) {
+                        continue;
+                    }
+                    const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+                    for (i32 i = 0; i < kL1Size; ++i) {
+                        acc[i] -= start[i];
+                    }
+                }
+            }
+
             curr.setUpdated(c);
         }
 
@@ -230,7 +280,7 @@ namespace stormphrax::eval {
             update(prev, curr, refreshTable, ctx, Colors::kWhite);
         }
 
-        inline void ensureUpToDate(const BitboardSet& bbs, KingPair kings) {
+        inline void ensureUpToDate(const PositionBoards& boards, KingPair kings) {
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 if (!m_curr->isDirty(c)) {
                     continue;
@@ -238,7 +288,7 @@ namespace stormphrax::eval {
 
                 // if the current accumulator needs a refresh, just do it
                 if (m_curr->ctx.updates.requiresRefresh(c)) {
-                    refreshAccumulator(*m_curr, c, bbs, m_refreshTable, kings.color(c));
+                    refreshAccumulator(*m_curr, c, boards, m_refreshTable, kings.color(c));
                     continue;
                 }
 
@@ -251,7 +301,7 @@ namespace stormphrax::eval {
 
                 // if the found accumulator requires a refresh, just give up and refresh the current one
                 if (curr->ctx.updates.requiresRefresh(c)) {
-                    refreshAccumulator(*m_curr, c, bbs, m_refreshTable, kings.color(c));
+                    refreshAccumulator(*m_curr, c, boards, m_refreshTable, kings.color(c));
                 } else {
                     // otherwise go forward and incrementally update all accumulators in between
                     do {
@@ -267,25 +317,9 @@ namespace stormphrax::eval {
         [[nodiscard]] static inline i32 evaluate(
             const Accumulator& accumulator,
             const PositionBoards& boards,
-            const KingPair& kings,
             Color stm
         ) {
             assert(stm != Colors::kNone);
-
-            if constexpr (InputFeatureSet::kThreatInputs) {
-                util::simd::Array<i16, kL1Size> black;
-                util::simd::Array<i16, kL1Size> white;
-
-                std::ranges::copy(accumulator.black(), black.begin());
-                std::ranges::copy(accumulator.white(), white.begin());
-
-                addThreatFeatures(black, Colors::kBlack, boards, kings.black());
-                addThreatFeatures(white, Colors::kWhite, boards, kings.white());
-
-                return stm == Colors::kBlack ? g_network.propagate(boards.bbs(), black, white)[0]
-                                             : g_network.propagate(boards.bbs(), white, black)[0];
-            }
-
             return stm == Colors::kBlack
                      ? g_network.propagate(boards.bbs(), accumulator.black(), accumulator.white())[0]
                      : g_network.propagate(boards.bbs(), accumulator.white(), accumulator.black())[0];
@@ -294,10 +328,11 @@ namespace stormphrax::eval {
         static inline void refreshAccumulator(
             UpdatableAccumulator& accumulator,
             Color c,
-            const BitboardSet& bbs,
+            const PositionBoards& boards,
             RefreshTable& refreshTable,
             Square king
         ) {
+            const auto& bbs = boards.bbs();
             const auto tableIdx = InputFeatureSet::getRefreshTableEntry(c, king);
 
             auto& rtEntry = refreshTable.table[tableIdx];
@@ -356,10 +391,20 @@ namespace stormphrax::eval {
             accumulator.acc.copyFrom(c, rtEntry.accumulator);
             prevBoards = bbs;
 
+            if constexpr (InputFeatureSet::kThreatInputs) {
+                addThreatFeatures(accumulator.acc.forColor(c), c, boards, king);
+            }
+
             accumulator.setUpdated(c);
         }
 
-        static inline void resetAccumulator(Accumulator& accumulator, Color c, const BitboardSet& bbs, Square king) {
+        template <bool kActivateThreats = true>
+        static inline void resetAccumulator(
+            Accumulator& accumulator,
+            Color c,
+            const PositionBoards& boards,
+            Square king
+        ) {
             assert(c != Colors::kNone);
             assert(king != Squares::kNone);
 
@@ -368,7 +413,7 @@ namespace stormphrax::eval {
             for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
                 const auto piece = Piece::fromRaw(pieceIdx);
 
-                auto board = bbs.forPiece(piece);
+                auto board = boards.bbs().forPiece(piece);
                 while (!board.empty()) {
                     const auto sq = board.popLowestSquare();
 
@@ -376,16 +421,10 @@ namespace stormphrax::eval {
                     accumulator.activateFeature(g_network.featureTransformer(), c, feature);
                 }
             }
-        }
 
-        static inline void resetAccumulator(
-            UpdatableAccumulator& accumulator,
-            Color c,
-            const BitboardSet& bbs,
-            Square king
-        ) {
-            resetAccumulator(accumulator.acc, c, bbs, king);
-            accumulator.setUpdated(c);
+            if constexpr (InputFeatureSet::kThreatInputs && kActivateThreats) {
+                addThreatFeatures(accumulator.forColor(c), c, boards, king);
+            }
         }
     };
 
@@ -393,48 +432,42 @@ namespace stormphrax::eval {
         if (InputFeatureSet::refreshRequired(color, src, dst)) {
             ctx.updates.setRefresh(color);
         }
+
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            if ((src.file() >= kFileE) != (dst.file() >= kFileE)) {
+                ctx.updates.setRefresh(color);
+            }
+        }
     }
 
-    inline void BoardObserver::pieceMoved(Piece piece, Square src, Square dst) {
-        ctx.updates.pushSubAdd(piece, src, dst);
-    }
-
-    inline void BoardObserver::pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
-        ctx.updates.pushSubAdd(piece, src, dst);
-        ctx.updates.pushSub(captured, dst);
-    }
-
-    inline void BoardObserver::pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
-        ctx.updates.pushSub(pawn, src);
-        ctx.updates.pushAdd(promo, dst);
-    }
-
-    inline void BoardObserver::pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
-        ctx.updates.pushSub(captured, dst);
-        ctx.updates.pushSub(pawn, src);
-        ctx.updates.pushAdd(promo, dst);
-    }
-
-    inline void BoardObserver::castled(
-        Piece king,
-        Square kingSrc,
-        Square kingDst,
-        Piece rook,
-        Square rookSrc,
-        Square rookDst
+    inline void BoardObserver::pieceAdded(
+        const PositionBoards& boards,
+        Piece piece,
+        Square sq,
+        bool discovery,
+        Bitboard discoveryMask
     ) {
-        prepareKingMove(king.color(), kingSrc, kingDst);
-        ctx.updates.pushSubAdd(king, kingSrc, kingDst);
-        ctx.updates.pushSubAdd(rook, rookSrc, rookDst);
+        ctx.updates.pushAdd(piece, sq);
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            updatePieceThreats<true>(ctx.updates, boards, piece, sq, discovery, discoveryMask);
+        }
     }
 
-    inline void BoardObserver::enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
-        ctx.updates.pushSubAdd(pawn, src, dst);
-        ctx.updates.pushSub(enemyPawn, captureSquare);
+    inline void BoardObserver::pieceRemoved(
+        const PositionBoards& boards,
+        Piece piece,
+        Square sq,
+        bool discovery,
+        Bitboard discoveryMask
+    ) {
+        ctx.updates.pushSub(piece, sq);
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            updatePieceThreats<false>(ctx.updates, boards, piece, sq, discovery, discoveryMask);
+        }
     }
 
-    inline void BoardObserver::finalize(BitboardSet bbs, KingPair kings) {
-        ctx.bbs = bbs;
+    inline void BoardObserver::finalize(const PositionBoards& boards, KingPair kings) {
+        ctx.boards = boards;
         ctx.kings = kings;
     }
 } // namespace stormphrax::eval

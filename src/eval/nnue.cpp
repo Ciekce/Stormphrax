@@ -22,6 +22,7 @@
 #include <string_view>
 
 #include "../attacks/attacks.h"
+#include "../rays.h"
 #include "../util/memstream.h"
 #include "nnue/io_impl.h"
 
@@ -300,6 +301,92 @@ namespace stormphrax::eval {
                     activateFeature(feature);
                 }
             }
+        }
+    }
+
+    namespace {
+        template <bool kAdd>
+        inline void addThreatFeature(
+            NnueUpdates& updates,
+            Piece attacker,
+            Square attackerSq,
+            Piece attacked,
+            Square attackedSq
+        ) {
+            if constexpr (kAdd) {
+                updates.addThreatFeature(attacker, attackerSq, attacked, attackedSq);
+            } else {
+                updates.removeThreatFeature(attacker, attackerSq, attacked, attackedSq);
+            }
+        }
+    } // namespace
+
+    template void updatePieceThreats<false>(NnueUpdates&, const PositionBoards&, Piece, Square, bool, Bitboard);
+    template void updatePieceThreats<true>(NnueUpdates&, const PositionBoards&, Piece, Square, bool, Bitboard);
+
+    template <bool kAdd>
+    void updatePieceThreats(
+        NnueUpdates& updates,
+        const PositionBoards& boards,
+        Piece piece,
+        Square sq,
+        bool discovery,
+        Bitboard discoveryMask
+    ) {
+        using namespace nnue::features::threats;
+
+        const auto& bbs = boards.bbs();
+        const auto occ = bbs.occupancy();
+
+        const auto rooks = bbs.forPiece(PieceTypes::kQueen) | bbs.forPiece(PieceTypes::kRook);
+        const auto bishops = bbs.forPiece(PieceTypes::kQueen) | bbs.forPiece(PieceTypes::kBishop);
+
+        const auto rookAttacks = attacks::getRookAttacks(sq, occ);
+        const auto bishopAttacks = attacks::getBishopAttacks(sq, occ);
+
+        auto threats = attacks::getAttacks(piece, sq, occ) & occ;
+        while (threats) {
+            const auto attackedSq = threats.popLowestSquare();
+            const auto attacked = boards.pieceOn(attackedSq);
+            addThreatFeature<kAdd>(updates, piece, sq, attacked, attackedSq);
+        }
+
+        auto incomingThreats = [&] {
+            Bitboard attackers{};
+            attackers |= bbs.forPiece(Pieces::kBlackPawn) & attacks::getPawnAttacks(sq, Colors::kWhite);
+            attackers |= bbs.forPiece(Pieces::kWhitePawn) & attacks::getPawnAttacks(sq, Colors::kBlack);
+            attackers |= bbs.forPiece(PieceTypes::kKnight) & attacks::getKnightAttacks(sq);
+            attackers |= bbs.forPiece(PieceTypes::kKing) & attacks::getKingAttacks(sq);
+            return attackers;
+        }();
+
+        auto sliders = (rooks & rookAttacks) | (bishops & bishopAttacks);
+
+        if (discovery) {
+            while (sliders) {
+                const auto sliderSq = sliders.popLowestSquare();
+                const auto slider = boards.pieceOn(sliderSq);
+
+                const auto ray = rayPast(sliderSq, sq) & ~rayBetween(sliderSq, sq) & ~sq.bit();
+                const auto discovered = ray & (rookAttacks | bishopAttacks) & occ;
+                assert(!discovered.multiple());
+
+                if (discovered && (rayPast(sliderSq, sq) & discoveryMask) != discoveryMask) {
+                    const auto attackedSq = discovered.lowestSquare();
+                    const auto attacked = boards.pieceOn(attackedSq);
+                    addThreatFeature<!kAdd>(updates, slider, sliderSq, attacked, attackedSq);
+                }
+
+                addThreatFeature<kAdd>(updates, slider, sliderSq, piece, sq);
+            }
+        } else {
+            incomingThreats |= sliders;
+        }
+
+        while (incomingThreats) {
+            const auto srcSq = incomingThreats.popLowestSquare();
+            const auto srcPc = boards.pieceOn(srcSq);
+            addThreatFeature<kAdd>(updates, srcPc, srcSq, piece, sq);
         }
     }
 } // namespace stormphrax::eval

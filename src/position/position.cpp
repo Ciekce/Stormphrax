@@ -111,9 +111,6 @@ namespace stormphrax {
     template void Position::removePiece<false>(Piece, Square);
     template void Position::removePiece<true>(Piece, Square);
 
-    template void Position::movePieceNoCap<false>(Piece, Square, Square);
-    template void Position::movePieceNoCap<true>(Piece, Square, Square);
-
     template Piece Position::movePiece<false, NullObserver>(Piece, Square, Square, NullObserver);
     template Piece Position::movePiece<true, NullObserver>(Piece, Square, Square, NullObserver);
     template Piece Position::movePiece<false, NnueObserver>(Piece, Square, Square, NnueObserver);
@@ -187,7 +184,7 @@ namespace stormphrax {
 
         assert(captured.typeOrNone() != PieceTypes::kKing);
 
-        observer.finalize(m_boards.bbs(), m_kings);
+        observer.finalize(m_boards, m_kings);
 
         if (movingType == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(stm).unset(moveSrc);
@@ -657,29 +654,6 @@ namespace stormphrax {
         }
     }
 
-    template <bool kUpdateKey>
-    void Position::movePieceNoCap(Piece piece, Square src, Square dst) {
-        assert(piece != Pieces::kNone);
-
-        assert(src != Squares::kNone);
-        assert(dst != Squares::kNone);
-
-        if (src == dst) {
-            return;
-        }
-
-        m_boards.movePiece(src, dst, piece);
-
-        if (piece.type() == PieceTypes::kKing) {
-            const auto color = piece.color();
-            m_kings.color(color) = dst;
-        }
-
-        if constexpr (kUpdateKey) {
-            m_keys.movePiece(piece, src, dst);
-        }
-    }
-
     template <bool kUpdateKey, typename Observer>
     Piece Position::movePiece(Piece piece, Square src, Square dst, Observer observer) {
         assert(piece != Pieces::kNone);
@@ -688,32 +662,29 @@ namespace stormphrax {
         assert(dst != Squares::kNone);
         assert(src != dst);
 
-        const auto captured = m_boards.pieceOn(dst);
-
-        if (captured != Pieces::kNone) {
-            assert(captured.type() != PieceTypes::kKing);
-
-            m_boards.removePiece(dst, captured);
-
-            if constexpr (kUpdateKey) {
-                m_keys.flipPiece(captured, dst);
-            }
-        }
-
-        m_boards.movePiece(src, dst, piece);
-
         if (piece.type() == PieceTypes::kKing) {
             const auto color = piece.color();
-
             observer.prepareKingMove(color, m_kings.color(color), dst);
-
             m_kings.color(color) = dst;
         }
 
-        if (captured == Pieces::kNone) {
-            observer.pieceMoved(piece, src, dst);
+        const auto captured = m_boards.pieceOn(dst);
+
+        if (captured != Pieces::kNone) {
+            observer.pieceRemoved(m_boards, piece, src, true);
+            m_boards.removePiece(src, piece);
+            observer.pieceRemoved(m_boards, captured, dst, false);
+            m_boards.removePiece(dst, captured);
+            m_boards.setPiece(dst, piece);
+            observer.pieceAdded(m_boards, piece, dst, false);
+            if constexpr (kUpdateKey) {
+                m_keys.flipPiece(captured, dst);
+            }
         } else {
-            observer.pieceCaptured(piece, src, dst, captured);
+            const auto discoveryMask = src.bit() | dst.bit();
+            observer.pieceRemoved(m_boards, piece, src, true, discoveryMask);
+            m_boards.movePiece(src, dst, piece);
+            observer.pieceAdded(m_boards, piece, dst, true, discoveryMask);
         }
 
         if constexpr (kUpdateKey) {
@@ -740,28 +711,26 @@ namespace stormphrax {
         const auto captured = m_boards.pieceOn(dst);
         const auto coloredPromo = pawn.copyColor(promo);
 
-        if (captured == Pieces::kNone) {
-            m_boards.moveAndChangePiece(src, dst, pawn, promo);
-
-            observer.pawnPromoted(pawn, src, dst, coloredPromo);
-
-            if constexpr (kUpdateKey) {
-                m_keys.flipPiece(pawn, src);
-                m_keys.flipPiece(coloredPromo, dst);
-            }
-        } else {
-            assert(captured.type() != PieceTypes::kKing);
-
+        if (captured != Pieces::kNone) {
+            observer.pieceRemoved(m_boards, pawn, src, true);
+            m_boards.removePiece(src, pawn);
+            observer.pieceRemoved(m_boards, captured, dst, false);
             m_boards.removePiece(dst, captured);
-            m_boards.moveAndChangePiece(src, dst, pawn, promo);
-
-            observer.pawnPromoteCaptured(pawn, src, dst, coloredPromo, captured);
-
+            m_boards.setPiece(dst, coloredPromo);
+            observer.pieceAdded(m_boards, coloredPromo, dst, false);
             if constexpr (kUpdateKey) {
                 m_keys.flipPiece(captured, dst);
-                m_keys.flipPiece(pawn, src);
-                m_keys.flipPiece(coloredPromo, dst);
             }
+        } else {
+            const auto discoveryMask = src.bit() | dst.bit();
+            observer.pieceRemoved(m_boards, pawn, src, true, discoveryMask);
+            m_boards.moveAndChangePiece(src, dst, pawn, promo);
+            observer.pieceAdded(m_boards, coloredPromo, dst, true, discoveryMask);
+        }
+
+        if constexpr (kUpdateKey) {
+            m_keys.flipPiece(pawn, src);
+            m_keys.flipPiece(coloredPromo, dst);
         }
 
         return captured;
@@ -788,12 +757,28 @@ namespace stormphrax {
             rookDst = kingSrc.withFile(kFileD);
         }
 
+        observer.prepareKingMove(king.color(), kingSrc, kingDst);
+
+        m_kings.color(king.color()) = kingDst;
+
         const auto rook = king.copyColor(PieceTypes::kRook);
 
-        movePieceNoCap<kUpdateKey>(king, kingSrc, kingDst);
-        movePieceNoCap<kUpdateKey>(rook, rookSrc, rookDst);
+        observer.pieceRemoved(m_boards, king, kingSrc, true);
+        m_boards.removePiece(kingSrc, king);
 
-        observer.castled(king, kingSrc, kingDst, rook, rookSrc, rookDst);
+        observer.pieceRemoved(m_boards, rook, rookSrc, true);
+        m_boards.removePiece(rookSrc, rook);
+
+        m_boards.setPiece(kingDst, king);
+        observer.pieceAdded(m_boards, king, kingDst, true);
+
+        m_boards.setPiece(rookDst, rook);
+        observer.pieceAdded(m_boards, rook, rookDst, true);
+
+        if constexpr (kUpdateKey) {
+            m_keys.movePiece(king, kingSrc, kingDst);
+            m_keys.movePiece(rook, rookSrc, rookDst);
+        }
     }
 
     template <bool kUpdateKey, typename Observer>
@@ -808,10 +793,13 @@ namespace stormphrax {
         const auto captureSquare = dst.flipRankParity();
         const auto enemyPawn = pawn.flipColor();
 
-        m_boards.movePiece(src, dst, pawn);
+        observer.pieceRemoved(m_boards, enemyPawn, captureSquare, true);
         m_boards.removePiece(captureSquare, enemyPawn);
 
-        observer.enPassanted(pawn, src, dst, enemyPawn, captureSquare);
+        const auto discoveryMask = src.bit() | dst.bit();
+        observer.pieceRemoved(m_boards, pawn, src, true, discoveryMask);
+        m_boards.movePiece(src, dst, pawn);
+        observer.pieceAdded(m_boards, pawn, dst, true, discoveryMask);
 
         if constexpr (kUpdateKey) {
             m_keys.movePiece(pawn, src, dst);

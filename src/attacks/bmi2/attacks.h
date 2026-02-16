@@ -47,4 +47,4 @@ namespace stormphrax::attacks::lookup {
 
         return g_bishopAttacks[data.offset + idx];
     }
-} // namespace stormphrax::attacks
+} // namespace stormphrax::attacks::lookup

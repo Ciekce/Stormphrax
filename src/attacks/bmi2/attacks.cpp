@@ -70,5 +70,5 @@ namespace stormphrax::attacks::lookup {
 
     const std::array<u16, kRookData.tableSize> g_rookAttacks = generateRookAttacks();
     const std::array<Bitboard, kBishopData.tableSize> g_bishopAttacks = generateBishopAttacks();
-} // namespace stormphrax::attacks
+} // namespace stormphrax::attacks::lookup
 #endif // SP_HAS_BMI2

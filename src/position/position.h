@@ -124,26 +124,26 @@ namespace stormphrax {
         void prepareKingMove(Color color, Square src, Square dst) {
             SP_UNUSED(color, src, dst);
         }
-        void pieceMoved(Piece piece, Square src, Square dst) {
-            SP_UNUSED(piece, src, dst);
+        void pieceAdded(
+            const PositionBoards& boards,
+            Piece piece,
+            Square sq,
+            bool discovery = true,
+            Bitboard discoveryMask = Bitboard{}
+        ) {
+            SP_UNUSED(boards, piece, sq, discovery, discoveryMask);
         }
-        void pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
-            SP_UNUSED(piece, src, dst, captured);
+        void pieceRemoved(
+            const PositionBoards& boards,
+            Piece piece,
+            Square sq,
+            bool discovery = true,
+            Bitboard discoveryMask = Bitboard{}
+        ) {
+            SP_UNUSED(boards, piece, sq, discovery, discoveryMask);
         }
-        void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
-            SP_UNUSED(pawn, src, dst, promo);
-        }
-        void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
-            SP_UNUSED(pawn, src, dst, promo, captured);
-        }
-        void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst) {
-            SP_UNUSED(king, kingSrc, kingDst, rook, rookSrc, rookDst);
-        }
-        void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
-            SP_UNUSED(pawn, src, dst, enemyPawn, captureSquare);
-        }
-        void finalize(BitboardSet bbs, KingPair kings) {
-            SP_UNUSED(bbs, kings);
+        void finalize(const PositionBoards& boards, KingPair kings) {
+            SP_UNUSED(boards, kings);
         }
     };
 

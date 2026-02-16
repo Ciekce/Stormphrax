@@ -78,7 +78,7 @@ namespace stormphrax::eval {
 
     template <bool kScale = true>
     inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
-        auto eval = nnueState.evaluate(pos.boards(), pos.kings(), pos.stm());
+        const auto eval = nnueState.evaluate(pos.boards(), pos.kings(), pos.stm());
         return adjustStatic<kScale>(pos, contempt, eval);
     }
 

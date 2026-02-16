@@ -176,7 +176,7 @@ namespace stormphrax::datagen {
 
                 output.start(pos);
 
-                thread.nnueState.reset(pos.bbs(), pos.kings());
+                thread.nnueState.reset(pos.boards(), pos.kings());
 
                 searcher.setMaxDepth(10);
                 searcher.setLimiter(verifLimiter);

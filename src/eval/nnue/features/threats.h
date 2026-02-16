@@ -20,12 +20,19 @@
 
 #include "../../../types.h"
 
-#include <optional>
+#include <span>
 
 #include "psq.h"
 
 namespace stormphrax::eval::nnue::features::threats {
     constexpr u32 kTotalThreatFeatures = 66864;
+
+    // just in case
+    constexpr usize kMaxThreatsAdded = 128;
+    constexpr usize kMaxThreatsRemoved = 128;
+
+    using AddedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsAdded>;
+    using RemovedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsRemoved>;
 
     template <typename PsqFeatureSet>
     struct ThreatInputs : PsqFeatureSet {
@@ -33,8 +40,27 @@ namespace stormphrax::eval::nnue::features::threats {
         static constexpr u32 kThreatFeatures = kTotalThreatFeatures;
 
         struct Updates : psq::PsqFeaturesBase::Updates {
-            // [black, white]
-            //std::array<bool, 2> refreshThreats{};
+            // black, white
+            AddedThreatList threatsAdded{};
+            RemovedThreatList threatsRemoved{};
+
+            inline void addThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                threatsAdded.push({
+                    .attacker = attacker,
+                    .attackerSq = attackerSq,
+                    .attacked = attacked,
+                    .attackedSq = attackedSq,
+                });
+            }
+
+            inline void removeThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                threatsRemoved.push({
+                    .attacker = attacker,
+                    .attackerSq = attackerSq,
+                    .attacked = attacked,
+                    .attackedSq = attackedSq,
+                });
+            }
         };
     };
 
