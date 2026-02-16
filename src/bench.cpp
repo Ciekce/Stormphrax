@@ -28,6 +28,7 @@
 
 #include "position/position.h"
 #include "stats.h"
+#include "util/numa/numa.h"
 
 namespace stormphrax::bench {
     using namespace std::string_view_literals;
