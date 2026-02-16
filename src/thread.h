@@ -149,6 +149,7 @@ namespace stormphrax::search {
         std::vector<PlayedMove> contMoves{};
 
         HistoryTables history{};
+
         CorrectionHistoryTable correctionHistory{};
 
         Position rootPos{};

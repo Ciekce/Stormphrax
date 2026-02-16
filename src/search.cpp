@@ -27,6 +27,7 @@
 #include "see.h"
 #include "stats.h"
 #include "uci.h"
+#include "util/numa/numa.h"
 
 namespace stormphrax::search {
     using namespace stormphrax::tunable;
@@ -326,6 +327,8 @@ namespace stormphrax::search {
     }
 
     void Searcher::run(u32 threadId) {
+        numa::bindThread(threadId);
+
         // Ensure thread data is allocated on the correct
         // NUMA node by initialising it from this thread
         m_threadData[threadId] = std::make_unique<ThreadData>();
