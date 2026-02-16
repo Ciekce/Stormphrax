@@ -23,6 +23,7 @@
 #include "tunable.h"
 #include "uci.h"
 #include "util/ctrlc.h"
+#include "util/numa/numa.h"
 #include "util/parse.h"
 
 #if SP_EXTERNAL_TUNE
@@ -32,6 +33,11 @@
 using namespace stormphrax;
 
 i32 main(i32 argc, const char* argv[]) {
+    if (!numa::init()) {
+        eprintln("Failed to initialize NUMA support");
+        return 1;
+    }
+
     tunable::init();
     cuckoo::init();
 

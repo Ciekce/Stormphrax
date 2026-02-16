@@ -28,6 +28,7 @@
 
 #include "position/position.h"
 #include "stats.h"
+#include "util/numa/numa.h"
 
 namespace stormphrax::bench {
     using namespace std::string_view_literals;
@@ -94,6 +95,8 @@ namespace stormphrax::bench {
     void run(i32 depth, usize ttSize) {
         const auto prevMinimal = g_opts.minimal;
         const auto prevChess960 = g_opts.chess960;
+
+        numa::bindThread(0);
 
         search::Searcher searcher{ttSize};
 
