@@ -21,7 +21,6 @@
 #include "types.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cstring>
 
 #include "core.h"
@@ -135,16 +134,14 @@ namespace stormphrax {
         static constexpr i32 kMaxBonus = kLimit / 4;
 
         struct Entry {
-            std::atomic<i16> value{};
+            i16 value{};
 
             inline void update(i32 bonus) {
-                auto v = value.load(std::memory_order::relaxed);
-                v += bonus - v * std::abs(bonus) / kLimit;
-                value.store(v, std::memory_order::relaxed);
+                value += bonus - value * std::abs(bonus) / kLimit;
             }
 
             [[nodiscard]] inline operator i32() const {
-                return value.load(std::memory_order::relaxed);
+                return value;
             }
         };
 

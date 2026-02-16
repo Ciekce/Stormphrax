@@ -96,8 +96,6 @@ namespace stormphrax::bench {
         const auto prevMinimal = g_opts.minimal;
         const auto prevChess960 = g_opts.chess960;
 
-        numa::bindThread(0);
-
         search::Searcher searcher{ttSize};
 
         searcher.setLimiter(limit::SearchLimiter{util::Instant::now()});
