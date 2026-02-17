@@ -23,6 +23,7 @@
 #include <atomic>
 
 #include "correction.h"
+#include "eval/eval.h"
 #include "history.h"
 #include "move.h"
 #include "movepick.h"
@@ -148,7 +149,8 @@ namespace stormphrax::search {
         std::vector<PlayedMove> contMoves{};
 
         HistoryTables history{};
-        CorrectionHistoryTable correctionHistory{};
+
+        CorrectionHistoryTable* correctionHistory{};
 
         Position rootPos{};
 

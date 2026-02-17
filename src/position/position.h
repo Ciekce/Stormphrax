@@ -22,6 +22,7 @@
 
 #include <array>
 #include <optional>
+#include <span>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -29,7 +30,6 @@
 #include <vector>
 
 #include "../attacks/attacks.h"
-#include "../eval/nnue.h"
 #include "../keys.h"
 #include "../move.h"
 #include "../rays.h"
@@ -120,17 +120,42 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const Keys& other) const = default;
     };
 
-    enum class NnueUpdateAction {
-        kNone = 0,
-        kQueue,
-        kApply,
+    struct NullObserver {
+        void prepareKingMove(Color color, Square src, Square dst) {
+            SP_UNUSED(color, src, dst);
+        }
+        void pieceMoved(Piece piece, Square src, Square dst) {
+            SP_UNUSED(piece, src, dst);
+        }
+        void pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
+            SP_UNUSED(piece, src, dst, captured);
+        }
+        void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
+            SP_UNUSED(pawn, src, dst, promo);
+        }
+        void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
+            SP_UNUSED(pawn, src, dst, promo, captured);
+        }
+        void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst) {
+            SP_UNUSED(king, kingSrc, kingDst, rook, rookSrc, rookDst);
+        }
+        void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
+            SP_UNUSED(pawn, src, dst, enemyPawn, captureSquare);
+        }
+        void finalize(BitboardSet bbs, KingPair kings) {
+            SP_UNUSED(bbs, kings);
+        }
     };
 
     class Position {
     public:
         // Moves are assumed to be legal
-        template <NnueUpdateAction kNnueAction = NnueUpdateAction::kNone>
-        [[nodiscard]] Position applyMove(Move move, eval::NnueState* nnueState = nullptr) const;
+        template <typename Observer>
+        [[nodiscard]] Position applyMove(Move move, Observer observer) const;
+
+        [[nodiscard]] Position applyMove(Move move) const {
+            return applyMove(move, NullObserver{});
+        }
 
         [[nodiscard]] inline Position applyNullMove() const {
             return applyMove(kNullMove);
@@ -442,15 +467,15 @@ namespace stormphrax {
         template <bool kUpdateKeys = true>
         void movePieceNoCap(Piece piece, Square src, Square dst);
 
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
+        [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, Observer observer);
 
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, eval::NnueUpdates& nnueUpdates);
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        void castle(Piece king, Square kingSrc, Square rookSrc, eval::NnueUpdates& nnueUpdates);
-        template <bool kUpdateKeys = true, bool kUpdateNnue = true>
-        Piece enPassant(Piece pawn, Square src, Square dst, eval::NnueUpdates& nnueUpdates);
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
+        Piece promotePawn(Piece pawn, Square src, Square dst, PieceType promo, Observer observer);
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
+        void castle(Piece king, Square kingSrc, Square rookSrc, Observer observer);
+        template <bool kUpdateKeys = true, typename Observer = NullObserver>
+        Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
         [[nodiscard]] inline Bitboard calcCheckers() const {
             const auto color = stm();

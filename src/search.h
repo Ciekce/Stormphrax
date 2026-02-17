@@ -41,6 +41,7 @@
 #include "thread.h"
 #include "ttable.h"
 #include "util/barrier.h"
+#include "util/numa/numa.h"
 #include "util/timer.h"
 
 namespace stormphrax::search {
@@ -179,6 +180,8 @@ namespace stormphrax::search {
 
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
+
+        numa::NumaUniqueAllocation<CorrectionHistoryTable> m_corrhists{};
 
         RootStatus initRootMoveList(const Position& pos);
 
