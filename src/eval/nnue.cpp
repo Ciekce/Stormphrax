@@ -287,12 +287,12 @@ namespace stormphrax::eval {
 
         const auto occ = boards.bbs().occupancy();
 
-        auto bb = occ;
+        auto bb = occ & ~boards.bbs().kings();
         while (bb) {
             const auto from = bb.popLowestSquare();
             const auto piece = boards.pieceOn(from);
 
-            auto threats = occ & attacks::getAttacks(piece, from, occ);
+            auto threats = occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings();
             while (threats) {
                 const auto to = threats.popLowestSquare();
                 const auto attacked = boards.pieceOn(to);
@@ -344,7 +344,7 @@ namespace stormphrax::eval {
         const auto rookAttacks = attacks::getRookAttacks(sq, occ);
         const auto bishopAttacks = attacks::getBishopAttacks(sq, occ);
 
-        auto threats = attacks::getAttacks(piece, sq, occ) & occ;
+        auto threats = attacks::getAttacks(piece, sq, occ) & occ & ~bbs.kings();
         while (threats) {
             const auto attackedSq = threats.popLowestSquare();
             const auto attacked = boards.pieceOn(attackedSq);
@@ -356,7 +356,6 @@ namespace stormphrax::eval {
             attackers |= bbs.forPiece(Pieces::kBlackPawn) & attacks::getPawnAttacks(sq, Colors::kWhite);
             attackers |= bbs.forPiece(Pieces::kWhitePawn) & attacks::getPawnAttacks(sq, Colors::kBlack);
             attackers |= bbs.forPiece(PieceTypes::kKnight) & attacks::getKnightAttacks(sq);
-            attackers |= bbs.forPiece(PieceTypes::kKing) & attacks::getKingAttacks(sq);
             return attackers;
         }();
 
