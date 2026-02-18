@@ -25,7 +25,7 @@
 #include "psq.h"
 
 namespace stormphrax::eval::nnue::features::threats {
-    constexpr u32 kTotalThreatFeatures = 66864;
+    constexpr u32 kTotalThreatFeatures = 60144;
 
     // just in case
     constexpr usize kMaxThreatsAdded = 128;

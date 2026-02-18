@@ -28,16 +28,16 @@ namespace stormphrax::eval::nnue::features::threats {
     namespace {
         constexpr util::MultiArray<i32, PieceTypes::kCount, PieceTypes::kCount> kPieceTargetMap = {{
             // clang-format off
-            {0,  1, -1,  2, -1, -1},
-            {0,  1,  2,  3,  4, -1},
-            {0,  1,  2,  3, -1, -1},
-            {0,  1,  2,  3, -1, -1},
-            {0,  1,  2,  3,  4, -1},
-            {0,  1,  2,  3, -1, -1},
+            { 0,  1, -1,  2, -1, -1},
+            { 0,  1,  2,  3,  4, -1},
+            { 0,  1,  2,  3, -1, -1},
+            { 0,  1,  2,  3, -1, -1},
+            { 0,  1,  2,  3,  4, -1},
+            {-1,  1, -1, -1, -1, -1},
             // clang-format on
         }};
 
-        constexpr std::array kPieceTargetCount = {6, 10, 8, 8, 10, 8};
+        constexpr std::array kPieceTargetCount = {6, 10, 8, 8, 10, 0};
 
         [[nodiscard]] consteval util::MultiArray<u8, Squares::kCount, Squares::kCount> generatePieceIndices(
             Piece piece
