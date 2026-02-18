@@ -688,10 +688,6 @@ namespace stormphrax::search {
             }
         }
 
-        if (depth >= 3 && !curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth)) {
-            --depth;
-        }
-
         Score rawStaticEval{};
         std::optional<Score> complexity{};
 
@@ -1005,6 +1001,7 @@ namespace stormphrax::search {
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
+                    r += (!curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth)) * 128;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
