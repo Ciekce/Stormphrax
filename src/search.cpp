@@ -1255,6 +1255,8 @@ namespace stormphrax::search {
                              );
         }
 
+        auto& curr = thread.stack[ply];
+
         ProbedTTableEntry ttEntry{};
         const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
@@ -1266,7 +1268,16 @@ namespace stormphrax::search {
             return ttEntry.score;
         }
 
-        const bool ttpv = kPvNode || ttEntry.wasPv;
+        if (!kPvNode && ttHit && !thread.reverseQsearch && ttEntry.move && !pos.isNoisy(ttEntry.move)
+            && ttEntry.flag != TtFlag::kUpperBound)
+        {
+            thread.reverseQsearch = true;
+            const auto score = search(thread, pos, curr.pv, 1, ply, moveStackIdx, alpha, beta, true);
+            thread.reverseQsearch = false;
+            return score;
+        }
+
+        curr.ttpv = kPvNode || ttEntry.wasPv;
 
         Score rawStaticEval, eval;
 
@@ -1281,7 +1292,7 @@ namespace stormphrax::search {
             }
 
             if (!ttHit) {
-                m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, curr.ttpv);
             }
 
             const auto staticEval =
@@ -1387,7 +1398,7 @@ namespace stormphrax::search {
             return -kScoreMate + ply;
         }
 
-        m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
+        m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, curr.ttpv);
 
         return bestScore;
     }

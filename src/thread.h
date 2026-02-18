@@ -135,6 +135,7 @@ namespace stormphrax::search {
         bool datagen{false};
 
         i32 minNmpPly{};
+        bool reverseQsearch{};
 
         eval::NnueState nnueState{};
 
