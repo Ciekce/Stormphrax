@@ -846,6 +846,8 @@ namespace stormphrax::search {
             }
         }
 
+        const bool iir = !curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth);
+
         thread.stack[ply + 1].killers.clear();
 
         moveStack.failLowQuiets.clear();
@@ -1001,7 +1003,7 @@ namespace stormphrax::search {
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
-                    r += (!curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth)) * 128;
+                    r += iir * 128;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
@@ -1050,7 +1052,7 @@ namespace stormphrax::search {
                         thread,
                         newPos,
                         curr.pv,
-                        newDepth,
+                        newDepth - iir,
                         ply + 1,
                         moveStackIdx + 1,
                         -alpha - 1,
