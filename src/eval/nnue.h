@@ -60,7 +60,7 @@ namespace stormphrax::eval {
         Piece piece,
         Square sq,
         bool discovery = true,
-        Bitboard discoveryMask = Bitboard::kAll
+        Bitboard discoveryMask = Bitboard::kNone
     );
 
     struct BoardObserver {
@@ -73,14 +73,14 @@ namespace stormphrax::eval {
             Piece piece,
             Square sq,
             bool discovery,
-            Bitboard discoveryMask = Bitboard::kAll
+            Bitboard discoveryMask = Bitboard::kNone
         );
         void pieceRemoved(
             const PositionBoards& boards,
             Piece piece,
             Square sq,
             bool discovery,
-            Bitboard discoveryMask = Bitboard::kAll
+            Bitboard discoveryMask = Bitboard::kNone
         );
 
         void finalize(const PositionBoards& boards, KingPair kings);

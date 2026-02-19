@@ -72,10 +72,10 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             for (u8 focus = 0; focus < Squares::kCount; focus++) {
                 std::array<u8, Squares::kCount> vec{};
                 for (u8 i = 0; i < Squares::kCount; i++) {
-                    const u8 wide = i + (i & 0x38);
-                    const u8 wideResult = offsets[i] + wide;
+                    const u8 wideFocus = focus + (focus & 0x38);
+                    const u8 wideResult = offsets[i] + wideFocus;
                     const u8 result = ((wideResult & 0x70) >> 1) | (wideResult & 0x07);
-                    const bool valid = wideResult & 0x88;
+                    const bool valid = (wideResult & 0x88) == 0;
                     vec[i] = valid ? result : 0x80;
                 }
                 permutations[focus] = std::bit_cast<Vector>(vec);
@@ -84,7 +84,15 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         }();
 
         const auto indexes = permutations[focus.idx()];
-        return Permutation{indexes, _mm512_movepi8_mask(indexes.raw)};
+        const auto valid = _mm512_testn_epi8_mask(indexes.raw, _mm512_set1_epi8(0x80));
+
+        const auto b = std::bit_cast<std::array<u8, 64>>(indexes);
+        for (u8 x : b) {
+            fmt::print("{:02x} ", x);
+        }
+        fmt::println("");
+
+        return Permutation{indexes, valid};
     }
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
@@ -107,6 +115,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             lut[Pieces::kWhiteQueen.idx()] = Bits::kQueen;
             lut[Pieces::kBlackKing.idx()] = Bits::kKing;
             lut[Pieces::kWhiteKing.idx()] = Bits::kKing;
+            lut[Pieces::kNone.idx()] = 0;
 
             return std::bit_cast<__m128i>(lut);
         }();
@@ -116,8 +125,27 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             std::bit_cast<__m512i>(mailbox),
             _mm512_set1_epi8(Pieces::kNone.idx())
         );
+
+        fmt::println("discoveryMask: {}", discoveryMask);
+        for (auto x : std::bit_cast<std::array<Piece, 64>>(maskedMailbox)) {
+            fmt::print("{} ", x);
+        }
+        fmt::println("");
+
         const auto permuted = _mm512_permutexvar_epi8(permutation.indexes.raw, maskedMailbox);
+
+        for (auto x : std::bit_cast<std::array<Piece, 64>>(permuted)) {
+            fmt::print("{} ", x);
+        }
+        fmt::println("");
+
         const auto bits = _mm512_maskz_shuffle_epi8(permutation.valid, _mm512_broadcast_i32x4(lut), permuted);
+
+        for (auto x : std::bit_cast<std::array<u8, 64>>(bits)) {
+            fmt::print("{:02x} ", x);
+        }
+        fmt::println("");
+
         return {{permuted}, {bits}};
     }
 

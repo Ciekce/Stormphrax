@@ -335,7 +335,7 @@ namespace stormphrax::eval {
             }});
 
             // Focus pair
-            const auto pair1 = _mm512_set1_epi16(static_cast<i16>(piece.idx() | (sq.idx() << 16)));
+            const auto pair1 = _mm512_set1_epi16(static_cast<i16>(piece.idx() | (sq.idx() << 8)));
 
             // Non-focus pair
             const auto pair2Sq = _mm512_maskz_compress_epi8(br, indexes.raw);
@@ -345,6 +345,10 @@ namespace stormphrax::eval {
             // Select which is the attacker and which is the victim.
             constexpr u64 mask = kOutgoing ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
             const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
+
+            for (auto x : std::bit_cast<std::array<UpdatedThreat, 16>>(vector)) {
+                fmt::println("{} {} {} {}", x.attacker, x.attackerSq, x.attacked, x.attackedSq);
+            }
 
             (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
                 _mm512_storeu_si512(reinterpret_cast<__m512i*>(ptr), vector);
@@ -411,31 +415,29 @@ namespace stormphrax::eval {
         const auto incomingAttackers = geometry::incomingAttackers(bits, closest);
         const auto incomingSliders = geometry::incomingSliders(bits, closest);
 
-<<<<<<< HEAD
-        const auto rookAttacks = attacks::getRookAttacks(sq, occ);
-        const auto bishopAttacks = attacks::getBishopAttacks(sq, occ);
+        const auto pl = std::bit_cast<std::array<Piece, 64>>(rays);
+        const auto sql = std::bit_cast<std::array<Square, 64>>(permutation.indexes);
+        const auto printbr = [&](geometry::Bitrays br) {
+            while (br) {
+                const auto index = std::countr_zero(br);
+                fmt::println("{} {}", pl[index], sql[index]);
+                br &= br - 1;
+            }
+        };
 
-        auto threats = attacks::getAttacks(piece, sq, occ) & occ & ~bbs.kings();
-        while (threats) {
-            const auto attackedSq = threats.popLowestSquare();
-            const auto attacked = boards.pieceOn(attackedSq);
-            addThreatFeature<kAdd>(updates, piece, sq, attacked, attackedSq);
-        }
+        fmt::println("{} {} {}", kAdd, piece, sq);
+        fmt::println("closest: {:016x}", closest);
+        printbr(closest);
+        fmt::println("outgoingThreats: {:016x}", outgoingThreats);
+        printbr(outgoingThreats);
+        fmt::println("incomingAttackers: {:016x}", incomingAttackers);
+        printbr(incomingAttackers);
+        fmt::println("incomingSliders: {:016x}", incomingSliders);
+        printbr(incomingSliders);
 
-        auto incomingThreats = [&] {
-            Bitboard attackers{};
-            attackers |= bbs.forPiece(Pieces::kBlackPawn) & attacks::getPawnAttacks(sq, Colors::kWhite);
-            attackers |= bbs.forPiece(Pieces::kWhitePawn) & attacks::getPawnAttacks(sq, Colors::kBlack);
-            attackers |= bbs.forPiece(PieceTypes::kKnight) & attacks::getKnightAttacks(sq);
-            return attackers;
-        }();
-
-        auto sliders = (rooks & rookAttacks) | (bishops & bishopAttacks);
-=======
         // Push all focus square relative threats.
         pushFocusThreatFeatures<kAdd, true>(updates, permutation.indexes, rays, outgoingThreats, piece, sq);
         pushFocusThreatFeatures<kAdd, false>(updates, permutation.indexes, rays, incomingAttackers, piece, sq);
->>>>>>> 1721acd (first pass)
 
         // Discover threat updates from sliders whose threats needs to be extended (if focus piece removed)
         // or retracted (if focus piece added).
