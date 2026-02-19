@@ -310,6 +310,7 @@ namespace stormphrax::eval {
         namespace geometry = nnue::features::threats::geometry;
         using UpdatedThreat = nnue::features::psq::UpdatedThreat;
 
+#if 0 // SP_HAS_VBMI2
         static_assert(sizeof(UpdatedThreat) == sizeof(u32));
         static_assert(offsetof(UpdatedThreat, attacker) == 0 * sizeof(u8));
         static_assert(offsetof(UpdatedThreat, attackerSq) == 1 * sizeof(u8));
@@ -385,6 +386,71 @@ namespace stormphrax::eval {
                 return count;
             });
         }
+#else
+        template <bool kAdd, bool kOutgoing>
+        inline void pushFocusThreatFeatures(
+            NnueUpdates& updates,
+            geometry::Vector indexes, // List of square indexes
+            geometry::Vector rays,    // List of pieces on those squares as indexed by indexes
+            geometry::Bitrays br,     // Bitrays where bit set is a piece attacked/being attacked by focus square
+            Piece piece,              // Piece on the focus square
+            Square sq                 // The focus square
+        ) {
+            const auto others = std::bit_cast<std::array<Piece, 64>>(rays);
+            const auto otherSqs = std::bit_cast<std::array<Square, 64>>(indexes);
+
+            for (; br; br &= br - 1) {
+                const auto i = std::countr_zero(br);
+
+                const auto other = others[i];
+                const auto otherSq = otherSqs[i];
+
+                const auto attacker = kOutgoing ? piece : other;
+                const auto attackerSq = kOutgoing ? sq : otherSq;
+                const auto attacked = kOutgoing ? other : piece;
+                const auto attackedSq = kOutgoing ? otherSq : sq;
+
+                if constexpr (kAdd) {
+                    updates.addThreatFeature(attacker, attackerSq, attacked, attackedSq);
+                } else {
+                    updates.removeThreatFeature(attacker, attackerSq, attacked, attackedSq);
+                }
+            }
+        }
+
+        template <bool kAdd>
+        inline void pushDiscoveredThreatFeatures(
+            NnueUpdates& updates,
+            geometry::Vector indexes, // Squares
+            geometry::Vector rays,    // Pieces
+            geometry::Bitrays sliders,
+            geometry::Bitrays victims
+        ) {
+            const auto pieces = std::bit_cast<std::array<Piece, 64>>(rays);
+            const auto squares = std::bit_cast<std::array<Square, 64>>(indexes);
+
+            for (; sliders; sliders &= sliders - 1, victims &= victims - 1) {
+                const auto slider = std::countr_zero(sliders);
+                const auto victim = std::countr_zero(victims);
+
+                const auto attacker = pieces[slider];
+                const auto attackerSq = squares[slider];
+                const auto attacked = pieces[victim];
+                const auto attackedSq = squares[victim];
+
+                // Opposite polarity:
+                // - Adding focus piece removes x-ray threats (a.k.a. slider threat retraction)
+                // - Removing focus piece adds x-ray threats (a.k.a. slider threat extension)
+                if constexpr (kAdd) {
+                    updates.removeThreatFeature(attacker, attackerSq, attacked, attackedSq);
+                } else {
+                    updates.addThreatFeature(attacker, attackerSq, attacked, attackedSq);
+                }
+            }
+
+            assert(!sliders && !victims);
+        }
+#endif
     } // namespace
 
     template void updatePieceThreats<false>(NnueUpdates&, const PositionBoards&, Piece, Square, bool, Bitboard);
