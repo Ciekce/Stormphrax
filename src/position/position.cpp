@@ -32,116 +32,6 @@
 
 namespace stormphrax {
     namespace {
-        void checkThreatUpdates(
-            const Position& posBefore,
-            const Position& posAfter,
-            Move move,
-            const eval::UpdateContext& ctx
-        ) {
-            using namespace eval::nnue;
-
-            static constexpr auto kColor = Colors::kWhite;
-
-            if (ctx.updates.requiresRefresh(kColor)) {
-                return;
-            }
-
-            const auto getFeatures = [](const Position& pos) {
-                StaticVector<features::psq::UpdatedThreat, 128> features{};
-
-                const auto& boards = pos.boards();
-                const auto occ = boards.bbs().occupancy();
-
-                auto bb = occ;
-                while (bb) {
-                    const auto from = bb.popLowestSquare();
-                    const auto piece = boards.pieceOn(from);
-
-                    auto threats = occ & attacks::getAttacks(piece, from, occ);
-                    while (threats) {
-                        const auto to = threats.popLowestSquare();
-                        const auto attacked = boards.pieceOn(to);
-                        features.push({piece, from, attacked, to});
-                    }
-                }
-
-                return features;
-            };
-
-            const auto featuresBefore = getFeatures(posBefore);
-            const auto featuresAfter = getFeatures(posAfter);
-
-            StaticVector<features::psq::UpdatedThreat, 128> added{};
-            StaticVector<features::psq::UpdatedThreat, 128> removed{};
-
-            for (const auto feature : featuresAfter) {
-                if (std::ranges::find(featuresBefore, feature) == featuresBefore.end()) {
-                    added.push(feature);
-                }
-            }
-
-            for (const auto feature : featuresBefore) {
-                if (std::ranges::find(featuresAfter, feature) == featuresAfter.end()) {
-                    removed.push(feature);
-                }
-            }
-
-            StaticVector<features::psq::UpdatedThreat, 32> addedMissing{};
-            StaticVector<features::psq::UpdatedThreat, 32> addedExtra{};
-
-            StaticVector<features::psq::UpdatedThreat, 32> removedMissing{};
-            StaticVector<features::psq::UpdatedThreat, 32> removedExtra{};
-
-            for (const auto feature : added) {
-                if (std::ranges::find(ctx.updates.threatsAdded, feature) == ctx.updates.threatsAdded.end()) {
-                    addedMissing.push(feature);
-                }
-            }
-
-            for (const auto feature : ctx.updates.threatsAdded) {
-                if (std::ranges::find(added, feature) == added.end()
-                    && std::ranges::find(ctx.updates.threatsRemoved, feature) == ctx.updates.threatsRemoved.end())
-                {
-                    addedExtra.push(feature);
-                }
-            }
-
-            for (const auto feature : removed) {
-                if (std::ranges::find(ctx.updates.threatsRemoved, feature) == ctx.updates.threatsRemoved.end()) {
-                    removedMissing.push(feature);
-                }
-            }
-
-            for (const auto feature : ctx.updates.threatsRemoved) {
-                if (std::ranges::find(removed, feature) == removed.end()
-                    && std::ranges::find(ctx.updates.threatsAdded, feature) == ctx.updates.threatsAdded.end())
-                {
-                    removedExtra.push(feature);
-                }
-            }
-
-            if (!addedMissing.empty() || !addedExtra.empty() || !removedMissing.empty() || !removedExtra.empty()) {
-                println("{} | {}", posBefore.toFen(), move);
-                println("added missing:");
-                for (const auto [attacker, attackerSq, attacked, attackedSq] : addedMissing) {
-                    println("  - {} {} -> {} {}", attacker, attackerSq, attacked, attackedSq);
-                }
-                println("added extra:");
-                for (const auto [attacker, attackerSq, attacked, attackedSq] : addedExtra) {
-                    println("  - {} {} -> {} {}", attacker, attackerSq, attacked, attackedSq);
-                }
-                println("removed missing:");
-                for (const auto [attacker, attackerSq, attacked, attackedSq] : removedMissing) {
-                    println("  - {} {} -> {} {}", attacker, attackerSq, attacked, attackedSq);
-                }
-                println("removed extra:");
-                for (const auto [attacker, attackerSq, attacked, attackedSq] : removedExtra) {
-                    println("  - {} {} -> {} {}", attacker, attackerSq, attacked, attackedSq);
-                }
-                std::terminate();
-            }
-        }
-
         std::array<PieceType, 8> scharnaglToBackrank(u32 n) {
             // https://en.wikipedia.org/wiki/Fischer_random_chess_numbering_scheme#Direct_derivation
 
@@ -294,9 +184,6 @@ namespace stormphrax {
 
         assert(captured.typeOrNone() != PieceTypes::kKing);
 
-        if constexpr (std::is_same_v<Observer, NnueObserver>) {
-            checkThreatUpdates(*this, newPos, move, observer.ctx);
-        }
         observer.finalize(m_boards, m_kings);
 
         if (movingType == PieceTypes::kRook) {
