@@ -85,13 +85,6 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
         const auto indexes = permutations[focus.idx()];
         const auto valid = _mm512_testn_epi8_mask(indexes.raw, _mm512_set1_epi8(0x80));
-
-        const auto b = std::bit_cast<std::array<u8, 64>>(indexes);
-        for (u8 x : b) {
-            fmt::print("{:02x} ", x);
-        }
-        fmt::println("");
-
         return Permutation{indexes, valid};
     }
 
@@ -125,27 +118,8 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             std::bit_cast<__m512i>(mailbox),
             _mm512_set1_epi8(Pieces::kNone.idx())
         );
-
-        fmt::println("discoveryMask: {}", discoveryMask);
-        for (auto x : std::bit_cast<std::array<Piece, 64>>(maskedMailbox)) {
-            fmt::print("{} ", x);
-        }
-        fmt::println("");
-
         const auto permuted = _mm512_permutexvar_epi8(permutation.indexes.raw, maskedMailbox);
-
-        for (auto x : std::bit_cast<std::array<Piece, 64>>(permuted)) {
-            fmt::print("{} ", x);
-        }
-        fmt::println("");
-
         const auto bits = _mm512_maskz_shuffle_epi8(permutation.valid, _mm512_broadcast_i32x4(lut), permuted);
-
-        for (auto x : std::bit_cast<std::array<u8, 64>>(bits)) {
-            fmt::print("{:02x} ", x);
-        }
-        fmt::println("");
-
         return {{permuted}, {bits}};
     }
 

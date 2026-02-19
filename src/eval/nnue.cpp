@@ -346,10 +346,6 @@ namespace stormphrax::eval {
             constexpr u64 mask = kOutgoing ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
             const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
 
-            for (auto x : std::bit_cast<std::array<UpdatedThreat, 16>>(vector)) {
-                fmt::println("{} {} {} {}", x.attacker, x.attackerSq, x.attacked, x.attackedSq);
-            }
-
             (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
                 _mm512_storeu_si512(reinterpret_cast<__m512i*>(ptr), vector);
                 return std::popcount(br);
@@ -414,26 +410,6 @@ namespace stormphrax::eval {
         const auto outgoingThreats = geometry::outgoingThreats(piece, closest);
         const auto incomingAttackers = geometry::incomingAttackers(bits, closest);
         const auto incomingSliders = geometry::incomingSliders(bits, closest);
-
-        const auto pl = std::bit_cast<std::array<Piece, 64>>(rays);
-        const auto sql = std::bit_cast<std::array<Square, 64>>(permutation.indexes);
-        const auto printbr = [&](geometry::Bitrays br) {
-            while (br) {
-                const auto index = std::countr_zero(br);
-                fmt::println("{} {}", pl[index], sql[index]);
-                br &= br - 1;
-            }
-        };
-
-        fmt::println("{} {} {}", kAdd, piece, sq);
-        fmt::println("closest: {:016x}", closest);
-        printbr(closest);
-        fmt::println("outgoingThreats: {:016x}", outgoingThreats);
-        printbr(outgoingThreats);
-        fmt::println("incomingAttackers: {:016x}", incomingAttackers);
-        printbr(incomingAttackers);
-        fmt::println("incomingSliders: {:016x}", incomingSliders);
-        printbr(incomingSliders);
 
         // Push all focus square relative threats.
         pushFocusThreatFeatures<kAdd, true>(updates, permutation.indexes, rays, outgoingThreats, piece, sq);
