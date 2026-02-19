@@ -102,6 +102,11 @@ namespace stormphrax {
             return *this;
         }
 
+        template <typename F>
+        inline void unsafeWrite(F f) {
+            m_size += f(&m_data[m_size]);
+        }
+
     private:
         std::array<T, kCapacity> m_data{};
         usize m_size{0};

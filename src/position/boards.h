@@ -232,6 +232,10 @@ namespace stormphrax {
             return m_bbs;
         }
 
+        [[nodiscard]] inline const std::array<Piece, Squares::kCount>& mailbox() const {
+            return m_mailbox;
+        }
+
         [[nodiscard]] inline PieceType pieceTypeAt(Square sq) const {
             assert(sq != Squares::kNone);
 
