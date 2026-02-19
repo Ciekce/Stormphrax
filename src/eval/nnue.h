@@ -54,13 +54,21 @@ namespace stormphrax::eval {
     void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king);
 
     template <bool kAdd>
-    void updatePieceThreats(
+    void updatePieceThreatsOnChange(NnueUpdates& updates, const PositionBoards& boards, Piece piece, Square sq);
+    void updatePieceThreatsOnMutate(
         NnueUpdates& updates,
         const PositionBoards& boards,
-        Piece piece,
-        Square sq,
-        bool discovery = true,
-        Bitboard discoveryMask = Bitboard::kNone
+        Piece oldPiece,
+        Piece newPiece,
+        Square sq
+    );
+    void updatePieceThreatsOnMove(
+        NnueUpdates& updates,
+        const PositionBoards& boards,
+        Piece oldPiece,
+        Square src,
+        Piece newPiece,
+        Square dst
     );
 
     struct BoardObserver {
@@ -68,20 +76,11 @@ namespace stormphrax::eval {
 
         void prepareKingMove(Color color, Square src, Square dst);
 
-        void pieceAdded(
-            const PositionBoards& boards,
-            Piece piece,
-            Square sq,
-            bool discovery,
-            Bitboard discoveryMask = Bitboard::kNone
-        );
-        void pieceRemoved(
-            const PositionBoards& boards,
-            Piece piece,
-            Square sq,
-            bool discovery,
-            Bitboard discoveryMask = Bitboard::kNone
-        );
+        void pieceAdded(const PositionBoards& boards, Piece piece, Square sq);
+        void pieceRemoved(const PositionBoards& boards, Piece piece, Square sq);
+        void pieceMutated(const PositionBoards& boards, Piece oldPiece, Piece newPiece, Square sq);
+        void pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst);
+        void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst);
 
         void finalize(const PositionBoards& boards, KingPair kings);
     };
@@ -440,29 +439,47 @@ namespace stormphrax::eval {
         }
     }
 
-    inline void BoardObserver::pieceAdded(
-        const PositionBoards& boards,
-        Piece piece,
-        Square sq,
-        bool discovery,
-        Bitboard discoveryMask
-    ) {
+    inline void BoardObserver::pieceAdded(const PositionBoards& boards, Piece piece, Square sq) {
         ctx.updates.pushAdd(piece, sq);
         if constexpr (InputFeatureSet::kThreatInputs) {
-            updatePieceThreats<true>(ctx.updates, boards, piece, sq, discovery, discoveryMask);
+            updatePieceThreatsOnChange<true>(ctx.updates, boards, piece, sq);
         }
     }
 
-    inline void BoardObserver::pieceRemoved(
-        const PositionBoards& boards,
-        Piece piece,
-        Square sq,
-        bool discovery,
-        Bitboard discoveryMask
-    ) {
+    inline void BoardObserver::pieceRemoved(const PositionBoards& boards, Piece piece, Square sq) {
         ctx.updates.pushSub(piece, sq);
         if constexpr (InputFeatureSet::kThreatInputs) {
-            updatePieceThreats<false>(ctx.updates, boards, piece, sq, discovery, discoveryMask);
+            updatePieceThreatsOnChange<false>(ctx.updates, boards, piece, sq);
+        }
+    }
+
+    inline void BoardObserver::pieceMutated(const PositionBoards& boards, Piece oldPiece, Piece newPiece, Square sq) {
+        ctx.updates.pushSub(oldPiece, sq);
+        ctx.updates.pushAdd(newPiece, sq);
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            updatePieceThreatsOnMutate(ctx.updates, boards, oldPiece, newPiece, sq);
+        }
+    }
+
+    inline void BoardObserver::pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst) {
+        ctx.updates.pushSub(piece, src);
+        ctx.updates.pushAdd(piece, dst);
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            updatePieceThreatsOnMove(ctx.updates, boards, piece, src, piece, dst);
+        }
+    }
+
+    inline void BoardObserver::piecePromoted(
+        const PositionBoards& boards,
+        Piece oldPiece,
+        Square src,
+        Piece newPiece,
+        Square dst
+    ) {
+        ctx.updates.pushSub(oldPiece, src);
+        ctx.updates.pushAdd(newPiece, dst);
+        if constexpr (InputFeatureSet::kThreatInputs) {
+            updatePieceThreatsOnMove(ctx.updates, boards, oldPiece, src, newPiece, dst);
         }
     }
 

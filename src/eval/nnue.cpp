@@ -454,23 +454,16 @@ namespace stormphrax::eval {
 #endif
     } // namespace
 
-    template void updatePieceThreats<false>(NnueUpdates&, const PositionBoards&, Piece, Square, bool, Bitboard);
-    template void updatePieceThreats<true>(NnueUpdates&, const PositionBoards&, Piece, Square, bool, Bitboard);
+    template void updatePieceThreatsOnChange<false>(NnueUpdates&, const PositionBoards&, Piece, Square);
+    template void updatePieceThreatsOnChange<true>(NnueUpdates&, const PositionBoards&, Piece, Square);
 
     template <bool kAdd>
-    void updatePieceThreats(
-        NnueUpdates& updates,
-        const PositionBoards& boards,
-        Piece piece,
-        Square sq,
-        bool discovery,
-        Bitboard discoveryMask
-    ) {
+    void updatePieceThreatsOnChange(NnueUpdates& updates, const PositionBoards& boards, Piece piece, Square sq) {
         using namespace nnue::features::threats;
 
         // Generate a list of indexes and ray array for a given focus square sq.
         const auto permutation = geometry::permutationFor(sq);
-        const auto [rays, bits] = geometry::permuteMailbox(permutation, boards.mailbox(), discoveryMask);
+        const auto [rays, bits] = geometry::permuteMailbox(permutation, boards.mailbox());
 
         // Determine all threats relative to the focus square sq.
         const auto closest = geometry::closestOccupied(bits);
@@ -484,20 +477,94 @@ namespace stormphrax::eval {
 
         // Discover threat updates from sliders whose threats needs to be extended (if focus piece removed)
         // or retracted (if focus piece added).
-        if (discovery) {
-            // A valid threat is when one ray has a slider on it, with a vicitim on the opposite ray.
-            // For example, a bishop on NW ray and blocker on the SE ray.
-            // Here we just detect all valid discovered threats.
-            const auto victimMask = std::rotr(closest & 0xFEFEFEFEFEFEFEFE, 32);
-            const auto valid = geometry::rayFill(victimMask) & geometry::rayFill(incomingSliders);
+        // A valid threat is when one ray has a slider on it, with a vicitim on the opposite ray.
+        // For example, a bishop on NW ray and blocker on the SE ray.
+        // Here we just detect all valid discovered threats.
+        const auto victimMask = std::rotr(closest & 0xFEFEFEFEFEFEFEFE, 32);
+        const auto valid = geometry::rayFill(victimMask) & geometry::rayFill(incomingSliders);
 
-            pushDiscoveredThreatFeatures<kAdd>(
-                updates,
-                permutation.indexes,
-                rays,
-                incomingSliders & valid,
-                victimMask & valid
-            );
-        }
+        pushDiscoveredThreatFeatures<kAdd>(
+            updates,
+            permutation.indexes,
+            rays,
+            incomingSliders & valid,
+            victimMask & valid
+        );
+    }
+
+    void updatePieceThreatsOnMutate(
+        NnueUpdates& updates,
+        const PositionBoards& boards,
+        Piece oldPiece,
+        Piece newPiece,
+        Square sq
+    ) {
+        using namespace nnue::features::threats;
+
+        // Generate a list of indexes and ray array for a given focus square sq.
+        const auto permutation = geometry::permutationFor(sq);
+        const auto [rays, bits] = geometry::permuteMailbox(permutation, boards.mailbox());
+
+        // Determine all threats relative to the focus square sq.
+        const auto closest = geometry::closestOccupied(bits);
+        const auto oldOutgoingThreats = geometry::outgoingThreats(oldPiece, closest);
+        const auto newOutgoingThreats = geometry::outgoingThreats(newPiece, closest);
+        const auto incomingAttackers = geometry::incomingAttackers(bits, closest);
+
+        // Push all focus square relative threats.
+        pushFocusThreatFeatures<false, true>(updates, permutation.indexes, rays, oldOutgoingThreats, oldPiece, sq);
+        pushFocusThreatFeatures<true, true>(updates, permutation.indexes, rays, newOutgoingThreats, newPiece, sq);
+        pushFocusThreatFeatures<false, false>(updates, permutation.indexes, rays, incomingAttackers, oldPiece, sq);
+        pushFocusThreatFeatures<true, false>(updates, permutation.indexes, rays, incomingAttackers, newPiece, sq);
+    }
+
+    void updatePieceThreatsOnMove(
+        NnueUpdates& updates,
+        const PositionBoards& boards,
+        Piece oldPiece,
+        Square src,
+        Piece newPiece,
+        Square dst
+    ) {
+        using namespace nnue::features::threats;
+
+        const auto srcPerm = geometry::permutationFor(src);
+        const auto dstPerm = geometry::permutationFor(dst);
+        const auto [srcRays, srcBits] = geometry::permuteMailbox(srcPerm, boards.mailbox(), dst);
+        const auto [dstRays, dstBits] = geometry::permuteMailbox(dstPerm, boards.mailbox());
+
+        const auto srcClosest = geometry::closestOccupied(srcBits);
+        const auto dstClosest = geometry::closestOccupied(dstBits);
+        const auto srcOutgoingThreats = geometry::outgoingThreats(oldPiece, srcClosest);
+        const auto dstOutgoingThreats = geometry::outgoingThreats(newPiece, dstClosest);
+        const auto srcIncomingAttackers = geometry::incomingAttackers(srcBits, srcClosest);
+        const auto dstIncomingAttackers = geometry::incomingAttackers(dstBits, dstClosest);
+        const auto srcIncomingSliders = geometry::incomingSliders(srcBits, srcClosest);
+        const auto dstIncomingSliders = geometry::incomingSliders(dstBits, dstClosest);
+
+        pushFocusThreatFeatures<false, true>(updates, srcPerm.indexes, srcRays, srcOutgoingThreats, oldPiece, src);
+        pushFocusThreatFeatures<true, true>(updates, dstPerm.indexes, dstRays, dstOutgoingThreats, newPiece, dst);
+        pushFocusThreatFeatures<false, false>(updates, srcPerm.indexes, srcRays, srcIncomingAttackers, oldPiece, src);
+        pushFocusThreatFeatures<true, false>(updates, dstPerm.indexes, dstRays, dstIncomingAttackers, newPiece, dst);
+
+        const auto srcVictimMask = std::rotr(srcClosest & 0xFEFEFEFEFEFEFEFE, 32);
+        const auto dstVictimMask = std::rotr(dstClosest & 0xFEFEFEFEFEFEFEFE, 32);
+        const auto srcValid = geometry::rayFill(srcVictimMask) & geometry::rayFill(srcIncomingSliders);
+        const auto dstValid = geometry::rayFill(dstVictimMask) & geometry::rayFill(dstIncomingSliders);
+
+        pushDiscoveredThreatFeatures<false>(
+            updates,
+            srcPerm.indexes,
+            srcRays,
+            srcIncomingSliders & srcValid,
+            srcVictimMask & srcValid
+        );
+        pushDiscoveredThreatFeatures<true>(
+            updates,
+            dstPerm.indexes,
+            dstRays,
+            dstIncomingSliders & dstValid,
+            dstVictimMask & dstValid
+        );
     }
 } // namespace stormphrax::eval

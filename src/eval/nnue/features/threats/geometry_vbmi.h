@@ -50,13 +50,25 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
+        const std::array<Piece, Squares::kCount>& mailbox
+    ) {
+        const auto lut = _mm512_broadcast_i32x4(kPieceToBitTable);
+
+        const auto maskedMailbox = std::bit_cast<__m512i>(mailbox);
+        const auto permuted = _mm512_permutexvar_epi8(permutation.indexes.raw, maskedMailbox);
+        const auto bits = _mm512_maskz_shuffle_epi8(permutation.valid, lut, permuted);
+        return {{permuted}, {bits}};
+    }
+
+    [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
+        const Permutation& permutation,
         const std::array<Piece, Squares::kCount>& mailbox,
-        Bitboard discoveryMask
+        Square ignore
     ) {
         const auto lut = _mm512_broadcast_i32x4(kPieceToBitTable);
 
         const auto maskedMailbox = _mm512_mask_blend_epi8(
-            discoveryMask,
+            ignore.bit(),
             std::bit_cast<__m512i>(mailbox),
             _mm512_set1_epi8(Pieces::kNone.idx())
         );

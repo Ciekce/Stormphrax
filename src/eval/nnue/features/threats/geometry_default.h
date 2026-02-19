@@ -60,17 +60,9 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
-        const std::array<Piece, Squares::kCount>& mailbox,
-        Bitboard discoveryMask
+        Vector maskedMailbox
     ) {
         const auto lut = _mm256_broadcastsi128_si256(kPieceToBitTable);
-
-        std::array<Piece, Squares::kCount> mb = mailbox;
-        while (discoveryMask) {
-            const auto sq = discoveryMask.popLowestSquare();
-            mb[sq.idx()] = Pieces::kNone;
-        }
-        const Vector maskedMailbox = std::bit_cast<Vector>(mb);
 
         const auto half_swizzler = [](__m256i bytes0, __m256i bytes1, __m256i idxs) {
             const auto mask0 = _mm256_slli_epi64(idxs, 2);
@@ -97,6 +89,28 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         }};
 
         return {permuted, bits};
+    }
+
+    [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
+        const Permutation& permutation,
+        const std::array<Piece, Squares::kCount>& mailbox
+    ) {
+        return permuteMailbox(permutation, std::bit_cast<Vector>(mailbox));
+    }
+
+    [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
+        const Permutation& permutation,
+        const std::array<Piece, Squares::kCount>& mailbox,
+        Square ignore
+    ) {
+        const auto ignoreVec = _mm256_set1_epi8(static_cast<i8>(ignore.idx()));
+        const auto noneVec = _mm256_set1_epi8(static_cast<i8>(Pieces::kNone.idx()));
+        const auto [permuted, bits] = permuteMailbox(permutation, std::bit_cast<Vector>(mailbox));
+        const Vector maskedBits{
+            _mm256_blendv_epi8(bits.raw[0], noneVec, _mm256_cmpeq_epi8(permutation.indexes.raw[0], ignoreVec)),
+            _mm256_blendv_epi8(bits.raw[1], noneVec, _mm256_cmpeq_epi8(permutation.indexes.raw[1], ignoreVec)),
+        };
+        return {permuted, maskedBits};
     }
 
     [[nodiscard]] inline Bitrays closestOccupied(Vector bits) {

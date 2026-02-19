@@ -124,23 +124,20 @@ namespace stormphrax {
         void prepareKingMove(Color color, Square src, Square dst) {
             SP_UNUSED(color, src, dst);
         }
-        void pieceAdded(
-            const PositionBoards& boards,
-            Piece piece,
-            Square sq,
-            bool discovery = true,
-            Bitboard discoveryMask = Bitboard{}
-        ) {
-            SP_UNUSED(boards, piece, sq, discovery, discoveryMask);
+        void pieceAdded(const PositionBoards& boards, Piece piece, Square sq) {
+            SP_UNUSED(boards, piece, sq);
         }
-        void pieceRemoved(
-            const PositionBoards& boards,
-            Piece piece,
-            Square sq,
-            bool discovery = true,
-            Bitboard discoveryMask = Bitboard{}
-        ) {
-            SP_UNUSED(boards, piece, sq, discovery, discoveryMask);
+        void pieceRemoved(const PositionBoards& boards, Piece piece, Square sq) {
+            SP_UNUSED(boards, piece, sq);
+        }
+        void pieceMutated(const PositionBoards& boards, Piece oldPiece, Piece newPiece, Square sq) {
+            SP_UNUSED(boards, oldPiece, newPiece, sq);
+        }
+        void pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst) {
+            SP_UNUSED(boards, piece, src, dst);
+        }
+        void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst) {
+            SP_UNUSED(boards, oldPiece, src, newPiece, dst);
         }
         void finalize(const PositionBoards& boards, KingPair kings) {
             SP_UNUSED(boards, kings);
