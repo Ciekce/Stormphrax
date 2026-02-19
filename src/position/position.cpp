@@ -671,10 +671,10 @@ namespace stormphrax {
         const auto captured = m_boards.pieceOn(dst);
 
         if (captured != Pieces::kNone) {
-            observer.pieceRemoved(m_boards, piece, src, true);
             m_boards.removePiece(src, piece);
-            observer.pieceRemoved(m_boards, captured, dst, false);
+            observer.pieceRemoved(m_boards, piece, src, true);
             m_boards.removePiece(dst, captured);
+            observer.pieceRemoved(m_boards, captured, dst, false);
             m_boards.setPiece(dst, piece);
             observer.pieceAdded(m_boards, piece, dst, false);
             if constexpr (kUpdateKey) {
@@ -682,8 +682,8 @@ namespace stormphrax {
             }
         } else {
             const auto discoveryMask = src.bit() | dst.bit();
-            observer.pieceRemoved(m_boards, piece, src, true, discoveryMask);
             m_boards.movePiece(src, dst, piece);
+            observer.pieceRemoved(m_boards, piece, src, true, discoveryMask);
             observer.pieceAdded(m_boards, piece, dst, true, discoveryMask);
         }
 
@@ -712,10 +712,10 @@ namespace stormphrax {
         const auto coloredPromo = pawn.copyColor(promo);
 
         if (captured != Pieces::kNone) {
-            observer.pieceRemoved(m_boards, pawn, src, true);
             m_boards.removePiece(src, pawn);
-            observer.pieceRemoved(m_boards, captured, dst, false);
+            observer.pieceRemoved(m_boards, pawn, src, true);
             m_boards.removePiece(dst, captured);
+            observer.pieceRemoved(m_boards, captured, dst, false);
             m_boards.setPiece(dst, coloredPromo);
             observer.pieceAdded(m_boards, coloredPromo, dst, false);
             if constexpr (kUpdateKey) {
@@ -723,8 +723,8 @@ namespace stormphrax {
             }
         } else {
             const auto discoveryMask = src.bit() | dst.bit();
-            observer.pieceRemoved(m_boards, pawn, src, true, discoveryMask);
             m_boards.moveAndChangePiece(src, dst, pawn, promo);
+            observer.pieceRemoved(m_boards, pawn, src, true, discoveryMask);
             observer.pieceAdded(m_boards, coloredPromo, dst, true, discoveryMask);
         }
 
@@ -763,11 +763,11 @@ namespace stormphrax {
 
         const auto rook = king.copyColor(PieceTypes::kRook);
 
-        observer.pieceRemoved(m_boards, king, kingSrc, true);
         m_boards.removePiece(kingSrc, king);
+        observer.pieceRemoved(m_boards, king, kingSrc, true);
 
-        observer.pieceRemoved(m_boards, rook, rookSrc, true);
         m_boards.removePiece(rookSrc, rook);
+        observer.pieceRemoved(m_boards, rook, rookSrc, true);
 
         m_boards.setPiece(kingDst, king);
         observer.pieceAdded(m_boards, king, kingDst, true);

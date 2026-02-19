@@ -308,12 +308,13 @@ namespace stormphrax::eval {
 
     namespace {
         namespace geometry = nnue::features::threats::geometry;
+        using UpdatedThreat = nnue::features::psq::UpdatedThreat;
 
-        static_assert(sizeof(nnue::features::psq::UpdatedThreat) == sizeof(u32));
-        static_assert(offsetof(nnue::features::psq::UpdatedThreat, attacker) == 0 * sizeof(u8));
-        static_assert(offsetof(nnue::features::psq::UpdatedThreat, attackerSq) == 1 * sizeof(u8));
-        static_assert(offsetof(nnue::features::psq::UpdatedThreat, attacked) == 2 * sizeof(u8));
-        static_assert(offsetof(nnue::features::psq::UpdatedThreat, attackedSq) == 3 * sizeof(u8));
+        static_assert(sizeof(UpdatedThreat) == sizeof(u32));
+        static_assert(offsetof(UpdatedThreat, attacker) == 0 * sizeof(u8));
+        static_assert(offsetof(UpdatedThreat, attackerSq) == 1 * sizeof(u8));
+        static_assert(offsetof(UpdatedThreat, attacked) == 2 * sizeof(u8));
+        static_assert(offsetof(UpdatedThreat, attackedSq) == 3 * sizeof(u8));
 
         template <bool kAdd, bool kOutgoing>
         inline void pushFocusThreatFeatures(
@@ -345,7 +346,7 @@ namespace stormphrax::eval {
             constexpr u64 mask = kOutgoing ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
             const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
 
-            (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](auto ptr) {
+            (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
                 _mm512_storeu_si512(reinterpret_cast<__m512i*>(ptr), vector);
                 return std::popcount(br);
             });
@@ -378,7 +379,7 @@ namespace stormphrax::eval {
             // Opposite polarity:
             // - Adding focus piece removes x-ray threats (a.k.a. slider threat retraction)
             // - Removing focus piece adds x-ray threats (a.k.a. slider threat extension)
-            (kAdd ? updates.threatsRemoved : updates.threatsAdded).unsafeWrite([&](auto ptr) {
+            (kAdd ? updates.threatsRemoved : updates.threatsAdded).unsafeWrite([&](UpdatedThreat* ptr) {
                 _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 0, tuple1);
                 _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 1, tuple2);
                 return count;
