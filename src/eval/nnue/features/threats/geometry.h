@@ -41,8 +41,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     using Bitrays = u64;
 
-    template <class Vector>
-    [[nodiscard]] inline constexpr std::array<Vector, Squares::kCount> generatePermutations() {
+    inline constexpr std::array<std::array<u8, Squares::kCount>, Squares::kCount> kPermutationTable = []() {
         constexpr std::array<u8, Squares::kCount> offsets{{
             0x1F, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // N
             0x21, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // NE
@@ -54,20 +53,18 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             0x0E, 0x0F, 0x1E, 0x2D, 0x3C, 0x4B, 0x5A, 0x69, // NW
         }};
 
-        std::array<Vector, Squares::kCount> permutations{};
+        std::array<std::array<u8, Squares::kCount>, Squares::kCount> permutations{};
         for (u8 focus = 0; focus < Squares::kCount; focus++) {
-            std::array<u8, Squares::kCount> vec{};
             for (u8 i = 0; i < Squares::kCount; i++) {
                 const u8 wideFocus = focus + (focus & 0x38);
                 const u8 wideResult = offsets[i] + wideFocus;
                 const u8 result = ((wideResult & 0x70) >> 1) | (wideResult & 0x07);
                 const bool valid = (wideResult & 0x88) == 0;
-                vec[i] = valid ? result : 0x80;
+                permutations[focus][i] = valid ? result : 0x80;
             }
-            permutations[focus] = std::bit_cast<Vector>(vec);
         }
         return permutations;
-    }
+    }();
 
     inline constexpr __m128i kPieceToBitTable = []() {
         std::array<u8, 16> lut{};
@@ -106,8 +103,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         return lut;
     }();
 
-    template <typename Vector>
-    inline constexpr Vector kIncomingThreatsMask = []() {
+    inline constexpr std::array<Bit, 64> kIncomingThreatsMask = []() {
         constexpr Bit horse = Bits::kKnight;
         constexpr Bit orth = Bits::kQueen | Bits::kRook;
         constexpr Bit diag = Bits::kQueen | Bits::kBishop;
@@ -115,7 +111,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         constexpr Bit wPawnNear = Bits::kWhitePawn | Bits::kKing | diag;
         constexpr Bit bPawnNear = Bits::kBlackPawn | Bits::kKing | diag;
 
-        constexpr std::array<Bit, 64> mask{{
+        return std::array<Bit, 64>{{
             horse, orthoNear, orth, orth, orth, orth, orth, orth, // N
             horse, bPawnNear, diag, diag, diag, diag, diag, diag, // NE
             horse, orthoNear, orth, orth, orth, orth, orth, orth, // E
@@ -125,16 +121,13 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             horse, orthoNear, orth, orth, orth, orth, orth, orth, // W
             horse, bPawnNear, diag, diag, diag, diag, diag, diag, // NW
         }};
-
-        return std::bit_cast<Vector>(mask);
     }();
 
-    template <typename Vector>
-    inline constexpr Vector kIncomingSlidersMask = []() {
+    inline constexpr std::array<Bit, 64> kIncomingSlidersMask = []() {
         constexpr Bit orth = Bits::kQueen | Bits::kRook;
         constexpr Bit diag = Bits::kQueen | Bits::kBishop;
 
-        constexpr std::array<Bit, 64> mask{{
+        return std::array<Bit, 64>{{
             0x80, orth, orth, orth, orth, orth, orth, orth, // N
             0x80, diag, diag, diag, diag, diag, diag, diag, // NE
             0x80, orth, orth, orth, orth, orth, orth, orth, // E
@@ -144,8 +137,6 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             0x80, orth, orth, orth, orth, orth, orth, orth, // W
             0x80, diag, diag, diag, diag, diag, diag, diag, // NW
         }};
-
-        return std::bit_cast<Vector>(mask);
     }();
 
 } // namespace stormphrax::eval::nnue::features::threats::geometry

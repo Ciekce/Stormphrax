@@ -47,14 +47,11 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     };
 
     [[nodiscard]] inline Permutation permutationFor(Square focus) {
-        static constexpr std::array<Vector, Squares::kCount> permutations = generatePermutations<Vector>();
-
-        const auto indexes = permutations[focus.idx()];
+        const auto indexes = std::bit_cast<Vector>(kPermutationTable[focus.idx()]);
         const Vector valid{{
             _mm256_cmpeq_epi8(indexes.raw[0], _mm256_set1_epi8(0x80)),
             _mm256_cmpeq_epi8(indexes.raw[1], _mm256_set1_epi8(0x80)),
         }};
-
         return Permutation{indexes, valid};
     }
 
@@ -138,7 +135,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingAttackers(Vector bits, Bitrays closest) {
-        constexpr auto mask = kIncomingThreatsMask<Vector>;
+        const auto mask = std::bit_cast<Vector>(kIncomingThreatsMask);
         const Vector v{{
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),
@@ -147,7 +144,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingSliders(Vector bits, Bitrays closest) {
-        constexpr auto mask = kIncomingSlidersMask<Vector>;
+        const auto mask = std::bit_cast<Vector>(kIncomingSlidersMask);
         const Vector v{{
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),

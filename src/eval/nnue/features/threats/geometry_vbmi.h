@@ -41,11 +41,9 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     };
 
     [[nodiscard]] inline Permutation permutationFor(Square focus) {
-        static constexpr std::array<Vector, Squares::kCount> permutations = generatePermutations<Vector>();
-
-        const auto indexes = permutations[focus.idx()];
-        const auto valid = _mm512_testn_epi8_mask(indexes.raw, _mm512_set1_epi8(0x80));
-        return Permutation{indexes, valid};
+        const auto indexes = _mm512_loadu_si512(kPermutationTable[focus.idx()].data());
+        const auto valid = _mm512_testn_epi8_mask(indexes, _mm512_set1_epi8(0x80));
+        return Permutation{{indexes}, valid};
     }
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
@@ -93,12 +91,12 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingAttackers(Vector bits, Bitrays closest) {
-        constexpr auto mask = kIncomingThreatsMask<__m512i>;
+        const auto mask = _mm512_loadu_si512(kIncomingThreatsMask.data());
         return _mm512_test_epi8_mask(bits.raw, mask) & closest;
     }
 
     [[nodiscard]] inline Bitrays incomingSliders(Vector bits, Bitrays closest) {
-        constexpr auto mask = kIncomingSlidersMask<__m512i>;
+        const auto mask = _mm512_loadu_si512(kIncomingSlidersMask.data());
         return _mm512_test_epi8_mask(bits.raw, mask) & closest & 0xFEFEFEFEFEFEFEFE;
     }
 
