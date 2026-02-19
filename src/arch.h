@@ -32,6 +32,7 @@
     #if !defined(SP_DISABLE_AVX512)
         #define SP_HAS_VNNI512 __AVX512VNNI__
         #define SP_HAS_VBMI2 __AVX512VBMI2__
+        #define SP_HAS_VBMI __AVX512VBMI__
         #define SP_HAS_AVX512 (__AVX512F__ && (__AVX512BW__ || __AVX512VNNI__))
     #else
         #define SP_HAS_VNNI512 0
