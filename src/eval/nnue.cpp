@@ -24,6 +24,7 @@
 
 #include "../attacks/attacks.h"
 #include "../rays.h"
+#include "../util/bits.h"
 #include "../util/memstream.h"
 #include "nnue/features/threats/geometry.h"
 #include "nnue/io_impl.h"
@@ -399,8 +400,8 @@ namespace stormphrax::eval {
             const auto others = std::bit_cast<std::array<Piece, 64>>(rays);
             const auto otherSqs = std::bit_cast<std::array<Square, 64>>(indexes);
 
-            for (; br; br &= br - 1) {
-                const auto i = std::countr_zero(br);
+            for (; br; br = util::resetLsb(br)) {
+                const auto i = util::ctz(br);
 
                 const auto other = others[i];
                 const auto otherSq = otherSqs[i];
@@ -429,14 +430,14 @@ namespace stormphrax::eval {
             const auto pieces = std::bit_cast<std::array<Piece, 64>>(rays);
             const auto squares = std::bit_cast<std::array<Square, 64>>(indexes);
 
-            for (; sliders; sliders &= sliders - 1, victims &= victims - 1) {
-                const auto slider = std::countr_zero(sliders);
-                const auto victim = std::countr_zero(victims);
+            for (; sliders; sliders = util::resetLsb(sliders), victims = util::resetLsb(victims)) {
+                const auto slider = util::ctz(sliders);
+                const auto victim = util::ctz(victims);
 
                 const auto attacker = pieces[slider];
                 const auto attackerSq = squares[slider];
-                const auto attacked = pieces[victim];
-                const auto attackedSq = squares[victim];
+                const auto attacked = pieces[(victim + 32) % 64];
+                const auto attackedSq = squares[(victim + 32) % 64];
 
                 // Opposite polarity:
                 // - Adding focus piece removes x-ray threats (a.k.a. slider threat retraction)
