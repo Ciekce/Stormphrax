@@ -103,14 +103,19 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         const std::array<Piece, Squares::kCount>& mailbox,
         Square ignore
     ) {
+        constexpr auto iota = std::bit_cast<Vector>(
+            std::array<u8, 64>{{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+                                22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                                44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63}}
+        );
         const auto ignoreVec = _mm256_set1_epi8(static_cast<i8>(ignore.idx()));
         const auto noneVec = _mm256_set1_epi8(static_cast<i8>(Pieces::kNone.idx()));
-        const auto [permuted, bits] = permuteMailbox(permutation, std::bit_cast<Vector>(mailbox));
-        const Vector maskedBits{
-            _mm256_blendv_epi8(bits.raw[0], noneVec, _mm256_cmpeq_epi8(permutation.indexes.raw[0], ignoreVec)),
-            _mm256_blendv_epi8(bits.raw[1], noneVec, _mm256_cmpeq_epi8(permutation.indexes.raw[1], ignoreVec)),
+        const auto mb = std::bit_cast<Vector>(mailbox);
+        const Vector maskedMailbox{
+            _mm256_blendv_epi8(mb.raw[0], noneVec, _mm256_cmpeq_epi8(iota.raw[0], ignoreVec)),
+            _mm256_blendv_epi8(mb.raw[1], noneVec, _mm256_cmpeq_epi8(iota.raw[1], ignoreVec)),
         };
-        return {permuted, maskedBits};
+        return permuteMailbox(permutation, maskedMailbox);
     }
 
     [[nodiscard]] inline Bitrays closestOccupied(Vector bits) {
