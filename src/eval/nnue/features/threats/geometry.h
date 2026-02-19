@@ -42,7 +42,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     using Bitrays = u64;
 
     template <class Vector>
-    [[nodiscard]] inline consteval std::array<Vector, Squares::kCount> generatePermutations() {
+    [[nodiscard]] inline constexpr std::array<Vector, Squares::kCount> generatePermutations() {
         constexpr std::array<u8, Squares::kCount> offsets{{
             0x1F, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // N
             0x21, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // NE
@@ -69,7 +69,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         return permutations;
     }
 
-    inline constexpr __m128i kPieceToBitTable = []() consteval {
+    inline constexpr __m128i kPieceToBitTable = []() {
         std::array<u8, 16> lut{};
 
         lut[Pieces::kBlackPawn.idx()] = Bits::kBlackPawn;
@@ -89,7 +89,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         return std::bit_cast<__m128i>(lut);
     }();
 
-    inline constexpr std::array<Bitrays, Pieces::kCount> kOutgoingThreatsTable = []() consteval {
+    inline constexpr std::array<Bitrays, Pieces::kCount> kOutgoingThreatsTable = []() {
         std::array<Bitrays, Pieces::kCount> lut{};
         lut[Pieces::kWhitePawn.idx()] = 0x02'00'00'00'00'00'02'00;
         lut[Pieces::kBlackPawn.idx()] = 0x00'00'02'00'02'00'00'00;
@@ -107,7 +107,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }();
 
     template <typename Vector>
-    inline constexpr Vector kIncomingThreatsMask = []() consteval {
+    inline constexpr Vector kIncomingThreatsMask = []() {
         constexpr Bit horse = Bits::kKnight;
         constexpr Bit orth = Bits::kQueen | Bits::kRook;
         constexpr Bit diag = Bits::kQueen | Bits::kBishop;
@@ -130,7 +130,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }();
 
     template <typename Vector>
-    inline constexpr Vector kIncomingSlidersMask = []() consteval {
+    inline constexpr Vector kIncomingSlidersMask = []() {
         constexpr Bit orth = Bits::kQueen | Bits::kRook;
         constexpr Bit diag = Bits::kQueen | Bits::kBishop;
 

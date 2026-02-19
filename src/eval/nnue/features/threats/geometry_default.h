@@ -47,7 +47,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     };
 
     [[nodiscard]] inline Permutation permutationFor(Square focus) {
-        constexpr std::array<Vector, Squares::kCount> permutations = generatePermutations<Vector>();
+        static constexpr std::array<Vector, Squares::kCount> permutations = generatePermutations<Vector>();
 
         const auto indexes = permutations[focus.idx()];
         const Vector valid{{
