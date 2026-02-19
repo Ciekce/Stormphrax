@@ -39,11 +39,7 @@ namespace stormphrax {
     class CorrectionHistoryTable {
     public:
         inline void clear() {
-            std::memset(&m_pawnTable, 0, sizeof(m_pawnTable));
-            std::memset(&m_blackNonPawnTable, 0, sizeof(m_blackNonPawnTable));
-            std::memset(&m_whiteNonPawnTable, 0, sizeof(m_whiteNonPawnTable));
-            std::memset(&m_majorTable, 0, sizeof(m_majorTable));
-            std::memset(&m_contTable, 0, sizeof(m_contTable));
+            std::memset(&m_tables, 0, sizeof(m_tables));
         }
 
         inline void update(
@@ -53,37 +49,34 @@ namespace stormphrax {
             Score searchScore,
             Score staticEval
         ) {
-            const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
+            auto& tables = m_tables[pos.stm().idx()];
 
-            const auto stm = pos.stm().idx();
+            const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
             const auto updateCont = [&](const u64 offset) {
                 if (keyHistory.size() >= offset) {
-                    m_contTable[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+                    tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
                 }
             };
 
-            m_pawnTable[stm][pos.pawnKey() % kEntries].update(bonus);
-            m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries].update(bonus);
-            m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries].update(bonus);
-            m_majorTable[stm][pos.majorKey() % kEntries].update(bonus);
+            tables.pawn[pos.pawnKey() % kEntries].update(bonus);
+            tables.blackNonPawn[pos.blackNonPawnKey() % kEntries].update(bonus);
+            tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries].update(bonus);
+            tables.major[pos.majorKey() % kEntries].update(bonus);
 
             updateCont(1);
             updateCont(2);
+            updateCont(4);
         }
 
-        [[nodiscard]] inline Score correct(
-            const Position& pos,
-            std::span<const u64> keyHistory,
-            Score score
-        ) const {
+        [[nodiscard]] inline Score correct(const Position& pos, std::span<const u64> keyHistory, Score score) const {
             using namespace tunable;
 
-            const auto stm = pos.stm().idx();
+            auto& tables = m_tables[pos.stm().idx()];
 
             const auto contAdjustment = [&](const u64 offset, i32 weight) {
                 if (keyHistory.size() >= offset) {
-                    return weight * m_contTable[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                    return weight * tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
                 } else {
                     return 0;
                 }
@@ -95,13 +88,14 @@ namespace stormphrax {
 
             i32 correction{};
 
-            correction += pawnCorrhistWeight() * m_pawnTable[stm][pos.pawnKey() % kEntries];
-            correction += blackNpWeight * m_blackNonPawnTable[stm][pos.blackNonPawnKey() % kEntries];
-            correction += whiteNpWeight * m_whiteNonPawnTable[stm][pos.whiteNonPawnKey() % kEntries];
-            correction += majorCorrhistWeight() * m_majorTable[stm][pos.majorKey() % kEntries];
+            correction += pawnCorrhistWeight() * tables.pawn[pos.pawnKey() % kEntries];
+            correction += blackNpWeight * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
+            correction += whiteNpWeight * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
+            correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
 
             correction += contAdjustment(1, contCorrhist1Weight());
             correction += contAdjustment(2, contCorrhist2Weight());
+            correction += contAdjustment(4, contCorrhist4Weight());
 
             score += correction / 2048;
 
@@ -128,10 +122,14 @@ namespace stormphrax {
             }
         };
 
-        util::MultiArray<Entry, Colors::kCount, kEntries> m_pawnTable{};
-        util::MultiArray<Entry, Colors::kCount, kEntries> m_blackNonPawnTable{};
-        util::MultiArray<Entry, Colors::kCount, kEntries> m_whiteNonPawnTable{};
-        util::MultiArray<Entry, Colors::kCount, kEntries> m_majorTable{};
-        std::array<Entry, kEntries> m_contTable{};
+        struct SidedTables {
+            std::array<Entry, kEntries> pawn{};
+            std::array<Entry, kEntries> blackNonPawn{};
+            std::array<Entry, kEntries> whiteNonPawn{};
+            std::array<Entry, kEntries> major{};
+            std::array<Entry, kEntries> cont{};
+        };
+
+        std::array<SidedTables, Colors::kCount> m_tables{};
     };
 } // namespace stormphrax
