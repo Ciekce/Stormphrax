@@ -98,18 +98,19 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         lut[Pieces::kBlackRook.idx()] = 0x00'FE'00'FE'00'FE'00'FE;
         lut[Pieces::kWhiteQueen.idx()] = 0xFE'FE'FE'FE'FE'FE'FE'FE;
         lut[Pieces::kBlackQueen.idx()] = 0xFE'FE'FE'FE'FE'FE'FE'FE;
-        lut[Pieces::kWhiteKing.idx()] = 0x02'02'02'02'02'02'02'02;
-        lut[Pieces::kBlackKing.idx()] = 0x02'02'02'02'02'02'02'02;
+        lut[Pieces::kWhiteKing.idx()] = 0; // Ignore king threats
+        lut[Pieces::kBlackKing.idx()] = 0; // Ignore king threats
         return lut;
     }();
 
     inline constexpr std::array<Bit, 64> kIncomingThreatsMask = []() {
+        // Note: We ignore king threats
         constexpr Bit horse = Bits::kKnight;
         constexpr Bit orth = Bits::kQueen | Bits::kRook;
         constexpr Bit diag = Bits::kQueen | Bits::kBishop;
-        constexpr Bit orthoNear = Bits::kKing | orth;
-        constexpr Bit wPawnNear = Bits::kWhitePawn | Bits::kKing | diag;
-        constexpr Bit bPawnNear = Bits::kBlackPawn | Bits::kKing | diag;
+        constexpr Bit orthoNear = orth;
+        constexpr Bit wPawnNear = Bits::kWhitePawn | diag;
+        constexpr Bit bPawnNear = Bits::kBlackPawn | diag;
 
         return std::array<Bit, 64>{{
             horse, orthoNear, orth, orth, orth, orth, orth, orth, // N
