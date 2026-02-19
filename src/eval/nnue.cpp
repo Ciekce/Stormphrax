@@ -311,7 +311,7 @@ namespace stormphrax::eval {
         namespace geometry = nnue::features::threats::geometry;
         using UpdatedThreat = nnue::features::psq::UpdatedThreat;
 
-#if 0 // SP_HAS_VBMI2
+#if SP_HAS_VBMI2
         static_assert(sizeof(UpdatedThreat) == sizeof(u32));
         static_assert(offsetof(UpdatedThreat, attacker) == 0 * sizeof(u8));
         static_assert(offsetof(UpdatedThreat, attackerSq) == 1 * sizeof(u8));
@@ -477,26 +477,6 @@ namespace stormphrax::eval {
         const auto outgoingThreats = geometry::outgoingThreats(piece, closest);
         const auto incomingAttackers = geometry::incomingAttackers(bits, closest);
         const auto incomingSliders = geometry::incomingSliders(bits, closest);
-
-        const auto pl = std::bit_cast<std::array<Piece, 64>>(rays);
-        const auto sql = std::bit_cast<std::array<Square, 64>>(permutation.indexes);
-        const auto printbr = [&](geometry::Bitrays br) {
-            while (br) {
-                const auto index = std::countr_zero(br);
-                fmt::println("{} {}", pl[index], sql[index]);
-                br &= br - 1;
-            }
-        };
-
-        // fmt::println("{} {} {}", kAdd, piece, sq);
-        // fmt::println("closest: {:016x}", closest);
-        // printbr(closest);
-        // fmt::println("outgoingThreats: {:016x}", outgoingThreats);
-        // printbr(outgoingThreats);
-        // fmt::println("incomingAttackers: {:016x}", incomingAttackers);
-        // printbr(incomingAttackers);
-        // fmt::println("incomingSliders: {:016x}", incomingSliders);
-        // printbr(incomingSliders);
 
         // Push all focus square relative threats.
         pushFocusThreatFeatures<kAdd, true>(updates, permutation.indexes, rays, outgoingThreats, piece, sq);
