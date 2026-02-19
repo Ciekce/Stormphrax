@@ -36,13 +36,14 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         }
 
         [[nodiscard]] Bitrays toMask() const {
-            return _mm256_movemask_epi8(raw[0]) | (static_cast<Bitrays>(_mm256_movemask_epi8(raw[1])) << 32);
+            return static_cast<u32>(_mm256_movemask_epi8(raw[0]))
+                 | (static_cast<Bitrays>(_mm256_movemask_epi8(raw[1])) << 32);
         }
     };
 
     struct Permutation {
         Vector indexes;
-        Vector valid;
+        Vector invalid;
     };
 
     [[nodiscard]] inline Permutation permutationFor(Square focus) {
@@ -50,9 +51,17 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
         const auto indexes = permutations[focus.idx()];
         const Vector valid{{
-            _mm256_cmpeq_epi8(_mm256_and_si256(indexes.raw[0], _mm256_set1_epi8(0x80)), _mm256_setzero_si256()),
-            _mm256_cmpeq_epi8(_mm256_and_si256(indexes.raw[1], _mm256_set1_epi8(0x80)), _mm256_setzero_si256()),
+            _mm256_cmpeq_epi8(indexes.raw[0], _mm256_set1_epi8(0x80)),
+            _mm256_cmpeq_epi8(indexes.raw[1], _mm256_set1_epi8(0x80)),
         }};
+
+        // for (auto x : std::bit_cast<std::array<Square, 64>>(indexes))
+        //     fmt::print("{} ", x);
+        // fmt::println("");
+        // for (auto x : std::bit_cast<std::array<u8, 64>>(valid))
+        //     fmt::print("{:02x} ", x);
+        // fmt::println("");
+
         return Permutation{indexes, valid};
     }
 
@@ -90,14 +99,30 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             half_swizzler(maskedMailbox.raw[0], maskedMailbox.raw[1], permutation.indexes.raw[1]),
         }};
         const Vector bits{{
-            _mm256_and_si256(_mm256_shuffle_epi8(lut, permuted.raw[0]), permutation.valid.raw[0]),
-            _mm256_and_si256(_mm256_shuffle_epi8(lut, permuted.raw[1]), permutation.valid.raw[1]),
+            _mm256_andnot_si256(permutation.invalid.raw[0], _mm256_shuffle_epi8(lut, permuted.raw[0])),
+            _mm256_andnot_si256(permutation.invalid.raw[1], _mm256_shuffle_epi8(lut, permuted.raw[1])),
         }};
+
+        // for (auto x : std::bit_cast<std::array<Piece, 64>>(maskedMailbox))
+        //     fmt::print("{} ", x);
+        // fmt::println("");
+        // for (auto x : std::bit_cast<std::array<Piece, 64>>(permuted))
+        //     fmt::print("{} ", x);
+        // fmt::println("");
+        // for (auto x : std::bit_cast<std::array<u8, 64>>(bits))
+        //     fmt::print("{:02x} ", x);
+        // fmt::println("");
+
         return {permuted, bits};
     }
 
     [[nodiscard]] inline Bitrays closestOccupied(Vector bits) {
-        const Bitrays occupied = bits.toMask();
+        // const Bitrays occupied = _mm512_test_epi8_mask(std::bit_cast<__m512i>(bits), std::bit_cast<__m512i>(bits));
+        const Vector unoccupied{
+            _mm256_cmpeq_epi8(bits.raw[0], _mm256_setzero_si256()),
+            _mm256_cmpeq_epi8(bits.raw[1], _mm256_setzero_si256()),
+        };
+        const Bitrays occupied = ~unoccupied.toMask();
         const Bitrays o = occupied | 0x8181818181818181;
         return (o ^ (o - 0x0303030303030303)) & occupied;
     }
@@ -112,21 +137,25 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingAttackers(Vector bits, Bitrays closest) {
+        // constexpr auto mask = kIncomingThreatsMask<__m512i>;
+        // return _mm512_test_epi8_mask(std::bit_cast<__m512i>(bits), mask) & closest;
         constexpr auto mask = kIncomingThreatsMask<Vector>;
         const Vector v{{
-            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), bits.raw[0]),
-            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), bits.raw[1]),
+            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
+            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),
         }};
-        return v.toMask() & closest;
+        return ~v.toMask() & closest;
     }
 
     [[nodiscard]] inline Bitrays incomingSliders(Vector bits, Bitrays closest) {
+        //constexpr auto mask = kIncomingSlidersMask<__m512i>;
+        //return _mm512_test_epi8_mask(std::bit_cast<__m512i>(bits), mask) & closest & 0xFEFEFEFEFEFEFEFE;
         constexpr auto mask = kIncomingSlidersMask<Vector>;
         const Vector v{{
-            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), bits.raw[0]),
-            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), bits.raw[1]),
+            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
+            _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),
         }};
-        return v.toMask() & closest & 0xFEFEFEFEFEFEFEFE;
+        return ~v.toMask() & closest & 0xFEFEFEFEFEFEFEFE;
     }
 
 } // namespace stormphrax::eval::nnue::features::threats::geometry

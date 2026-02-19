@@ -150,7 +150,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
 } // namespace stormphrax::eval::nnue::features::threats::geometry
 
-#if SP_HAS_VBMI
+#if 0
     #include "geometry_vbmi.h"
 #else
     #include "geometry_default.h"
