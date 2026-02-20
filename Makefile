@@ -43,8 +43,7 @@ CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver5 -mtune=znver5
-CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=skylake-avx512 -mtune=znver4
+CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
 
@@ -145,7 +144,7 @@ define build
 endef
 endif
 
-release: vnni512 avx512 avx2-bmi2 avx2
+release: avx512 avx2-bmi2 avx2
 all: native release
 
 .PHONY: all
@@ -167,9 +166,6 @@ native: $(EXE)
 
 tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,TUNABLE,tunable)
-
-vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,RELEASE,VNNI512,vnni512)
 
 avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX512,avx512)
