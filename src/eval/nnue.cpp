@@ -19,6 +19,7 @@
 #include "nnue.h"
 
 #include <cassert>
+#include <cstring>
 #include <fstream>
 #include <string_view>
 
@@ -330,11 +331,13 @@ namespace stormphrax::eval {
             // Create the (piecea, squarea, pieceb, squareb) tuples.
             // Whether pair1 or pair2 is paira or pairb is determined by kOutgoing.
 
-            constexpr auto kPair2Shuffle = std::bit_cast<__m512i>(std::array<u8, 64>{{
-                0,  64, 0,  64, 1,  65, 1,  65, 2,  66, 2,  66, 3,  67, 3,  67, 4,  68, 4,  68, 5,  69,
-                5,  69, 6,  70, 6,  70, 7,  71, 7,  71, 8,  72, 8,  72, 9,  73, 9,  73, 10, 74, 10, 74,
-                11, 75, 11, 75, 12, 76, 12, 76, 13, 77, 13, 77, 14, 78, 14, 78, 15, 79, 15, 79,
-            }});
+            // clang-format off
+            const auto pair2Shuffle = _mm512_set_epi8(
+                79, 15, 79, 15, 78, 14, 78, 14, 77, 13, 77, 13, 76, 12, 76, 12, 75, 11, 75, 11,
+                74, 10, 74, 10, 73, 9, 73, 9, 72, 8, 72, 8, 71, 7, 71, 7, 70, 6, 70, 6, 69, 5,
+                69, 5, 68, 4, 68, 4, 67, 3, 67, 3, 66, 2, 66, 2, 65, 1, 65, 1, 64, 0, 64, 0
+            );
+            // clang-format on
 
             // Focus pair
             const auto pair1 = _mm512_set1_epi16(static_cast<i16>(piece.idx() | (sq.idx() << 8)));
@@ -342,14 +345,14 @@ namespace stormphrax::eval {
             // Non-focus pair
             const auto pair2Sq = _mm512_maskz_compress_epi8(br, indexes.raw);
             const auto pair2Piece = _mm512_maskz_compress_epi8(br, rays.raw);
-            const auto pair2 = _mm512_permutex2var_epi8(pair2Piece, kPair2Shuffle, pair2Sq);
+            const auto pair2 = _mm512_permutex2var_epi8(pair2Piece, pair2Shuffle, pair2Sq);
 
             // Select which is the attacker and which is the victim.
             constexpr u64 mask = kOutgoing ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
             const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
 
             (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
-                _mm512_storeu_si512(reinterpret_cast<__m512i*>(ptr), vector);
+                _mm512_storeu_si512(ptr, vector);
                 return std::popcount(br);
             });
         }
@@ -397,8 +400,10 @@ namespace stormphrax::eval {
             Piece piece,              // Piece on the focus square
             Square sq                 // The focus square
         ) {
-            const auto others = std::bit_cast<std::array<Piece, 64>>(rays);
-            const auto otherSqs = std::bit_cast<std::array<Square, 64>>(indexes);
+            std::array<Piece, 64> others;
+            std::memcpy(others.data(), &rays, sizeof(others));
+            std::array<Square, 64> otherSqs;
+            std::memcpy(otherSqs.data(), &indexes, sizeof(otherSqs));
 
             for (; br; br = util::resetLsb(br)) {
                 const auto i = util::ctz(br);
@@ -427,8 +432,10 @@ namespace stormphrax::eval {
             geometry::Bitrays sliders,
             geometry::Bitrays victims
         ) {
-            const auto pieces = std::bit_cast<std::array<Piece, 64>>(rays);
-            const auto squares = std::bit_cast<std::array<Square, 64>>(indexes);
+            std::array<Piece, 64> pieces;
+            std::memcpy(pieces.data(), &rays, sizeof(pieces));
+            std::array<Square, 64> squares;
+            std::memcpy(squares.data(), &indexes, sizeof(squares));
 
             for (; sliders; sliders = util::resetLsb(sliders), victims = util::resetLsb(victims)) {
                 const auto slider = util::ctz(sliders);

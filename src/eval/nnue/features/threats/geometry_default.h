@@ -27,7 +27,6 @@
 #include "../../../../types.h"
 
 namespace stormphrax::eval::nnue::features::threats::geometry {
-
     struct Vector {
         std::array<__m256i, 2> raw;
 
@@ -39,6 +38,22 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             return static_cast<u32>(_mm256_movemask_epi8(raw[0]))
                  | (static_cast<Bitrays>(_mm256_movemask_epi8(raw[1])) << 32);
         }
+
+        [[nodiscard]] static Vector load(const void* ptr) {
+            return Vector{
+                .raw = {
+                    _mm256_loadu_si256(static_cast<const __m256i*>(ptr) + 0),
+                    _mm256_loadu_si256(static_cast<const __m256i*>(ptr) + 1),
+                }
+            };
+        }
+
+        template <typename T>
+        [[nodiscard]] static Vector cast(const T& v)
+            requires(sizeof(T) == sizeof(__m256i) * 2)
+        {
+            return load(&v);
+        }
     };
 
     struct Permutation {
@@ -47,7 +62,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     };
 
     [[nodiscard]] inline Permutation permutationFor(Square focus) {
-        const auto indexes = std::bit_cast<Vector>(kPermutationTable[focus.idx()]);
+        const auto indexes = Vector::cast(kPermutationTable[focus.idx()]);
         const Vector valid{{
             _mm256_cmpeq_epi8(indexes.raw[0], _mm256_set1_epi8(0x80)),
             _mm256_cmpeq_epi8(indexes.raw[1], _mm256_set1_epi8(0x80)),
@@ -59,9 +74,10 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         const Permutation& permutation,
         Vector maskedMailbox
     ) {
-        const auto lut = _mm256_broadcastsi128_si256(kPieceToBitTable);
+        const auto lut =
+            _mm256_broadcastsi128_si256(_mm_loadu_si128(reinterpret_cast<const __m128i*>(kPieceToBitTable.data())));
 
-        const auto half_swizzler = [](__m256i bytes0, __m256i bytes1, __m256i idxs) {
+        const auto halfSwizzler = [](__m256i bytes0, __m256i bytes1, __m256i idxs) {
             const auto mask0 = _mm256_slli_epi64(idxs, 2);
             const auto mask1 = _mm256_slli_epi64(idxs, 3);
 
@@ -77,8 +93,8 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         };
 
         const Vector permuted{{
-            half_swizzler(maskedMailbox.raw[0], maskedMailbox.raw[1], permutation.indexes.raw[0]),
-            half_swizzler(maskedMailbox.raw[0], maskedMailbox.raw[1], permutation.indexes.raw[1]),
+            halfSwizzler(maskedMailbox.raw[0], maskedMailbox.raw[1], permutation.indexes.raw[0]),
+            halfSwizzler(maskedMailbox.raw[0], maskedMailbox.raw[1], permutation.indexes.raw[1]),
         }};
         const Vector bits{{
             _mm256_andnot_si256(permutation.invalid.raw[0], _mm256_shuffle_epi8(lut, permuted.raw[0])),
@@ -90,24 +106,24 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
-        const std::array<Piece, Squares::kCount>& mailbox
+        const std::span<const Piece, Squares::kCount> mailbox
     ) {
-        return permuteMailbox(permutation, std::bit_cast<Vector>(mailbox));
+        return permuteMailbox(permutation, Vector::load(mailbox.data()));
     }
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
-        const std::array<Piece, Squares::kCount>& mailbox,
+        const std::span<const Piece, Squares::kCount> mailbox,
         Square ignore
     ) {
-        constexpr auto iota = std::bit_cast<Vector>(
+        const auto iota = Vector::cast(
             std::array<u8, 64>{{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
                                 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
                                 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63}}
         );
         const auto ignoreVec = _mm256_set1_epi8(static_cast<i8>(ignore.idx()));
         const auto noneVec = _mm256_set1_epi8(static_cast<i8>(Pieces::kNone.idx()));
-        const auto mb = std::bit_cast<Vector>(mailbox);
+        const auto mb = Vector::load(mailbox.data());
         const Vector maskedMailbox{
             _mm256_blendv_epi8(mb.raw[0], noneVec, _mm256_cmpeq_epi8(iota.raw[0], ignoreVec)),
             _mm256_blendv_epi8(mb.raw[1], noneVec, _mm256_cmpeq_epi8(iota.raw[1], ignoreVec)),
@@ -135,7 +151,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingAttackers(Vector bits, Bitrays closest) {
-        const auto mask = std::bit_cast<Vector>(kIncomingThreatsMask);
+        const auto mask = Vector::cast(kIncomingThreatsMask);
         const Vector v{{
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),
@@ -144,12 +160,11 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
     }
 
     [[nodiscard]] inline Bitrays incomingSliders(Vector bits, Bitrays closest) {
-        const auto mask = std::bit_cast<Vector>(kIncomingSlidersMask);
+        const auto mask = Vector::cast(kIncomingSlidersMask);
         const Vector v{{
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[0], mask.raw[0]), _mm256_setzero_si256()),
             _mm256_cmpeq_epi8(_mm256_and_si256(bits.raw[1], mask.raw[1]), _mm256_setzero_si256()),
         }};
         return ~v.toMask() & closest & 0xFEFEFEFEFEFEFEFE;
     }
-
 } // namespace stormphrax::eval::nnue::features::threats::geometry

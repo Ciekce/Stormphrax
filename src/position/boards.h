@@ -232,7 +232,7 @@ namespace stormphrax {
             return m_bbs;
         }
 
-        [[nodiscard]] inline const std::array<Piece, Squares::kCount>& mailbox() const {
+        [[nodiscard]] inline std::span<const Piece, Squares::kCount> mailbox() const {
             return m_mailbox;
         }
 

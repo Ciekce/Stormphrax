@@ -26,7 +26,6 @@
 #include "../../../../types.h"
 
 namespace stormphrax::eval::nnue::features::threats::geometry {
-
     using Bit = u8;
 
     struct Bits {
@@ -41,8 +40,8 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     using Bitrays = u64;
 
-    inline constexpr std::array<std::array<u8, Squares::kCount>, Squares::kCount> kPermutationTable = []() {
-        constexpr std::array<u8, Squares::kCount> offsets{{
+    inline constexpr std::array<std::array<u8, Squares::kCount>, Squares::kCount> kPermutationTable = [] {
+        constexpr std::array<u8, Squares::kCount> kOffsets = {
             0x1F, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // N
             0x21, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // NE
             0x12, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // E
@@ -51,13 +50,13 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             0xDF, 0xEF, 0xDE, 0xCD, 0xBC, 0xAB, 0x9A, 0x89, // SW
             0xEE, 0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, // W
             0x0E, 0x0F, 0x1E, 0x2D, 0x3C, 0x4B, 0x5A, 0x69, // NW
-        }};
+        };
 
         std::array<std::array<u8, Squares::kCount>, Squares::kCount> permutations{};
-        for (u8 focus = 0; focus < Squares::kCount; focus++) {
-            for (u8 i = 0; i < Squares::kCount; i++) {
+        for (u8 focus = 0; focus < Squares::kCount; ++focus) {
+            for (u8 i = 0; i < Squares::kCount; ++i) {
                 const u8 wideFocus = focus + (focus & 0x38);
-                const u8 wideResult = offsets[i] + wideFocus;
+                const u8 wideResult = kOffsets[i] + wideFocus;
                 const u8 result = ((wideResult & 0x70) >> 1) | (wideResult & 0x07);
                 const bool valid = (wideResult & 0x88) == 0;
                 permutations[focus][i] = valid ? result : 0x80;
@@ -66,8 +65,8 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         return permutations;
     }();
 
-    inline constexpr __m128i kPieceToBitTable = []() {
-        std::array<u8, 16> lut{};
+    inline constexpr std::array<Bit, 16> kPieceToBitTable = [] {
+        std::array<Bit, 16> lut{};
 
         lut[Pieces::kBlackPawn.idx()] = Bits::kBlackPawn;
         lut[Pieces::kWhitePawn.idx()] = Bits::kWhitePawn;
@@ -83,10 +82,10 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         lut[Pieces::kWhiteKing.idx()] = Bits::kKing;
         lut[Pieces::kNone.idx()] = 0;
 
-        return std::bit_cast<__m128i>(lut);
+        return lut;
     }();
 
-    inline constexpr std::array<Bitrays, Pieces::kCount> kOutgoingThreatsTable = []() {
+    inline constexpr std::array<Bitrays, Pieces::kCount> kOutgoingThreatsTable = [] {
         std::array<Bitrays, Pieces::kCount> lut{};
         lut[Pieces::kWhitePawn.idx()] = 0x02'00'00'00'00'00'02'00;
         lut[Pieces::kBlackPawn.idx()] = 0x00'00'02'00'02'00'00'00;
@@ -103,43 +102,42 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         return lut;
     }();
 
-    inline constexpr std::array<Bit, 64> kIncomingThreatsMask = []() {
+    inline constexpr std::array<Bit, 64> kIncomingThreatsMask = [] {
         // Note: We ignore king threats
-        constexpr Bit horse = Bits::kKnight;
-        constexpr Bit orth = Bits::kQueen | Bits::kRook;
-        constexpr Bit diag = Bits::kQueen | Bits::kBishop;
-        constexpr Bit orthoNear = orth;
-        constexpr Bit wPawnNear = Bits::kWhitePawn | diag;
-        constexpr Bit bPawnNear = Bits::kBlackPawn | diag;
+        constexpr Bit kHorse = Bits::kKnight;
+        constexpr Bit kOrth = Bits::kQueen | Bits::kRook;
+        constexpr Bit kDiag = Bits::kQueen | Bits::kBishop;
+        constexpr Bit kOrthoNear = kOrth;
+        constexpr Bit kWPawnNear = Bits::kWhitePawn | kDiag;
+        constexpr Bit kBPawnNear = Bits::kBlackPawn | kDiag;
 
-        return std::array<Bit, 64>{{
-            horse, orthoNear, orth, orth, orth, orth, orth, orth, // N
-            horse, bPawnNear, diag, diag, diag, diag, diag, diag, // NE
-            horse, orthoNear, orth, orth, orth, orth, orth, orth, // E
-            horse, wPawnNear, diag, diag, diag, diag, diag, diag, // SE
-            horse, orthoNear, orth, orth, orth, orth, orth, orth, // S
-            horse, wPawnNear, diag, diag, diag, diag, diag, diag, // SW
-            horse, orthoNear, orth, orth, orth, orth, orth, orth, // W
-            horse, bPawnNear, diag, diag, diag, diag, diag, diag, // NW
-        }};
+        return std::array<Bit, 64>{
+            kHorse, kOrthoNear, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // N
+            kHorse, kBPawnNear, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // NE
+            kHorse, kOrthoNear, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // E
+            kHorse, kWPawnNear, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // SE
+            kHorse, kOrthoNear, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // S
+            kHorse, kWPawnNear, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // SW
+            kHorse, kOrthoNear, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // W
+            kHorse, kBPawnNear, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // NW
+        };
     }();
 
-    inline constexpr std::array<Bit, 64> kIncomingSlidersMask = []() {
-        constexpr Bit orth = Bits::kQueen | Bits::kRook;
-        constexpr Bit diag = Bits::kQueen | Bits::kBishop;
+    inline constexpr std::array<Bit, 64> kIncomingSlidersMask = [] {
+        constexpr Bit kOrth = Bits::kQueen | Bits::kRook;
+        constexpr Bit kDiag = Bits::kQueen | Bits::kBishop;
 
-        return std::array<Bit, 64>{{
-            0x80, orth, orth, orth, orth, orth, orth, orth, // N
-            0x80, diag, diag, diag, diag, diag, diag, diag, // NE
-            0x80, orth, orth, orth, orth, orth, orth, orth, // E
-            0x80, diag, diag, diag, diag, diag, diag, diag, // SE
-            0x80, orth, orth, orth, orth, orth, orth, orth, // S
-            0x80, diag, diag, diag, diag, diag, diag, diag, // SW
-            0x80, orth, orth, orth, orth, orth, orth, orth, // W
-            0x80, diag, diag, diag, diag, diag, diag, diag, // NW
-        }};
+        return std::array<Bit, 64>{
+            0x80, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // N
+            0x80, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // NE
+            0x80, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // E
+            0x80, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // SE
+            0x80, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // S
+            0x80, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // SW
+            0x80, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, kOrth, // W
+            0x80, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, kDiag, // NW
+        };
     }();
-
 } // namespace stormphrax::eval::nnue::features::threats::geometry
 
 #if SP_HAS_VBMI
@@ -147,4 +145,3 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 #else
     #include "geometry_default.h"
 #endif
-

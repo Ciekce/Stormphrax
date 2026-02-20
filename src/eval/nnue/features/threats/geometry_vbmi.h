@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
 #include <array>
@@ -26,7 +27,6 @@
 #include "../../../../types.h"
 
 namespace stormphrax::eval::nnue::features::threats::geometry {
-
     struct Vector {
         __m512i raw;
 
@@ -48,11 +48,12 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
-        const std::array<Piece, Squares::kCount>& mailbox
+        const std::span<const Piece, Squares::kCount> mailbox
     ) {
-        const auto lut = _mm512_broadcast_i32x4(kPieceToBitTable);
+        const auto lut =
+            _mm512_broadcast_i32x4(_mm_loadu_si128(reinterpret_cast<const __m128i*>(kPieceToBitTable.data())));
 
-        const auto maskedMailbox = std::bit_cast<__m512i>(mailbox);
+        const auto maskedMailbox = _mm512_loadu_si512(mailbox.data());
         const auto permuted = _mm512_permutexvar_epi8(permutation.indexes.raw, maskedMailbox);
         const auto bits = _mm512_maskz_shuffle_epi8(permutation.valid, lut, permuted);
         return {{permuted}, {bits}};
@@ -60,14 +61,15 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     [[nodiscard]] inline std::tuple<Vector, Vector> permuteMailbox(
         const Permutation& permutation,
-        const std::array<Piece, Squares::kCount>& mailbox,
+        const std::span<const Piece, Squares::kCount> mailbox,
         Square ignore
     ) {
-        const auto lut = _mm512_broadcast_i32x4(kPieceToBitTable);
+        const auto lut =
+            _mm512_broadcast_i32x4(_mm_loadu_si128(reinterpret_cast<const __m128i*>(kPieceToBitTable.data())));
 
         const auto maskedMailbox = _mm512_mask_blend_epi8(
             ignore.bit(),
-            std::bit_cast<__m512i>(mailbox),
+            _mm512_loadu_si512(mailbox.data()),
             _mm512_set1_epi8(Pieces::kNone.idx())
         );
         const auto permuted = _mm512_permutexvar_epi8(permutation.indexes.raw, maskedMailbox);
@@ -99,5 +101,4 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
         const auto mask = _mm512_loadu_si512(kIncomingSlidersMask.data());
         return _mm512_test_epi8_mask(bits.raw, mask) & closest & 0xFEFEFEFEFEFEFEFE;
     }
-
 } // namespace stormphrax::eval::nnue::features::threats::geometry
