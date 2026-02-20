@@ -960,7 +960,7 @@ namespace stormphrax::search {
 
                     if (score < sBeta) {
                         if (score < sBeta - 200 * kPvNode - doubleExtMargin()) {
-                            extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+                            extension = 2 + (!kPvNode && !ttMoveNoisy && score < sBeta - tripleExtMargin());
                         } else {
                             extension = 1;
                         }
