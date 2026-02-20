@@ -21,7 +21,6 @@
 #include "../../../../types.h"
 
 #include <array>
-#include <bit>
 
 #include "../../../../arch.h"
 #include "../../../../core.h"

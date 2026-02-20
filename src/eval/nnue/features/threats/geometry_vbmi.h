@@ -21,7 +21,7 @@
 #include "../../../../types.h"
 
 #include <array>
-#include <bit>
+#include <span>
 #include <tuple>
 
 #include <immintrin.h>
