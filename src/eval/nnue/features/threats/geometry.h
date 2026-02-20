@@ -18,12 +18,14 @@
 
 #pragma once
 
+#include "../../../../types.h"
+
 #include <array>
 #include <bit>
 
 #include "../../../../arch.h"
 #include "../../../../core.h"
-#include "../../../../types.h"
+#include "../../../../util/multi_array.h"
 
 namespace stormphrax::eval::nnue::features::threats::geometry {
     using Bit = u8;
@@ -40,7 +42,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
     using Bitrays = u64;
 
-    inline constexpr std::array<std::array<u8, Squares::kCount>, Squares::kCount> kPermutationTable = [] {
+    inline constexpr util::MultiArray<u8, Squares::kCount, Squares::kCount> kPermutationTable = [] {
         constexpr std::array<u8, Squares::kCount> kOffsets = {
             0x1F, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // N
             0x21, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // NE
@@ -52,7 +54,7 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
             0x0E, 0x0F, 0x1E, 0x2D, 0x3C, 0x4B, 0x5A, 0x69, // NW
         };
 
-        std::array<std::array<u8, Squares::kCount>, Squares::kCount> permutations{};
+        util::MultiArray<u8, Squares::kCount, Squares::kCount> permutations{};
         for (u8 focus = 0; focus < Squares::kCount; ++focus) {
             for (u8 i = 0; i < Squares::kCount; ++i) {
                 const u8 wideFocus = focus + (focus & 0x38);

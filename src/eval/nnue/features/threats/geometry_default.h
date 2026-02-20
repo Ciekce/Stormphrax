@@ -18,13 +18,13 @@
 
 #pragma once
 
+#include "../../../../types.h"
+
 #include <array>
 #include <bit>
 #include <tuple>
 
 #include <immintrin.h>
-
-#include "../../../../types.h"
 
 namespace stormphrax::eval::nnue::features::threats::geometry {
     struct Vector {
