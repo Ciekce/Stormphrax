@@ -959,8 +959,9 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && score < sBeta - doubleExtMargin()) {
-                            extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+                        const auto baseThreshold = sBeta - 200 * kPvNode;
+                        if (score < baseThreshold - doubleExtMargin()) {
+                            extension = 2 + (!ttMoveNoisy && score < baseThreshold - tripleExtMargin());
                         } else {
                             extension = 1;
                         }
