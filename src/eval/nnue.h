@@ -289,7 +289,7 @@ namespace stormphrax::eval {
                 return;
             }
 
-            std::ranges::copy(prev.forColor(c), curr.threatAcc[0].forColor(c).begin());
+            curr.threatAcc[0].copyFrom(c, prev);
 
             if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
                 return;
