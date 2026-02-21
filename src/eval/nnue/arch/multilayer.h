@@ -37,6 +37,7 @@ namespace stormphrax::eval::nnue::arch {
     // airwise clipped ReLU on the FT, squared clipped ReLU
     // or dual CReLU or SCReLU on L1, and clipped ReLU on L2
     template <
+        typename FeatureSet,
         u32 kL1Size,
         u32 kL2Size,
         u32 kL3Size,
@@ -65,6 +66,8 @@ namespace stormphrax::eval::nnue::arch {
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
+        static constexpr auto kThreatInputCount = FeatureSet::kThreatInputs ? kL1Size : 0;
+
         SP_SIMD_ALIGNAS std::array<i8, kOutputBucketCount * kL1Size * kL2Size> l1Weights{};
         SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL2Size> l1Biases{};
 
@@ -78,8 +81,10 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr i32 kQ = 1 << kQuantBits;
 
         inline void activateFt(
-            std::span<const i16, kL1Size> stmInputs,
-            std::span<const i16, kL1Size> nstmInputs,
+            std::span<const i16, kL1Size> stmPsqInputs,
+            std::span<const i16, kL1Size> nstmPsqInputs,
+            std::span<const i16, kThreatInputCount> stmThreatInputs,
+            std::span<const i16, kThreatInputCount> nstmThreatInputs,
             std::span<u8, kL1Size> outputs,
             sparse::SparseContext<kL1Size>& sparseCtx
         ) const {
@@ -91,13 +96,23 @@ namespace stormphrax::eval::nnue::arch {
             const auto zero_ = zero<i16>();
             const auto one = set1<i16>((1 << kFtQBits) - 1);
 
-            const auto activatePerspective = [&](std::span<const i16, kL1Size> inputs, u32 outputOffset) {
+            const auto activatePerspective = [&](std::span<const i16, kL1Size> psqInputs,
+                                                 std::span<const i16, kThreatInputCount> threatInputs,
+                                                 u32 outputOffset) {
                 for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 2) {
-                    auto i1_0 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 0]);
-                    auto i1_1 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 1]);
+                    auto i1_0 = load<i16>(&psqInputs[inputIdx + kChunkSize<i16> * 0]);
+                    auto i1_1 = load<i16>(&psqInputs[inputIdx + kChunkSize<i16> * 1]);
 
-                    auto i2_0 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
-                    auto i2_1 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
+                    auto i2_0 = load<i16>(&psqInputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
+                    auto i2_1 = load<i16>(&psqInputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
+
+                    if constexpr (FeatureSet::kThreatInputs) {
+                        i1_0 = add<i16>(i1_0, load<i16>(&threatInputs[inputIdx + kChunkSize<i16> * 0]));
+                        i1_1 = add<i16>(i1_1, load<i16>(&threatInputs[inputIdx + kChunkSize<i16> * 1]));
+
+                        i2_0 = add<i16>(i2_0, load<i16>(&threatInputs[inputIdx + kPairCount + kChunkSize<i16> * 0]));
+                        i2_1 = add<i16>(i2_1, load<i16>(&threatInputs[inputIdx + kPairCount + kChunkSize<i16> * 1]));
+                    }
 
                     i1_0 = min<i16>(i1_0, one);
                     i1_1 = min<i16>(i1_1, one);
@@ -117,8 +132,8 @@ namespace stormphrax::eval::nnue::arch {
                 }
             };
 
-            activatePerspective(stmInputs, 0);
-            activatePerspective(nstmInputs, kPairCount);
+            activatePerspective(stmPsqInputs, stmThreatInputs, 0);
+            activatePerspective(nstmPsqInputs, nstmThreatInputs, kPairCount);
 
             for (u32 output = 0; output < kL1Size; output += kChunkSize<i8> * 2) {
                 const auto a = load<u8>(&outputs[output + kChunkSize<i8> * 0]);
@@ -382,8 +397,10 @@ namespace stormphrax::eval::nnue::arch {
     public:
         inline void propagate(
             u32 bucket,
-            std::span<const i16, kL1Size> stmInputs,
-            std::span<const i16, kL1Size> nstmInputs,
+            std::span<const i16, kL1Size> stmPsqInputs,
+            std::span<const i16, kL1Size> nstmPsqInputs,
+            std::span<const i16, kThreatInputCount> stmThreatInputs,
+            std::span<const i16, kThreatInputCount> nstmThreatInputs,
             std::span<OutputType, kOutputCount> outputs
         ) const {
             using namespace util::simd;
@@ -399,7 +416,7 @@ namespace stormphrax::eval::nnue::arch {
             Array<i32, kL3Size> l2Out;
             Array<i32, 1> l3Out;
 
-            activateFt(stmInputs, nstmInputs, ftOut, sparseCtx);
+            activateFt(stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, ftOut, sparseCtx);
             propagateL1(bucket, ftOut, l1Out, sparseCtx);
             propagateL2(bucket, l1Out, l2Out);
             propagateL3(bucket, l2Out, l3Out);

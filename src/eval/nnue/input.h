@@ -71,6 +71,10 @@ namespace stormphrax::eval::nnue {
             return m_outputs[c.idx()];
         }
 
+        inline void clear(Color c) {
+            m_outputs[c.idx()].fill(0);
+        }
+
         inline void initBoth(const Ft& featureTransformer) {
             std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
             std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());

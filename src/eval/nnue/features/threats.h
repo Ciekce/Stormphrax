@@ -41,8 +41,18 @@ namespace stormphrax::eval::nnue::features::threats {
 
         struct Updates : psq::PsqFeaturesBase::Updates {
             // black, white
+            std::array<bool, 2> refreshThreats{};
+
             AddedThreatList threatsAdded{};
             RemovedThreatList threatsRemoved{};
+
+            inline void setThreatRefresh(Color c) {
+                refreshThreats[c.idx()] = true;
+            }
+
+            [[nodiscard]] inline bool requiresThreatRefresh(Color c) const {
+                return refreshThreats[c.idx()];
+            }
 
             inline void addThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
                 threatsAdded.push({

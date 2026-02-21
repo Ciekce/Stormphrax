@@ -50,11 +50,11 @@ namespace stormphrax::eval::nnue::features::psq {
             std::array<UpdatedThreat, 0> threatsAdded{};
             std::array<UpdatedThreat, 0> threatsRemoved{};
 
-            inline void setRefresh(Color c) {
+            inline void setPsqRefresh(Color c) {
                 refresh[c.idx()] = true;
             }
 
-            [[nodiscard]] inline bool requiresRefresh(Color c) const {
+            [[nodiscard]] inline bool requiresPsqRefresh(Color c) const {
                 return refresh[c.idx()];
             }
 

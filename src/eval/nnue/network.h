@@ -37,13 +37,15 @@ namespace stormphrax::eval::nnue {
 
         inline util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> propagate(
             const BitboardSet& bbs,
-            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmInputs,
-            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> nstmInputs
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmPsqInputs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> nstmPsqInputs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmThreatInputs,
+            std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> nstmThreatInputs
         ) const {
             util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> outputs;
 
             const auto bucket = OutputBucketing::getBucket(bbs);
-            m_arch.propagate(bucket, stmInputs, nstmInputs, outputs);
+            m_arch.propagate(bucket, stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, outputs);
 
             return outputs;
         }
@@ -72,6 +74,9 @@ namespace stormphrax::eval::nnue {
         }
 
     private:
+        static constexpr u32 kThreatAccSize =
+            FeatureTransformer::InputFeatureSet::kThreatInputs ? FeatureTransformer::kOutputCount : 0;
+
         FeatureTransformer m_featureTransformer{};
         Arch m_arch{};
     };
