@@ -26,7 +26,6 @@ namespace stormphrax::search {
 
         stack[ply].move = kNullMove;
         conthist[ply] = &history.contTable(Pieces::kWhitePawn, Squares::kA1);
-        contMoves[ply] = {Pieces::kNone, Squares::kNone};
 
         keyHistory.push_back(pos.key());
 
@@ -44,7 +43,6 @@ namespace stormphrax::search {
 
         stack[ply].move = move;
         conthist[ply] = &history.contTable(moving, move.toSq());
-        contMoves[ply] = {moving, move.toSq()};
 
         keyHistory.push_back(pos.key());
 
