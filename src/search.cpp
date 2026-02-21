@@ -966,10 +966,10 @@ namespace stormphrax::search {
                         }
                     } else if (sBeta >= beta) {
                         return sBeta;
+                    } else if (ttEntry.score >= beta) {
+                        extension = -3;
                     } else if (cutnode) {
                         extension = -2;
-                    } else if (ttEntry.score >= beta) {
-                        extension = -1;
                     }
                 } else if (depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
                            && ttEntry.flag == TtFlag::kLowerBound)
