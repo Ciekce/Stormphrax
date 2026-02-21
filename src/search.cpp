@@ -943,7 +943,7 @@ namespace stormphrax::search {
             i32 extension{};
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
-                if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
+                if (depth >= 6 && ttEntry.depth >= depth - 3 && ttEntry.flag != TtFlag::kUpperBound
                     && !isWin(ttEntry.score))
                 {
                     const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
@@ -959,11 +959,9 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && score < sBeta - doubleExtMargin()) {
-                            extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
-                        } else {
-                            extension = 1;
-                        }
+                        const auto doubleMargin = 200 * kPvNode + 20 * ttMoveNoisy;
+                        const auto tripleMargin = 100 + 200 * kPvNode + 50 * ttMoveNoisy;
+                        extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (sBeta >= beta) {
                         return sBeta;
                     } else if (cutnode) {
