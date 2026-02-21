@@ -297,29 +297,40 @@ namespace stormphrax::eval {
 
             const auto king = ctx.kings.color(c);
 
+            const auto* threatWeights = g_network.featureTransformer().threatWeights.data();
+
             auto acc = curr.threatAcc[0].forColor(c);
+
+            StaticVector<u32, 128> adds{};
+            StaticVector<u32, 128> subs{};
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
                 const auto feature =
                     nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
-                if (feature >= nnue::features::threats::kTotalThreatFeatures) {
-                    continue;
-                }
-                const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
-                for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] += start[i];
+                if (feature < nnue::features::threats::kTotalThreatFeatures) {
+                    __builtin_prefetch(threatWeights + feature * kL1Size);
+                    adds.push(feature);
                 }
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
                 const auto feature =
                     nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
-                if (feature >= nnue::features::threats::kTotalThreatFeatures) {
-                    continue;
+                if (feature < nnue::features::threats::kTotalThreatFeatures) {
+                    __builtin_prefetch(threatWeights + feature * kL1Size);
+                    subs.push(feature);
                 }
-                const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+            }
+
+            for (const auto add : adds) {
                 for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] -= start[i];
+                    acc[i] += threatWeights[add * kL1Size + i];
+                }
+            }
+
+            for (const auto sub : subs) {
+                for (i32 i = 0; i < kL1Size; ++i) {
+                    acc[i] -= threatWeights[sub * kL1Size + i];
                 }
             }
 
