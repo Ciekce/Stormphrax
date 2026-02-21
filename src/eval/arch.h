@@ -68,6 +68,7 @@ namespace stormphrax::eval {
     using OutputBucketing = nnue::output::MaterialCount<8>;
 
     using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
+        InputFeatureSet,
         kL1Size,
         kL2Size,
         kL3Size,

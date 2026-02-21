@@ -34,7 +34,14 @@
 
 namespace stormphrax::eval::nnue::arch {
     // implements an (inputs->L1)x2->1xN network, with configurable activation
-    template <u32 kL1Size, u32 kFtQ, u32 kL1Q, typename Activation, output::OutputBucketing OutputBucketing, i32 kScale>
+    template <
+        typename FeatureSet,
+        u32 kL1Size,
+        u32 kFtQ,
+        u32 kL1Q,
+        typename Activation,
+        output::OutputBucketing OutputBucketing,
+        i32 kScale>
     struct SingleLayer {
         static constexpr u32 kArchId = 1;
 
@@ -53,8 +60,10 @@ namespace stormphrax::eval::nnue::arch {
     public:
         inline void propagate(
             u32 bucket,
-            std::span<const i16, kL1Size> stmInputs,
-            std::span<const i16, kL1Size> nstmInputs,
+            std::span<const i16, kL1Size> stmPsqInputs,
+            std::span<const i16, kL1Size> nstmPsqInputs,
+            std::span<const i16, kL1Size> stmThreatInputs,
+            std::span<const i16, kL1Size> nstmThreatInputs,
             std::span<OutputType, kOutputCount> outputs
         ) const {
             using namespace util::simd;
@@ -72,7 +81,12 @@ namespace stormphrax::eval::nnue::arch {
 
             // stm perspective
             for (u32 inputIdx = 0; inputIdx < kL1Size; inputIdx += kChunkSize<i16>) {
-                const auto inputs = load<i16>(&stmInputs[inputIdx]);
+                auto inputs = load<i16>(&stmPsqInputs[inputIdx]);
+
+                if constexpr (FeatureSet::kThreatInputs) {
+                    inputs = add<i16>(load<i16>(&stmThreatInputs[inputIdx]));
+                }
+
                 const auto weights = load<i16>(&l1Weights[weightOffset + inputIdx]);
 
                 sum = Activation::template activateDotAccumulate<i16, kFtQ>(sum, inputs, weights);
@@ -80,7 +94,12 @@ namespace stormphrax::eval::nnue::arch {
 
             // nstm perspective
             for (u32 inputIdx = 0; inputIdx < kL1Size; inputIdx += kChunkSize<i16>) {
-                const auto inputs = load<i16>(&nstmInputs[inputIdx]);
+                auto inputs = load<i16>(&nstmPsqInputs[inputIdx]);
+
+                if constexpr (FeatureSet::kThreatInputs) {
+                    inputs = add<i16>(load<i16>(&nstmThreatInputs[inputIdx]));
+                }
+
                 const auto weights = load<i16>(&l1Weights[kL1Size + weightOffset + inputIdx]);
 
                 sum = Activation::template activateDotAccumulate<i16, kFtQ>(sum, inputs, weights);

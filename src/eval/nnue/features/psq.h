@@ -47,14 +47,14 @@ namespace stormphrax::eval::nnue::features::psq {
             StaticVector<PieceSquare, 2> sub{};
             StaticVector<PieceSquare, 2> add{};
 
-            std::array<UpdatedThreat, 0> threatsAdded{};
-            std::array<UpdatedThreat, 0> threatsRemoved{};
+            StaticVector<UpdatedThreat, 0> threatsAdded{};
+            StaticVector<UpdatedThreat, 0> threatsRemoved{};
 
-            inline void setRefresh(Color c) {
+            inline void setPsqRefresh(Color c) {
                 refresh[c.idx()] = true;
             }
 
-            [[nodiscard]] inline bool requiresRefresh(Color c) const {
+            [[nodiscard]] inline bool requiresPsqRefresh(Color c) const {
                 return refresh[c.idx()];
             }
 
@@ -69,6 +69,15 @@ namespace stormphrax::eval::nnue::features::psq {
 
             inline void pushAdd(Piece piece, Square sq) {
                 add.push({piece, sq});
+            }
+
+            inline void setThreatRefresh(Color c) {
+                SP_UNUSED(c);
+            }
+
+            [[nodiscard]] inline bool requiresThreatRefresh(Color c) const {
+                SP_UNUSED(c);
+                return false;
             }
 
             inline void addThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {

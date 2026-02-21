@@ -253,7 +253,7 @@ namespace stormphrax::datagen {
                     eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
                     pos = pos.applyMove(move, eval::BoardObserver{ctx});
-                    thread.nnueState.apply(ctx);
+                    thread.nnueState.applyImmediately(ctx);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 
