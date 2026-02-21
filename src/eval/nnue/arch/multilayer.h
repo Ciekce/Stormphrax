@@ -403,8 +403,12 @@ namespace stormphrax::eval::nnue::arch {
         ) const {
             using namespace util::simd;
 
-            assert(isAligned(stmInputs.data()));
-            assert(isAligned(nstmInputs.data()));
+            assert(isAligned(stmPsqInputs.data()));
+            assert(isAligned(nstmPsqInputs.data()));
+
+            assert(!FeatureSet::kThreatInputs || isAligned(stmPsqInputs.data()));
+            assert(!FeatureSet::kThreatInputs || isAligned(nstmPsqInputs.data()));
+
             assert(isAligned(outputs.data()));
 
             sparse::SparseContext<kL1Size> sparseCtx;

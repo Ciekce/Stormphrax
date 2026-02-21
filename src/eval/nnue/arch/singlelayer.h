@@ -70,8 +70,12 @@ namespace stormphrax::eval::nnue::arch {
 
             static constexpr i32 Q = kFtQ * kL1Q;
 
-            assert(isAligned(stmInputs.data()));
-            assert(isAligned(nstmInputs.data()));
+            assert(isAligned(stmPsqInputs.data()));
+            assert(isAligned(nstmPsqInputs.data()));
+
+            assert(!FeatureSet::kThreatInputs || isAligned(stmPsqInputs.data()));
+            assert(!FeatureSet::kThreatInputs || isAligned(nstmPsqInputs.data()));
+
             assert(isAligned(outputs.data()));
 
             const auto weightOffset = bucket * kL1Size * 2;
