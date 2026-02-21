@@ -74,9 +74,6 @@ namespace stormphrax::eval::nnue {
         }
 
     private:
-        static constexpr u32 kThreatAccSize =
-            FeatureTransformer::InputFeatureSet::kThreatInputs ? FeatureTransformer::kOutputCount : 0;
-
         FeatureTransformer m_featureTransformer{};
         Arch m_arch{};
     };

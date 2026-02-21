@@ -66,8 +66,6 @@ namespace stormphrax::eval::nnue::arch {
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
-        static constexpr auto kThreatInputCount = FeatureSet::kThreatInputs ? kL1Size : 0;
-
         SP_SIMD_ALIGNAS std::array<i8, kOutputBucketCount * kL1Size * kL2Size> l1Weights{};
         SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL2Size> l1Biases{};
 
@@ -83,8 +81,8 @@ namespace stormphrax::eval::nnue::arch {
         inline void activateFt(
             std::span<const i16, kL1Size> stmPsqInputs,
             std::span<const i16, kL1Size> nstmPsqInputs,
-            std::span<const i16, kThreatInputCount> stmThreatInputs,
-            std::span<const i16, kThreatInputCount> nstmThreatInputs,
+            std::span<const i16, kL1Size> stmThreatInputs,
+            std::span<const i16, kL1Size> nstmThreatInputs,
             std::span<u8, kL1Size> outputs,
             sparse::SparseContext<kL1Size>& sparseCtx
         ) const {
@@ -97,7 +95,7 @@ namespace stormphrax::eval::nnue::arch {
             const auto one = set1<i16>((1 << kFtQBits) - 1);
 
             const auto activatePerspective = [&](std::span<const i16, kL1Size> psqInputs,
-                                                 std::span<const i16, kThreatInputCount> threatInputs,
+                                                 std::span<const i16, kL1Size> threatInputs,
                                                  u32 outputOffset) {
                 for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 2) {
                     auto i1_0 = load<i16>(&psqInputs[inputIdx + kChunkSize<i16> * 0]);
@@ -399,8 +397,8 @@ namespace stormphrax::eval::nnue::arch {
             u32 bucket,
             std::span<const i16, kL1Size> stmPsqInputs,
             std::span<const i16, kL1Size> nstmPsqInputs,
-            std::span<const i16, kThreatInputCount> stmThreatInputs,
-            std::span<const i16, kThreatInputCount> nstmThreatInputs,
+            std::span<const i16, kL1Size> stmThreatInputs,
+            std::span<const i16, kL1Size> nstmThreatInputs,
             std::span<OutputType, kOutputCount> outputs
         ) const {
             using namespace util::simd;
