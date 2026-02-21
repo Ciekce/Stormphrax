@@ -166,7 +166,7 @@ namespace stormphrax::eval {
             }
 
             if (header.hiddenSize != kL1Size) {
-                eprintln("wrong number of hidden neurons {} (expected: {})", header.hiddenSize, kL1Size);
+                eprintln("wrong number of l1 neurons {} (expected: {})", header.hiddenSize, kL1Size);
                 return false;
             }
 
