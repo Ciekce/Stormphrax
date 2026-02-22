@@ -37,6 +37,7 @@ namespace stormphrax::eval::nnue::arch {
     // airwise clipped ReLU on the FT, squared clipped ReLU
     // or dual CReLU or SCReLU on L1, and clipped ReLU on L2
     template <
+        typename FeatureSet,
         u32 kL1Size,
         u32 kL2Size,
         u32 kL3Size,
@@ -78,63 +79,65 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr i32 kQ = 1 << kQuantBits;
 
         inline void activateFt(
-            std::span<const i16, kL1Size> stmInputs,
-            std::span<const i16, kL1Size> nstmInputs,
+            std::span<const i16, kL1Size> stmPsqInputs,
+            std::span<const i16, kL1Size> nstmPsqInputs,
+            std::span<const i16, kL1Size> stmThreatInputs,
+            std::span<const i16, kL1Size> nstmThreatInputs,
             std::span<u8, kL1Size> outputs,
             sparse::SparseContext<kL1Size>& sparseCtx
         ) const {
             using namespace util::simd;
 
             static constexpr auto kPairCount = kL1Size / 2;
-            static_assert(kPairCount % (kChunkSize<i16> * 4) == 0);
+            static_assert(kPairCount % (kChunkSize<i16> * 2) == 0);
 
             const auto zero_ = zero<i16>();
             const auto one = set1<i16>((1 << kFtQBits) - 1);
 
-            const auto activatePerspective = [&](std::span<const i16, kL1Size> inputs, u32 outputOffset) {
-                for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 4) {
-                    auto i1_0 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 0]);
-                    auto i1_1 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 1]);
-                    auto i1_2 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 2]);
-                    auto i1_3 = load<i16>(&inputs[inputIdx + kChunkSize<i16> * 3]);
+            const auto activatePerspective = [&](std::span<const i16, kL1Size> psqInputs,
+                                                 std::span<const i16, kL1Size> threatInputs,
+                                                 u32 outputOffset) {
+                for (u32 inputIdx = 0; inputIdx < kPairCount; inputIdx += kChunkSize<i16> * 2) {
+                    auto i1_0 = load<i16>(&psqInputs[inputIdx + kChunkSize<i16> * 0]);
+                    auto i1_1 = load<i16>(&psqInputs[inputIdx + kChunkSize<i16> * 1]);
 
-                    auto i2_0 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
-                    auto i2_1 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
-                    auto i2_2 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 2]);
-                    auto i2_3 = load<i16>(&inputs[inputIdx + kPairCount + kChunkSize<i16> * 3]);
+                    auto i2_0 = load<i16>(&psqInputs[inputIdx + kPairCount + kChunkSize<i16> * 0]);
+                    auto i2_1 = load<i16>(&psqInputs[inputIdx + kPairCount + kChunkSize<i16> * 1]);
+
+                    if constexpr (FeatureSet::kThreatInputs) {
+                        i1_0 = add<i16>(i1_0, load<i16>(&threatInputs[inputIdx + kChunkSize<i16> * 0]));
+                        i1_1 = add<i16>(i1_1, load<i16>(&threatInputs[inputIdx + kChunkSize<i16> * 1]));
+
+                        i2_0 = add<i16>(i2_0, load<i16>(&threatInputs[inputIdx + kPairCount + kChunkSize<i16> * 0]));
+                        i2_1 = add<i16>(i2_1, load<i16>(&threatInputs[inputIdx + kPairCount + kChunkSize<i16> * 1]));
+                    }
 
                     i1_0 = min<i16>(i1_0, one);
                     i1_1 = min<i16>(i1_1, one);
-                    i1_2 = min<i16>(i1_2, one);
-                    i1_3 = min<i16>(i1_3, one);
 
                     i2_0 = min<i16>(i2_0, one);
                     i2_1 = min<i16>(i2_1, one);
-                    i2_2 = min<i16>(i2_2, one);
-                    i2_3 = min<i16>(i2_3, one);
 
                     i1_0 = max<i16>(i1_0, zero_);
                     i1_1 = max<i16>(i1_1, zero_);
-                    i1_2 = max<i16>(i1_2, zero_);
-                    i1_3 = max<i16>(i1_3, zero_);
 
                     const auto p_0 = shiftLeftMulHi<i16>(i1_0, i2_0, kFtScaleBits);
                     const auto p_1 = shiftLeftMulHi<i16>(i1_1, i2_1, kFtScaleBits);
-                    const auto p_2 = shiftLeftMulHi<i16>(i1_2, i2_2, kFtScaleBits);
-                    const auto p_3 = shiftLeftMulHi<i16>(i1_3, i2_3, kFtScaleBits);
 
                     const auto packed_0 = packUnsigned<i16>(p_0, p_1);
-                    const auto packed_1 = packUnsigned<i16>(p_2, p_3);
 
                     store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 0], packed_0);
-                    store<u8>(&outputs[outputOffset + inputIdx + kChunkSize<i8> * 1], packed_1);
-
-                    sparseCtx.update(packed_0, packed_1);
                 }
             };
 
-            activatePerspective(stmInputs, 0);
-            activatePerspective(nstmInputs, kPairCount);
+            activatePerspective(stmPsqInputs, stmThreatInputs, 0);
+            activatePerspective(nstmPsqInputs, nstmThreatInputs, kPairCount);
+
+            for (u32 output = 0; output < kL1Size; output += kChunkSize<i8> * 2) {
+                const auto a = load<u8>(&outputs[output + kChunkSize<i8> * 0]);
+                const auto b = load<u8>(&outputs[output + kChunkSize<i8> * 1]);
+                sparseCtx.update(a, b);
+            }
         }
 
         inline void propagateL1(
@@ -392,14 +395,20 @@ namespace stormphrax::eval::nnue::arch {
     public:
         inline void propagate(
             u32 bucket,
-            std::span<const i16, kL1Size> stmInputs,
-            std::span<const i16, kL1Size> nstmInputs,
+            std::span<const i16, kL1Size> stmPsqInputs,
+            std::span<const i16, kL1Size> nstmPsqInputs,
+            std::span<const i16, kL1Size> stmThreatInputs,
+            std::span<const i16, kL1Size> nstmThreatInputs,
             std::span<OutputType, kOutputCount> outputs
         ) const {
             using namespace util::simd;
 
-            assert(isAligned(stmInputs.data()));
-            assert(isAligned(nstmInputs.data()));
+            assert(isAligned(stmPsqInputs.data()));
+            assert(isAligned(nstmPsqInputs.data()));
+
+            assert(!FeatureSet::kThreatInputs || isAligned(stmPsqInputs.data()));
+            assert(!FeatureSet::kThreatInputs || isAligned(nstmPsqInputs.data()));
+
             assert(isAligned(outputs.data()));
 
             sparse::SparseContext<kL1Size> sparseCtx;
@@ -409,7 +418,7 @@ namespace stormphrax::eval::nnue::arch {
             Array<i32, kL3Size> l2Out;
             Array<i32, 1> l3Out;
 
-            activateFt(stmInputs, nstmInputs, ftOut, sparseCtx);
+            activateFt(stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, ftOut, sparseCtx);
             propagateL1(bucket, ftOut, l1Out, sparseCtx);
             propagateL2(bucket, l1Out, l2Out);
             propagateL3(bucket, l2Out, l3Out);
@@ -431,8 +440,8 @@ namespace stormphrax::eval::nnue::arch {
                 && stream.write(l2Biases) && stream.write(l3Weights) && stream.write(l3Biases);
         }
 
-        template <typename W, typename B>
-        static inline void permuteFt(std::span<W> weights, std::span<B> biases) {
+        template <typename W, typename T, typename B>
+        static inline void permuteFt(std::span<W> psqWeights, std::span<T> threatWeights, std::span<B> biases) {
             using namespace util::simd;
 
             if constexpr (!kPackNonSequential) {
@@ -442,8 +451,8 @@ namespace stormphrax::eval::nnue::arch {
             static constexpr usize kPackSize = kPackOrdering.size();
             static constexpr usize kChunkSize = kPackSize * kPackGrouping;
 
-            const auto permute = [&]<typename T, usize kN>(std::span<T, kN> values) {
-                util::MultiArray<T, kPackSize, kPackGrouping> tmp;
+            const auto permute = [&]<typename P, usize kN>(std::span<P, kN> values) {
+                util::MultiArray<P, kPackSize, kPackGrouping> tmp;
 
                 for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
                     std::copy(&values[offset], &values[offset] + kChunkSize, &tmp[0][0]);
@@ -454,7 +463,8 @@ namespace stormphrax::eval::nnue::arch {
                 }
             };
 
-            permute(weights);
+            permute(psqWeights);
+            permute(threatWeights);
             permute(biases);
         }
     };

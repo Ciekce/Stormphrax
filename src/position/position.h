@@ -124,26 +124,23 @@ namespace stormphrax {
         void prepareKingMove(Color color, Square src, Square dst) {
             SP_UNUSED(color, src, dst);
         }
-        void pieceMoved(Piece piece, Square src, Square dst) {
-            SP_UNUSED(piece, src, dst);
+        void pieceAdded(const PositionBoards& boards, Piece piece, Square sq) {
+            SP_UNUSED(boards, piece, sq);
         }
-        void pieceCaptured(Piece piece, Square src, Square dst, Piece captured) {
-            SP_UNUSED(piece, src, dst, captured);
+        void pieceRemoved(const PositionBoards& boards, Piece piece, Square sq) {
+            SP_UNUSED(boards, piece, sq);
         }
-        void pawnPromoted(Piece pawn, Square src, Square dst, Piece promo) {
-            SP_UNUSED(pawn, src, dst, promo);
+        void pieceMutated(const PositionBoards& boards, Piece oldPiece, Piece newPiece, Square sq) {
+            SP_UNUSED(boards, oldPiece, newPiece, sq);
         }
-        void pawnPromoteCaptured(Piece pawn, Square src, Square dst, Piece promo, Piece captured) {
-            SP_UNUSED(pawn, src, dst, promo, captured);
+        void pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst) {
+            SP_UNUSED(boards, piece, src, dst);
         }
-        void castled(Piece king, Square kingSrc, Square kingDst, Piece rook, Square rookSrc, Square rookDst) {
-            SP_UNUSED(king, kingSrc, kingDst, rook, rookSrc, rookDst);
+        void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst) {
+            SP_UNUSED(boards, oldPiece, src, newPiece, dst);
         }
-        void enPassanted(Piece pawn, Square src, Square dst, Piece enemyPawn, Square captureSquare) {
-            SP_UNUSED(pawn, src, dst, enemyPawn, captureSquare);
-        }
-        void finalize(BitboardSet bbs, KingPair kings) {
-            SP_UNUSED(bbs, kings);
+        void finalize(const PositionBoards& boards, KingPair kings) {
+            SP_UNUSED(boards, kings);
         }
     };
 

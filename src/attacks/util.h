@@ -51,7 +51,7 @@ namespace stormphrax::attacks {
             }
         }
 
-        constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy) {
+        [[nodiscard]] constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy) {
             Bitboard dst{};
 
             auto blockers = edges(dir);
@@ -79,12 +79,12 @@ namespace stormphrax::attacks {
         }
     } // namespace internal
 
-    template <i32... Dirs>
-    consteval std::array<Bitboard, Squares::kCount> generateEmptyBoardAttacks() {
+    template <i32... kDirs>
+    [[nodiscard]] consteval std::array<Bitboard, Squares::kCount> generateEmptyBoardAttacks() {
         std::array<Bitboard, Squares::kCount> dst{};
 
         for (i32 square = 0; square < Squares::kCount; ++square) {
-            for (const auto dir : {Dirs...}) {
+            for (const auto dir : {kDirs...}) {
                 const auto attacks = internal::generateSlidingAttacks(Square::fromRaw(square), dir, 0);
                 dst[square] |= attacks;
             }
@@ -99,7 +99,7 @@ namespace stormphrax::attacks {
         generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>();
 
     template <i32... kDirs>
-    consteval Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
         Bitboard dst{};
 
         for (const auto dir : {kDirs...}) {
@@ -109,11 +109,11 @@ namespace stormphrax::attacks {
         return dst;
     }
 
-    consteval Bitboard genRookAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard genRookAttacks(Square src, Bitboard occupancy) {
         return genAllSlidingAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>(src, occupancy);
     }
 
-    consteval Bitboard genBishopAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard genBishopAttacks(Square src, Bitboard occupancy) {
         return genAllSlidingAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>(
             src,
             occupancy

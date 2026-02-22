@@ -239,7 +239,7 @@ namespace stormphrax::search {
         m_minRootScore = -kScoreInf;
         m_maxRootScore = kScoreInf;
 
-        thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
+        thread.nnueState.reset(thread.rootPos.boards(), thread.rootPos.kings());
 
         m_runningThreads.store(1);
         m_stop.store(false, std::memory_order::seq_cst);
@@ -369,7 +369,7 @@ namespace stormphrax::search {
 
             std::ranges::copy(m_setupInfo.keyHistory, std::back_inserter(thread.keyHistory));
 
-            thread.nnueState.reset(thread.rootPos.bbs(), thread.rootPos.kings());
+            thread.nnueState.reset(thread.rootPos.boards(), thread.rootPos.kings());
 
             m_setupBarrier.arriveAndWait();
         }

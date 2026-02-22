@@ -77,6 +77,10 @@ namespace stormphrax::eval::nnue {
                 return false;
             }
 
+            if (n == 0) {
+                return true;
+            }
+
             auto& stream = *std::get<std::istream*>(m_stream);
 
             const auto padding = calcPadding(n);
@@ -91,6 +95,10 @@ namespace stormphrax::eval::nnue {
             if (!std::holds_alternative<std::ostream*>(m_stream)) {
                 assert(false);
                 return false;
+            }
+
+            if (n == 0) {
+                return true;
             }
 
             static constexpr std::array<std::byte, kBlockSize> Empty{};

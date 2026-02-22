@@ -28,7 +28,7 @@
 #include "../util.h"
 #include "data.h"
 
-namespace stormphrax::attacks {
+namespace stormphrax::attacks::lookup {
     extern const std::array<u16, bmi2::kRookData.tableSize> g_rookAttacks;
     extern const std::array<Bitboard, bmi2::kBishopData.tableSize> g_bishopAttacks;
 
@@ -47,4 +47,4 @@ namespace stormphrax::attacks {
 
         return g_bishopAttacks[data.offset + idx];
     }
-} // namespace stormphrax::attacks
+} // namespace stormphrax::attacks::lookup

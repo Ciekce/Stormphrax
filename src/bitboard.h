@@ -128,6 +128,7 @@ namespace stormphrax {
 
         static constexpr auto kCenterSquares = U64(0x0000001818000000);
 
+        static constexpr auto kNone = U64(0);
         static constexpr auto kAll = U64(0xFFFFFFFFFFFFFFFF);
 
         constexpr Bitboard(u64 board = 0) :

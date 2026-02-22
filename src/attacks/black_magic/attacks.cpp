@@ -19,7 +19,7 @@
 #include "../attacks.h"
 
 #if !SP_HAS_BMI2
-namespace stormphrax::attacks {
+namespace stormphrax::attacks::lookup {
     using namespace black_magic;
 
     namespace {
@@ -81,5 +81,5 @@ namespace stormphrax::attacks {
 
     const std::array<Bitboard, kRookData.tableSize> g_rookAttacks = generateRookAttacks();
     const std::array<Bitboard, kBishopData.tableSize> g_bishopAttacks = generateBishopAttacks();
-} // namespace stormphrax::attacks
+} // namespace stormphrax::attacks::lookup
 #endif // !SP_HAS_BMI2

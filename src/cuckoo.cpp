@@ -44,7 +44,7 @@ namespace stormphrax::cuckoo {
                 for (u32 s1 = s0 + 1; s1 < Squares::kCount; ++s1) {
                     const auto sq1 = Square::fromRaw(s1);
 
-                    if (!attacks::getNonPawnPieceAttacks(piece.type(), sq0)[sq1]) {
+                    if (!attacks::getAttacks(piece, sq0)[sq1]) {
                         continue;
                     }
 

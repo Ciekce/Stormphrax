@@ -28,7 +28,7 @@
 #include "../util.h"
 #include "data.h"
 
-namespace stormphrax::attacks {
+namespace stormphrax::attacks::lookup {
     extern const std::array<Bitboard, black_magic::kRookData.tableSize> g_rookAttacks;
     extern const std::array<Bitboard, black_magic::kBishopData.tableSize> g_bishopAttacks;
 
@@ -71,4 +71,4 @@ namespace stormphrax::attacks {
 
         return g_bishopAttacks[data.offset + idx];
     }
-} // namespace stormphrax::attacks
+} // namespace stormphrax::attacks::lookup

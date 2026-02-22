@@ -25,11 +25,12 @@
 #include "nnue/activation.h"
 #include "nnue/arch/multilayer.h"
 #include "nnue/arch/singlelayer.h"
-#include "nnue/features.h"
+#include "nnue/features/psq.h"
+#include "nnue/features/threats.h"
 #include "nnue/output.h"
 
 namespace stormphrax::eval {
-    // current arch: (704x16hm->1792)x2->(16x2->32->1)x8
+    // current arch: (704x16hm+60144->640)x2->(32x2->32->1)x8
     // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
 
     constexpr u32 kFtQBits = 8;
@@ -37,8 +38,8 @@ namespace stormphrax::eval {
 
     constexpr u32 kFtScaleBits = 7;
 
-    constexpr u32 kL1Size = 1792;
-    constexpr u32 kL2Size = 16;
+    constexpr u32 kL1Size = 640;
+    constexpr u32 kL2Size = 32;
     constexpr u32 kL3Size = 32;
 
     using L1Activation = nnue::activation::ClippedReLU;
@@ -48,8 +49,8 @@ namespace stormphrax::eval {
     constexpr i32 kScale = 400;
 
     // visually flipped upside down, a1 = 0
-    using InputFeatureSet = nnue::features::KingBucketsMergedMirrored<
-        nnue::features::MirroredKingSide::kAbcd,
+    using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
+        nnue::features::psq::MirroredKingSide::kAbcd,
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,
@@ -62,9 +63,12 @@ namespace stormphrax::eval {
         // clang-format on
         >;
 
+    using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
+
     using OutputBucketing = nnue::output::MaterialCount<8>;
 
     using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
+        InputFeatureSet,
         kL1Size,
         kL2Size,
         kL3Size,

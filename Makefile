@@ -27,7 +27,7 @@ COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 USE_LIBNUMA = off
 
-SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp src/limit.cpp src/util/numa/numa_fallback.cpp src/util/numa/numa_libnuma.cpp
+SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp src/limit.cpp src/util/numa/numa_fallback.cpp src/util/numa/numa_libnuma.cpp src/eval/nnue/features/threats.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
 SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
 
@@ -36,17 +36,17 @@ SUFFIX :=
 CXX := clang++
 
 # disable -Wunused-function and -Wunused-const-variable for zstd
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -fconstexpr-steps=2097152 -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
 
 CXXFLAGS_RELEASE := -O3 -DNDEBUG
 CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-CXXFLAGS_VNNI512 := -DSP_VNNI512 -DSP_FAST_PEXT -march=znver5 -mtune=znver5
-CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
+CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=skylake-avx512 -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
+CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
 
 LDFLAGS :=
 
@@ -145,7 +145,7 @@ define build
 endef
 endif
 
-release: vnni512 avx512 avx2-bmi2 avx2
+release: avx512 avx2-bmi2 avx2
 all: native release
 
 .PHONY: all
@@ -168,9 +168,6 @@ native: $(EXE)
 tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,TUNABLE,tunable)
 
-vnni512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,RELEASE,VNNI512,vnni512)
-
 avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX512,avx512)
 
@@ -179,6 +176,9 @@ avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,RELEASE,AVX2,avx2)
+
+armv8_4: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 sanitizer: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,SANITIZER,NATIVE,native)

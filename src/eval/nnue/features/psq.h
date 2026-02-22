@@ -18,14 +18,79 @@
 
 #pragma once
 
-#include "../../types.h"
+#include "../../../types.h"
 
 #include <algorithm>
 
-#include "../../core.h"
+#include "../../../core.h"
+#include "../../../util/static_vector.h"
 
-namespace stormphrax::eval::nnue::features {
-    struct [[maybe_unused]] SingleBucket {
+namespace stormphrax::eval::nnue::features::psq {
+    struct UpdatedThreat {
+        Piece attacker;
+        Square attackerSq;
+        Piece attacked;
+        Square attackedSq;
+        bool operator==(const UpdatedThreat&) const = default;
+    };
+
+    struct PsqFeaturesBase {
+        static constexpr bool kThreatInputs = false;
+        static constexpr u32 kThreatFeatures = 0;
+
+        struct Updates {
+            using PieceSquare = std::pair<Piece, Square>;
+
+            // [black, white]
+            std::array<bool, 2> refresh{};
+
+            StaticVector<PieceSquare, 2> sub{};
+            StaticVector<PieceSquare, 2> add{};
+
+            StaticVector<UpdatedThreat, 0> threatsAdded{};
+            StaticVector<UpdatedThreat, 0> threatsRemoved{};
+
+            inline void setPsqRefresh(Color c) {
+                refresh[c.idx()] = true;
+            }
+
+            [[nodiscard]] inline bool requiresPsqRefresh(Color c) const {
+                return refresh[c.idx()];
+            }
+
+            inline void pushSubAdd(Piece piece, Square src, Square dst) {
+                sub.push({piece, src});
+                add.push({piece, dst});
+            }
+
+            inline void pushSub(Piece piece, Square sq) {
+                sub.push({piece, sq});
+            }
+
+            inline void pushAdd(Piece piece, Square sq) {
+                add.push({piece, sq});
+            }
+
+            inline void setThreatRefresh(Color c) {
+                SP_UNUSED(c);
+            }
+
+            [[nodiscard]] inline bool requiresThreatRefresh(Color c) const {
+                SP_UNUSED(c);
+                return false;
+            }
+
+            inline void addThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                SP_UNUSED(attacker, attackerSq, attacked, attackedSq);
+            }
+
+            inline void removeThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+                SP_UNUSED(attacker, attackerSq, attacked, attackedSq);
+            }
+        };
+    };
+
+    struct [[maybe_unused]] SingleBucket : PsqFeaturesBase {
         static constexpr u32 kInputSize = 768;
 
         static constexpr u32 kBucketCount = 1;
@@ -56,7 +121,7 @@ namespace stormphrax::eval::nnue::features {
     };
 
     template <u32... kBucketIndices>
-    struct [[maybe_unused]] KingBuckets {
+    struct [[maybe_unused]] KingBuckets : PsqFeaturesBase {
         static_assert(sizeof...(kBucketIndices) == Squares::kCount);
 
     private:
@@ -122,7 +187,7 @@ namespace stormphrax::eval::nnue::features {
     };
 
     template <MirroredKingSide kSide, u32... kBucketIndices>
-    struct [[maybe_unused]] KingBucketsMirrored {
+    struct [[maybe_unused]] KingBucketsMirrored : PsqFeaturesBase {
         static_assert(sizeof...(kBucketIndices) == Squares::kCount / 2);
 
     private:
@@ -235,7 +300,7 @@ namespace stormphrax::eval::nnue::features {
 
     //TODO verify that buckets work for merged kings
     template <MirroredKingSide kSide, u32... kBucketIndices>
-    struct [[maybe_unused]] KingBucketsMergedMirrored : public KingBucketsMirrored<kSide, kBucketIndices...> {
+    struct [[maybe_unused]] KingBucketsMergedMirrored : KingBucketsMirrored<kSide, kBucketIndices...> {
         static constexpr u32 kInputSize = 704;
         static constexpr bool kMergedKings = true;
     };
@@ -254,4 +319,33 @@ namespace stormphrax::eval::nnue::features {
         28, 29, 30, 31
         // clang-format on
         >;
-} // namespace stormphrax::eval::nnue::features
+
+    template <typename FeatureSet>
+    [[nodiscard]] constexpr u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
+        assert(c != Colors::kNone);
+        assert(piece != Pieces::kNone);
+        assert(sq != Squares::kNone);
+        assert(king != Squares::kNone);
+
+        constexpr u32 kColorStride = Squares::kCount * PieceTypes::kCount;
+        constexpr u32 kPieceStride = Squares::kCount;
+
+        const u32 type = piece.type().raw();
+
+        const auto color = [piece, c]() -> u32 {
+            if (FeatureSet::kMergedKings && piece.type() == PieceTypes::kKing) {
+                return 0;
+            }
+            return piece.color() == c ? 0 : 1;
+        }();
+
+        if (c == Colors::kBlack) {
+            sq = sq.flipRank();
+        }
+
+        sq = FeatureSet::transformFeatureSquare(sq, king);
+
+        const auto bucketOffset = FeatureSet::getBucket(c, king) * FeatureSet::kInputSize;
+        return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
+    }
+} // namespace stormphrax::eval::nnue::features::psq

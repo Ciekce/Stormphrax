@@ -91,8 +91,40 @@ namespace stormphrax {
             return dst;
         }
 
+        consteval util::MultiArray<Bitboard, Squares::kCount, Squares::kCount> generatePassingRays() {
+            util::MultiArray<Bitboard, Squares::kCount, Squares::kCount> dst{};
+
+            for (i32 from = 0; from < Squares::kCount; ++from) {
+                const auto srcSquare = Square::fromRaw(from);
+                const auto srcMask = srcSquare.bit();
+
+                const auto rookAttacks = attacks::kEmptyBoardRooks[from];
+                const auto bishopAttacks = attacks::kEmptyBoardBishops[from];
+
+                for (i32 to = 0; to < Squares::kCount; ++to) {
+                    if (from == to) {
+                        continue;
+                    }
+
+                    const auto dstSquare = Square::fromRaw(to);
+                    const auto dstMask = dstSquare.bit();
+
+                    if (rookAttacks[dstSquare]) {
+                        dst[from][to] = attacks::genRookAttacks(srcSquare, Bitboard{})
+                                      & (attacks::genRookAttacks(dstSquare, srcMask) | dstMask);
+                    } else if (bishopAttacks[dstSquare]) {
+                        dst[from][to] = attacks::genBishopAttacks(srcSquare, Bitboard{})
+                                      & (attacks::genBishopAttacks(dstSquare, srcMask) | dstMask);
+                    }
+                }
+            }
+
+            return dst;
+        }
+
         constexpr auto kBetweenRays = generateBetweenRays();
         constexpr auto kIntersectingRays = generateIntersectingRays();
+        constexpr auto kPassingRays = generatePassingRays();
     } // namespace detail
 
     constexpr Bitboard rayBetween(Square src, Square dst) {
@@ -101,5 +133,9 @@ namespace stormphrax {
 
     constexpr Bitboard rayIntersecting(Square src, Square dst) {
         return detail::kIntersectingRays[src.idx()][dst.idx()];
+    }
+
+    constexpr Bitboard rayPast(Square src, Square target) {
+        return detail::kPassingRays[src.idx()][target.idx()];
     }
 } // namespace stormphrax
