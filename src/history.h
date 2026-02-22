@@ -109,8 +109,13 @@ namespace stormphrax {
             return m_continuation[moving.idx()][to.idx()];
         }
 
-        inline void updateMainHistory(Bitboard threats, Piece moving, Move move, HistoryScore bonus) {
-            butterflyEntry(moving.color(), threats, move).update(bonus);
+        inline void updateMainHistory(
+            Bitboard threats,
+            Piece moving,
+            Move move,
+            HistoryScore bonus
+        ) {
+            butterflyEntry(threats, move).update(bonus);
             pieceToEntry(threats, moving, move).update(bonus);
         }
 
@@ -146,7 +151,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline i32 getMainHist(Bitboard threats, Piece moving, Move move) const {
-            return (butterflyEntry(moving.color(), threats, move) + pieceToEntry(threats, moving, move)) / 2;
+            return (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
         }
 
         [[nodiscard]] inline i32 getConthist(
@@ -185,7 +190,7 @@ namespace stormphrax {
 
     private:
         // [from][to][from attacked][to attacked]
-        util::MultiArray<HistoryEntry, Colors::kCount, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
+        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
         // [piece][to]
         util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> m_pieceTo{};
         // [prev piece][to][curr piece type][to]
@@ -223,14 +228,12 @@ namespace stormphrax {
             return 0;
         }
 
-        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Color stm, Bitboard threats, Move move) const {
-            return m_butterfly[stm.idx()][move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]]
-                              [threats[move.toSq()]];
+        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
-        [[nodiscard]] inline HistoryEntry& butterflyEntry(Color stm, Bitboard threats, Move move) {
-            return m_butterfly[stm.idx()][move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]]
-                              [threats[move.toSq()]];
+        [[nodiscard]] inline HistoryEntry& butterflyEntry(Bitboard threats, Move move) {
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] inline const HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) const {

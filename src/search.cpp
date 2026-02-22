@@ -717,7 +717,7 @@ namespace stormphrax::search {
             }
 
             if (!kRootNode && !inCheck && parent->move && parent->quiet && parent->staticEval != kScoreNone) {
-                const auto bonus = std::clamp(-10 * (parent->staticEval + curr.staticEval), -2000, 1800) + 600;
+                const auto bonus = std::clamp(-6 * (parent->staticEval + curr.staticEval), -1400, 1200) + 400;
                 thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
             }
         }
