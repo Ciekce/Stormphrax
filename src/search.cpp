@@ -184,7 +184,7 @@ namespace stormphrax::search {
         }
     }
 
-    ThreadData& Searcher::take() {
+    ThreadData& Searcher::take(u32 numaId) {
         stopThreads();
 
         m_resetBarrier.reset(1);
@@ -200,9 +200,12 @@ namespace stormphrax::search {
         auto& thread = *m_threadData[0];
 
         thread.id = 0;
-        thread.correctionHistory = m_corrhists.get(0);
+        thread.numaId = numaId;
 
-        return *m_threadData[0];
+        //TODO no need for <numa node count> corrhists for every datagen thread
+        thread.correctionHistory = m_corrhists.get(numaId);
+
+        return thread;
     }
 
     std::pair<Score, Score> Searcher::runDatagenSearch() {
@@ -343,6 +346,8 @@ namespace stormphrax::search {
         auto& thread = *m_threadData[threadId];
 
         thread.id = threadId;
+        thread.numaId = threadId;
+
         thread.correctionHistory = m_corrhists.get(threadId);
 
         m_initBarrier.arriveAndWait();

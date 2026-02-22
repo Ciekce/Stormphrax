@@ -25,8 +25,6 @@
 #include "../core.h"
 #include "../correction.h"
 #include "../position/position.h"
-#include "../see.h"
-#include "../tunable.h"
 #include "nnue.h"
 
 namespace stormphrax::eval {
@@ -41,8 +39,6 @@ namespace stormphrax::eval {
         i32 eval,
         i32* corrDelta = nullptr
     ) {
-        eval = eval * (200 - pos.halfmove()) / 200;
-
         if constexpr (kCorrect) {
             const auto corrected = correction->correct(pos, keyHistory, eval);
 
@@ -58,20 +54,8 @@ namespace stormphrax::eval {
 
     template <bool kScale>
     inline Score adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
-        using namespace tunable;
-
-        if constexpr (kScale) {
-            const auto bbs = pos.bbs();
-
-            const auto npMaterial =
-                scalingValueKnight() * bbs.knights().popcount() + scalingValueBishop() * bbs.bishops().popcount()
-                + scalingValueRook() * bbs.rooks().popcount() + scalingValueQueen() * bbs.queens().popcount();
-
-            eval = eval * (materialScalingBase() + npMaterial) / 32768;
-        }
-
+        SP_UNUSED(kScale);
         eval += contempt[pos.stm().idx()];
-
         return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }
 

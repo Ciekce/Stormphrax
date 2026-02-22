@@ -23,6 +23,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <optional>
 #include <thread>
 
@@ -35,6 +36,7 @@
 #include "../search.h"
 #include "../tb.h"
 #include "../util/ctrlc.h"
+#include "../util/numa/numa.h"
 #include "../util/rng.h"
 #include "../util/timer.h"
 #include "fen.h"
@@ -47,6 +49,7 @@ namespace stormphrax::datagen {
 
     namespace {
         std::atomic_bool s_stop{false};
+        std::mutex s_printMutex{};
 
         void initCtrlCHandler() {
             util::signal::setCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
@@ -71,6 +74,8 @@ namespace stormphrax::datagen {
             }
         }
 
+        constexpr usize kTtSize = 16;
+
         constexpr usize kVerificationHardNodeLimit = 25165814;
 
         constexpr usize kDatagenSoftNodeLimit = 24000;
@@ -86,15 +91,20 @@ namespace stormphrax::datagen {
         constexpr u32 kWinAdjPlyCount = 5;
         constexpr u32 kDrawAdjPlyCount = 10;
 
-        constexpr i32 kReportInterval = 512;
+        constexpr usize kReportInterval = 256;
 
         template <OutputFormat Format>
         void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
+            numa::bindThread(id);
+
             const auto outFile = outDir / fmt::format("{}.{}", id, Format::kExtension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
-                eprintln("failed to open output file {}", outFile);
+                {
+                    const std::unique_lock printLock{s_printMutex};
+                    eprintln("failed to open output file {}", outFile);
+                }
                 return;
             }
 
@@ -110,15 +120,15 @@ namespace stormphrax::datagen {
             const auto verifLimiter = createLimiter(kVerificationHardNodeLimit);
             const auto datagenLimiter = createLimiter(kDatagenHardNodeLimit, kDatagenSoftNodeLimit);
 
-            search::Searcher searcher{};
+            search::Searcher searcher{kTtSize};
             searcher.setSilent(true);
 
-            auto& thread = searcher.take();
+            auto& thread = searcher.take(id);
             thread.datagen = true;
 
             auto& pos = thread.rootPos;
 
-            const auto resetSearch = [&searcher, &thread]() {
+            const auto resetSearch = [&searcher, &thread] {
                 searcher.newGame();
 
                 thread.search = search::SearchData{};
@@ -129,17 +139,18 @@ namespace stormphrax::datagen {
 
             const auto startTime = Instant::now();
 
+            usize gameNumber = 0;
             usize totalPositions{};
 
-            for (i32 game = 0; !s_stop.load(std::memory_order::seq_cst); ++game) {
-                resetSearch();
-
+            while (!s_stop.load(std::memory_order::seq_cst)) {
                 if (dfrc) {
                     const auto dfrcIndex = rng.nextU32(960 * 960);
                     pos = *Position::fromDfrcIndex(dfrcIndex);
                 } else {
                     pos = Position::starting();
                 }
+
+                s_stop.store(true, std::memory_order::seq_cst);
 
                 const auto moveCount = 8 + (rng.nextU32() >> 31);
 
@@ -149,7 +160,7 @@ namespace stormphrax::datagen {
                     ScoredMoveList moves{};
                     generateAll(moves, pos);
 
-                    std::shuffle(moves.begin(), moves.end(), rng);
+                    std::ranges::shuffle(moves, rng);
 
                     legalFound = false;
 
@@ -169,12 +180,10 @@ namespace stormphrax::datagen {
                 }
 
                 if (!legalFound) {
-                    // this game was useless, don't count it
-                    --game;
                     continue;
                 }
 
-                output.start(pos);
+                resetSearch();
 
                 thread.nnueState.reset(pos.boards(), pos.kings());
 
@@ -187,11 +196,11 @@ namespace stormphrax::datagen {
                 searcher.setLimiter(datagenLimiter);
 
                 if (std::abs(normFirstScore) > kVerificationScoreLimit) {
-                    --game;
                     continue;
                 }
 
                 resetSearch();
+                output.start(pos);
 
                 u32 winPlies{};
                 u32 lossPlies{};
@@ -250,10 +259,9 @@ namespace stormphrax::datagen {
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
-                    eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
-                    pos = pos.applyMove(move, eval::BoardObserver{ctx});
-                    thread.nnueState.applyImmediately(ctx);
+                    pos = pos.applyMove(move, NullObserver{});
+                    thread.nnueState.reset(pos.boards(), pos.kings());
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 
@@ -287,13 +295,16 @@ namespace stormphrax::datagen {
                 const auto positions = output.writeAllWithOutcome(out, *outcome);
                 totalPositions += positions;
 
-                if (((game + 1) % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
+                ++gameNumber;
+
+                if ((gameNumber % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
                     const auto time = startTime.elapsed();
+                    const std::unique_lock printLock{s_printMutex};
                     println(
                         "thread {}: wrote {} positions from {} games in {} sec ({:.6g} positions/sec)",
                         id,
                         totalPositions,
-                        game + 1,
+                        gameNumber,
                         time,
                         static_cast<f64>(totalPositions) / time
                     );
@@ -360,7 +371,7 @@ namespace stormphrax::datagen {
 
         for (u32 i = 0; i < threads; ++i) {
             const auto seed = seedGenerator.nextSeed();
-            theThreads.emplace_back([&, i, seed]() { threadFunc(i, dfrc, seed, outDir); });
+            theThreads.emplace_back([&, i, seed] { threadFunc(i, dfrc, seed, outDir); });
         }
 
         for (auto& thread : theThreads) {
