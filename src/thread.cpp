@@ -25,6 +25,11 @@ namespace stormphrax::search {
         assert(ply <= kMaxDepth);
 
         stack[ply].move = kNullMove;
+        stack[ply].moving = Pieces::kNone;
+        stack[ply].quiet = true;
+
+        stack[ply].threats = pos.threats();
+
         conthist[ply] = &history.contTable(Pieces::kWhitePawn, Squares::kA1);
 
         keyHistory.push_back(pos.key());
@@ -42,6 +47,11 @@ namespace stormphrax::search {
         const auto moving = pos.boards().pieceOn(move.fromSq());
 
         stack[ply].move = move;
+        stack[ply].moving = moving;
+        stack[ply].quiet = !pos.isNoisy(move);
+
+        stack[ply].threats = pos.threats();
+
         conthist[ply] = &history.contTable(moving, move.toSq());
 
         keyHistory.push_back(pos.key());

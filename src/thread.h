@@ -79,7 +79,10 @@ namespace stormphrax::search {
 
     struct SearchStackEntry {
         PvList pv{};
+
         Move move;
+        Piece moving;
+        bool quiet;
 
         Score staticEval{};
         bool ttpv{};
@@ -88,6 +91,8 @@ namespace stormphrax::search {
 
         Move excluded{};
         i32 reduction{};
+
+        Bitboard threats{};
     };
 
     struct MoveStackEntry {
