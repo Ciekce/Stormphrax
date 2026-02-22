@@ -30,12 +30,12 @@ endif()
 
 # disable -Wunused-function and -Wunused-const-variable for zstd
 if(MSVC)
-	add_compile_options(/EHsc /W4 /clang:-Wno-sign-compare /clang:-Wno-unused-function /clang:-Wno-unused-const-variable /WX)
+	add_compile_options(/EHsc /W4 /clang:-Wno-sign-compare /clang:-Wno-unused-function /clang:-Wno-unused-const-variable /WX /clang:-fconstexpr-steps=2097152)
 	# for pyrrhic
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 else()
-	add_compile_options(-Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -Werror)
+	add_compile_options(-Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -Werror -fconstexpr-steps=2097152)
 endif()
 
 find_package(Threads REQUIRED)

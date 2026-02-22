@@ -39,7 +39,7 @@ namespace stormphrax::eval::nnue::features::threats {
 
         constexpr std::array kPieceTargetCount = {6, 10, 8, 8, 10, 0};
 
-        [[nodiscard]] consteval util::MultiArray<u8, Squares::kCount, Squares::kCount> generatePieceIndices(
+        [[nodiscard]] constexpr util::MultiArray<u8, Squares::kCount, Squares::kCount> generatePieceIndices(
             Piece piece
         ) {
             util::MultiArray<u8, Squares::kCount, Squares::kCount> dst{};
