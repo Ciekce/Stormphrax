@@ -109,6 +109,16 @@ namespace stormphrax {
             return m_continuation[moving.idx()][to.idx()];
         }
 
+        inline void updateMainHistory(
+            Bitboard threats,
+            Piece moving,
+            Move move,
+            HistoryScore bonus
+        ) {
+            butterflyEntry(threats, move).update(bonus);
+            pieceToEntry(threats, moving, move).update(bonus);
+        }
+
         inline void updateConthist(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
@@ -132,8 +142,7 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update(bonus);
-            pieceToEntry(threats, moving, move).update(bonus);
+            updateMainHistory(threats, moving, move, bonus);
             updateConthist(continuations, ply, threats, moving, move, bonus);
         }
 
