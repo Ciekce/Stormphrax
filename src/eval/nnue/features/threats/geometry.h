@@ -143,6 +143,10 @@ namespace stormphrax::eval::nnue::features::threats::geometry {
 
 #if SP_HAS_VBMI
     #include "geometry_vbmi.h"
+#elif SP_HAS_AVX2
+    #include "geometry_avx2.h"
+#elif SP_HAS_NEON
+    #include "geometry_neon.h"
 #else
-    #include "geometry_default.h"
+    #error unsupported architecture
 #endif

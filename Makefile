@@ -46,6 +46,7 @@ CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
 CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=skylake-avx512 -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
+CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
 
 LDFLAGS :=
 
@@ -175,6 +176,9 @@ avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
 
 avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,RELEASE,AVX2,avx2)
+
+armv8_4: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 sanitizer: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,SANITIZER,NATIVE,native)
