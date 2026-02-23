@@ -150,8 +150,6 @@ namespace stormphrax::datagen {
                     pos = Position::starting();
                 }
 
-                s_stop.store(true, std::memory_order::seq_cst);
-
                 const auto moveCount = 8 + (rng.nextU32() >> 31);
 
                 bool legalFound = false;
