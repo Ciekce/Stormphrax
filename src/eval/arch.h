@@ -36,7 +36,7 @@ namespace stormphrax::eval {
     constexpr u32 kFtQBits = 8;
     constexpr u32 kL1QBits = 6;
 
-    constexpr u32 kL1Size = 32;
+    constexpr u32 kL1Size = 64;
 
     using L1Activation = nnue::activation::SquaredClippedReLU;
 
@@ -45,7 +45,7 @@ namespace stormphrax::eval {
     // visually flipped upside down, a1 = 0
     using PsqFeatureSet = nnue::features::psq::SingleBucketMirrored<nnue::features::psq::MirroredKingSide::kAbcd>;
 
-    using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
+    using InputFeatureSet = PsqFeatureSet;
 
     using OutputBucketing = nnue::output::Single;
 
