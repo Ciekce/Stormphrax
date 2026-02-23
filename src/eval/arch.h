@@ -34,48 +34,27 @@ namespace stormphrax::eval {
     // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
 
     constexpr u32 kFtQBits = 8;
-    constexpr u32 kL1QBits = 7;
+    constexpr u32 kL1QBits = 6;
 
-    constexpr u32 kFtScaleBits = 7;
+    constexpr u32 kL1Size = 32;
 
-    constexpr u32 kL1Size = 640;
-    constexpr u32 kL2Size = 32;
-    constexpr u32 kL3Size = 32;
-
-    using L1Activation = nnue::activation::ClippedReLU;
-
-    constexpr bool kDualActivation = true;
+    using L1Activation = nnue::activation::SquaredClippedReLU;
 
     constexpr i32 kScale = 400;
 
     // visually flipped upside down, a1 = 0
-    using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
-        nnue::features::psq::MirroredKingSide::kAbcd,
-        // clang-format off
-         0,  1,  2,  3,
-         4,  5,  6,  7,
-         8,  9, 10, 11,
-         8,  9, 10, 11,
-        12, 12, 13, 13,
-        12, 12, 13, 13,
-        14, 14, 15, 15,
-        14, 14, 15, 15
-        // clang-format on
-        >;
+    using PsqFeatureSet = nnue::features::psq::SingleBucketMirrored<nnue::features::psq::MirroredKingSide::kAbcd>;
 
     using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
 
-    using OutputBucketing = nnue::output::MaterialCount<8>;
+    using OutputBucketing = nnue::output::Single;
 
-    using LayeredArch = nnue::arch::PairwiseMultilayerCReLUSCReLUCReLU<
+    using LayeredArch = nnue::arch::SingleLayer<
         InputFeatureSet,
         kL1Size,
-        kL2Size,
-        kL3Size,
-        kFtScaleBits,
-        kFtQBits,
-        kL1QBits,
-        kDualActivation,
+        (1 << kFtQBits) - 1,
+        1 << kL1QBits,
+        L1Activation,
         OutputBucketing,
         kScale>;
 } // namespace stormphrax::eval
