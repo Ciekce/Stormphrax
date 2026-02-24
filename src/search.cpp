@@ -211,6 +211,9 @@ namespace stormphrax::search {
     std::pair<Score, Score> Searcher::runDatagenSearch() {
         auto& thread = *m_threadData[0];
 
+        // ensure a nullmove is returned in mate and stalemate
+        thread.pvMove().pv.reset();
+
         if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
             return {-kScoreMate, -kScoreMate};
         }
