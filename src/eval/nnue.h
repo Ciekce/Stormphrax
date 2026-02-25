@@ -38,10 +38,12 @@ namespace stormphrax::eval {
 
     using NnueUpdates = InputFeatureSet::Updates;
 
-    extern const Network& g_network;
+    void init();
+    void shutdown();
 
-    void loadDefaultNetwork();
-    void loadNetwork(std::string_view name);
+    [[nodiscard]] bool isNetworkLoaded();
+
+    const Network* getNetwork(u32 numaId);
 
     [[nodiscard]] std::string_view defaultNetworkName();
 
@@ -51,7 +53,13 @@ namespace stormphrax::eval {
         KingPair kings{};
     };
 
-    void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king);
+    void addThreatFeatures(
+        const Network& network,
+        std::span<i16, kL1Size> acc,
+        Color c,
+        const PositionBoards& boards,
+        Square king
+    );
 
     template <bool kAdd>
     void updatePieceThreatsOnChange(NnueUpdates& updates, const PositionBoards& boards, Piece piece, Square sq);
@@ -130,10 +138,16 @@ namespace stormphrax::eval {
             m_accumulatorStack.resize(256);
         }
 
+        inline void setNetwork(const Network* network) {
+            assert(network);
+            m_network = network;
+        }
+
         inline void reset(const PositionBoards& boards, KingPair kings) {
+            assert(m_network);
             assert(kings.isValid());
 
-            m_refreshTable.init(g_network.featureTransformer());
+            m_refreshTable.init(m_network->featureTransformer());
 
             m_curr = &m_accumulatorStack[0];
 
@@ -142,13 +156,13 @@ namespace stormphrax::eval {
                 const auto entry = InputFeatureSet::getRefreshTableEntry(c, king);
 
                 auto& rtEntry = m_refreshTable.table[entry];
-                resetPsqAccumulator(rtEntry.accumulator, c, boards, king);
+                resetPsqAccumulator(*m_network, rtEntry.accumulator, c, boards, king);
 
                 m_curr->psqAcc.copyFrom(c, rtEntry.accumulator);
                 rtEntry.colorBbs(c) = boards.bbs();
 
                 if constexpr (InputFeatureSet::kThreatInputs) {
-                    resetThreatAccumulator(m_curr->threatAcc[0], c, boards, king);
+                    resetThreatAccumulator(*m_network, m_curr->threatAcc[0], c, boards, king);
                 }
             }
         }
@@ -164,9 +178,10 @@ namespace stormphrax::eval {
         }
 
         inline void applyImmediately(const UpdateContext& ctx) {
-            updateBothPsq(m_curr->psqAcc, *m_curr, m_refreshTable, ctx);
+            assert(m_network);
+            updateBothPsq(*m_network, m_curr->psqAcc, *m_curr, m_refreshTable, ctx);
             if constexpr (InputFeatureSet::kThreatInputs) {
-                updateBothThreat(m_curr->threatAcc[0], *m_curr, ctx);
+                updateBothThreat(*m_network, m_curr->threatAcc[0], *m_curr, ctx);
             }
         }
 
@@ -176,15 +191,16 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] inline i32 evaluate(const PositionBoards& boards, KingPair kings, Color stm) {
+            assert(m_network);
             assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
             assert(stm != Colors::kNone);
 
             ensureUpToDate(boards, kings);
 
             if constexpr (InputFeatureSet::kThreatInputs) {
-                return evaluate(m_curr->psqAcc, &m_curr->threatAcc[0], boards, stm);
+                return evaluate(*m_network, m_curr->psqAcc, &m_curr->threatAcc[0], boards, stm);
             } else {
-                return evaluate(m_curr->psqAcc, nullptr, boards, stm);
+                return evaluate(*m_network, m_curr->psqAcc, nullptr, boards, stm);
             }
         }
 
@@ -192,22 +208,24 @@ namespace stormphrax::eval {
             assert(kings.isValid());
             assert(stm != Colors::kNone);
 
+            const auto& network = *getNetwork(0);
+
             Accumulator psqAccumulator{};
 
-            psqAccumulator.initBoth(g_network.featureTransformer());
+            psqAccumulator.initBoth(network.featureTransformer());
 
-            resetPsqAccumulator(psqAccumulator, Colors::kBlack, boards, kings.black());
-            resetPsqAccumulator(psqAccumulator, Colors::kWhite, boards, kings.white());
+            resetPsqAccumulator(network, psqAccumulator, Colors::kBlack, boards, kings.black());
+            resetPsqAccumulator(network, psqAccumulator, Colors::kWhite, boards, kings.white());
 
             if constexpr (InputFeatureSet::kThreatInputs) {
                 Accumulator threatAccumulator{};
 
-                resetThreatAccumulator(threatAccumulator, Colors::kBlack, boards, kings.black());
-                resetThreatAccumulator(threatAccumulator, Colors::kWhite, boards, kings.white());
+                resetThreatAccumulator(network, threatAccumulator, Colors::kBlack, boards, kings.black());
+                resetThreatAccumulator(network, threatAccumulator, Colors::kWhite, boards, kings.white());
 
-                return evaluate(psqAccumulator, &threatAccumulator, boards, stm);
+                return evaluate(network, psqAccumulator, &threatAccumulator, boards, stm);
             } else {
-                return evaluate(psqAccumulator, nullptr, boards, stm);
+                return evaluate(network, psqAccumulator, nullptr, boards, stm);
             }
         }
 
@@ -217,7 +235,10 @@ namespace stormphrax::eval {
 
         RefreshTable m_refreshTable{};
 
+        const Network* m_network{};
+
         static inline void updatePsq(
+            const Network& network,
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             RefreshTable& refreshTable,
@@ -225,7 +246,7 @@ namespace stormphrax::eval {
             Color c
         ) {
             if (ctx.updates.requiresPsqRefresh(c)) {
-                refreshPsqAccumulator(curr, c, ctx.boards, refreshTable, ctx.kings.color(c));
+                refreshPsqAccumulator(network, curr, c, ctx.boards, refreshTable, ctx.kings.color(c));
                 return;
             }
 
@@ -246,7 +267,7 @@ namespace stormphrax::eval {
                 const auto sub = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece, subSquare, king);
                 const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
-                curr.psqAcc.subAddFrom(prev, g_network.featureTransformer(), c, sub, add);
+                curr.psqAcc.subAddFrom(prev, network.featureTransformer(), c, sub, add);
             } else if (addCount == 1 && subCount == 2) // any capture
             {
                 const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
@@ -257,7 +278,7 @@ namespace stormphrax::eval {
                 const auto sub1 = nnue::features::psq::featureIndex<InputFeatureSet>(c, subPiece1, subSquare1, king);
                 const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
-                curr.psqAcc.subSubAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add);
+                curr.psqAcc.subSubAddFrom(prev, network.featureTransformer(), c, sub0, sub1, add);
             } else if (addCount == 2 && subCount == 2) // castling
             {
                 const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
@@ -270,7 +291,7 @@ namespace stormphrax::eval {
                 const auto add0 = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece0, addSquare0, king);
                 const auto add1 = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece1, addSquare1, king);
 
-                curr.psqAcc.subSubAddAddFrom(prev, g_network.featureTransformer(), c, sub0, sub1, add0, add1);
+                curr.psqAcc.subSubAddAddFrom(prev, network.featureTransformer(), c, sub0, sub1, add0, add1);
             } else {
                 assert(false && "Materialising a piece from nowhere?");
             }
@@ -279,13 +300,14 @@ namespace stormphrax::eval {
         }
 
         static inline void updateThreat(
+            const Network& network,
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             const UpdateContext& ctx,
             Color c
         ) {
             if (ctx.updates.requiresThreatRefresh(c)) {
-                refreshThreatAccumulator(curr, c, ctx.boards, ctx.kings.color(c));
+                refreshThreatAccumulator(network, curr, c, ctx.boards, ctx.kings.color(c));
                 return;
             }
 
@@ -305,7 +327,7 @@ namespace stormphrax::eval {
                 if (feature >= nnue::features::threats::kTotalThreatFeatures) {
                     continue;
                 }
-                const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+                const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
                 for (i32 i = 0; i < kL1Size; ++i) {
                     acc[i] += start[i];
                 }
@@ -317,7 +339,7 @@ namespace stormphrax::eval {
                 if (feature >= nnue::features::threats::kTotalThreatFeatures) {
                     continue;
                 }
-                const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+                const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
                 for (i32 i = 0; i < kL1Size; ++i) {
                     acc[i] -= start[i];
                 }
@@ -327,25 +349,29 @@ namespace stormphrax::eval {
         }
 
         static inline void updateBothPsq(
+            const Network& network,
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             RefreshTable& refreshTable,
             const UpdateContext& ctx
         ) {
-            updatePsq(prev, curr, refreshTable, ctx, Colors::kBlack);
-            updatePsq(prev, curr, refreshTable, ctx, Colors::kWhite);
+            updatePsq(network, prev, curr, refreshTable, ctx, Colors::kBlack);
+            updatePsq(network, prev, curr, refreshTable, ctx, Colors::kWhite);
         }
 
         static inline void updateBothThreat(
+            const Network& network,
             const Accumulator& prev,
             UpdatableAccumulator& curr,
             const UpdateContext& ctx
         ) {
-            updateThreat(prev, curr, ctx, Colors::kBlack);
-            updateThreat(prev, curr, ctx, Colors::kWhite);
+            updateThreat(network, prev, curr, ctx, Colors::kBlack);
+            updateThreat(network, prev, curr, ctx, Colors::kWhite);
         }
 
         inline void ensureUpToDate(const PositionBoards& boards, KingPair kings) {
+            assert(m_network);
+
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 if (!m_curr->isPsqDirty(c)) {
                     continue;
@@ -353,7 +379,7 @@ namespace stormphrax::eval {
 
                 // if the current accumulator needs a refresh, just do it
                 if (m_curr->ctx.updates.requiresPsqRefresh(c)) {
-                    refreshPsqAccumulator(*m_curr, c, boards, m_refreshTable, kings.color(c));
+                    refreshPsqAccumulator(*m_network, *m_curr, c, boards, m_refreshTable, kings.color(c));
                     continue;
                 }
 
@@ -366,14 +392,14 @@ namespace stormphrax::eval {
 
                 // if the found accumulator requires a refresh, just give up and refresh the current one
                 if (curr->ctx.updates.requiresPsqRefresh(c)) {
-                    refreshPsqAccumulator(*m_curr, c, boards, m_refreshTable, kings.color(c));
+                    refreshPsqAccumulator(*m_network, *m_curr, c, boards, m_refreshTable, kings.color(c));
                 } else {
                     // otherwise go forward and incrementally update all accumulators in between
                     do {
                         const auto& prev = *curr;
 
                         ++curr;
-                        updatePsq(prev.psqAcc, *curr, m_refreshTable, curr->ctx, c);
+                        updatePsq(*m_network, prev.psqAcc, *curr, m_refreshTable, curr->ctx, c);
                     } while (curr != m_curr);
                 }
             }
@@ -386,7 +412,7 @@ namespace stormphrax::eval {
                     }
 
                     if (m_curr->ctx.updates.requiresThreatRefresh(c)) {
-                        refreshThreatAccumulator(*m_curr, c, boards, kings.color(c));
+                        refreshThreatAccumulator(*m_network, *m_curr, c, boards, kings.color(c));
                         continue;
                     }
 
@@ -396,13 +422,13 @@ namespace stormphrax::eval {
                     assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresThreatRefresh(c));
 
                     if (curr->ctx.updates.requiresThreatRefresh(c)) {
-                        refreshThreatAccumulator(*m_curr, c, boards, kings.color(c));
+                        refreshThreatAccumulator(*m_network, *m_curr, c, boards, kings.color(c));
                     } else {
                         do {
                             const auto& prev = *curr;
 
                             ++curr;
-                            updateThreat(prev.threatAcc[0], *curr, curr->ctx, c);
+                            updateThreat(*m_network, prev.threatAcc[0], *curr, curr->ctx, c);
                         } while (curr != m_curr);
                     }
                 }
@@ -410,6 +436,7 @@ namespace stormphrax::eval {
         }
 
         [[nodiscard]] static inline i32 evaluate(
+            const Network& network,
             const Accumulator& psqAccumulator,
             const Accumulator* threatAccumulator,
             const PositionBoards& boards,
@@ -417,14 +444,14 @@ namespace stormphrax::eval {
         ) {
             assert(stm != Colors::kNone);
             if constexpr (InputFeatureSet::kThreatInputs) {
-                return stm == Colors::kBlack ? g_network.propagate(
+                return stm == Colors::kBlack ? network.propagate(
                                                    boards.bbs(),
                                                    psqAccumulator.black(),
                                                    psqAccumulator.white(),
                                                    threatAccumulator->black(),
                                                    threatAccumulator->white()
                                                )[0]
-                                             : g_network.propagate(
+                                             : network.propagate(
                                                    boards.bbs(),
                                                    psqAccumulator.white(),
                                                    psqAccumulator.black(),
@@ -433,14 +460,14 @@ namespace stormphrax::eval {
                                                )[0];
             } else {
                 // just pass the psq accumulators again, they're unused
-                return stm == Colors::kBlack ? g_network.propagate(
+                return stm == Colors::kBlack ? network.propagate(
                                                    boards.bbs(),
                                                    psqAccumulator.black(),
                                                    psqAccumulator.white(),
                                                    psqAccumulator.black(),
                                                    psqAccumulator.white()
                                                )[0]
-                                             : g_network.propagate(
+                                             : network.propagate(
                                                    boards.bbs(),
                                                    psqAccumulator.white(),
                                                    psqAccumulator.black(),
@@ -451,6 +478,7 @@ namespace stormphrax::eval {
         }
 
         static inline void refreshPsqAccumulator(
+            const Network& network,
             UpdatableAccumulator& accumulator,
             Color c,
             const PositionBoards& boards,
@@ -492,12 +520,12 @@ namespace stormphrax::eval {
                 const auto add1 = adds.pop();
                 const auto add2 = adds.pop();
                 const auto add3 = adds.pop();
-                rtEntry.accumulator.activateFourFeatures(g_network.featureTransformer(), c, add0, add1, add2, add3);
+                rtEntry.accumulator.activateFourFeatures(network.featureTransformer(), c, add0, add1, add2, add3);
             }
 
             while (adds.size() >= 1) {
                 const auto add = adds.pop();
-                rtEntry.accumulator.activateFeature(g_network.featureTransformer(), c, add);
+                rtEntry.accumulator.activateFeature(network.featureTransformer(), c, add);
             }
 
             while (subs.size() >= 4) {
@@ -505,12 +533,12 @@ namespace stormphrax::eval {
                 const auto sub1 = subs.pop();
                 const auto sub2 = subs.pop();
                 const auto sub3 = subs.pop();
-                rtEntry.accumulator.deactivateFourFeatures(g_network.featureTransformer(), c, sub0, sub1, sub2, sub3);
+                rtEntry.accumulator.deactivateFourFeatures(network.featureTransformer(), c, sub0, sub1, sub2, sub3);
             }
 
             while (subs.size() >= 1) {
                 const auto sub = subs.pop();
-                rtEntry.accumulator.deactivateFeature(g_network.featureTransformer(), c, sub);
+                rtEntry.accumulator.deactivateFeature(network.featureTransformer(), c, sub);
             }
 
             accumulator.psqAcc.copyFrom(c, rtEntry.accumulator);
@@ -520,18 +548,20 @@ namespace stormphrax::eval {
         }
 
         static inline void refreshThreatAccumulator(
+            const Network& network,
             UpdatableAccumulator& accumulator,
             Color c,
             const PositionBoards& boards,
             Square king
         ) {
             if constexpr (InputFeatureSet::kThreatInputs) {
-                resetThreatAccumulator(accumulator.threatAcc[0], c, boards, king);
+                resetThreatAccumulator(network, accumulator.threatAcc[0], c, boards, king);
                 accumulator.setThreatUpdated(c);
             }
         }
 
         static inline void resetPsqAccumulator(
+            const Network& network,
             Accumulator& accumulator,
             Color c,
             const PositionBoards& boards,
@@ -550,12 +580,13 @@ namespace stormphrax::eval {
                     const auto sq = board.popLowestSquare();
 
                     const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
-                    accumulator.activateFeature(g_network.featureTransformer(), c, feature);
+                    accumulator.activateFeature(network.featureTransformer(), c, feature);
                 }
             }
         }
 
         static inline void resetThreatAccumulator(
+            const Network& network,
             Accumulator& accumulator,
             Color c,
             const PositionBoards& boards,
@@ -566,7 +597,7 @@ namespace stormphrax::eval {
 
             if constexpr (InputFeatureSet::kThreatInputs) {
                 accumulator.clear(c);
-                addThreatFeatures(accumulator.forColor(c), c, boards, king);
+                addThreatFeatures(network, accumulator.forColor(c), c, boards, king);
             }
         }
     };

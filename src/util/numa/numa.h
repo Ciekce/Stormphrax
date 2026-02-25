@@ -26,6 +26,8 @@
 #ifdef SP_USE_LIBNUMA
     #include <numa.h>
     #include <sched.h>
+#else
+    #include "../align.h"
 #endif
 
 namespace stormphrax::numa {
@@ -38,12 +40,13 @@ namespace stormphrax::numa {
     template <typename T>
     class NumaUniqueAllocation {
     public:
-        NumaUniqueAllocation();
+        explicit NumaUniqueAllocation(usize count = 1);
         ~NumaUniqueAllocation();
 
         [[nodiscard]] T* get(u32 threadId);
 
     private:
+        usize m_count;
         std::vector<T*> m_data{};
     };
 
@@ -52,21 +55,26 @@ namespace stormphrax::numa {
     [[nodiscard]] i32 getNode(u32 threadId);
 
     template <typename T>
-    NumaUniqueAllocation<T>::NumaUniqueAllocation() {
-        const auto count = nodeCount();
-        m_data.reserve(count);
-        for (i32 node = 0; node < count; ++node) {
-            auto* storage = numa_alloc_onnode(sizeof(T), node);
-            auto* v = new (storage) T();
-            m_data.push_back(v);
+    NumaUniqueAllocation<T>::NumaUniqueAllocation(usize count) :
+            m_count{count} {
+        const auto nodes = nodeCount();
+        m_data.reserve(nodes);
+        for (i32 node = 0; node < nodes; ++node) {
+            auto* ptr = static_cast<T*>(numa_alloc_onnode(sizeof(T) * count, node));
+            for (usize i = 0; i < count; ++i) {
+                new (&ptr[i]) T;
+            }
+            m_data.push_back(ptr);
         }
     }
 
     template <typename T>
     NumaUniqueAllocation<T>::~NumaUniqueAllocation() {
-        for (auto* v : m_data) {
-            v->~T();
-            numa_free(v, sizeof(T));
+        for (auto* ptr : m_data) {
+            for (usize i = 0; i < m_count; ++i) {
+                ptr[i].~T();
+            }
+            numa_free(ptr, sizeof(T) * m_count);
         }
         m_data.clear();
     }
@@ -78,16 +86,25 @@ namespace stormphrax::numa {
     }
 #else
     template <typename T>
-    NumaUniqueAllocation<T>::NumaUniqueAllocation() {
+    NumaUniqueAllocation<T>::NumaUniqueAllocation(usize count) :
+            m_count{count} {
         m_data.reserve(1);
-        m_data.push_back(new T());
+        auto* ptr = util::alignedAlloc<T>(4096, count);
+        for (usize i = 0; i < count; ++i) {
+            new (&ptr[i]) T;
+        }
+        m_data.push_back(ptr);
     }
 
     template <typename T>
     NumaUniqueAllocation<T>::~NumaUniqueAllocation() {
-        for (const auto* v : m_data) {
-            delete v;
+        for (auto* v : m_data) {
+            for (usize i = 0; i < m_count; ++i) {
+                v[i].~T();
+            }
+            util::alignedFree(v);
         }
+        m_count = 0;
         m_data.clear();
     }
 

@@ -32,7 +32,7 @@
 #include "../../util/simd.h"
 #include "features/psq.h"
 #include "features/threats.h"
-#include "io.h"
+#include "loader.h"
 
 namespace stormphrax::eval::nnue {
     template <typename Ft>
@@ -354,16 +354,18 @@ namespace stormphrax::eval::nnue {
         static_assert(kPsqInputCount > 0);
         static_assert(kOutputCount > 0);
 
-        SP_SIMD_ALIGNAS std::array<PsqWeightType, kPsqWeightCount> psqWeights;
-        SP_SIMD_ALIGNAS std::array<ThreatWeightType, kThreatWeightCount> threatWeights;
-        SP_SIMD_ALIGNAS std::array<OutputType, kBiasCount> biases;
+        SP_NETWORK_PARAMS(PsqWeightType, kPsqWeightCount, psqWeights);
+        SP_NETWORK_PARAMS(ThreatWeightType, kThreatWeightCount, threatWeights);
+        SP_NETWORK_PARAMS(OutputType, kBiasCount, biases);
 
-        inline bool readFrom(IParamStream& stream) {
-            return stream.read(psqWeights) && stream.read(threatWeights) && stream.read(biases);
+        inline bool loadFrom(NetworkLoader& loader) {
+            return loader.load(psqWeights) && loader.load(threatWeights) && loader.load(biases);
         }
 
-        inline bool writeTo(IParamStream& stream) const {
-            return stream.write(psqWeights) && stream.read(threatWeights) && stream.write(biases);
+        [[nodiscard]] static inline usize byteSize() {
+            return sizeof(PsqWeightType) * kPsqWeightCount       //
+                 + sizeof(ThreatWeightType) * kThreatWeightCount //
+                 + sizeof(OutputType) * kBiasCount;
         }
     };
 } // namespace stormphrax::eval::nnue

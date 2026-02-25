@@ -28,7 +28,7 @@
 
 #include "../../../util/multi_array.h"
 #include "../../../util/simd.h"
-#include "../io.h"
+#include "../loader.h"
 #include "../output.h"
 #include "util/sparse.h"
 
@@ -66,14 +66,23 @@ namespace stormphrax::eval::nnue::arch {
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
-        SP_SIMD_ALIGNAS std::array<i8, kOutputBucketCount * kL1Size * kL2Size> l1Weights{};
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL2Size> l1Biases{};
+        static constexpr usize kL1WeightCount = kOutputBucketCount * kL1Size * kL2Size;
+        static constexpr usize kL1BiasCount = kOutputBucketCount * kL2Size;
 
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL2SizeFull * kL3Size> l2Weights{};
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL3Size> l2Biases{};
+        static constexpr usize kL2WeightCount = kOutputBucketCount * kL2SizeFull * kL3Size;
+        static constexpr usize kL2BiasCount = kOutputBucketCount * kL3Size;
 
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount * kL3Size> l3Weights{};
-        SP_SIMD_ALIGNAS std::array<i32, kOutputBucketCount> l3Biases{};
+        static constexpr usize kL3WeightCount = kOutputBucketCount * kL3Size;
+        static constexpr usize kL3BiasCount = kOutputBucketCount;
+
+        SP_NETWORK_PARAMS(i8, kL1WeightCount, l1Weights);
+        SP_NETWORK_PARAMS(i32, kL1BiasCount, l1Biases);
+
+        SP_NETWORK_PARAMS(i32, kL2WeightCount, l2Weights);
+        SP_NETWORK_PARAMS(i32, kL2BiasCount, l2Biases);
+
+        SP_NETWORK_PARAMS(i32, kL3WeightCount, l3Weights);
+        SP_NETWORK_PARAMS(i32, kL3BiasCount, l3Biases);
 
         static constexpr i32 kQuantBits = 6;
         static constexpr i32 kQ = 1 << kQuantBits;
@@ -430,18 +439,24 @@ namespace stormphrax::eval::nnue::arch {
             outputs[0] = l3Out[0] * kScale / (kQ * kQ * kQ);
         }
 
-        inline bool readFrom(IParamStream& stream) {
-            return stream.read(l1Weights) && stream.read(l1Biases) && stream.read(l2Weights) && stream.read(l2Biases)
-                && stream.read(l3Weights) && stream.read(l3Biases);
+        inline bool loadFrom(NetworkLoader& loader) {
+            return loader.load(l1Weights) && loader.load(l1Biases) //
+                && loader.load(l2Weights) && loader.load(l2Biases) //
+                && loader.load(l3Weights) && loader.load(l3Biases);
         }
 
-        inline bool writeTo(IParamStream& stream) const {
-            return stream.write(l1Weights) && stream.write(l1Biases) && stream.write(l2Weights)
-                && stream.write(l2Biases) && stream.write(l3Weights) && stream.write(l3Biases);
+        [[nodiscard]] static inline usize byteSize() {
+            return sizeof(i8) * kL1WeightCount + sizeof(i32) * kL1BiasCount  //
+                 + sizeof(i32) * kL2WeightCount + sizeof(i32) * kL2BiasCount //
+                 + sizeof(i32) * kL3WeightCount + sizeof(i32) * kL3BiasCount;
         }
 
         template <typename W, typename T, typename B>
-        static inline void permuteFt(std::span<W> psqWeights, std::span<T> threatWeights, std::span<B> biases) {
+        static inline void permuteFt(
+            std::span<const W> psqWeights,
+            std::span<const T> threatWeights,
+            std::span<const B> biases
+        ) {
             using namespace util::simd;
 
             if constexpr (!kPackNonSequential) {
@@ -451,7 +466,7 @@ namespace stormphrax::eval::nnue::arch {
             static constexpr usize kPackSize = kPackOrdering.size();
             static constexpr usize kChunkSize = kPackSize * kPackGrouping;
 
-            const auto permute = [&]<typename P, usize kN>(std::span<P, kN> values) {
+            const auto permute = [&]<typename P>(std::span<P> values) {
                 util::MultiArray<P, kPackSize, kPackGrouping> tmp;
 
                 for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
@@ -463,9 +478,15 @@ namespace stormphrax::eval::nnue::arch {
                 }
             };
 
-            permute(psqWeights);
-            permute(threatWeights);
-            permute(biases);
+            // These values are always safe to modify, because uncompressed embedded nets are assumed to be
+            //  pre-permuted, and so this function will only be called with a decompressed or external net
+            const auto deconst = []<typename P>(std::span<const P> values) {
+                return std::span<P>{const_cast<P*>(values.data()), values.size()};
+            };
+
+            permute(deconst(psqWeights));
+            permute(deconst(threatWeights));
+            permute(deconst(biases));
         }
     };
 } // namespace stormphrax::eval::nnue::arch

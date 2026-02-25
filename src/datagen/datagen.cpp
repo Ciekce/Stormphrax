@@ -314,6 +314,11 @@ namespace stormphrax::datagen {
         i32 threads,
         std::optional<std::string_view> tbPath
     ) {
+        if (!eval::isNetworkLoaded()) {
+            eprintln("No network loaded");
+            return 1;
+        }
+
         std::function<decltype(runThread<Marlinformat>)> threadFunc{};
 
         if (format == "marlinformat") {
