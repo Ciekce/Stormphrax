@@ -98,11 +98,11 @@ namespace stormphrax::numa {
 
     template <typename T>
     NumaUniqueAllocation<T>::~NumaUniqueAllocation() {
-        for (auto* v : m_data) {
+        for (auto* ptr : m_data) {
             for (usize i = 0; i < m_count; ++i) {
-                v[i].~T();
+                ptr[i].~T();
             }
-            util::alignedFree(v);
+            util::alignedFree(ptr);
         }
         m_count = 0;
         m_data.clear();
