@@ -345,6 +345,7 @@ namespace stormphrax::search {
         auto& thread = *m_threadData[threadId];
 
         thread.id = threadId;
+        thread.nnueState.setNetwork(eval::getNetwork(threadId));
         thread.correctionHistory = m_corrhists.get(threadId);
 
         m_initBarrier.arriveAndWait();
