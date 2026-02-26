@@ -151,8 +151,8 @@ namespace stormphrax {
         }
 
         if (!move) {
-            newPos.m_pinned = newPos.calcPinned();
-            newPos.m_threats = newPos.calcThreats();
+            newPos.calcPinned();
+            newPos.calcThreats();
 
             return newPos;
         }
@@ -209,9 +209,9 @@ namespace stormphrax {
             newPos.m_keys.switchCastling(m_castlingRooks, newPos.m_castlingRooks);
         }
 
-        newPos.m_checkers = newPos.calcCheckers();
-        newPos.m_pinned = newPos.calcPinned();
-        newPos.m_threats = newPos.calcThreats();
+        newPos.calcCheckers();
+        newPos.calcPinned();
+        newPos.calcThreats();
 
         newPos.filterEp(nstm);
 
@@ -826,9 +826,9 @@ namespace stormphrax {
             m_keys.flipStm();
         }
 
-        m_checkers = calcCheckers();
-        m_pinned = calcPinned();
-        m_threats = calcThreats();
+        calcCheckers();
+        calcPinned();
+        calcThreats();
 
         filterEp(stm());
     }

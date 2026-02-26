@@ -474,50 +474,48 @@ namespace stormphrax {
         template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
-        [[nodiscard]] inline Bitboard calcCheckers() const {
+        inline void calcCheckers() {
             const auto color = stm();
-            return attackersTo(m_kings.color(color), color.flip());
+            m_checkers = attackersTo(m_kings.color(color), color.flip());
         }
 
-        [[nodiscard]] inline Bitboard calcPinned(Color c) const {
-            Bitboard pinned{};
+        inline void calcPinned() {
+            m_pinned = {};
 
-            const auto king = m_kings.color(c);
-            const auto opponent = c.flip();
+            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+                auto& pinned = m_pinned[c.idx()];
 
-            const auto& bbs = m_boards.bbs();
+                const auto king = m_kings.color(c);
+                const auto opponent = c.flip();
 
-            const auto ourOcc = bbs.occupancy(c);
-            const auto oppOcc = bbs.occupancy(opponent);
+                const auto& bbs = m_boards.bbs();
 
-            const auto oppQueens = bbs.queens(opponent);
+                const auto ourOcc = bbs.occupancy(c);
+                const auto oppOcc = bbs.occupancy(opponent);
 
-            auto potentialAttackers = attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
-                                    | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
+                const auto oppQueens = bbs.queens(opponent);
 
-            while (potentialAttackers) {
-                const auto potentialAttacker = potentialAttackers.popLowestSquare();
-                const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
+                auto potentialAttackers = attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
+                                        | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
 
-                if (maybePinned.one()) {
-                    pinned |= maybePinned;
+                while (potentialAttackers) {
+                    const auto potentialAttacker = potentialAttackers.popLowestSquare();
+                    const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
+
+                    if (maybePinned.one()) {
+                        pinned |= maybePinned;
+                    }
                 }
             }
-
-            return pinned;
         }
 
-        [[nodiscard]] inline std::array<Bitboard, 2> calcPinned() const {
-            return {calcPinned(Colors::kBlack), calcPinned(Colors::kWhite)};
-        }
-
-        [[nodiscard]] inline Bitboard calcThreats() const {
+        inline void calcThreats() {
             const auto us = stm();
             const auto them = us.flip();
 
             const auto& bbs = m_boards.bbs();
 
-            Bitboard threats{};
+            m_threats = Bitboard{};
 
             const auto occ = bbs.occupancy();
 
@@ -526,31 +524,29 @@ namespace stormphrax {
             auto rooks = queens | bbs.rooks(them);
             while (rooks) {
                 const auto rook = rooks.popLowestSquare();
-                threats |= attacks::getRookAttacks(rook, occ);
+                m_threats |= attacks::getRookAttacks(rook, occ);
             }
 
             auto bishops = queens | bbs.bishops(them);
             while (bishops) {
                 const auto bishop = bishops.popLowestSquare();
-                threats |= attacks::getBishopAttacks(bishop, occ);
+                m_threats |= attacks::getBishopAttacks(bishop, occ);
             }
 
             auto knights = bbs.knights(them);
             while (knights) {
                 const auto knight = knights.popLowestSquare();
-                threats |= attacks::getKnightAttacks(knight);
+                m_threats |= attacks::getKnightAttacks(knight);
             }
 
             const auto pawns = bbs.pawns(them);
             if (them == Colors::kBlack) {
-                threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
+                m_threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
             } else {
-                threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
+                m_threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
             }
 
-            threats |= attacks::getKingAttacks(m_kings.color(them));
-
-            return threats;
+            m_threats |= attacks::getKingAttacks(m_kings.color(them));
         }
 
         // Unsets ep squares if they are invalid (no pawn is able to capture)
