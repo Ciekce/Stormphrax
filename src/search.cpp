@@ -1012,13 +1012,13 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
 
-                    if (!kPvNode && parent->rawReduction > r + 64) {
-                        r += 16;
-                    }
-
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
                         r -= lmrHighComplexityReductionScale() * highComplexity;
+                    }
+
+                    if (!kPvNode && parent->rawReduction > r + 64) {
+                        r += 16;
                     }
 
                     // can't use std::clamp because newDepth can be <0
