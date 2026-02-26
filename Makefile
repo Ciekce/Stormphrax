@@ -169,7 +169,7 @@ EVALFILE_NAME := $(notdir $(EVALFILE))
 # ========================================== native ==========================================
 
 tmp/permute-native: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) -o tmp/permute-native $(filter-out $<,$^)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o tmp/permute-native $(filter-out $<,$^)
 
 tmp/$(EVALFILE_NAME)_permuted_native: $(EVALFILE) tmp/permute-native
 	tmp/permute-native $< $@
@@ -188,7 +188,7 @@ sanitizer: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLAC
 # ========================================== avx512 ==========================================
 
 tmp/permute-avx512: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
 	tmp/permute-avx512 $< $@
@@ -199,7 +199,7 @@ avx512: tmp/$(EVALFILE_NAME)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
 # ========================================== avx2-bmi2 ==========================================
 
 tmp/permute-avx2-bmi2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
 	tmp/permute-avx2-bmi2 $< $@
@@ -210,7 +210,7 @@ avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_B
 # ========================================== avx2 ==========================================
 
 tmp/permute-avx2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
 	tmp/permute-avx2 $< $@
@@ -221,7 +221,7 @@ avx2: tmp/$(EVALFILE_NAME)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC
 # ========================================== armv8_4 ==========================================
 
 tmp/permute-armv8-4: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
 	tmp/permute-armv8-4 $< $@
