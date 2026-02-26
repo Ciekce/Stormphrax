@@ -321,16 +321,17 @@ namespace stormphrax::eval {
 
             auto acc = curr.threatAcc[0].forColor(c);
 
+            usize addIndex = 0, subIndex = 0;
+            StaticVector<u32, nnue::features::threats::kMaxThreatsAdded> addFeatures;
+            StaticVector<u32, nnue::features::threats::kMaxThreatsAdded> subFeatures;
+
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
                 const auto feature =
                     nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
                 if (feature >= nnue::features::threats::kTotalThreatFeatures) {
                     continue;
                 }
-                const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
-                for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] += start[i];
-                }
+                addFeatures.push(feature);
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
@@ -339,9 +340,33 @@ namespace stormphrax::eval {
                 if (feature >= nnue::features::threats::kTotalThreatFeatures) {
                     continue;
                 }
-                const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
+                subFeatures.push(feature);
+            }
+
+            while (addIndex < addFeatures.size() && subIndex < subFeatures.size()) {
+                const auto addFeature = addFeatures[addIndex++];
+                const auto subFeature = subFeatures[subIndex++];
+                const auto* add = &network.featureTransformer().threatWeights[addFeature * kL1Size];
+                const auto* sub = &network.featureTransformer().threatWeights[subFeature * kL1Size];
                 for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] -= start[i];
+                    acc[i] += add[i];
+                    acc[i] -= sub[i];
+                }
+            }
+
+            while (addIndex < addFeatures.size()) {
+                const auto addFeature = addFeatures[addIndex++];
+                const auto* add = &network.featureTransformer().threatWeights[addFeature * kL1Size];
+                for (i32 i = 0; i < kL1Size; ++i) {
+                    acc[i] += add[i];
+                }
+            }
+
+            while (subIndex < subFeatures.size()) {
+                const auto subFeature = subFeatures[subIndex++];
+                const auto* sub = &network.featureTransformer().threatWeights[subFeature * kL1Size];
+                for (i32 i = 0; i < kL1Size; ++i) {
+                    acc[i] -= sub[i];
                 }
             }
 
