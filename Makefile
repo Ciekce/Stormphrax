@@ -164,23 +164,25 @@ endif
 tmp:
 	mkdir tmp
 
+EVALFILE_NAME := $(notdir $(EVALFILE))
+
 # ========================================== native ==========================================
 
 tmp/permute-native: tmp $(SOURCES_PERMUTE)
 	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) -o tmp/permute-native $(filter-out $<,$^)
 
-tmp/$(EVALFILE)_permuted_native: $(EVALFILE) tmp/permute-native
+tmp/$(EVALFILE_NAME)_permuted_native: $(EVALFILE) tmp/permute-native
 	tmp/permute-native $< $@
 
-$(EXE): tmp/$(EVALFILE)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+$(EXE): tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,NATIVE,native)
 
 native: $(EXE)
 
-tunable: tmp/$(EVALFILE)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+tunable: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,TUNABLE,tunable)
 
-sanitizer: tmp/$(EVALFILE)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+sanitizer: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,SANITIZER,NATIVE,native)
 
 # ========================================== avx512 ==========================================
@@ -188,10 +190,10 @@ sanitizer: tmp/$(EVALFILE)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAG
 tmp/permute-avx512: tmp $(SOURCES_PERMUTE)
 	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
+tmp/$(EVALFILE_NAME)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
 	tmp/permute-avx512 $< $@
 
-avx512: tmp/$(EVALFILE)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
+avx512: tmp/$(EVALFILE_NAME)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX512,avx512)
 
 # ========================================== avx2-bmi2 ==========================================
@@ -199,10 +201,10 @@ avx512: tmp/$(EVALFILE)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
 tmp/permute-avx2-bmi2: tmp $(SOURCES_PERMUTE)
 	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
+tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
 	tmp/permute-avx2-bmi2 $< $@
 
-avx2-bmi2: tmp/$(EVALFILE)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
+avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
 
 # ========================================== avx2 ==========================================
@@ -210,10 +212,10 @@ avx2-bmi2: tmp/$(EVALFILE)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
 tmp/permute-avx2: tmp $(SOURCES_PERMUTE)
 	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
+tmp/$(EVALFILE_NAME)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
 	tmp/permute-avx2 $< $@
 
-avx2: tmp/$(EVALFILE)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+avx2: tmp/$(EVALFILE_NAME)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,RELEASE,AVX2,avx2)
 
 # ========================================== armv8_4 ==========================================
@@ -221,10 +223,10 @@ avx2: tmp/$(EVALFILE)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 tmp/permute-armv8-4: tmp $(SOURCES_PERMUTE)
 	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
+tmp/$(EVALFILE_NAME)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
 	tmp/permute-armv8-4 $< $@
 
-armv8_4: tmp/$(EVALFILE)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+armv8_4: tmp/$(EVALFILE_NAME)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 clean:
