@@ -1012,6 +1012,10 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
 
+                    if (!kPvNode && parent->rawReduction > r + 64) {
+                        r += 16;
+                    }
+
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
                         r -= lmrHighComplexityReductionScale() * highComplexity;
@@ -1021,9 +1025,13 @@ namespace stormphrax::search {
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
 
+                    curr.rawReduction = r;
                     curr.reduction = newDepth - reduced;
+
                     score =
                         -search(thread, newPos, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
+
+                    curr.rawReduction = 0;
                     curr.reduction = 0;
 
                     if (score > alpha && reduced < newDepth) {
