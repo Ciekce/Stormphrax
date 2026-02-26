@@ -27,23 +27,24 @@ COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 USE_LIBNUMA = off
 
-SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/io_impl.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp src/limit.cpp src/util/numa/numa_fallback.cpp src/util/numa/numa_libnuma.cpp src/eval/nnue/features/threats.cpp
+SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/loader.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp src/limit.cpp src/util/numa/numa_fallback.cpp src/util/numa/numa_libnuma.cpp src/eval/nnue/features/threats.cpp
 SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
 SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
+SOURCES_PERMUTE := preprocess/permute.cpp src/3rdparty/fmt/src/format.cc
 
 SUFFIX :=
 
 CXX := clang++
 
 # disable -Wunused-function and -Wunused-const-variable for zstd
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -fconstexpr-steps=2097152 -DSP_NETWORK_FILE=\"$(EVALFILE)\" -DSP_VERSION=$(VERSION)
+CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -fconstexpr-steps=2097152 -DSP_VERSION=$(VERSION)
 
 CXXFLAGS_RELEASE := -O3 -DNDEBUG
 CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
 
 CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=skylake-avx512 -mtune=znver4
+CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
 CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
@@ -131,15 +132,15 @@ PROFILE_OUT = sp_profile$(SUFFIX)
 
 ifneq ($(PGO),on)
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $<,$^)
 endef
 else
 define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $<,$^)
     ./$(PROFILE_OUT) bench
     $(RM) $(PROFILE_OUT)
     $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $(EVALFILE),$^)
+    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $<,$^)
     $(RM) *.profraw
     $(RM) sp.profdata
 endef
@@ -160,28 +161,73 @@ $(EVALFILE):
 download-net: $(EVALFILE)
 endif
 
-$(EXE): $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+tmp:
+	mkdir tmp
+
+EVALFILE_NAME := $(notdir $(EVALFILE))
+
+# ========================================== native ==========================================
+
+tmp/permute-native: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) -o tmp/permute-native $(filter-out $<,$^)
+
+tmp/$(EVALFILE_NAME)_permuted_native: $(EVALFILE) tmp/permute-native
+	tmp/permute-native $< $@
+
+$(EXE): tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,NATIVE,native)
 
 native: $(EXE)
 
-tunable: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+tunable: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
 	$(call build,RELEASE,TUNABLE,tunable)
 
-avx512: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+sanitizer: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
+	$(call build,SANITIZER,NATIVE,native)
+
+# ========================================== avx512 ==========================================
+
+tmp/permute-avx512: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+
+tmp/$(EVALFILE_NAME)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
+	tmp/permute-avx512 $< $@
+
+avx512: tmp/$(EVALFILE_NAME)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX512,avx512)
 
-avx2-bmi2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BMI2)
+# ========================================== avx2-bmi2 ==========================================
+
+tmp/permute-avx2-bmi2: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+
+tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
+	tmp/permute-avx2-bmi2 $< $@
+
+avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
 
-avx2: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+# ========================================== avx2 ==========================================
+
+tmp/permute-avx2: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+
+tmp/$(EVALFILE_NAME)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
+	tmp/permute-avx2 $< $@
+
+avx2: tmp/$(EVALFILE_NAME)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
 	$(call build,RELEASE,AVX2,avx2)
 
-armv8_4: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,RELEASE,ARMV8_4,armv8_4)
+# ========================================== armv8_4 ==========================================
 
-sanitizer: $(EVALFILE) $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,SANITIZER,NATIVE,native)
+tmp/permute-armv8-4: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+
+tmp/$(EVALFILE_NAME)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
+	tmp/permute-armv8-4 $< $@
+
+armv8_4: tmp/$(EVALFILE_NAME)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 clean:
 

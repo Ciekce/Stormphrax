@@ -263,7 +263,6 @@ namespace stormphrax {
                 search::kSyzygyProbeLimitRange.max()
             );
             println("option name SyzygyProbeRootOnly type check default {}", defaultOpts.syzygyProbeRootOnly);
-            println("option name EvalFile type string default <internal>");
 
 #if SP_EXTERNAL_TUNE
             for (const auto& param : tunableParams()) {
@@ -386,6 +385,11 @@ namespace stormphrax {
         }
 
         void UciHandler::handleGo(std::span<const std::string_view> args, Instant startTime) {
+            if (!eval::isNetworkLoaded()) {
+                eprintln("No network loaded");
+                return;
+            }
+
             if (m_searcher.searching()) {
                 eprintln("already searching");
                 return;
@@ -781,15 +785,6 @@ namespace stormphrax {
                     if (!value.empty()) {
                         if (const auto newSyzygyProbeRootOnly = util::tryParseBool(value)) {
                             opts::mutableOpts().syzygyProbeRootOnly = *newSyzygyProbeRootOnly;
-                        }
-                    }
-                } else if (name == "evalfile") {
-                    if (!value.empty()) {
-                        if (value == "<internal>") {
-                            eval::loadDefaultNetwork();
-                            println("info string loaded embedded network {}", eval::defaultNetworkName());
-                        } else {
-                            eval::loadNetwork(value);
                         }
                     }
                 }
