@@ -149,7 +149,7 @@ namespace stormphrax::eval {
 
             m_refreshTable.init(m_network->featureTransformer());
 
-            m_curr = &m_accumulatorStack[0];
+            m_top = &m_accumulatorStack[0];
 
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 const auto king = kings.color(c);
@@ -158,36 +158,36 @@ namespace stormphrax::eval {
                 auto& rtEntry = m_refreshTable.table[entry];
                 resetPsqAccumulator(*m_network, rtEntry.accumulator, c, boards, king);
 
-                m_curr->psqAcc.copyFrom(c, rtEntry.accumulator);
+                m_top->psqAcc.copyFrom(c, rtEntry.accumulator);
                 rtEntry.colorBbs(c) = boards.bbs();
 
                 if constexpr (InputFeatureSet::kThreatInputs) {
-                    resetThreatAccumulator(*m_network, m_curr->threatAcc[0], c, boards, king);
+                    resetThreatAccumulator(*m_network, m_top->threatAcc[0], c, boards, king);
                 }
             }
         }
 
         inline BoardObserver push() {
-            ++m_curr;
+            ++m_top;
 
-            m_curr->ctx = {};
-            m_curr->setPsqDirty();
-            m_curr->setThreatDirty();
+            m_top->ctx = {};
+            m_top->setPsqDirty();
+            m_top->setThreatDirty();
 
-            return BoardObserver{m_curr->ctx};
+            return BoardObserver{m_top->ctx};
         }
 
         inline void applyImmediately(const UpdateContext& ctx) {
             assert(m_network);
-            updateBothPsq(*m_network, m_curr->psqAcc, *m_curr, m_refreshTable, ctx);
+            updateBothPsq(*m_network, m_top->psqAcc, *m_top, m_refreshTable, ctx);
             if constexpr (InputFeatureSet::kThreatInputs) {
-                updateBothThreat(*m_network, m_curr->threatAcc[0], *m_curr, ctx);
+                updateBothThreat(*m_network, m_top->threatAcc[0], *m_top, ctx);
             }
         }
 
         inline void pop() {
             assert(m_curr > &m_accumulatorStack[0]);
-            --m_curr;
+            --m_top;
         }
 
         [[nodiscard]] inline i32 evaluate(const PositionBoards& boards, KingPair kings, Color stm) {
@@ -198,9 +198,9 @@ namespace stormphrax::eval {
             ensureUpToDate(boards, kings);
 
             if constexpr (InputFeatureSet::kThreatInputs) {
-                return evaluate(*m_network, m_curr->psqAcc, &m_curr->threatAcc[0], boards, stm);
+                return evaluate(*m_network, m_top->psqAcc, &m_top->threatAcc[0], boards, stm);
             } else {
-                return evaluate(*m_network, m_curr->psqAcc, nullptr, boards, stm);
+                return evaluate(*m_network, m_top->psqAcc, nullptr, boards, stm);
             }
         }
 
@@ -231,7 +231,7 @@ namespace stormphrax::eval {
 
     private:
         std::vector<UpdatableAccumulator> m_accumulatorStack{};
-        UpdatableAccumulator* m_curr{};
+        UpdatableAccumulator* m_top{};
 
         RefreshTable m_refreshTable{};
 
@@ -373,63 +373,59 @@ namespace stormphrax::eval {
             assert(m_network);
 
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
-                if (!m_curr->isPsqDirty(c)) {
+                if (!m_top->isPsqDirty(c)) {
                     continue;
                 }
 
                 // if the current accumulator needs a refresh, just do it
-                if (m_curr->ctx.updates.requiresPsqRefresh(c)) {
-                    refreshPsqAccumulator(*m_network, *m_curr, c, boards, m_refreshTable, kings.color(c));
+                if (m_top->ctx.updates.requiresPsqRefresh(c)) {
+                    refreshPsqAccumulator(*m_network, *m_top, c, boards, m_refreshTable, kings.color(c));
                     continue;
                 }
 
                 // scan back to the last non-dirty accumulator, or an accumulator that requires a refresh.
                 // root accumulator is always up-to-date
-                auto* curr = m_curr - 1;
+                auto* curr = m_top - 1;
                 for (; curr->isPsqDirty(c) && !curr->ctx.updates.requiresPsqRefresh(c); --curr) {}
 
                 assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresPsqRefresh(c));
 
                 // if the found accumulator requires a refresh, just give up and refresh the current one
                 if (curr->ctx.updates.requiresPsqRefresh(c)) {
-                    refreshPsqAccumulator(*m_network, *m_curr, c, boards, m_refreshTable, kings.color(c));
+                    refreshPsqAccumulator(*m_network, *m_top, c, boards, m_refreshTable, kings.color(c));
                 } else {
                     // otherwise go forward and incrementally update all accumulators in between
                     do {
-                        const auto& prev = *curr;
-
-                        ++curr;
+                        const auto& prev = *curr++;
                         updatePsq(*m_network, prev.psqAcc, *curr, m_refreshTable, curr->ctx, c);
-                    } while (curr != m_curr);
+                    } while (curr != m_top);
                 }
             }
 
             if constexpr (InputFeatureSet::kThreatInputs) {
                 // same logic as above
                 for (const auto c : {Colors::kBlack, Colors::kWhite}) {
-                    if (!m_curr->isThreatDirty(c)) {
+                    if (!m_top->isThreatDirty(c)) {
                         continue;
                     }
 
-                    if (m_curr->ctx.updates.requiresThreatRefresh(c)) {
-                        refreshThreatAccumulator(*m_network, *m_curr, c, boards, kings.color(c));
+                    if (m_top->ctx.updates.requiresThreatRefresh(c)) {
+                        refreshThreatAccumulator(*m_network, *m_top, c, boards, kings.color(c));
                         continue;
                     }
 
-                    auto* curr = m_curr - 1;
+                    auto* curr = m_top - 1;
                     for (; curr->isThreatDirty(c) && !curr->ctx.updates.requiresThreatRefresh(c); --curr) {}
 
                     assert(curr != &m_accumulatorStack[0] || !curr->ctx.updates.requiresThreatRefresh(c));
 
                     if (curr->ctx.updates.requiresThreatRefresh(c)) {
-                        refreshThreatAccumulator(*m_network, *m_curr, c, boards, kings.color(c));
+                        refreshThreatAccumulator(*m_network, *m_top, c, boards, kings.color(c));
                     } else {
                         do {
-                            const auto& prev = *curr;
-
-                            ++curr;
+                            const auto& prev = *curr++;
                             updateThreat(*m_network, prev.threatAcc[0], *curr, curr->ctx, c);
-                        } while (curr != m_curr);
+                        } while (curr != m_top);
                     }
                 }
             }
