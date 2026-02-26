@@ -451,6 +451,28 @@ namespace stormphrax::eval::nnue::arch {
                  + sizeof(i32) * kL3WeightCount + sizeof(i32) * kL3BiasCount;
         }
 
+        template <typename T>
+        static inline void permuteParams(std::span<T> values) {
+            using namespace util::simd;
+
+            if constexpr (!kPackNonSequential) {
+                return;
+            }
+
+            static constexpr usize kPackSize = kPackOrdering.size();
+            static constexpr usize kChunkSize = kPackSize * kPackGrouping;
+
+            util::MultiArray<T, kPackSize, kPackGrouping> tmp;
+
+            for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
+                std::copy(&values[offset], &values[offset] + kChunkSize, &tmp[0][0]);
+
+                for (usize i = 0; i < kPackSize; ++i) {
+                    std::ranges::copy(tmp[kPackOrdering[i]], &values[offset + i * kPackGrouping]);
+                }
+            }
+        }
+
         template <typename W, typename T, typename B>
         static inline void permuteFt(
             std::span<const W> psqWeights,
@@ -463,30 +485,15 @@ namespace stormphrax::eval::nnue::arch {
                 return;
             }
 
-            static constexpr usize kPackSize = kPackOrdering.size();
-            static constexpr usize kChunkSize = kPackSize * kPackGrouping;
-
-            const auto permute = [&]<typename P>(std::span<P> values) {
-                util::MultiArray<P, kPackSize, kPackGrouping> tmp;
-
-                for (usize offset = 0; offset < values.size(); offset += kChunkSize) {
-                    std::copy(&values[offset], &values[offset] + kChunkSize, &tmp[0][0]);
-
-                    for (usize i = 0; i < kPackSize; ++i) {
-                        std::ranges::copy(tmp[kPackOrdering[i]], &values[offset + i * kPackGrouping]);
-                    }
-                }
-            };
-
             // These values are always safe to modify, because uncompressed embedded nets are assumed to be
             //  pre-permuted, and so this function will only be called with a decompressed or external net
             const auto deconst = []<typename P>(std::span<const P> values) {
                 return std::span<P>{const_cast<P*>(values.data()), values.size()};
             };
 
-            permute(deconst(psqWeights));
-            permute(deconst(threatWeights));
-            permute(deconst(biases));
+            permuteParams(deconst(psqWeights));
+            permuteParams(deconst(threatWeights));
+            permuteParams(deconst(biases));
         }
     };
 } // namespace stormphrax::eval::nnue::arch

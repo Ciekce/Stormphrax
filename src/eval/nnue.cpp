@@ -30,6 +30,7 @@
 #include "../util/align.h"
 #include "../util/memstream.h"
 #include "../util/numa/numa.h"
+#include "header.h"
 #include "nnue/features/threats/geometry.h"
 #include "nnue/loader.h"
 
@@ -53,32 +54,6 @@ namespace {
 
 namespace stormphrax::eval {
     namespace {
-        SP_ENUM_FLAGS(u16, NetworkFlags){
-            kNone = 0x0000,
-            kZstdCompressed = 0x0001,
-            kHorizontallyMirrored = 0x0002,
-            kMergedKings = 0x0004,
-            kPairwiseMul = 0x0008,
-        };
-
-        constexpr u16 kExpectedHeaderVersion = 1;
-
-        struct __attribute__((packed)) NetworkHeader {
-            std::array<char, 4> magic{};
-            u16 version{};
-            NetworkFlags flags{};
-            [[maybe_unused]] u8 padding{};
-            u8 arch{};
-            u8 activation{};
-            u16 hiddenSize{};
-            u8 inputBuckets{};
-            u8 outputBuckets{};
-            u8 nameLen{};
-            std::array<char, 48> name{};
-        };
-
-        static_assert(sizeof(NetworkHeader) == 64);
-
         inline std::string_view archName(u8 arch) {
             static constexpr std::array kNetworkArchNames = {
                 "basic",
