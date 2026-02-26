@@ -90,6 +90,8 @@ namespace stormphrax::datagen {
 
         template <OutputFormat Format>
         void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
+            numa::bindThread(id);
+
             const auto outFile = outDir / fmt::format("{}.{}", id, Format::kExtension);
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
@@ -113,7 +115,7 @@ namespace stormphrax::datagen {
             search::Searcher searcher{};
             searcher.setSilent(true);
 
-            auto& thread = searcher.take();
+            auto& thread = searcher.take(id);
             thread.datagen = true;
 
             auto& pos = thread.rootPos;

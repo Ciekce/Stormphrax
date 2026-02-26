@@ -33,7 +33,7 @@
 namespace stormphrax::numa {
     [[nodiscard]] bool init();
 
-    void bindThread(u32 threadId);
+    void bindThread(u32 numaId);
 
     [[nodiscard]] i32 nodeCount();
 
@@ -43,7 +43,7 @@ namespace stormphrax::numa {
         explicit NumaUniqueAllocation(usize count = 1);
         ~NumaUniqueAllocation();
 
-        [[nodiscard]] T* get(u32 threadId);
+        [[nodiscard]] T* get(u32 numaId);
 
     private:
         usize m_count;
@@ -52,7 +52,7 @@ namespace stormphrax::numa {
 
 #ifdef SP_USE_LIBNUMA
     std::span<const cpu_set_t> threadMapping();
-    [[nodiscard]] i32 getNode(u32 threadId);
+    [[nodiscard]] i32 getNode(u32 numaId);
 
     template <typename T>
     NumaUniqueAllocation<T>::NumaUniqueAllocation(usize count) :
@@ -80,8 +80,8 @@ namespace stormphrax::numa {
     }
 
     template <typename T>
-    T* NumaUniqueAllocation<T>::get(u32 threadId) {
-        const auto node = getNode(threadId);
+    T* NumaUniqueAllocation<T>::get(u32 numaId) {
+        const auto node = getNode(numaId);
         return m_data[node];
     }
 #else
@@ -109,8 +109,8 @@ namespace stormphrax::numa {
     }
 
     template <typename T>
-    T* NumaUniqueAllocation<T>::get(u32 threadId) {
-        SP_UNUSED(threadId);
+    T* NumaUniqueAllocation<T>::get(u32 numaId) {
+        SP_UNUSED(numaId);
         return m_data[0];
     }
 #endif

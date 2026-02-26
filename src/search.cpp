@@ -184,7 +184,7 @@ namespace stormphrax::search {
         }
     }
 
-    ThreadData& Searcher::take() {
+    ThreadData& Searcher::take(u32 numaId) {
         stopThreads();
 
         m_resetBarrier.reset(1);
@@ -201,8 +201,10 @@ namespace stormphrax::search {
         thread = std::make_unique<ThreadData>();
 
         thread->id = 0;
-        thread->nnueState.setNetwork(eval::getNetwork(0));
-        thread->correctionHistory = m_corrhists.get(0);
+
+        thread->numaId = numaId;
+        thread->nnueState.setNetwork(eval::getNetwork(numaId));
+        thread->correctionHistory = m_corrhists.get(numaId);
 
         return *thread;
     }

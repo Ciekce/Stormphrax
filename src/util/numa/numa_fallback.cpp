@@ -25,8 +25,8 @@ namespace stormphrax::numa {
         return true;
     }
 
-    void bindThread(u32 threadId) {
-        SP_UNUSED(threadId);
+    void bindThread(u32 numaId) {
+        SP_UNUSED(numaId);
     }
 
     i32 nodeCount() {

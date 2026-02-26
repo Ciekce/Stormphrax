@@ -128,6 +128,7 @@ namespace stormphrax::search {
         }
 
         u32 id{};
+        u32 numaId{};
 
         SearchData search{};
 

@@ -36,8 +36,8 @@ namespace stormphrax::numa {
         return true;
     }
 
-    void bindThread(u32 threadId) {
-        const auto node = getNode(threadId);
+    void bindThread(u32 numaId) {
+        const auto node = getNode(numaId);
         const auto handle = pthread_self();
         const auto* cpuSet = &threadMapping()[node];
         pthread_setaffinity_np(handle, sizeof(cpu_set_t), cpuSet);
@@ -81,8 +81,8 @@ namespace stormphrax::numa {
         return s_mapping;
     }
 
-    i32 getNode(u32 threadId) {
-        return static_cast<i32>(threadId % nodeCount());
+    i32 getNode(u32 numaId) {
+        return static_cast<i32>(numaId % nodeCount());
     }
 } // namespace stormphrax::numa
 #endif
