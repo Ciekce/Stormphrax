@@ -1,5 +1,6 @@
 /cmake-*/
 /build/
+/tmp/
 /.idea/
 /*.exe
 /*.profraw

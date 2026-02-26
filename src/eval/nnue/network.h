@@ -50,12 +50,12 @@ namespace stormphrax::eval::nnue {
             return outputs;
         }
 
-        inline bool readFrom(IParamStream& stream) {
-            if (!m_featureTransformer.readFrom(stream) || !m_arch.readFrom(stream)) {
+        inline bool loadFrom(NetworkLoader& loader, bool prePermuted) {
+            if (!m_featureTransformer.loadFrom(loader) || !m_arch.loadFrom(loader)) {
                 return false;
             }
 
-            if constexpr (Arch::kRequiresFtPermute) {
+            if (Arch::kRequiresFtPermute && !prePermuted) {
                 Arch::template permuteFt<
                     typename Ft::PsqWeightType,
                     typename Ft::ThreatWeightType,
@@ -69,8 +69,8 @@ namespace stormphrax::eval::nnue {
             return true;
         }
 
-        inline bool writeTo(IParamStream& stream) const {
-            return m_featureTransformer.writeTo(stream) && m_arch.writeTo(stream);
+        [[nodiscard]] static inline usize byteSize() {
+            return FeatureTransformer::byteSize() + Arch::byteSize();
         }
 
     private:

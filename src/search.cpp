@@ -27,7 +27,7 @@
 #include "see.h"
 #include "stats.h"
 #include "uci.h"
-#include "util/numa/numa.h"
+#include "util/numa/numa.h" // iei
 
 namespace stormphrax::search {
     using namespace stormphrax::tunable;
@@ -184,7 +184,7 @@ namespace stormphrax::search {
         }
     }
 
-    ThreadData& Searcher::take() {
+    ThreadData& Searcher::take(u32 numaId) {
         stopThreads();
 
         m_resetBarrier.reset(1);
@@ -196,13 +196,17 @@ namespace stormphrax::search {
         m_threadData.resize(1);
         m_threadData.shrink_to_fit();
 
-        m_threadData[0] = std::make_unique<ThreadData>();
-        auto& thread = *m_threadData[0];
+        auto& thread = m_threadData[0];
 
-        thread.id = 0;
-        thread.correctionHistory = m_corrhists.get(0);
+        thread = std::make_unique<ThreadData>();
 
-        return *m_threadData[0];
+        thread->id = 0;
+
+        thread->numaId = numaId;
+        thread->nnueState.setNetwork(eval::getNetwork(numaId));
+        thread->correctionHistory = m_corrhists.get(numaId);
+
+        return *thread;
     }
 
     std::pair<Score, Score> Searcher::runDatagenSearch() {
@@ -343,6 +347,7 @@ namespace stormphrax::search {
         auto& thread = *m_threadData[threadId];
 
         thread.id = threadId;
+        thread.nnueState.setNetwork(eval::getNetwork(threadId));
         thread.correctionHistory = m_corrhists.get(threadId);
 
         m_initBarrier.arriveAndWait();

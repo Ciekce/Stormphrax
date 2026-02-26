@@ -21,14 +21,18 @@
 #include <cassert>
 #include <cstring>
 #include <fstream>
+#include <memory>
 #include <string_view>
 
+#include "../3rdparty/zstd/zstd.h"
+
 #include "../attacks/attacks.h"
-#include "../rays.h"
-#include "../util/bits.h"
+#include "../util/align.h"
 #include "../util/memstream.h"
+#include "../util/numa/numa.h"
+#include "header.h"
 #include "nnue/features/threats/geometry.h"
-#include "nnue/io_impl.h"
+#include "nnue/loader.h"
 
 #ifdef _MSC_VER
     #define SP_MSVC
@@ -50,32 +54,6 @@ namespace {
 
 namespace stormphrax::eval {
     namespace {
-        SP_ENUM_FLAGS(u16, NetworkFlags){
-            kNone = 0x0000,
-            kZstdCompressed = 0x0001,
-            kHorizontallyMirrored = 0x0002,
-            kMergedKings = 0x0004,
-            kPairwiseMul = 0x0008,
-        };
-
-        constexpr u16 kExpectedHeaderVersion = 1;
-
-        struct __attribute__((packed)) NetworkHeader {
-            std::array<char, 4> magic{};
-            u16 version{};
-            NetworkFlags flags{};
-            [[maybe_unused]] u8 padding{};
-            u8 arch{};
-            u8 activation{};
-            u16 hiddenSize{};
-            u8 inputBuckets{};
-            u8 outputBuckets{};
-            u8 nameLen{};
-            std::array<char, 48> name{};
-        };
-
-        static_assert(sizeof(NetworkHeader) == 64);
-
         inline std::string_view archName(u8 arch) {
             static constexpr std::array kNetworkArchNames = {
                 "basic",
@@ -204,26 +182,20 @@ namespace stormphrax::eval {
             return true;
         }
 
-        bool loadNetworkFrom(Network& network, std::istream& stream, const NetworkHeader& header) {
-            bool success;
+        // must manually allocate for alignment
+        std::byte* s_loadedNetworkData{nullptr};
 
-            if (testFlags(header.flags, NetworkFlags::kZstdCompressed)) {
-                nnue::ZstdParamStream paramStream{stream};
-                success = network.readFrom(paramStream);
-            } else {
-                nnue::PaddedParamStream<64> paramStream{stream};
-                success = network.readFrom(paramStream);
-            }
-
-            return success;
-        }
-
+#ifdef SP_USE_LIBNUMA
+        std::unique_ptr<numa::NumaUniqueAllocation<std::byte>> s_networkData{};
+        std::unique_ptr<numa::NumaUniqueAllocation<Network>> s_networks{};
+#else
         Network s_network{};
+#endif
+
+        bool s_networkLoaded{false};
     } // namespace
 
-    const Network& g_network = s_network;
-
-    void loadDefaultNetwork() {
+    void init() {
         if (g_defaultNetSize < sizeof(NetworkHeader)) {
             eprintln("Missing default network?");
             return;
@@ -236,44 +208,114 @@ namespace stormphrax::eval {
             return;
         }
 
-        const auto* begin = g_defaultNetData + sizeof(NetworkHeader);
-        const auto* end = g_defaultNetData + g_defaultNetSize;
+        const auto networkSize = Network::byteSize();
 
-        util::MemoryIstream stream{{begin, end}};
+        const bool compressed = testFlags(header.flags, NetworkFlags::kZstdCompressed);
 
-        if (!loadNetworkFrom(s_network, stream, header)) {
+        const std::byte* ptr;
+
+        if (compressed) {
+#ifndef SP_USE_LIBNUMA
+            eprintln("Warning: default network is compressed and will not be shared between running instances");
+#endif
+
+            s_networkLoaded = false;
+
+            if (!s_loadedNetworkData) {
+                s_loadedNetworkData = util::alignedAlloc<std::byte>(util::simd::kAlignment, networkSize);
+            }
+
+            const auto decompressedSize = ZSTD_decompress(
+                s_loadedNetworkData,
+                networkSize,
+                g_defaultNetData + sizeof(NetworkHeader),
+                g_defaultNetSize - sizeof(NetworkHeader)
+            );
+
+            if (ZSTD_isError(decompressedSize)) {
+                eprintln("Failed to decompress default network: {}", ZSTD_getErrorName(decompressedSize));
+                return;
+            }
+
+            if (decompressedSize < networkSize) {
+                eprintln("Decompressed default network too small? {} < {}", decompressedSize, networkSize);
+                return;
+            }
+
+            ptr = s_loadedNetworkData;
+        } else {
+            const auto defaultNetSize = g_defaultNetSize - sizeof(NetworkHeader);
+
+            if (defaultNetSize < networkSize) {
+                eprintln("Default network too small? {} < {}", defaultNetSize, networkSize);
+                return;
+            }
+
+            s_networkLoaded = false;
+
+            if (s_loadedNetworkData) {
+                util::alignedFree(s_loadedNetworkData);
+                s_loadedNetworkData = nullptr;
+            }
+
+            ptr = g_defaultNetData + sizeof(NetworkHeader);
+        }
+
+#ifdef SP_USE_LIBNUMA
+        s_networks = std::make_unique<numa::NumaUniqueAllocation<Network>>();
+        s_networkData = std::make_unique<numa::NumaUniqueAllocation<std::byte>>(networkSize);
+
+        const auto nodeCount = numa::nodeCount();
+        for (i32 node = 0; node < nodeCount; ++node) {
+            auto* target = s_networkData->get(node);
+            std::memcpy(target, ptr, networkSize);
+            nnue::NetworkLoader loader{target, networkSize};
+            if (!s_networks->get(node)->loadFrom(loader, !compressed)) {
+                eprintln("Failed to load default network on NUMA node {}", node);
+                return;
+            }
+        }
+
+        if (s_loadedNetworkData) {
+            util::alignedFree(s_loadedNetworkData);
+            s_loadedNetworkData = nullptr;
+        }
+#else
+        nnue::NetworkLoader loader{ptr, networkSize};
+        if (!s_network.loadFrom(loader, !compressed)) {
             eprintln("Failed to load default network");
             return;
         }
+#endif
+
+        s_networkLoaded = true;
     }
 
-    void loadNetwork(std::string_view name) {
-        std::ifstream stream{std::string{name}, std::ios::binary};
-
-        if (!stream) {
-            eprintln("failed to open network file \"{}\"", name);
-            return;
+    void shutdown() {
+        if (s_loadedNetworkData) {
+            util::alignedFree(s_loadedNetworkData);
+            s_loadedNetworkData = nullptr;
         }
 
-        NetworkHeader header{};
-        stream.read(reinterpret_cast<char*>(&header), sizeof(NetworkHeader));
+#ifdef SP_USE_LIBNUMA
+        s_networkData = nullptr;
+        s_networks = nullptr;
+#endif
 
-        if (!stream) {
-            eprintln("failed to read network file header");
-            return;
-        }
+        s_networkLoaded = false;
+    }
 
-        if (!validate(header)) {
-            return;
-        }
+    bool isNetworkLoaded() {
+        return s_networkLoaded;
+    }
 
-        if (!loadNetworkFrom(s_network, stream, header)) {
-            eprintln("failed to read network parameters");
-            return;
-        }
-
-        const std::string_view netName{header.name.data(), header.nameLen};
-        println("info string loaded network {}", netName);
+    const Network* getNetwork(u32 numaId) {
+#ifdef SP_USE_LIBNUMA
+        return s_networks->get(numaId);
+#else
+        SP_UNUSED(numaId);
+        return &s_network;
+#endif
     }
 
     std::string_view defaultNetworkName() {
@@ -281,9 +323,15 @@ namespace stormphrax::eval {
         return {header.name.data(), header.nameLen};
     }
 
-    void addThreatFeatures(std::span<i16, kL1Size> acc, Color c, const PositionBoards& boards, Square king) {
+    void addThreatFeatures(
+        const Network& network,
+        std::span<i16, kL1Size> acc,
+        Color c,
+        const PositionBoards& boards,
+        Square king
+    ) {
         const auto activateFeature = [&](u32 feature) {
-            const auto* start = &g_network.featureTransformer().threatWeights[feature * kL1Size];
+            const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
             for (i32 i = 0; i < kL1Size; ++i) {
                 acc[i] += start[i];
             }

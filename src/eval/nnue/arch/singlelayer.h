@@ -29,7 +29,7 @@
 #include "../../../util/multi_array.h"
 #include "../../../util/simd.h"
 #include "../activation.h"
-#include "../io.h"
+#include "../loader.h"
 #include "../output.h"
 
 namespace stormphrax::eval::nnue::arch {
@@ -54,8 +54,11 @@ namespace stormphrax::eval::nnue::arch {
     private:
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
-        SP_SIMD_ALIGNAS std::array<i16, kOutputBucketCount * kL1Size * 2> l1Weights{};
-        SP_SIMD_ALIGNAS std::array<i16, kOutputBucketCount> l1Biases{};
+        static constexpr auto kWeightCount = kOutputBucketCount * kL1Size * 2;
+        static constexpr auto kBiasCount = kOutputBucketCount;
+
+        SP_NETWORK_PARAMS(i16, kWeightCount, l1Weights);
+        SP_NETWORK_PARAMS(i16, kBiasCount, l1Biases);
 
     public:
         inline void propagate(
@@ -117,12 +120,12 @@ namespace stormphrax::eval::nnue::arch {
             outputs[0] = out * kScale / Q;
         }
 
-        inline bool readFrom(IParamStream& stream) {
-            return stream.read(l1Weights) && stream.read(l1Biases);
+        inline bool loadFrom(NetworkLoader& loader) {
+            return loader.load(l1Weights) && loader.load(l1Biases);
         }
 
-        inline bool writeTo(IParamStream& stream) const {
-            return stream.write(l1Weights) && stream.write(l1Biases);
+        [[nodiscard]] static inline usize byteSize() {
+            return sizeof(i16) * kWeightCount + sizeof(i16) * kBiasCount;
         }
     };
 } // namespace stormphrax::eval::nnue::arch
