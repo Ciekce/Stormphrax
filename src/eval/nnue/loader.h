@@ -24,20 +24,6 @@
 #include <span>
 
 namespace stormphrax::eval::nnue {
-    class IParamStream {
-    public:
-        virtual ~IParamStream() = default;
-
-        virtual bool read(std::span<i8> dst) = 0;
-        virtual bool read(std::span<i16> dst) = 0;
-        virtual bool read(std::span<i32> dst) = 0;
-
-        template <typename T, usize kSize>
-        inline bool read(std::array<T, kSize>& dst) {
-            return read(std::span<T>{dst});
-        }
-    };
-
     class NetworkLoader {
     public:
         explicit NetworkLoader(const std::byte* buffer, usize bufferSize);
