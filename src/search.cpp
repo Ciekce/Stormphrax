@@ -856,6 +856,10 @@ namespace stormphrax::search {
             }
         }
 
+        if (kPvNode) {
+            thread.nnueState.ensureUpToDate(boards, pos.kings());
+        }
+
         thread.stack[ply + 1].killers.clear();
 
         moveStack.failLowQuiets.clear();
