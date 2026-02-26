@@ -394,8 +394,8 @@ namespace stormphrax {
             return m_pinned[c.idx()];
         }
 
-        [[nodiscard]] inline std::array<Bitboard, 2> pinned() const {
-            return m_pinned;
+        [[nodiscard]] inline Bitboard pinners(Color c) const {
+            return m_pinners[c.idx()];
         }
 
         [[nodiscard]] inline Bitboard threats() const {
@@ -481,9 +481,11 @@ namespace stormphrax {
 
         inline void calcPinned() {
             m_pinned = {};
+            m_pinners = {};
 
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
                 auto& pinned = m_pinned[c.idx()];
+                auto& pinners = m_pinners[c.flip().idx()];
 
                 const auto king = m_kings.color(c);
                 const auto opponent = c.flip();
@@ -504,6 +506,7 @@ namespace stormphrax {
 
                     if (maybePinned.one()) {
                         pinned |= maybePinned;
+                        pinners[potentialAttacker] = true;
                     }
                 }
             }
@@ -558,6 +561,7 @@ namespace stormphrax {
 
         Bitboard m_checkers{};
         std::array<Bitboard, 2> m_pinned{};
+        std::array<Bitboard, 2> m_pinners{};
         Bitboard m_threats{};
 
         CastlingRooks m_castlingRooks{};
@@ -572,7 +576,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 216);
+    static_assert(sizeof(Position) == 232);
 } // namespace stormphrax
 
 template <>

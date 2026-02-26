@@ -104,20 +104,21 @@ namespace stormphrax::see {
         const auto bishops = queens | bbs.bishops();
         const auto rooks = queens | bbs.rooks();
 
-        const auto blackPinned = pos.pinned(Colors::kBlack);
-        const auto whitePinned = pos.pinned(Colors::kWhite);
+        const std::array kingRays = {
+            rayPast(pos.blackKing(), sq),
+            rayPast(pos.whiteKing(), sq),
+        };
 
-        const auto blackKingRay = rayIntersecting(pos.blackKing(), sq);
-        const auto whiteKingRay = rayIntersecting(pos.whiteKing(), sq);
-
-        const auto allowed = ~(blackPinned | whitePinned) | (blackPinned & blackKingRay) | (whitePinned & whiteKingRay);
-
-        auto attackers = pos.allAttackersTo(sq, occupancy) & allowed;
+        auto attackers = pos.allAttackersTo(sq, occupancy);
 
         auto us = color.flip();
 
         while (true) {
-            const auto ourAttackers = attackers & bbs.forColor(us);
+            auto ourAttackers = attackers & bbs.forColor(us);
+
+            if (pos.pinners(us.flip()) & occupancy) {
+                ourAttackers &= ~(pos.pinned(us) & ~kingRays[us.idx()]);
+            }
 
             if (ourAttackers.empty()) {
                 break;
