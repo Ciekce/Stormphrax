@@ -151,7 +151,7 @@ namespace stormphrax {
         }
 
         if (!move) {
-            newPos.calcPinned();
+            newPos.calcCheckersAndPins();
             newPos.calcThreats();
 
             return newPos;
@@ -209,8 +209,7 @@ namespace stormphrax {
             newPos.m_keys.switchCastling(m_castlingRooks, newPos.m_castlingRooks);
         }
 
-        newPos.calcCheckers();
-        newPos.calcPinned();
+        newPos.calcCheckersAndPins();
         newPos.calcThreats();
 
         newPos.filterEp(nstm);
@@ -826,8 +825,7 @@ namespace stormphrax {
             m_keys.flipStm();
         }
 
-        calcCheckers();
-        calcPinned();
+        calcCheckersAndPins();
         calcThreats();
 
         filterEp(stm());

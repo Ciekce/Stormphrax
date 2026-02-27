@@ -262,22 +262,12 @@ namespace stormphrax {
             return attackers;
         }
 
-        [[nodiscard]] inline Bitboard attackersTo(Square sq, Color attacker) const {
+        [[nodiscard]] inline Bitboard nonSliderAttackersTo(Square sq, Color attacker) const {
             assert(sq != Squares::kNone);
 
             const auto& bbs = this->bbs();
 
             Bitboard attackers{};
-
-            const auto occ = bbs.occupancy();
-
-            const auto queens = bbs.queens(attacker);
-
-            const auto rooks = queens | bbs.rooks(attacker);
-            attackers |= rooks & attacks::getRookAttacks(sq, occ);
-
-            const auto bishops = queens | bbs.bishops(attacker);
-            attackers |= bishops & attacks::getBishopAttacks(sq, occ);
 
             const auto pawns = bbs.pawns(attacker);
             attackers |= pawns & attacks::getPawnAttacks(sq, attacker.flip());
@@ -287,6 +277,25 @@ namespace stormphrax {
 
             const auto kings = bbs.kings(attacker);
             attackers |= kings & attacks::getKingAttacks(sq);
+
+            return attackers;
+        }
+
+        [[nodiscard]] inline Bitboard attackersTo(Square sq, Color attacker) const {
+            assert(sq != Squares::kNone);
+
+            auto attackers = nonSliderAttackersTo(sq, attacker);
+
+            const auto& bbs = this->bbs();
+
+            const auto occ = bbs.occupancy();
+            const auto queens = bbs.queens(attacker);
+
+            const auto rooks = queens | bbs.rooks(attacker);
+            attackers |= rooks & attacks::getRookAttacks(sq, occ);
+
+            const auto bishops = queens | bbs.bishops(attacker);
+            attackers |= bishops & attacks::getBishopAttacks(sq, occ);
 
             return attackers;
         }
@@ -461,8 +470,6 @@ namespace stormphrax {
         void setPiece(Piece piece, Square sq);
         template <bool kUpdateKeys = true>
         void removePiece(Piece piece, Square sq);
-        template <bool kUpdateKeys = true>
-        void movePieceNoCap(Piece piece, Square src, Square dst);
 
         template <bool kUpdateKeys = true, typename Observer = NullObserver>
         [[nodiscard]] Piece movePiece(Piece piece, Square src, Square dst, Observer observer);
@@ -474,12 +481,8 @@ namespace stormphrax {
         template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
-        inline void calcCheckers() {
-            const auto color = stm();
-            m_checkers = attackersTo(m_kings.color(color), color.flip());
-        }
-
-        inline void calcPinned() {
+        inline void calcCheckersAndPins() {
+            m_checkers = nonSliderAttackersTo(m_kings.color(m_stm), m_stm.flip());
             m_pinned = {};
 
             for (const auto c : {Colors::kBlack, Colors::kWhite}) {
@@ -502,7 +505,10 @@ namespace stormphrax {
                     const auto potentialAttacker = potentialAttackers.popLowestSquare();
                     const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
 
-                    if (maybePinned.one()) {
+                    if (maybePinned.empty()) {
+                        assert(c == m_stm);
+                        m_checkers[potentialAttacker] = true;
+                    } else if (maybePinned.one()) {
                         pinned |= maybePinned;
                     }
                 }
