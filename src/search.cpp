@@ -744,7 +744,8 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+                const auto rfpDepth = std::max(depth - improving, 0);
+                auto margin = tunable::rfpMargin() * rfpDepth + 6 * rfpDepth * rfpDepth;
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
