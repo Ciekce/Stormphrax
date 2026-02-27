@@ -111,11 +111,12 @@ namespace stormphrax::util::simd {
             return _mm512_add_epi8(a, b);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 subI8([[maybe_unused]] VectorI8 a, [[maybe_unused]] VectorI8 b) {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 subI8(VectorI8 a, VectorI8 b) {
             return _mm512_sub_epi8(a, b);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 shiftLeftI8([[maybe_unused]] VectorI8 v, [[maybe_unused]] i32 shift) {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 shiftLeftI8(VectorI8 v, i32 shift) {
+            SP_UNUSED(v, shift);
             unimplemented();
         }
 

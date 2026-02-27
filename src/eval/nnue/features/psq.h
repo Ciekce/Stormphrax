@@ -99,23 +99,23 @@ namespace stormphrax::eval::nnue::features::psq {
         static constexpr bool kIsMirrored = false;
         static constexpr bool kMergedKings = false;
 
-        static constexpr Square transformFeatureSquare([[maybe_unused]] Square sq, [[maybe_unused]] Square kingSq) {
+        static constexpr Square transformFeatureSquare(Square sq, Square kingSq) {
+            SP_UNUSED(kingSq);
             return sq;
         }
 
-        static constexpr u32 getBucket([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
+        static constexpr u32 getBucket(Color c, Square kingSq) {
+            SP_UNUSED(c, kingSq);
             return 0;
         }
 
-        static constexpr u32 getRefreshTableEntry([[maybe_unused]] Color c, [[maybe_unused]] Square kingSq) {
+        static constexpr u32 getRefreshTableEntry(Color c, Square kingSq) {
+            SP_UNUSED(c, kingSq);
             return 0;
         }
 
-        static constexpr bool refreshRequired(
-            [[maybe_unused]] Color c,
-            [[maybe_unused]] Square prevKingSq,
-            [[maybe_unused]] Square kingSq
-        ) {
+        static constexpr bool refreshRequired(Color c, Square prevKingSq, Square kingSq) {
+            SP_UNUSED(c, prevKingSq, kingSq);
             return false;
         }
     };
@@ -138,7 +138,8 @@ namespace stormphrax::eval::nnue::features::psq {
 
         static_assert(kBucketCount > 1, "use SingleBucket for single-bucket arches");
 
-        static constexpr Square transformFeatureSquare(Square sq, [[maybe_unused]] Square kingSq) {
+        static constexpr Square transformFeatureSquare(Square sq, Square kingSq) {
+            SP_UNUSED(kingSq);
             return sq;
         }
 
