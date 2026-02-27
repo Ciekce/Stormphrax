@@ -184,7 +184,7 @@ namespace stormphrax {
 
         assert(captured.typeOrNone() != PieceTypes::kKing);
 
-        observer.finalize(m_boards, m_kings);
+        observer.finalize(newPos.m_kings);
 
         if (movingType == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(stm).unset(moveSrc);

@@ -139,8 +139,8 @@ namespace stormphrax {
         void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst) {
             SP_UNUSED(boards, oldPiece, src, newPiece, dst);
         }
-        void finalize(const PositionBoards& boards, KingPair kings) {
-            SP_UNUSED(boards, kings);
+        void finalize(KingPair kings) {
+            SP_UNUSED(kings);
         }
     };
 

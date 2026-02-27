@@ -49,7 +49,6 @@ namespace stormphrax::eval {
 
     struct UpdateContext {
         NnueUpdates updates{};
-        PositionBoards boards{};
         KingPair kings{};
     };
 
@@ -90,7 +89,7 @@ namespace stormphrax::eval {
         void pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst);
         void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst);
 
-        void finalize(const PositionBoards& boards, KingPair kings);
+        void finalize(KingPair kings);
     };
 
     class NnueState {
@@ -177,22 +176,33 @@ namespace stormphrax::eval {
             return BoardObserver{m_top->ctx};
         }
 
-        inline void applyImmediately(const UpdateContext& ctx) {
+        inline void applyImmediately(const UpdateContext& ctx, const PositionBoards& boards) {
             assert(m_network);
-            updateBothPsq(*m_network, m_top->psqAcc, *m_top, m_refreshTable, ctx);
-            if constexpr (InputFeatureSet::kThreatInputs) {
-                updateBothThreat(*m_network, m_top->threatAcc[0], *m_top, ctx);
+            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+                if (ctx.updates.requiresPsqRefresh(c)) {
+                    refreshPsqAccumulator(*m_network, *m_top, c, boards, m_refreshTable, ctx.kings.color(c));
+                } else {
+                    updatePsq(*m_network, m_top->psqAcc, *m_top, ctx, c);
+                }
+
+                if constexpr (InputFeatureSet::kThreatInputs) {
+                    if (ctx.updates.requiresThreatRefresh(c)) {
+                        refreshThreatAccumulator(*m_network, *m_top, c, boards, ctx.kings.color(c));
+                    } else {
+                        applyThreatUpdates(*m_network, *m_top, ctx, c);
+                    }
+                }
             }
         }
 
         inline void pop() {
-            assert(m_curr > &m_accumulatorStack[0]);
+            assert(m_top > &m_accumulatorStack[0]);
             --m_top;
         }
 
         [[nodiscard]] inline i32 evaluate(const PositionBoards& boards, KingPair kings, Color stm) {
             assert(m_network);
-            assert(m_curr >= &m_accumulatorStack[0] && m_curr <= &m_accumulatorStack.back());
+            assert(m_top >= &m_accumulatorStack[0] && m_top <= &m_accumulatorStack.back());
             assert(stm != Colors::kNone);
 
             ensureUpToDate(boards, kings);
@@ -241,14 +251,10 @@ namespace stormphrax::eval {
             const Network& network,
             const Accumulator& prev,
             UpdatableAccumulator& curr,
-            RefreshTable& refreshTable,
             const UpdateContext& ctx,
             Color c
         ) {
-            if (ctx.updates.requiresPsqRefresh(c)) {
-                refreshPsqAccumulator(network, curr, c, ctx.boards, refreshTable, ctx.kings.color(c));
-                return;
-            }
+            assert(!ctx.updates.requiresPsqRefresh(c));
 
             const auto subCount = ctx.updates.sub.size();
             const auto addCount = ctx.updates.add.size();
@@ -299,19 +305,15 @@ namespace stormphrax::eval {
             curr.setPsqUpdated(c);
         }
 
-        static inline void updateThreat(
+        // Updates a threat accumulator in place.
+        // Assumed to already be initialised to the previous accumulator
+        static inline void applyThreatUpdates(
             const Network& network,
-            const Accumulator& prev,
             UpdatableAccumulator& curr,
             const UpdateContext& ctx,
             Color c
         ) {
-            if (ctx.updates.requiresThreatRefresh(c)) {
-                refreshThreatAccumulator(network, curr, c, ctx.boards, ctx.kings.color(c));
-                return;
-            }
-
-            curr.threatAcc[0].copyFrom(c, prev);
+            assert(!ctx.updates.requiresThreatRefresh(c));
 
             if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
                 return;
@@ -373,27 +375,6 @@ namespace stormphrax::eval {
             curr.setThreatUpdated(c);
         }
 
-        static inline void updateBothPsq(
-            const Network& network,
-            const Accumulator& prev,
-            UpdatableAccumulator& curr,
-            RefreshTable& refreshTable,
-            const UpdateContext& ctx
-        ) {
-            updatePsq(network, prev, curr, refreshTable, ctx, Colors::kBlack);
-            updatePsq(network, prev, curr, refreshTable, ctx, Colors::kWhite);
-        }
-
-        static inline void updateBothThreat(
-            const Network& network,
-            const Accumulator& prev,
-            UpdatableAccumulator& curr,
-            const UpdateContext& ctx
-        ) {
-            updateThreat(network, prev, curr, ctx, Colors::kBlack);
-            updateThreat(network, prev, curr, ctx, Colors::kWhite);
-        }
-
         inline void ensureUpToDate(const PositionBoards& boards, KingPair kings) {
             assert(m_network);
 
@@ -422,7 +403,7 @@ namespace stormphrax::eval {
                     // otherwise go forward and incrementally update all accumulators in between
                     do {
                         const auto& prev = *curr++;
-                        updatePsq(*m_network, prev.psqAcc, *curr, m_refreshTable, curr->ctx, c);
+                        updatePsq(*m_network, prev.psqAcc, *curr, curr->ctx, c);
                     } while (curr != m_top);
                 }
             }
@@ -449,7 +430,8 @@ namespace stormphrax::eval {
                     } else {
                         do {
                             const auto& prev = *curr++;
-                            updateThreat(*m_network, prev.threatAcc[0], *curr, curr->ctx, c);
+                            curr->threatAcc[0].copyFrom(c, prev.threatAcc[0]);
+                            applyThreatUpdates(*m_network, *curr, curr->ctx, c);
                         } while (curr != m_top);
                     }
                 }
@@ -679,8 +661,7 @@ namespace stormphrax::eval {
         }
     }
 
-    inline void BoardObserver::finalize(const PositionBoards& boards, KingPair kings) {
-        ctx.boards = boards;
+    inline void BoardObserver::finalize(KingPair kings) {
         ctx.kings = kings;
     }
 } // namespace stormphrax::eval
