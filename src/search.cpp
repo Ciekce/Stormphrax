@@ -784,6 +784,10 @@ namespace stormphrax::search {
                     );
                 }();
 
+                if (hasStopped()) {
+                    return 0;
+                }
+
                 if (score >= beta) {
                     if (depth <= 14 || thread.minNmpPly > 0) {
                         return score > kScoreWin ? beta : score;
@@ -795,6 +799,10 @@ namespace stormphrax::search {
                         search(thread, pos, curr.pv, depth - R, ply, moveStackIdx + 1, beta - 1, beta, true);
 
                     thread.minNmpPly = 0;
+
+                    if (hasStopped()) {
+                        return 0;
+                    }
 
                     if (verifScore >= beta) {
                         return verifScore;
@@ -1044,7 +1052,7 @@ namespace stormphrax::search {
                             !cutnode
                         );
 
-                        if (!noisy && (score <= alpha || score >= beta)) {
+                        if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
                             const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
                             thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
                         }
