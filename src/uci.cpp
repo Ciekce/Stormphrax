@@ -811,18 +811,16 @@ namespace stormphrax {
 
             print("Checkers:");
 
-            auto checkers = m_pos.checkers();
-            while (checkers) {
-                print(" {}", checkers.popLowestSquare());
+            for (const auto checker : m_pos.checkers()) {
+                print(" {}", checker);
             }
 
             println();
 
             print("Pinned:");
 
-            auto pinned = m_pos.pinned(m_pos.stm());
-            while (pinned) {
-                print(" {}", pinned.popLowestSquare());
+            for (const auto pinned : m_pos.pinned()) {
+                print(" {}", pinned);
             }
 
             println();

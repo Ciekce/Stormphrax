@@ -29,35 +29,28 @@
 namespace stormphrax {
     namespace {
         inline void pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
-            while (!board.empty()) {
-                const auto dstSquare = board.popLowestSquare();
+            for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-
                 dst.push({Move::standard(srcSquare, dstSquare), 0});
             }
         }
 
         inline void pushStandards(ScoredMoveList& dst, Square srcSquare, Bitboard board) {
-            while (!board.empty()) {
-                const auto dstSquare = board.popLowestSquare();
+            for (const auto dstSquare : board) {
                 dst.push({Move::standard(srcSquare, dstSquare), 0});
             }
         }
 
         inline void pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
-            while (!board.empty()) {
-                const auto dstSquare = board.popLowestSquare();
+            for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-
                 noisy.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen), 0});
             }
         }
 
         inline void pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
-            while (!board.empty()) {
-                const auto dstSquare = board.popLowestSquare();
+            for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight), 0});
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kRook), 0});
                 quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kBishop), 0});
@@ -69,10 +62,8 @@ namespace stormphrax {
         }
 
         inline void pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
-            while (!board.empty()) {
-                const auto dstSquare = board.popLowestSquare();
+            for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-
                 noisy.push({Move::enPassant(srcSquare, dstSquare), 0});
             }
         }
@@ -157,13 +148,8 @@ namespace stormphrax {
 
         template <const std::array<Bitboard, Squares::kCount>& kAttacks>
         inline void precalculated(ScoredMoveList& dst, PieceType pt, const Position& pos, Bitboard dstMask) {
-            const auto us = pos.stm();
-
-            auto pieces = pos.bbs().forPiece(pt, us);
-            while (!pieces.empty()) {
-                const auto srcSquare = pieces.popLowestSquare();
+            for (const auto srcSquare : pos.bbs().forPiece(pt, pos.stm())) {
                 const auto attacks = kAttacks[srcSquare.idx()];
-
                 pushStandards(dst, srcSquare, attacks & dstMask);
             }
         }
@@ -299,20 +285,13 @@ namespace stormphrax {
 
             const auto queens = bbs.queens(us);
 
-            auto rooks = queens | bbs.rooks(us);
-            auto bishops = queens | bbs.bishops(us);
-
-            while (!rooks.empty()) {
-                const auto src = rooks.popLowestSquare();
+            for (const auto src : queens | bbs.rooks(us)) {
                 const auto attacks = attacks::getRookAttacks(src, occupancy);
-
                 pushStandards(dst, src, attacks & dstMask);
             }
 
-            while (!bishops.empty()) {
-                const auto src = bishops.popLowestSquare();
+            for (const auto src : queens | bbs.bishops(us)) {
                 const auto attacks = attacks::getBishopAttacks(src, occupancy);
-
                 pushStandards(dst, src, attacks & dstMask);
             }
         }

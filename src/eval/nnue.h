@@ -502,18 +502,13 @@ namespace stormphrax::eval {
                 const auto prev = prevBoards.forPiece(piece);
                 const auto curr = bbs.forPiece(piece);
 
-                auto added = curr & ~prev;
-                auto removed = prev & ~curr;
-
-                while (added) {
-                    const auto sq = added.popLowestSquare();
-                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
+                for (const auto addedSq : curr & ~prev) {
+                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, addedSq, king);
                     adds.push(feature);
                 }
 
-                while (removed) {
-                    const auto sq = removed.popLowestSquare();
-                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
+                for (const auto removedSq : prev & ~curr) {
+                    const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, removedSq, king);
                     subs.push(feature);
                 }
             }
@@ -577,11 +572,7 @@ namespace stormphrax::eval {
             // corresponding to that piece on each of the squares it occurs on
             for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
                 const auto piece = Piece::fromRaw(pieceIdx);
-
-                auto board = boards.bbs().forPiece(piece);
-                while (!board.empty()) {
-                    const auto sq = board.popLowestSquare();
-
+                for (const auto sq : boards.bbs().forPiece(piece)) {
                     const auto feature = nnue::features::psq::featureIndex<InputFeatureSet>(c, piece, sq, king);
                     accumulator.activateFeature(network.featureTransformer(), c, feature);
                 }

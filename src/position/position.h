@@ -359,8 +359,7 @@ namespace stormphrax {
                 return !(squares & m_threats).empty();
             }
 
-            while (squares) {
-                const auto sq = squares.popLowestSquare();
+            for (const auto sq : squares) {
                 if (isAttacked(sq, attacker)) {
                     return true;
                 }
@@ -498,13 +497,12 @@ namespace stormphrax {
 
                 const auto oppQueens = bbs.queens(opponent);
 
-                auto potentialAttackers = attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
-                                        | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
+                const auto potentialAttackers =
+                    attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
+                    | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
 
-                while (potentialAttackers) {
-                    const auto potentialAttacker = potentialAttackers.popLowestSquare();
+                for (const auto potentialAttacker : potentialAttackers) {
                     const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
-
                     if (maybePinned.empty()) {
                         assert(c == m_stm);
                         m_checkers[potentialAttacker] = true;
@@ -524,24 +522,17 @@ namespace stormphrax {
             m_threats = Bitboard{};
 
             const auto occ = bbs.occupancy();
-
             const auto queens = bbs.queens(them);
 
-            auto rooks = queens | bbs.rooks(them);
-            while (rooks) {
-                const auto rook = rooks.popLowestSquare();
+            for (const auto rook : queens | bbs.rooks(them)) {
                 m_threats |= attacks::getRookAttacks(rook, occ);
             }
 
-            auto bishops = queens | bbs.bishops(them);
-            while (bishops) {
-                const auto bishop = bishops.popLowestSquare();
+            for (const auto bishop : queens | bbs.bishops(them)) {
                 m_threats |= attacks::getBishopAttacks(bishop, occ);
             }
 
-            auto knights = bbs.knights(them);
-            while (knights) {
-                const auto knight = knights.popLowestSquare();
+            for (const auto knight : bbs.knights(them)) {
                 m_threats |= attacks::getKnightAttacks(knight);
             }
 

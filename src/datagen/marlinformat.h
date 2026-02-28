@@ -47,12 +47,11 @@ namespace stormphrax::datagen {
                 const auto castlingRooks = pos.castlingRooks();
                 const auto& boards = pos.boards();
 
-                auto occupancy = boards.bbs().occupancy();
+                const auto occupancy = boards.bbs().occupancy();
                 board.occupancy = occupancy;
 
                 usize i = 0;
-                while (occupancy) {
-                    const auto sq = occupancy.popLowestSquare();
+                for (const auto sq : occupancy) {
                     const auto piece = boards.pieceOn(sq);
 
                     auto ptId = piece.type().raw();

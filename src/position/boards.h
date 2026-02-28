@@ -320,10 +320,7 @@ namespace stormphrax {
 
             for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
                 const auto piece = Piece::fromRaw(pieceIdx);
-
-                auto board = m_bbs.forPiece(piece);
-                while (!board.empty()) {
-                    const auto sq = board.popLowestSquare();
+                for (const auto sq : m_bbs.forPiece(piece)) {
                     assert(slot(sq) == Pieces::kNone);
                     slot(sq) = piece;
                 }
