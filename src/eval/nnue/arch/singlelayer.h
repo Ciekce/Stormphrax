@@ -127,5 +127,19 @@ namespace stormphrax::eval::nnue::arch {
         [[nodiscard]] static inline usize byteSize() {
             return sizeof(i16) * kWeightCount + sizeof(i16) * kBiasCount;
         }
+
+        template <typename T>
+        static inline void permuteParams(std::span<T> values) {
+            SP_UNUSED(values);
+        }
+
+        template <typename W, typename T, typename B>
+        static inline void permuteFt(
+            std::span<const W> psqWeights,
+            std::span<const T> threatWeights,
+            std::span<const B> biases
+        ) {
+            SP_UNUSED(psqWeights, threatWeights, biases);
+        }
     };
 } // namespace stormphrax::eval::nnue::arch
