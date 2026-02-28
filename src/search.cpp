@@ -979,7 +979,7 @@ namespace stormphrax::search {
                         } else {
                             extension = 1;
                         }
-                    } else if (sBeta >= beta) {
+                    } else if (!kPvNode && sBeta >= beta) {
                         return sBeta;
                     } else if (cutnode) {
                         extension = -2;
