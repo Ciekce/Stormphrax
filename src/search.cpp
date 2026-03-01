@@ -620,7 +620,7 @@ namespace stormphrax::search {
                     && pos.isPseudolegal(ttEntry.move))
                 {
                     const auto bonus = historyBonus(depth);
-                    thread.history.updateQuietScore(
+                    thread.history.updateConthist(
                         thread.conthist,
                         ply,
                         pos.threats(),
