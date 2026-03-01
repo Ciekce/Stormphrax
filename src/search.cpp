@@ -694,7 +694,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (depth >= 3 && !curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth)) {
+        if (depth >= 3 && !curr.excluded && cutnode && (!ttMove || ttEntry.depth + 3 < depth)) {
             --depth;
         }
 
