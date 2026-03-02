@@ -912,6 +912,7 @@ namespace stormphrax::search {
                 const auto lmrDepth = [&] {
                     auto r = baseLmr;
                     r += curr.ttpv * lmrDepthTtpvScale();
+                    r += 128 * !improving;
                     return std::max(depth - r / 128, 0);
                 }();
 
