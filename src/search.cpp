@@ -909,7 +909,7 @@ namespace stormphrax::search {
 
             if ((!kRootNode || thread.search.rootDepth == 1) && bestScore > -kScoreWin && (!kPvNode || !thread.datagen))
             {
-                const auto lmrDepth = std::max(depth - baseLmr / 128, 0);
+                const auto lmrDepth = std::max(depth - (baseLmr + 96 * curr.ttpv) / 128, 0);
 
                 if (!noisy) {
                     if (legalMoves >= kLmpTable[improving][std::min(depth, 15)]) {
