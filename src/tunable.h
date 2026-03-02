@@ -180,6 +180,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
     SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
 
+    SP_TUNABLE_PARAM(lmrDepthTtpvScale, 96, 48, 192, 8)
+
     SP_TUNABLE_PARAM(fpMargin, 261, 120, 350, 45)
     SP_TUNABLE_PARAM(fpScale, 68, 40, 80, 8)
     SP_TUNABLE_PARAM(fpHistoryDivisor, 128, 32, 384, 18)
