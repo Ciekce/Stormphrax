@@ -1613,7 +1613,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (g_opts.minimal) {
+        if (!g_opts.minimal) {
             println("info string Selected thread {}", bestThread->id);
         }
 
