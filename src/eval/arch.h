@@ -48,20 +48,7 @@ namespace stormphrax::eval {
 
     constexpr i32 kScale = 400;
 
-    // visually flipped upside down, a1 = 0
-    using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
-        nnue::features::psq::MirroredKingSide::kAbcd,
-        // clang-format off
-         0,  1,  2,  3,
-         4,  5,  6,  7,
-         8,  9, 10, 11,
-         8,  9, 10, 11,
-        12, 12, 13, 13,
-        12, 12, 13, 13,
-        14, 14, 15, 15,
-        14, 14, 15, 15
-        // clang-format on
-        >;
+    using PsqFeatureSet = nnue::features::psq::HalfKaV2Mirrored<nnue::features::psq::MirroredKingSide::kAbcd>;
 
     using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
 
