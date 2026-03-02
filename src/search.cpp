@@ -927,7 +927,9 @@ namespace stormphrax::search {
                     }
 
                     if (!inCheck && lmrDepth <= 8 && std::abs(alpha) < 2000
-                        && curr.staticEval + fpMargin() + depth * fpScale() + history / fpHistoryDivisor() <= alpha)
+                        && curr.staticEval + fpMargin() + depth * (fpScale() - !improving * 20)
+                                   + history / fpHistoryDivisor()
+                               <= alpha)
                     {
                         generator.skipQuiets();
                         continue;
