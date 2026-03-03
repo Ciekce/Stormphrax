@@ -810,7 +810,7 @@ namespace stormphrax::search {
                 }
             }
 
-            const auto probcutBeta = beta + probcutMargin();
+            const auto probcutBeta = beta + probcutMargin() - 80 * improving;
             const auto probcutDepth = std::max(depth - 3, 1);
 
             if (!curr.ttpv && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
