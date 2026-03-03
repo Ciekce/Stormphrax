@@ -95,8 +95,7 @@ namespace stormphrax {
     class HistoryTables {
     public:
         inline void clear() {
-            std::memset(&m_butterfly, 0, sizeof(m_butterfly));
-            std::memset(&m_pieceTo, 0, sizeof(m_pieceTo));
+            std::memset(&m_main, 0, sizeof(m_main));
             std::memset(&m_continuation, 0, sizeof(m_continuation));
             std::memset(&m_noisy, 0, sizeof(m_noisy));
         }
@@ -112,12 +111,13 @@ namespace stormphrax {
         inline void updateConthist(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
+            Square kingSq,
             Bitboard threats,
             Piece moving,
             Move move,
             HistoryScore bonus
         ) {
-            const auto base = getConthist(continuations, ply, moving, move) + getMainHist(threats, moving, move) / 2;
+            const auto base = getConthist(continuations, ply, moving, move) + getMainHist(kingSq, threats, moving, move) / 2;
 
             updateConthist(continuations, ply, moving, move, base, bonus, 1);
             updateConthist(continuations, ply, moving, move, base, bonus, 2);
@@ -127,22 +127,23 @@ namespace stormphrax {
         inline void updateQuietScore(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
+            Square kingSq,
             Bitboard threats,
             Piece moving,
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update(bonus);
-            pieceToEntry(threats, moving, move).update(bonus);
-            updateConthist(continuations, ply, threats, moving, move, bonus);
+            butterflyEntry(kingSq, threats, move).update(bonus);
+            pieceToEntry(kingSq, threats, moving, move).update(bonus);
+            updateConthist(continuations, ply, kingSq, threats, moving, move, bonus);
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
             noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
         }
 
-        [[nodiscard]] inline i32 getMainHist(Bitboard threats, Piece moving, Move move) const {
-            return (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
+        [[nodiscard]] inline i32 getMainHist(Square kingSq, Bitboard threats, Piece moving, Move move) const {
+            return (butterflyEntry(kingSq, threats, move) + pieceToEntry(kingSq, threats, moving, move)) / 2;
         }
 
         [[nodiscard]] inline i32 getConthist(
@@ -163,13 +164,14 @@ namespace stormphrax {
         [[nodiscard]] inline i32 quietScore(
             std::span<ContinuationSubtable* const> continuations,
             i32 ply,
+            Square kingSq,
             Bitboard threats,
             Piece moving,
             Move move
         ) const {
             i32 score{};
 
-            score += getMainHist(threats, moving, move);
+            score += getMainHist(kingSq, threats, moving, move);
             score += getConthist(continuations, ply, moving, move);
 
             return score;
@@ -180,10 +182,16 @@ namespace stormphrax {
         }
 
     private:
-        // [from][to][from attacked][to attacked]
-        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
-        // [piece][to]
-        util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> m_pieceTo{};
+        struct MainHistory {
+            // [from][to][from attacked][to attacked]
+            util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> butterfly{};
+            // [piece][to]
+            util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> pieceTo{};
+        };
+
+        // [friendly king sq]
+        std::array<MainHistory, Squares::kCount> m_main{};
+
         // [prev piece][to][curr piece type][to]
         util::MultiArray<ContinuationSubtable, Pieces::kCount, Squares::kCount> m_continuation{};
 
@@ -219,20 +227,29 @@ namespace stormphrax {
             return 0;
         }
 
-        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Square kingSq, Bitboard threats, Move move) const {
+            return m_main[kingSq.idx()]
+                .butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
-        [[nodiscard]] inline HistoryEntry& butterflyEntry(Bitboard threats, Move move) {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        [[nodiscard]] inline HistoryEntry& butterflyEntry(Square kingSq, Bitboard threats, Move move) {
+            return m_main[kingSq.idx()]
+                .butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
-        [[nodiscard]] inline const HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) const {
-            return m_pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        [[nodiscard]] inline const HistoryEntry& pieceToEntry(
+            Square kingSq,
+            Bitboard threats,
+            Piece moving,
+            Move move
+        ) const {
+            return m_main[kingSq.idx()]
+                .pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
-        [[nodiscard]] inline HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) {
-            return m_pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        [[nodiscard]] inline HistoryEntry& pieceToEntry(Square kingSq, Bitboard threats, Piece moving, Move move) {
+            return m_main[kingSq.idx()]
+                .pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] static inline const ContinuationSubtable& conthistEntry(

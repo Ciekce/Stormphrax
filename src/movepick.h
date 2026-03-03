@@ -369,6 +369,7 @@ namespace stormphrax {
             move.score = m_history.quietScore(
                 m_continuations,
                 m_ply,
+                m_pos.king(m_pos.stm()),
                 m_pos.threats(),
                 m_pos.boards().pieceOn(move.move.fromSq()),
                 move.move

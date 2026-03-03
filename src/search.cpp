@@ -603,6 +603,8 @@ namespace stormphrax::search {
 
         assert(!kRootNode || curr.excluded == kNullMove);
 
+        const auto kingSq = pos.king(us);
+
         auto& moveStack = thread.moveStack[moveStackIdx];
 
         ProbedTTableEntry ttEntry{};
@@ -623,6 +625,7 @@ namespace stormphrax::search {
                     thread.history.updateQuietScore(
                         thread.conthist,
                         ply,
+                        kingSq,
                         pos.threats(),
                         boards.pieceOn(ttEntry.move.fromSq()),
                         ttEntry.move,
@@ -904,8 +907,9 @@ namespace stormphrax::search {
 
             const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-            const auto history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
-                                       : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+            const auto history =
+                noisy ? thread.history.noisyScore(move, captured, pos.threats())
+                      : thread.history.quietScore(thread.conthist, ply, kingSq, pos.threats(), moving, move);
 
             if ((!kRootNode || thread.search.rootDepth == 1) && bestScore > -kScoreWin && (!kPvNode || !thread.datagen))
             {
@@ -1058,7 +1062,8 @@ namespace stormphrax::search {
 
                         if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
                             const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
-                            thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
+                            thread.history
+                                .updateConthist(thread.conthist, ply, kingSq, pos.threats(), moving, move, bonus);
                         }
                     }
                 }
@@ -1179,6 +1184,7 @@ namespace stormphrax::search {
                 thread.history.updateQuietScore(
                     thread.conthist,
                     ply,
+                    kingSq,
                     pos.threats(),
                     pos.boards().pieceOn(bestMove.fromSq()),
                     bestMove,
@@ -1189,6 +1195,7 @@ namespace stormphrax::search {
                     thread.history.updateQuietScore(
                         thread.conthist,
                         ply,
+                        kingSq,
                         pos.threats(),
                         pos.boards().pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
