@@ -36,6 +36,7 @@ namespace stormphrax::search {
 
     namespace {
         constexpr f64 kWidenReportDelay = 1.0;
+        constexpr f64 kMultipvVerboseDelay = 1.0;
         constexpr f64 kCurrmoveReportDelay = 2.5;
 
         // [improving][clamped depth]
@@ -460,9 +461,27 @@ namespace stormphrax::search {
                     delta += delta * aspWideningFactor() / 16;
                 }
 
-                thread.sortRootMoves();
+                thread.sortSearchedRootMoves();
 
                 assert(thread.pvMove().pv.length > 0);
+
+                if (thread.isMainThread()) {
+                    const bool lastPv = thread.pvIdx + 1 == m_multiPv;
+
+                    if (lastPv && !hasStopped()) {
+                        const auto nodes = searchData.loadNodes();
+                        m_limiter->update(depth, nodes, thread.pvMove());
+                        if (depth >= m_maxDepth || m_limiter->stopSoft(nodes)) {
+                            m_stop.store(true, std::memory_order::relaxed);
+                        }
+                    }
+
+                    if (!m_silent
+                        && (hasStopped() || (!g_opts.minimal && (lastPv || elapsed() >= kMultipvVerboseDelay))))
+                    {
+                        report(thread, searchData.rootDepth, elapsed());
+                    }
+                }
 
                 if (hasStopped()) {
                     break;
@@ -474,27 +493,6 @@ namespace stormphrax::search {
             }
 
             thread.depthCompleted = depth;
-
-            if (depth >= m_maxDepth) {
-                if (thread.isMainThread() && m_infinite) {
-                    report(thread, searchData.rootDepth, elapsed());
-                }
-                break;
-            }
-
-            if (thread.isMainThread()) {
-                const auto nodes = searchData.loadNodes();
-
-                m_limiter->update(depth, nodes, thread.pvMove());
-
-                if (m_limiter->stopSoft(nodes)) {
-                    break;
-                }
-
-                if (!m_silent && !g_opts.minimal) {
-                    report(thread, searchData.rootDepth, elapsed());
-                }
-            }
         }
 
         const auto waitForThreads = [&] {
@@ -1631,7 +1629,11 @@ namespace stormphrax::search {
 
         const auto& bestThread = selectThread();
 
-        report(bestThread, bestThread.depthCompleted, elapsed());
+        // the main thread already printed its info before stopping
+        if (!bestThread.isMainThread()) {
+            report(bestThread, bestThread.depthCompleted, elapsed());
+        }
+
         println("bestmove {}", bestThread.pvMove().pv.moves[0]);
     }
 } // namespace stormphrax::search

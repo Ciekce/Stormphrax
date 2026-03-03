@@ -168,7 +168,7 @@ namespace stormphrax::search {
             return findRootMove(move) != nullptr;
         }
 
-        void sortRootMoves();
+        void sortSearchedRootMoves();
         void sortRemainingRootMoves();
 
         [[nodiscard]] inline RootMove& pvMove() {
