@@ -870,6 +870,8 @@ namespace stormphrax::search {
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
 
+        bool bestMoveSingular = false;
+
         auto ttFlag = TtFlag::kUpperBound;
 
         auto generator =
@@ -958,6 +960,7 @@ namespace stormphrax::search {
             }
 
             i32 extension{};
+            bool singular = false;
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
                 if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
@@ -981,6 +984,7 @@ namespace stormphrax::search {
                         } else {
                             extension = 1;
                         }
+                        singular = true;
                     } else if (!kPvNode && sBeta >= beta) {
                         return sBeta;
                     } else if (cutnode) {
@@ -1134,6 +1138,8 @@ namespace stormphrax::search {
                 alpha = score;
                 bestMove = move;
 
+                bestMoveSingular = singular;
+
                 ++alphaRaises;
 
                 if constexpr (kPvNode) {
@@ -1212,7 +1218,7 @@ namespace stormphrax::search {
         bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
         if (!curr.excluded) {
-            if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove))
+            if (!inCheck && !bestMoveSingular && (bestMove.isNull() || !pos.isNoisy(bestMove))
                 && (ttFlag == TtFlag::kExact                                          //
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
