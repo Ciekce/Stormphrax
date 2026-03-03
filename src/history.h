@@ -96,6 +96,7 @@ namespace stormphrax {
     public:
         inline void clear() {
             std::memset(&m_main, 0, sizeof(m_main));
+            std::memset(&m_mainFactorizer, 0, sizeof(m_mainFactorizer));
             std::memset(&m_continuation, 0, sizeof(m_continuation));
             std::memset(&m_noisy, 0, sizeof(m_noisy));
         }
@@ -117,7 +118,8 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            const auto base = getConthist(continuations, ply, moving, move) + getMainHist(kingSq, threats, moving, move) / 2;
+            const auto base =
+                getConthist(continuations, ply, moving, move) + getMainHist(kingSq, threats, moving, move) / 2;
 
             updateConthist(continuations, ply, moving, move, base, bonus, 1);
             updateConthist(continuations, ply, moving, move, base, bonus, 2);
@@ -135,6 +137,10 @@ namespace stormphrax {
         ) {
             butterflyEntry(kingSq, threats, move).update(bonus);
             pieceToEntry(kingSq, threats, moving, move).update(bonus);
+
+            butterflyFactorizerEntry(threats, move).update(bonus);
+            pieceToFactorizerEntry(threats, moving, move).update(bonus);
+
             updateConthist(continuations, ply, kingSq, threats, moving, move, bonus);
         }
 
@@ -143,7 +149,10 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline i32 getMainHist(Square kingSq, Bitboard threats, Piece moving, Move move) const {
-            return (butterflyEntry(kingSq, threats, move) + pieceToEntry(kingSq, threats, moving, move)) / 2;
+            const auto main = butterflyEntry(kingSq, threats, move) + pieceToEntry(kingSq, threats, moving, move);
+            const auto factorizer =
+                butterflyFactorizerEntry(threats, move) + pieceToFactorizerEntry(threats, moving, move);
+            return (main + factorizer) / 4;
         }
 
         [[nodiscard]] inline i32 getConthist(
@@ -191,6 +200,7 @@ namespace stormphrax {
 
         // [friendly king sq]
         std::array<MainHistory, Squares::kCount> m_main{};
+        MainHistory m_mainFactorizer{};
 
         // [prev piece][to][curr piece type][to]
         util::MultiArray<ContinuationSubtable, Pieces::kCount, Squares::kCount> m_continuation{};
@@ -250,6 +260,28 @@ namespace stormphrax {
         [[nodiscard]] inline HistoryEntry& pieceToEntry(Square kingSq, Bitboard threats, Piece moving, Move move) {
             return m_main[kingSq.idx()]
                 .pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        }
+
+        [[nodiscard]] inline const HistoryEntry& butterflyFactorizerEntry(Bitboard threats, Move move) const {
+            return m_mainFactorizer
+                .butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        }
+
+        [[nodiscard]] inline HistoryEntry& butterflyFactorizerEntry(Bitboard threats, Move move) {
+            return m_mainFactorizer
+                .butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        }
+
+        [[nodiscard]] inline const HistoryEntry& pieceToFactorizerEntry(
+            Bitboard threats,
+            Piece moving,
+            Move move
+        ) const {
+            return m_mainFactorizer.pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+        }
+
+        [[nodiscard]] inline HistoryEntry& pieceToFactorizerEntry(Bitboard threats, Piece moving, Move move) {
+            return m_mainFactorizer.pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
         }
 
         [[nodiscard]] static inline const ContinuationSubtable& conthistEntry(
