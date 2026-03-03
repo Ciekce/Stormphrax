@@ -1214,7 +1214,7 @@ namespace stormphrax::search {
         bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
         if (!curr.excluded) {
-            if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove))
+            if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove) || !see::see(pos, bestMove, 0))
                 && (ttFlag == TtFlag::kExact                                          //
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
