@@ -337,17 +337,24 @@ namespace stormphrax::eval {
             }
         };
 
+        usize featureCount{};
+
         const auto occ = boards.bbs().occupancy();
 
         for (const auto from : occ & ~boards.bbs().kings()) {
             const auto piece = boards.pieceOn(from);
-            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
+            for (const auto to : occ& attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
                 const auto attacked = boards.pieceOn(to);
                 const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
                 if (feature < nnue::features::threats::kTotalThreatFeatures) {
                     activateFeature(feature);
+                    ++featureCount;
                 }
             }
+        }
+
+        if (c == Colors::kBlack) {
+            println("{} threat features", featureCount);
         }
     }
 
