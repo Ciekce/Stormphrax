@@ -66,8 +66,10 @@ namespace stormphrax::search {
         return nullptr;
     }
 
-    void ThreadData::sortRootMoves() {
-        std::ranges::stable_sort(rootMoves, [](const RootMove& a, const RootMove& b) { return a.score > b.score; });
+    void ThreadData::sortSearchedRootMoves() {
+        std::stable_sort(rootMoves.begin(), rootMoves.begin() + pvIdx + 1, [](const RootMove& a, const RootMove& b) {
+            return a.score > b.score;
+        });
     }
 
     void ThreadData::sortRemainingRootMoves() {
