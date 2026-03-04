@@ -981,8 +981,8 @@ namespace stormphrax::search {
                         } else {
                             extension = 1;
                         }
-                    } else if (!kPvNode && sBeta >= beta) {
-                        return sBeta;
+                    } else if (!kPvNode && score >= beta) {
+                        return !isWin(score) ? (score + beta) / 2 : score;
                     } else if (cutnode) {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
