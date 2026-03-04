@@ -401,6 +401,8 @@ namespace stormphrax::search {
         searchData.nodes = 0;
         thread.stack[0].killers.clear();
 
+        thread.optimism = {};
+
         thread.depthCompleted = 0;
 
         for (i32 depth = 1;; ++depth) {
@@ -413,13 +415,21 @@ namespace stormphrax::search {
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
                 searchData.seldepth = 0;
 
+                const auto& rootMove = thread.rootMoves[thread.pvIdx];
+
+                if (depth > 1) {
+                    const auto optimism = 150 * rootMove.averageScore / (std::abs(rootMove.averageScore + 120));
+                    thread.optimism[thread.rootPos.stm().idx()] = optimism;
+                    thread.optimism[thread.rootPos.nstm().idx()] = -optimism;
+                }
+
                 auto delta = initialAspWindow();
 
                 auto alpha = -kScoreInf;
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
-                    const auto lastScore = thread.rootMoves[thread.pvIdx].windowScore;
+                    const auto lastScore = rootMove.windowScore;
 
                     alpha = std::max(lastScore - delta, -kScoreInf);
                     beta = std::min(lastScore + delta, kScoreInf);
@@ -585,6 +595,7 @@ namespace stormphrax::search {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
+                                 thread.optimism,
                                  thread.keyHistory,
                                  thread.nnueState,
                                  thread.correctionHistory,
@@ -716,8 +727,14 @@ namespace stormphrax::search {
                 curr.staticEval = kScoreNone;
             } else {
                 Score corrDelta{};
-                curr.staticEval =
-                    eval::adjustEval(pos, thread.keyHistory, thread.correctionHistory, rawStaticEval, &corrDelta);
+                curr.staticEval = eval::adjustEval(
+                    pos,
+                    thread.optimism,
+                    thread.keyHistory,
+                    thread.correctionHistory,
+                    rawStaticEval,
+                    &corrDelta
+                );
                 complexity = corrDelta;
             }
         }
@@ -1118,6 +1135,12 @@ namespace stormphrax::search {
                     } else if (score >= beta) {
                         rootMove->displayScore = beta;
                         rootMove->lowerbound = true;
+                    } else {
+                        if (rootMove->averageScore == -kScoreInf) {
+                            rootMove->averageScore = score;
+                        } else {
+                            rootMove->averageScore = (rootMove->averageScore + score) / 2;
+                        }
                     }
 
                     rootMove->pv.update(move, curr.pv);
@@ -1263,6 +1286,7 @@ namespace stormphrax::search {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
+                                 thread.optimism,
                                  thread.keyHistory,
                                  thread.nnueState,
                                  thread.correctionHistory,
@@ -1299,7 +1323,8 @@ namespace stormphrax::search {
                 m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
             }
 
-            const auto staticEval = eval::adjustEval(pos, thread.keyHistory, thread.correctionHistory, rawStaticEval);
+            const auto staticEval =
+                eval::adjustEval(pos, thread.optimism, thread.keyHistory, thread.correctionHistory, rawStaticEval);
 
             if (ttEntry.flag == TtFlag::kExact                                         //
                 || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval) //

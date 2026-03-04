@@ -27,6 +27,7 @@ namespace stormphrax::search {
     struct RootMove {
         Score score{-kScoreInf};
         Score windowScore{-kScoreInf};
+        Score averageScore{-kScoreInf};
 
         Score displayScore{-kScoreInf};
         Score previousScore{-kScoreInf};
