@@ -141,6 +141,8 @@ namespace stormphrax::search {
         u32 pvIdx{};
         std::vector<RootMove> rootMoves{};
 
+        eval::Optimism optimism{};
+
         i32 depthCompleted{};
 
         std::vector<SearchStackEntry> stack{};
