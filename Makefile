@@ -22,7 +22,6 @@ ifndef EVALFILE
     NO_EVALFILE_SET = true
 endif
 
-PGO = off
 COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 USE_LIBNUMA = off
@@ -80,25 +79,6 @@ ifneq (, $(findstring clang,$(COMPILER_VERSION)))
     ifneq ($(DETECTED_OS),Darwin)
         LDFLAGS += -fuse-ld=lld
     endif
-    ifeq ($(DETECTED_OS),Windows)
-        ifeq (,$(shell where llvm-profdata))
-            $(warning llvm-profdata not found, disabling PGO)
-            override PGO := off
-        endif
-    else
-        ifeq (,$(shell which llvm-profdata))
-            $(warning llvm-profdata not found, disabling PGO)
-            override PGO := off
-        endif
-    endif
-    PGO_GENERATE := -DSP_PGO_PROFILE -fprofile-instr-generate
-    PGO_MERGE := llvm-profdata merge -output=sp.profdata *.profraw
-    PGO_USE := -fprofile-instr-use=sp.profdata
-else
-    $(warning GCC currently produces very slow binaries for Stormphrax)
-    PGO_GENERATE := -DSP_PGO_PROFILE -fprofile-generate
-    PGO_MERGE :=
-    PGO_USE := -fprofile-use
 endif
 
 ARCH_DEFINES := $(shell echo | $(CXX) -march=native -E -dM -)
@@ -128,23 +108,9 @@ ifeq ($(USE_LIBNUMA),on)
 	LDFLAGS += -lnuma
 endif
 
-PROFILE_OUT = sp_profile$(SUFFIX)
-
-ifneq ($(PGO),on)
 define build
     $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $<,$^)
 endef
-else
-define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $<,$^)
-    ./$(PROFILE_OUT) bench
-    $(RM) $(PROFILE_OUT)
-    $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $<,$^)
-    $(RM) *.profraw
-    $(RM) sp.profdata
-endef
-endif
 
 release: avx512 avx2-bmi2 avx2
 all: native release

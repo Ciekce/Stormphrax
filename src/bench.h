@@ -25,8 +25,6 @@
 namespace stormphrax::bench {
 #if SP_SPARSE_BENCH_L1_SIZE > 0
     constexpr i32 kDefaultBenchDepth = 18;
-#elif defined(SP_PGO_PROFILE)
-    constexpr i32 kDefaultBenchDepth = 10;
 #else
     constexpr i32 kDefaultBenchDepth = 14;
 #endif
