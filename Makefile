@@ -64,7 +64,7 @@ ifeq ($(DETECTED_OS), Windows)
     SUFFIX := .exe
     # for fathom
     CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
-    RM := del
+    RMDIR := rmdir /s /q
 else
     SUFFIX :=
     LDFLAGS += -pthread
@@ -72,7 +72,7 @@ else
     ifdef IS_COSMO
         CXXFLAGS += -stdlib=libc++
     endif
-    RM := rm
+    RMDIR := rm -rf
 endif
 
 ifneq (, $(findstring clang,$(COMPILER_VERSION)))
@@ -196,4 +196,5 @@ armv8_4: tmp/$(EVALFILE_NAME)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK
 	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 clean:
+	$(RMDIR) tmp
 
