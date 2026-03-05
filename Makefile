@@ -45,7 +45,7 @@ CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
 CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
-CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
+CXXFLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
 CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
 
 LDFLAGS :=
@@ -112,7 +112,7 @@ define build
     $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $<,$^)
 endef
 
-release: avx512 avx2-bmi2 avx2
+release: avx512 avx2-bmi2 zen2
 all: native release
 
 .PHONY: all
@@ -173,16 +173,16 @@ tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
 avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
 
-# ========================================== avx2 ==========================================
+# ========================================== zen2 ==========================================
 
-tmp/permute-avx2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
+tmp/permute-zen2: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ZEN2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE_NAME)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
-	tmp/permute-avx2 $< $@
+tmp/$(EVALFILE_NAME)_permuted_zen2: $(EVALFILE) tmp/permute-zen2
+	tmp/permute-zen2 $< $@
 
-avx2: tmp/$(EVALFILE_NAME)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,RELEASE,AVX2,avx2)
+zen2: tmp/$(EVALFILE_NAME)_permuted_zen2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+	$(call build,RELEASE,ZEN2,zen2)
 
 # ========================================== armv8_4 ==========================================
 

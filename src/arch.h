@@ -68,7 +68,7 @@
     #define SP_HAS_AVX2 1
     #define SP_HAS_NEON 0
     #define SP_HAS_NEON_DOTPROD 0
-#elif defined(SP_AVX2)
+#elif defined(SP_ZEN2)
     #define SP_HAS_BMI2 0
     #define SP_HAS_VNNI512 0
     #define SP_HAS_VBMI2 0
