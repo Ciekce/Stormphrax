@@ -741,7 +741,7 @@ namespace stormphrax::search {
                 ++depth;
             }
 
-            if (depth >= 2 && parent->reduction >= 2 && curr.staticEval + parent->staticEval >= 150) {
+            if (depth >= 2 && parent->reduction >= 2 && curr.staticEval + parent->staticEval >= 200) {
                 --depth;
             }
 
