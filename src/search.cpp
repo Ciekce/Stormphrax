@@ -741,7 +741,9 @@ namespace stormphrax::search {
                 ++depth;
             }
 
-            if (depth >= 2 && parent->reduction >= 2 && curr.staticEval + parent->staticEval >= 200) {
+            if (depth >= 2 && parent->reduction >= 2 && parent->staticEval != kScoreNone
+                && curr.staticEval + parent->staticEval >= hindsightReductionMargin())
+            {
                 --depth;
             }
 
