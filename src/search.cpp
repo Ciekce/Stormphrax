@@ -1301,10 +1301,6 @@ namespace stormphrax::search {
                 rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
             }
 
-            if (!ttHit) {
-                m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
-            }
-
             const auto staticEval = eval::adjustEval(pos, thread.keyHistory, thread.correctionHistory, rawStaticEval);
 
             if (ttEntry.flag == TtFlag::kExact                                         //
@@ -1317,7 +1313,15 @@ namespace stormphrax::search {
             }
 
             if (eval >= beta) {
-                return !isWin(eval) && !isWin(beta) ? (eval + beta) / 2 : eval;
+                eval = !isWin(eval) && !isWin(beta) ? (eval + beta) / 2 : eval;
+                if (!ttHit) {
+                    m_ttable.put(pos.key(), eval, rawStaticEval, kNullMove, 0, ply, TtFlag::kLowerBound, ttpv);
+                }
+                return eval;
+            }
+
+            if (!ttHit) {
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
             }
 
             if (eval > alpha) {
