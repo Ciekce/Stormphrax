@@ -39,6 +39,10 @@ namespace stormphrax {
         inline void clear() {
             killer = kNullMove;
         }
+
+        [[nodiscard]] inline bool contains(Move move) const {
+            return killer == move;
+        }
     };
 
     struct MovegenData {
