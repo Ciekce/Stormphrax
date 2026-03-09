@@ -146,14 +146,6 @@ namespace stormphrax {
             pushStandards(quiet, forwardOffset, singles);
         }
 
-        template <const std::array<Bitboard, Squares::kCount>& kAttacks>
-        inline void precalculated(ScoredMoveList& dst, PieceType pt, const Position& pos, Bitboard dstMask) {
-            for (const auto srcSquare : pos.bbs().forPiece(pt, pos.stm())) {
-                const auto attacks = kAttacks[srcSquare.idx()];
-                pushStandards(dst, srcSquare, attacks & dstMask);
-            }
-        }
-
         void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
             for (const auto srcSquare : pos.bbs().knights(pos.stm()) & ~pos.pinned(pos.stm())) {
                 const auto attacks = attacks::kKnightAttacks[srcSquare.idx()];
@@ -184,7 +176,8 @@ namespace stormphrax {
 
         template <bool kCastling>
         void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<attacks::kKingAttacks>(dst, PieceTypes::kKing, pos, dstMask);
+            const auto attacks = attacks::kKingAttacks[pos.king(pos.stm()).idx()];
+            pushStandards(dst, srcSquare, attacks & dstMask & ~pos.threats());
 
             if constexpr (kCastling) {
                 if (!pos.isCheck()) {
