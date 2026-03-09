@@ -276,23 +276,36 @@ namespace stormphrax {
             const auto& bbs = pos.bbs();
 
             const auto us = pos.stm();
-            const auto them = us.flip();
 
-            const auto ours = bbs.forColor(us);
-            const auto theirs = bbs.forColor(them);
+            const auto occupancy = bbs.occupancy();
+            const auto pinned = pos.pinned(us);
 
-            const auto occupancy = ours | theirs;
+            const auto king = pos.king(us);
+            const auto rookPinRays = attacks::kEmptyBoardRooks[king.idx()];
+            const auto bishopPinRays = attacks::kEmptyBoardBishops[king.idx()];
 
             const auto queens = bbs.queens(us);
+            const auto rooks = queens | bbs.rooks(us);
+            const auto bishops = queens | bbs.bishops(us);
 
-            for (const auto src : queens | bbs.rooks(us)) {
+            for (const auto src : rooks & ~pinned) {
                 const auto attacks = attacks::getRookAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask);
             }
 
-            for (const auto src : queens | bbs.bishops(us)) {
+            for (const auto src : bishops & ~pinned) {
                 const auto attacks = attacks::getBishopAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask);
+            }
+
+            for (const auto src : rooks& pinned) {
+                const auto attacks = attacks::getRookAttacks(src, occupancy);
+                pushStandards(dst, src, attacks & dstMask & rookPinRays);
+            }
+
+            for (const auto src : bishops& pinned) {
+                const auto attacks = attacks::getBishopAttacks(src, occupancy);
+                pushStandards(dst, src, attacks & dstMask & bishopPinRays);
             }
         }
     } // namespace
