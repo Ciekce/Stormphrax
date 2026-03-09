@@ -98,6 +98,9 @@ namespace stormphrax::attacks {
     constexpr auto kEmptyBoardBishops =
         generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>();
 
+    constexpr auto kDiagonals = generateEmptyBoardAttacks<offsets::kUpRight, offsets::kDownLeft>();
+    constexpr auto kAntiDiagonals = generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kDownRight>();
+
     template <i32... kDirs>
     [[nodiscard]] constexpr Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
         Bitboard dst{};

@@ -121,19 +121,29 @@ namespace stormphrax {
             const auto leftOffset = offsets::upLeft(us);
             const auto rightOffset = offsets::upRight(us);
 
+            const auto king = pos.king(us);
+            const auto forwardPinMask = Bitboard::file(king.file());
+            const auto leftPinMask =
+                us == Colors::kBlack ? attacks::kDiagonals[king.idx()] : attacks::kAntiDiagonals[king.idx()];
+            const auto rightPinMask =
+                us == Colors::kBlack ? attacks::kAntiDiagonals[king.idx()] : attacks::kDiagonals[king.idx()];
+
             const auto theirs = bbs.occupancy(them);
 
             const auto forwardDstMask = dstMask & ~theirs;
 
             const auto pawns = bbs.pawns(us);
+            const auto pinned = pos.pinned(us);
 
-            const auto leftAttacks = pawns.shiftUpLeftRelative(us) & dstMask;
-            const auto rightAttacks = pawns.shiftUpRightRelative(us) & dstMask;
+            const auto movablePawns = [&](Bitboard pinMask) { return (pawns & ~pinned) | (pawns & pinMask); };
+
+            const auto leftAttacks = movablePawns(leftPinMask).shiftUpLeftRelative(us) & dstMask;
+            const auto rightAttacks = movablePawns(rightPinMask).shiftUpRightRelative(us) & dstMask;
 
             pushUnderpromotions(quiet, leftOffset, leftAttacks & theirs & promotionRank);
             pushUnderpromotions(quiet, rightOffset, rightAttacks & theirs & promotionRank);
 
-            auto forwards = pawns.shiftUpRelative(us) & ~occ;
+            auto forwards = movablePawns(forwardPinMask).shiftUpRelative(us) & ~occ;
 
             auto singles = forwards & forwardDstMask;
             pushUnderpromotions(quiet, forwardOffset, singles & promotionRank);
@@ -176,8 +186,9 @@ namespace stormphrax {
 
         template <bool kCastling>
         void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            const auto attacks = attacks::kKingAttacks[pos.king(pos.stm()).idx()];
-            pushStandards(dst, srcSquare, attacks & dstMask & ~pos.threats());
+            const auto king = pos.king(pos.stm());
+            const auto attacks = attacks::kKingAttacks[king.idx()];
+            pushStandards(dst, king, attacks & dstMask & ~pos.threats());
 
             if constexpr (kCastling) {
                 if (!pos.isCheck()) {

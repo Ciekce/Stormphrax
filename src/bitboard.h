@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <array>
+#include <cassert>
 
 #include "core.h"
 #include "util/bits.h"
@@ -135,6 +136,11 @@ namespace stormphrax {
 
         constexpr Bitboard(u64 board = 0) :
                 m_board{board} {}
+
+        [[nodiscard]] constexpr static Bitboard file(i32 file) {
+            assert(file >= 0 && file < 8);
+            return {kFileA << file};
+        }
 
         [[nodiscard]] constexpr operator u64() const {
             return m_board;
