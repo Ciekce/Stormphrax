@@ -521,7 +521,7 @@ namespace stormphrax {
 
             m_threats = Bitboard{};
 
-            const auto occ = bbs.occupancy();
+            const auto occ = bbs.occupancy() & ~bbs.kings(us);
             const auto queens = bbs.queens(them);
 
             for (const auto rook : queens | bbs.rooks(them)) {
