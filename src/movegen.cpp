@@ -155,7 +155,10 @@ namespace stormphrax {
         }
 
         void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            precalculated<attacks::kKnightAttacks>(dst, PieceTypes::kKnight, pos, dstMask);
+            for (const auto srcSquare : pos.bbs().knights(pos.stm()) & ~pos.pinned(pos.stm())) {
+                const auto attacks = attacks::kKnightAttacks[srcSquare.idx()];
+                pushStandards(dst, srcSquare, attacks & dstMask);
+            }
         }
 
         inline void generateFrcCastling(
