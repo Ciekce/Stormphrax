@@ -151,7 +151,7 @@ namespace stormphrax::search {
 
         HistoryTables history{};
 
-        CorrectionHistoryTable* correctionHistory{};
+        CorrectionHistoryTable correctionHistory{};
 
         Position rootPos{};
 

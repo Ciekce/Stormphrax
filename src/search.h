@@ -181,8 +181,6 @@ namespace stormphrax::search {
         RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
-        numa::NumaUniqueAllocation<CorrectionHistoryTable> m_corrhists{};
-
         RootStatus initRootMoveList(const Position& pos);
 
         void stopThreads();
