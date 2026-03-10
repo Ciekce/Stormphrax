@@ -418,7 +418,8 @@ namespace stormphrax::search {
                 const auto& rootMove = thread.rootMoves[thread.pvIdx];
 
                 if (depth > 1) {
-                    const auto optimism = 150 * rootMove.averageScore / (std::abs(rootMove.averageScore) + 100);
+                    const auto optimism =
+                        optimismScale() * rootMove.averageScore / (std::abs(rootMove.averageScore) + optimismStretch());
                     thread.optimism[thread.rootPos.stm().idx()] = optimism;
                     thread.optimism[thread.rootPos.nstm().idx()] = -optimism;
                 }
