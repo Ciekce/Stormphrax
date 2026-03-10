@@ -39,6 +39,8 @@ namespace stormphrax::search {
         constexpr f64 kMultipvVerboseDelay = 1.0;
         constexpr f64 kCurrmoveReportDelay = 2.5;
 
+        constexpr u32 kSharedCorrhistBucketSize = 32;
+
         // [improving][clamped depth]
         constexpr auto kLmpTable = [] {
             util::MultiArray<i32, 2, 16> result{};
@@ -197,6 +199,8 @@ namespace stormphrax::search {
         m_threadData.resize(1);
         m_threadData.shrink_to_fit();
 
+        m_corrhists.realloc(1);
+
         auto& thread = m_threadData[0];
 
         thread = std::make_unique<ThreadData>();
@@ -282,6 +286,10 @@ namespace stormphrax::search {
 
         m_searchEndBarrier.reset(threadCount);
 
+        const auto threadsPerNode = util::ceilDiv<u32>(threadCount, numa::nodeCount());
+        const auto corrhistsPerNode = util::ceilDiv(threadsPerNode, kSharedCorrhistBucketSize);
+        m_corrhists.realloc(corrhistsPerNode);
+
         for (u32 threadId = 0; threadId < threadCount; ++threadId) {
             m_threads.emplace_back([this, threadId] { run(threadId); });
         }
@@ -351,7 +359,9 @@ namespace stormphrax::search {
         thread.numaId = threadId;
 
         thread.nnueState.setNetwork(eval::getNetwork(threadId));
-        thread.correctionHistory = m_corrhists.get(threadId);
+
+        const auto corrhistIdx = (threadId / numa::nodeCount()) / kSharedCorrhistBucketSize;
+        thread.correctionHistory = &m_corrhists.get(threadId)[corrhistIdx];
 
         m_initBarrier.arriveAndWait();
 

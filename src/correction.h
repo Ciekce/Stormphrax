@@ -36,7 +36,7 @@ namespace stormphrax {
         Square dst;
     };
 
-    class CorrectionHistoryTable {
+    class alignas(kCacheLineSize) CorrectionHistoryTable {
     public:
         inline void clear() {
             std::memset(&m_tables, 0, sizeof(m_tables));
