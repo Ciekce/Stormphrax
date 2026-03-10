@@ -825,7 +825,7 @@ namespace stormphrax {
 
             println();
 
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, nullptr, eval::staticEvalOnce(m_pos));
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, {}, nullptr, eval::staticEvalOnce(m_pos));
 
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
             const auto whiteNormalized = m_pos.stm() == Colors::kBlack ? -normalized : normalized;
@@ -842,14 +842,14 @@ namespace stormphrax {
         }
 
         void UciHandler::handleEval() {
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, nullptr, eval::staticEvalOnce(m_pos));
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, {}, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
             println("Static eval: {:+}", static_cast<f64>(normalized) / 100.0);
         }
 
         void UciHandler::handleRawEval() {
-            const auto score = eval::staticEvalOnce<false>(m_pos);
+            const auto score = eval::staticEvalOnce(m_pos);
             println("{}", score);
         }
 
