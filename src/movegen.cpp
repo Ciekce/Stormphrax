@@ -157,7 +157,8 @@ namespace stormphrax {
         }
 
         void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
-            for (const auto srcSquare : pos.bbs().knights(pos.stm()) & ~pos.pinned(pos.stm())) {
+            const auto nonPinnedKnights = pos.bbs().knights(pos.stm()) & ~pos.pinned(pos.stm());
+            for (const auto srcSquare : nonPinnedKnights) {
                 const auto attacks = attacks::kKnightAttacks[srcSquare.idx()];
                 pushStandards(dst, srcSquare, attacks & dstMask);
             }
@@ -172,14 +173,18 @@ namespace stormphrax {
             Square rook,
             Square rookDst
         ) {
+            const auto us = pos.stm();
+
             const auto toKingDst = rayBetween(king, kingDst);
             const auto toRook = rayBetween(king, rook);
 
             const auto occ = occupancy ^ king.bit() ^ rook.bit();
+            const auto threats = pos.threats();
 
-            if ((occ & (toKingDst | toRook | kingDst.bit() | rookDst.bit())).empty()
-                && !pos.anyAttacked(toKingDst | kingDst.bit(), pos.nstm()))
-            {
+            const auto clearMask = toKingDst | toRook | kingDst.bit() | rookDst.bit();
+            const auto checkMask = toKingDst | kingDst.bit();
+
+            if ((occ & clearMask).empty() && (threats & checkMask).empty() && !pos.pinned(us)[rook]) {
                 pushCastling(dst, king, rook);
             }
         }
@@ -194,6 +199,7 @@ namespace stormphrax {
                 if (!pos.isCheck()) {
                     const auto& castlingRooks = pos.castlingRooks();
                     const auto occupancy = pos.bbs().occupancy();
+                    const auto threats = pos.threats();
 
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
                     if (g_opts.chess960) {
@@ -248,28 +254,28 @@ namespace stormphrax {
                         if (pos.stm() == Colors::kBlack) {
                             if (castlingRooks.black().kingside != Squares::kNone
                                 && (occupancy & U64(0x6000000000000000)).empty()
-                                && !pos.isAttacked(Squares::kF8, Colors::kWhite))
+                                && (threats & U64(0x7000000000000000)).empty())
                             {
                                 pushCastling(dst, pos.blackKing(), Squares::kH8);
                             }
 
                             if (castlingRooks.black().queenside != Squares::kNone
                                 && (occupancy & U64(0x0E00000000000000)).empty()
-                                && !pos.isAttacked(Squares::kD8, Colors::kWhite))
+                                && (threats & U64(0x1C00000000000000)).empty())
                             {
                                 pushCastling(dst, pos.blackKing(), Squares::kA8);
                             }
                         } else {
                             if (castlingRooks.white().kingside != Squares::kNone
                                 && (occupancy & U64(0x0000000000000060)).empty()
-                                && !pos.isAttacked(Squares::kF1, Colors::kBlack))
+                                && (threats & U64(0x0000000000000070)).empty())
                             {
                                 pushCastling(dst, pos.whiteKing(), Squares::kH1);
                             }
 
                             if (castlingRooks.white().queenside != Squares::kNone
                                 && (occupancy & U64(0x000000000000000E)).empty()
-                                && !pos.isAttacked(Squares::kD1, Colors::kBlack))
+                                && (threats & U64(0x000000000000001C)).empty())
                             {
                                 pushCastling(dst, pos.whiteKing(), Squares::kA1);
                             }
