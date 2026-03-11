@@ -819,6 +819,14 @@ namespace stormphrax {
             m_enPassant = Squares::kNone;
         };
 
+        const auto movedPawn = m_enPassant.flipRankParity();
+
+        // if we are in check, we must be checked by the pushed pawn only for ep to be valid
+        if (!(checkers() & ~movedPawn.bit()).empty()) {
+            unset();
+            return;
+        }
+
         const auto& bbs = m_boards.bbs();
 
         const auto moved = capturing.flip();
@@ -867,10 +875,9 @@ namespace stormphrax {
         }
 
         // also handle the annoying case where capturing en passant would cause discovered check
-        const auto movedPawn = m_enPassant.flipRankParity();
         const auto capturingPawn = candidates.lowestSquare();
 
-        const auto rank = rayIntersecting(movedPawn, capturingPawn);
+        const auto rank = Bitboard::rank(movedPawn.rank());
         const auto oppRookCandidates = rank & (bbs.rooks(moved) | bbs.queens(moved));
 
         // not possible :3
