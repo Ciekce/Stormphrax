@@ -839,10 +839,6 @@ namespace stormphrax::search {
                 auto generator = MoveGenerator::probcut(pos, ttMove, moveStack.movegenData, thread.history);
 
                 while (const auto move = generator.next()) {
-                    if (!pos.isLegal(move)) {
-                        println("pc {} {}\n{}", pos.toFen(), move, pos);
-                    }
-
                     if (!see::see(pos, move, seeThreshold)) {
                         continue;
                     }
@@ -906,9 +902,6 @@ namespace stormphrax::search {
             if constexpr (kRootNode) {
                 if (!thread.isLegalRootMove(move)) {
                     continue;
-                }
-                if (!pos.isLegal(move)) {
-                    println("serach {} {}\n{}", pos.toFen(), move, pos);
                 }
 
                 assert(pos.isLegal(move));
@@ -1367,10 +1360,6 @@ namespace stormphrax::search {
         u32 legalMoves = 0;
 
         while (const auto move = generator.next()) {
-            if (!pos.isLegal(move)) {
-                println("qsearch {} {}\n{}", pos.toFen(), move, pos);
-            }
-
             if (bestScore > -kScoreWin) {
                 if (!inCheck && futility <= alpha && !see::see(pos, move, 1)) {
                     if (bestScore < futility) {
