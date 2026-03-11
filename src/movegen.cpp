@@ -80,19 +80,29 @@ namespace stormphrax {
 
             const auto& bbs = pos.bbs();
 
+            const auto king = pos.king(us);
+            const auto forwardPinMask = Bitboard::file(king.file());
+            const auto leftPinMask =
+                us == Colors::kBlack ? attacks::kDiagonals[king.idx()] : attacks::kAntiDiagonals[king.idx()];
+            const auto rightPinMask =
+                us == Colors::kBlack ? attacks::kAntiDiagonals[king.idx()] : attacks::kDiagonals[king.idx()];
+
             const auto theirs = bbs.occupancy(them);
 
             const auto forwardDstMask = dstMask & kPromotionRank & ~theirs;
 
             const auto pawns = bbs.pawns(us);
+            const auto pinned = pos.pinned(us);
 
-            const auto leftAttacks = pawns.shiftUpLeftRelative(us) & dstMask;
-            const auto rightAttacks = pawns.shiftUpRightRelative(us) & dstMask;
+            const auto movablePawns = [&](Bitboard pinMask) { return (pawns & ~pinned) | (pawns & pinMask); };
+
+            const auto leftAttacks = movablePawns(leftPinMask).shiftUpLeftRelative(us) & dstMask;
+            const auto rightAttacks = movablePawns(rightPinMask).shiftUpRightRelative(us) & dstMask;
 
             pushQueenPromotions(noisy, leftOffset, leftAttacks & theirs & kPromotionRank);
             pushQueenPromotions(noisy, rightOffset, rightAttacks & theirs & kPromotionRank);
 
-            const auto forwards = pawns.shiftUpRelative(us) & forwardDstMask;
+            const auto forwards = movablePawns(forwardPinMask).shiftUpRelative(us) & forwardDstMask;
             pushQueenPromotions(noisy, forwardOffset, forwards);
 
             pushStandards(noisy, leftOffset, leftAttacks & theirs & ~kPromotionRank);
@@ -335,18 +345,10 @@ namespace stormphrax {
 
         auto dstMask = kingDstMask;
 
-        Bitboard epMask{};
-        Bitboard epPawn{};
-
-        if (pos.enPassant() != Squares::kNone) {
-            epMask = Bitboard::fromSquare(pos.enPassant());
-            epPawn = us == Colors::kBlack ? epMask.shiftUp() : epMask.shiftDown();
-        }
-
         // queen promotions are noisy
         const auto promos = ~ours & (us == Colors::kBlack ? boards::kRank1 : boards::kRank8);
 
-        auto pawnDstMask = kingDstMask | epMask | promos;
+        auto pawnDstMask = kingDstMask | promos;
 
         if (pos.isCheck()) {
             if (pos.checkers().multiple()) {
@@ -357,11 +359,6 @@ namespace stormphrax {
             dstMask = pos.checkers();
 
             pawnDstMask = kingDstMask | (promos & rayBetween(pos.king(us), pos.checkers().lowestSquare()));
-
-            // pawn that just moved is the checker
-            if (!(pos.checkers() & epPawn).empty()) {
-                pawnDstMask |= epMask;
-            }
         }
 
         generateSliders(noisy, pos, dstMask);
@@ -413,31 +410,17 @@ namespace stormphrax {
 
         auto dstMask = kingDstMask;
 
-        Bitboard epMask{};
-        Bitboard epPawn{};
-
-        if (pos.enPassant() != Squares::kNone) {
-            epMask = Bitboard::fromSquare(pos.enPassant());
-            epPawn = pos.stm() == Colors::kBlack ? epMask.shiftUp() : epMask.shiftDown();
-        }
-
-        auto pawnDstMask = kingDstMask;
-
         if (pos.isCheck()) {
             if (pos.checkers().multiple()) {
                 generateKings<false>(dst, pos, kingDstMask);
                 return;
             }
 
-            pawnDstMask = dstMask = pos.checkers() | rayBetween(pos.king(us), pos.checkers().lowestSquare());
-
-            if (!(pos.checkers() & epPawn).empty()) {
-                pawnDstMask |= epMask;
-            }
+            dstMask = pos.checkers() | rayBetween(pos.king(us), pos.checkers().lowestSquare());
         }
 
         generateSliders(dst, pos, dstMask);
-        generatePawnsNoisy(dst, pos, pawnDstMask);
+        generatePawnsNoisy(dst, pos, dstMask);
         generatePawnsQuiet(dst, pos, dstMask, bbs.occupancy());
         generateKnights(dst, pos, dstMask);
         generateKings<true>(dst, pos, kingDstMask);
