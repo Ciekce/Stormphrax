@@ -373,7 +373,7 @@ namespace stormphrax {
 
             dstMask = pos.checkers();
 
-            pawnDstMask = kingDstMask | (promos & rayBetween(pos.king(us), pos.checkers().lowestSquare()));
+            pawnDstMask = dstMask | (promos & rayBetween(pos.king(us), pos.checkers().lowestSquare()));
         }
 
         generateSliders(noisy, pos, dstMask);
@@ -417,27 +417,29 @@ namespace stormphrax {
     }
 
     void generateAll(ScoredMoveList& dst, const Position& pos) {
-        const auto& bbs = pos.bbs();
-
-        const auto us = pos.stm();
-
-        const auto kingDstMask = ~bbs.forColor(pos.stm());
-
-        auto dstMask = kingDstMask;
-
-        if (pos.isCheck()) {
-            if (pos.checkers().multiple()) {
-                generateKings<false>(dst, pos, kingDstMask);
-                return;
-            }
-
-            dstMask = pos.checkers() | rayBetween(pos.king(us), pos.checkers().lowestSquare());
-        }
-
-        generateSliders(dst, pos, dstMask);
-        generatePawnsNoisy(dst, pos, dstMask);
-        generatePawnsQuiet(dst, pos, dstMask, bbs.occupancy());
-        generateKnights(dst, pos, dstMask);
-        generateKings<true>(dst, pos, kingDstMask);
+        generateNoisy(dst, pos);
+        generateQuiet(dst, pos);
+        // const auto& bbs = pos.bbs();
+        //
+        // const auto us = pos.stm();
+        //
+        // const auto kingDstMask = ~bbs.forColor(pos.stm());
+        //
+        // auto dstMask = kingDstMask;
+        //
+        // if (pos.isCheck()) {
+        //     if (pos.checkers().multiple()) {
+        //         generateKings<false>(dst, pos, kingDstMask);
+        //         return;
+        //     }
+        //
+        //     dstMask = pos.checkers() | rayBetween(pos.king(us), pos.checkers().lowestSquare());
+        // }
+        //
+        // generateSliders(dst, pos, dstMask);
+        // generatePawnsNoisy(dst, pos, dstMask);
+        // generatePawnsQuiet(dst, pos, dstMask, bbs.occupancy());
+        // generateKnights(dst, pos, dstMask);
+        // generateKings<true>(dst, pos, kingDstMask);
     }
 } // namespace stormphrax

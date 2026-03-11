@@ -133,6 +133,7 @@ namespace stormphrax {
 
     template <typename Observer>
     Position Position::applyMove(Move move, Observer observer) const {
+        // println("{} {} {}", toFen(), move, isLegal(move));
         auto newPos = *this;
 
         newPos.m_stm = m_stm.flip();
@@ -151,6 +152,7 @@ namespace stormphrax {
         }
 
         if (!move) {
+            println("nullmove");
             newPos.calcCheckersAndPins();
             newPos.calcThreats();
 
@@ -209,6 +211,7 @@ namespace stormphrax {
             newPos.m_keys.switchCastling(m_castlingRooks, newPos.m_castlingRooks);
         }
 
+        // println("{}", move);
         newPos.calcCheckersAndPins();
         newPos.calcThreats();
 

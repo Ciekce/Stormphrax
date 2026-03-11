@@ -479,38 +479,7 @@ namespace stormphrax {
         template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
-        inline void calcCheckersAndPins() {
-            m_checkers = nonSliderAttackersTo(m_kings.color(m_stm), m_stm.flip());
-            m_pinned = {};
-
-            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
-                auto& pinned = m_pinned[c.idx()];
-
-                const auto king = m_kings.color(c);
-                const auto opponent = c.flip();
-
-                const auto& bbs = m_boards.bbs();
-
-                const auto ourOcc = bbs.occupancy(c);
-                const auto oppOcc = bbs.occupancy(opponent);
-
-                const auto oppQueens = bbs.queens(opponent);
-
-                const auto potentialAttackers =
-                    attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
-                    | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
-
-                for (const auto potentialAttacker : potentialAttackers) {
-                    const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
-                    if (maybePinned.empty()) {
-                        assert(c == m_stm);
-                        m_checkers[potentialAttacker] = true;
-                    } else if (maybePinned.one()) {
-                        pinned |= maybePinned;
-                    }
-                }
-            }
-        }
+        inline void calcCheckersAndPins();
 
         inline void calcThreats() {
             const auto us = stm();
@@ -575,3 +544,42 @@ template <>
 struct fmt::formatter<stormphrax::Position> : fmt::formatter<std::string_view> {
     format_context::iterator format(const stormphrax::Position& value, format_context& ctx) const;
 };
+
+namespace stormphrax {
+    inline void Position::calcCheckersAndPins() {
+        m_checkers = nonSliderAttackersTo(m_kings.color(m_stm), m_stm.flip());
+        m_pinned = {};
+
+        for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+            auto& pinned = m_pinned[c.idx()];
+
+            const auto king = m_kings.color(c);
+            const auto opponent = c.flip();
+
+            const auto& bbs = m_boards.bbs();
+
+            const auto ourOcc = bbs.occupancy(c);
+            const auto oppOcc = bbs.occupancy(opponent);
+
+            const auto oppQueens = bbs.queens(opponent);
+
+            const auto potentialAttackers =
+                attacks::getBishopAttacks(king, oppOcc) & (oppQueens | bbs.bishops(opponent))
+                | attacks::getRookAttacks(king, oppOcc) & (oppQueens | bbs.rooks(opponent));
+
+            for (const auto potentialAttacker : potentialAttackers) {
+                const auto maybePinned = ourOcc & rayBetween(potentialAttacker, king);
+                if (maybePinned.empty()) {
+                    if (c != m_stm) {
+                        println("{}", *this);
+                        println("{}", potentialAttacker);
+                    }
+                    assert(c == m_stm);
+                    m_checkers[potentialAttacker] = true;
+                } else if (maybePinned.one()) {
+                    pinned |= maybePinned;
+                }
+            }
+        }
+    }
+} // namespace stormphrax
