@@ -110,23 +110,16 @@ namespace stormphrax {
 
             if (pos.enPassant() != Squares::kNone) {
                 const auto epMask = Bitboard::fromSquare(pos.enPassant());
-                const auto epPawn = us == Colors::kBlack ? epMask.shiftUp() : epMask.shiftDown();
-                const auto epRank = epPawn.lowestSquare().rank();
+                const auto epPawn = Bitboard::fromSquare(pos.enPassant().flipRankParity());
 
                 if ((pos.checkers() & ~epPawn).empty()) {
                     const auto leftAttacker = movablePawns(leftPinMask).shiftUpLeftRelative(us) & epMask;
                     const auto rightAttacker = movablePawns(rightPinMask).shiftUpRightRelative(us) & epMask;
-                    const bool hasBoth = leftAttacker && rightAttacker;
 
-                    const auto occ = bbs.occupancy() ^ leftAttacker ^ rightAttacker;
-                    const auto ray = Bitboard::rank(king.rank()) & attacks::getRookAttacks(king, occ);
-                    const auto theirRooks = bbs.rooks(them) | bbs.queens(them);
-                    const auto canEp = king.rank() != epRank || hasBoth || (ray & theirRooks).empty();
+                    // We do not need to check for a clearance pin here as this is done in Position::filterEp.
 
-                    if (canEp) {
-                        pushEnPassants(noisy, leftOffset, leftAttacker);
-                        pushEnPassants(noisy, rightOffset, rightAttacker);
-                    }
+                    pushEnPassants(noisy, leftOffset, leftAttacker);
+                    pushEnPassants(noisy, rightOffset, rightAttacker);
                 }
             }
         }

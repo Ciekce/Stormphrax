@@ -870,7 +870,7 @@ namespace stormphrax {
         const auto movedPawn = m_enPassant.flipRankParity();
         const auto capturingPawn = candidates.lowestSquare();
 
-        const auto rank = rayIntersecting(movedPawn, capturingPawn);
+        const auto rank = Bitboard::rank(movedPawn.rank());
         const auto oppRookCandidates = rank & (bbs.rooks(moved) | bbs.queens(moved));
 
         // not possible :3
