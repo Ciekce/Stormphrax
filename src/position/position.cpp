@@ -901,6 +901,10 @@ namespace stormphrax {
         const auto src = Square::fromStr(move.substr(0, 2));
         const auto dst = Square::fromStr(move.substr(2, 2));
 
+        if (!src || !dst) {
+            return kNullMove;
+        }
+
         if (move.length() == 5) {
             const auto promo = PieceType::fromChar(move[4]);
 

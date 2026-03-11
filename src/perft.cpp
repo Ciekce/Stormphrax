@@ -34,15 +34,15 @@ namespace stormphrax {
             ScoredMoveList moves{};
             generateAll(moves, pos);
 
+            if (depth == 1) {
+                return moves.size();
+            }
+
             usize total{};
 
             for (const auto [move, score] : moves) {
-                if (depth == 1) {
-                    ++total;
-                } else {
-                    const auto newPos = pos.applyMove(move);
-                    total += doPerft(newPos, depth - 1);
-                }
+                const auto newPos = pos.applyMove(move);
+                total += doPerft(newPos, depth - 1);
             }
 
             return total;
