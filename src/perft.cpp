@@ -26,13 +26,14 @@ namespace stormphrax {
     using util::Instant;
 
     namespace {
+        template <auto MOVEGEN>
         usize doPerft(const Position& pos, i32 depth) {
             if (depth <= 0) {
                 return 1;
             }
 
             ScoredMoveList moves{};
-            generateAll(moves, pos);
+            MOVEGEN(moves, pos);
 
             usize total{};
 
@@ -41,38 +42,57 @@ namespace stormphrax {
                     ++total;
                 } else {
                     const auto newPos = pos.applyMove(move);
-                    total += doPerft(newPos, depth - 1);
+                    total += doPerft<MOVEGEN>(newPos, depth - 1);
                 }
             }
 
             return total;
         }
+
+        template <auto MOVEGEN>
+        void doSplitPerft(const Position& pos, i32 depth) {
+            const auto start = Instant::now();
+
+            ScoredMoveList moves{};
+            MOVEGEN(moves, pos);
+
+            usize total{};
+
+            for (const auto [move, score] : moves) {
+                const auto newPos = pos.applyMove(move);
+                const auto value = doPerft<MOVEGEN>(newPos, depth - 1);
+
+                total += value;
+                println("{}\t{}", move, value);
+            }
+
+            const auto nps = static_cast<usize>(static_cast<f64>(total) / start.elapsed());
+
+            println();
+            println("total {}", total);
+            println("{} nps", nps);
+        }
+
+        void isLegalMoveGen(ScoredMoveList& dst, const Position& pos) {
+            for (i32 i = 0; i < 0x10000; ++i) {
+                const auto move = Move::fromRaw(static_cast<u16>(i));
+                if (pos.isLegal(move)) {
+                    dst.push({move, 0});
+                }
+            }
+        }
     } // namespace
 
     void perft(const Position& pos, i32 depth) {
-        println("{}", doPerft(pos, depth));
+        println("{}", doPerft<generateAll>(pos, depth));
     }
 
     void splitPerft(const Position& pos, i32 depth) {
-        const auto start = Instant::now();
-
-        ScoredMoveList moves{};
-        generateAll(moves, pos);
-
-        usize total{};
-
-        for (const auto [move, score] : moves) {
-            const auto newPos = pos.applyMove(move);
-            const auto value = doPerft(newPos, depth - 1);
-
-            total += value;
-            println("{}\t{}", move, value);
-        }
-
-        const auto nps = static_cast<usize>(static_cast<f64>(total) / start.elapsed());
-
-        println();
-        println("total {}", total);
-        println("{} nps", nps);
+        doSplitPerft<generateAll>(pos, depth);
     }
+
+    void splitIsLegalPerft(const Position& pos, i32 depth) {
+        doSplitPerft<isLegalMoveGen>(pos, depth);
+    }
+
 } // namespace stormphrax

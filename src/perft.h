@@ -26,4 +26,6 @@
 namespace stormphrax {
     void perft(const Position& pos, i32 depth);
     void splitPerft(const Position& pos, i32 depth);
+
+    void splitIsLegalPerft(const Position& pos, i32 depth);
 } // namespace stormphrax

@@ -85,7 +85,7 @@ namespace stormphrax {
                 case MovegenStage::kTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
+                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
                         return m_ttMove;
                     }
 
@@ -127,7 +127,7 @@ namespace stormphrax {
                     ++m_stage;
 
                     if (!m_skipQuiets && m_killers.killer && m_killers.killer != m_ttMove
-                        && m_pos.isPseudolegal(m_killers.killer))
+                        && m_pos.isLegal(m_killers.killer))
                     {
                         return m_killers.killer;
                     }
@@ -172,7 +172,7 @@ namespace stormphrax {
                 case MovegenStage::kQsearchTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
+                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
                         return m_ttMove;
                     }
 
@@ -200,7 +200,7 @@ namespace stormphrax {
                 case MovegenStage::kQsearchEvasionsTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
+                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
                         return m_ttMove;
                     }
 
@@ -250,7 +250,7 @@ namespace stormphrax {
                 case MovegenStage::kProbcutTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isPseudolegal(m_ttMove)) {
+                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
                         return m_ttMove;
                     }
 

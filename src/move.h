@@ -118,6 +118,10 @@ namespace stormphrax {
             };
         }
 
+        [[nodiscard]] static constexpr Move fromRaw(u16 move) {
+            return Move{move};
+        }
+
     private:
         explicit constexpr Move(u16 move) :
                 m_move{move} {}

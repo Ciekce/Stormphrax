@@ -158,7 +158,6 @@ namespace stormphrax {
             return applyMove(kNullMove);
         }
 
-        [[nodiscard]] bool isPseudolegal(Move move) const;
         [[nodiscard]] bool isLegal(Move move) const;
 
         [[nodiscard]] inline const PositionBoards& boards() const {

@@ -217,22 +217,49 @@ namespace stormphrax {
         return newPos;
     }
 
-    bool Position::isPseudolegal(Move move) const {
-        assert(move != kNullMove);
+    bool Position::isLegal(Move move) const {
+        if (move == kNullMove) {
+            return false;
+        }
+
+        if (move.type() != MoveType::kPromotion && move.promoIdx() != 0) {
+            return false;
+        }
 
         const auto us = stm();
 
+        const auto king = m_kings.color(us);
+
+        const auto& bbs = m_boards.bbs();
+
         const auto src = move.fromSq();
+        const auto dst = move.toSq();
         const auto srcPiece = m_boards.pieceOn(src);
+        const auto dstPiece = m_boards.pieceOn(dst);
+
+        const auto type = move.type();
 
         if (srcPiece == Pieces::kNone || srcPiece.color() != us) {
             return false;
         }
 
-        const auto type = move.type();
+        if (m_checkers && srcPiece != PieceTypes::kKing.withColor(us)) {
+            // multiple checks can only be evaded with a king move
+            if (m_checkers.multiple()) {
+                return false;
+            }
 
-        const auto dst = move.toSq();
-        const auto dstPiece = m_boards.pieceOn(dst);
+            // one checker may be evaded, blocked, or captured
+            const auto checker = m_checkers.lowestSquare();
+            if (!(rayBetween(king, checker) | Bitboard::fromSquare(checker))[dst] && type != MoveType::kEnPassant) {
+                return false;
+            }
+        }
+
+        // pinned pieces can only move along their pin ray
+        if (pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
+            return false;
+        }
 
         // we're capturing something
         if (dstPiece != Pieces::kNone
@@ -290,25 +317,37 @@ namespace stormphrax {
                 const auto toRook = rayBetween(src, dst);
 
                 const auto castleOcc = occ ^ src.bit() ^ dst.bit();
+                const auto clearMask = toKingDst | toRook | kingDst.bit() | rookDst.bit();
+                const auto checkMask = toKingDst | kingDst.bit();
 
-                return (castleOcc & (toKingDst | toRook | kingDst.bit() | rookDst.bit())).empty()
-                    && !anyAttacked(toKingDst | kingDst.bit(), them);
+                return (castleOcc & clearMask).empty() && (m_threats & checkMask).empty() && !pinned(us)[dst];
             } else {
                 if (dst == m_castlingRooks.black().kingside) {
-                    return (occ & U64(0x6000000000000000)).empty() && !isAttacked(Squares::kF8, Colors::kWhite);
+                    return (occ & U64(0x6000000000000000)).empty() && (m_threats & U64(0x7000000000000000)).empty();
                 } else if (dst == m_castlingRooks.black().queenside) {
-                    return (occ & U64(0x0E00000000000000)).empty() && !isAttacked(Squares::kD8, Colors::kWhite);
+                    return (occ & U64(0x0E00000000000000)).empty() && (m_threats & U64(0x1C00000000000000)).empty();
                 } else if (dst == m_castlingRooks.white().kingside) {
-                    return (occ & U64(0x0000000000000060)).empty() && !isAttacked(Squares::kF1, Colors::kBlack);
+                    return (occ & U64(0x0000000000000060)).empty() && (m_threats & U64(0x0000000000000070)).empty();
                 } else {
-                    return (occ & U64(0x000000000000000E)).empty() && !isAttacked(Squares::kD1, Colors::kBlack);
+                    return (occ & U64(0x000000000000000E)).empty() && (m_threats & U64(0x000000000000001C)).empty();
                 }
             }
         }
 
         if (srcPieceType == PieceTypes::kPawn) {
             if (type == MoveType::kEnPassant) {
-                return dst == m_enPassant && attacks::getPawnAttacks(m_enPassant, them)[src];
+                if (dst != m_enPassant || !attacks::getPawnAttacks(m_enPassant, them)[src]) {
+                    return false;
+                }
+
+                const auto captureSquare = dst.flipRankParity();
+                const auto postEpOcc = bbs.occupancy() ^ Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst)
+                                     ^ Bitboard::fromSquare(captureSquare);
+
+                const auto theirQueens = bbs.queens(them);
+
+                return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | bbs.bishops(them))).empty()
+                    && (attacks::getRookAttacks(king, postEpOcc) & (theirQueens | bbs.rooks(them))).empty();
             }
 
             const auto srcRank = move.fromSqRank();
@@ -368,7 +407,7 @@ namespace stormphrax {
                     attacks = attacks::getQueenAttacks(src, occ);
                     break;
                 case PieceTypes::kKing.raw():
-                    attacks = attacks::getKingAttacks(src);
+                    attacks = attacks::getKingAttacks(src) & ~m_threats;
                     break;
                 default:
                     __builtin_unreachable();
@@ -380,62 +419,6 @@ namespace stormphrax {
         }
 
         return true;
-    }
-
-    // This does *not* check for pseudolegality, moves are assumed to be pseudolegal
-    bool Position::isLegal(Move move) const {
-        assert(move != kNullMove);
-
-        const auto us = stm();
-        const auto them = us.flip();
-
-        const auto& bbs = m_boards.bbs();
-
-        const auto src = move.fromSq();
-        const auto dst = move.toSq();
-
-        const auto king = m_kings.color(us);
-
-        if (move.type() == MoveType::kCastling) {
-            const auto kingDst = move.fromSq().withFile(move.fromSqFile() < move.toSqFile() ? kFileG : kFileC);
-            return !m_threats[kingDst] && !(g_opts.chess960 && pinned(us)[dst]);
-        } else if (move.type() == MoveType::kEnPassant) {
-            const auto captureSquare = dst.flipRankParity();
-            const auto postEpOcc = bbs.occupancy() ^ Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst)
-                                 ^ Bitboard::fromSquare(captureSquare);
-
-            const auto theirQueens = bbs.queens(them);
-
-            return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | bbs.bishops(them))).empty()
-                && (attacks::getRookAttacks(king, postEpOcc) & (theirQueens | bbs.rooks(them))).empty();
-        }
-
-        const auto moving = m_boards.pieceOn(src);
-
-        if (moving.type() == PieceTypes::kKing) {
-            const auto kinglessOcc = bbs.occupancy() ^ bbs.kings(us);
-            const auto theirQueens = bbs.queens(them);
-
-            return !m_threats[move.toSq()]
-                && (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | bbs.bishops(them))).empty()
-                && (attacks::getRookAttacks(dst, kinglessOcc) & (theirQueens | bbs.rooks(them))).empty();
-        }
-
-        // multiple checks can only be evaded with a king move
-        if (m_checkers.multiple()) {
-            return false;
-        }
-
-        if (pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
-            return false;
-        }
-
-        if (m_checkers.empty()) {
-            return true;
-        }
-
-        const auto checker = m_checkers.lowestSquare();
-        return (rayBetween(king, checker) | Bitboard::fromSquare(checker))[dst];
     }
 
     // see comment in cuckoo.cpp

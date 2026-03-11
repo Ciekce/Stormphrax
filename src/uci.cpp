@@ -99,6 +99,7 @@ namespace stormphrax {
             void handleMoves();
             void handlePerft(std::span<const std::string_view> args);
             void handleSplitperft(std::span<const std::string_view> args);
+            void handleSplitislegalperft(std::span<const std::string_view> args);
             void handleBench(std::span<const std::string_view> args);
             void handleProbeWdl();
             void handleWait();
@@ -174,6 +175,8 @@ namespace stormphrax {
                     handlePerft(args);
                 } else if (command == "splitperft") {
                     handleSplitperft(args);
+                } else if (command == "splitislegalperft") {
+                    handleSplitislegalperft(args);
                 } else if (command == "bench") {
                     handleBench(args);
                 } else if (command == "probewdl") {
@@ -536,7 +539,7 @@ namespace stormphrax {
                             const auto move = m_pos.moveFromUci(candidate);
 
                             if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
+                                if (m_pos.isLegal(move)) {
                                     movesToSearch.push(move);
                                 } else {
                                     println("info string ignoring illegal move {}", candidate);
@@ -904,6 +907,19 @@ namespace stormphrax {
             }
 
             splitPerft(m_pos, static_cast<i32>(depth));
+        }
+
+        void UciHandler::handleSplitislegalperft(std::span<const std::string_view> args) {
+            u32 depth = 6;
+
+            if (!args.empty()) {
+                if (!util::tryParse(depth, args[0])) {
+                    eprintln("invalid depth {}", args[0]);
+                    return;
+                }
+            }
+
+            splitIsLegalPerft(m_pos, static_cast<i32>(depth));
         }
 
         void UciHandler::handleBench(std::span<const std::string_view> args) {

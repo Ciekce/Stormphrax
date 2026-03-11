@@ -61,9 +61,7 @@ namespace stormphrax::search {
             generateAll(generated, pos);
 
             for (const auto [move, _s] : generated) {
-                if (pos.isLegal(move)) {
-                    moves.push(move);
-                }
+                moves.push(move);
             }
         }
 
@@ -626,9 +624,7 @@ namespace stormphrax::search {
                     || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
-                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
-                    && pos.isPseudolegal(ttEntry.move))
-                {
+                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move) && pos.isLegal(ttEntry.move)) {
                     const auto bonus = historyBonus(depth);
                     thread.history.updateQuietScore(
                         thread.conthist,
@@ -843,10 +839,6 @@ namespace stormphrax::search {
                 auto generator = MoveGenerator::probcut(pos, ttMove, moveStack.movegenData, thread.history);
 
                 while (const auto move = generator.next()) {
-                    if (!pos.isLegal(move)) {
-                        continue;
-                    }
-
                     if (!see::see(pos, move, seeThreshold)) {
                         continue;
                     }
@@ -913,8 +905,6 @@ namespace stormphrax::search {
                 }
 
                 assert(pos.isLegal(move));
-            } else if (!pos.isLegal(move)) {
-                continue;
             }
 
             const bool quietOrLosing = generator.stage() > MovegenStage::kGoodNoisy;
@@ -1370,10 +1360,6 @@ namespace stormphrax::search {
         u32 legalMoves = 0;
 
         while (const auto move = generator.next()) {
-            if (!pos.isLegal(move)) {
-                continue;
-            }
-
             if (bestScore > -kScoreWin) {
                 if (!inCheck && futility <= alpha && !see::see(pos, move, 1)) {
                     if (bestScore < futility) {
