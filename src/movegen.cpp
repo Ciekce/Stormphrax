@@ -334,13 +334,13 @@ namespace stormphrax {
                 pushStandards(dst, src, attacks & dstMask);
             }
 
-            for (const auto src : rooks& pinned) {
+            for (const auto src : rooks & pinned) {
                 const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getRookAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
             }
 
-            for (const auto src : bishops& pinned) {
+            for (const auto src : bishops & pinned) {
                 const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getBishopAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
