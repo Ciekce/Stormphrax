@@ -114,8 +114,8 @@ namespace stormphrax {
                 const auto epRank = epPawn.lowestSquare().rank();
 
                 if ((pos.checkers() & ~epPawn).empty()) {
-                    const auto leftAttacker = leftAttacks & epMask;
-                    const auto rightAttacker = rightAttacks & epMask;
+                    const auto leftAttacker = movablePawns(leftPinMask).shiftUpLeftRelative(us) & epMask;
+                    const auto rightAttacker = movablePawns(rightPinMask).shiftUpRightRelative(us) & epMask;
                     const bool hasBoth = leftAttacker && rightAttacker;
 
                     const auto occ = bbs.occupancy() ^ leftAttacker ^ rightAttacker;
@@ -319,8 +319,6 @@ namespace stormphrax {
             const auto pinned = pos.pinned(us);
 
             const auto king = pos.king(us);
-            const auto rookPinRays = attacks::kEmptyBoardRooks[king.idx()];
-            const auto bishopPinRays = attacks::kEmptyBoardBishops[king.idx()];
 
             const auto queens = bbs.queens(us);
             const auto rooks = queens | bbs.rooks(us);
@@ -337,13 +335,15 @@ namespace stormphrax {
             }
 
             for (const auto src : rooks& pinned) {
+                const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getRookAttacks(src, occupancy);
-                pushStandards(dst, src, attacks & dstMask & rookPinRays);
+                pushStandards(dst, src, attacks & dstMask & pinRay);
             }
 
             for (const auto src : bishops& pinned) {
+                const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getBishopAttacks(src, occupancy);
-                pushStandards(dst, src, attacks & dstMask & bishopPinRays);
+                pushStandards(dst, src, attacks & dstMask & pinRay);
             }
         }
     } // namespace
