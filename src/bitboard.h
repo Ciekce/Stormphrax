@@ -137,6 +137,11 @@ namespace stormphrax {
         constexpr Bitboard(u64 board = 0) :
                 m_board{board} {}
 
+        [[nodiscard]] constexpr static Bitboard rank(i32 rank) {
+            assert(rank >= 0 && rank < 8);
+            return {kRank1 << (rank * 8)};
+        }
+
         [[nodiscard]] constexpr static Bitboard file(i32 file) {
             assert(file >= 0 && file < 8);
             return {kFileA << file};
