@@ -218,13 +218,8 @@ namespace stormphrax {
     }
 
     bool Position::isLegal(Move move) const {
-        if (move == kNullMove) {
-            return false;
-        }
-
-        if (move.type() != MoveType::kPromotion && move.promoIdx() != 0) {
-            return false;
-        }
+        assert(move != kNullMove);
+        assert(move.type() == MoveType::kPromotion || move.promoIdx() == 0);
 
         const auto us = stm();
 
