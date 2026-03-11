@@ -75,5 +75,4 @@ namespace stormphrax {
         println("total {}", total);
         println("{} nps", nps);
     }
-
 } // namespace stormphrax
