@@ -109,18 +109,15 @@ namespace stormphrax {
             pushStandards(noisy, rightOffset, rightAttacks & theirs & ~kPromotionRank);
 
             if (pos.enPassant() != Squares::kNone) {
+                // We do not need to check for check or for a clearance pin here as this is done in Position::filterEp.
+
                 const auto epMask = Bitboard::fromSquare(pos.enPassant());
-                const auto epPawn = Bitboard::fromSquare(pos.enPassant().flipRankParity());
 
-                if ((pos.checkers() & ~epPawn).empty()) {
-                    const auto leftAttacker = movablePawns(leftPinMask).shiftUpLeftRelative(us) & epMask;
-                    const auto rightAttacker = movablePawns(rightPinMask).shiftUpRightRelative(us) & epMask;
+                const auto leftAttacker = movablePawns(leftPinMask).shiftUpLeftRelative(us) & epMask;
+                const auto rightAttacker = movablePawns(rightPinMask).shiftUpRightRelative(us) & epMask;
 
-                    // We do not need to check for a clearance pin here as this is done in Position::filterEp.
-
-                    pushEnPassants(noisy, leftOffset, leftAttacker);
-                    pushEnPassants(noisy, rightOffset, rightAttacker);
-                }
+                pushEnPassants(noisy, leftOffset, leftAttacker);
+                pushEnPassants(noisy, rightOffset, rightAttacker);
             }
         }
 
