@@ -37,10 +37,6 @@ namespace stormphrax {
             usize total{};
 
             for (const auto [move, score] : moves) {
-                if (!pos.isLegal(move)) {
-                    continue;
-                }
-
                 if (depth == 1) {
                     ++total;
                 } else {
@@ -66,10 +62,6 @@ namespace stormphrax {
         usize total{};
 
         for (const auto [move, score] : moves) {
-            if (!pos.isLegal(move)) {
-                continue;
-            }
-
             const auto newPos = pos.applyMove(move);
             const auto value = doPerft(newPos, depth - 1);
 

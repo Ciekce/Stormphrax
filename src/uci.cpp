@@ -536,7 +536,7 @@ namespace stormphrax {
                             const auto move = m_pos.moveFromUci(candidate);
 
                             if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
+                                if (m_pos.isLegal(move)) {
                                     movesToSearch.push(move);
                                 } else {
                                     println("info string ignoring illegal move {}", candidate);
