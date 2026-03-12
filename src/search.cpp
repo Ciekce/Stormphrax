@@ -1354,7 +1354,8 @@ namespace stormphrax::search {
             ttEntry.move,
             thread.history,
             thread.conthist,
-            ply
+            ply,
+            !kPvNode && ttEntry.move && ttEntry.flag != TtFlag::kUpperBound && !pos.isNoisy(ttEntry.move)
         );
 
         u32 legalMoves = 0;

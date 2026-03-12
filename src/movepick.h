@@ -306,9 +306,11 @@ namespace stormphrax {
             Move ttMove,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            bool forceEvasions
         ) {
-            const auto stage = pos.isCheck() ? MovegenStage::kQsearchEvasionsTtMove : MovegenStage::kQsearchTtMove;
+            const auto stage =
+                forceEvasions || pos.isCheck() ? MovegenStage::kQsearchEvasionsTtMove : MovegenStage::kQsearchTtMove;
             return MoveGenerator{stage, pos, data, ttMove, nullptr, history, continuations, ply};
         }
 
