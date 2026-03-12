@@ -1037,6 +1037,10 @@ namespace stormphrax::search {
                         r -= lmrHighComplexityReductionScale() * highComplexity;
                     }
 
+                    if (!kRootNode && parent->reduction > 0 && legalMoves >= 5) {
+                        r -= parent->reduction * 128 / 5;
+                    }
+
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
