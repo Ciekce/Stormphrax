@@ -1359,6 +1359,7 @@ namespace stormphrax::search {
         );
 
         u32 legalMoves = 0;
+        bool searchedAnyQuiets = false;
 
         while (const auto move = generator.next()) {
             if (bestScore > -kScoreWin) {
@@ -1394,7 +1395,11 @@ namespace stormphrax::search {
                 return 0;
             }
 
-            if (score > -kScoreWin) {
+            if (move != ttEntry.move && !pos.isNoisy(move)) {
+                searchedAnyQuiets = true;
+            }
+
+            if (score > -kScoreWin && searchedAnyQuiets) {
                 generator.skipQuiets();
             }
 
