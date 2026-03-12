@@ -219,7 +219,7 @@ namespace stormphrax::datagen {
 
                     assert(pos.boards().pieceOn(move.fromSq()) != Pieces::kNone);
 
-                    if (std::abs(score) > kScoreWin) {
+                    if (isDecisive(score)) {
                         outcome = score > 0 ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                     } else {
                         if (normScore > kWinAdjMinScore) {
