@@ -1348,13 +1348,16 @@ namespace stormphrax::search {
 
         auto ttFlag = TtFlag::kUpperBound;
 
+        const bool searchQuiets =
+            !kPvNode && ttEntry.move && ttEntry.flag != TtFlag::kUpperBound && !pos.isNoisy(ttEntry.move);
         auto generator = MoveGenerator::qsearch(
             pos,
             thread.moveStack[moveStackIdx].movegenData,
             ttEntry.move,
             thread.history,
             thread.conthist,
-            ply
+            ply,
+            searchQuiets
         );
 
         u32 legalMoves = 0;
