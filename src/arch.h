@@ -91,6 +91,10 @@
     #error no arch specified
 #endif
 
+#if !SP_HAS_VBMI2
+    #error guard
+#endif
+
 namespace stormphrax {
 #ifdef __cpp_lib_hardware_interference_size
     constexpr auto kCacheLineSize = std::hardware_destructive_interference_size;
