@@ -732,6 +732,19 @@ namespace stormphrax::search {
             }
         }
 
+        const auto eval = [&] {
+            if (inCheck) {
+                return kScoreNone;
+            }
+            if (ttEntry.flag == TtFlag::kExact                                              //
+                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > curr.staticEval) //
+                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < curr.staticEval))
+            {
+                return ttEntry.score;
+            }
+            return curr.staticEval;
+        }();
+
         const bool improving = [&] {
             if (inCheck) {
                 return false;
@@ -765,9 +778,8 @@ namespace stormphrax::search {
                 return margin;
             };
 
-            if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
-                                                                         : curr.staticEval;
+            if (depth <= 6 && !isLoss(beta) && !isWin(eval) && eval - rfpMargin() >= beta) {
+                return !isDecisive(eval) && !isDecisive(beta) ? (eval + beta) / 2 : eval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + razoringMargin() * depth <= alpha) {
