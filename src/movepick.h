@@ -42,7 +42,8 @@ namespace stormphrax {
     };
 
     struct MovegenData {
-        ScoredMoveList moves;
+        MoveList moves;
+        std::array<i32, kDefaultMoveListCapacity> scores;
     };
 
     enum class MovegenStage : i32 {
@@ -104,7 +105,9 @@ namespace stormphrax {
                 case MovegenStage::kGoodNoisy: {
                     while (m_idx < m_end) {
                         const auto idx = findNext();
-                        const auto [move, score] = m_data.moves[idx];
+
+                        const auto move = m_data.moves[idx];
+                        const auto score = m_data.scores[idx];
 
                         if (move == m_ttMove) {
                             continue;
@@ -112,11 +115,13 @@ namespace stormphrax {
 
                         const auto threshold = -score / 4 + goodNoisySeeOffset();
 
-                        if (!see::see(m_pos, move, threshold)) {
-                            m_data.moves[m_badNoisyEnd++] = m_data.moves[idx];
-                        } else {
+                        if (see::see(m_pos, move, threshold)) {
                             return move;
                         }
+
+                        const auto newIdx = m_badNoisyEnd++;
+                        m_data.moves[newIdx] = move;
+                        m_data.scores[newIdx] = score;
                     }
 
                     ++m_stage;
@@ -347,11 +352,13 @@ namespace stormphrax {
             m_data.moves.clear();
         }
 
-        inline void scoreNoisy(ScoredMove& scoredMove) {
-            const auto move = scoredMove.move;
-            auto& score = scoredMove.score;
+        inline void scoreNoisy(u32 idx) {
+            const auto move = m_data.moves[idx];
+            auto& score = m_data.scores[idx];
 
             const auto captured = m_pos.captureTarget(move);
+
+            score = 0;
 
             score += m_history.noisyScore(move, captured, m_pos.threats()) / 8;
             score += see::value(captured);
@@ -363,23 +370,22 @@ namespace stormphrax {
 
         inline void scoreNoisies() {
             for (u32 i = m_idx; i < m_end; ++i) {
-                scoreNoisy(m_data.moves[i]);
+                scoreNoisy(i);
             }
         }
 
-        inline void scoreQuiet(ScoredMove& move) {
-            move.score = m_history.quietScore(
-                m_continuations,
-                m_ply,
-                m_pos.threats(),
-                m_pos.boards().pieceOn(move.move.fromSq()),
-                move.move
-            );
+        inline void scoreQuiet(u32 idx) {
+            const auto move = m_data.moves[idx];
+            auto& score = m_data.scores[idx];
+
+            score =
+                m_history
+                    .quietScore(m_continuations, m_ply, m_pos.threats(), m_pos.boards().pieceOn(move.fromSq()), move);
         }
 
         inline void scoreQuiets() {
             for (u32 i = m_idx; i < m_end; ++i) {
-                scoreQuiet(m_data.moves[i]);
+                scoreQuiet(i);
             }
         }
 
@@ -390,14 +396,18 @@ namespace stormphrax {
                 return static_cast<u64>(widened) << 32;
             };
 
-            auto best = toU64(m_data.moves[m_idx].score) | (256 - m_idx);
+            auto best = toU64(m_data.scores[m_idx]) | (256 - m_idx);
+
             for (auto i = m_idx + 1; i < m_end; ++i) {
-                const auto curr = toU64(m_data.moves[i].score) | (256 - i);
+                const auto curr = toU64(m_data.scores[i]) | (256 - i);
                 best = std::max(best, curr);
             }
+
             const auto bestIdx = 256 - (best & 0xFFFFFFFF);
+
             if (bestIdx != m_idx) {
                 std::swap(m_data.moves[m_idx], m_data.moves[bestIdx]);
+                std::swap(m_data.scores[m_idx], m_data.scores[bestIdx]);
             }
 
             return m_idx++;
@@ -407,7 +417,7 @@ namespace stormphrax {
         [[nodiscard]] inline Move selectNext(auto predicate) {
             while (m_idx < m_end) {
                 const auto idx = kSort ? findNext() : m_idx++;
-                const auto move = m_data.moves[idx].move;
+                const auto move = m_data.moves[idx];
 
                 if (predicate(move)) {
                     return move;

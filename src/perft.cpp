@@ -31,7 +31,7 @@ namespace stormphrax {
                 return 1;
             }
 
-            ScoredMoveList moves{};
+            MoveList moves{};
             generateAll(moves, pos);
 
             if (depth == 1) {
@@ -40,7 +40,7 @@ namespace stormphrax {
 
             usize total{};
 
-            for (const auto [move, score] : moves) {
+            for (const auto move : moves) {
                 const auto newPos = pos.applyMove(move);
                 total += doPerft(newPos, depth - 1);
             }
@@ -56,12 +56,12 @@ namespace stormphrax {
     void splitPerft(const Position& pos, i32 depth) {
         const auto start = Instant::now();
 
-        ScoredMoveList moves{};
+        MoveList moves{};
         generateAll(moves, pos);
 
         usize total{};
 
-        for (const auto [move, score] : moves) {
+        for (const auto move : moves) {
             const auto newPos = pos.applyMove(move);
             const auto value = doPerft(newPos, depth - 1);
 

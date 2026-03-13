@@ -875,14 +875,14 @@ namespace stormphrax {
         }
 
         void UciHandler::handleMoves() {
-            ScoredMoveList moves{};
+            MoveList moves{};
             generateAll(moves, m_pos);
 
             for (u32 i = 0; i < moves.size(); ++i) {
                 if (i > 0) {
-                    print(" {}", moves[i].move);
+                    print(" {}", moves[i]);
                 } else {
-                    print("{}", moves[i].move);
+                    print("{}", moves[i]);
                 }
             }
 

@@ -55,15 +55,6 @@ namespace stormphrax::search {
         [[nodiscard]] constexpr Score drawScore(usize nodes) {
             return 2 - static_cast<Score>(nodes % 4);
         }
-
-        inline void generateLegal(MoveList& moves, const Position& pos) {
-            ScoredMoveList generated{};
-            generateAll(generated, pos);
-
-            for (const auto [move, _s] : generated) {
-                moves.push(move);
-            }
-        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMib) :
@@ -315,7 +306,7 @@ namespace stormphrax::search {
         }
 
         if (m_rootMoveList.empty()) {
-            generateLegal(m_rootMoveList, pos);
+            generateAll(m_rootMoveList, pos);
         }
 
         return m_rootMoveList.empty() ? RootStatus::kNoLegalMoves : RootStatus::kGenerated;

@@ -29,10 +29,8 @@ namespace stormphrax {
         i32 score;
     };
 
-    using ScoredMoveList = StaticVector<ScoredMove, kDefaultMoveListCapacity>;
+    void generateNoisy(MoveList& noisy, const Position& pos);
+    void generateQuiet(MoveList& quiet, const Position& pos);
 
-    void generateNoisy(ScoredMoveList& noisy, const Position& pos);
-    void generateQuiet(ScoredMoveList& quiet, const Position& pos);
-
-    void generateAll(ScoredMoveList& dst, const Position& pos);
+    void generateAll(MoveList& dst, const Position& pos);
 } // namespace stormphrax

@@ -148,14 +148,14 @@ namespace stormphrax::datagen {
                 bool legalFound = false;
 
                 for (i32 i = 0; i < moveCount; ++i) {
-                    ScoredMoveList moves{};
+                    MoveList moves{};
                     generateAll(moves, pos);
 
                     std::shuffle(moves.begin(), moves.end(), rng);
 
                     legalFound = false;
 
-                    for (const auto [move, score] : moves) {
+                    for (const auto move : moves) {
                         if (pos.isLegal(move)) {
                             thread.keyHistory.push_back(pos.key());
                             pos = pos.applyMove(move);

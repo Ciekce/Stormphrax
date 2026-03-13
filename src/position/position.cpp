@@ -483,10 +483,10 @@ namespace stormphrax {
 
             //TODO there's a speedup possible here, but
             // it requires a lot of movegen refactoring
-            ScoredMoveList moves{};
+            MoveList moves{};
             generateAll(moves, *this);
 
-            return std::ranges::any_of(moves, [this](const auto move) { return isLegal(move.move); });
+            return std::ranges::any_of(moves, [this](const auto move) { return isLegal(move); });
         }
 
         const auto currKey = m_keys.all;

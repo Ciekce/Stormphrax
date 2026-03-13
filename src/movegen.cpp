@@ -28,47 +28,47 @@
 
 namespace stormphrax {
     namespace {
-        inline void pushStandards(ScoredMoveList& dst, i32 offset, Bitboard board) {
+        inline void pushStandards(MoveList& dst, i32 offset, Bitboard board) {
             for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-                dst.push({Move::standard(srcSquare, dstSquare), 0});
+                dst.push(Move::standard(srcSquare, dstSquare));
             }
         }
 
-        inline void pushStandards(ScoredMoveList& dst, Square srcSquare, Bitboard board) {
+        inline void pushStandards(MoveList& dst, Square srcSquare, Bitboard board) {
             for (const auto dstSquare : board) {
-                dst.push({Move::standard(srcSquare, dstSquare), 0});
+                dst.push(Move::standard(srcSquare, dstSquare));
             }
         }
 
-        inline void pushQueenPromotions(ScoredMoveList& noisy, i32 offset, Bitboard board) {
-            for (const auto dstSquare : board) {
-                const auto srcSquare = dstSquare.offset(-offset);
-                noisy.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen), 0});
-            }
-        }
-
-        inline void pushUnderpromotions(ScoredMoveList& quiet, i32 offset, Bitboard board) {
+        inline void pushQueenPromotions(MoveList& noisy, i32 offset, Bitboard board) {
             for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kRook), 0});
-                quiet.push({Move::promotion(srcSquare, dstSquare, PieceTypes::kBishop), 0});
+                noisy.push(Move::promotion(srcSquare, dstSquare, PieceTypes::kQueen));
             }
         }
 
-        inline void pushCastling(ScoredMoveList& dst, Square srcSquare, Square dstSquare) {
-            dst.push({Move::castling(srcSquare, dstSquare), 0});
-        }
-
-        inline void pushEnPassants(ScoredMoveList& noisy, i32 offset, Bitboard board) {
+        inline void pushUnderpromotions(MoveList& quiet, i32 offset, Bitboard board) {
             for (const auto dstSquare : board) {
                 const auto srcSquare = dstSquare.offset(-offset);
-                noisy.push({Move::enPassant(srcSquare, dstSquare), 0});
+                quiet.push(Move::promotion(srcSquare, dstSquare, PieceTypes::kKnight));
+                quiet.push(Move::promotion(srcSquare, dstSquare, PieceTypes::kRook));
+                quiet.push(Move::promotion(srcSquare, dstSquare, PieceTypes::kBishop));
             }
         }
 
-        void generatePawnsNoisy(ScoredMoveList& noisy, const Position& pos, Bitboard dstMask) {
+        inline void pushCastling(MoveList& dst, Square srcSquare, Square dstSquare) {
+            dst.push(Move::castling(srcSquare, dstSquare));
+        }
+
+        inline void pushEnPassants(MoveList& noisy, i32 offset, Bitboard board) {
+            for (const auto dstSquare : board) {
+                const auto srcSquare = dstSquare.offset(-offset);
+                noisy.push(Move::enPassant(srcSquare, dstSquare));
+            }
+        }
+
+        void generatePawnsNoisy(MoveList& noisy, const Position& pos, Bitboard dstMask) {
             const auto us = pos.stm();
             const auto them = pos.nstm();
 
@@ -121,7 +121,7 @@ namespace stormphrax {
             }
         }
 
-        void generatePawnsQuiet(ScoredMoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
+        void generatePawnsQuiet(MoveList& quiet, const Position& pos, Bitboard dstMask, Bitboard occ) {
             const auto us = pos.stm();
             const auto them = pos.nstm();
 
@@ -171,7 +171,7 @@ namespace stormphrax {
             pushStandards(quiet, forwardOffset, singles);
         }
 
-        void generateKnights(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateKnights(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto nonPinnedKnights = pos.bbs().knights(pos.stm()) & ~pos.pinned(pos.stm());
             for (const auto srcSquare : nonPinnedKnights) {
                 const auto attacks = attacks::kKnightAttacks[srcSquare.idx()];
@@ -180,7 +180,7 @@ namespace stormphrax {
         }
 
         inline void generateFrcCastling(
-            ScoredMoveList& dst,
+            MoveList& dst,
             const Position& pos,
             Bitboard occupancy,
             Square king,
@@ -205,7 +205,7 @@ namespace stormphrax {
         }
 
         template <bool kCastling>
-        void generateKings(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateKings(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto king = pos.king(pos.stm());
             const auto attacks = attacks::kKingAttacks[king.idx()];
             pushStandards(dst, king, attacks & dstMask & ~pos.threats());
@@ -300,7 +300,7 @@ namespace stormphrax {
             }
         }
 
-        void generateSliders(ScoredMoveList& dst, const Position& pos, Bitboard dstMask) {
+        void generateSliders(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto& bbs = pos.bbs();
 
             const auto us = pos.stm();
@@ -324,13 +324,13 @@ namespace stormphrax {
                 pushStandards(dst, src, attacks & dstMask);
             }
 
-            for (const auto src : rooks & pinned) {
+            for (const auto src : rooks& pinned) {
                 const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getRookAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
             }
 
-            for (const auto src : bishops & pinned) {
+            for (const auto src : bishops& pinned) {
                 const auto pinRay = rayPast(king, src);
                 const auto attacks = attacks::getBishopAttacks(src, occupancy);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
@@ -338,7 +338,7 @@ namespace stormphrax {
         }
     } // namespace
 
-    void generateNoisy(ScoredMoveList& noisy, const Position& pos) {
+    void generateNoisy(MoveList& noisy, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.stm();
@@ -372,7 +372,7 @@ namespace stormphrax {
         generateKings<false>(noisy, pos, kingDstMask);
     }
 
-    void generateQuiet(ScoredMoveList& quiet, const Position& pos) {
+    void generateQuiet(MoveList& quiet, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.stm();
@@ -406,7 +406,7 @@ namespace stormphrax {
         generateKings<true>(quiet, pos, kingDstMask);
     }
 
-    void generateAll(ScoredMoveList& dst, const Position& pos) {
+    void generateAll(MoveList& dst, const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto us = pos.stm();
