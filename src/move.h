@@ -125,6 +125,8 @@ namespace stormphrax {
         u16 m_move{};
     };
 
+    static_assert(sizeof(Move) == sizeof(u16));
+
     constexpr Move kNullMove{};
 
     // assumed upper bound for number of possible moves is 218

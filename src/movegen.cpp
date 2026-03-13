@@ -18,19 +18,71 @@
 
 #include "movegen.h"
 
-#include <algorithm>
 #include <array>
+
+#if SP_HAS_AVX512 && SP_HAS_VBMI2
+    #include <immintrin.h>
+#endif
 
 #include "attacks/attacks.h"
 #include "opts.h"
 #include "rays.h"
-#include "util/bitfield.h"
 
 namespace stormphrax {
     namespace {
-        inline void pushStandards(MoveList& dst, i32 offset, Bitboard board) {
+#if SP_HAS_AVX512 && SP_HAS_VBMI2
+        inline void writeMoves(MoveList& dst, u32 mask, __m512i table) {
+            dst.unsafeWrite([&](Move* ptr) {
+                auto* target = reinterpret_cast<__m512i*>(ptr);
+                _mm512_storeu_si512(target, _mm512_maskz_compress_epi16(mask, table));
+                return std::popcount(mask);
+            });
+        }
+
+        template <i32 kOffset>
+        inline void pushStandards(MoveList& dst, Bitboard board) {
+            alignas(64) static constexpr auto kSplatTable = [] {
+                std::array<Move, Squares::kCount> table;
+                for (i32 toIdx = 0; toIdx < Squares::kCount; ++toIdx) {
+                    // out-of-bounds squares will never be accessed, but clamp them anyway
+                    const auto fromIdx = std::clamp<i32>(toIdx - kOffset, 0, Squares::kCount - 1);
+                    const auto fromSq = Square::fromRaw(fromIdx);
+                    const auto toSq = Square::fromRaw(toIdx);
+                    table[toIdx] = Move::standard(fromSq, toSq);
+                }
+                return table;
+            }();
+
+            const auto* table = reinterpret_cast<const __m512i*>(kSplatTable.data());
+
+            writeMoves(dst, board, _mm512_load_si512(table));
+            writeMoves(dst, board >> 32, _mm512_load_si512(table + 1));
+        }
+
+        inline void pushStandards(MoveList& dst, Square srcSquare, Bitboard board) {
+            static constexpr auto kZeroSquare = Square::fromRaw(0);
+
+            alignas(64) static constexpr auto kSplatTable = [] {
+                std::array<Move, Squares::kCount> table;
+                for (i32 toIdx = 0; toIdx < Squares::kCount; ++toIdx) {
+                    const auto toSq = Square::fromRaw(toIdx);
+                    table[toIdx] = Move::standard(kZeroSquare, toSq);
+                }
+                return table;
+            }();
+
+            const auto* table = reinterpret_cast<const __m512i*>(kSplatTable.data());
+
+            const auto froms = _mm512_set1_epi16(static_cast<i16>(Move::standard(srcSquare, kZeroSquare).data()));
+
+            writeMoves(dst, board, _mm512_or_si512(froms, _mm512_load_si512(table)));
+            writeMoves(dst, board >> 32, _mm512_or_si512(froms, _mm512_load_si512(table + 1)));
+        }
+#else
+        template <i32 kOffset>
+        inline void pushStandards(MoveList& dst, Bitboard board) {
             for (const auto dstSquare : board) {
-                const auto srcSquare = dstSquare.offset(-offset);
+                const auto srcSquare = dstSquare.offset(-kOffset);
                 dst.push(Move::standard(srcSquare, dstSquare));
             }
         }
@@ -40,6 +92,7 @@ namespace stormphrax {
                 dst.push(Move::standard(srcSquare, dstSquare));
             }
         }
+#endif
 
         inline void pushQueenPromotions(MoveList& noisy, i32 offset, Bitboard board) {
             for (const auto dstSquare : board) {
@@ -105,8 +158,13 @@ namespace stormphrax {
             const auto forwards = movablePawns(forwardPinMask).shiftUpRelative(us) & forwardDstMask;
             pushQueenPromotions(noisy, forwardOffset, forwards);
 
-            pushStandards(noisy, leftOffset, leftAttacks & theirs & ~kPromotionRank);
-            pushStandards(noisy, rightOffset, rightAttacks & theirs & ~kPromotionRank);
+            if (pos.stm() == Colors::kBlack) {
+                pushStandards<offsets::upLeft(Colors::kBlack)>(noisy, leftAttacks & theirs & ~kPromotionRank);
+                pushStandards<offsets::upRight(Colors::kBlack)>(noisy, rightAttacks & theirs & ~kPromotionRank);
+            } else {
+                pushStandards<offsets::upLeft(Colors::kWhite)>(noisy, leftAttacks & theirs & ~kPromotionRank);
+                pushStandards<offsets::upRight(Colors::kWhite)>(noisy, rightAttacks & theirs & ~kPromotionRank);
+            }
 
             if (pos.enPassant() != Squares::kNone) {
                 // We do not need to check for check or for a clearance pin here as this is done in Position::filterEp.
@@ -131,7 +189,6 @@ namespace stormphrax {
             const auto thirdRank = boards::rank(us, 2);
 
             const auto forwardOffset = offsets::up(us);
-            const auto doubleOffset = forwardOffset * 2;
 
             const auto leftOffset = offsets::upLeft(us);
             const auto rightOffset = offsets::upRight(us);
@@ -167,8 +224,13 @@ namespace stormphrax {
             forwards &= thirdRank;
             const auto doubles = forwards.shiftUpRelative(us) & forwardDstMask;
 
-            pushStandards(quiet, doubleOffset, doubles);
-            pushStandards(quiet, forwardOffset, singles);
+            if (pos.stm() == Colors::kBlack) {
+                pushStandards<offsets::up(Colors::kBlack) * 2>(quiet, doubles);
+                pushStandards<offsets::up(Colors::kBlack)>(quiet, singles);
+            } else {
+                pushStandards<offsets::up(Colors::kWhite) * 2>(quiet, doubles);
+                pushStandards<offsets::up(Colors::kWhite)>(quiet, singles);
+            }
         }
 
         void generateKnights(MoveList& dst, const Position& pos, Bitboard dstMask) {
