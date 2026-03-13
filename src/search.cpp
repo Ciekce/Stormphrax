@@ -718,8 +718,10 @@ namespace stormphrax::search {
 
             if (inCheck) {
                 curr.staticEval = kScoreNone;
+                curr.eval = kScoreNone;
             } else {
                 Score corrDelta{};
+
                 curr.staticEval = eval::adjustEval(
                     pos,
                     thread.optimism,
@@ -728,22 +730,19 @@ namespace stormphrax::search {
                     rawStaticEval,
                     &corrDelta
                 );
+
                 complexity = corrDelta;
+
+                if (ttEntry.flag == TtFlag::kExact                                              //
+                    || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > curr.staticEval) //
+                    || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < curr.staticEval))
+                {
+                    curr.eval = ttEntry.score;
+                } else {
+                    curr.eval = curr.staticEval;
+                }
             }
         }
-
-        const auto eval = [&] {
-            if (inCheck) {
-                return kScoreNone;
-            }
-            if (ttEntry.flag == TtFlag::kExact                                              //
-                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score > curr.staticEval) //
-                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < curr.staticEval))
-            {
-                return ttEntry.score;
-            }
-            return curr.staticEval;
-        }();
 
         const bool improving = [&] {
             if (inCheck) {
@@ -778,8 +777,8 @@ namespace stormphrax::search {
                 return margin;
             };
 
-            if (depth <= 6 && !isLoss(beta) && !isWin(eval) && eval - rfpMargin() >= beta) {
-                return !isDecisive(eval) && !isDecisive(beta) ? (eval + beta) / 2 : eval;
+            if (depth <= 6 && !isWin(curr.eval) && !isLoss(beta) && curr.eval - rfpMargin() >= beta) {
+                return !isDecisive(curr.eval) && !isDecisive(beta) ? (curr.eval + beta) / 2 : curr.eval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + razoringMargin() * depth <= alpha) {
