@@ -53,6 +53,10 @@ namespace stormphrax {
                 return table;
             }();
 
+            if (board.empty()) {
+                return;
+            }
+
             const auto* table = reinterpret_cast<const __m512i*>(kSplatTable.data());
 
             writeMoves(dst, board, _mm512_load_si512(table));
@@ -70,6 +74,10 @@ namespace stormphrax {
                 }
                 return table;
             }();
+
+            if (board.empty()) {
+                return;
+            }
 
             const auto* table = reinterpret_cast<const __m512i*>(kSplatTable.data());
 
