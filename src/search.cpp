@@ -994,7 +994,7 @@ namespace stormphrax::search {
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? (score + beta) / 2 : score;
                     } else if (ttEntry.score >= beta) {
-                        extension = -3;
+                        extension = kPvNode ? -1 : -3;
                     } else if (cutnode) {
                         extension = -2;
                     }
