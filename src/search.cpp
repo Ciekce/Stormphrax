@@ -970,7 +970,7 @@ namespace stormphrax::search {
             i32 extension{};
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
-                if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
+                if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 3 && ttEntry.flag != TtFlag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
                     const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
