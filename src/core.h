@@ -714,6 +714,18 @@ namespace stormphrax {
     constexpr i32 kMaxDepth = 248;
 
     constexpr auto kScoreMaxMate = kScoreMate - kMaxDepth;
+
+    [[nodiscard]] constexpr bool isWin(Score score) {
+        return score > kScoreWin;
+    }
+
+    [[nodiscard]] constexpr bool isLoss(Score score) {
+        return score < -kScoreWin;
+    }
+
+    [[nodiscard]] constexpr bool isDecisive(Score score) {
+        return std::abs(score) > kScoreWin;
+    }
 } // namespace stormphrax
 
 template <>

@@ -49,7 +49,7 @@ namespace stormphrax::wdl {
     template <bool kSharpen>
     Score normalizeScore(Score score, i32 material) {
         // don't normalise wins/losses, or zeroes that are pointless to normalise
-        if (score == 0 || std::abs(score) > kScoreWin) {
+        if (score == 0 || isDecisive(score)) {
             return score;
         }
 

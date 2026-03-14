@@ -158,7 +158,6 @@ namespace stormphrax {
             return applyMove(kNullMove);
         }
 
-        [[nodiscard]] bool isPseudolegal(Move move) const;
         [[nodiscard]] bool isLegal(Move move) const;
 
         [[nodiscard]] inline const PositionBoards& boards() const {
@@ -521,7 +520,7 @@ namespace stormphrax {
 
             m_threats = Bitboard{};
 
-            const auto occ = bbs.occupancy();
+            const auto occ = bbs.occupancy() & ~bbs.kings(us);
             const auto queens = bbs.queens(them);
 
             for (const auto rook : queens | bbs.rooks(them)) {

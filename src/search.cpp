@@ -61,14 +61,8 @@ namespace stormphrax::search {
             generateAll(generated, pos);
 
             for (const auto [move, _s] : generated) {
-                if (pos.isLegal(move)) {
-                    moves.push(move);
-                }
+                moves.push(move);
             }
-        }
-
-        [[nodiscard]] constexpr bool isWin(Score score) {
-            return std::abs(score) > kScoreWin;
         }
     } // namespace
 
@@ -413,7 +407,8 @@ namespace stormphrax::search {
                 const auto& rootMove = thread.rootMoves[thread.pvIdx];
 
                 if (depth > 1) {
-                    const auto optimism = 150 * rootMove.averageScore / (std::abs(rootMove.averageScore) + 100);
+                    const auto optimism =
+                        optimismScale() * rootMove.averageScore / (std::abs(rootMove.averageScore) + optimismStretch());
                     thread.optimism[thread.rootPos.stm().idx()] = optimism;
                     thread.optimism[thread.rootPos.nstm().idx()] = -optimism;
                 }
@@ -620,9 +615,7 @@ namespace stormphrax::search {
                     || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
-                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)
-                    && pos.isPseudolegal(ttEntry.move))
-                {
+                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move) && pos.isLegal(ttEntry.move)) {
                     const auto bonus = historyBonus(depth);
                     thread.history.updateQuietScore(
                         thread.conthist,
@@ -768,7 +761,8 @@ namespace stormphrax::search {
             };
 
             if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isWin(curr.staticEval) && !isWin(beta) ? (curr.staticEval + beta) / 2 : curr.staticEval;
+                return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
+                                                                         : curr.staticEval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + razoringMargin() * depth <= alpha) {
@@ -806,7 +800,7 @@ namespace stormphrax::search {
 
                 if (score >= beta) {
                     if (depth <= 14 || thread.minNmpPly > 0) {
-                        return score > kScoreWin ? beta : score;
+                        return isWin(score) ? beta : score;
                     }
 
                     thread.minNmpPly = ply + (depth - R) * 3 / 4;
@@ -829,7 +823,7 @@ namespace stormphrax::search {
             const auto probcutBeta = beta + probcutMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
-            if (!curr.ttpv && depth >= 7 && std::abs(beta) < kScoreWin && (!ttMove || ttMoveNoisy)
+            if (!curr.ttpv && depth >= 7 && !isDecisive(beta) && (!ttMove || ttMoveNoisy)
                 && !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
             {
                 const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
@@ -837,10 +831,6 @@ namespace stormphrax::search {
                 auto generator = MoveGenerator::probcut(pos, ttMove, moveStack.movegenData, thread.history);
 
                 while (const auto move = generator.next()) {
-                    if (!pos.isLegal(move)) {
-                        continue;
-                    }
-
                     if (!see::see(pos, move, seeThreshold)) {
                         continue;
                     }
@@ -907,8 +897,6 @@ namespace stormphrax::search {
                 }
 
                 assert(pos.isLegal(move));
-            } else if (!pos.isLegal(move)) {
-                continue;
             }
 
             const bool quietOrLosing = generator.stage() > MovegenStage::kGoodNoisy;
@@ -923,8 +911,7 @@ namespace stormphrax::search {
             const auto history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
                                        : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
 
-            if ((!kRootNode || thread.search.rootDepth == 1) && bestScore > -kScoreWin && (!kPvNode || !thread.datagen))
-            {
+            if ((!kRootNode || thread.search.rootDepth == 1) && !isLoss(bestScore) && (!kPvNode || !thread.datagen)) {
                 const auto lmrDepth = [&] {
                     auto r = baseLmr;
                     r += curr.ttpv * lmrDepthTtpvScale();
@@ -978,8 +965,8 @@ namespace stormphrax::search {
             i32 extension{};
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
-                if (depth >= 8 && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
-                    && !isWin(ttEntry.score))
+                if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
+                    && !isDecisive(ttEntry.score))
                 {
                     const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
                     const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
@@ -1000,7 +987,7 @@ namespace stormphrax::search {
                             extension = 1;
                         }
                     } else if (!kPvNode && score >= beta) {
-                        return !isWin(score) ? (score + beta) / 2 : score;
+                        return !isDecisive(score) ? (score + beta) / 2 : score;
                     } else if (cutnode) {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
@@ -1229,7 +1216,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (bestScore >= beta && !isWin(bestScore) && !isWin(beta)) {
+        if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
             bestScore = (bestScore * depth + beta) / (depth + 1);
         }
 
@@ -1337,7 +1324,7 @@ namespace stormphrax::search {
             }
 
             if (eval >= beta) {
-                return !isWin(eval) && !isWin(beta) ? (eval + beta) / 2 : eval;
+                return !isDecisive(eval) && !isDecisive(beta) ? (eval + beta) / 2 : eval;
             }
 
             if (eval > alpha) {
@@ -1352,23 +1339,22 @@ namespace stormphrax::search {
 
         auto ttFlag = TtFlag::kUpperBound;
 
+        const bool searchQuiets =
+            !kPvNode && ttEntry.move && ttEntry.flag != TtFlag::kUpperBound && !pos.isNoisy(ttEntry.move);
         auto generator = MoveGenerator::qsearch(
             pos,
             thread.moveStack[moveStackIdx].movegenData,
             ttEntry.move,
             thread.history,
             thread.conthist,
-            ply
+            ply,
+            searchQuiets
         );
 
         u32 legalMoves = 0;
 
         while (const auto move = generator.next()) {
-            if (!pos.isLegal(move)) {
-                continue;
-            }
-
-            if (bestScore > -kScoreWin) {
+            if (!isLoss(bestScore)) {
                 if (!inCheck && futility <= alpha && !see::see(pos, move, 1)) {
                     if (bestScore < futility) {
                         bestScore = futility;
@@ -1401,7 +1387,7 @@ namespace stormphrax::search {
                 return 0;
             }
 
-            if (score > -kScoreWin) {
+            if (!isLoss(score)) {
                 generator.skipQuiets();
             }
 
@@ -1496,9 +1482,9 @@ namespace stormphrax::search {
 
         // wdl display
         if (g_opts.showWdl) {
-            if (score > kScoreWin) {
+            if (isWin(score)) {
                 print(" wdl 1000 0 0");
-            } else if (score < -kScoreWin) {
+            } else if (isLoss(score)) {
                 print(" wdl 0 0 1000");
             } else {
                 const auto [wdlWin, wdlLoss] = wdl::wdlModel(score, material);
@@ -1601,7 +1587,7 @@ namespace stormphrax::search {
             }
 
             // if the best thread has a proven win, only take a better win
-            if (bestRootScore > kScoreWin) {
+            if (isWin(bestRootScore)) {
                 if (rootScore > bestRootScore) {
                     acceptCandidateThread(thread);
                 }
@@ -1609,15 +1595,15 @@ namespace stormphrax::search {
             }
 
             // if the best thread has a proven loss, take the candidate if it has a shorter one
-            if (bestRootScore < -kScoreWin) {
-                if (rootScore < -kScoreWin && rootScore < bestRootScore) {
+            if (isLoss(bestRootScore)) {
+                if (isLoss(rootScore) && rootScore < bestRootScore) {
                     acceptCandidateThread(thread);
                 }
                 continue;
             }
 
             // if the best thread has any proven decisive score, take it
-            if (std::abs(rootScore) > kScoreWin) {
+            if (isDecisive(rootScore)) {
                 acceptCandidateThread(thread);
                 continue;
             }

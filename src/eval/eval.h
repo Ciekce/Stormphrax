@@ -51,7 +51,8 @@ namespace stormphrax::eval {
                               + scalingValueRook() * bbs.rooks().popcount()     //
                               + scalingValueQueen() * bbs.queens().popcount();
 
-        eval = (eval * (materialScalingBase() + npMaterial) + optimism[pos.stm().idx()] * (2000 + npMaterial)) / 32768;
+        eval = (eval * (materialScalingBase() + npMaterial) + optimism[pos.stm().idx()] * (optimismBase() + npMaterial))
+             / 32768;
 
         eval = eval * (200 - pos.halfmove()) / 200;
 
@@ -73,7 +74,6 @@ namespace stormphrax::eval {
         return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
     }
 
-    template <bool kScale = true>
     inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
         const auto eval = nnueState.evaluate(pos.boards(), pos.kings(), pos.stm());
         return adjustStatic(pos, contempt, eval);

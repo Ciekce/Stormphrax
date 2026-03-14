@@ -34,18 +34,18 @@ namespace stormphrax {
         // for a long time, these were backwards
         // cheers toanth
         inline Score scoreToTt(Score score, i32 ply) {
-            if (score < -kScoreWin) {
+            if (isLoss(score)) {
                 return score - ply;
-            } else if (score > kScoreWin) {
+            } else if (isWin(score)) {
                 return score + ply;
             }
             return score;
         }
 
         inline Score scoreFromTt(Score score, i32 ply) {
-            if (score < -kScoreWin) {
+            if (isLoss(score)) {
                 return score + ply;
-            } else if (score > kScoreWin) {
+            } else if (isWin(score)) {
                 return score - ply;
             }
             return score;
