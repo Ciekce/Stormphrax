@@ -986,7 +986,7 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        const auto doubleMargin = 4 + 300 * kPvNode + 20 * ttMoveNoisy;
+                        const auto doubleMargin = 2 + 260 * kPvNode + 15 * ttMoveNoisy;
                         extension = 1                              //
                                   + (score < sBeta - doubleMargin) //
                                   + (!kPvNode && !ttMoveNoisy && score < sBeta - tripleExtMargin());
