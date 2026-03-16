@@ -998,8 +998,10 @@ namespace stormphrax::search {
                     } else if (ttEntry.score >= beta) {
                         extension = -1;
                     }
-                } else if (depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
-                           && ttEntry.flag == TtFlag::kLowerBound)
+                } else if (
+                    depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
+                    && ttEntry.flag == TtFlag::kLowerBound
+                )
                 {
                     extension = 1;
                 }
@@ -1465,7 +1467,7 @@ namespace stormphrax::search {
         const auto material = thread.rootPos.classicalMaterial();
 
         // mates
-        if (std::abs(score) >= kScoreMaxMate) {
+        if (std::abs(score) > kScoreTbWin) {
             if (score > 0) {
                 print("mate {}", (kScoreMate - score + 1) / 2);
             } else {

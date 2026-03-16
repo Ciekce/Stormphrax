@@ -713,8 +713,6 @@ namespace stormphrax {
 
     constexpr i32 kMaxDepth = 248;
 
-    constexpr auto kScoreMaxMate = kScoreMate - kMaxDepth;
-
     [[nodiscard]] constexpr bool isWin(Score score) {
         return score > kScoreWin;
     }
