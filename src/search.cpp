@@ -992,6 +992,19 @@ namespace stormphrax::search {
                             extension = 1;
                         }
                     } else if (!kPvNode && score >= beta) {
+                        const auto bonus = historyBonus(depth);
+                        if (ttMoveNoisy) {
+                            thread.history.updateNoisyScore(ttMove, pos.captureTarget(ttMove), pos.threats(), bonus);
+                        } else {
+                            thread.history.updateQuietScore(
+                                thread.conthist,
+                                ply,
+                                pos.threats(),
+                                pos.boards().pieceOn(ttMove.fromSq()),
+                                ttMove,
+                                bonus
+                            );
+                        }
                         return !isDecisive(score) ? (score + beta) / 2 : score;
                     } else if (cutnode) {
                         extension = -2;
