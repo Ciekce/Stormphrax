@@ -584,9 +584,13 @@ namespace stormphrax::search {
 
         thread.search.updateSeldepth(ply);
 
+        if (depth > kMaxDepth) {
+            depth = kMaxDepth;
+        }
+
         const bool inCheck = pos.isCheck();
 
-        if (ply >= kMaxDepth) {
+        if (ply > kMaxDepth) {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
@@ -746,7 +750,8 @@ namespace stormphrax::search {
         }();
 
         if (!kPvNode && !inCheck && !curr.excluded) {
-            if (parent->reduction >= 3 && parent->staticEval != kScoreNone && curr.staticEval + parent->staticEval <= 0)
+            if (depth < kMaxDepth && parent->reduction >= 3 && parent->staticEval != kScoreNone
+                && curr.staticEval + parent->staticEval <= 0)
             {
                 ++depth;
             }
@@ -1280,7 +1285,7 @@ namespace stormphrax::search {
             thread.search.updateSeldepth(ply);
         }
 
-        if (ply >= kMaxDepth) {
+        if (ply > kMaxDepth) {
             return inCheck ? 0
                            : eval::adjustedStaticEval(
                                  pos,
