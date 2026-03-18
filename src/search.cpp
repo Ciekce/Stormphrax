@@ -618,8 +618,60 @@ namespace stormphrax::search {
 
         if (!curr.excluded) {
             ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+            curr.ttpv = kPvNode || ttEntry.wasPv;
+        }
 
-            if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
+        const auto ttMove =
+            (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
+
+        const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
+
+        Score rawStaticEval{};
+        std::optional<Score> complexity{};
+
+        if (!curr.excluded) {
+            if (inCheck) {
+                rawStaticEval = kScoreNone;
+            } else if (ttHit && ttEntry.staticEval != kScoreNone) {
+                rawStaticEval = ttEntry.staticEval;
+            } else {
+                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+            }
+
+            if (!ttHit) {
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, curr.ttpv);
+            }
+
+            if (inCheck) {
+                curr.staticEval = kScoreNone;
+            } else {
+                Score corrDelta{};
+                curr.staticEval = eval::adjustEval(
+                    pos,
+                    thread.optimism,
+                    thread.keyHistory,
+                    thread.correctionHistory,
+                    rawStaticEval,
+                    &corrDelta
+                );
+                complexity = corrDelta;
+            }
+        }
+
+        if (!kPvNode && !curr.excluded) {
+            if (depth < kMaxDepth && !inCheck && parent->reduction >= 3 && parent->staticEval != kScoreNone
+                && curr.staticEval + parent->staticEval <= 0)
+            {
+                ++depth;
+            }
+
+            if (depth >= 2 && !inCheck && parent->reduction >= 2 && parent->staticEval != kScoreNone
+                && curr.staticEval + parent->staticEval >= hindsightReductionMargin())
+            {
+                --depth;
+            }
+
+            if (ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
                 && (ttEntry.flag == TtFlag::kExact                                     //
                     || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
@@ -638,14 +690,7 @@ namespace stormphrax::search {
 
                 return ttEntry.score;
             }
-
-            curr.ttpv = kPvNode || ttEntry.wasPv;
         }
-
-        const auto ttMove =
-            (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
-
-        const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
         const auto pieceCount = bbs.occupancy().popcount();
 
@@ -704,38 +749,6 @@ namespace stormphrax::search {
             --depth;
         }
 
-        Score rawStaticEval{};
-        std::optional<Score> complexity{};
-
-        if (!curr.excluded) {
-            if (inCheck) {
-                rawStaticEval = kScoreNone;
-            } else if (ttHit && ttEntry.staticEval != kScoreNone) {
-                rawStaticEval = ttEntry.staticEval;
-            } else {
-                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
-            }
-
-            if (!ttHit) {
-                m_ttable.putStaticEval(pos.key(), rawStaticEval, curr.ttpv);
-            }
-
-            if (inCheck) {
-                curr.staticEval = kScoreNone;
-            } else {
-                Score corrDelta{};
-                curr.staticEval = eval::adjustEval(
-                    pos,
-                    thread.optimism,
-                    thread.keyHistory,
-                    thread.correctionHistory,
-                    rawStaticEval,
-                    &corrDelta
-                );
-                complexity = corrDelta;
-            }
-        }
-
         const bool improving = [&] {
             if (inCheck) {
                 return false;
@@ -750,18 +763,6 @@ namespace stormphrax::search {
         }();
 
         if (!kPvNode && !inCheck && !curr.excluded) {
-            if (depth < kMaxDepth && parent->reduction >= 3 && parent->staticEval != kScoreNone
-                && curr.staticEval + parent->staticEval <= 0)
-            {
-                ++depth;
-            }
-
-            if (depth >= 2 && parent->reduction >= 2 && parent->staticEval != kScoreNone
-                && curr.staticEval + parent->staticEval >= hindsightReductionMargin())
-            {
-                --depth;
-            }
-
             const auto rfpMargin = [&] {
                 auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
                 if (complexity) {
