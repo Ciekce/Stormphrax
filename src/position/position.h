@@ -439,7 +439,8 @@ namespace stormphrax {
         [[nodiscard]] inline bool givesDirectCheck(Move move) const {
             assert(move != kNullMove);
 
-            const auto movingPt = boards().pieceOn(move.fromSq()).type();
+            const auto movingPt =
+                move.type() == MoveType::kPromotion ? move.promo() : boards().pieceOn(move.fromSq()).type();
 
             if (movingPt == PieceTypes::kKing) {
                 return false;
