@@ -212,6 +212,8 @@ namespace stormphrax {
         newPos.calcCheckersAndPins();
         newPos.calcThreats();
 
+        newPos.calcCheckZones();
+
         newPos.filterEp(nstm);
 
         return newPos;
@@ -806,7 +808,19 @@ namespace stormphrax {
         calcCheckersAndPins();
         calcThreats();
 
+        calcCheckZones();
+
         filterEp(stm());
+    }
+
+    void Position::calcCheckZones() {
+        const auto oppKingSq = king(nstm());
+        const auto occ = bbs().occupancy();
+
+        checkZones[0] = attacks::getPawnAttacks(oppKingSq, nstm());
+        checkZones[1] = attacks::getKnightAttacks(oppKingSq);
+        checkZones[2] = attacks::getBishopAttacks(oppKingSq, occ);
+        checkZones[3] = attacks::getRookAttacks(oppKingSq, occ);
     }
 
     void Position::filterEp(Color capturing) {
