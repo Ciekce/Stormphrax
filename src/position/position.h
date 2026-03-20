@@ -436,6 +436,26 @@ namespace stormphrax {
                     || boards().pieceOn(move.toSq()) != Pieces::kNone);
         }
 
+        [[nodiscard]] inline bool givesDirectCheck(Move move) const {
+            assert(move != kNullMove);
+
+            const auto movingPt =
+                move.type() == MoveType::kPromotion ? move.promo() : boards().pieceOn(move.fromSq()).type();
+
+            if (movingPt == PieceTypes::kKing) {
+                return false;
+            }
+
+            const auto checkZone = [&] {
+                if (movingPt == PieceTypes::kQueen) {
+                    return checkZones[PieceTypes::kBishop.idx()] | checkZones[PieceTypes::kRook.idx()];
+                }
+                return checkZones[movingPt.idx()];
+            }();
+
+            return checkZone[move.toSq()];
+        }
+
         [[nodiscard]] std::string toFen() const;
 
         [[nodiscard]] inline bool operator==(const Position& other) const = default;
@@ -545,10 +565,15 @@ namespace stormphrax {
             m_threats |= attacks::getKingAttacks(m_kings.color(them));
         }
 
+        void calcCheckZones();
+
         // Unsets ep squares if they are invalid (no pawn is able to capture)
         void filterEp(Color capturing);
 
         PositionBoards m_boards{};
+
+        // pnbr
+        std::array<Bitboard, 4> checkZones{};
 
         Keys m_keys{};
 
@@ -568,7 +593,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 216);
+    static_assert(sizeof(Position) == 248);
 } // namespace stormphrax
 
 template <>
