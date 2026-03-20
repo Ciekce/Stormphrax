@@ -354,14 +354,14 @@ namespace stormphrax::eval::nnue::arch {
                     r_0 = shiftLeft<i32>(r_0, kQuantBits);
                     r_1 = shiftLeft<i32>(r_1, kQuantBits);
 
-                    i_0 = add<i32>(i_0, r_0);
-                    i_1 = add<i32>(i_1, r_1);
-
                     const auto w_0 = load<i32>(&l3Weights[weightIdx + kChunkSize<i32> * 0]);
                     const auto w_1 = load<i32>(&l3Weights[weightIdx + kChunkSize<i32> * 1]);
 
                     i_0 = clamp<i32>(i_0, zero<i32>(), one);
                     i_1 = clamp<i32>(i_1, zero<i32>(), one);
+
+                    i_0 = add<i32>(i_0, r_0);
+                    i_1 = add<i32>(i_1, r_1);
 
                     i_0 = mulLo<i32>(i_0, w_0);
                     i_1 = mulLo<i32>(i_1, w_1);
@@ -395,11 +395,6 @@ namespace stormphrax::eval::nnue::arch {
                     r_2 = shiftLeft<i32>(r_2, kQuantBits);
                     r_3 = shiftLeft<i32>(r_3, kQuantBits);
 
-                    i_0 = add<i32>(i_0, r_0);
-                    i_1 = add<i32>(i_1, r_1);
-                    i_2 = add<i32>(i_2, r_2);
-                    i_3 = add<i32>(i_3, r_3);
-
                     const auto w_0 = load<i32>(&l3Weights[weightIdx + kChunkSize<i32> * 0]);
                     const auto w_1 = load<i32>(&l3Weights[weightIdx + kChunkSize<i32> * 1]);
                     const auto w_2 = load<i32>(&l3Weights[weightIdx + kChunkSize<i32> * 2]);
@@ -409,6 +404,11 @@ namespace stormphrax::eval::nnue::arch {
                     i_1 = clamp<i32>(i_1, zero<i32>(), one);
                     i_2 = clamp<i32>(i_2, zero<i32>(), one);
                     i_3 = clamp<i32>(i_3, zero<i32>(), one);
+
+                    i_0 = add<i32>(i_0, r_0);
+                    i_1 = add<i32>(i_1, r_1);
+                    i_2 = add<i32>(i_2, r_2);
+                    i_3 = add<i32>(i_3, r_3);
 
                     i_0 = mulLo<i32>(i_0, w_0);
                     i_1 = mulLo<i32>(i_1, w_1);
