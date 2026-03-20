@@ -1370,7 +1370,7 @@ namespace stormphrax::search {
 
         while (const auto move = generator.next()) {
             if (!isLoss(bestScore)) {
-                if (!inCheck && futility <= alpha && !see::see(pos, move, 1)) {
+                if (!inCheck && futility <= alpha && !pos.givesDirectCheck(move) && !see::see(pos, move, 1)) {
                     if (bestScore < futility) {
                         bestScore = futility;
                     }
