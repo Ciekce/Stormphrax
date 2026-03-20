@@ -448,9 +448,9 @@ namespace stormphrax {
 
             const auto checkZone = [&] {
                 if (movingPt == PieceTypes::kQueen) {
-                    return checkZones[PieceTypes::kBishop.idx()] | checkZones[PieceTypes::kRook.idx()];
+                    return m_checkZones[PieceTypes::kBishop.idx()] | m_checkZones[PieceTypes::kRook.idx()];
                 }
-                return checkZones[movingPt.idx()];
+                return m_checkZones[movingPt.idx()];
             }();
 
             return checkZone[move.toSq()];
@@ -573,7 +573,7 @@ namespace stormphrax {
         PositionBoards m_boards{};
 
         // pnbr
-        std::array<Bitboard, 4> checkZones{};
+        std::array<Bitboard, 4> m_checkZones{};
 
         Keys m_keys{};
 

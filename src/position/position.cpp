@@ -817,10 +817,10 @@ namespace stormphrax {
         const auto oppKingSq = king(nstm());
         const auto occ = bbs().occupancy();
 
-        checkZones[0] = attacks::getPawnAttacks(oppKingSq, nstm());
-        checkZones[1] = attacks::getKnightAttacks(oppKingSq);
-        checkZones[2] = attacks::getBishopAttacks(oppKingSq, occ);
-        checkZones[3] = attacks::getRookAttacks(oppKingSq, occ);
+        m_checkZones[0] = attacks::getPawnAttacks(oppKingSq, nstm());
+        m_checkZones[1] = attacks::getKnightAttacks(oppKingSq);
+        m_checkZones[2] = attacks::getBishopAttacks(oppKingSq, occ);
+        m_checkZones[3] = attacks::getRookAttacks(oppKingSq, occ);
     }
 
     void Position::filterEp(Color capturing) {
