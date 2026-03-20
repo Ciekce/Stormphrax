@@ -40,7 +40,7 @@ namespace stormphrax::eval {
 
     constexpr u32 kL1Size = 640;
     constexpr u32 kL2Size = 32;
-    constexpr u32 kL3Size = 32;
+    constexpr u32 kL3Size = 64;
 
     using L1Activation = nnue::activation::ClippedReLU;
 
