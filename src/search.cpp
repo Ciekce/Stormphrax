@@ -1027,9 +1027,7 @@ namespace stormphrax::search {
             if (newPos.isDrawn(ply, thread.keyHistory)) {
                 score = drawScore(thread.search.loadNodes());
             } else {
-                auto newDepth = depth + extension - 1;
-
-                auto r = [&] {
+                const auto r = [&] {
                     if (move == ttMove) {
                         return 0;
                     }
@@ -1053,6 +1051,8 @@ namespace stormphrax::search {
 
                     return r;
                 }();
+
+                auto newDepth = depth + extension - 1;
 
                 if (depth >= 2 && legalMoves >= 2 + kRootNode) {
                     // can't use std::clamp because newDepth can be <0
