@@ -1029,7 +1029,11 @@ namespace stormphrax::search {
             } else {
                 auto newDepth = depth + extension - 1;
 
-                if (depth >= 2 && legalMoves >= 2 + kRootNode) {
+                auto r = [&] {
+                    if (move == ttMove) {
+                        return 0;
+                    }
+
                     auto r = baseLmr;
 
                     r += !kPvNode * lmrNonPvReductionScale();
@@ -1047,6 +1051,10 @@ namespace stormphrax::search {
                         r -= lmrHighComplexityReductionScale() * highComplexity;
                     }
 
+                    return r;
+                }();
+
+                if (depth >= 2 && legalMoves >= 2 + kRootNode) {
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
@@ -1089,7 +1097,7 @@ namespace stormphrax::search {
                         thread,
                         newPos,
                         curr.pv,
-                        newDepth,
+                        newDepth - (r > 512),
                         ply + 1,
                         moveStackIdx + 1,
                         -alpha - 1,
