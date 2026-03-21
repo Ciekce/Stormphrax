@@ -882,6 +882,12 @@ namespace stormphrax::search {
             }
         }
 
+        if (!kPvNode && !curr.excluded && ttEntry.depth >= depth - 3 && ttEntry.score >= beta + 400
+            && !isDecisive(ttEntry.score) && !isDecisive(beta))
+        {
+            return ttEntry.score;
+        }
+
         thread.stack[ply + 1].killers.clear();
 
         moveStack.failLowQuiets.clear();
