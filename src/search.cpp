@@ -1097,7 +1097,7 @@ namespace stormphrax::search {
                         thread,
                         newPos,
                         curr.pv,
-                        newDepth - (r > 512),
+                        newDepth - (r > 384),
                         ply + 1,
                         moveStackIdx + 1,
                         -alpha - 1,
