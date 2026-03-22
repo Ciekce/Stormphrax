@@ -1377,7 +1377,7 @@ namespace stormphrax::search {
                     continue;
                 }
 
-                if (legalMoves >= 2) {
+                if (legalMoves >= 2 && !pos.givesDirectCheck(move)) {
                     break;
                 }
 
