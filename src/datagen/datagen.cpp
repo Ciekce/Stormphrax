@@ -275,7 +275,8 @@ namespace stormphrax::datagen {
                         break;
                     }
 
-                    output.push(filtered, move, score);
+                    const auto clampedScore = std::abs(score) <= 2 ? 0 : score;
+                    output.push(filtered, move, clampedScore);
 
                     if (outcome) {
                         break;
