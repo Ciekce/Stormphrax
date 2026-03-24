@@ -394,6 +394,8 @@ namespace stormphrax::search {
 
         searchData.nodes = 0;
         thread.stack[0].killers.clear();
+        thread.stack[0].cutoffs = 0;
+        thread.stack[1].cutoffs = 0;
 
         thread.optimism = {};
 
@@ -608,6 +610,8 @@ namespace stormphrax::search {
 
         const auto* parent = kRootNode ? nullptr : &thread.stack[ply - 1];
         auto& curr = thread.stack[ply];
+        auto& child = thread.stack[ply + 1];
+        auto& grandchild = thread.stack[ply + 2];
 
         assert(!kRootNode || curr.excluded == kNullMove);
 
@@ -703,6 +707,8 @@ namespace stormphrax::search {
         if (depth >= 3 && !curr.excluded && (kPvNode || cutnode) && (!ttMove || ttEntry.depth + 3 < depth)) {
             --depth;
         }
+
+        grandchild.cutoffs = 0;
 
         Score rawStaticEval{};
         std::optional<Score> complexity{};
@@ -1041,6 +1047,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
+                    r += 128 * (child.cutoffs >= 3);
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
@@ -1172,6 +1179,7 @@ namespace stormphrax::search {
 
             if (score >= beta) {
                 ttFlag = TtFlag::kLowerBound;
+                ++curr.cutoffs;
                 break;
             }
 

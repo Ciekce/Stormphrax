@@ -88,6 +88,7 @@ namespace stormphrax::search {
 
         Move excluded{};
         i32 reduction{};
+        i32 cutoffs{};
     };
 
     struct MoveStackEntry {
