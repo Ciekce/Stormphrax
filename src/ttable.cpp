@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,18 +34,18 @@ namespace stormphrax {
         // for a long time, these were backwards
         // cheers toanth
         inline Score scoreToTt(Score score, i32 ply) {
-            if (score < -kScoreWin) {
+            if (isLoss(score)) {
                 return score - ply;
-            } else if (score > kScoreWin) {
+            } else if (isWin(score)) {
                 return score + ply;
             }
             return score;
         }
 
         inline Score scoreFromTt(Score score, i32 ply) {
-            if (score < -kScoreWin) {
+            if (isLoss(score)) {
                 return score + ply;
-            } else if (score > kScoreWin) {
+            } else if (isWin(score)) {
                 return score - ply;
             }
             return score;

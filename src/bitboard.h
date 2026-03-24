@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include <array>
+#include <cassert>
 
 #include "core.h"
 #include "util/bits.h"
@@ -103,6 +104,8 @@ namespace stormphrax {
         friend class Bitboard;
     };
 
+    class Biterator;
+
     class Bitboard {
     public:
         static constexpr auto kRank1 = U64(0x00000000000000FF);
@@ -133,6 +136,16 @@ namespace stormphrax {
 
         constexpr Bitboard(u64 board = 0) :
                 m_board{board} {}
+
+        [[nodiscard]] constexpr static Bitboard rank(i32 rank) {
+            assert(rank >= 0 && rank < 8);
+            return {kRank1 << (rank * 8)};
+        }
+
+        [[nodiscard]] constexpr static Bitboard file(i32 file) {
+            assert(file >= 0 && file < 8);
+            return {kFileA << file};
+        }
 
         [[nodiscard]] constexpr operator u64() const {
             return m_board;
@@ -273,13 +286,13 @@ namespace stormphrax {
             return util::isolateLsb(m_board);
         }
 
-        [[nodiscard]] constexpr Square popLowestSquare() {
+        constexpr Square popLowestSquare() {
             const auto sq = lowestSquare();
             m_board = util::resetLsb(m_board);
             return sq;
         }
 
-        [[nodiscard]] constexpr Bitboard popLowestBit() {
+        constexpr Bitboard popLowestBit() {
             const auto bit = lowestBit();
             m_board = util::resetLsb(m_board);
             return bit;
@@ -461,9 +474,42 @@ namespace stormphrax {
             return sq.bit();
         }
 
+        [[nodiscard]] inline Biterator begin() const;
+        [[nodiscard]] inline Biterator end() const;
+
     private:
         u64 m_board;
     };
+
+    class Biterator {
+    public:
+        constexpr Biterator& operator++() {
+            m_bb.popLowestSquare();
+            return *this;
+        }
+
+        [[nodiscard]] constexpr Square operator*() const {
+            return m_bb.lowestSquare();
+        }
+
+        constexpr bool operator==(const Biterator&) const = default;
+
+    private:
+        explicit constexpr Biterator(Bitboard bb) :
+                m_bb{bb} {}
+
+        Bitboard m_bb;
+
+        friend class Bitboard;
+    };
+
+    inline Biterator Bitboard::begin() const {
+        return Biterator{*this};
+    }
+
+    inline Biterator Bitboard::end() const {
+        return Biterator{Bitboard{}};
+    }
 
     namespace boards {
         constexpr Bitboard kRank1{Bitboard::kRank1};

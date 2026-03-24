@@ -37,6 +37,7 @@ struct ThreatInputFtWeights {
 
 struct NoThreatInputFtWeights {
     util::MultiArray<i16, InputFeatureSet::kBucketCount * InputFeatureSet::kInputSize * kL1Size> psq;
+    static std::array<i8, 0> threat;
 };
 
 using FtWeights = std::conditional_t<InputFeatureSet::kThreatInputs, ThreatInputFtWeights, NoThreatInputFtWeights>;
@@ -99,7 +100,7 @@ i32 main(i32 argc, char* argv[]) {
     }
 
     if constexpr (!LayeredArch::kRequiresFtPermute) {
-        println("Permutation not required for current arch");
+        println("No permutation required for current network arch");
         std::copy(std::istreambuf_iterator{in}, std::istreambuf_iterator<char>{}, std::ostreambuf_iterator{out});
         if (!out) {
             eprintln("Failed to write network");

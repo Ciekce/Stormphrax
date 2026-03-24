@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,6 +97,9 @@ namespace stormphrax::attacks {
         generateEmptyBoardAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>();
     constexpr auto kEmptyBoardBishops =
         generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>();
+
+    constexpr auto kDiagonals = generateEmptyBoardAttacks<offsets::kUpRight, offsets::kDownLeft>();
+    constexpr auto kAntiDiagonals = generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kDownRight>();
 
     template <i32... kDirs>
     [[nodiscard]] constexpr Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {

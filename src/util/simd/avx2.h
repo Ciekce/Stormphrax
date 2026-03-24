@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,7 +115,8 @@ namespace stormphrax::util::simd {
             return _mm256_sub_epi8(a, b);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 shiftLeftI8([[maybe_unused]] VectorI8 v, [[maybe_unused]] i32 shift) {
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI8 shiftLeftI8(VectorI8 v, i32 shift) {
+            SP_UNUSED(v, shift);
             unimplemented();
         }
 

@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 namespace stormphrax::bench {
 #if SP_SPARSE_BENCH_L1_SIZE > 0
     constexpr i32 kDefaultBenchDepth = 18;
-#elif defined(SP_PGO_PROFILE)
-    constexpr i32 kDefaultBenchDepth = 10;
 #else
     constexpr i32 kDefaultBenchDepth = 14;
 #endif

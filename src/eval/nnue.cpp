@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -339,14 +339,9 @@ namespace stormphrax::eval {
 
         const auto occ = boards.bbs().occupancy();
 
-        auto bb = occ & ~boards.bbs().kings();
-        while (bb) {
-            const auto from = bb.popLowestSquare();
+        for (const auto from : occ & ~boards.bbs().kings()) {
             const auto piece = boards.pieceOn(from);
-
-            auto threats = occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings();
-            while (threats) {
-                const auto to = threats.popLowestSquare();
+            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
                 const auto attacked = boards.pieceOn(to);
                 const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
                 if (feature < nnue::features::threats::kTotalThreatFeatures) {

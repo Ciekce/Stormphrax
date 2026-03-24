@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -374,13 +374,20 @@ namespace stormphrax {
             }
 
             for (usize i = next + 1; i < args.size(); ++i) {
-                if (const auto move = m_pos.moveFromUci(args[i])) {
-                    m_keyHistory.push_back(m_pos.key());
-                    m_pos = m_pos.applyMove(move);
-                } else {
+                const auto move = m_pos.moveFromUci(args[i]);
+
+                if (!move) {
                     eprintln("Invalid move {}", args[i]);
                     break;
                 }
+
+                if (!m_pos.isLegal(move)) {
+                    eprintln("Illegal move {}", args[i]);
+                    break;
+                }
+
+                m_keyHistory.push_back(m_pos.key());
+                m_pos = m_pos.applyMove(move);
             }
         }
 
@@ -536,7 +543,7 @@ namespace stormphrax {
                             const auto move = m_pos.moveFromUci(candidate);
 
                             if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                if (m_pos.isPseudolegal(move) && m_pos.isLegal(move)) {
+                                if (m_pos.isLegal(move)) {
                                     movesToSearch.push(move);
                                 } else {
                                     println("info string ignoring illegal move {}", candidate);
@@ -810,24 +817,24 @@ namespace stormphrax {
             println("Pawn key: {:016x}", m_pos.pawnKey());
 
             print("Checkers:");
-
-            auto checkers = m_pos.checkers();
-            while (checkers) {
-                print(" {}", checkers.popLowestSquare());
+            for (const auto checker : m_pos.checkers()) {
+                print(" {}", checker);
             }
-
             println();
 
-            print("Pinned:");
-
-            auto pinned = m_pos.pinned(m_pos.stm());
-            while (pinned) {
-                print(" {}", pinned.popLowestSquare());
+            print("White pinned:");
+            for (const auto pinned : m_pos.pinned(Colors::kWhite)) {
+                print(" {}", pinned);
             }
-
             println();
 
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, nullptr, eval::staticEvalOnce(m_pos));
+            print("Black pinned:");
+            for (const auto pinned : m_pos.pinned(Colors::kBlack)) {
+                print(" {}", pinned);
+            }
+            println();
+
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, {}, nullptr, eval::staticEvalOnce(m_pos));
 
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
             const auto whiteNormalized = m_pos.stm() == Colors::kBlack ? -normalized : normalized;
@@ -835,7 +842,7 @@ namespace stormphrax {
             const auto unsharpened = wdl::normalizeScore<false>(staticEval, m_pos.classicalMaterial());
             const auto whiteUnsharpened = m_pos.stm() == Colors::kBlack ? -unsharpened : unsharpened;
 
-            println("Static eval: {:+}", static_cast<f64>(whiteNormalized) / 100.0);
+            println("Static eval (white-relative): {:+}", static_cast<f64>(whiteNormalized) / 100.0);
             println("Unsharpened eval: {:+}", static_cast<f64>(whiteUnsharpened) / 100.0);
         }
 
@@ -844,14 +851,14 @@ namespace stormphrax {
         }
 
         void UciHandler::handleEval() {
-            const auto staticEval = eval::adjustEval<false>(m_pos, {}, nullptr, eval::staticEvalOnce(m_pos));
+            const auto staticEval = eval::adjustEval<false>(m_pos, {}, {}, nullptr, eval::staticEvalOnce(m_pos));
             const auto normalized = wdl::normalizeScore(staticEval, m_pos.classicalMaterial());
 
             println("Static eval: {:+}", static_cast<f64>(normalized) / 100.0);
         }
 
         void UciHandler::handleRawEval() {
-            const auto score = eval::staticEvalOnce<false>(m_pos);
+            const auto score = eval::staticEvalOnce(m_pos);
             println("{}", score);
         }
 

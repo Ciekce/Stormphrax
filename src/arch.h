@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@
     #define SP_HAS_AVX2 1
     #define SP_HAS_NEON 0
     #define SP_HAS_NEON_DOTPROD 0
-#elif defined(SP_AVX2)
+#elif defined(SP_ZEN2)
     #define SP_HAS_BMI2 0
     #define SP_HAS_VNNI512 0
     #define SP_HAS_VBMI2 0

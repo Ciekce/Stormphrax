@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -224,7 +224,7 @@ namespace stormphrax::datagen {
 
                     assert(pos.boards().pieceOn(move.fromSq()) != Pieces::kNone);
 
-                    if (std::abs(score) > kScoreWin) {
+                    if (isDecisive(score)) {
                         outcome = score > 0 ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
                     } else {
                         if (normScore > kWinAdjMinScore) {
@@ -257,9 +257,10 @@ namespace stormphrax::datagen {
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
+                    eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
-                    pos = pos.applyMove(move, NullObserver{});
-                    thread.nnueState.reset(pos.boards(), pos.kings());
+                    pos = pos.applyMove(move, eval::BoardObserver{ctx});
+                    thread.nnueState.applyImmediately(ctx, pos.boards());
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 

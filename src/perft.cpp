@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,19 +34,15 @@ namespace stormphrax {
             ScoredMoveList moves{};
             generateAll(moves, pos);
 
+            if (depth == 1) {
+                return moves.size();
+            }
+
             usize total{};
 
             for (const auto [move, score] : moves) {
-                if (!pos.isLegal(move)) {
-                    continue;
-                }
-
-                if (depth == 1) {
-                    ++total;
-                } else {
-                    const auto newPos = pos.applyMove(move);
-                    total += doPerft(newPos, depth - 1);
-                }
+                const auto newPos = pos.applyMove(move);
+                total += doPerft(newPos, depth - 1);
             }
 
             return total;
@@ -66,10 +62,6 @@ namespace stormphrax {
         usize total{};
 
         for (const auto [move, score] : moves) {
-            if (!pos.isLegal(move)) {
-                continue;
-            }
-
             const auto newPos = pos.applyMove(move);
             const auto value = doPerft(newPos, depth - 1);
 

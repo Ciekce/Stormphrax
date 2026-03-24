@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,6 +141,8 @@ namespace stormphrax::search {
         u32 pvIdx{};
         std::vector<RootMove> rootMoves{};
 
+        eval::Optimism optimism{};
+
         i32 depthCompleted{};
 
         std::vector<SearchStackEntry> stack{};
@@ -168,7 +170,7 @@ namespace stormphrax::search {
             return findRootMove(move) != nullptr;
         }
 
-        void sortRootMoves();
+        void sortSearchedRootMoves();
         void sortRemainingRootMoves();
 
         [[nodiscard]] inline RootMove& pvMove() {

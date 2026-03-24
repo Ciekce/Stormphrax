@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,6 @@ namespace stormphrax::wdl {
     [[nodiscard]] Score normalizeScore(Score score, i32 material);
 
     inline Score unnormalizeScoreMaterial58(Score score) {
-        return score == 0 || std::abs(score) > kScoreWin ? score : score * kMaterial58NormalizationK / 100;
+        return score == 0 || isDecisive(score) ? score : score * kMaterial58NormalizationK / 100;
     }
 } // namespace stormphrax::wdl

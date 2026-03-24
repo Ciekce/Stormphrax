@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,8 +151,8 @@ namespace stormphrax {
         }
 
         if (!move) {
-            newPos.m_pinned = newPos.calcPinned();
-            newPos.m_threats = newPos.calcThreats();
+            newPos.calcCheckersAndPins();
+            newPos.calcThreats();
 
             return newPos;
         }
@@ -184,7 +184,7 @@ namespace stormphrax {
 
         assert(captured.typeOrNone() != PieceTypes::kKing);
 
-        observer.finalize(m_boards, m_kings);
+        observer.finalize(newPos.m_kings);
 
         if (movingType == PieceTypes::kRook) {
             newPos.m_castlingRooks.color(stm).unset(moveSrc);
@@ -209,31 +209,54 @@ namespace stormphrax {
             newPos.m_keys.switchCastling(m_castlingRooks, newPos.m_castlingRooks);
         }
 
-        newPos.m_checkers = newPos.calcCheckers();
-        newPos.m_pinned = newPos.calcPinned();
-        newPos.m_threats = newPos.calcThreats();
+        newPos.calcCheckersAndPins();
+        newPos.calcThreats();
+
+        newPos.calcCheckZones();
 
         newPos.filterEp(nstm);
 
         return newPos;
     }
 
-    bool Position::isPseudolegal(Move move) const {
+    bool Position::isLegal(Move move) const {
         assert(move != kNullMove);
+        assert(move.type() == MoveType::kPromotion || move.promoIdx() == 0);
 
         const auto us = stm();
 
+        const auto king = m_kings.color(us);
+
+        const auto& bbs = m_boards.bbs();
+
         const auto src = move.fromSq();
+        const auto dst = move.toSq();
         const auto srcPiece = m_boards.pieceOn(src);
+        const auto dstPiece = m_boards.pieceOn(dst);
+
+        const auto type = move.type();
 
         if (srcPiece == Pieces::kNone || srcPiece.color() != us) {
             return false;
         }
 
-        const auto type = move.type();
+        if (m_checkers && srcPiece != PieceTypes::kKing.withColor(us)) {
+            // multiple checks can only be evaded with a king move
+            if (m_checkers.multiple()) {
+                return false;
+            }
 
-        const auto dst = move.toSq();
-        const auto dstPiece = m_boards.pieceOn(dst);
+            // one checker may be evaded, blocked, or captured
+            const auto checker = m_checkers.lowestSquare();
+            if (!(rayBetween(king, checker) | Bitboard::fromSquare(checker))[dst] && type != MoveType::kEnPassant) {
+                return false;
+            }
+        }
+
+        // pinned pieces can only move along their pin ray
+        if (pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
+            return false;
+        }
 
         // we're capturing something
         if (dstPiece != Pieces::kNone
@@ -291,25 +314,37 @@ namespace stormphrax {
                 const auto toRook = rayBetween(src, dst);
 
                 const auto castleOcc = occ ^ src.bit() ^ dst.bit();
+                const auto clearMask = toKingDst | toRook | kingDst.bit() | rookDst.bit();
+                const auto checkMask = toKingDst | kingDst.bit();
 
-                return (castleOcc & (toKingDst | toRook | kingDst.bit() | rookDst.bit())).empty()
-                    && !anyAttacked(toKingDst | kingDst.bit(), them);
+                return (castleOcc & clearMask).empty() && (m_threats & checkMask).empty() && !pinned(us)[dst];
             } else {
                 if (dst == m_castlingRooks.black().kingside) {
-                    return (occ & U64(0x6000000000000000)).empty() && !isAttacked(Squares::kF8, Colors::kWhite);
+                    return (occ & U64(0x6000000000000000)).empty() && (m_threats & U64(0x7000000000000000)).empty();
                 } else if (dst == m_castlingRooks.black().queenside) {
-                    return (occ & U64(0x0E00000000000000)).empty() && !isAttacked(Squares::kD8, Colors::kWhite);
+                    return (occ & U64(0x0E00000000000000)).empty() && (m_threats & U64(0x1C00000000000000)).empty();
                 } else if (dst == m_castlingRooks.white().kingside) {
-                    return (occ & U64(0x0000000000000060)).empty() && !isAttacked(Squares::kF1, Colors::kBlack);
+                    return (occ & U64(0x0000000000000060)).empty() && (m_threats & U64(0x0000000000000070)).empty();
                 } else {
-                    return (occ & U64(0x000000000000000E)).empty() && !isAttacked(Squares::kD1, Colors::kBlack);
+                    return (occ & U64(0x000000000000000E)).empty() && (m_threats & U64(0x000000000000001C)).empty();
                 }
             }
         }
 
         if (srcPieceType == PieceTypes::kPawn) {
             if (type == MoveType::kEnPassant) {
-                return dst == m_enPassant && attacks::getPawnAttacks(m_enPassant, them)[src];
+                if (dst != m_enPassant || !attacks::getPawnAttacks(m_enPassant, them)[src]) {
+                    return false;
+                }
+
+                const auto captureSquare = dst.flipRankParity();
+                const auto postEpOcc = bbs.occupancy() ^ Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst)
+                                     ^ Bitboard::fromSquare(captureSquare);
+
+                const auto theirQueens = bbs.queens(them);
+
+                return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | bbs.bishops(them))).empty()
+                    && (attacks::getRookAttacks(king, postEpOcc) & (theirQueens | bbs.rooks(them))).empty();
             }
 
             const auto srcRank = move.fromSqRank();
@@ -369,7 +404,7 @@ namespace stormphrax {
                     attacks = attacks::getQueenAttacks(src, occ);
                     break;
                 case PieceTypes::kKing.raw():
-                    attacks = attacks::getKingAttacks(src);
+                    attacks = attacks::getKingAttacks(src) & ~m_threats;
                     break;
                 default:
                     __builtin_unreachable();
@@ -381,62 +416,6 @@ namespace stormphrax {
         }
 
         return true;
-    }
-
-    // This does *not* check for pseudolegality, moves are assumed to be pseudolegal
-    bool Position::isLegal(Move move) const {
-        assert(move != kNullMove);
-
-        const auto us = stm();
-        const auto them = us.flip();
-
-        const auto& bbs = m_boards.bbs();
-
-        const auto src = move.fromSq();
-        const auto dst = move.toSq();
-
-        const auto king = m_kings.color(us);
-
-        if (move.type() == MoveType::kCastling) {
-            const auto kingDst = move.fromSq().withFile(move.fromSqFile() < move.toSqFile() ? kFileG : kFileC);
-            return !m_threats[kingDst] && !(g_opts.chess960 && pinned(us)[dst]);
-        } else if (move.type() == MoveType::kEnPassant) {
-            const auto captureSquare = dst.flipRankParity();
-            const auto postEpOcc = bbs.occupancy() ^ Bitboard::fromSquare(src) ^ Bitboard::fromSquare(dst)
-                                 ^ Bitboard::fromSquare(captureSquare);
-
-            const auto theirQueens = bbs.queens(them);
-
-            return (attacks::getBishopAttacks(king, postEpOcc) & (theirQueens | bbs.bishops(them))).empty()
-                && (attacks::getRookAttacks(king, postEpOcc) & (theirQueens | bbs.rooks(them))).empty();
-        }
-
-        const auto moving = m_boards.pieceOn(src);
-
-        if (moving.type() == PieceTypes::kKing) {
-            const auto kinglessOcc = bbs.occupancy() ^ bbs.kings(us);
-            const auto theirQueens = bbs.queens(them);
-
-            return !m_threats[move.toSq()]
-                && (attacks::getBishopAttacks(dst, kinglessOcc) & (theirQueens | bbs.bishops(them))).empty()
-                && (attacks::getRookAttacks(dst, kinglessOcc) & (theirQueens | bbs.rooks(them))).empty();
-        }
-
-        // multiple checks can only be evaded with a king move
-        if (m_checkers.multiple()) {
-            return false;
-        }
-
-        if (pinned(us)[src] && !rayIntersecting(src, dst)[king]) {
-            return false;
-        }
-
-        if (m_checkers.empty()) {
-            return true;
-        }
-
-        const auto checker = m_checkers.lowestSquare();
-        return (rayBetween(king, checker) | Bitboard::fromSquare(checker))[dst];
     }
 
     // see comment in cuckoo.cpp
@@ -826,11 +805,22 @@ namespace stormphrax {
             m_keys.flipStm();
         }
 
-        m_checkers = calcCheckers();
-        m_pinned = calcPinned();
-        m_threats = calcThreats();
+        calcCheckersAndPins();
+        calcThreats();
+
+        calcCheckZones();
 
         filterEp(stm());
+    }
+
+    void Position::calcCheckZones() {
+        const auto oppKingSq = king(nstm());
+        const auto occ = bbs().occupancy();
+
+        m_checkZones[0] = attacks::getPawnAttacks(oppKingSq, nstm());
+        m_checkZones[1] = attacks::getKnightAttacks(oppKingSq);
+        m_checkZones[2] = attacks::getBishopAttacks(oppKingSq, occ);
+        m_checkZones[3] = attacks::getRookAttacks(oppKingSq, occ);
     }
 
     void Position::filterEp(Color capturing) {
@@ -842,6 +832,14 @@ namespace stormphrax {
             m_keys.flipEp(m_enPassant);
             m_enPassant = Squares::kNone;
         };
+
+        const auto movedPawn = m_enPassant.flipRankParity();
+
+        // if we are in check, we must be checked by the pushed pawn only for ep to be valid
+        if (!(checkers() & ~movedPawn.bit()).empty()) {
+            unset();
+            return;
+        }
 
         const auto& bbs = m_boards.bbs();
 
@@ -891,10 +889,9 @@ namespace stormphrax {
         }
 
         // also handle the annoying case where capturing en passant would cause discovered check
-        const auto movedPawn = m_enPassant.flipRankParity();
         const auto capturingPawn = candidates.lowestSquare();
 
-        const auto rank = rayIntersecting(movedPawn, capturingPawn);
+        const auto rank = Bitboard::rank(movedPawn.rank());
         const auto oppRookCandidates = rank & (bbs.rooks(moved) | bbs.queens(moved));
 
         // not possible :3
@@ -917,6 +914,10 @@ namespace stormphrax {
 
         const auto src = Square::fromStr(move.substr(0, 2));
         const auto dst = Square::fromStr(move.substr(2, 2));
+
+        if (!src || !dst) {
+            return kNullMove;
+        }
 
         if (move.length() == 5) {
             const auto promo = PieceType::fromChar(move[4]);

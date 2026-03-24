@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -157,6 +157,10 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(scalingValueQueen, 1250, 800, 1600, 40)
 
     SP_TUNABLE_PARAM(materialScalingBase, 26500, 10000, 40000, 1500)
+    SP_TUNABLE_PARAM(optimismBase, 2000, 0, 12000, 400)
+
+    SP_TUNABLE_PARAM(optimismStretch, 100, 50, 200, 8)
+    SP_TUNABLE_PARAM(optimismScale, 150, 75, 300, 12)
 
     SP_TUNABLE_PARAM(pawnCorrhistWeight, 133, 32, 384, 18)
     SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 142, 32, 384, 18)
@@ -172,6 +176,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
 
+    SP_TUNABLE_PARAM(hindsightReductionMargin, 200, 100, 400, 15)
+
     SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 64, 16, 128, 5)
 
@@ -179,6 +185,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
     SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
+
+    SP_TUNABLE_PARAM(lmrDepthTtpvScale, 96, 48, 192, 8)
 
     SP_TUNABLE_PARAM(fpMargin, 261, 120, 350, 45)
     SP_TUNABLE_PARAM(fpScale, 68, 40, 80, 8)
@@ -216,6 +224,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 257, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 128, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrAlphaRaiseReductionScale, 64, 32, 384, 12)
+    SP_TUNABLE_PARAM(lmrTtMoveNoisyReductionScale, 128, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrHighComplexityReductionScale, 128, 32, 384, 12)
 
     SP_TUNABLE_PARAM(lmrQuietHistoryDivisor, 10835, 4096, 16384, 650)

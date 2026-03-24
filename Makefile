@@ -22,7 +22,6 @@ ifndef EVALFILE
     NO_EVALFILE_SET = true
 endif
 
-PGO = off
 COMMIT_HASH = off
 DISABLE_NEON_DOTPROD = off
 USE_LIBNUMA = off
@@ -46,7 +45,7 @@ CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
 CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
 CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
 CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
-CXXFLAGS_AVX2 := -DSP_AVX2 -march=bdver4 -mno-tbm -mno-sse4a -mno-bmi2 -mtune=znver2
+CXXFLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
 CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
 
 LDFLAGS :=
@@ -65,7 +64,7 @@ ifeq ($(DETECTED_OS), Windows)
     SUFFIX := .exe
     # for fathom
     CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
-    RM := del
+    RMDIR := rmdir /s /q
 else
     SUFFIX :=
     LDFLAGS += -pthread
@@ -73,32 +72,13 @@ else
     ifdef IS_COSMO
         CXXFLAGS += -stdlib=libc++
     endif
-    RM := rm
+    RMDIR := rm -rf
 endif
 
 ifneq (, $(findstring clang,$(COMPILER_VERSION)))
     ifneq ($(DETECTED_OS),Darwin)
         LDFLAGS += -fuse-ld=lld
     endif
-    ifeq ($(DETECTED_OS),Windows)
-        ifeq (,$(shell where llvm-profdata))
-            $(warning llvm-profdata not found, disabling PGO)
-            override PGO := off
-        endif
-    else
-        ifeq (,$(shell which llvm-profdata))
-            $(warning llvm-profdata not found, disabling PGO)
-            override PGO := off
-        endif
-    endif
-    PGO_GENERATE := -DSP_PGO_PROFILE -fprofile-instr-generate
-    PGO_MERGE := llvm-profdata merge -output=sp.profdata *.profraw
-    PGO_USE := -fprofile-instr-use=sp.profdata
-else
-    $(warning GCC currently produces very slow binaries for Stormphrax)
-    PGO_GENERATE := -DSP_PGO_PROFILE -fprofile-generate
-    PGO_MERGE :=
-    PGO_USE := -fprofile-use
 endif
 
 ARCH_DEFINES := $(shell echo | $(CXX) -march=native -E -dM -)
@@ -128,25 +108,11 @@ ifeq ($(USE_LIBNUMA),on)
 	LDFLAGS += -lnuma
 endif
 
-PROFILE_OUT = sp_profile$(SUFFIX)
-
-ifneq ($(PGO),on)
 define build
     $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $<,$^)
 endef
-else
-define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(PROFILE_OUT) $(PGO_GENERATE) $(filter-out $<,$^)
-    ./$(PROFILE_OUT) bench
-    $(RM) $(PROFILE_OUT)
-    $(PGO_MERGE)
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(PGO_USE) $(filter-out $<,$^)
-    $(RM) *.profraw
-    $(RM) sp.profdata
-endef
-endif
 
-release: avx512 avx2-bmi2 avx2
+release: avx512 avx2-bmi2 zen2
 all: native release
 
 .PHONY: all
@@ -169,7 +135,7 @@ EVALFILE_NAME := $(notdir $(EVALFILE))
 # ========================================== native ==========================================
 
 tmp/permute-native: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) -o tmp/permute-native $(filter-out $<,$^)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o tmp/permute-native $(filter-out $<,$^)
 
 tmp/$(EVALFILE_NAME)_permuted_native: $(EVALFILE) tmp/permute-native
 	tmp/permute-native $< $@
@@ -188,7 +154,7 @@ sanitizer: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLAC
 # ========================================== avx512 ==========================================
 
 tmp/permute-avx512: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
 	tmp/permute-avx512 $< $@
@@ -199,7 +165,7 @@ avx512: tmp/$(EVALFILE_NAME)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
 # ========================================== avx2-bmi2 ==========================================
 
 tmp/permute-avx2-bmi2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
 	tmp/permute-avx2-bmi2 $< $@
@@ -207,21 +173,21 @@ tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
 avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
 	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
 
-# ========================================== avx2 ==========================================
+# ========================================== zen2 ==========================================
 
-tmp/permute-avx2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+tmp/permute-zen2: tmp $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ZEN2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
-tmp/$(EVALFILE_NAME)_permuted_avx2: $(EVALFILE) tmp/permute-avx2
-	tmp/permute-avx2 $< $@
+tmp/$(EVALFILE_NAME)_permuted_zen2: $(EVALFILE) tmp/permute-zen2
+	tmp/permute-zen2 $< $@
 
-avx2: tmp/$(EVALFILE_NAME)_permuted_avx2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,RELEASE,AVX2,avx2)
+zen2: tmp/$(EVALFILE_NAME)_permuted_zen2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
+	$(call build,RELEASE,ZEN2,zen2)
 
 # ========================================== armv8_4 ==========================================
 
 tmp/permute-armv8-4: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) -o $@ $(SOURCES_PERMUTE)
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
 
 tmp/$(EVALFILE_NAME)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
 	tmp/permute-armv8-4 $< $@
@@ -230,4 +196,5 @@ armv8_4: tmp/$(EVALFILE_NAME)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK
 	$(call build,RELEASE,ARMV8_4,armv8_4)
 
 clean:
+	$(RMDIR) tmp
 

@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,10 @@ namespace stormphrax::util::signal {
         struct sigaction action{};
 
         action.sa_flags = SA_RESTART;
-        action.sa_handler = []([[maybe_unused]] int signal) { s_handler(); };
+        action.sa_handler = [](int signal) {
+            SP_UNUSED(signal);
+            s_handler();
+        };
 
         if (sigaction(SIGINT, &action, nullptr)) {
             eprintln("failed to set SIGINT handler");

@@ -1,6 +1,6 @@
 /*
  * Stormphrax, a UCI chess engine
- * Copyright (C) 2025 Ciekce
+ * Copyright (C) 2026 Ciekce
  *
  * Stormphrax is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,9 @@ namespace stormphrax::datagen {
         m_moves.clear();
     }
 
-    void Viriformat::push([[maybe_unused]] bool filtered, Move move, Score score) {
+    void Viriformat::push(bool filtered, Move move, Score score) {
+        SP_UNUSED(filtered);
+
         static constexpr std::array kMoveTypes = {
             static_cast<u16>(0x0000), // normal
             static_cast<u16>(0xC000), // promo
