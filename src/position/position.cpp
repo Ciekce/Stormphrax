@@ -153,6 +153,7 @@ namespace stormphrax {
         if (!move) {
             newPos.calcCheckersAndPins();
             newPos.calcThreats();
+            newPos.calcCheckZones();
 
             return newPos;
         }
