@@ -980,10 +980,10 @@ namespace stormphrax::search {
                 if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
-                    const auto sBeta = ttEntry.score
-                                     - (depth * sBetaBaseMargin() * (2 - (ttEntry.flag == TtFlag::kExact)) / 2
-                                        + depth * sBetaPrevPvMargin() * (curr.ttpv && !kPvNode))
-                                           / 32;
+                    const auto sBetaMargin = sBetaBaseMargin() - 5 * (ttEntry.flag == TtFlag::kExact)
+                                           + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
+                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
+
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
