@@ -1423,9 +1423,17 @@ namespace stormphrax::search {
             }
         }
 
-        // stalemate not handled
-        if (inCheck && legalMoves == 0) {
-            return -kScoreMate + ply;
+        if (legalMoves == 0) {
+            if (inCheck) {
+                return -kScoreMate + ply;
+            }
+
+            ScoredMoveList moves{};
+            generateAll(moves, pos);
+            if (moves.empty()) {
+                // stalemate
+                return drawScore(thread.search.loadNodes());
+            }
         }
 
         m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
