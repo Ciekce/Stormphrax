@@ -931,7 +931,7 @@ namespace stormphrax::search {
                 }();
 
                 if (!noisy) {
-                    if (legalMoves >= kLmpTable[improving][std::min(depth, 15)]) {
+                    if (legalMoves >= kLmpTable[improving][std::min(depth, 15)] && !pos.givesDirectCheck(move)) {
                         generator.skipQuiets();
                         continue;
                     }
