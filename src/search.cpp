@@ -749,6 +749,23 @@ namespace stormphrax::search {
             return true;
         }();
 
+        const auto rfpMargin = [&] {
+            auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+            if (complexity) {
+                margin += *complexity * rfpCorrplexityScale() / 128;
+            }
+            return margin;
+        };
+
+        if (!kPvNode && inCheck && !curr.excluded && ttHit && !isDecisive(ttEntry.score)
+            && (ttEntry.flag == TtFlag::kExact                                     //
+                || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
+                || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta))
+            && ttEntry.score - rfpMargin() * depth >= beta)
+        {
+            return ttEntry.score;
+        }
+
         if (!kPvNode && !inCheck && !curr.excluded) {
             if (depth < kMaxDepth && parent->reduction >= 3 && parent->staticEval != kScoreNone
                 && curr.staticEval + parent->staticEval <= 0)
@@ -761,14 +778,6 @@ namespace stormphrax::search {
             {
                 --depth;
             }
-
-            const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
-                if (complexity) {
-                    margin += *complexity * rfpCorrplexityScale() / 128;
-                }
-                return margin;
-            };
 
             if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
                 return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
