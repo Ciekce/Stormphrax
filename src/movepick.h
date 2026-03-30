@@ -85,7 +85,8 @@ namespace stormphrax {
                 case MovegenStage::kTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
+                    if (m_ttMove) {
+                        assert(m_pos.isLegal(m_ttMove));
                         return m_ttMove;
                     }
 
@@ -172,7 +173,8 @@ namespace stormphrax {
                 case MovegenStage::kQsearchTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
+                    if (m_ttMove) {
+                        assert(m_pos.isLegal(m_ttMove));
                         return m_ttMove;
                     }
 
@@ -200,7 +202,8 @@ namespace stormphrax {
                 case MovegenStage::kQsearchEvasionsTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
+                    if (m_ttMove) {
+                        assert(m_pos.isLegal(m_ttMove));
                         return m_ttMove;
                     }
 
@@ -250,7 +253,8 @@ namespace stormphrax {
                 case MovegenStage::kProbcutTtMove: {
                     ++m_stage;
 
-                    if (m_ttMove && m_pos.isLegal(m_ttMove)) {
+                    if (m_ttMove) {
+                        assert(m_pos.isLegal(m_ttMove));
                         return m_ttMove;
                     }
 

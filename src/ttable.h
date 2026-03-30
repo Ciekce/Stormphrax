@@ -29,6 +29,7 @@
 #include "core.h"
 #include "move.h"
 #include "util/range.h"
+#include "position/position.h"
 
 namespace stormphrax {
     constexpr usize kDefaultTtSizeMib = 64;
@@ -58,7 +59,7 @@ namespace stormphrax {
         void resize(usize mib);
         bool finalize();
 
-        bool probe(ProbedTTableEntry& dst, u64 key, i32 ply) const;
+        bool probe(ProbedTTableEntry& dst, const Position& pos, i32 ply) const;
         void put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, TtFlag flag, bool pv);
 
         inline void putStaticEval(u64 key, Score staticEval, bool pv) {

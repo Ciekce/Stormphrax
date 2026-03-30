@@ -33,7 +33,6 @@
 #include "../keys.h"
 #include "../move.h"
 #include "../rays.h"
-#include "../ttable.h"
 #include "boards.h"
 
 namespace stormphrax {

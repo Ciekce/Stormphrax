@@ -617,14 +617,14 @@ namespace stormphrax::search {
         bool ttHit = false;
 
         if (!curr.excluded) {
-            ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+            ttHit = m_ttable.probe(ttEntry, pos, ply);
 
             if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
                 && (ttEntry.flag == TtFlag::kExact                                     //
                     || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score <= alpha) //
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
-                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move) && pos.isLegal(ttEntry.move)) {
+                if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move)) {
                     const auto bonus = historyBonus(depth);
                     thread.history.updateQuietScore(
                         thread.conthist,
@@ -1298,7 +1298,7 @@ namespace stormphrax::search {
         }
 
         ProbedTTableEntry ttEntry{};
-        const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+        const bool ttHit = m_ttable.probe(ttEntry, pos, ply);
 
         if (!kPvNode
             && (ttEntry.flag == TtFlag::kExact                                     //

@@ -118,14 +118,15 @@ namespace stormphrax {
         return true;
     }
 
-    bool TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply) const {
+    bool TTable::probe(ProbedTTableEntry& dst, const Position& pos, i32 ply) const {
         assert(!m_pendingInit);
 
+        const auto key = pos.key();
         const auto packedKey = packEntryKey(key);
 
         const auto& cluster = m_clusters[index(key)];
         for (const auto entry : cluster.entries) {
-            if (entry.filled() && packedKey == entry.key) {
+            if (entry.filled() && packedKey == entry.key && (entry.move.isNull() || pos.isLegal(entry.move))) {
                 dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
                 dst.staticEval = static_cast<Score>(entry.staticEval);
                 dst.depth = entry.depth();
