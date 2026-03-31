@@ -570,7 +570,7 @@ namespace stormphrax::search {
                 return alpha;
             }
 
-            if (alpha < 0 && pos.hasCycle(ply, thread.keyHistory)) {
+            if (alpha < 0 && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
                 alpha = drawScore(thread.search.loadNodes());
                 if (alpha >= beta) {
                     return alpha;
@@ -1272,7 +1272,7 @@ namespace stormphrax::search {
             }
         }
 
-        if (alpha < 0 && pos.hasCycle(ply, thread.keyHistory)) {
+        if (alpha < 0 && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
             alpha = drawScore(thread.search.loadNodes());
             if (alpha >= beta) {
                 return alpha;
