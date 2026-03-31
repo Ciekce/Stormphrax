@@ -419,24 +419,24 @@ namespace stormphrax {
     }
 
     // see comment in cuckoo.cpp
-    bool Position::hasCycle(i32 ply, std::span<const u64> keys) const {
+    bool Position::hasUpcomingRepetition(i32 ply, std::span<const u64> keys) const {
         const auto end = std::min<i32>(m_halfmove, static_cast<i32>(keys.size()));
 
         if (end < 3) {
             return false;
         }
 
-        const auto S = [&](i32 d) { return keys[keys.size() - d]; };
+        const auto prevKey = [&](i32 d) { return keys[keys.size() - d]; };
 
         const auto occ = m_boards.bbs().occupancy();
         const auto originalKey = m_keys.all;
 
-        auto other = ~(originalKey ^ S(1));
+        auto other = originalKey ^ prevKey(1);
 
         for (i32 d = 3; d <= end; d += 2) {
-            const auto currKey = S(d);
+            const auto currKey = prevKey(d);
 
-            other ^= ~(currKey ^ S(d - 1));
+            other ^= currKey ^ prevKey(d - 1);
             if (other != 0) {
                 continue;
             }
@@ -461,14 +461,12 @@ namespace stormphrax {
                     return true;
                 }
 
-                auto piece = m_boards.pieceOn(move.fromSq());
-                if (piece == Pieces::kNone) {
-                    piece = m_boards.pieceOn(move.toSq());
+                // otherwise, require a threefold
+                for (i32 i = d + 2; i <= end; ++i) {
+                    if (currKey == prevKey(d)) {
+                        return true;
+                    }
                 }
-
-                assert(piece != Pieces::kNone);
-
-                return piece.color() == stm();
             }
         }
 

@@ -25,11 +25,11 @@
 #include "move.h"
 
 namespace stormphrax::cuckoo {
-    constexpr usize h1(u64 key) {
+    [[nodiscard]] constexpr usize h1(u64 key) {
         return static_cast<usize>(key & 0x1FFF);
     }
 
-    constexpr usize h2(u64 key) {
+    [[nodiscard]] constexpr usize h2(u64 key) {
         return static_cast<usize>((key >> 16) & 0x1FFF);
     }
 
