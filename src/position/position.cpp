@@ -431,12 +431,12 @@ namespace stormphrax {
         const auto occ = m_boards.bbs().occupancy();
         const auto originalKey = m_keys.all;
 
-        auto other = originalKey ^ prevKey(1);
+        auto other = originalKey ^ prevKey(1) ^ keys::color();
 
         for (i32 d = 3; d <= end; d += 2) {
             const auto currKey = prevKey(d);
 
-            other ^= currKey ^ prevKey(d - 1);
+            other ^= currKey ^ prevKey(d - 1) ^ keys::color();
             if (other != 0) {
                 continue;
             }
