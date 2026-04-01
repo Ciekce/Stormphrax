@@ -1064,23 +1064,25 @@ namespace stormphrax::search {
                         -search(thread, newPos, curr.pv, reduced, ply + 1, moveStackIdx + 1, -alpha - 1, -alpha, true);
                     curr.reduction = 0;
 
-                    if (score > alpha && reduced < newDepth) {
+                    if (score > alpha) {
                         const bool doDeeperSearch = score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
                         const bool doShallowerSearch = score < bestScore + newDepth;
 
                         newDepth += doDeeperSearch - doShallowerSearch;
 
-                        score = -search(
-                            thread,
-                            newPos,
-                            curr.pv,
-                            newDepth,
-                            ply + 1,
-                            moveStackIdx + 1,
-                            -alpha - 1,
-                            -alpha,
-                            !cutnode
-                        );
+                        if (reduced < newDepth) {
+                            score = -search(
+                                thread,
+                                newPos,
+                                curr.pv,
+                                newDepth,
+                                ply + 1,
+                                moveStackIdx + 1,
+                                -alpha - 1,
+                                -alpha,
+                                !cutnode
+                            );
+                        }
 
                         if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
                             const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
