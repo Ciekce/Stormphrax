@@ -1049,7 +1049,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-                    r += 8 * (legalMoves - 1);
+                    r += 3 * legalMoves;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
