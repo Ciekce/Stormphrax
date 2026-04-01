@@ -788,6 +788,7 @@ namespace stormphrax::search {
                 auto margin = nmpBetaBaseMargin();
                 margin -= depth * nmpBetaMarginDepthScale() / 128;
                 margin -= improving * nmpBetaImprovingMargin();
+                margin -= 20 * cutnode;
                 return margin;
             };
 
