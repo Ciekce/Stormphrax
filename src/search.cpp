@@ -793,7 +793,7 @@ namespace stormphrax::search {
                 auto margin = nmpBetaBaseMargin();
                 margin -= depth * nmpBetaMarginDepthScale() / 128;
                 margin -= improving * nmpBetaImprovingMargin();
-                return margin;
+                return std::max(margin, 0);
             };
 
             if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
