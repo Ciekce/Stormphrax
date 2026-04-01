@@ -183,6 +183,10 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
 
+    SP_TUNABLE_PARAM(nmpBetaBaseMargin, 200, 100, 400, 15)
+    SP_TUNABLE_PARAM(nmpBetaMarginDepthScale, 1280, 128, 2560, 32)
+    SP_TUNABLE_PARAM(nmpBetaImprovingMargin, 40, 10, 80, 3)
+
     SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
     SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
 

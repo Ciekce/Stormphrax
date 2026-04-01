@@ -784,7 +784,14 @@ namespace stormphrax::search {
                 }
             }
 
-            if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + 200 - 10 * depth - 40 * improving
+            const auto nmpBetaMargin = [&] {
+                auto margin = nmpBetaBaseMargin();
+                margin -= depth * nmpBetaMarginDepthScale() / 128;
+                margin -= improving * nmpBetaImprovingMargin();
+                return margin;
+            };
+
+            if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
                 && !parent->move.isNull() && !(ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < beta)
                 && !bbs.nonPk(us).empty())
             {
