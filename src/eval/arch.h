@@ -38,8 +38,8 @@ namespace stormphrax::eval {
 
     constexpr u32 kFtScaleBits = 7;
 
-    constexpr u32 kL1Size = 640;
-    constexpr u32 kL2Size = 32;
+    constexpr u32 kL1Size = 2048;
+    constexpr u32 kL2Size = 16;
     constexpr u32 kL3Size = 32;
 
     using L1Activation = nnue::activation::ClippedReLU;
@@ -54,8 +54,8 @@ namespace stormphrax::eval {
         // clang-format off
          0,  1,  2,  3,
          4,  5,  6,  7,
-         8,  9, 10, 11,
-         8,  9, 10, 11,
+         8,  8,  9,  9,
+        10, 10, 11, 11,
         12, 12, 13, 13,
         12, 12, 13, 13,
         14, 14, 15, 15,
@@ -63,7 +63,7 @@ namespace stormphrax::eval {
         // clang-format on
         >;
 
-    using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
+    using InputFeatureSet = PsqFeatureSet;
 
     using OutputBucketing = nnue::output::MaterialCount<8>;
 
