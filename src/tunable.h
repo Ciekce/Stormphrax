@@ -178,7 +178,7 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(hindsightReductionMargin, 200, 100, 400, 15)
 
-    SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
+    SP_TUNABLE_PARAM(rfpMargin, 50, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 64, 16, 128, 5)
 
     SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
