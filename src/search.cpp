@@ -903,7 +903,7 @@ namespace stormphrax::search {
         auto generator =
             MoveGenerator::main(pos, moveStack.movegenData, ttMove, curr.killers, thread.history, thread.conthist, ply);
 
-        u32 legalMoves = 0;
+        i32 legalMoves = 0;
         i32 alphaRaises = 0;
 
         while (const auto move = generator.next()) {
@@ -1049,7 +1049,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-                    r += 3 * legalMoves;
+                    r += 72 - 8 * legalMoves;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
