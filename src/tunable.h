@@ -238,7 +238,7 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(lmrTtpvExtThreshold, -128, -384, 0, 19)
 
-    SP_TUNABLE_PARAM(lmrDeeperMargin, 49, 20, 100, 6)
+    SP_TUNABLE_PARAM(lmrDeeperMargin, 70, 20, 100, 6)
 
     SP_TUNABLE_PARAM(maxHistory, 15769, 8192, 32768, 256)
 
