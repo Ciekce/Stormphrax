@@ -1438,6 +1438,10 @@ namespace stormphrax::search {
             return -kScoreMate + ply;
         }
 
+        if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
+            bestScore = (bestScore + beta) / 2;
+        }
+
         m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
 
         return bestScore;
