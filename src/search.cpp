@@ -1002,7 +1002,7 @@ namespace stormphrax::search {
 
                     if (score < sBeta) {
                         const auto doubleMargin = 200 * kPvNode + 20 * ttMoveNoisy;
-                        const auto tripleMargin = 100 + 200 * kPvNode + 50 * ttMoveNoisy;
+                        const auto tripleMargin = 100 + 200 * kPvNode + 100 * ttMoveNoisy;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? (score + beta) / 2 : score;
