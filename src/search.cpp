@@ -762,19 +762,6 @@ namespace stormphrax::search {
                 --depth;
             }
 
-            const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
-                if (complexity) {
-                    margin += *complexity * rfpCorrplexityScale() / 128;
-                }
-                return margin;
-            };
-
-            if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
-                                                                         : curr.staticEval;
-            }
-
             if (depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
                 && curr.staticEval + razoringMargin() * depth <= alpha)
             {
