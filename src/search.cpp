@@ -1001,8 +1001,9 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        const auto doubleMargin = 11 + 150 * kPvNode;
-                        const auto tripleMargin = 100 + 200 * ttMoveNoisy;
+                        const auto corr = complexity.value_or(0);
+                        const auto doubleMargin = 10 + 150 * kPvNode - 80 * corr / 128;
+                        const auto tripleMargin = 40 + 200 * ttMoveNoisy - 80 * corr / 128;
                         extension = 1 + (score < sBeta - doubleMargin) + (!kPvNode && score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? (score + beta) / 2 : score;
