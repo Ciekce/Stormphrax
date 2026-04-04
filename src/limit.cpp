@@ -50,6 +50,21 @@ namespace stormphrax::limit {
             m_prevBestMove = bestMove;
         }
 
+        if (isMating(pvMove.score)) {
+            m_scale = 0.15;
+            return;
+        }
+
+        if (isWin(pvMove.score)) {
+            m_scale = 0.6;
+            return;
+        }
+
+        if (isLoss(pvMove.score)) {
+            m_scale = 0.5;
+            return;
+        }
+
         auto scale = 1.0;
 
         const auto bestMoveNodeFraction = static_cast<f64>(pvMove.nodes) / static_cast<f64>(totalNodes);
