@@ -733,7 +733,7 @@ namespace stormphrax {
         return score < -kScoreTbWin;
     }
 
-    [[nodiscard]] constexpr bool isMae(Score score) {
+    [[nodiscard]] constexpr bool isMate(Score score) {
         return std::abs(score) > kScoreTbWin;
     }
 } // namespace stormphrax
