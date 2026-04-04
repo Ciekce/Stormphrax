@@ -765,8 +765,7 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin =
-                    tunable::rfpMargin() * std::max(depth - (improving && !pos.opponentHasTrivialCapture()), 0);
+                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
@@ -796,7 +795,7 @@ namespace stormphrax::search {
 
             if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
                 && !parent->move.isNull() && !(ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < beta)
-                && !bbs.nonPk(us).empty())
+                && !bbs.nonPk(us).empty() && !pos.opponentHasTrivialCapture())
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
 
