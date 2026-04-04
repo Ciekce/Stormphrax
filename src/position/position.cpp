@@ -418,6 +418,19 @@ namespace stormphrax {
         return true;
     }
 
+    bool Position::opponentHasTrivialCapture() const {
+        const auto& bbs = this->bbs();
+
+        const auto pawnThreats = pieceThreats(PieceTypes::kPawn);
+        const auto minorThreats = pawnThreats | pieceThreats(PieceTypes::kKnight) | pieceThreats(PieceTypes::kBishop);
+        const auto rookThreats = minorThreats | pieceThreats(PieceTypes::kRook);
+
+        const auto trivialThreats =
+            (rookThreats & bbs.queens(stm())) | (minorThreats & bbs.rooks(stm())) | (pawnThreats & bbs.minors(stm()));
+
+        return !trivialThreats.empty();
+    }
+
     // see comment in cuckoo.cpp
     bool Position::hasUpcomingRepetition(i32 ply, std::span<const u64> keys) const {
         const auto end = std::min<i32>(m_halfmove, static_cast<i32>(keys.size()));
