@@ -409,6 +409,14 @@ namespace stormphrax {
             return m_threats;
         }
 
+        [[nodiscard]] inline Bitboard pieceThreats(PieceType pt) const {
+            assert(pt != PieceTypes::kNone);
+            assert(pt != PieceTypes::kKing);
+            return m_pieceThreats[pt.idx()];
+        }
+
+        [[nodiscard]] bool opponentHasTrivialCapture() const;
+
         [[nodiscard]] bool hasUpcomingRepetition(i32 ply, std::span<const u64> keys) const;
         [[nodiscard]] bool isDrawn(i32 ply, std::span<const u64> keys) const;
 
@@ -539,29 +547,40 @@ namespace stormphrax {
             const auto& bbs = m_boards.bbs();
 
             m_threats = Bitboard{};
+            m_pieceThreats.fill(Bitboard{});
 
             const auto occ = bbs.occupancy() & ~bbs.kings(us);
-            const auto queens = bbs.queens(them);
 
-            for (const auto rook : queens | bbs.rooks(them)) {
-                m_threats |= attacks::getRookAttacks(rook, occ);
+            auto& queenThreats = m_pieceThreats[PieceTypes::kQueen.idx()];
+            for (const auto queen : bbs.queens(them)) {
+                queenThreats |= attacks::getQueenAttacks(queen, occ);
             }
 
-            for (const auto bishop : queens | bbs.bishops(them)) {
-                m_threats |= attacks::getBishopAttacks(bishop, occ);
+            auto& rookThreats = m_pieceThreats[PieceTypes::kRook.idx()];
+            for (const auto rook : bbs.rooks(them)) {
+                rookThreats |= attacks::getRookAttacks(rook, occ);
             }
 
+            auto& bishopThreats = m_pieceThreats[PieceTypes::kBishop.idx()];
+            for (const auto bishop : bbs.bishops(them)) {
+                bishopThreats |= attacks::getBishopAttacks(bishop, occ);
+            }
+
+            auto& knightThreats = m_pieceThreats[PieceTypes::kKnight.idx()];
             for (const auto knight : bbs.knights(them)) {
-                m_threats |= attacks::getKnightAttacks(knight);
+                knightThreats |= attacks::getKnightAttacks(knight);
             }
+
+            auto& pawnThreats = m_pieceThreats[PieceTypes::kPawn.idx()];
 
             const auto pawns = bbs.pawns(them);
             if (them == Colors::kBlack) {
-                m_threats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
+                pawnThreats |= pawns.shiftDownLeft() | pawns.shiftDownRight();
             } else {
-                m_threats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
+                pawnThreats |= pawns.shiftUpLeft() | pawns.shiftUpRight();
             }
 
+            m_threats |= queenThreats | rookThreats | bishopThreats | knightThreats | pawnThreats;
             m_threats |= attacks::getKingAttacks(m_kings.color(them));
         }
 
@@ -579,7 +598,10 @@ namespace stormphrax {
 
         Bitboard m_checkers{};
         std::array<Bitboard, 2> m_pinned{};
+
         Bitboard m_threats{};
+        // excl. king
+        std::array<Bitboard, PieceTypes::kCount - 1> m_pieceThreats{};
 
         CastlingRooks m_castlingRooks{};
 
@@ -593,7 +615,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 248);
+    static_assert(sizeof(Position) == 288);
 } // namespace stormphrax
 
 template <>
