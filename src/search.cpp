@@ -1020,7 +1020,8 @@ namespace stormphrax::search {
                     && ttEntry.flag == TtFlag::kLowerBound
                 )
                 {
-                    extension = 1;
+                    extension =
+                        1 + (!kPvNode && !ttMoveNoisy && ttEntry.depth >= depth - 3 && curr.staticEval <= alpha - 40);
                 }
             }
 
