@@ -724,6 +724,18 @@ namespace stormphrax {
     [[nodiscard]] constexpr bool isDecisive(Score score) {
         return std::abs(score) > kScoreWin;
     }
+
+    [[nodiscard]] constexpr bool isMating(Score score) {
+        return score > kScoreTbWin;
+    }
+
+    [[nodiscard]] constexpr bool isMated(Score score) {
+        return score < -kScoreTbWin;
+    }
+
+    [[nodiscard]] constexpr bool isMate(Score score) {
+        return std::abs(score) > kScoreTbWin;
+    }
 } // namespace stormphrax
 
 template <>
