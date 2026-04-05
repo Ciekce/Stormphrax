@@ -562,6 +562,8 @@ namespace stormphrax::search {
         const auto& boards = pos.boards();
         const auto& bbs = pos.bbs();
 
+        const auto draw = drawScore(thread.search.loadNodes());
+
         if constexpr (!kRootNode) {
             alpha = std::max(alpha, -kScoreMate + ply);
             beta = std::min(beta, kScoreMate - ply - 1);
@@ -570,8 +572,8 @@ namespace stormphrax::search {
                 return alpha;
             }
 
-            if (alpha < 0 && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
-                alpha = drawScore(thread.search.loadNodes());
+            if (alpha < draw && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
+                alpha = draw;
                 if (alpha >= beta) {
                     return alpha;
                 }
@@ -674,8 +676,8 @@ namespace stormphrax::search {
                 } else if (result == tb::ProbeResult::kLoss) {
                     score = -kScoreTbWin + ply;
                     flag = TtFlag::kUpperBound;
-                } else { // draw
-                    score = drawScore(thread.search.loadNodes());
+                } else {
+                    score = draw;
                     flag = TtFlag::kExact;
                 }
 
@@ -1033,7 +1035,7 @@ namespace stormphrax::search {
             Score score{};
 
             if (newPos.isDrawn(ply, thread.keyHistory)) {
-                score = drawScore(thread.search.loadNodes());
+                score = draw;
             } else {
                 auto newDepth = depth + extension - 1;
 
@@ -1282,8 +1284,10 @@ namespace stormphrax::search {
             }
         }
 
-        if (alpha < 0 && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
-            alpha = drawScore(thread.search.loadNodes());
+        const auto draw = drawScore(thread.search.loadNodes());
+
+        if (alpha < draw && pos.hasUpcomingRepetition(ply, thread.keyHistory)) {
+            alpha = draw;
             if (alpha >= beta) {
                 return alpha;
             }
@@ -1405,7 +1409,7 @@ namespace stormphrax::search {
             const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
             const auto score = newPos.isDrawn(ply, thread.keyHistory)
-                                 ? drawScore(thread.search.loadNodes())
+                                 ? draw
                                  : -qsearch<kPvNode>(thread, newPos, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
             if (hasStopped()) {
