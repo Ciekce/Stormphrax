@@ -984,6 +984,8 @@ namespace stormphrax::search {
                 println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
             }
 
+            auto newDepth = depth - 1;
+
             i32 extension{};
 
             if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
@@ -1005,6 +1007,7 @@ namespace stormphrax::search {
                     if (score < sBeta) {
                         if (!kPvNode && score < sBeta - doubleExtMargin()) {
                             extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
+                            ++depth;
                         } else {
                             extension = 1;
                         }
@@ -1025,6 +1028,7 @@ namespace stormphrax::search {
             }
 
             cutnode |= extension < 0;
+            newDepth += extension;
 
             m_ttable.prefetch(pos.roughKeyAfter(move));
 
@@ -1037,8 +1041,6 @@ namespace stormphrax::search {
             if (newPos.isDrawn(ply, thread.keyHistory)) {
                 score = draw;
             } else {
-                auto newDepth = depth + extension - 1;
-
                 if (depth >= 2 && legalMoves >= 2 + kRootNode) {
                     auto r = baseLmr;
 
