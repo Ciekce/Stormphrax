@@ -751,6 +751,9 @@ namespace stormphrax::search {
             return true;
         }();
 
+        const bool oppWorsening =
+            !kRootNode && !inCheck && parent->staticEval != kScoreNone && curr.staticEval > -parent->staticEval;
+
         if (!kPvNode && !inCheck && !curr.excluded) {
             if (depth < kMaxDepth && parent->reduction >= 3 && parent->staticEval != kScoreNone
                 && curr.staticEval + parent->staticEval <= 0)
@@ -766,10 +769,11 @@ namespace stormphrax::search {
 
             const auto rfpMargin = [&] {
                 auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+                margin -= 25 * oppWorsening;
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
-                return margin;
+                return std::max(margin, 0);
             };
 
             if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
