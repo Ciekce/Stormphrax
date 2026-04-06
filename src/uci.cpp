@@ -102,6 +102,7 @@ namespace stormphrax {
             void handleBench(std::span<const std::string_view> args);
             void handleProbeWdl();
             void handleWait();
+            void handleMove(std::span<const std::string_view> args);
 
             bool m_quit{false};
 
@@ -180,6 +181,8 @@ namespace stormphrax {
                     handleProbeWdl();
                 } else if (command == "wait") {
                     handleWait();
+                } else if (command == "move") {
+                    handleMove(args);
                 }
 
                 if (m_quit) {
@@ -982,6 +985,27 @@ namespace stormphrax {
 
         void UciHandler::handleWait() {
             m_searcher.waitForStop();
+        }
+
+        void UciHandler::handleMove(std::span<const std::string_view> args) {
+            if (args.empty()) {
+                return;
+            }
+
+            const auto move = m_pos.moveFromUci(args[0]);
+
+            if (!move) {
+                eprintln("Invalid move {}", args[0]);
+                return;
+            }
+
+            if (!m_pos.isLegal(move)) {
+                eprintln("Illegal move {}", args[0]);
+                return;
+            }
+
+            m_keyHistory.push_back(m_pos.key());
+            m_pos = m_pos.applyMove(move);
         }
     } // namespace
 
