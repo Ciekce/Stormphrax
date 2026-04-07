@@ -1181,12 +1181,16 @@ namespace stormphrax::search {
                     pv.update(move, curr.pv);
                 }
 
-                ttFlag = TtFlag::kExact;
-            }
+                if (score >= beta) {
+                    ttFlag = TtFlag::kLowerBound;
+                    break;
+                }
 
-            if (score >= beta) {
-                ttFlag = TtFlag::kLowerBound;
-                break;
+                ttFlag = TtFlag::kExact;
+
+                if ((!kRootNode || thread.pvIdx == 0) && move != ttMove) {
+                    m_ttable.put(pos.key(), bestScore, rawStaticEval, move, depth, ply, TtFlag::kLowerBound, true);
+                }
             }
 
             if (move != bestMove) {
