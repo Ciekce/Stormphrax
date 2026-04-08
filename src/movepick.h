@@ -367,19 +367,22 @@ namespace stormphrax {
             }
         }
 
-        inline void scoreQuiet(ScoredMove& move) {
-            move.score = m_history.quietScore(
-                m_continuations,
-                m_ply,
-                m_pos.threats(),
-                m_pos.boards().pieceOn(move.move.fromSq()),
-                move.move
-            );
-        }
-
         inline void scoreQuiets() {
             for (u32 i = m_idx; i < m_end; ++i) {
-                scoreQuiet(m_data.moves[i]);
+                auto& scoredMove = m_data.moves[i];
+
+                const auto move = scoredMove.move;
+                auto& score = scoredMove.score;
+
+                score += m_history.quietScore(
+                    m_continuations,
+                    m_ply,
+                    m_pos.threats(),
+                    m_pos.boards().pieceOn(move.fromSq()),
+                    move
+                );
+
+                score += 8192 * m_pos.givesDirectCheck(move);
             }
         }
 
