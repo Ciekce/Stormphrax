@@ -78,7 +78,7 @@ namespace stormphrax::datagen {
 
         constexpr usize kVerificationHardNodeLimit = 25165814;
 
-        constexpr usize kDatagenSoftNodeLimit = 24000;
+        constexpr usize kDatagenSoftNodeLimit = 5000;
         constexpr usize kDatagenHardNodeLimit = 8388608;
 
         constexpr Score kVerificationScoreLimit = 500;
