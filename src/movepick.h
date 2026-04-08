@@ -379,7 +379,15 @@ namespace stormphrax {
 
         inline void scoreQuiets() {
             for (u32 i = m_idx; i < m_end; ++i) {
-                scoreQuiet(m_data.moves[i]);
+                auto& scoredMove = m_data.moves[i];
+
+                const auto move = scoredMove.move;
+                auto& score = scoredMove.score;
+
+                const auto moving = m_pos.boards().pieceOn(move.fromSq());
+
+                score += 2 * m_history.getMainHist(m_pos.threats(), moving, move);
+                score += m_history.getConthist(m_continuations, m_ply, moving, move);
             }
         }
 
