@@ -369,6 +369,8 @@ namespace stormphrax {
 
         inline void scoreQuiets() {
             const auto pawnThreats = m_pos.pieceThreats(PieceTypes::kPawn);
+            const auto minorThreats = m_pos.pieceThreats(PieceTypes::kKnight) | m_pos.pieceThreats(PieceTypes::kBishop);
+            const auto rookThreats = m_pos.pieceThreats(PieceTypes::kRook);
 
             for (u32 i = m_idx; i < m_end; ++i) {
                 auto& scoredMove = m_data.moves[i];
@@ -386,9 +388,19 @@ namespace stormphrax {
 
                 const auto movingPt = m_pos.boards().pieceOn(move.fromSq()).type();
 
-                if (movingPt != PieceTypes::kPawn) {
-                    score += (6 * see::value(movingPt)) * pawnThreats[move.fromSq()];
-                }
+                const auto threats = [&] {
+                    if (movingPt == PieceTypes::kKnight || movingPt == PieceTypes::kBishop) {
+                        return pawnThreats;
+                    } else if (movingPt == PieceTypes::kRook) {
+                        return pawnThreats | minorThreats;
+                    } else if (movingPt == PieceTypes::kQueen) {
+                        return pawnThreats | minorThreats | rookThreats;
+                    }
+                    return Bitboard{};
+                }();
+
+                score += (4 * see::value(movingPt)) * threats[move.fromSq()];
+                score -= (4 * see::value(movingPt)) * threats[move.toSq()];
             }
         }
 
