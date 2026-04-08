@@ -382,7 +382,7 @@ namespace stormphrax {
                     move
                 );
 
-                score += 8192 * m_pos.givesDirectCheck(move);
+                score += 8192 * (m_pos.givesDirectCheck(move) && see::see(m_pos, move, -100));
             }
         }
 
