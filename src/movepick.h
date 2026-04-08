@@ -387,7 +387,7 @@ namespace stormphrax {
                 const auto movingPt = m_pos.boards().pieceOn(move.fromSq()).type();
 
                 if (movingPt != PieceTypes::kPawn) {
-                    score -= (6 * see::value(movingPt)) * pawnThreats[move.toSq()];
+                    score += (6 * see::value(movingPt)) * pawnThreats[move.fromSq()];
                 }
             }
         }
