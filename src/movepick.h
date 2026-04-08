@@ -417,7 +417,7 @@ namespace stormphrax {
             return kNullMove;
         }
 
-        [[nodiscard]] inline bool isSpecial(Move move) {
+        [[nodiscard]] inline bool isSpecial(Move move) const {
             return move == m_ttMove || move == m_killers.killer;
         }
 
