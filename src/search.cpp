@@ -930,8 +930,23 @@ namespace stormphrax::search {
 
             const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-            const auto history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
-                                       : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+            const auto history = [&] {
+                if (noisy) {
+                    return thread.history.getNoisy(move, captured, pos.threats());
+                } else {
+                    i32 history = 0;
+
+                    history += (thread.history.getButterfly(pos.threats(), move)
+                                + thread.history.getPieceTo(pos.threats(), moving, move))
+                             / 2;
+
+                    history += getConthist(thread.conthist, ply, moving, move, 1);
+                    history += getConthist(thread.conthist, ply, moving, move, 2);
+                    history += getConthist(thread.conthist, ply, moving, move, 4) / 2;
+
+                    return history;
+                }
+            }();
 
             if ((!kRootNode || thread.search.rootDepth == 1) && !isLoss(bestScore) && (!kPvNode || !thread.datagen)) {
                 const auto lmrDepth = [&] {
