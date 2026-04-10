@@ -131,13 +131,18 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
+            using namespace tunable;
+
             i32 base = 0;
 
-            base += (getButterfly(threats, move) + getPieceTo(threats, moving, move)) / 4;
+            base += getButterfly(threats, move) * contBaseButterflyWeight();
+            base += getPieceTo(threats, moving, move) * contBasePieceToWeight();
 
-            base += getConthist(continuations, ply, moving, move, 1);
-            base += getConthist(continuations, ply, moving, move, 2);
-            base += getConthist(continuations, ply, moving, move, 4) / 2;
+            base += getConthist(continuations, ply, moving, move, 1) * contBaseCont1Weight();
+            base += getConthist(continuations, ply, moving, move, 2) * contBaseCont2Weight();
+            base += getConthist(continuations, ply, moving, move, 4) * contBaseCont4Weight();
+
+            base /= 1024;
 
             updateConthist(continuations, ply, moving, move, base, bonus, 1);
             updateConthist(continuations, ply, moving, move, base, bonus, 2);

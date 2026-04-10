@@ -176,6 +176,12 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
 
+    SP_TUNABLE_PARAM(movepickButterflyWeight, 512, 0, 4096, 100)
+    SP_TUNABLE_PARAM(movepickPieceToWeight, 512, 0, 4096, 100)
+    SP_TUNABLE_PARAM(movepickCont1Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(movepickCont2Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(movepickCont4Weight, 512, 0, 4096, 100)
+
     SP_TUNABLE_PARAM(directCheckBonus, 8192, 2048, 16384, 716)
     SP_TUNABLE_PARAM(directCheckSeeThreshold, -100, -300, 0, 60)
 
@@ -192,6 +198,12 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(probcutMargin, 303, 150, 400, 13)
     SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
+
+    SP_TUNABLE_PARAM(searchButterflyWeight, 512, 0, 4096, 100)
+    SP_TUNABLE_PARAM(searchPieceToWeight, 512, 0, 4096, 100)
+    SP_TUNABLE_PARAM(searchCont1Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(searchCont2Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(searchCont4Weight, 512, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(lmrDepthTtpvScale, 96, 48, 192, 8)
 
@@ -254,6 +266,12 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(maxHistoryPenalty, 1239, 1024, 4096, 256)
     SP_TUNABLE_PARAM(historyPenaltyDepthScale, 343, 128, 512, 32)
     SP_TUNABLE_PARAM(historyPenaltyOffset, 161, 128, 768, 64)
+
+    SP_TUNABLE_PARAM(contBaseButterflyWeight, 256, 0, 4096, 100)
+    SP_TUNABLE_PARAM(contBasePieceToWeight, 256, 0, 4096, 100)
+    SP_TUNABLE_PARAM(contBaseCont1Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(contBaseCont2Weight, 1024, 0, 4096, 100)
+    SP_TUNABLE_PARAM(contBaseCont4Weight, 512, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(qsearchFpMargin, 135, 50, 400, 17)
     SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 30)

@@ -936,15 +936,14 @@ namespace stormphrax::search {
                 } else {
                     i32 history = 0;
 
-                    history += (thread.history.getButterfly(pos.threats(), move)
-                                + thread.history.getPieceTo(pos.threats(), moving, move))
-                             / 2;
+                    history += thread.history.getButterfly(pos.threats(), move) * searchButterflyWeight();
+                    history += thread.history.getPieceTo(pos.threats(), moving, move) * searchPieceToWeight();
 
-                    history += getConthist(thread.conthist, ply, moving, move, 1);
-                    history += getConthist(thread.conthist, ply, moving, move, 2);
-                    history += getConthist(thread.conthist, ply, moving, move, 4) / 2;
+                    history += getConthist(thread.conthist, ply, moving, move, 1) * searchCont1Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 2) * searchCont2Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 4) * searchCont2Weight();
 
-                    return history;
+                    return history / 1024;
                 }
             }();
 

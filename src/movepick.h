@@ -370,6 +370,8 @@ namespace stormphrax {
         inline void scoreQuiets() {
             using namespace tunable;
 
+            const auto threats = m_pos.threats();
+
             for (u32 i = m_idx; i < m_end; ++i) {
                 auto& scoredMove = m_data.moves[i];
 
@@ -378,13 +380,14 @@ namespace stormphrax {
 
                 const auto moving = m_pos.boards().pieceOn(move.fromSq());
 
-                score += (m_history.getButterfly(m_pos.threats(), move)
-                          + m_history.getPieceTo(m_pos.threats(), moving, move))
-                       / 2;
+                score += m_history.getButterfly(threats, move) * movepickButterflyWeight();
+                score += m_history.getPieceTo(threats, moving, move) * movepickPieceToWeight();
 
-                score += getConthist(m_continuations, m_ply, moving, move, 1);
-                score += getConthist(m_continuations, m_ply, moving, move, 2);
-                score += getConthist(m_continuations, m_ply, moving, move, 4) / 2;
+                score += getConthist(m_continuations, m_ply, moving, move, 1) * movepickCont1Weight();
+                score += getConthist(m_continuations, m_ply, moving, move, 2) * movepickCont2Weight();
+                score += getConthist(m_continuations, m_ply, moving, move, 4) * movepickCont4Weight();
+
+                score /= 1024;
 
                 score += directCheckBonus()
                        * (m_pos.givesDirectCheck(move) && see::see(m_pos, move, directCheckSeeThreshold()));
