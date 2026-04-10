@@ -368,6 +368,8 @@ namespace stormphrax {
         }
 
         inline void scoreQuiets() {
+            using namespace tunable;
+
             for (u32 i = m_idx; i < m_end; ++i) {
                 auto& scoredMove = m_data.moves[i];
 
@@ -382,7 +384,8 @@ namespace stormphrax {
                     move
                 );
 
-                score += 8192 * (m_pos.givesDirectCheck(move) && see::see(m_pos, move, -100));
+                score += directCheckBonus()
+                       * (m_pos.givesDirectCheck(move) && see::see(m_pos, move, directCheckSeeThreshold()));
             }
         }
 
