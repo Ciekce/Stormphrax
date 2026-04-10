@@ -176,6 +176,9 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
 
+    SP_TUNABLE_PARAM(directCheckBonus, 8192, 2048, 16384, 716)
+    SP_TUNABLE_PARAM(directCheckSeeThreshold, -100, -300, 0, 60)
+
     SP_TUNABLE_PARAM(hindsightReductionMargin, 200, 100, 400, 15)
 
     SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
