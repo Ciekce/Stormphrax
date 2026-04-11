@@ -957,9 +957,18 @@ namespace stormphrax::search {
                         generator.skipQuiets();
                         continue;
                     }
-                } else if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset())
-                {
-                    continue;
+                } else {
+                    const auto futility = curr.staticEval + 24 + 72 * depth;
+                    if (depth <= 12 && !inCheck && quietOrLosing && futility <= alpha && !pos.givesDirectCheck(move)) {
+                        if (!isDecisive(bestScore) && bestScore < futility) {
+                            bestScore = futility;
+                        }
+                        break;
+                    }
+
+                    if (depth <= 4 && history < noisyHistPruningMargin() * depth * depth + noisyHistPruningOffset()) {
+                        continue;
+                    }
                 }
 
                 const auto seeThreshold =
