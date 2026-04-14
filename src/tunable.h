@@ -185,6 +185,11 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(directCheckBonus, 8192, 2048, 16384, 716)
     SP_TUNABLE_PARAM(directCheckSeeThreshold, -100, -300, 0, 60)
 
+    SP_TUNABLE_PARAM(evalPolicyScale, 10, 5, 20, 0.7)
+    SP_TUNABLE_PARAM(evalPolicyMin, -2100, -4000, -1000, 150)
+    SP_TUNABLE_PARAM(evalPolicyMax, 1700, 1000, 4000, 150)
+    SP_TUNABLE_PARAM(evalPolicyOffset, 600, 0, 1200, 60)
+
     SP_TUNABLE_PARAM(hindsightReductionMargin, 200, 100, 400, 15)
 
     SP_TUNABLE_PARAM(rfpMargin, 71, 25, 150, 5)
