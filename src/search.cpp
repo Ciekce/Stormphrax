@@ -784,8 +784,9 @@ namespace stormphrax::search {
             };
 
             if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
-                                                                         : curr.staticEval;
+                return !isDecisive(curr.staticEval) && !isDecisive(beta)
+                         ? util::ilerp<1024>(curr.staticEval, beta, rfpFailFirmT())
+                         : curr.staticEval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
@@ -1034,7 +1035,7 @@ namespace stormphrax::search {
                                                 + ttMoveNoisy * tripleExtNoisyMargin();
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
-                        return !isDecisive(score) ? (score + beta) / 2 : score;
+                        return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
                     } else if (cutnode) {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
@@ -1414,7 +1415,7 @@ namespace stormphrax::search {
             }
 
             if (eval >= beta) {
-                return !isDecisive(eval) && !isDecisive(beta) ? (eval + beta) / 2 : eval;
+                return !isDecisive(eval) && !isDecisive(beta) ? util::ilerp<1024>(eval, beta, standPatFailFirmT()) : eval;
             }
 
             if (eval > alpha) {

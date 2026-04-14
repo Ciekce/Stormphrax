@@ -201,6 +201,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(rfpQuadMargin, 0, 0, 25, 1.2)
     SP_TUNABLE_PARAM(rfpImprovingMargin, 71, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 64, 16, 128, 5)
+    SP_TUNABLE_PARAM(rfpFailFirmT, 512, 0, 1024, 51)
 
     SP_TUNABLE_PARAM(razoringMargin, 315, 100, 350, 40)
 
@@ -243,6 +244,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(tripleExtBaseMargin, 100, 30, 150, 8)
     SP_TUNABLE_PARAM(tripleExtPvMargin, 400, 200, 800, 30)
     SP_TUNABLE_PARAM(tripleExtNoisyMargin, 200, 100, 400, 15)
+
+    SP_TUNABLE_PARAM(multicutFailFirmT, 512, 0, 1024, 51)
 
     SP_TUNABLE_PARAM(ldseMargin, 26, 10, 60, 3)
     SP_TUNABLE_PARAM(ldseDoubleExtMargin, 40, 20, 80, 3)
@@ -315,6 +318,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(contBaseCont1Weight, 1024, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBaseCont2Weight, 1024, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBaseCont4Weight, 512, 0, 4096, 100)
+
+    SP_TUNABLE_PARAM(standPatFailFirmT, 512, 0, 1024, 51)
 
     SP_TUNABLE_PARAM(qsearchFpMargin, 135, 50, 400, 17)
     SP_TUNABLE_PARAM(qsearchSeeThreshold, -97, -2000, 200, 30)
