@@ -1024,11 +1024,11 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && score < sBeta - doubleExtMargin()) {
-                            extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
-                        } else {
-                            extension = 1;
-                        }
+                        const auto doubleMargin = doubleExtBaseMargin() + kPvNode * doubleExtPvMargin()
+                                                + ttMoveNoisy * doubleExtNoisyMargin();
+                        const auto tripleMargin = tripleExtBaseMargin() + kPvNode * tripleExtPvMargin()
+                                                + ttMoveNoisy * tripleExtNoisyMargin();
+                        extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? (score + beta) / 2 : score;
                     } else if (cutnode) {
