@@ -29,7 +29,7 @@
 #include "core.h"
 
 #ifndef SP_EXTERNAL_TUNE
-    #define SP_EXTERNAL_TUNE 0
+    #define SP_EXTERNAL_TUNE 1
 #endif
 
 namespace stormphrax::tunable {
@@ -147,11 +147,11 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM_F64(timeScaleMin, 0.07, 0.001, 1.0, 0.1, 1000)
 
-    SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 100, 50, 200, 7.5, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 450, 300, 700, 25, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueBishop, 450, 300, 700, 25, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 650, 400, 1000, 30, updateSeeValueTable)
-    SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1250, 800, 1600, 40, updateSeeValueTable)
+    SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 100, 50, 200, 7.5, updateSeeTables)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 450, 300, 700, 25, updateSeeTables)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueBishop, 450, 300, 700, 25, updateSeeTables)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 650, 400, 1000, 30, updateSeeTables)
+    SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1250, 800, 1600, 40, updateSeeTables)
 
     SP_TUNABLE_PARAM(scalingValueKnight, 450, 300, 700, 25)
     SP_TUNABLE_PARAM(scalingValueBishop, 450, 300, 700, 25)
