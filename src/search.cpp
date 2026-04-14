@@ -627,7 +627,8 @@ namespace stormphrax::search {
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
                 if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move) && pos.isLegal(ttEntry.move)) {
-                    const auto bonus = historyBonus(depth);
+                    const auto bonus =
+                        historyBonus(depth, ttCutoffBonusDepthScale(), ttCutoffBonusOffset(), maxTtCutoffBonus());
                     thread.history.updateQuietScore(
                         thread.conthist,
                         ply,
@@ -1110,7 +1111,18 @@ namespace stormphrax::search {
                         }
 
                         if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
-                            const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
+                            const auto bonus = score <= alpha ? -historyBonus(
+                                                                    newDepth,
+                                                                    postLmrContPenaltyDepthScale(),
+                                                                    postLmrContPenaltyOffset(),
+                                                                    maxPostLmrContPenalty()
+                                                                )
+                                                              : historyBonus(
+                                                                    newDepth,
+                                                                    postLmrContBonusDepthScale(),
+                                                                    postLmrContBonusOffset(),
+                                                                    maxPostLmrContBonus()
+                                                                );
                             thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
                         }
                     }
@@ -1229,11 +1241,11 @@ namespace stormphrax::search {
         if (bestMove) {
             const auto historyDepth = depth + (!inCheck && curr.staticEval <= bestScore);
 
-            const auto bonus = historyBonus(historyDepth);
-            const auto penalty = historyPenalty(historyDepth);
-
             if (!pos.isNoisy(bestMove)) {
                 curr.killers.push(bestMove);
+
+                const auto quietBonus =
+                    historyBonus(historyDepth, quietBonusDepthScale(), quietBonusOffset(), maxQuietBonus());
 
                 thread.history.updateQuietScore(
                     thread.conthist,
@@ -1241,8 +1253,11 @@ namespace stormphrax::search {
                     pos.threats(),
                     pos.boards().pieceOn(bestMove.fromSq()),
                     bestMove,
-                    bonus
+                    quietBonus
                 );
+
+                const auto quietPenalty =
+                    -historyBonus(historyDepth, quietPenaltyDepthScale(), quietPenaltyOffset(), maxQuietPenalty());
 
                 for (const auto prevQuiet : moveStack.failLowQuiets) {
                     thread.history.updateQuietScore(
@@ -1251,18 +1266,38 @@ namespace stormphrax::search {
                         pos.threats(),
                         pos.boards().pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
-                        penalty
+                        quietPenalty
                     );
+                }
+
+                const auto noisyPenalty = -historyBonus(
+                    historyDepth,
+                    quietBmNoisyPenaltyDepthScale(),
+                    quietBmNoisyPenaltyOffset(),
+                    maxQuietBmNoisyPenalty()
+                );
+
+                for (const auto prevNoisy : moveStack.failLowNoisies) {
+                    const auto captured = pos.captureTarget(prevNoisy);
+                    thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), noisyPenalty);
                 }
             } else {
                 const auto captured = pos.captureTarget(bestMove);
-                thread.history.updateNoisyScore(bestMove, captured, pos.threats(), bonus);
-            }
+                const auto noisyBonus =
+                    historyBonus(historyDepth, noisyBonusDepthScale(), noisyBonusOffset(), maxNoisyBonus());
+                thread.history.updateNoisyScore(bestMove, captured, pos.threats(), noisyBonus);
 
-            // unconditionally update capthist
-            for (const auto prevNoisy : moveStack.failLowNoisies) {
-                const auto captured = pos.captureTarget(prevNoisy);
-                thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), penalty);
+                const auto noisyPenalty = -historyBonus(
+                    historyDepth,
+                    noisyBmNoisyPenaltyDepthScale(),
+                    noisyBmNoisyPenaltyOffset(),
+                    maxNoisyBmNoisyPenalty()
+                );
+
+                for (const auto prevNoisy : moveStack.failLowNoisies) {
+                    const auto prevCaptured = pos.captureTarget(prevNoisy);
+                    thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
+                }
             }
         }
 

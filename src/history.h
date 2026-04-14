@@ -58,19 +58,11 @@ namespace stormphrax {
         }
     };
 
-    inline HistoryScore historyBonus(i32 depth) {
+    [[nodiscard]] inline HistoryScore historyBonus(i32 depth, i32 depthScale, i32 offset, i32 max) {
         return static_cast<HistoryScore>(std::clamp(
-            depth * tunable::historyBonusDepthScale() - tunable::historyBonusOffset(),
+            depth * depthScale - offset,
             0,
-            tunable::maxHistoryBonus()
-        ));
-    }
-
-    inline HistoryScore historyPenalty(i32 depth) {
-        return static_cast<HistoryScore>(-std::clamp(
-            depth * tunable::historyPenaltyDepthScale() - tunable::historyPenaltyOffset(),
-            0,
-            tunable::maxHistoryPenalty()
+            max
         ));
     }
 
@@ -129,8 +121,9 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update(bonus);
-            pieceToEntry(threats, moving, move).update(bonus);
+            using namespace tunable;
+            butterflyEntry(threats, move).update(bonus * butterflyUpdateWeight() / 1024);
+            pieceToEntry(threats, moving, move).update(bonus * pieceToUpdateWeight() / 1024);
         }
 
         inline void updateConthist(
@@ -154,9 +147,9 @@ namespace stormphrax {
 
             base /= 1024;
 
-            updateConthist(continuations, ply, moving, move, base, bonus, 1);
-            updateConthist(continuations, ply, moving, move, base, bonus, 2);
-            updateConthist(continuations, ply, moving, move, base, bonus, 4);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont1UpdateWeight() / 1024, 1);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont2UpdateWeight() / 1024, 2);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont4UpdateWeight() / 1024, 4);
         }
 
         inline void updateQuietScore(
