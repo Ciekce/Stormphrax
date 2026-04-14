@@ -61,10 +61,8 @@ namespace stormphrax::see {
         Bitboard attackers,
         Color color
     ) {
-        for (i32 i = 0; i < 6; ++i) {
-            const auto pt = PieceType::fromRaw(i);
+        for (const auto pt : tunable::g_seeOrderedPts) {
             const auto board = attackers & bbs.forPiece(pt, color);
-
             if (!board.empty()) {
                 occ ^= board.lowestBit();
                 return pt;
