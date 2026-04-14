@@ -783,7 +783,7 @@ namespace stormphrax::search {
                 return margin;
             };
 
-            if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
+            if (depth <= 12 && curr.staticEval - rfpMargin() >= beta) {
                 return !isDecisive(curr.staticEval) && !isDecisive(beta)
                          ? util::ilerp<1024>(curr.staticEval, beta, rfpFailFirmT())
                          : curr.staticEval;

@@ -49,21 +49,17 @@ namespace stormphrax {
             return *this;
         }
 
-        inline void update(HistoryScore bonus) {
-            value += bonus - value * std::abs(bonus) / tunable::maxHistory();
+        inline void update(HistoryScore bonus, i32 max) {
+            value += bonus - value * std::abs(bonus) / max;
         }
 
-        inline void updateWithBase(HistoryScore bonus, i32 base) {
-            value += bonus - base * std::abs(bonus) / tunable::maxHistory();
+        inline void updateWithBase(HistoryScore bonus, i32 base, i32 max) {
+            value += bonus - base * std::abs(bonus) / max;
         }
     };
 
     [[nodiscard]] inline HistoryScore historyBonus(i32 depth, i32 depthScale, i32 offset, i32 max) {
-        return static_cast<HistoryScore>(std::clamp(
-            depth * depthScale - offset,
-            0,
-            max
-        ));
+        return static_cast<HistoryScore>(std::clamp(depth * depthScale - offset, 0, max));
     }
 
     class ContinuationSubtable {
@@ -115,15 +111,10 @@ namespace stormphrax {
             return m_continuation[moving.idx()][to.idx()];
         }
 
-        inline void updateMainHistory(
-            Bitboard threats,
-            Piece moving,
-            Move move,
-            HistoryScore bonus
-        ) {
+        inline void updateMainHistory(Bitboard threats, Piece moving, Move move, HistoryScore bonus) {
             using namespace tunable;
-            butterflyEntry(threats, move).update(bonus * butterflyUpdateWeight() / 1024);
-            pieceToEntry(threats, moving, move).update(bonus * pieceToUpdateWeight() / 1024);
+            butterflyEntry(threats, move).update(bonus * butterflyUpdateWeight() / 1024, maxButterflyHistory());
+            pieceToEntry(threats, moving, move).update(bonus * pieceToUpdateWeight() / 1024, maxPieceToHistory());
         }
 
         inline void updateConthist(
@@ -165,7 +156,7 @@ namespace stormphrax {
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
-            noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
+            noisyEntry(move, captured, threats[move.toSq()]).update(bonus, tunable::maxNoisyHistory());
         }
 
         [[nodiscard]] inline i32 getButterfly(Bitboard threats, Move move) const {
@@ -202,7 +193,7 @@ namespace stormphrax {
             i32 offset
         ) {
             if (offset <= ply) {
-                (*continuations[ply - offset])[{moving, move}].updateWithBase(bonus, base);
+                (*continuations[ply - offset])[{moving, move}].updateWithBase(bonus, base, tunable::maxConthist());
             }
         }
 

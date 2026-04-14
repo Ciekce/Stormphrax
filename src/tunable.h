@@ -171,7 +171,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(contCorrhist2Weight, 192, 32, 384, 18)
     SP_TUNABLE_PARAM(contCorrhist4Weight, 192, 32, 384, 18)
 
-    SP_TUNABLE_PARAM(initialAspWindow, 16, 4, 50, 4)
+    SP_TUNABLE_PARAM(initialAspWindow, 16, 4, 50, 1)
     SP_TUNABLE_PARAM(aspWideningFactor, 17, 1, 24, 1)
 
     SP_TUNABLE_PARAM(goodNoisySeeOffset, 15, -384, 384, 40)
@@ -220,8 +220,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(lmrDepthTtpvScale, 96, 48, 192, 8)
 
-    SP_TUNABLE_PARAM(fpMargin, 261, 120, 350, 45)
-    SP_TUNABLE_PARAM(fpScale, 68, 40, 80, 8)
+    SP_TUNABLE_PARAM(fpMargin, 261, 120, 400, 20)
+    SP_TUNABLE_PARAM(fpScale, 68, 40, 120, 4)
     SP_TUNABLE_PARAM(fpHistoryDivisor, 128, 32, 384, 18)
 
     SP_TUNABLE_PARAM(quietHistPruningMargin, -2314, -4000, -1000, 175)
@@ -250,10 +250,10 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(ldseMargin, 26, 10, 60, 3)
     SP_TUNABLE_PARAM(ldseDoubleExtMargin, 40, 20, 80, 3)
 
-    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 83, 50, 120, 15, updateQuietLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 83, 50, 120, 5, updateQuietLmrTable)
     SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 218, 100, 300, 10, updateQuietLmrTable)
 
-    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -12, -50, 75, 10, updateNoisyLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -12, -50, 75, 5, updateNoisyLmrTable)
     SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 248, 150, 350, 10, updateNoisyLmrTable)
 
     SP_TUNABLE_PARAM(lmrNonPvReductionScale, 131, 32, 384, 12)
@@ -284,7 +284,10 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(postLmrContPenaltyDepthScale, 343, 128, 512, 32)
     SP_TUNABLE_PARAM(postLmrContPenaltyOffset, 161, 128, 768, 64)
 
-    SP_TUNABLE_PARAM(maxHistory, 15769, 8192, 32768, 256)
+    SP_TUNABLE_PARAM(maxButterflyHistory, 16384, 8192, 32768, 256)
+    SP_TUNABLE_PARAM(maxPieceToHistory, 16384, 8192, 32768, 256)
+    SP_TUNABLE_PARAM(maxConthist, 16384, 8192, 32768, 256)
+    SP_TUNABLE_PARAM(maxNoisyHistory, 16384, 8192, 32768, 256)
 
     SP_TUNABLE_PARAM(maxQuietBonus, 2576, 1024, 4096, 256)
     SP_TUNABLE_PARAM(quietBonusDepthScale, 280, 128, 512, 32)
