@@ -1012,7 +1012,7 @@ namespace stormphrax::search {
                     && !isDecisive(ttEntry.score))
                 {
                     const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
-                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
+                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 128;
 
                     const auto sDepth = (depth - 1) / 2;
 
