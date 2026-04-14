@@ -736,6 +736,11 @@ namespace stormphrax::search {
                 );
                 complexity = corrDelta;
             }
+
+            if (!kRootNode && !inCheck && parent->move && parent->quiet && parent->staticEval != kScoreNone) {
+                const auto bonus = std::clamp(-10 * (parent->staticEval + curr.staticEval), -2100, 1700) + 600;
+                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+            }
         }
 
         const bool improving = [&] {
