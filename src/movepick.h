@@ -353,7 +353,7 @@ namespace stormphrax {
 
             const auto captured = m_pos.captureTarget(move);
 
-            score += m_history.noisyScore(move, captured, m_pos.threats()) / 8;
+            score += m_history.getNoisy(move, captured, m_pos.threats()) / 8;
             score += see::value(captured);
 
             if (move.type() == MoveType::kPromotion) {
@@ -370,19 +370,24 @@ namespace stormphrax {
         inline void scoreQuiets() {
             using namespace tunable;
 
+            const auto threats = m_pos.threats();
+
             for (u32 i = m_idx; i < m_end; ++i) {
                 auto& scoredMove = m_data.moves[i];
 
                 const auto move = scoredMove.move;
                 auto& score = scoredMove.score;
 
-                score += m_history.quietScore(
-                    m_continuations,
-                    m_ply,
-                    m_pos.threats(),
-                    m_pos.boards().pieceOn(move.fromSq()),
-                    move
-                );
+                const auto moving = m_pos.boards().pieceOn(move.fromSq());
+
+                score += m_history.getButterfly(threats, move) * movepickButterflyWeight();
+                score += m_history.getPieceTo(threats, moving, move) * movepickPieceToWeight();
+
+                score += getConthist(m_continuations, m_ply, moving, move, 1) * movepickCont1Weight();
+                score += getConthist(m_continuations, m_ply, moving, move, 2) * movepickCont2Weight();
+                score += getConthist(m_continuations, m_ply, moving, move, 4) * movepickCont4Weight();
+
+                score /= 1024;
 
                 score += directCheckBonus()
                        * (m_pos.givesDirectCheck(move) && see::see(m_pos, move, directCheckSeeThreshold()));

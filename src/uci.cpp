@@ -56,7 +56,7 @@ namespace stormphrax {
         std::vector<tunable::TunableParam>& tunableParams() {
             static auto params = [] {
                 std::vector<tunable::TunableParam> params{};
-                params.reserve(128);
+                params.reserve(256);
                 return params;
             }();
 

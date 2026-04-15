@@ -31,6 +31,7 @@ namespace stormphrax::tunable {
 
     util::MultiArray<i32, 2, 256, 256> g_lmrTable{};
     std::array<i32, 13> g_seeValues{};
+    std::array<PieceType, PieceTypes::kCount> g_seeOrderedPts{};
 
     void updateQuietLmrTable() {
         const auto base = static_cast<f64>(quietLmrBase()) / 100.0;
@@ -54,11 +55,10 @@ namespace stormphrax::tunable {
         }
     }
 
-    void updateSeeValueTable() {
-        // king and none
+    void updateSeeTables() {
         g_seeValues.fill(0);
 
-        const std::array scores = {
+        const std::array values = {
             seeValuePawn(),
             seeValueKnight(),
             seeValueBishop(),
@@ -66,16 +66,31 @@ namespace stormphrax::tunable {
             seeValueQueen(),
         };
 
-        for (usize i = 0; i < scores.size(); ++i) {
-            g_seeValues[i * 2 + 0] = scores[i];
-            g_seeValues[i * 2 + 1] = scores[i];
+        for (usize i = 0; i < values.size(); ++i) {
+            g_seeValues[i * 2 + 0] = values[i];
+            g_seeValues[i * 2 + 1] = values[i];
         }
+
+        g_seeOrderedPts = {
+            PieceTypes::kPawn,
+            PieceTypes::kKnight,
+            PieceTypes::kBishop,
+            PieceTypes::kRook,
+            PieceTypes::kQueen,
+            PieceTypes::kKing,
+        };
+
+        std::ranges::stable_sort(g_seeOrderedPts, [&](PieceType a, PieceType b) {
+            return b == PieceTypes::kKing
+                || (a != PieceTypes::kKing
+                    && (values[a.idx()] * 10000 + a.idx()) < (values[b.idx()] * 10000 + b.idx()));
+        });
     }
 
     void init() {
         updateQuietLmrTable();
         updateNoisyLmrTable();
 
-        updateSeeValueTable();
+        updateSeeTables();
     }
 } // namespace stormphrax::tunable

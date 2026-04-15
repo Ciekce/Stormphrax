@@ -49,29 +49,17 @@ namespace stormphrax {
             return *this;
         }
 
-        inline void update(HistoryScore bonus) {
-            value += bonus - value * std::abs(bonus) / tunable::maxHistory();
+        inline void update(HistoryScore bonus, i32 max) {
+            value += bonus - value * std::abs(bonus) / max;
         }
 
-        inline void updateWithBase(HistoryScore bonus, i32 base) {
-            value += bonus - base * std::abs(bonus) / tunable::maxHistory();
+        inline void updateWithBase(HistoryScore bonus, i32 base, i32 max) {
+            value += bonus - base * std::abs(bonus) / max;
         }
     };
 
-    inline HistoryScore historyBonus(i32 depth) {
-        return static_cast<HistoryScore>(std::clamp(
-            depth * tunable::historyBonusDepthScale() - tunable::historyBonusOffset(),
-            0,
-            tunable::maxHistoryBonus()
-        ));
-    }
-
-    inline HistoryScore historyPenalty(i32 depth) {
-        return static_cast<HistoryScore>(-std::clamp(
-            depth * tunable::historyPenaltyDepthScale() - tunable::historyPenaltyOffset(),
-            0,
-            tunable::maxHistoryPenalty()
-        ));
+    [[nodiscard]] inline HistoryScore historyBonus(i32 depth, i32 depthScale, i32 offset, i32 max) {
+        return static_cast<HistoryScore>(std::clamp(depth * depthScale - offset, 0, max));
     }
 
     class ContinuationSubtable {
@@ -92,6 +80,20 @@ namespace stormphrax {
         util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount> m_data{};
     };
 
+    [[nodiscard]] inline HistoryScore getConthist(
+        std::span<ContinuationSubtable* const> continuations,
+        i32 ply,
+        Piece moving,
+        Move move,
+        i32 offset
+    ) {
+        if (offset <= ply) {
+            return (*continuations[ply - offset])[{moving, move}];
+        }
+
+        return 0;
+    }
+
     class HistoryTables {
     public:
         inline void clear() {
@@ -109,6 +111,12 @@ namespace stormphrax {
             return m_continuation[moving.idx()][to.idx()];
         }
 
+        inline void updateMainHistory(Bitboard threats, Piece moving, Move move, HistoryScore bonus) {
+            using namespace tunable;
+            butterflyEntry(threats, move).update(bonus * butterflyUpdateWeight() / 1024, maxButterflyHistory());
+            pieceToEntry(threats, moving, move).update(bonus * pieceToUpdateWeight() / 1024, maxPieceToHistory());
+        }
+
         inline void updateConthist(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
@@ -117,11 +125,22 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            const auto base = getConthist(continuations, ply, moving, move) + getMainHist(threats, moving, move) / 2;
+            using namespace tunable;
 
-            updateConthist(continuations, ply, moving, move, base, bonus, 1);
-            updateConthist(continuations, ply, moving, move, base, bonus, 2);
-            updateConthist(continuations, ply, moving, move, base, bonus, 4);
+            i32 base = 0;
+
+            base += getButterfly(threats, move) * contBaseButterflyWeight();
+            base += getPieceTo(threats, moving, move) * contBasePieceToWeight();
+
+            base += getConthist(continuations, ply, moving, move, 1) * contBaseCont1Weight();
+            base += getConthist(continuations, ply, moving, move, 2) * contBaseCont2Weight();
+            base += getConthist(continuations, ply, moving, move, 4) * contBaseCont4Weight();
+
+            base /= 1024;
+
+            updateConthist(continuations, ply, moving, move, base, bonus * cont1UpdateWeight() / 1024, 1);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont2UpdateWeight() / 1024, 2);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont4UpdateWeight() / 1024, 4);
         }
 
         inline void updateQuietScore(
@@ -132,50 +151,23 @@ namespace stormphrax {
             Move move,
             HistoryScore bonus
         ) {
-            butterflyEntry(threats, move).update(bonus);
-            pieceToEntry(threats, moving, move).update(bonus);
+            updateMainHistory(threats, moving, move, bonus);
             updateConthist(continuations, ply, threats, moving, move, bonus);
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
-            noisyEntry(move, captured, threats[move.toSq()]).update(bonus);
+            noisyEntry(move, captured, threats[move.toSq()]).update(bonus, tunable::maxNoisyHistory());
         }
 
-        [[nodiscard]] inline i32 getMainHist(Bitboard threats, Piece moving, Move move) const {
-            return (butterflyEntry(threats, move) + pieceToEntry(threats, moving, move)) / 2;
+        [[nodiscard]] inline i32 getButterfly(Bitboard threats, Move move) const {
+            return butterflyEntry(threats, move);
         }
 
-        [[nodiscard]] inline i32 getConthist(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            Piece moving,
-            Move move
-        ) const {
-            i32 score{};
-
-            score += conthistScore(continuations, ply, moving, move, 1);
-            score += conthistScore(continuations, ply, moving, move, 2);
-            score += conthistScore(continuations, ply, moving, move, 4) / 2;
-
-            return score;
+        [[nodiscard]] inline i32 getPieceTo(Bitboard threats, Piece moving, Move move) const {
+            return pieceToEntry(threats, moving, move);
         }
 
-        [[nodiscard]] inline i32 quietScore(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            Bitboard threats,
-            Piece moving,
-            Move move
-        ) const {
-            i32 score{};
-
-            score += getMainHist(threats, moving, move);
-            score += getConthist(continuations, ply, moving, move);
-
-            return score;
-        }
-
-        [[nodiscard]] inline i32 noisyScore(Move move, Piece captured, Bitboard threats) const {
+        [[nodiscard]] inline i32 getNoisy(Move move, Piece captured, Bitboard threats) const {
             return noisyEntry(move, captured, threats[move.toSq()]);
         }
 
@@ -201,22 +193,8 @@ namespace stormphrax {
             i32 offset
         ) {
             if (offset <= ply) {
-                conthistEntry(continuations, ply, offset)[{moving, move}].updateWithBase(bonus, base);
+                (*continuations[ply - offset])[{moving, move}].updateWithBase(bonus, base, tunable::maxConthist());
             }
-        }
-
-        static inline HistoryScore conthistScore(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            Piece moving,
-            Move move,
-            i32 offset
-        ) {
-            if (offset <= ply) {
-                return conthistEntry(continuations, ply, offset)[{moving, move}];
-            }
-
-            return 0;
         }
 
         [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
@@ -233,22 +211,6 @@ namespace stormphrax {
 
         [[nodiscard]] inline HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) {
             return m_pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
-        }
-
-        [[nodiscard]] static inline const ContinuationSubtable& conthistEntry(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            i32 offset
-        ) {
-            return *continuations[ply - offset];
-        }
-
-        [[nodiscard]] static inline ContinuationSubtable& conthistEntry(
-            std::span<ContinuationSubtable*> continuations,
-            i32 ply,
-            i32 offset
-        ) {
-            return *continuations[ply - offset];
         }
 
         [[nodiscard]] inline const HistoryEntry& noisyEntry(Move move, Piece captured, bool defended) const {

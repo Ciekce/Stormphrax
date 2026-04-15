@@ -627,7 +627,8 @@ namespace stormphrax::search {
                     || (ttEntry.flag == TtFlag::kLowerBound && ttEntry.score >= beta)))
             {
                 if (ttEntry.score >= beta && ttEntry.move && !pos.isNoisy(ttEntry.move) && pos.isLegal(ttEntry.move)) {
-                    const auto bonus = historyBonus(depth);
+                    const auto bonus =
+                        historyBonus(depth, ttCutoffBonusDepthScale(), ttCutoffBonusOffset(), maxTtCutoffBonus());
                     thread.history.updateQuietScore(
                         thread.conthist,
                         ply,
@@ -736,6 +737,13 @@ namespace stormphrax::search {
                 );
                 complexity = corrDelta;
             }
+
+            if (!kRootNode && !inCheck && parent->move && parent->quiet && parent->staticEval != kScoreNone) {
+                const auto parentGain = -parent->staticEval - curr.staticEval;
+                const auto bonus =
+                    std::clamp(parentGain * evalPolicyScale(), evalPolicyMin(), evalPolicyMax()) + evalPolicyOffset();
+                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+            }
         }
 
         const bool improving = [&] {
@@ -765,16 +773,20 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = tunable::rfpMargin() * std::max(depth - improving, 0);
+                auto margin = rfpConstantMargin();
+                margin += rfpLinearMargin() * depth;
+                margin += rfpQuadMargin() * depth * depth;
+                margin -= rfpImprovingMargin() * improving;
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 128;
                 }
                 return margin;
             };
 
-            if (depth <= 6 && curr.staticEval - rfpMargin() >= beta) {
-                return !isDecisive(curr.staticEval) && !isDecisive(beta) ? (curr.staticEval + beta) / 2
-                                                                         : curr.staticEval;
+            if (depth <= 12 && curr.staticEval - rfpMargin() >= beta) {
+                return !isDecisive(curr.staticEval) && !isDecisive(beta)
+                         ? util::ilerp<1024>(curr.staticEval, beta, rfpFailFirmT())
+                         : curr.staticEval;
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
@@ -930,8 +942,22 @@ namespace stormphrax::search {
 
             const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
-            const auto history = noisy ? thread.history.noisyScore(move, captured, pos.threats())
-                                       : thread.history.quietScore(thread.conthist, ply, pos.threats(), moving, move);
+            const auto history = [&] {
+                if (noisy) {
+                    return thread.history.getNoisy(move, captured, pos.threats());
+                } else {
+                    i32 history = 0;
+
+                    history += thread.history.getButterfly(pos.threats(), move) * searchButterflyWeight();
+                    history += thread.history.getPieceTo(pos.threats(), moving, move) * searchPieceToWeight();
+
+                    history += getConthist(thread.conthist, ply, moving, move, 1) * searchCont1Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 2) * searchCont2Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 4) * searchCont4Weight();
+
+                    return history / 1024;
+                }
+            }();
 
             if ((!kRootNode || thread.search.rootDepth == 1) && !isLoss(bestScore) && (!kPvNode || !thread.datagen)) {
                 const auto lmrDepth = [&] {
@@ -991,7 +1017,7 @@ namespace stormphrax::search {
                     && !isDecisive(ttEntry.score))
                 {
                     const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
-                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 16;
+                    const auto sBeta = ttEntry.score - depth * sBetaMargin / 128;
 
                     const auto sDepth = (depth - 1) / 2;
 
@@ -1003,13 +1029,13 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && score < sBeta - doubleExtMargin()) {
-                            extension = 2 + (!ttMoveNoisy && score < sBeta - tripleExtMargin());
-                        } else {
-                            extension = 1;
-                        }
+                        const auto doubleMargin = doubleExtBaseMargin() + kPvNode * doubleExtPvMargin()
+                                                + ttMoveNoisy * doubleExtNoisyMargin();
+                        const auto tripleMargin = tripleExtBaseMargin() + kPvNode * tripleExtPvMargin()
+                                                + ttMoveNoisy * tripleExtNoisyMargin();
+                        extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
-                        return !isDecisive(score) ? (score + beta) / 2 : score;
+                        return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
                     } else if (cutnode) {
                         extension = -2;
                     } else if (ttEntry.score >= beta) {
@@ -1046,7 +1072,7 @@ namespace stormphrax::search {
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= history * 128 / (noisy ? lmrNoisyHistoryDivisor() : lmrQuietHistoryDivisor());
+                    r -= history * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
@@ -1089,7 +1115,18 @@ namespace stormphrax::search {
                         }
 
                         if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
-                            const auto bonus = score <= alpha ? historyPenalty(newDepth) : historyBonus(newDepth);
+                            const auto bonus = score <= alpha ? -historyBonus(
+                                                                    newDepth,
+                                                                    postLmrContPenaltyDepthScale(),
+                                                                    postLmrContPenaltyOffset(),
+                                                                    maxPostLmrContPenalty()
+                                                                )
+                                                              : historyBonus(
+                                                                    newDepth,
+                                                                    postLmrContBonusDepthScale(),
+                                                                    postLmrContBonusOffset(),
+                                                                    maxPostLmrContBonus()
+                                                                );
                             thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
                         }
                     }
@@ -1208,11 +1245,11 @@ namespace stormphrax::search {
         if (bestMove) {
             const auto historyDepth = depth + (!inCheck && curr.staticEval <= bestScore);
 
-            const auto bonus = historyBonus(historyDepth);
-            const auto penalty = historyPenalty(historyDepth);
-
             if (!pos.isNoisy(bestMove)) {
                 curr.killers.push(bestMove);
+
+                const auto quietBonus =
+                    historyBonus(historyDepth, quietBonusDepthScale(), quietBonusOffset(), maxQuietBonus());
 
                 thread.history.updateQuietScore(
                     thread.conthist,
@@ -1220,8 +1257,11 @@ namespace stormphrax::search {
                     pos.threats(),
                     pos.boards().pieceOn(bestMove.fromSq()),
                     bestMove,
-                    bonus
+                    quietBonus
                 );
+
+                const auto quietPenalty =
+                    -historyBonus(historyDepth, quietPenaltyDepthScale(), quietPenaltyOffset(), maxQuietPenalty());
 
                 for (const auto prevQuiet : moveStack.failLowQuiets) {
                     thread.history.updateQuietScore(
@@ -1230,18 +1270,38 @@ namespace stormphrax::search {
                         pos.threats(),
                         pos.boards().pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
-                        penalty
+                        quietPenalty
                     );
+                }
+
+                const auto noisyPenalty = -historyBonus(
+                    historyDepth,
+                    quietBmNoisyPenaltyDepthScale(),
+                    quietBmNoisyPenaltyOffset(),
+                    maxQuietBmNoisyPenalty()
+                );
+
+                for (const auto prevNoisy : moveStack.failLowNoisies) {
+                    const auto captured = pos.captureTarget(prevNoisy);
+                    thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), noisyPenalty);
                 }
             } else {
                 const auto captured = pos.captureTarget(bestMove);
-                thread.history.updateNoisyScore(bestMove, captured, pos.threats(), bonus);
-            }
+                const auto noisyBonus =
+                    historyBonus(historyDepth, noisyBonusDepthScale(), noisyBonusOffset(), maxNoisyBonus());
+                thread.history.updateNoisyScore(bestMove, captured, pos.threats(), noisyBonus);
 
-            // unconditionally update capthist
-            for (const auto prevNoisy : moveStack.failLowNoisies) {
-                const auto captured = pos.captureTarget(prevNoisy);
-                thread.history.updateNoisyScore(prevNoisy, captured, pos.threats(), penalty);
+                const auto noisyPenalty = -historyBonus(
+                    historyDepth,
+                    noisyBmNoisyPenaltyDepthScale(),
+                    noisyBmNoisyPenaltyOffset(),
+                    maxNoisyBmNoisyPenalty()
+                );
+
+                for (const auto prevNoisy : moveStack.failLowNoisies) {
+                    const auto prevCaptured = pos.captureTarget(prevNoisy);
+                    thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
+                }
             }
         }
 
@@ -1355,7 +1415,8 @@ namespace stormphrax::search {
             }
 
             if (eval >= beta) {
-                return !isDecisive(eval) && !isDecisive(beta) ? (eval + beta) / 2 : eval;
+                return !isDecisive(eval) && !isDecisive(beta) ? util::ilerp<1024>(eval, beta, standPatFailFirmT())
+                                                              : eval;
             }
 
             if (eval > alpha) {
