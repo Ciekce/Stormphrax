@@ -29,7 +29,7 @@
 #include "core.h"
 
 #ifndef SP_EXTERNAL_TUNE
-    #define SP_EXTERNAL_TUNE 1
+    #define SP_EXTERNAL_TUNE 0
 #endif
 
 namespace stormphrax::tunable {
