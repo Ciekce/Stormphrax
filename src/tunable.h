@@ -145,7 +145,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM_F64(scoreTrendTmPositiveScale, 0.97, 0.5, 2.0, 0.075, 100)
     SP_TUNABLE_PARAM_F64(scoreTrendTmNegativeScale, 1.03, 0.5, 2.0, 0.075, 100)
 
-    SP_TUNABLE_PARAM_F64(timeScaleMin, 0.110, 0.001, 1.0, 0.1, 1000)
+    SP_TUNABLE_PARAM_F64(timeScaleMin, 0.11, 0.001, 1.0, 0.1, 1000)
 
     SP_TUNABLE_PARAM_CALLBACK(seeValuePawn, 94, 50, 200, 7.5, updateSeeTables)
     SP_TUNABLE_PARAM_CALLBACK(seeValueKnight, 444, 300, 700, 25, updateSeeTables)
