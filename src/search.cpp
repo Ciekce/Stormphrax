@@ -1415,7 +1415,8 @@ namespace stormphrax::search {
             }
 
             if (eval >= beta) {
-                return !isDecisive(eval) && !isDecisive(beta) ? util::ilerp<1024>(eval, beta, standPatFailFirmT()) : eval;
+                return !isDecisive(eval) && !isDecisive(beta) ? util::ilerp<1024>(eval, beta, standPatFailFirmT())
+                                                              : eval;
             }
 
             if (eval > alpha) {

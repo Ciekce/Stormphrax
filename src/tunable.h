@@ -24,9 +24,9 @@
 #include <functional>
 #include <string_view>
 
+#include "core.h"
 #include "util/multi_array.h"
 #include "util/range.h"
-#include "core.h"
 
 #ifndef SP_EXTERNAL_TUNE
     #define SP_EXTERNAL_TUNE 0
