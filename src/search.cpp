@@ -940,6 +940,8 @@ namespace stormphrax::search {
 
             const auto captured = pos.captureTarget(move);
 
+            const bool recapture = !kRootNode && parent->move && !parent->quiet && move.toSq() == parent->move.toSq();
+
             const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
 
             const auto history = [&] {
@@ -1016,7 +1018,8 @@ namespace stormphrax::search {
                 if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
-                    const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
+                    const auto sBetaMargin =
+                        sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode) - 20 * recapture;
                     const auto sBeta = ttEntry.score - depth * sBetaMargin / 128;
 
                     const auto sDepth = (depth - 1) / 2;
