@@ -1067,24 +1067,24 @@ namespace stormphrax::search {
             } else {
                 auto newDepth = depth + extension - 1;
 
+                auto r = baseLmr;
+
+                r += !kPvNode * lmrNonPvReductionScale();
+                r -= curr.ttpv * lmrTtpvReductionScale();
+                r -= history * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
+                r -= improving * lmrImprovingReductionScale();
+                r -= givesCheck * lmrCheckReductionScale();
+                r += cutnode * lmrCutnodeReductionScale();
+                r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
+                r += alphaRaises * lmrAlphaRaiseReductionScale();
+                r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
+
+                if (complexity) {
+                    const bool highComplexity = *complexity > lmrHighComplexityThreshold();
+                    r -= lmrHighComplexityReductionScale() * highComplexity;
+                }
+
                 if (depth >= 2 && legalMoves >= 2 + kRootNode) {
-                    auto r = baseLmr;
-
-                    r += !kPvNode * lmrNonPvReductionScale();
-                    r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= history * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
-                    r -= improving * lmrImprovingReductionScale();
-                    r -= givesCheck * lmrCheckReductionScale();
-                    r += cutnode * lmrCutnodeReductionScale();
-                    r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
-                    r += alphaRaises * lmrAlphaRaiseReductionScale();
-                    r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-
-                    if (complexity) {
-                        const bool highComplexity = *complexity > lmrHighComplexityThreshold();
-                        r -= lmrHighComplexityReductionScale() * highComplexity;
-                    }
-
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
@@ -1140,7 +1140,7 @@ namespace stormphrax::search {
                         thread,
                         newPos,
                         curr.pv,
-                        newDepth,
+                        newDepth - (!ttMove && r > 512),
                         ply + 1,
                         moveStackIdx + 1,
                         -alpha - 1,
