@@ -1018,8 +1018,7 @@ namespace stormphrax::search {
                 if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
-                    const auto sBetaMargin =
-                        sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode) - 64 * recapture;
+                    const auto sBetaMargin = sBetaBaseMargin() + sBetaPrevPvMargin() * (curr.ttpv && !kPvNode);
                     const auto sBeta = ttEntry.score - depth * sBetaMargin / 128;
 
                     const auto sDepth = (depth - 1) / 2;
@@ -1082,6 +1081,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
+                    r += 128 * recapture;
 
                     if (complexity) {
                         const bool highComplexity = *complexity > lmrHighComplexityThreshold();
