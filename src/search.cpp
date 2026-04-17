@@ -1033,7 +1033,9 @@ namespace stormphrax::search {
                                                 + ttMoveNoisy * doubleExtNoisyMargin();
                         const auto tripleMargin = tripleExtBaseMargin() + kPvNode * tripleExtPvMargin()
                                                 + ttMoveNoisy * tripleExtNoisyMargin();
-                        extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
+                        const auto quadMargin = 400 + ttMoveNoisy * 300;
+                        extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin)
+                                  + (!kPvNode && score < sBeta - quadMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
                     } else if (cutnode) {
