@@ -1154,6 +1154,9 @@ namespace stormphrax::search {
                 //   - alpha was raised by a previous zero-window search,
                 // then do a full-window search to get the true score of this node
                 if (kPvNode && (legalMoves == 1 || score > alpha)) {
+                    if (move == ttMove && ttEntry.depth > 1) {
+                        newDepth = std::max(newDepth, 1);
+                    }
                     score = -search<
                         true>(thread, newPos, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
                 }
