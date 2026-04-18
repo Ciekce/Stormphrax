@@ -877,21 +877,17 @@ namespace stormphrax::search {
 
                     const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
-                    auto score = -qsearch(thread, newPos, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
-
-                    if (score >= probcutBeta) {
-                        score = -search(
-                            thread,
-                            newPos,
-                            curr.pv,
-                            probcutDepth - 1,
-                            ply + 1,
-                            moveStackIdx + 1,
-                            -probcutBeta,
-                            -probcutBeta + 1,
-                            !cutnode
-                        );
-                    }
+                    const auto score = -search(
+                        thread,
+                        newPos,
+                        curr.pv,
+                        probcutDepth - 1,
+                        ply + 1,
+                        moveStackIdx + 1,
+                        -probcutBeta,
+                        -probcutBeta + 1,
+                        !cutnode
+                    );
 
                     if (hasStopped()) {
                         return 0;
