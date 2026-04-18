@@ -859,7 +859,7 @@ namespace stormphrax::search {
             const auto probcutBeta = beta + probcutMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
-            if (!curr.ttpv && depth >= 7 && !isDecisive(beta) && (!ttMove || ttMoveNoisy)
+            if (depth >= 7 && !isDecisive(beta) && (!ttMove || ttMoveNoisy)
                 && !(ttHit && ttEntry.depth >= probcutDepth && ttEntry.score < probcutBeta))
             {
                 const auto seeThreshold = (probcutBeta - curr.staticEval) * probcutSeeScale() / 16;
