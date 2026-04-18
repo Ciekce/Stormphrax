@@ -1116,19 +1116,13 @@ namespace stormphrax::search {
                             );
                         }
 
-                        if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
-                            const auto bonus = score <= alpha ? -historyBonus(
-                                                                    newDepth,
-                                                                    postLmrContPenaltyDepthScale(),
-                                                                    postLmrContPenaltyOffset(),
-                                                                    maxPostLmrContPenalty()
-                                                                )
-                                                              : historyBonus(
-                                                                    newDepth,
-                                                                    postLmrContBonusDepthScale(),
-                                                                    postLmrContBonusOffset(),
-                                                                    maxPostLmrContBonus()
-                                                                );
+                        if (!noisy && score >= beta && !hasStopped()) {
+                            const auto bonus = historyBonus(
+                                newDepth,
+                                postLmrContBonusDepthScale(),
+                                postLmrContBonusOffset(),
+                                maxPostLmrContBonus()
+                            );
                             thread.history.updateConthist(thread.conthist, ply, pos.threats(), moving, move, bonus);
                         }
                     }
