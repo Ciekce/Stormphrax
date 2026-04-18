@@ -1311,6 +1311,10 @@ namespace stormphrax::search {
 
         bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
 
+        if (!kPvNode && bestScore <= alpha) {
+            curr.ttpv |= parent->ttpv;
+        }
+
         if (!curr.excluded) {
             if (!inCheck && (bestMove.isNull() || !pos.isNoisy(bestMove))
                 && (ttFlag == TtFlag::kExact                                          //
