@@ -43,6 +43,7 @@ namespace stormphrax {
         u64 blackNonPawns;
         u64 whiteNonPawns;
         u64 majors;
+        u64 minors;
 
         inline void clear() {
             all = 0;
@@ -50,6 +51,7 @@ namespace stormphrax {
             blackNonPawns = 0;
             whiteNonPawns = 0;
             majors = 0;
+            minors = 0;
         }
 
         inline void flipStm() {
@@ -71,6 +73,8 @@ namespace stormphrax {
 
             if (piece.type().isMajor()) {
                 majors ^= key;
+            } else if (piece.type().isMinor()) {
+                minors ^= key;
             }
         }
 
@@ -89,6 +93,8 @@ namespace stormphrax {
 
             if (piece.type().isMajor()) {
                 majors ^= key;
+            } else if (piece.type().isMinor()) {
+                minors ^= key;
             }
         }
 
@@ -106,6 +112,7 @@ namespace stormphrax {
             blackNonPawns ^= key;
             whiteNonPawns ^= key;
             majors ^= key;
+            minors ^= key;
         }
 
         inline void switchCastling(const CastlingRooks& before, const CastlingRooks& after) {
@@ -115,6 +122,7 @@ namespace stormphrax {
             blackNonPawns ^= key;
             whiteNonPawns ^= key;
             majors ^= key;
+            minors ^= key;
         }
 
         [[nodiscard]] inline bool operator==(const Keys& other) const = default;
@@ -210,6 +218,10 @@ namespace stormphrax {
 
         [[nodiscard]] inline u64 majorKey() const {
             return m_keys.majors;
+        }
+
+        [[nodiscard]] inline u64 minorKey() const {
+            return m_keys.minors;
         }
 
         [[nodiscard]] inline u64 roughKeyAfter(Move move) const {
@@ -593,7 +605,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 248);
+    static_assert(sizeof(Position) == 256);
 } // namespace stormphrax
 
 template <>

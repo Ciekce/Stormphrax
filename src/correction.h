@@ -63,6 +63,7 @@ namespace stormphrax {
             tables.blackNonPawn[pos.blackNonPawnKey() % kEntries].update(bonus);
             tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries].update(bonus);
             tables.major[pos.majorKey() % kEntries].update(bonus);
+            tables.minor[pos.minorKey() % kEntries].update(bonus);
 
             updateCont(1);
             updateCont(2);
@@ -92,6 +93,7 @@ namespace stormphrax {
             correction += blackNpWeight * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
             correction += whiteNpWeight * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
             correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
+            correction += 128 * tables.minor[pos.minorKey() % kEntries];
 
             correction += contAdjustment(1, contCorrhist1Weight());
             correction += contAdjustment(2, contCorrhist2Weight());
@@ -127,6 +129,7 @@ namespace stormphrax {
             std::array<Entry, kEntries> blackNonPawn{};
             std::array<Entry, kEntries> whiteNonPawn{};
             std::array<Entry, kEntries> major{};
+            std::array<Entry, kEntries> minor{};
             std::array<Entry, kEntries> cont{};
         };
 
