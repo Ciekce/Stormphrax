@@ -1014,7 +1014,7 @@ namespace stormphrax::search {
 
             i32 extension{};
 
-            if (!kRootNode && ply < thread.search.rootDepth * 2 && move == ttMove && !curr.excluded) {
+            if (!kRootNode && move == ttMove && !curr.excluded) {
                 if (depth >= 6 + curr.ttpv && ttEntry.depth >= depth - 5 && ttEntry.flag != TtFlag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
