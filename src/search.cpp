@@ -584,7 +584,9 @@ namespace stormphrax::search {
             return qsearch<kPvNode>(thread, pos, ply, moveStackIdx, alpha, beta);
         }
 
-        thread.search.updateSeldepth(ply);
+        if constexpr (kPvNode) {
+            thread.search.updateSeldepth(ply);
+        }
 
         if (depth > kMaxDepth) {
             depth = kMaxDepth;
