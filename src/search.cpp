@@ -647,6 +647,8 @@ namespace stormphrax::search {
             curr.ttpv = kPvNode || ttEntry.wasPv;
         }
 
+        curr.moveCount = 0;
+
         const auto ttMove =
             (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
@@ -1006,7 +1008,7 @@ namespace stormphrax::search {
             const auto prevNodes = thread.search.loadNodes();
 
             thread.search.incNodes();
-            ++legalMoves;
+            curr.moveCount = ++legalMoves;
 
             if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
                 println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
@@ -1307,7 +1309,8 @@ namespace stormphrax::search {
             }
         } else if (!kRootNode && parent->move && parent->quiet) {
             const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+            const auto scale = 900 + 1000 * (parent->moveCount >= 8);
+            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * scale / 1024);
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {

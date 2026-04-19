@@ -84,6 +84,8 @@ namespace stormphrax::search {
         Piece moving;
         bool quiet;
 
+        i32 moveCount;
+
         Score staticEval{};
         bool ttpv{};
 
