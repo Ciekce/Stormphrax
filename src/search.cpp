@@ -1305,6 +1305,9 @@ namespace stormphrax::search {
                     thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
                 }
             }
+        } else if (!kRootNode && parent->move && parent->quiet) {
+            const auto bonus = historyBonus(depth, 300, 100, 2500);
+            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
