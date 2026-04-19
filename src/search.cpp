@@ -1375,6 +1375,8 @@ namespace stormphrax::search {
                              );
         }
 
+        const auto& parent = thread.stack[ply - 1];
+
         ProbedTTableEntry ttEntry{};
         const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
@@ -1449,8 +1451,10 @@ namespace stormphrax::search {
 
         while (const auto move = generator.next()) {
             if (!isLoss(bestScore)) {
-                const auto theOtherFutility = eval + see::gain(pos.boards(), move) * 2560 / 1024;
-                if (!inCheck && theOtherFutility <= alpha) {
+                const auto theOtherFutility = eval + see::value(pos.captureTarget(move)) * 2560 / 1024;
+                if (!inCheck && move.type() != MoveType::kPromotion && move.toSq() != parent.move.toSq()
+                    && theOtherFutility <= alpha)
+                {
                     if (bestScore < theOtherFutility) {
                         bestScore = theOtherFutility;
                     }
