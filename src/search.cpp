@@ -1449,6 +1449,14 @@ namespace stormphrax::search {
 
         while (const auto move = generator.next()) {
             if (!isLoss(bestScore)) {
+                const auto theOtherFutility = eval + see::gain(pos.boards(), move) * 2560 / 1024;
+                if (!inCheck && theOtherFutility <= alpha) {
+                    if (bestScore < theOtherFutility) {
+                        bestScore = theOtherFutility;
+                    }
+                    continue;
+                }
+
                 if (!inCheck && futility <= alpha && !see::see(pos, move, 1)) {
                     if (bestScore < futility) {
                         bestScore = futility;
