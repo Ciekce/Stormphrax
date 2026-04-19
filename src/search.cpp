@@ -1307,7 +1307,7 @@ namespace stormphrax::search {
             }
         } else if (!kRootNode && parent->move && parent->quiet) {
             const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            const auto scale = 1024 + std::min(50 * depth, 400);
+            const auto scale = 1024 + std::min(200 * depth, 1500);
             thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * scale / 1024);
         }
 
