@@ -189,7 +189,7 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(maxTtCutoffBonus, 2526, 1024, 4096, 256)
     SP_TUNABLE_PARAM(ttCutoffBonusDepthScale, 280, 128, 512, 32)
-    SP_TUNABLE_PARAM(ttCutoffBonusOffset, 396, 128, 768, 64)
+    SP_TUNABLE_PARAM(ttCutoffBonusOffset, 396, 0, 768, 64)
 
     SP_TUNABLE_PARAM(evalPolicyScale, 10, 5, 20, 0.7)
     SP_TUNABLE_PARAM(evalPolicyMin, -2011, -4000, -1000, 150)
@@ -280,11 +280,11 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(maxPostLmrContBonus, 2709, 1024, 4096, 256)
     SP_TUNABLE_PARAM(postLmrContBonusDepthScale, 263, 128, 512, 32)
-    SP_TUNABLE_PARAM(postLmrContBonusOffset, 529, 128, 768, 64)
+    SP_TUNABLE_PARAM(postLmrContBonusOffset, 529, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxPostLmrContPenalty, 1114, 1024, 4096, 256)
     SP_TUNABLE_PARAM(postLmrContPenaltyDepthScale, 312, 128, 512, 32)
-    SP_TUNABLE_PARAM(postLmrContPenaltyOffset, 269, 128, 768, 64)
+    SP_TUNABLE_PARAM(postLmrContPenaltyOffset, 269, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxButterflyHistory, 16252, 8192, 32768, 256)
     SP_TUNABLE_PARAM(maxPieceToHistory, 16228, 8192, 32768, 256)
@@ -293,23 +293,27 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(maxQuietBonus, 2640, 1024, 4096, 256)
     SP_TUNABLE_PARAM(quietBonusDepthScale, 312, 128, 512, 32)
-    SP_TUNABLE_PARAM(quietBonusOffset, 302, 128, 768, 64)
+    SP_TUNABLE_PARAM(quietBonusOffset, 302, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxQuietPenalty, 1135, 1024, 4096, 256)
     SP_TUNABLE_PARAM(quietPenaltyDepthScale, 356, 128, 512, 32)
-    SP_TUNABLE_PARAM(quietPenaltyOffset, 192, 128, 768, 64)
+    SP_TUNABLE_PARAM(quietPenaltyOffset, 192, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxNoisyBonus, 2441, 1024, 4096, 256)
     SP_TUNABLE_PARAM(noisyBonusDepthScale, 273, 128, 512, 32)
-    SP_TUNABLE_PARAM(noisyBonusOffset, 471, 128, 768, 64)
+    SP_TUNABLE_PARAM(noisyBonusOffset, 471, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxNoisyBmNoisyPenalty, 1650, 1024, 4096, 256)
     SP_TUNABLE_PARAM(noisyBmNoisyPenaltyDepthScale, 348, 128, 512, 32)
-    SP_TUNABLE_PARAM(noisyBmNoisyPenaltyOffset, 185, 128, 768, 64)
+    SP_TUNABLE_PARAM(noisyBmNoisyPenaltyOffset, 185, 0, 768, 64)
 
     SP_TUNABLE_PARAM(maxQuietBmNoisyPenalty, 1618, 1024, 4096, 256)
     SP_TUNABLE_PARAM(quietBmNoisyPenaltyDepthScale, 362, 128, 512, 32)
-    SP_TUNABLE_PARAM(quietBmNoisyPenaltyOffset, 130, 128, 768, 64)
+    SP_TUNABLE_PARAM(quietBmNoisyPenaltyOffset, 130, 0, 768, 64)
+
+    SP_TUNABLE_PARAM(maxPcmBonus, 1250, 768, 4096, 256)
+    SP_TUNABLE_PARAM(pcmBonusDepthScale, 150, 64, 512, 32)
+    SP_TUNABLE_PARAM(pcmBonusOffset, 50, 0, 768, 64)
 
     SP_TUNABLE_PARAM(butterflyUpdateWeight, 940, 512, 2048, 76)
     SP_TUNABLE_PARAM(pieceToUpdateWeight, 861, 512, 2048, 76)
