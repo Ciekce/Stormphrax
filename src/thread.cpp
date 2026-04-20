@@ -26,6 +26,7 @@ namespace stormphrax::search {
 
         stack[ply].move = kNullMove;
         stack[ply].moving = Pieces::kNone;
+        stack[ply].captured = Pieces::kNone;
         stack[ply].quiet = true;
 
         stack[ply].threats = pos.threats();
@@ -48,6 +49,7 @@ namespace stormphrax::search {
 
         stack[ply].move = move;
         stack[ply].moving = moving;
+        stack[ply].captured = pos.captureTarget(move);
         stack[ply].quiet = !pos.isNoisy(move);
 
         stack[ply].threats = pos.threats();

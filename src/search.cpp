@@ -1305,9 +1305,14 @@ namespace stormphrax::search {
                     thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
                 }
             }
-        } else if (!kRootNode && parent->move && parent->quiet) {
-            const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+        } else if (!kRootNode && parent->move) {
+            if (parent->quiet) {
+                const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
+                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+            } else {
+                const auto bonus = historyBonus(depth, 150, 50, 1250);
+                thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, bonus);
+            }
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
