@@ -1239,7 +1239,7 @@ namespace stormphrax::search {
 
         if (legalMoves == 0) {
             if (curr.excluded) {
-                return alpha;
+                return -kScoreWin;
             }
             return inCheck ? (-kScoreMate + ply) : 0;
         }
