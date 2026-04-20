@@ -1310,8 +1310,7 @@ namespace stormphrax::search {
                 const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
                 thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
             } else {
-                const auto bonus = historyBonus(depth, 150, 50, 1250);
-                thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, bonus);
+                thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, 200);
             }
         }
 
