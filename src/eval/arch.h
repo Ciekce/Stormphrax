@@ -46,7 +46,7 @@ namespace stormphrax::eval {
 
     constexpr bool kDualActivation = true;
 
-    constexpr i32 kScale = 400;
+    constexpr i32 kScale = 424;
 
     // visually flipped upside down, a1 = 0
     using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
