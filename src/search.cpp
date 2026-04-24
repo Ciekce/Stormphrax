@@ -919,7 +919,7 @@ namespace stormphrax::search {
         auto generator =
             MoveGenerator::main(pos, moveStack.movegenData, ttMove, curr.killers, thread.history, thread.conthist, ply);
 
-        u32 legalMoves = 0;
+        i32 legalMoves = 0;
         i32 alphaRaises = 0;
 
         while (const auto move = generator.next()) {
@@ -1091,7 +1091,7 @@ namespace stormphrax::search {
                         }
                     }();
 
-                    auto r = baseLmr;
+                    auto r = baseLmr + lmrOffset();
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
@@ -1103,6 +1103,7 @@ namespace stormphrax::search {
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
                     r -= complexity.value_or(0) * lmrComplexityScale() / 4096;
+                    r -= legalMoves * lmrMoveCountReductionScale();
 
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 1024, 1), newDepth) + kPvNode
