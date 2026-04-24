@@ -183,6 +183,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(movepickCont1Weight, 1107, 0, 4096, 100)
     SP_TUNABLE_PARAM(movepickCont2Weight, 1023, 0, 4096, 100)
     SP_TUNABLE_PARAM(movepickCont4Weight, 576, 0, 4096, 100)
+    SP_TUNABLE_PARAM(movepickCont6Weight, 0, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(directCheckBonus, 8902, 2048, 16384, 716)
     SP_TUNABLE_PARAM(directCheckSeeThreshold, -25, -300, 0, 60)
@@ -219,6 +220,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(searchCont1Weight, 1144, 0, 4096, 100)
     SP_TUNABLE_PARAM(searchCont2Weight, 1067, 0, 4096, 100)
     SP_TUNABLE_PARAM(searchCont4Weight, 593, 0, 4096, 100)
+    SP_TUNABLE_PARAM(searchCont6Weight, 0, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(lmrDepthTtpvScale, 89, 48, 192, 8)
 
@@ -263,6 +265,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrCont1Weight, 1144, 0, 4096, 100)
     SP_TUNABLE_PARAM(lmrCont2Weight, 1067, 0, 4096, 100)
     SP_TUNABLE_PARAM(lmrCont4Weight, 593, 0, 4096, 100)
+    SP_TUNABLE_PARAM(lmrCont6Weight, 0, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(lmrNonPvReductionScale, 137, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrTtpvReductionScale, 148, 32, 384, 12)
@@ -327,12 +330,14 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(cont1UpdateWeight, 1033, 512, 2048, 76)
     SP_TUNABLE_PARAM(cont2UpdateWeight, 1084, 512, 2048, 76)
     SP_TUNABLE_PARAM(cont4UpdateWeight, 1052, 512, 2048, 76)
+    SP_TUNABLE_PARAM(cont6UpdateWeight, 1024, 512, 2048, 76)
 
     SP_TUNABLE_PARAM(contBaseButterflyWeight, 258, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBasePieceToWeight, 176, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBaseCont1Weight, 982, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBaseCont2Weight, 1005, 0, 4096, 100)
     SP_TUNABLE_PARAM(contBaseCont4Weight, 485, 0, 4096, 100)
+    SP_TUNABLE_PARAM(contBaseCont6Weight, 0, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(standPatFailFirmT, 557, 0, 1024, 51)
 

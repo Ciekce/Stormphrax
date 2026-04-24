@@ -956,6 +956,7 @@ namespace stormphrax::search {
                     history += getConthist(thread.conthist, ply, moving, move, 1) * searchCont1Weight();
                     history += getConthist(thread.conthist, ply, moving, move, 2) * searchCont2Weight();
                     history += getConthist(thread.conthist, ply, moving, move, 4) * searchCont4Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 6) * searchCont6Weight();
 
                     return history / 1024;
                 }
@@ -1082,6 +1083,7 @@ namespace stormphrax::search {
                             history += getConthist(thread.conthist, ply, moving, move, 1) * lmrCont1Weight();
                             history += getConthist(thread.conthist, ply, moving, move, 2) * lmrCont2Weight();
                             history += getConthist(thread.conthist, ply, moving, move, 4) * lmrCont4Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 6) * lmrCont6Weight();
 
                             return history / 1024;
                         }
