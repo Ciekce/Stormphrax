@@ -25,8 +25,8 @@
 
 namespace stormphrax::wdl {
     std::pair<f64, f64> wdlParams(i32 material) {
-        static constexpr std::array kAs = {-96.02243718, 269.74715145, -333.86830676, 436.37312689};
-        static constexpr std::array kBs = {-25.83309316, 94.79252729, -54.62661884, 80.45166722};
+        static constexpr std::array kAs = {-171.96582889, 365.09875259, -244.89183999, 440.96838139};
+        static constexpr std::array kBs = {-74.26348812, 213.03909562, -101.21826986, 81.39125860};
 
         static_assert(kMaterial58NormalizationK == static_cast<i32>(std::reduce(kAs.begin(), kAs.end())));
 
