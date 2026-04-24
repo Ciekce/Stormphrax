@@ -223,7 +223,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(searchCont4Weight, 593, 0, 4096, 100)
     SP_TUNABLE_PARAM(searchCont6Weight, 0, 0, 4096, 100)
 
-    SP_TUNABLE_PARAM(lmrDepthTtpvScale, 89, 48, 192, 8)
+    SP_TUNABLE_PARAM(lmrDepthTtpvScale, 712, 384, 1536, 64)
 
     SP_TUNABLE_PARAM(fpMargin, 262, 120, 400, 20)
     SP_TUNABLE_PARAM(fpScale, 69, 40, 120, 4)
@@ -269,23 +269,21 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrCont4Weight, 593, 0, 4096, 100)
     SP_TUNABLE_PARAM(lmrCont6Weight, 0, 0, 4096, 100)
 
-    SP_TUNABLE_PARAM(lmrNonPvReductionScale, 137, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrTtpvReductionScale, 148, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrImprovingReductionScale, 150, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrCheckReductionScale, 110, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 252, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 142, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrAlphaRaiseReductionScale, 55, 32, 384, 12)
-    SP_TUNABLE_PARAM(lmrTtMoveNoisyReductionScale, 126, 32, 384, 12)
-
-    SP_TUNABLE_PARAM(lmrComplexityScale, 475, 256, 1024, 38)
+    SP_TUNABLE_PARAM(lmrNonPvReductionScale, 1096, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrTtpvReductionScale, 1184, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrImprovingReductionScale, 1200, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrCheckReductionScale, 880, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrCutnodeReductionScale, 2016, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 1136, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrAlphaRaiseReductionScale, 440, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrTtMoveNoisyReductionScale, 1008, 256, 3072, 96)
 
     SP_TUNABLE_PARAM(lmrQuietHistoryScale, 428, 192, 768, 28)
     SP_TUNABLE_PARAM(lmrNoisyHistoryScale, 412, 192, 768, 28)
 
-    SP_TUNABLE_PARAM(lmrHighComplexityThreshold, 69, 30, 120, 5)
+    SP_TUNABLE_PARAM(lmrComplexityScale, 475, 256, 1024, 38)
 
-    SP_TUNABLE_PARAM(lmrTtpvExtThreshold, -121, -384, 0, 19)
+    SP_TUNABLE_PARAM(lmrTtpvExtThreshold, -968, -3072, 0, 152)
 
     SP_TUNABLE_PARAM(lmrDeeperBase, 43, 20, 100, 6)
     SP_TUNABLE_PARAM(lmrDeeperScale, 4, 3, 12, 1)
