@@ -153,12 +153,13 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM_CALLBACK(seeValueRook, 671, 400, 1000, 30, updateSeeTables)
     SP_TUNABLE_PARAM_CALLBACK(seeValueQueen, 1244, 800, 1600, 40, updateSeeTables)
 
+    SP_TUNABLE_PARAM(scalingValuePawn, 50, 20, 200, 6)
     SP_TUNABLE_PARAM(scalingValueKnight, 450, 300, 700, 25)
     SP_TUNABLE_PARAM(scalingValueBishop, 450, 300, 700, 25)
     SP_TUNABLE_PARAM(scalingValueRook, 650, 400, 1000, 30)
     SP_TUNABLE_PARAM(scalingValueQueen, 1250, 800, 1600, 40)
 
-    SP_TUNABLE_PARAM(materialScalingBase, 26500, 10000, 40000, 1500)
+    SP_TUNABLE_PARAM(materialScalingBase, 26000, 10000, 40000, 1500)
     SP_TUNABLE_PARAM(optimismBase, 2000, 0, 12000, 400)
 
     SP_TUNABLE_PARAM(optimismStretch, 103, 50, 200, 8)
