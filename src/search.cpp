@@ -1311,7 +1311,8 @@ namespace stormphrax::search {
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
-            bestScore = (bestScore * depth + beta) / (depth + 1);
+            const auto weight = std::min(depth, 8);
+            bestScore = (bestScore * weight + beta) / (weight + 1);
         }
 
         bestScore = std::clamp(bestScore, syzygyMin, syzygyMax);
