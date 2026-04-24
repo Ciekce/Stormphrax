@@ -1307,7 +1307,8 @@ namespace stormphrax::search {
             }
         } else if (!kRootNode && parent->move && parent->quiet) {
             const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+            const auto weight = 1024 + 512 * (!inCheck && bestScore < curr.staticEval - 100);
+            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * weight / 1024);
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {
