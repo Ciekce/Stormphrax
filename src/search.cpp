@@ -1070,11 +1070,28 @@ namespace stormphrax::search {
                 auto newDepth = depth + extension - 1;
 
                 if (depth >= 2 && legalMoves >= 2 + kRootNode) {
+                    const auto lmrHistory = [&] {
+                        if (noisy) {
+                            return history;
+                        } else {
+                            i32 history = 0;
+
+                            history += thread.history.getButterfly(pos.threats(), move) * lmrButterflyWeight();
+                            history += thread.history.getPieceTo(pos.threats(), moving, move) * lmrPieceToWeight();
+
+                            history += getConthist(thread.conthist, ply, moving, move, 1) * lmrCont1Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 2) * lmrCont2Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 4) * lmrCont4Weight();
+
+                            return history / 1024;
+                        }
+                    }();
+
                     auto r = baseLmr;
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= history * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
+                    r -= lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();

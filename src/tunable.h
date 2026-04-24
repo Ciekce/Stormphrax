@@ -258,6 +258,12 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -13, -50, 75, 5, updateNoisyLmrTable)
     SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 243, 150, 350, 10, updateNoisyLmrTable)
 
+    SP_TUNABLE_PARAM(lmrButterflyWeight, 517, 0, 4096, 100)
+    SP_TUNABLE_PARAM(lmrPieceToWeight, 459, 0, 4096, 100)
+    SP_TUNABLE_PARAM(lmrCont1Weight, 1144, 0, 4096, 100)
+    SP_TUNABLE_PARAM(lmrCont2Weight, 1067, 0, 4096, 100)
+    SP_TUNABLE_PARAM(lmrCont4Weight, 593, 0, 4096, 100)
+
     SP_TUNABLE_PARAM(lmrNonPvReductionScale, 137, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrTtpvReductionScale, 148, 32, 384, 12)
     SP_TUNABLE_PARAM(lmrImprovingReductionScale, 150, 32, 384, 12)
