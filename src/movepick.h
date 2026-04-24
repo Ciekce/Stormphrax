@@ -386,6 +386,7 @@ namespace stormphrax {
                 score += getConthist(m_continuations, m_ply, moving, move, 1) * movepickCont1Weight();
                 score += getConthist(m_continuations, m_ply, moving, move, 2) * movepickCont2Weight();
                 score += getConthist(m_continuations, m_ply, moving, move, 4) * movepickCont4Weight();
+                score += getConthist(m_continuations, m_ply, moving, move, 6) * movepickCont6Weight();
 
                 score /= 1024;
 
