@@ -650,6 +650,9 @@ namespace stormphrax::search {
         const auto ttMove =
             (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
+        curr.ttMove = ttMove;
+        curr.moveCount = 0;
+
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
         const auto pieceCount = bbs.occupancy().popcount();
@@ -1007,7 +1010,7 @@ namespace stormphrax::search {
             const auto prevNodes = thread.search.loadNodes();
 
             thread.search.incNodes();
-            ++legalMoves;
+            curr.moveCount = ++legalMoves;
 
             if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
                 println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
@@ -1323,9 +1326,26 @@ namespace stormphrax::search {
                     thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
                 }
             }
-        } else if (!kRootNode && parent->move && parent->quiet) {
-            const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+        } else if (!kRootNode && parent->move) {
+            if (parent->quiet) {
+                const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
+
+                auto weight = pcmBaseWeight();
+
+                weight += std::min(depth * pcmDepthWeight(), pcmDepthMax());
+                weight += (parent->moveCount >= 8) * pcmParentMoveCountWeight();
+                weight += (parent->move == parent->ttMove) * pcmParentTtMoveWeight();
+                weight += (!inCheck && bestScore < curr.staticEval - pcmStaticEvalThreshold()) * pcmStaticEvalWeight();
+                weight += (parent->staticEval != kScoreNone
+                           && bestScore < -parent->staticEval - pcmParentStaticEvalThreshold())
+                        * pcmParentStaticEvalWeight();
+
+                weight = std::max(weight, 0);
+
+                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * weight / 1024);
+            } else {
+                thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
+            }
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {

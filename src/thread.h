@@ -82,7 +82,11 @@ namespace stormphrax::search {
 
         Move move;
         Piece moving;
+        Piece captured;
         bool quiet;
+
+        Move ttMove;
+        i32 moveCount;
 
         Score staticEval{};
         bool ttpv{};
