@@ -1102,11 +1102,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-
-                    if (complexity) {
-                        const bool highComplexity = *complexity > lmrHighComplexityThreshold();
-                        r -= lmrHighComplexityReductionScale() * highComplexity;
-                    }
+                    r -= complexity.value_or(0) * lmrComplexityScale() / 32768;
 
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
