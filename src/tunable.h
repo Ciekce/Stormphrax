@@ -269,6 +269,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrCont4Weight, 593, 0, 4096, 100)
     SP_TUNABLE_PARAM(lmrCont6Weight, 0, 0, 4096, 100)
 
+    SP_TUNABLE_PARAM(lmrOffset, 0, -2048, 2048, 50)
     SP_TUNABLE_PARAM(lmrNonPvReductionScale, 1096, 256, 3072, 96)
     SP_TUNABLE_PARAM(lmrTtpvReductionScale, 1184, 256, 3072, 96)
     SP_TUNABLE_PARAM(lmrImprovingReductionScale, 1200, 256, 3072, 96)
@@ -277,6 +278,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrTtpvFailLowReductionScale, 1136, 256, 3072, 96)
     SP_TUNABLE_PARAM(lmrAlphaRaiseReductionScale, 440, 256, 3072, 96)
     SP_TUNABLE_PARAM(lmrTtMoveNoisyReductionScale, 1008, 256, 3072, 96)
+    SP_TUNABLE_PARAM(lmrMoveCountReductionScale, 50, 0, 128, 10)
 
     SP_TUNABLE_PARAM(lmrQuietHistoryScale, 428, 192, 768, 28)
     SP_TUNABLE_PARAM(lmrNoisyHistoryScale, 412, 192, 768, 28)
