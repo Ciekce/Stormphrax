@@ -1032,10 +1032,12 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        const auto doubleMargin = doubleExtBaseMargin() + kPvNode * doubleExtPvMargin()
-                                                + ttMoveNoisy * doubleExtNoisyMargin();
+                        const auto corr = complexity.value_or(0);
+                        const auto doubleMargin =
+                            doubleExtBaseMargin() + kPvNode * doubleExtPvMargin() - corr * doubleExtCorrScale() / 8192;
                         const auto tripleMargin = tripleExtBaseMargin() + kPvNode * tripleExtPvMargin()
-                                                + ttMoveNoisy * tripleExtNoisyMargin();
+                                                + ttMoveNoisy * tripleExtNoisyMargin()
+                                                - corr * tripleExtCorrScale() / 8192;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
