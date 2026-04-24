@@ -327,6 +327,20 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(pcmBonusDepthScale, 150, 64, 512, 32)
     SP_TUNABLE_PARAM(pcmBonusOffset, 50, 0, 768, 64)
 
+    SP_TUNABLE_PARAM(pcmBaseWeight, 256, -1024, 1024, 51)
+    SP_TUNABLE_PARAM(pcmDepthWeight, 400, 0, 768, 38)
+    SP_TUNABLE_PARAM(pcmParentMoveCountWeight, 1024, 0, 2048, 100)
+    SP_TUNABLE_PARAM(pcmParentTtMoveWeight, 1024, 0, 2048, 100)
+    SP_TUNABLE_PARAM(pcmStaticEvalWeight, 1024, 0, 2048, 100)
+    SP_TUNABLE_PARAM(pcmParentStaticEvalWeight, 1024, 0, 2048, 100)
+
+    SP_TUNABLE_PARAM(pcmDepthMax, 4096, 2048, 8192, 300)
+
+    SP_TUNABLE_PARAM(pcmStaticEvalThreshold, 120, 60, 240, 9)
+    SP_TUNABLE_PARAM(pcmParentStaticEvalThreshold, 120, 60, 240, 9)
+
+    SP_TUNABLE_PARAM(noisyPcmBonus, 60, 0, 2048, 30)
+
     SP_TUNABLE_PARAM(butterflyUpdateWeight, 940, 512, 2048, 76)
     SP_TUNABLE_PARAM(pieceToUpdateWeight, 861, 512, 2048, 76)
 
