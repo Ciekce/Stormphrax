@@ -966,7 +966,7 @@ namespace stormphrax::search {
                 const auto lmrDepth = [&] {
                     auto r = baseLmr;
                     r += curr.ttpv * lmrDepthTtpvScale();
-                    return std::max(depth - r / 128, 0);
+                    return std::max(depth - r / 1024, 0);
                 }();
 
                 if (!noisy) {
@@ -1095,17 +1095,17 @@ namespace stormphrax::search {
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
+                    r -= lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 4096;
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-                    r -= complexity.value_or(0) * lmrComplexityScale() / 32768;
+                    r -= complexity.value_or(0) * lmrComplexityScale() / 4096;
 
                     // can't use std::clamp because newDepth can be <0
-                    const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
+                    const auto reduced = std::min(std::max(newDepth - r / 1024, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
 
                     curr.reduction = newDepth - reduced;
