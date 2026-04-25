@@ -37,6 +37,12 @@ else
     override RMDIR := rm -rf
 endif
 
+CC := clang
+CXX := clang++
+
+export CC
+export CXX
+
 releases: avx512 avx2-bmi2 zen2
 all: native releases
 

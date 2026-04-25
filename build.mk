@@ -11,17 +11,14 @@ USE_LIBNUMA = off
 # https://stackoverflow.com/a/1825832
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
-override SOURCES_3RDPARTY := 3rdparty/fmt/src/format.cc 3rdparty/pyrrhic/tbprobe.cpp 3rdparty/zstd/zstddeclib.c
-override SOURCES_PERMUTE := preprocess/permute.cpp 3rdparty/fmt/src/format.cc
+SOURCES_3RDPARTY := 3rdparty/fmt/src/format.cc 3rdparty/pyrrhic/tbprobe.cpp 3rdparty/zstd/zstddeclib.c
+SOURCES_PERMUTE := preprocess/permute.cpp 3rdparty/fmt/src/format.cc
 
-override HEADERS := $(call rwildcard,src,*.h)
-override SOURCES := $(call rwildcard,src,*.cpp)
+HEADERS := $(call rwildcard,src,*.h)
+SOURCES := $(call rwildcard,src,*.cpp)
 
 # Sources including 3rdparty
-override SOURCES_ALL := $(SOURCES) $(SOURCES_3RDPARTY)
-
-CC := clang
-CXX := clang++
+SOURCES_ALL := $(SOURCES) $(SOURCES_3RDPARTY)
 
 CFLAGS := -std=c11
 CXXFLAGS := -std=c++20 -fconstexpr-steps=2097152
@@ -29,43 +26,43 @@ CXXFLAGS := -std=c++20 -fconstexpr-steps=2097152
 # disable -Wunused-function and -Wunused-const-variable for zstd
 FLAGS := -I3rdparty/fmt/include -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_VERSION=$(VERSION)
 
-override FLAGS_RELEASE := -O3 -DNDEBUG
-override FLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
+FLAGS_RELEASE := -O3 -DNDEBUG
+FLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
 
-override FLAGS_NATIVE := -DSP_NATIVE -march=native
-override FLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-override FLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
-override FLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
-override FLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
-override FLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
+FLAGS_NATIVE := -DSP_NATIVE -march=native
+FLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
+FLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
+FLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
+FLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
+FLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
 
 ifdef NO_EXE_SET
-    override EXE := $(EXE)-$(TYPE)
+    EXE := $(EXE)-$(TYPE)
 endif
 
 LDFLAGS :=
 
-override CC_VERSION := $(shell $(CC) --version)
+CC_VERSION := $(shell $(CC) --version)
 ifeq (, $(findstring clang, $(CC_VERSION)))
 	$(error Only Clang supported)
 endif
 
-override CXX_VERSION := $(shell $(CXX) --version)
+CXX_VERSION := $(shell $(CXX) --version)
 ifeq (, $(findstring clang, $(CXX_VERSION)))
 	$(error Only Clang supported)
 endif
 
-override MKDIR := mkdir -p
+MKDIR := mkdir -p
 
 ifeq ($(DETECTED_OS), Windows)
-    override SUFFIX := .exe
-    override RM := del
+    SUFFIX := .exe
+    RM := del
     ifeq (.exe,$(findstring .exe,$(SHELL)))
-        override MKDIR := -mkdir
+        MKDIR := -mkdir
     endif
 else
-    override SUFFIX :=
-    override RM := rm
+    SUFFIX :=
+    RM := rm
     LDFLAGS += -pthread
 endif
 
@@ -94,7 +91,7 @@ ifeq ($(USE_LIBNUMA),on)
 	LDFLAGS += -lnuma
 endif
 
-override OUTFILE = $(subst .exe,,$(EXE))$(SUFFIX)
+OUTFILE = $(subst .exe,,$(EXE))$(SUFFIX)
 
 ifeq ($(TYPE), native)
     FLAGS += $(FLAGS_NATIVE) $(FLAGS_RELEASE)
@@ -117,8 +114,8 @@ endif
 CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)
 
-override BUILD_DIR := build-$(TYPE)
-override OBJECTS := $(addprefix $(BUILD_DIR)/,$(filter %.o,$(SOURCES_ALL:.c=.o) $(SOURCES_ALL:.cpp=.o) $(SOURCES_ALL:.cc=.o)))
+BUILD_DIR := build-$(TYPE)
+OBJECTS := $(addprefix $(BUILD_DIR)/,$(filter %.o,$(SOURCES_ALL:.c=.o) $(SOURCES_ALL:.cpp=.o) $(SOURCES_ALL:.cc=.o)))
 
 define create_mkdir_target
 $1:
