@@ -50,25 +50,25 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp 
 	src/util/timer.cpp src/rays.h src/ttable.h src/ttable.cpp
 	src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
 	src/perft.cpp src/thread.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
-	src/opts.cpp src/position/boards.h src/3rdparty/pyrrhic/stdendian.h src/3rdparty/pyrrhic/tbconfig.h
-	src/3rdparty/pyrrhic/tbprobe.h src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.h src/datagen/datagen.cpp
+	src/opts.cpp src/position/boards.h 3rdparty/pyrrhic/stdendian.h 3rdparty/pyrrhic/tbconfig.h
+	3rdparty/pyrrhic/tbprobe.h 3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.h src/datagen/datagen.cpp
 	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h
 	src/cuckoo.h src/cuckoo.cpp src/eval/nnue/network.h src/eval/nnue/activation.h src/eval/nnue/output.h
 	src/eval/nnue/input.h src/util/memstream.h src/util/aligned_array.h src/eval/nnue/loader.h src/eval/nnue/features/psq.h
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
 	src/util/multi_array.h src/correction.h src/util/simd/avx512.h src/util/simd/avx2.h
-	src/util/simd/neon.h src/util/align.h src/3rdparty/zstd/zstddeclib.c
+	src/util/simd/neon.h src/util/align.h 3rdparty/zstd/zstddeclib.c
 	src/eval/nnue/loader.cpp src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
 	src/eval/nnue/arch/singlelayer.h src/eval/nnue/arch/multilayer.h src/stats.h src/stats.cpp
-	src/3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h src/thread.cpp src/root_move.h src/pv.h src/limit.h
+	3rdparty/fmt/src/format.cc src/eval/nnue/arch/util/sparse.h src/thread.cpp src/root_move.h src/pv.h src/limit.h
 	src/limit.cpp src/util/numa/numa.h src/util/numa/numa_libnuma.cpp src/util/numa/numa_fallback.cpp
 	src/eval/nnue/features/threats.h src/eval/nnue/features/threats.cpp src/attacks/bmi2/data.h
 	src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp src/attacks/black_magic/data.h
 	src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp
 	src/eval/header.h)
 
-target_include_directories(stormphrax-native PUBLIC src/3rdparty/fmt/include)
+target_include_directories(stormphrax-native PUBLIC 3rdparty/fmt/include)
 target_compile_options(stormphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)
 target_link_options(stormphrax-native PUBLIC -fuse-ld=lld)
 target_link_libraries(stormphrax-native PUBLIC Threads::Threads)
@@ -86,8 +86,8 @@ if(SP_DISABLE_NEON_DOTPROD)
 	target_compile_definitions(stormphrax-native PUBLIC SP_DISABLE_NEON_DOTPROD)
 endif()
 
-add_executable(permute-native preprocess/permute.cpp src/3rdparty/fmt/src/format.cc)
-target_include_directories(permute-native PUBLIC src/3rdparty/fmt/include)
+add_executable(permute-native preprocess/permute.cpp 3rdparty/fmt/src/format.cc)
+target_include_directories(permute-native PUBLIC 3rdparty/fmt/include)
 target_compile_definitions(permute-native PUBLIC SP_NATIVE)
 target_compile_options(permute-native PUBLIC -march=native)
 

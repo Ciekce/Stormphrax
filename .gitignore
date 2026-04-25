@@ -1,5 +1,6 @@
 /cmake-*/
 /build/
+/build-*/
 /tmp/
 /.idea/
 /*.exe

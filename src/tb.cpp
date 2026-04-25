@@ -18,7 +18,7 @@
 
 #include "tb.h"
 
-#include "3rdparty/pyrrhic/tbprobe.h"
+#include "../3rdparty/pyrrhic/tbprobe.h"
 #include "move.h"
 
 namespace stormphrax::tb {

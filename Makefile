@@ -1,121 +1,44 @@
 ifeq ($(OS), Windows_NT)
-    DETECTED_OS := Windows
+    override DETECTED_OS := Windows
 else
-    DETECTED_OS := $(shell uname -s)
+    override DETECTED_OS := $(shell uname -s)
 endif
 
+export DETECTED_OS
+
 ifeq ($(DETECTED_OS),Darwin)
-VERSION := $(shell cat version.txt)
-DEFAULT_NET := $(shell cat network.txt)
+    override VERSION := $(shell cat version.txt)
+    override DEFAULT_NET := $(shell cat network.txt)
 else
-VERSION := $(file < version.txt)
-DEFAULT_NET := $(file < network.txt)
+    override VERSION := $(file < version.txt)
+    override DEFAULT_NET := $(file < network.txt)
 endif
+
+export VERSION
 
 ifndef EXE
     EXE = stormphrax-$(VERSION)
-    NO_EXE_SET = true
+    override NO_EXE_SET = true
+    export NO_EXE_SET
 endif
+
+export EXE
 
 ifndef EVALFILE
     EVALFILE = $(DEFAULT_NET).nnue
-    NO_EVALFILE_SET = true
+    override NO_EVALFILE_SET = true
 endif
 
-COMMIT_HASH = off
-DISABLE_NEON_DOTPROD = off
-USE_LIBNUMA = off
-
-SOURCES_COMMON := src/3rdparty/fmt/src/format.cc src/main.cpp src/core.cpp src/uci.cpp src/util/split.cpp src/move.cpp src/position/position.cpp src/movegen.cpp src/search.cpp src/util/timer.cpp src/ttable.cpp src/eval/nnue.cpp src/perft.cpp src/bench.cpp src/tunable.cpp src/opts.cpp src/3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.cpp src/wdl.cpp src/cuckoo.cpp src/datagen/marlinformat.cpp src/datagen/viriformat.cpp src/datagen/fen.cpp src/tb.cpp src/3rdparty/zstd/zstddeclib.c src/eval/nnue/loader.cpp src/util/ctrlc.cpp src/stats.cpp src/thread.cpp src/limit.cpp src/util/numa/numa_fallback.cpp src/util/numa/numa_libnuma.cpp src/eval/nnue/features/threats.cpp
-SOURCES_BMI2 := src/attacks/bmi2/attacks.cpp
-SOURCES_BLACK_MAGIC := src/attacks/black_magic/attacks.cpp
-SOURCES_PERMUTE := preprocess/permute.cpp src/3rdparty/fmt/src/format.cc
-
-SUFFIX :=
-
-CXX := clang++
-
-# disable -Wunused-function and -Wunused-const-variable for zstd
-CXXFLAGS := -Isrc/3rdparty/fmt/include -std=c++20 -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -fconstexpr-steps=2097152 -DSP_VERSION=$(VERSION)
-
-CXXFLAGS_RELEASE := -O3 -DNDEBUG
-CXXFLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
-
-CXXFLAGS_NATIVE := -DSP_NATIVE -march=native
-CXXFLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
-CXXFLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
-CXXFLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
-CXXFLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
-CXXFLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
-
-LDFLAGS :=
-
-COMPILER_VERSION := $(shell $(CXX) --version)
-
-ifeq (, $(findstring clang,$(COMPILER_VERSION)))
-    ifeq (, $(findstring gcc,$(COMPILER_VERSION)))
-        ifeq (, $(findstring g++,$(COMPILER_VERSION)))
-            $(error Only Clang and GCC supported)
-        endif
-    endif
-endif
+export EVALFILE
 
 ifeq ($(DETECTED_OS), Windows)
-    SUFFIX := .exe
-    # for fathom
-    CXXFLAGS += -D_CRT_SECURE_NO_WARNINGS
-    RMDIR := rmdir /s /q
+    override RMDIR := rmdir /s /q
 else
-    SUFFIX :=
-    LDFLAGS += -pthread
-    # don't ask
-    ifdef IS_COSMO
-        CXXFLAGS += -stdlib=libc++
-    endif
-    RMDIR := rm -rf
+    override RMDIR := rm -rf
 endif
 
-ifneq (, $(findstring clang,$(COMPILER_VERSION)))
-    ifneq ($(DETECTED_OS),Darwin)
-        LDFLAGS += -fuse-ld=lld
-    endif
-endif
-
-ARCH_DEFINES := $(shell echo | $(CXX) -march=native -E -dM -)
-
-ifneq ($(findstring __BMI2__, $(ARCH_DEFINES)),)
-    ifeq ($(findstring __znver1, $(ARCH_DEFINES)),)
-        ifeq ($(findstring __znver2, $(ARCH_DEFINES)),)
-            ifeq ($(findstring __bdver, $(ARCH_DEFINES)),)
-                CXXFLAGS_NATIVE += -DSP_FAST_PEXT
-            endif
-        endif
-    endif
-endif
-
-ifneq ($(findstring __ARM_ARCH, $(ARCH_DEFINES)),)
-    ifeq ($(DISABLE_NEON_DOTPROD),on)
-        CXXFLAGS_NATIVE += -DSP_DISABLE_NEON_DOTPROD
-    endif
-endif
-
-ifeq ($(COMMIT_HASH),on)
-    CXXFLAGS += -DSP_COMMIT_HASH=$(shell git log -1 --pretty=format:%h)
-endif
-
-ifeq ($(USE_LIBNUMA),on)
-	CXXFLAGS += -DSP_USE_LIBNUMA
-	LDFLAGS += -lnuma
-endif
-
-define build
-    $(CXX) $(CXXFLAGS) $(CXXFLAGS_$1) $(CXXFLAGS_$2) -DSP_NETWORK_FILE=\"$<\" $(LDFLAGS) -o $(EXE)$(if $(NO_EXE_SET),-$3)$(SUFFIX) $(filter-out $<,$^)
-endef
-
-release: avx512 avx2-bmi2 zen2
-all: native release
-
-.PHONY: all
+releases: avx512 avx2-bmi2 zen2
+all: native releases
 
 .DEFAULT_GOAL := native
 
@@ -127,73 +50,41 @@ $(EVALFILE):
 download-net: $(EVALFILE)
 endif
 
-tmp:
-	mkdir tmp
+.PHONY: native
+native: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-EVALFILE_NAME := $(notdir $(EVALFILE))
+.PHONY: tunable
+tunable: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-# ========================================== native ==========================================
+.PHONY: sanitizer
+sanitizer: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-tmp/permute-native: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_NATIVE) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o tmp/permute-native $(filter-out $<,$^)
+.PHONY: avx512
+avx512: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-tmp/$(EVALFILE_NAME)_permuted_native: $(EVALFILE) tmp/permute-native
-	tmp/permute-native $< $@
+.PHONY: avx2-bmi2
+avx2-bmi2: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-$(EXE): tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,RELEASE,NATIVE,native)
+.PHONY: zen2
+zen2: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-native: $(EXE)
+.PHONY: armv8-4
+armv8-4: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
-tunable: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,RELEASE,TUNABLE,tunable)
+.PHONY: bench
+bench: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=native bench IS_CALLED_FROM_MAKEFILE=yea
 
-sanitizer: tmp/$(EVALFILE_NAME)_permuted_native $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC) $(SOURCES_BMI2)
-	$(call build,SANITIZER,NATIVE,native)
-
-# ========================================== avx512 ==========================================
-
-tmp/permute-avx512: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX512) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
-
-tmp/$(EVALFILE_NAME)_permuted_avx512: $(EVALFILE) tmp/permute-avx512
-	tmp/permute-avx512 $< $@
-
-avx512: tmp/$(EVALFILE_NAME)_permuted_avx512 $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,RELEASE,AVX512,avx512)
-
-# ========================================== avx2-bmi2 ==========================================
-
-tmp/permute-avx2-bmi2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_AVX2_BMI2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
-
-tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2: $(EVALFILE) tmp/permute-avx2-bmi2
-	tmp/permute-avx2-bmi2 $< $@
-
-avx2-bmi2: tmp/$(EVALFILE_NAME)_permuted_avx2_bmi2 $(SOURCES_COMMON) $(SOURCES_BMI2)
-	$(call build,RELEASE,AVX2_BMI2,avx2-bmi2)
-
-# ========================================== zen2 ==========================================
-
-tmp/permute-zen2: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ZEN2) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
-
-tmp/$(EVALFILE_NAME)_permuted_zen2: $(EVALFILE) tmp/permute-zen2
-	tmp/permute-zen2 $< $@
-
-zen2: tmp/$(EVALFILE_NAME)_permuted_zen2 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,RELEASE,ZEN2,zen2)
-
-# ========================================== armv8_4 ==========================================
-
-tmp/permute-armv8-4: tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(CXXFLAGS_ARMV8_4) $(CXXFLAGS_RELEASE) $(LDFLAGS) -o $@ $(SOURCES_PERMUTE)
-
-tmp/$(EVALFILE_NAME)_permuted_armv8_4: $(EVALFILE) tmp/permute-armv8-4
-	tmp/permute-armv8-4 $< $@
-
-armv8_4: tmp/$(EVALFILE_NAME)_permuted_armv8_4 $(SOURCES_COMMON) $(SOURCES_BLACK_MAGIC)
-	$(call build,RELEASE,ARMV8_4,armv8_4)
+.PHONY: format
+format: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=native format IS_CALLED_FROM_MAKEFILE=yea
 
 clean:
 	$(RMDIR) tmp

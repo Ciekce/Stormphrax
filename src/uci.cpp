@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "3rdparty/pyrrhic/tbprobe.h"
+#include "../3rdparty/pyrrhic/tbprobe.h"
 #include "bench.h"
 #include "eval/eval.h"
 #include "limit.h"

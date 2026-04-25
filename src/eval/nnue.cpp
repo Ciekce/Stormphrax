@@ -24,7 +24,7 @@
 #include <memory>
 #include <string_view>
 
-#include "../3rdparty/zstd/zstd.h"
+#include "../../3rdparty/zstd/zstd.h"
 
 #include "../attacks/attacks.h"
 #include "../util/align.h"
@@ -41,7 +41,7 @@
 #endif
 
 #define INCBIN_PREFIX g_
-#include "../3rdparty/incbin.h"
+#include "../../3rdparty/incbin.h"
 
 #ifdef SP_MSVC
     #pragma pop_macro("_MSC_VER")

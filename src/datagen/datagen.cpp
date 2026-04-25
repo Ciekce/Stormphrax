@@ -28,7 +28,7 @@
 
 #include <fmt/std.h>
 
-#include "../3rdparty/pyrrhic/tbprobe.h"
+#include "../../3rdparty/pyrrhic/tbprobe.h"
 #include "../limit.h"
 #include "../movegen.h"
 #include "../opts.h"

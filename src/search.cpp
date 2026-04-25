@@ -22,7 +22,7 @@
 #include <cmath>
 #include <tuple>
 
-#include "3rdparty/pyrrhic/tbprobe.h"
+#include "../3rdparty/pyrrhic/tbprobe.h"
 #include "opts.h"
 #include "see.h"
 #include "stats.h"

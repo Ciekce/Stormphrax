@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include "../../core.h"
-#include "../../util/bits.h"
-#include "../../attacks/attacks.h"
-#include "../../search.h"
+#include "../../src/core.h"
+#include "../../src/util/bits.h"
+#include "../../src/attacks/attacks.h"
+#include "../../src/search.h"
 
 namespace stormphrax::util::detail {
     constexpr i32 popLsb(u64* x) {
