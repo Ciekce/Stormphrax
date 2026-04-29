@@ -38,28 +38,28 @@ namespace stormphrax::eval {
 
     constexpr u32 kFtScaleBits = 7;
 
-    constexpr u32 kL1Size = 640;
-    constexpr u32 kL2Size = 32;
+    constexpr u32 kL1Size = 384;
+    constexpr u32 kL2Size = 16;
     constexpr u32 kL3Size = 32;
 
     using L1Activation = nnue::activation::ClippedReLU;
 
-    constexpr bool kDualActivation = true;
+    constexpr bool kDualActivation = false;
 
     constexpr i32 kScale = 400;
 
     // visually flipped upside down, a1 = 0
-    using PsqFeatureSet = nnue::features::psq::KingBucketsMergedMirrored<
+    using PsqFeatureSet = nnue::features::psq::KingBucketsMirrored<
         nnue::features::psq::MirroredKingSide::kAbcd,
         // clang-format off
-         0,  1,  2,  3,
-         4,  5,  6,  7,
-         8,  9, 10, 11,
-         8,  9, 10, 11,
-        12, 12, 13, 13,
-        12, 12, 13, 13,
-        14, 14, 15, 15,
-        14, 14, 15, 15
+        0, 0, 1, 1,
+        2, 2, 2, 2,
+        3, 3, 3, 3,
+        3, 3, 3, 3,
+        3, 3, 3, 3,
+        3, 3, 3, 3,
+        3, 3, 3, 3,
+        3, 3, 3, 3
         // clang-format on
         >;
 
