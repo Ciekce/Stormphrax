@@ -135,12 +135,14 @@ namespace stormphrax {
             base += getConthist(continuations, ply, moving, move, 1) * contBaseCont1Weight();
             base += getConthist(continuations, ply, moving, move, 2) * contBaseCont2Weight();
             base += getConthist(continuations, ply, moving, move, 4) * contBaseCont4Weight();
+            base += getConthist(continuations, ply, moving, move, 6) * contBaseCont6Weight();
 
             base /= 1024;
 
             updateConthist(continuations, ply, moving, move, base, bonus * cont1UpdateWeight() / 1024, 1);
             updateConthist(continuations, ply, moving, move, base, bonus * cont2UpdateWeight() / 1024, 2);
             updateConthist(continuations, ply, moving, move, base, bonus * cont4UpdateWeight() / 1024, 4);
+            updateConthist(continuations, ply, moving, move, base, bonus * cont6UpdateWeight() / 1024, 6);
         }
 
         inline void updateQuietScore(

@@ -650,6 +650,9 @@ namespace stormphrax::search {
         const auto ttMove =
             (kRootNode && thread.search.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
+        curr.ttMove = ttMove;
+        curr.moveCount = 0;
+
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
         const auto pieceCount = bbs.occupancy().popcount();
@@ -919,7 +922,7 @@ namespace stormphrax::search {
         auto generator =
             MoveGenerator::main(pos, moveStack.movegenData, ttMove, curr.killers, thread.history, thread.conthist, ply);
 
-        u32 legalMoves = 0;
+        i32 legalMoves = 0;
         i32 alphaRaises = 0;
 
         while (const auto move = generator.next()) {
@@ -956,6 +959,7 @@ namespace stormphrax::search {
                     history += getConthist(thread.conthist, ply, moving, move, 1) * searchCont1Weight();
                     history += getConthist(thread.conthist, ply, moving, move, 2) * searchCont2Weight();
                     history += getConthist(thread.conthist, ply, moving, move, 4) * searchCont4Weight();
+                    history += getConthist(thread.conthist, ply, moving, move, 6) * searchCont6Weight();
 
                     return history / 1024;
                 }
@@ -965,7 +969,7 @@ namespace stormphrax::search {
                 const auto lmrDepth = [&] {
                     auto r = baseLmr;
                     r += curr.ttpv * lmrDepthTtpvScale();
-                    return std::max(depth - r / 128, 0);
+                    return std::max(depth - r / 1024, 0);
                 }();
 
                 if (!noisy) {
@@ -1006,7 +1010,7 @@ namespace stormphrax::search {
             const auto prevNodes = thread.search.loadNodes();
 
             thread.search.incNodes();
-            ++legalMoves;
+            curr.moveCount = ++legalMoves;
 
             if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
                 println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
@@ -1031,10 +1035,12 @@ namespace stormphrax::search {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        const auto doubleMargin = doubleExtBaseMargin() + kPvNode * doubleExtPvMargin()
-                                                + ttMoveNoisy * doubleExtNoisyMargin();
+                        const auto corr = complexity.value_or(0);
+                        const auto doubleMargin =
+                            doubleExtBaseMargin() + kPvNode * doubleExtPvMargin() - corr * doubleExtCorrScale() / 8192;
                         const auto tripleMargin = tripleExtBaseMargin() + kPvNode * tripleExtPvMargin()
-                                                + ttMoveNoisy * tripleExtNoisyMargin();
+                                                + ttMoveNoisy * tripleExtNoisyMargin()
+                                                - corr * tripleExtCorrScale() / 8192;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
@@ -1070,25 +1076,40 @@ namespace stormphrax::search {
                 auto newDepth = depth + extension - 1;
 
                 if (depth >= 2 && legalMoves >= 2 + kRootNode) {
-                    auto r = baseLmr;
+                    const auto lmrHistory = [&] {
+                        if (noisy) {
+                            return history;
+                        } else {
+                            i32 history = 0;
+
+                            history += thread.history.getButterfly(pos.threats(), move) * lmrButterflyWeight();
+                            history += thread.history.getPieceTo(pos.threats(), moving, move) * lmrPieceToWeight();
+
+                            history += getConthist(thread.conthist, ply, moving, move, 1) * lmrCont1Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 2) * lmrCont2Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 4) * lmrCont4Weight();
+                            history += getConthist(thread.conthist, ply, moving, move, 6) * lmrCont6Weight();
+
+                            return history / 1024;
+                        }
+                    }();
+
+                    auto r = baseLmr + lmrOffset();
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= history * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 32768;
+                    r -= lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 4096;
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-
-                    if (complexity) {
-                        const bool highComplexity = *complexity > lmrHighComplexityThreshold();
-                        r -= lmrHighComplexityReductionScale() * highComplexity;
-                    }
+                    r -= complexity.value_or(0) * lmrComplexityScale() / 4096;
+                    r -= legalMoves * lmrMoveCountReductionScale();
 
                     // can't use std::clamp because newDepth can be <0
-                    const auto reduced = std::min(std::max(newDepth - r / 128, 1), newDepth) + kPvNode
+                    const auto reduced = std::min(std::max(newDepth - r / 1024, 1), newDepth) + kPvNode
                                        + (curr.ttpv && r < lmrTtpvExtThreshold());
 
                     curr.reduction = newDepth - reduced;
@@ -1305,9 +1326,26 @@ namespace stormphrax::search {
                     thread.history.updateNoisyScore(prevNoisy, prevCaptured, pos.threats(), noisyPenalty);
                 }
             }
-        } else if (!kRootNode && parent->move && parent->quiet) {
-            const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
-            thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
+        } else if (!kRootNode && parent->move) {
+            if (parent->quiet) {
+                const auto bonus = historyBonus(depth, pcmBonusDepthScale(), pcmBonusOffset(), maxPcmBonus());
+
+                auto weight = pcmBaseWeight();
+
+                weight += std::min(depth * pcmDepthWeight(), pcmDepthMax());
+                weight += (parent->moveCount >= 8) * pcmParentMoveCountWeight();
+                weight += (parent->move == parent->ttMove) * pcmParentTtMoveWeight();
+                weight += (!inCheck && bestScore < curr.staticEval - pcmStaticEvalThreshold()) * pcmStaticEvalWeight();
+                weight += (parent->staticEval != kScoreNone
+                           && bestScore < -parent->staticEval - pcmParentStaticEvalThreshold())
+                        * pcmParentStaticEvalWeight();
+
+                weight = std::max(weight, 0);
+
+                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * weight / 1024);
+            } else {
+                thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
+            }
         }
 
         if (bestScore >= beta && !isDecisive(bestScore) && !isDecisive(beta)) {

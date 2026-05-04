@@ -25,7 +25,7 @@ namespace stormphrax::tunable {
         inline i32 lmrReduction(f64 base, f64 divisor, i32 depth, i32 moves) {
             const auto lnDepth = std::log(static_cast<f64>(depth));
             const auto lnMoves = std::log(static_cast<f64>(moves));
-            return static_cast<i32>(128.0 * (base + lnDepth * lnMoves / divisor));
+            return static_cast<i32>(1024.0 * (base + lnDepth * lnMoves / divisor));
         }
     } // namespace
 

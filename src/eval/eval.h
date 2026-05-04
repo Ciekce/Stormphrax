@@ -46,7 +46,8 @@ namespace stormphrax::eval {
 
         const auto bbs = pos.bbs();
 
-        const auto npMaterial = scalingValueKnight() * bbs.knights().popcount() //
+        const auto npMaterial = scalingValuePawn() * bbs.pawns().popcount()     //
+                              + scalingValueKnight() * bbs.knights().popcount() //
                               + scalingValueBishop() * bbs.bishops().popcount() //
                               + scalingValueRook() * bbs.rooks().popcount()     //
                               + scalingValueQueen() * bbs.queens().popcount();
