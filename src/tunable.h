@@ -187,7 +187,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(movepickCont6Weight, 276, 0, 4096, 100)
 
     SP_TUNABLE_PARAM(directCheckBonus, 10173, 2048, 16384, 716)
-    SP_TUNABLE_PARAM(directCheckSeeThreshold, -6, -300, 0, 60)
+    SP_TUNABLE_PARAM(directCheckSeeThreshold, -6, -300, 100, 60)
 
     SP_TUNABLE_PARAM(maxTtCutoffBonus, 2855, 1024, 4096, 256)
     SP_TUNABLE_PARAM(ttCutoffBonusDepthScale, 269, 128, 512, 32)
@@ -200,14 +200,14 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(hindsightReductionMargin, 201, 100, 400, 15)
 
-    SP_TUNABLE_PARAM(rfpConstantMargin, 2, 0, 100, 5)
+    SP_TUNABLE_PARAM(rfpConstantMargin, 2, -100, 100, 10)
     SP_TUNABLE_PARAM(rfpLinearMargin, 84, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpQuadMargin, 7, 0, 25, 1.2)
     SP_TUNABLE_PARAM(rfpImprovingMargin, 74, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 63, 16, 128, 5)
     SP_TUNABLE_PARAM(rfpFailFirmT, 700, 0, 1024, 51)
 
-    SP_TUNABLE_PARAM(razoringMargin, 345, 100, 350, 40)
+    SP_TUNABLE_PARAM(razoringMargin, 345, 100, 700, 40)
 
     SP_TUNABLE_PARAM(nmpBetaBaseMargin, 204, 100, 400, 15)
     SP_TUNABLE_PARAM(nmpBetaMarginDepthScale, 1275, 128, 2560, 32)
@@ -226,7 +226,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrDepthTtpvScale, 718, 384, 1536, 64)
 
     SP_TUNABLE_PARAM(fpMargin, 274, 120, 400, 20)
-    SP_TUNABLE_PARAM(fpScale, 68, 40, 120, 4)
+    SP_TUNABLE_PARAM(fpScale, 68, 30, 120, 4)
     SP_TUNABLE_PARAM(fpHistoryDivisor, 101, 32, 384, 18)
 
     SP_TUNABLE_PARAM(quietHistPruningMargin, -2238, -4000, -1000, 175)
