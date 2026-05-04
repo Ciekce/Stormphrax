@@ -40,6 +40,7 @@ namespace stormphrax {
     public:
         inline void clear() {
             std::memset(&m_tables, 0, sizeof(m_tables));
+            std::memset(&m_cont, 0, sizeof(m_cont));
         }
 
         inline void update(
@@ -55,7 +56,7 @@ namespace stormphrax {
 
             const auto updateCont = [&](const u64 offset) {
                 if (keyHistory.size() >= offset) {
-                    tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+                    m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
                 }
             };
 
@@ -76,7 +77,7 @@ namespace stormphrax {
 
             const auto contAdjustment = [&](const u64 offset, i32 weight) {
                 if (keyHistory.size() >= offset) {
-                    return weight * tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                    return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
                 } else {
                     return 0;
                 }
@@ -127,9 +128,9 @@ namespace stormphrax {
             std::array<Entry, kEntries> blackNonPawn{};
             std::array<Entry, kEntries> whiteNonPawn{};
             std::array<Entry, kEntries> major{};
-            std::array<Entry, kEntries> cont{};
         };
 
         std::array<SidedTables, Colors::kCount> m_tables{};
+        std::array<Entry, kEntries> m_cont{};
     };
 } // namespace stormphrax
