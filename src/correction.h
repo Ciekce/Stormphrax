@@ -56,7 +56,7 @@ namespace stormphrax {
 
             const auto updateCont = [&](const u64 offset) {
                 if (keyHistory.size() >= offset) {
-                    m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+                    m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
                 }
             };
 
@@ -77,7 +77,7 @@ namespace stormphrax {
 
             const auto contAdjustment = [&](const u64 offset, i32 weight) {
                 if (keyHistory.size() >= offset) {
-                    return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                    return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
                 } else {
                     return 0;
                 }
@@ -105,6 +105,7 @@ namespace stormphrax {
 
     private:
         static constexpr usize kEntries = 16384;
+        static constexpr usize kContEntries = 32768;
 
         static constexpr i32 kLimit = 1024;
         static constexpr i32 kMaxBonus = kLimit / 4;
@@ -131,6 +132,6 @@ namespace stormphrax {
         };
 
         std::array<SidedTables, Colors::kCount> m_tables{};
-        std::array<Entry, kEntries> m_cont{};
+        std::array<Entry, kContEntries> m_cont{};
     };
 } // namespace stormphrax
