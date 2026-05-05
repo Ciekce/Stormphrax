@@ -154,6 +154,8 @@ namespace stormphrax {
             newPos.calcCheckersAndPins();
             newPos.calcThreats();
 
+            newPos.calcCheckZones();
+
             return newPos;
         }
 
