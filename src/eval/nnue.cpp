@@ -60,6 +60,8 @@ namespace stormphrax::eval {
                 "perspective",
                 "perspective_multilayer",
                 "perspective_multilayer_dual_act",
+                "perspective_multilayer_skip_l2",
+                "perspective_multilayer_dual_act_skip_l2",
             };
 
             if (arch < kNetworkArchNames.size()) {

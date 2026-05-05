@@ -45,10 +45,11 @@ namespace stormphrax::eval::nnue::arch {
         u32 kFtQBits,
         u32 kL1QBits,
         bool kDualActivation,
+        bool kSkipL2,
         output::OutputBucketing OutputBucketing,
         i32 kScale>
     struct PairwiseMultilayerCReLUSCReLUCReLU {
-        static constexpr u32 kArchId = kDualActivation ? 3 : 2;
+        static constexpr u32 kArchId = 2 + kDualActivation + 2 * kSkipL2;
 
         static_assert(kL2Size % 16 == 0);
         static_assert(kL3Size % 16 == 0);
@@ -63,6 +64,8 @@ namespace stormphrax::eval::nnue::arch {
         static constexpr auto kI8ChunkSizeI32 = sizeof(i32) / sizeof(u8);
 
         static constexpr u32 kL2SizeFull = kL2Size * (1 + kDualActivation);
+
+        static_assert(!kSkipL2 || kL2SizeFull == kL3Size);
 
         static constexpr auto kOutputBucketCount = OutputBucketing::kBucketCount;
 
@@ -322,7 +325,12 @@ namespace stormphrax::eval::nnue::arch {
             }
         }
 
-        inline void propagateL3(u32 bucket, std::span<const i32, kL3Size> inputs, std::span<i32, 1> outputs) const {
+        inline void propagateL3(
+            u32 bucket,
+            [[maybe_unused]] std::span<const i32, kL2SizeFull> skippedL1Out,
+            std::span<const i32, kL3Size> inputs,
+            std::span<i32, 1> outputs
+        ) const {
             using namespace util::simd;
 
             const auto weightOffset = bucket * kL3Size;
@@ -348,6 +356,17 @@ namespace stormphrax::eval::nnue::arch {
 
                     i_0 = clamp<i32>(i_0, zero<i32>(), one);
                     i_1 = clamp<i32>(i_1, zero<i32>(), one);
+
+                    if constexpr (kSkipL2) {
+                        const auto s_0 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 0]);
+                        const auto s_1 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 1]);
+
+                        s_0 = shiftLeft<i32>(s_0, kQuantBits);
+                        s_1 = shiftLeft<i32>(s_1, kQuantBits);
+
+                        i_0 = add<i32>(i_0, s_0);
+                        i_1 = add<i32>(i_1, s_1);
+                    }
 
                     i_0 = mulLo<i32>(i_0, w_0);
                     i_1 = mulLo<i32>(i_1, w_1);
@@ -380,6 +399,23 @@ namespace stormphrax::eval::nnue::arch {
                     i_1 = clamp<i32>(i_1, zero<i32>(), one);
                     i_2 = clamp<i32>(i_2, zero<i32>(), one);
                     i_3 = clamp<i32>(i_3, zero<i32>(), one);
+
+                    if constexpr (kSkipL2) {
+                        auto s_0 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 0]);
+                        auto s_1 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 1]);
+                        auto s_2 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 2]);
+                        auto s_3 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 3]);
+
+                        s_0 = shiftLeft<i32>(s_0, kQuantBits);
+                        s_1 = shiftLeft<i32>(s_1, kQuantBits);
+                        s_2 = shiftLeft<i32>(s_2, kQuantBits);
+                        s_3 = shiftLeft<i32>(s_3, kQuantBits);
+
+                        i_0 = add<i32>(i_0, s_0);
+                        i_1 = add<i32>(i_1, s_1);
+                        i_2 = add<i32>(i_2, s_2);
+                        i_3 = add<i32>(i_3, s_3);
+                    }
 
                     i_0 = mulLo<i32>(i_0, w_0);
                     i_1 = mulLo<i32>(i_1, w_1);
@@ -430,7 +466,7 @@ namespace stormphrax::eval::nnue::arch {
             activateFt(stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, ftOut, sparseCtx);
             propagateL1(bucket, ftOut, l1Out, sparseCtx);
             propagateL2(bucket, l1Out, l2Out);
-            propagateL3(bucket, l2Out, l3Out);
+            propagateL3(bucket, l1Out, l2Out, l3Out);
 
 #if SP_SPARSE_BENCH_L1_SIZE > 0
             sparse::trackActivations(ftOut);
