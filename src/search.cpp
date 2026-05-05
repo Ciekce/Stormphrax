@@ -1036,11 +1036,15 @@ namespace stormphrax::search {
 
                     if (score < sBeta) {
                         const auto corr = complexity.value_or(0);
-                        const auto doubleMargin = doubleExtBaseMargin() + kPvNode * doubleExtPvMargin()
-                                                + 50 * (kPvNode && !ttEntry.wasPv) - corr * doubleExtCorrScale() / 8192;
-                        const auto tripleMargin =
-                            tripleExtBaseMargin() + kPvNode * tripleExtPvMargin() + 50 * (kPvNode && !ttEntry.wasPv)
-                            + ttMoveNoisy * tripleExtNoisyMargin() - corr * tripleExtCorrScale() / 8192;
+                        const auto doubleMargin = doubleExtBaseMargin()                                //
+                                                + kPvNode * doubleExtPvMargin()                        //
+                                                + (kPvNode && !ttEntry.wasPv) * doubleExtNewPvMargin() //
+                                                - corr * doubleExtCorrScale() / 8192;
+                        const auto tripleMargin = tripleExtBaseMargin()                                //
+                                                + kPvNode * tripleExtPvMargin()                        //
+                                                + (kPvNode && !ttEntry.wasPv) * tripleExtNewPvMargin() //
+                                                + ttMoveNoisy * tripleExtNoisyMargin()                 //
+                                                - corr * tripleExtCorrScale() / 8192;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
