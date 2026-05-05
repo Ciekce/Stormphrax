@@ -60,6 +60,8 @@ namespace stormphrax::eval {
                 "perspective",
                 "perspective_multilayer",
                 "perspective_multilayer_dual_act",
+                "perspective_multilayer_skip_l2",
+                "perspective_multilayer_dual_act_skip_l2",
             };
 
             if (arch < kNetworkArchNames.size()) {
@@ -341,7 +343,7 @@ namespace stormphrax::eval {
 
         for (const auto from : occ & ~boards.bbs().kings()) {
             const auto piece = boards.pieceOn(from);
-            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
+            for (const auto to : occ& attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
                 const auto attacked = boards.pieceOn(to);
                 const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
                 if (feature < nnue::features::threats::kTotalThreatFeatures) {
