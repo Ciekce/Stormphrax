@@ -343,7 +343,7 @@ namespace stormphrax::eval {
 
         for (const auto from : occ & ~boards.bbs().kings()) {
             const auto piece = boards.pieceOn(from);
-            for (const auto to : occ& attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
+            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
                 const auto attacked = boards.pieceOn(to);
                 const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
                 if (feature < nnue::features::threats::kTotalThreatFeatures) {
