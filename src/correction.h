@@ -40,6 +40,7 @@ namespace stormphrax {
     public:
         inline void clear() {
             std::memset(&m_tables, 0, sizeof(m_tables));
+            std::memset(&m_cont, 0, sizeof(m_cont));
         }
 
         inline void update(
@@ -55,7 +56,7 @@ namespace stormphrax {
 
             const auto updateCont = [&](const u64 offset) {
                 if (keyHistory.size() >= offset) {
-                    tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+                    m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
                 }
             };
 
@@ -76,21 +77,17 @@ namespace stormphrax {
 
             const auto contAdjustment = [&](const u64 offset, i32 weight) {
                 if (keyHistory.size() >= offset) {
-                    return weight * tables.cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                    return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
                 } else {
                     return 0;
                 }
             };
 
-            const auto [blackNpWeight, whiteNpWeight] =
-                pos.stm() == Colors::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                            : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
-
             i32 correction{};
 
             correction += pawnCorrhistWeight() * tables.pawn[pos.pawnKey() % kEntries];
-            correction += blackNpWeight * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
-            correction += whiteNpWeight * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
+            correction += nonPawnCorrhistWeight() * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
+            correction += nonPawnCorrhistWeight() * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
             correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
 
             correction += contAdjustment(1, contCorrhist1Weight());
@@ -104,6 +101,7 @@ namespace stormphrax {
 
     private:
         static constexpr usize kEntries = 16384;
+        static constexpr usize kContEntries = 32768;
 
         static constexpr i32 kLimit = 1024;
         static constexpr i32 kMaxBonus = kLimit / 4;
@@ -127,9 +125,9 @@ namespace stormphrax {
             std::array<Entry, kEntries> blackNonPawn{};
             std::array<Entry, kEntries> whiteNonPawn{};
             std::array<Entry, kEntries> major{};
-            std::array<Entry, kEntries> cont{};
         };
 
         std::array<SidedTables, Colors::kCount> m_tables{};
+        std::array<Entry, kContEntries> m_cont{};
     };
 } // namespace stormphrax
