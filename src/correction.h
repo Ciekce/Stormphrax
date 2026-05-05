@@ -83,15 +83,11 @@ namespace stormphrax {
                 }
             };
 
-            const auto [blackNpWeight, whiteNpWeight] =
-                pos.stm() == Colors::kBlack ? std::pair{stmNonPawnCorrhistWeight(), nstmNonPawnCorrhistWeight()}
-                                            : std::pair{nstmNonPawnCorrhistWeight(), stmNonPawnCorrhistWeight()};
-
             i32 correction{};
 
             correction += pawnCorrhistWeight() * tables.pawn[pos.pawnKey() % kEntries];
-            correction += blackNpWeight * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
-            correction += whiteNpWeight * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
+            correction += nonPawnCorrhistWeight() * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
+            correction += nonPawnCorrhistWeight() * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
             correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
 
             correction += contAdjustment(1, contCorrhist1Weight());

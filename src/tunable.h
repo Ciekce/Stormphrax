@@ -166,8 +166,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(optimismScale, 141, 75, 300, 12)
 
     SP_TUNABLE_PARAM(pawnCorrhistWeight, 177, 32, 384, 18)
-    SP_TUNABLE_PARAM(stmNonPawnCorrhistWeight, 168, 32, 384, 18)
-    SP_TUNABLE_PARAM(nstmNonPawnCorrhistWeight, 172, 32, 384, 18)
+    SP_TUNABLE_PARAM(nonPawnCorrhistWeight, 172, 32, 384, 18)
     SP_TUNABLE_PARAM(majorCorrhistWeight, 130, 32, 384, 18)
 
     SP_TUNABLE_PARAM(contCorrhist1Weight, 152, 32, 384, 18)
