@@ -1048,10 +1048,10 @@ namespace stormphrax::search {
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
+                    } else if (ttEntry.score >= beta) {
+                        extension = -3;
                     } else if (cutnode) {
                         extension = -2;
-                    } else if (ttEntry.score >= beta) {
-                        extension = -1;
                     }
                 } else if (
                     depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
