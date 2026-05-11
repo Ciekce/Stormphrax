@@ -20,10 +20,9 @@
 
 #include "../../../types.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
-#include <istream>
-#include <ostream>
 #include <span>
 
 #include "../../../util/multi_array.h"

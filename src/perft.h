@@ -20,7 +20,6 @@
 
 #include "types.h"
 
-#include "core.h"
 #include "position/position.h"
 
 namespace stormphrax {

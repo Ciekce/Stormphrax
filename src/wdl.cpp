@@ -19,7 +19,9 @@
 #include "wdl.h"
 
 #include <array>
+#include <cmath>
 #include <numeric>
+#include <utility>
 
 #include "opts.h"
 

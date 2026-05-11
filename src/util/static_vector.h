@@ -20,7 +20,6 @@
 
 #include "../types.h"
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 
@@ -30,7 +29,7 @@ namespace stormphrax {
     public:
         StaticVector() = default;
 
-        StaticVector(const StaticVector<T, kCapacity>& other) {
+        StaticVector(const StaticVector& other) {
             *this = other;
         }
 
@@ -96,11 +95,7 @@ namespace stormphrax {
             m_size = size;
         }
 
-        inline StaticVector<T, kCapacity>& operator=(const StaticVector<T, kCapacity>& other) {
-            std::copy(other.begin(), other.end(), begin());
-            m_size = other.m_size;
-            return *this;
-        }
+        StaticVector& operator=(const StaticVector& other) = default;
 
         template <typename F>
         inline void unsafeWrite(F f) {

@@ -20,7 +20,6 @@
 
 #include "types.h"
 
-#include <cmath>
 #include <utility>
 
 #include "core.h"

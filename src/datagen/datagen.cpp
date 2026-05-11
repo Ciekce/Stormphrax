@@ -140,7 +140,7 @@ namespace stormphrax::datagen {
                     const auto dfrcIndex = rng.nextU32(960 * 960);
                     pos = *Position::fromDfrcIndex(dfrcIndex);
                 } else {
-                    pos = Position::starting();
+                    pos = Position::startpos();
                 }
 
                 const auto moveCount = 8 + (rng.nextU32() >> 31);

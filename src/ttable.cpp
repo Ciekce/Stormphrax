@@ -18,14 +18,15 @@
 
 #include "ttable.h"
 
-#include <bit>
 #include <cstring>
 #include <thread>
+#include <vector>
 
 #ifndef _WIN32
     #include <sys/mman.h>
 #endif
 
+#include "opts.h"
 #include "util/align.h"
 #include "util/cemath.h"
 

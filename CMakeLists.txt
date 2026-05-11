@@ -66,7 +66,7 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp 
 	src/eval/nnue/features/threats.h src/eval/nnue/features/threats.cpp src/attacks/bmi2/data.h
 	src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp src/attacks/black_magic/data.h
 	src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp
-	src/eval/header.h)
+	src/eval/header.h src/correction.cpp src/movepick.cpp src/pv.cpp src/see.cpp)
 
 target_include_directories(stormphrax-native PUBLIC 3rdparty/fmt/include)
 target_compile_options(stormphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)

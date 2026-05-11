@@ -27,18 +27,7 @@ namespace stormphrax::search {
         std::array<Move, kMaxDepth> moves{};
         u32 length{};
 
-        inline void update(Move move, const PvList& child) {
-            moves[0] = move;
-            std::copy_n(child.moves.begin(), child.length, moves.begin() + 1);
-
-            length = child.length + 1;
-
-            assert(length == 1 || moves[0] != moves[1]);
-        }
-
-        inline void reset() {
-            moves[0] = kNullMove;
-            length = 0;
-        }
+        void update(Move move, const PvList& child);
+        void reset();
     };
 } // namespace stormphrax::search

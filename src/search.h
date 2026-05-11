@@ -20,16 +20,13 @@
 
 #include "types.h"
 
-#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <string>
-#include <string_view>
+#include <span>
 #include <thread>
 #include <utility>
 #include <vector>

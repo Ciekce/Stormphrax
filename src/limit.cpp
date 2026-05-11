@@ -18,7 +18,10 @@
 
 #include "limit.h"
 
+#include <algorithm>
+
 #include "tunable.h"
+#include "util/cemath.h"
 
 namespace stormphrax::limit {
     namespace {

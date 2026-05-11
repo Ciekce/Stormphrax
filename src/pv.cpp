@@ -16,23 +16,22 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "pv.h"
 
-#include "types.h"
+#include <algorithm>
 
-#include "core.h"
-#include "position/position.h"
-#include "tunable.h"
+namespace stormphrax::search {
+    void PvList::update(Move move, const PvList& child) {
+        moves[0] = move;
+        std::copy_n(child.moves.begin(), child.length, moves.begin() + 1);
 
-namespace stormphrax::see {
-    [[nodiscard]] constexpr i32 value(Piece piece) {
-        return tunable::g_seeValues[piece.idx()];
+        length = child.length + 1;
+
+        assert(length == 1 || moves[0] != moves[1]);
     }
 
-    [[nodiscard]] constexpr i32 value(PieceType pt) {
-        return tunable::g_seeValues[pt.idx() * 2];
+    void PvList::reset() {
+        moves[0] = kNullMove;
+        length = 0;
     }
-
-    [[nodiscard]] i32 gain(const PositionBoards& boards, Move move);
-    [[nodiscard]] bool see(const Position& pos, Move move, Score threshold);
-} // namespace stormphrax::see
+} // namespace stormphrax::search

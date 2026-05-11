@@ -18,13 +18,9 @@
 
 #include "movegen.h"
 
-#include <algorithm>
-#include <array>
-
 #include "attacks/attacks.h"
 #include "opts.h"
 #include "rays.h"
-#include "util/bitfield.h"
 
 namespace stormphrax {
     namespace {

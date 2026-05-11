@@ -23,11 +23,13 @@ SOURCES_ALL := $(SOURCES) $(SOURCES_3RDPARTY)
 CFLAGS := -std=c11
 CXXFLAGS := -std=c++20 -fconstexpr-steps=2097152
 
-# disable -Wunused-function and -Wunused-const-variable for zstd
-FLAGS := -I3rdparty/fmt/include -flto -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_VERSION=$(VERSION)
+CXXFLAGS_PERMUTE := $(CXXFLAGS) -O1 -DNDEBUG
 
-FLAGS_RELEASE := -O3 -DNDEBUG
-FLAGS_SANITIZER := -O1 -g -fsanitize=address,undefined
+CFLAGS_ENGINE := $(CFLAGS)
+CXXFLAGS_ENGINE := $(CXXFLAGS)
+
+# disable -Wunused-function and -Wunused-const-variable for zstd
+FLAGS := -I3rdparty/fmt/include -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_VERSION=$(VERSION)
 
 FLAGS_NATIVE := -DSP_NATIVE -march=native
 FLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
@@ -35,6 +37,9 @@ FLAGS_AVX512 := -DSP_AVX512 -DSP_FAST_PEXT -march=icelake-client -mtune=znver4
 FLAGS_AVX2_BMI2 := -DSP_AVX2_BMI2 -DSP_FAST_PEXT -march=haswell -mtune=znver3
 FLAGS_ZEN2 := -DSP_ZEN2 -march=bdver4 -mno-tbm -mno-sse4a -mtune=znver2
 FLAGS_ARMV8_4 := -DSP_ARMV8_4 -march=armv8.4-a
+
+ENGINE_FLAGS_RELEASE := -O3 -flto -DNDEBUG
+ENGINE_FLAGS_SANITIZER := -O1 -flto -g -fsanitize=address,undefined
 
 ifdef NO_EXE_SET
     EXE := $(EXE)-$(TYPE)
@@ -94,25 +99,34 @@ endif
 OUTFILE = $(subst .exe,,$(EXE))$(SUFFIX)
 
 ifeq ($(TYPE), native)
-    FLAGS += $(FLAGS_NATIVE) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_NATIVE)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else ifeq ($(TYPE), tunable)
-    FLAGS += $(FLAGS_TUNABLE) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_TUNABLE)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else ifeq ($(TYPE), sanitizer)
-    FLAGS += $(FLAGS_NATIVE) $(FLAGS_SANITIZER)
+    FLAGS += $(FLAGS_NATIVE)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_SANITIZER)
 else ifeq ($(TYPE), avx512)
-    FLAGS += $(FLAGS_AVX512) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_AVX512)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else ifeq ($(TYPE), avx2-bmi2)
-    FLAGS += $(FLAGS_AVX2_BMI2) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_AVX2_BMI2)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else ifeq ($(TYPE), zen2)
-    FLAGS += $(FLAGS_ZEN2) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_ZEN2)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else ifeq ($(TYPE), armv8-4)
-    FLAGS += $(FLAGS_ARMV8_4) $(FLAGS_RELEASE)
+    FLAGS += $(FLAGS_ARMV8_4)
+    ENGINE_FLAGS += $(ENGINE_FLAGS_RELEASE)
 else
     $(error Unknown build type)
 endif
 
-CFLAGS += $(FLAGS)
-CXXFLAGS += $(FLAGS)
+CXXFLAGS_PERMUTE += $(FLAGS) $(PERMUTE_FLAGS)
+
+CFLAGS_ENGINE += $(FLAGS) $(ENGINE_FLAGS)
+CXXFLAGS_ENGINE += $(FLAGS) $(ENGINE_FLAGS)
 
 BUILD_DIR := build-$(TYPE)
 OBJECTS := $(addprefix $(BUILD_DIR)/,$(filter %.o,$(SOURCES_ALL:.c=.o) $(SOURCES_ALL:.cpp=.o) $(SOURCES_ALL:.cc=.o)))
@@ -136,22 +150,22 @@ EVALFILE_NAME := $(notdir $(EVALFILE))
 .SECONDEXPANSION:
 
 tmp/permute-$(TYPE): tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o tmp/permute-$(TYPE) $(filter-out $<,$^)
+	$(CXX) $(CXXFLAGS_PERMUTE) $(LDFLAGS) -o tmp/permute-$(TYPE) $(filter-out $<,$^)
 
 tmp/$(EVALFILE_NAME)_permuted_$(TYPE): $(EVALFILE) tmp/permute-$(TYPE)
 	tmp/permute-$(TYPE) $< $@
 
 $(BUILD_DIR)/%.o: %.c version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CC) $(CFLAGS) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
+	$(CC) $(CFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
 
 $(BUILD_DIR)/%.o: %.cpp version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CXX) $(CXXFLAGS) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
+	$(CXX) $(CXXFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
 
 $(BUILD_DIR)/%.o: %.cc version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CXX) $(CXXFLAGS) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
+	$(CXX) $(CXXFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
 
 $(OUTFILE): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(OUTFILE) $(OBJECTS)
+	$(CXX) $(CXXFLAGS_ENGINE) $(LDFLAGS) -o $(OUTFILE) $(OBJECTS)
 
 bench: $(OUTFILE)
 	./$(OUTFILE) bench

@@ -111,7 +111,7 @@ namespace stormphrax {
             search::Searcher m_searcher{};
 
             std::vector<u64> m_keyHistory{};
-            Position m_pos{Position::starting()};
+            Position m_pos{Position::startpos()};
 
             i32 m_moveOverhead{limit::kDefaultMoveOverheadMs};
         };
@@ -312,7 +312,7 @@ namespace stormphrax {
             usize next = 0;
 
             if (type == "startpos") {
-                m_pos = Position::starting();
+                m_pos = Position::startpos();
                 m_keyHistory.clear();
             } else if (type == "fen") {
                 const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));

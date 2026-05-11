@@ -20,8 +20,6 @@
 
 #include "types.h"
 
-#include <array>
-
 #include "attacks/util.h"
 #include "bitboard.h"
 #include "core.h"

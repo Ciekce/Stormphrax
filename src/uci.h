@@ -23,9 +23,8 @@
 #include <span>
 #include <string_view>
 
-#include "core.h"
-#include "move.h"
 #include "tunable.h"
+#include "util/range.h"
 
 namespace stormphrax::uci {
     constexpr auto kContemptRange = util::Range<i32>{-1000, 1000};

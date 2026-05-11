@@ -20,11 +20,7 @@
 
 #include "types.h"
 
-#include <array>
-#include <cstdint>
-
 #include "core.h"
-#include "opts.h"
 #include "util/static_vector.h"
 
 namespace stormphrax {

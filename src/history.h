@@ -20,9 +20,11 @@
 
 #include "types.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <span>
 #include <utility>
 
 #include "bitboard.h"

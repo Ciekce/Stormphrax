@@ -23,6 +23,7 @@
 #include <optional>
 
 #include "root_move.h"
+#include "util/range.h"
 #include "util/timer.h"
 
 namespace stormphrax::limit {

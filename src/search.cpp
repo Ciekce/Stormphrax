@@ -19,13 +19,11 @@
 #include "search.h"
 
 #include <algorithm>
-#include <cmath>
-#include <tuple>
+#include <unordered_map>
 
 #include "../3rdparty/pyrrhic/tbprobe.h"
 #include "opts.h"
 #include "see.h"
-#include "stats.h"
 #include "uci.h"
 #include "util/numa/numa.h" // iei
 

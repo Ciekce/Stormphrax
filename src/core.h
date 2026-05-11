@@ -20,15 +20,13 @@
 
 #include "types.h"
 
-#include <algorithm>
 #include <array>
 #include <cassert>
-#include <cmath>
-#include <cstring>
-#include <utility>
+#include <cstdlib>
+#include <string_view>
 
-#include "util/bitfield.h"
-#include "util/cemath.h"
+// include here to make globally available
+#include "stats.h"
 
 namespace stormphrax {
     class Color {
