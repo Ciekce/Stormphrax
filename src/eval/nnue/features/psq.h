@@ -322,11 +322,11 @@ namespace stormphrax::eval::nnue::features::psq {
         >;
 
     template <typename FeatureSet>
-    [[nodiscard]] constexpr u32 featureIndex(Color c, Piece piece, Square sq, Square king) {
+    [[nodiscard]] constexpr u32 featureIndex(Color c, Piece piece, Square sq, Square kingSq) {
         assert(c != Colors::kNone);
         assert(piece != Pieces::kNone);
         assert(sq != Squares::kNone);
-        assert(king != Squares::kNone);
+        assert(kingSq != Squares::kNone);
 
         constexpr u32 kColorStride = Squares::kCount * PieceTypes::kCount;
         constexpr u32 kPieceStride = Squares::kCount;
@@ -344,9 +344,9 @@ namespace stormphrax::eval::nnue::features::psq {
             sq = sq.flipRank();
         }
 
-        sq = FeatureSet::transformFeatureSquare(sq, king);
+        sq = FeatureSet::transformFeatureSquare(sq, kingSq);
 
-        const auto bucketOffset = FeatureSet::getBucket(c, king) * FeatureSet::kInputSize;
+        const auto bucketOffset = FeatureSet::getBucket(c, kingSq) * FeatureSet::kInputSize;
         return bucketOffset + color * kColorStride + type * kPieceStride + sq.raw();
     }
 } // namespace stormphrax::eval::nnue::features::psq

@@ -641,7 +641,7 @@ namespace stormphrax {
 
         [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
 
-        [[nodiscard]] inline bool isValid() {
+        [[nodiscard]] inline bool isValid() const {
             return black() != Squares::kNone && white() != Squares::kNone && black() != white();
         }
     };

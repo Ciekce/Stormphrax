@@ -22,7 +22,7 @@
 
 #include <vector>
 
-#include "../position/position.h"
+#include "../position.h"
 #include "../util/u4array.h"
 #include "format.h"
 
@@ -45,14 +45,13 @@ namespace stormphrax::datagen {
                 PackedBoard board{};
 
                 const auto castlingRooks = pos.castlingRooks();
-                const auto& boards = pos.boards();
 
-                const auto occupancy = boards.bbs().occupancy();
-                board.occupancy = occupancy;
+                const auto occ = pos.occ();
+                board.occupancy = occ;
 
                 usize i = 0;
-                for (const auto sq : occupancy) {
-                    const auto piece = boards.pieceOn(sq);
+                for (const auto sq : occ) {
+                    const auto piece = pos.pieceOn(sq);
 
                     auto ptId = piece.type().raw();
 

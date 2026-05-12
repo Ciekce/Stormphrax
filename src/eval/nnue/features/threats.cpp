@@ -134,7 +134,7 @@ namespace stormphrax::eval::nnue::features::threats {
         }();
     } // namespace
 
-    u32 featureIndex(Color c, Square king, Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
+    u32 featureIndex(Color c, Square kingSq, Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
         if (c == Colors::kBlack) {
             attacker = attacker.flipColor();
             attacked = attacked.flipColor();
@@ -143,7 +143,7 @@ namespace stormphrax::eval::nnue::features::threats {
             attackedSq = attackedSq.flipRank();
         }
 
-        if (king.file() >= kFileE) {
+        if (kingSq.file() >= kFileE) {
             attackerSq = attackerSq.flipFile();
             attackedSq = attackedSq.flipFile();
         }

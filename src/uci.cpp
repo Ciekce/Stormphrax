@@ -32,7 +32,7 @@
 #include "movegen.h"
 #include "opts.h"
 #include "perft.h"
-#include "position/position.h"
+#include "position.h"
 #include "search.h"
 #include "tb.h"
 #include "ttable.h"
@@ -960,7 +960,7 @@ namespace stormphrax {
                 return;
             }
 
-            if (m_pos.bbs().occupancy().popcount() > TB_LARGEST) {
+            if (m_pos.occ().popcount() > TB_LARGEST) {
                 eprintln("too many pieces");
                 return;
             }

@@ -26,7 +26,7 @@
 
 #include "../core.h"
 #include "../move.h"
-#include "../position/position.h"
+#include "../position.h"
 #include "common.h"
 
 namespace stormphrax::datagen {

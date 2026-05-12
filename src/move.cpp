@@ -19,7 +19,7 @@
 #include "move.h"
 
 #include "opts.h"
-#include "position/position.h"
+#include "position.h"
 
 fmt::format_context::iterator fmt::formatter<stormphrax::Move>::format(
     stormphrax::Move value,

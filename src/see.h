@@ -21,7 +21,7 @@
 #include "types.h"
 
 #include "core.h"
-#include "position/position.h"
+#include "position.h"
 #include "tunable.h"
 
 namespace stormphrax::see {
@@ -33,6 +33,6 @@ namespace stormphrax::see {
         return tunable::g_seeValues[pt.idx() * 2];
     }
 
-    [[nodiscard]] i32 gain(const PositionBoards& boards, Move move);
+    [[nodiscard]] i32 gain(const Position& pos, Move move);
     [[nodiscard]] bool see(const Position& pos, Move move, Score threshold);
 } // namespace stormphrax::see

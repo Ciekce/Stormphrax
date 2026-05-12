@@ -45,7 +45,7 @@ namespace stormphrax::search {
     std::pair<Position, ThreadPosGuard<true>> ThreadData::applyMove(const Position& pos, i32 ply, Move move) {
         assert(ply <= kMaxDepth);
 
-        const auto moving = pos.boards().pieceOn(move.fromSq());
+        const auto moving = pos.pieceOn(move.fromSq());
 
         stack[ply].move = move;
         stack[ply].moving = moving;

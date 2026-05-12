@@ -236,7 +236,7 @@ namespace stormphrax::search {
         m_minRootScore = -kScoreInf;
         m_maxRootScore = kScoreInf;
 
-        thread.nnueState.reset(thread.rootPos.boards(), thread.rootPos.kings());
+        thread.nnueState.reset(thread.rootPos);
 
         m_runningThreads.store(1);
         m_stop.store(false, std::memory_order::seq_cst);
@@ -285,7 +285,7 @@ namespace stormphrax::search {
         m_rootMoveList.clear();
 
         if (g_opts.syzygyEnabled
-            && pos.bbs().occupancy().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+            && pos.occ().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
         {
             bool success = true;
 
@@ -369,7 +369,7 @@ namespace stormphrax::search {
 
             std::ranges::copy(m_setupInfo.keyHistory, std::back_inserter(thread.keyHistory));
 
-            thread.nnueState.reset(thread.rootPos.boards(), thread.rootPos.kings());
+            thread.nnueState.reset(thread.rootPos);
 
             m_setupBarrier.arriveAndWait();
         }
@@ -557,9 +557,6 @@ namespace stormphrax::search {
             }
         }
 
-        const auto& boards = pos.boards();
-        const auto& bbs = pos.bbs();
-
         const auto draw = drawScore(thread.search.loadNodes());
 
         if constexpr (!kRootNode) {
@@ -604,8 +601,6 @@ namespace stormphrax::search {
                              );
         }
 
-        const auto us = pos.stm();
-
         assert(!kPvNode || !cutnode);
 
         const auto* parent = kRootNode ? nullptr : &thread.stack[ply - 1];
@@ -633,7 +628,7 @@ namespace stormphrax::search {
                         thread.conthist,
                         ply,
                         pos.threats(),
-                        boards.pieceOn(ttEntry.move.fromSq()),
+                        pos.pieceOn(ttEntry.move.fromSq()),
                         ttEntry.move,
                         bonus
                     );
@@ -653,7 +648,7 @@ namespace stormphrax::search {
 
         const bool ttMoveNoisy = ttMove && pos.isNoisy(ttMove);
 
-        const auto pieceCount = bbs.occupancy().popcount();
+        const auto pieceCount = pos.occ().popcount();
 
         auto syzygyMin = -kScoreMate;
         auto syzygyMax = kScoreMate;
@@ -810,7 +805,7 @@ namespace stormphrax::search {
 
             if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
                 && !parent->move.isNull() && !(ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < beta)
-                && !bbs.nonPk(us).empty())
+                && !pos.bbs().nonPk(pos.stm()).empty())
             {
                 m_ttable.prefetch(pos.key() ^ keys::color());
 
@@ -939,7 +934,7 @@ namespace stormphrax::search {
             const bool quietOrLosing = generator.stage() > MovegenStage::kGoodNoisy;
 
             const bool noisy = pos.isNoisy(move);
-            const auto moving = boards.pieceOn(move.fromSq());
+            const auto moving = pos.pieceOn(move.fromSq());
 
             const auto captured = pos.captureTarget(move);
 
@@ -1280,7 +1275,7 @@ namespace stormphrax::search {
                     thread.conthist,
                     ply,
                     pos.threats(),
-                    pos.boards().pieceOn(bestMove.fromSq()),
+                    pos.pieceOn(bestMove.fromSq()),
                     bestMove,
                     quietBonus
                 );
@@ -1293,7 +1288,7 @@ namespace stormphrax::search {
                         thread.conthist,
                         ply,
                         pos.threats(),
-                        pos.boards().pieceOn(prevQuiet.fromSq()),
+                        pos.pieceOn(prevQuiet.fromSq()),
                         prevQuiet,
                         quietPenalty
                     );

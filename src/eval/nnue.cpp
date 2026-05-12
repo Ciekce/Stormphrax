@@ -325,13 +325,7 @@ namespace stormphrax::eval {
         return {header.name.data(), header.nameLen};
     }
 
-    void addThreatFeatures(
-        const Network& network,
-        std::span<i16, kL1Size> acc,
-        Color c,
-        const PositionBoards& boards,
-        Square king
-    ) {
+    void addThreatFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos) {
         const auto activateFeature = [&](u32 feature) {
             const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
             for (i32 i = 0; i < kL1Size; ++i) {
@@ -339,13 +333,16 @@ namespace stormphrax::eval {
             }
         };
 
-        const auto occ = boards.bbs().occupancy();
+        const auto occ = pos.occ();
 
-        for (const auto from : occ & ~boards.bbs().kings()) {
-            const auto piece = boards.pieceOn(from);
-            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~boards.bbs().kings()) {
-                const auto attacked = boards.pieceOn(to);
-                const auto feature = nnue::features::threats::featureIndex(c, king, piece, from, attacked, to);
+        const auto kingSq = pos.king(c);
+        const auto kings = pos.bb(PieceTypes::kKing);
+
+        for (const auto from : occ & ~kings) {
+            const auto piece = pos.pieceOn(from);
+            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~kings) {
+                const auto attacked = pos.pieceOn(to);
+                const auto feature = nnue::features::threats::featureIndex(c, kingSq, piece, from, attacked, to);
                 if (feature < nnue::features::threats::kTotalThreatFeatures) {
                     activateFeature(feature);
                 }
@@ -506,16 +503,16 @@ namespace stormphrax::eval {
 #endif
     } // namespace
 
-    template void updatePieceThreatsOnChange<false>(NnueUpdates&, const PositionBoards&, Piece, Square);
-    template void updatePieceThreatsOnChange<true>(NnueUpdates&, const PositionBoards&, Piece, Square);
+    template void updatePieceThreatsOnChange<false>(NnueUpdates&, const Position&, Piece, Square);
+    template void updatePieceThreatsOnChange<true>(NnueUpdates&, const Position&, Piece, Square);
 
     template <bool kAdd>
-    void updatePieceThreatsOnChange(NnueUpdates& updates, const PositionBoards& boards, Piece piece, Square sq) {
+    void updatePieceThreatsOnChange(NnueUpdates& updates, const Position& pos, Piece piece, Square sq) {
         using namespace nnue::features::threats;
 
         // Generate a list of indexes and ray array for a given focus square sq.
         const auto permutation = geometry::permutationFor(sq);
-        const auto [rays, bits] = geometry::permuteMailbox(permutation, boards.mailbox());
+        const auto [rays, bits] = geometry::permuteMailbox(permutation, pos.mailbox());
 
         // Determine all threats relative to the focus square sq.
         const auto closest = geometry::closestOccupied(bits);
@@ -546,7 +543,7 @@ namespace stormphrax::eval {
 
     void updatePieceThreatsOnMutate(
         NnueUpdates& updates,
-        const PositionBoards& boards,
+        const Position& pos,
         Piece oldPiece,
         Piece newPiece,
         Square sq
@@ -555,7 +552,7 @@ namespace stormphrax::eval {
 
         // Generate a list of indexes and ray array for a given focus square sq.
         const auto permutation = geometry::permutationFor(sq);
-        const auto [rays, bits] = geometry::permuteMailbox(permutation, boards.mailbox());
+        const auto [rays, bits] = geometry::permuteMailbox(permutation, pos.mailbox());
 
         // Determine all threats relative to the focus square sq.
         const auto closest = geometry::closestOccupied(bits);
@@ -572,7 +569,7 @@ namespace stormphrax::eval {
 
     void updatePieceThreatsOnMove(
         NnueUpdates& updates,
-        const PositionBoards& boards,
+        const Position& pos,
         Piece oldPiece,
         Square src,
         Piece newPiece,
@@ -582,8 +579,8 @@ namespace stormphrax::eval {
 
         const auto srcPerm = geometry::permutationFor(src);
         const auto dstPerm = geometry::permutationFor(dst);
-        const auto [srcRays, srcBits] = geometry::permuteMailbox(srcPerm, boards.mailbox(), dst);
-        const auto [dstRays, dstBits] = geometry::permuteMailbox(dstPerm, boards.mailbox());
+        const auto [srcRays, srcBits] = geometry::permuteMailbox(srcPerm, pos.mailbox(), dst);
+        const auto [dstRays, dstBits] = geometry::permuteMailbox(dstPerm, pos.mailbox());
 
         const auto srcClosest = geometry::closestOccupied(srcBits);
         const auto dstClosest = geometry::closestOccupied(dstBits);

@@ -24,15 +24,15 @@
 namespace stormphrax::see {
     namespace {
         [[nodiscard]] inline PieceType popLeastValuable(
-            const BitboardSet& bbs,
+            const Position& pos,
             Bitboard& occ,
             Bitboard attackers,
-            Color color
+            Color c
         ) {
             for (const auto pt : tunable::g_seeOrderedPts) {
-                const auto board = attackers & bbs.forPiece(pt, color);
-                if (!board.empty()) {
-                    occ ^= board.lowestBit();
+                const auto bb = attackers & pos.bb(pt, c);
+                if (!bb.empty()) {
+                    occ ^= bb.lowestBit();
                     return pt;
                 }
             }
@@ -41,7 +41,7 @@ namespace stormphrax::see {
         }
     } // namespace
 
-    i32 gain(const PositionBoards& boards, Move move) {
+    i32 gain(const Position& pos, Move move) {
         const auto type = move.type();
 
         if (type == MoveType::kCastling) {
@@ -50,7 +50,7 @@ namespace stormphrax::see {
             return value(PieceTypes::kPawn);
         }
 
-        auto score = value(boards.pieceOn(move.toSq()));
+        auto score = value(pos.pieceOn(move.toSq()));
 
         if (type == MoveType::kPromotion) {
             score += value(move.promo()) - value(PieceTypes::kPawn);
@@ -60,18 +60,15 @@ namespace stormphrax::see {
     }
 
     bool see(const Position& pos, Move move, Score threshold) {
-        const auto& boards = pos.boards();
-        const auto& bbs = boards.bbs();
-
         const auto color = pos.stm();
 
-        auto score = gain(boards, move) - threshold;
+        auto score = gain(pos, move) - threshold;
 
         if (score < 0) {
             return false;
         }
 
-        auto next = move.type() == MoveType::kPromotion ? move.promo() : boards.pieceOn(move.fromSq()).type();
+        auto next = move.type() == MoveType::kPromotion ? move.promo() : pos.pieceOn(move.fromSq()).type();
 
         score -= value(next);
 
@@ -81,12 +78,12 @@ namespace stormphrax::see {
 
         const auto sq = move.toSq();
 
-        auto occupancy = bbs.occupancy() ^ move.fromSq().bit() ^ sq.bit();
+        auto occ = pos.occ() ^ move.fromSq().bit() ^ sq.bit();
 
-        const auto queens = bbs.queens();
+        const auto queens = pos.bb(PieceTypes::kQueen);
 
-        const auto bishops = queens | bbs.bishops();
-        const auto rooks = queens | bbs.rooks();
+        const auto bishops = queens | pos.bb(PieceTypes::kBishop);
+        const auto rooks = queens | pos.bb(PieceTypes::kRook);
 
         const auto blackPinned = pos.pinned(Colors::kBlack);
         const auto whitePinned = pos.pinned(Colors::kWhite);
@@ -96,35 +93,35 @@ namespace stormphrax::see {
 
         const auto allowed = ~(blackPinned | whitePinned) | (blackPinned & blackKingRay) | (whitePinned & whiteKingRay);
 
-        auto attackers = pos.allAttackersTo(sq, occupancy) & allowed;
+        auto attackers = pos.allAttackersTo(sq, occ) & allowed;
 
         auto us = color.flip();
 
         while (true) {
-            const auto ourAttackers = attackers & bbs.forColor(us);
+            const auto ourAttackers = attackers & pos.bb(us);
 
             if (ourAttackers.empty()) {
                 break;
             }
 
-            next = popLeastValuable(bbs, occupancy, ourAttackers, us);
+            next = popLeastValuable(pos, occ, ourAttackers, us);
 
             if (next == PieceTypes::kPawn || next == PieceTypes::kBishop || next == PieceTypes::kQueen) {
-                attackers |= attacks::getBishopAttacks(sq, occupancy) & bishops;
+                attackers |= attacks::getBishopAttacks(sq, occ) & bishops;
             }
 
             if (next == PieceTypes::kRook || next == PieceTypes::kQueen) {
-                attackers |= attacks::getRookAttacks(sq, occupancy) & rooks;
+                attackers |= attacks::getRookAttacks(sq, occ) & rooks;
             }
 
-            attackers &= occupancy;
+            attackers &= occ;
 
             score = -score - 1 - value(next);
             us = us.flip();
 
             if (score >= 0) {
                 // our only attacker is our king, but the opponent still has defenders
-                if (next == PieceTypes::kKing && !(attackers & bbs.forColor(us)).empty()) {
+                if (next == PieceTypes::kKing && !(attackers & pos.bb(us)).empty()) {
                     us = us.flip();
                 }
                 break;

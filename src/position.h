@@ -18,20 +18,209 @@
 
 #pragma once
 
-#include "../types.h"
+#include "types.h"
 
 #include <array>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
-#include "../attacks/attacks.h"
-#include "../keys.h"
-#include "../move.h"
-#include "boards.h"
+#include "attacks/attacks.h"
+#include "keys.h"
+#include "move.h"
 
 namespace stormphrax {
+    class BitboardSet {
+    public:
+        [[nodiscard]] inline Bitboard& bb(Color c) {
+            return m_colors[c.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard bb(Color c) const {
+            return m_colors[c.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard& bb(PieceType pt) {
+            return m_pieces[pt.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard bb(PieceType pt) const {
+            return m_pieces[pt.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard bb(PieceType pt, Color c) const {
+            return m_pieces[pt.idx()] & bb(c);
+        }
+
+        [[nodiscard]] inline Bitboard bb(Piece piece) const {
+            return bb(piece.type(), piece.color());
+        }
+
+        [[nodiscard]] inline Bitboard black() const {
+            return m_colors[Colors::kBlack.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard white() const {
+            return m_colors[Colors::kWhite.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard occ() const {
+            return black() | white();
+        }
+
+        [[nodiscard]] inline Bitboard pawns() const {
+            return bb(PieceTypes::kPawn);
+        }
+
+        [[nodiscard]] inline Bitboard knights() const {
+            return bb(PieceTypes::kKnight);
+        }
+
+        [[nodiscard]] inline Bitboard bishops() const {
+            return bb(PieceTypes::kBishop);
+        }
+
+        [[nodiscard]] inline Bitboard rooks() const {
+            return bb(PieceTypes::kRook);
+        }
+
+        [[nodiscard]] inline Bitboard queens() const {
+            return bb(PieceTypes::kQueen);
+        }
+
+        [[nodiscard]] inline Bitboard kings() const {
+            return bb(PieceTypes::kKing);
+        }
+
+        [[nodiscard]] inline Bitboard blackPawns() const {
+            return pawns() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whitePawns() const {
+            return pawns() & white();
+        }
+
+        [[nodiscard]] inline Bitboard blackKnights() const {
+            return knights() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteKnights() const {
+            return knights() & white();
+        }
+
+        [[nodiscard]] inline Bitboard blackBishops() const {
+            return bishops() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteBishops() const {
+            return bishops() & white();
+        }
+
+        [[nodiscard]] inline Bitboard blackRooks() const {
+            return rooks() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteRooks() const {
+            return rooks() & white();
+        }
+
+        [[nodiscard]] inline Bitboard blackQueens() const {
+            return queens() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteQueens() const {
+            return queens() & white();
+        }
+
+        [[nodiscard]] inline Bitboard blackKings() const {
+            return kings() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteKings() const {
+            return kings() & white();
+        }
+
+        [[nodiscard]] inline Bitboard minors() const {
+            return knights() | bishops();
+        }
+
+        [[nodiscard]] inline Bitboard blackMinors() const {
+            return minors() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteMinors() const {
+            return minors() & white();
+        }
+
+        [[nodiscard]] inline Bitboard majors() const {
+            return rooks() | queens();
+        }
+
+        [[nodiscard]] inline Bitboard blackMajors() const {
+            return majors() & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteMajors() const {
+            return majors() & white();
+        }
+
+        [[nodiscard]] inline Bitboard nonPk() const {
+            return occ() ^ pawns() ^ kings();
+        }
+
+        [[nodiscard]] inline Bitboard blackNonPk() const {
+            return black() ^ (pawns() | kings()) & black();
+        }
+
+        [[nodiscard]] inline Bitboard whiteNonPk() const {
+            return white() ^ (pawns() | kings()) & white();
+        }
+
+        [[nodiscard]] inline Bitboard pawns(Color c) const {
+            return bb(PieceTypes::kPawn, c);
+        }
+
+        [[nodiscard]] inline Bitboard knights(Color c) const {
+            return bb(PieceTypes::kKnight, c);
+        }
+
+        [[nodiscard]] inline Bitboard bishops(Color c) const {
+            return bb(PieceTypes::kBishop, c);
+        }
+
+        [[nodiscard]] inline Bitboard rooks(Color c) const {
+            return bb(PieceTypes::kRook, c);
+        }
+
+        [[nodiscard]] inline Bitboard queens(Color c) const {
+            return bb(PieceTypes::kQueen, c);
+        }
+
+        [[nodiscard]] inline Bitboard kings(Color c) const {
+            return bb(PieceTypes::kKing, c);
+        }
+
+        [[nodiscard]] inline Bitboard minors(Color c) const {
+            return c == Colors::kBlack ? blackMinors() : whiteMinors();
+        }
+
+        [[nodiscard]] inline Bitboard majors(Color c) const {
+            return c == Colors::kBlack ? blackMajors() : whiteMajors();
+        }
+
+        [[nodiscard]] inline Bitboard nonPk(Color c) const {
+            return c == Colors::kBlack ? blackNonPk() : whiteNonPk();
+        }
+
+        [[nodiscard]] inline bool operator==(const BitboardSet& other) const = default;
+
+    private:
+        std::array<Bitboard, 2> m_colors{};
+        std::array<Bitboard, 6> m_pieces{};
+    };
+
     struct Keys {
         u64 all;
         u64 pawns;
@@ -115,32 +304,46 @@ namespace stormphrax {
         [[nodiscard]] inline bool operator==(const Keys& other) const = default;
     };
 
+    class Position;
+
     struct NullObserver {
-        void prepareKingMove(Color color, Square src, Square dst) {
-            SP_UNUSED(color, src, dst);
+        void prepareKingMove(Color c, Square src, Square dst) {
+            SP_UNUSED(c, src, dst);
         }
-        void pieceAdded(const PositionBoards& boards, Piece piece, Square sq) {
-            SP_UNUSED(boards, piece, sq);
+
+        void pieceAdded(const Position& pos, Piece piece, Square sq) {
+            SP_UNUSED(pos, piece, sq);
         }
-        void pieceRemoved(const PositionBoards& boards, Piece piece, Square sq) {
-            SP_UNUSED(boards, piece, sq);
+
+        void pieceRemoved(const Position& pos, Piece piece, Square sq) {
+            SP_UNUSED(pos, piece, sq);
         }
-        void pieceMutated(const PositionBoards& boards, Piece oldPiece, Piece newPiece, Square sq) {
-            SP_UNUSED(boards, oldPiece, newPiece, sq);
+
+        void pieceMutated(const Position& pos, Piece oldPiece, Piece newPiece, Square sq) {
+            SP_UNUSED(pos, oldPiece, newPiece, sq);
         }
-        void pieceMoved(const PositionBoards& boards, Piece piece, Square src, Square dst) {
-            SP_UNUSED(boards, piece, src, dst);
+
+        void pieceMoved(const Position& pos, Piece piece, Square src, Square dst) {
+            SP_UNUSED(pos, piece, src, dst);
         }
-        void piecePromoted(const PositionBoards& boards, Piece oldPiece, Square src, Piece newPiece, Square dst) {
-            SP_UNUSED(boards, oldPiece, src, newPiece, dst);
+
+        void piecePromoted(const Position& pos, Piece oldPiece, Square src, Piece newPiece, Square dst) {
+            SP_UNUSED(pos, oldPiece, src, newPiece, dst);
         }
-        void finalize(KingPair kings) {
-            SP_UNUSED(kings);
+
+        void finalize(const Position& pos) {
+            (void)pos;
         }
     };
 
+    class BoardIterator;
+
     class Position {
     public:
+        Position() {
+            m_mailbox.fill(Pieces::kNone);
+        }
+
         // Moves are assumed to be legal
         template <typename Observer>
         [[nodiscard]] Position applyMove(Move move, Observer observer) const;
@@ -155,12 +358,37 @@ namespace stormphrax {
 
         [[nodiscard]] bool isLegal(Move move) const;
 
-        [[nodiscard]] inline const PositionBoards& boards() const {
-            return m_boards;
+        [[nodiscard]] inline Piece pieceOn(Square sq) const {
+            assert(sq != Squares::kNone);
+            return m_mailbox[sq.idx()];
+        }
+
+        [[nodiscard]] inline Bitboard bb(Color c) const {
+            return m_bbs.bb(c);
+        }
+
+        [[nodiscard]] inline Bitboard bb(PieceType pt) const {
+            return m_bbs.bb(pt);
+        }
+
+        [[nodiscard]] inline Bitboard bb(PieceType pt, Color c) const {
+            return m_bbs.bb(pt, c);
+        }
+
+        [[nodiscard]] inline Bitboard bb(Piece piece) const {
+            return m_bbs.bb(piece);
+        }
+
+        [[nodiscard]] inline Bitboard occ() const {
+            return m_bbs.occ();
         }
 
         [[nodiscard]] inline const BitboardSet& bbs() const {
-            return m_boards.bbs();
+            return m_bbs;
+        }
+
+        [[nodiscard]] inline std::span<const Piece, Squares::kCount> mailbox() const {
+            return m_mailbox;
         }
 
         [[nodiscard]] inline Color stm() const {
@@ -209,7 +437,7 @@ namespace stormphrax {
 
         [[nodiscard]] u64 roughKeyAfter(Move move) const;
 
-        [[nodiscard]] Bitboard allAttackersTo(Square sq, Bitboard occupancy) const;
+        [[nodiscard]] Bitboard allAttackersTo(Square sq, Bitboard occ) const;
         [[nodiscard]] Bitboard nonSliderAttackersTo(Square sq, Color attacker) const;
         [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker) const;
 
@@ -240,11 +468,6 @@ namespace stormphrax {
         [[nodiscard]] inline Square king(Color c) const {
             assert(c != Colors::kNone);
             return m_kings.color(c);
-        }
-
-        [[nodiscard]] inline Square oppKing(Color c) const {
-            assert(c != Colors::kNone);
-            return m_kings.color(c.flip());
         }
 
         [[nodiscard]] inline bool isCheck() const {
@@ -283,18 +506,19 @@ namespace stormphrax {
         [[nodiscard]] Move moveFromUci(std::string_view move) const;
 
         [[nodiscard]] inline u32 plyFromStartpos() const {
-            return m_fullmove * 2 - (m_stm == Colors::kBlack ? 0 : 1) - 1;
+            return m_fullmove * 2 - (m_stm == Colors::kWhite) - 1;
         }
 
         [[nodiscard]] inline i32 classicalMaterial() const {
-            const auto& bbs = m_boards.bbs();
-
-            return 1 * bbs.pawns().popcount()   //
-                 + 3 * bbs.knights().popcount() //
-                 + 3 * bbs.bishops().popcount() //
-                 + 5 * bbs.rooks().popcount()   //
-                 + 9 * bbs.queens().popcount();
+            return 1 * m_bbs.pawns().popcount()   //
+                 + 3 * m_bbs.knights().popcount() //
+                 + 3 * m_bbs.bishops().popcount() //
+                 + 5 * m_bbs.rooks().popcount()   //
+                 + 9 * m_bbs.queens().popcount();
         }
+
+        [[nodiscard]] inline BoardIterator begin() const;
+        [[nodiscard]] inline BoardIterator end() const;
 
         [[nodiscard]] static Position startpos();
 
@@ -320,6 +544,11 @@ namespace stormphrax {
         template <bool kUpdateKeys = true, typename Observer = NullObserver>
         Piece enPassant(Piece pawn, Square src, Square dst, Observer observer);
 
+        void setPieceInternal(Square sq, Piece piece);
+        void movePieceInternal(Square src, Square dst, Piece piece);
+        void moveAndChangePieceInternal(Square src, Square dst, Piece moving, PieceType promo);
+        void removePieceInternal(Square sq, Piece piece);
+
         void calcCheckersAndPins();
         void calcThreats();
         void calcCheckZones();
@@ -327,7 +556,12 @@ namespace stormphrax {
         // Unsets ep squares if they are invalid (no pawn is able to capture)
         void filterEp(Color capturing);
 
-        PositionBoards m_boards{};
+        [[nodiscard]] inline Piece& mailboxSlot(Square sq) {
+            return m_mailbox[sq.idx()];
+        }
+
+        BitboardSet m_bbs{};
+        std::array<Piece, Squares::kCount> m_mailbox{};
 
         // pnbr
         std::array<Bitboard, 4> m_checkZones{};
@@ -351,6 +585,41 @@ namespace stormphrax {
     };
 
     static_assert(sizeof(Position) == 248);
+
+    class BoardIterator {
+    public:
+        constexpr BoardIterator& operator++() {
+            m_bb.popLowestSquare();
+            return *this;
+        }
+
+        [[nodiscard]] constexpr std::pair<Piece, Square> operator*() const {
+            const auto sq = m_bb.lowestSquare();
+            return {m_pos.pieceOn(sq), sq};
+        }
+
+        inline bool operator==(const BoardIterator& other) const {
+            assert(&m_pos == &other.m_pos);
+            return m_bb == other.m_bb;
+        }
+
+    private:
+        const Position& m_pos;
+        Bitboard m_bb;
+
+        BoardIterator(const Position& pos, Bitboard bb) :
+                m_pos{pos}, m_bb{bb} {}
+
+        friend class Position;
+    };
+
+    inline BoardIterator Position::begin() const {
+        return BoardIterator{*this, occ()};
+    }
+
+    inline BoardIterator Position::end() const {
+        return BoardIterator{*this, Bitboard{}};
+    }
 } // namespace stormphrax
 
 template <>

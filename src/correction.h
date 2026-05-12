@@ -23,7 +23,7 @@
 #include <atomic>
 
 #include "core.h"
-#include "position/position.h"
+#include "position.h"
 #include "util/multi_array.h"
 
 namespace stormphrax {

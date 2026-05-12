@@ -78,32 +78,6 @@ namespace stormphrax {
         constexpr auto kDiagonal21RL = kVertical + kHorizontal + kHorizontal;
     } // namespace shifts
 
-    class BitboardSlot {
-    public:
-        [[nodiscard]] constexpr operator bool() const {
-            return (m_board & m_mask) != 0;
-        }
-
-        constexpr BitboardSlot& operator=(bool rhs) {
-            if (rhs) {
-                m_board |= m_mask;
-            } else {
-                m_board &= ~m_mask;
-            }
-
-            return *this;
-        }
-
-    private:
-        constexpr BitboardSlot(u64& board, i32 n) :
-                m_board{board}, m_mask{u64{1} << n} {}
-
-        u64& m_board;
-        u64 m_mask;
-
-        friend class Bitboard;
-    };
-
     class Biterator;
 
     class Bitboard {
@@ -254,12 +228,23 @@ namespace stormphrax {
             return *this;
         }
 
-        [[nodiscard]] constexpr bool operator[](Square s) const {
-            return m_board & s.bit();
+        [[nodiscard]] constexpr bool hasSq(Square sq) const {
+            return (m_board & sq.bit()) != 0;
         }
 
-        [[nodiscard]] constexpr BitboardSlot operator[](Square s) {
-            return BitboardSlot{m_board, s.raw()};
+        constexpr Bitboard& setSq(Square sq) {
+            m_board |= sq.bit();
+            return *this;
+        }
+
+        constexpr Bitboard& clearSq(Square sq) {
+            m_board &= ~sq.bit();
+            return *this;
+        }
+
+        constexpr Bitboard& flipSq(Square sq) {
+            m_board ^= sq.bit();
+            return *this;
         }
 
         [[nodiscard]] constexpr i32 popcount() const {
@@ -559,7 +544,7 @@ struct fmt::formatter<stormphrax::Bitboard> : fmt::formatter<std::string_view> {
                     format_to(ctx.out(), " ");
                 }
 
-                format_to(ctx.out(), "{}", value[stormphrax::Square::fromFileRank(file, rank)] ? '1' : '.');
+                format_to(ctx.out(), "{}", value.hasSq(stormphrax::Square::fromFileRank(file, rank)) ? '1' : '.');
             }
 
             format_to(ctx.out(), "\n");

@@ -53,9 +53,7 @@ namespace stormphrax::datagen {
         }
 
         [[nodiscard]] std::optional<Outcome> probeTb(const Position& pos) {
-            if (pos.bbs().occupancy().popcount() > TB_LARGEST || pos.halfmove() != 0
-                || pos.castlingRooks() != CastlingRooks{})
-            {
+            if (pos.occ().popcount() > TB_LARGEST || pos.halfmove() != 0 || pos.castlingRooks() != CastlingRooks{}) {
                 return {};
             }
 
@@ -178,7 +176,7 @@ namespace stormphrax::datagen {
 
                 output.start(pos);
 
-                thread.nnueState.reset(pos.boards(), pos.kings());
+                thread.nnueState.reset(pos);
 
                 searcher.setMaxDepth(10);
                 searcher.setLimiter(verifLimiter);
@@ -217,7 +215,7 @@ namespace stormphrax::datagen {
                         break;
                     }
 
-                    assert(pos.boards().pieceOn(move.fromSq()) != Pieces::kNone);
+                    assert(pos.pieceOn(move.fromSq()) != Pieces::kNone);
 
                     if (isDecisive(score)) {
                         outcome = score > 0 ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
@@ -255,7 +253,7 @@ namespace stormphrax::datagen {
                     eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
                     pos = pos.applyMove(move, eval::BoardObserver{ctx});
-                    thread.nnueState.applyImmediately(ctx, pos.boards());
+                    thread.nnueState.applyImmediately(ctx, pos);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 

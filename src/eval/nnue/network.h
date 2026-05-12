@@ -22,8 +22,7 @@
 
 #include <span>
 
-#include "../../position/boards.h"
-#include "../../util/aligned_array.h"
+#include "../../position.h"
 
 namespace stormphrax::eval::nnue {
     template <typename Ft, typename OutputBucketing, typename Arch>
@@ -36,7 +35,7 @@ namespace stormphrax::eval::nnue {
         }
 
         inline util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> propagate(
-            const BitboardSet& bbs,
+            const Position& pos,
             std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmPsqInputs,
             std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> nstmPsqInputs,
             std::span<const typename FeatureTransformer::OutputType, FeatureTransformer::kOutputCount> stmThreatInputs,
@@ -44,7 +43,7 @@ namespace stormphrax::eval::nnue {
         ) const {
             util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> outputs;
 
-            const auto bucket = OutputBucketing::getBucket(bbs);
+            const auto bucket = OutputBucketing::getBucket(pos);
             m_arch.propagate(bucket, stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, outputs);
 
             return outputs;

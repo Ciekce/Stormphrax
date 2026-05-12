@@ -33,7 +33,7 @@
 
 #include "eval/eval.h"
 #include "limit.h"
-#include "position/position.h"
+#include "position.h"
 #include "tb.h"
 #include "thread.h"
 #include "ttable.h"

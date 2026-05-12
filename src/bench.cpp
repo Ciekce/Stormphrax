@@ -27,7 +27,7 @@
 #endif
 
 #include "opts.h"
-#include "position/position.h"
+#include "position.h"
 #include "util/numa/numa.h"
 
 namespace stormphrax::bench {

@@ -45,10 +45,10 @@ namespace stormphrax {
                     const auto dstSquare = Square::fromRaw(to);
                     const auto dstMask = dstSquare.bit();
 
-                    if (rookAttacks[dstSquare]) {
+                    if (rookAttacks.hasSq(dstSquare)) {
                         dst[from][to] =
                             attacks::genRookAttacks(srcSquare, dstMask) & attacks::genRookAttacks(dstSquare, srcMask);
-                    } else if (bishopAttacks[dstSquare]) {
+                    } else if (bishopAttacks.hasSq(dstSquare)) {
                         dst[from][to] = attacks::genBishopAttacks(srcSquare, dstMask)
                                       & attacks::genBishopAttacks(dstSquare, srcMask);
                     }
@@ -76,10 +76,10 @@ namespace stormphrax {
                     const auto dstSquare = Square::fromRaw(to);
                     const auto dstMask = dstSquare.bit();
 
-                    if (rookAttacks[dstSquare]) {
+                    if (rookAttacks.hasSq(dstSquare)) {
                         dst[from][to] = (srcMask | attacks::genRookAttacks(srcSquare, Bitboard{}))
                                       & (dstMask | attacks::genRookAttacks(dstSquare, Bitboard{}));
-                    } else if (bishopAttacks[dstSquare]) {
+                    } else if (bishopAttacks.hasSq(dstSquare)) {
                         dst[from][to] = (srcMask | attacks::genBishopAttacks(srcSquare, Bitboard{}))
                                       & (dstMask | attacks::genBishopAttacks(dstSquare, Bitboard{}));
                     }
@@ -107,10 +107,10 @@ namespace stormphrax {
                     const auto dstSquare = Square::fromRaw(to);
                     const auto dstMask = dstSquare.bit();
 
-                    if (rookAttacks[dstSquare]) {
+                    if (rookAttacks.hasSq(dstSquare)) {
                         dst[from][to] = attacks::genRookAttacks(srcSquare, Bitboard{})
                                       & (attacks::genRookAttacks(dstSquare, srcMask) | dstMask);
-                    } else if (bishopAttacks[dstSquare]) {
+                    } else if (bishopAttacks.hasSq(dstSquare)) {
                         dst[from][to] = attacks::genBishopAttacks(srcSquare, Bitboard{})
                                       & (attacks::genBishopAttacks(dstSquare, srcMask) | dstMask);
                     }

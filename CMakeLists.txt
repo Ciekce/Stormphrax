@@ -45,12 +45,12 @@ option(SP_DISABLE_NEON_DOTPROD "whether to disable NEON dotprod on ARM machines"
 
 add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/core.cpp src/util/bitfield.h
 	src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h
-	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position/position.h src/position/position.cpp src/search.h
+	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position.h src/position.cpp src/search.h
 	src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h
 	src/util/timer.cpp src/rays.h src/ttable.h src/ttable.cpp
 	src/util/cemath.h src/eval/nnue.h src/eval/nnue.cpp src/util/range.h src/arch.h src/perft.h
 	src/perft.cpp src/thread.h src/see.h src/bench.h src/bench.cpp src/tunable.h src/tunable.cpp src/opts.h
-	src/opts.cpp src/position/boards.h 3rdparty/pyrrhic/stdendian.h 3rdparty/pyrrhic/tbconfig.h
+	src/opts.cpp 3rdparty/pyrrhic/stdendian.h 3rdparty/pyrrhic/tbconfig.h
 	3rdparty/pyrrhic/tbprobe.h 3rdparty/pyrrhic/tbprobe.cpp src/datagen/datagen.h src/datagen/datagen.cpp
 	src/util/u4array.h src/eval/eval.h src/util/barrier.h src/util/simd.h src/wdl.h src/wdl.cpp src/eval/arch.h
 	src/cuckoo.h src/cuckoo.cpp src/eval/nnue/network.h src/eval/nnue/activation.h src/eval/nnue/output.h
@@ -66,7 +66,8 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp 
 	src/eval/nnue/features/threats.h src/eval/nnue/features/threats.cpp src/attacks/bmi2/data.h
 	src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp src/attacks/black_magic/data.h
 	src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp
-	src/eval/header.h src/correction.cpp src/movepick.cpp src/pv.cpp src/see.cpp)
+	src/eval/header.h src/correction.cpp src/movepick.cpp src/pv.cpp src/see.cpp src/eval/nnue_state.h
+	src/eval/nnue_state.cpp src/eval/eval.cpp)
 
 target_include_directories(stormphrax-native PUBLIC 3rdparty/fmt/include)
 target_compile_options(stormphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)
