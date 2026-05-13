@@ -1501,6 +1501,10 @@ namespace stormphrax::search {
                 }
             }
 
+            if constexpr (kPvNode) {
+                curr.pv.length = 0;
+            }
+
             ++legalMoves;
 
             thread.search.incNodes();
