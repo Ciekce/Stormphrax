@@ -22,7 +22,7 @@
 
 #include <vector>
 
-#include "../position/position.h"
+#include "../position.h"
 #include "../util/u4array.h"
 #include "format.h"
 

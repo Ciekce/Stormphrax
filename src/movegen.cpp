@@ -18,13 +18,9 @@
 
 #include "movegen.h"
 
-#include <algorithm>
-#include <array>
-
 #include "attacks/attacks.h"
 #include "opts.h"
 #include "rays.h"
-#include "util/bitfield.h"
 
 namespace stormphrax {
     namespace {
@@ -78,8 +74,6 @@ namespace stormphrax {
             const auto leftOffset = offsets::upLeft(us);
             const auto rightOffset = offsets::upRight(us);
 
-            const auto& bbs = pos.bbs();
-
             const auto king = pos.king(us);
             const auto forwardPinMask = Bitboard::file(king.file());
             const auto leftPinMask =
@@ -87,11 +81,11 @@ namespace stormphrax {
             const auto rightPinMask =
                 us == Colors::kBlack ? attacks::kAntiDiagonals[king.idx()] : attacks::kDiagonals[king.idx()];
 
-            const auto theirs = bbs.occupancy(them);
+            const auto theirs = pos.bb(them);
 
             const auto forwardDstMask = dstMask & kPromotionRank & ~theirs;
 
-            const auto pawns = bbs.pawns(us);
+            const auto pawns = pos.bbs().pawns(us);
             const auto pinned = pos.pinned(us);
 
             const auto movablePawns = [&](Bitboard pinMask) { return (pawns & ~pinned) | (pawns & pinMask); };
@@ -125,8 +119,6 @@ namespace stormphrax {
             const auto us = pos.stm();
             const auto them = pos.nstm();
 
-            const auto& bbs = pos.bbs();
-
             const auto promotionRank = boards::promotionRank(us);
             const auto thirdRank = boards::rank(us, 2);
 
@@ -143,11 +135,11 @@ namespace stormphrax {
             const auto rightPinMask =
                 us == Colors::kBlack ? attacks::kAntiDiagonals[king.idx()] : attacks::kDiagonals[king.idx()];
 
-            const auto theirs = bbs.occupancy(them);
+            const auto theirs = pos.bb(them);
 
             const auto forwardDstMask = dstMask & ~theirs;
 
-            const auto pawns = bbs.pawns(us);
+            const auto pawns = pos.bbs().pawns(us);
             const auto pinned = pos.pinned(us);
 
             const auto movablePawns = [&](Bitboard pinMask) { return (pawns & ~pinned) | (pawns & pinMask); };
@@ -182,7 +174,7 @@ namespace stormphrax {
         inline void generateFrcCastling(
             ScoredMoveList& dst,
             const Position& pos,
-            Bitboard occupancy,
+            Bitboard occ,
             Square king,
             Square kingDst,
             Square rook,
@@ -193,13 +185,13 @@ namespace stormphrax {
             const auto toKingDst = rayBetween(king, kingDst);
             const auto toRook = rayBetween(king, rook);
 
-            const auto occ = occupancy ^ king.bit() ^ rook.bit();
+            const auto clearOcc = occ ^ king.bit() ^ rook.bit();
             const auto threats = pos.threats();
 
             const auto clearMask = toKingDst | toRook | kingDst.bit() | rookDst.bit();
             const auto checkMask = toKingDst | kingDst.bit();
 
-            if ((occ & clearMask).empty() && (threats & checkMask).empty() && !pos.pinned(us)[rook]) {
+            if ((clearOcc & clearMask).empty() && (threats & checkMask).empty() && !pos.pinned(us).hasSq(rook)) {
                 pushCastling(dst, king, rook);
             }
         }
@@ -213,7 +205,7 @@ namespace stormphrax {
             if constexpr (kCastling) {
                 if (!pos.isCheck()) {
                     const auto& castlingRooks = pos.castlingRooks();
-                    const auto occupancy = pos.bbs().occupancy();
+                    const auto occ = pos.occ();
                     const auto threats = pos.threats();
 
                     // this branch is cheaper than the extra checks the chess960 castling movegen does
@@ -223,7 +215,7 @@ namespace stormphrax {
                                 generateFrcCastling(
                                     dst,
                                     pos,
-                                    occupancy,
+                                    occ,
                                     pos.blackKing(),
                                     Squares::kG8,
                                     castlingRooks.black().kingside,
@@ -234,7 +226,7 @@ namespace stormphrax {
                                 generateFrcCastling(
                                     dst,
                                     pos,
-                                    occupancy,
+                                    occ,
                                     pos.blackKing(),
                                     Squares::kC8,
                                     castlingRooks.black().queenside,
@@ -246,7 +238,7 @@ namespace stormphrax {
                                 generateFrcCastling(
                                     dst,
                                     pos,
-                                    occupancy,
+                                    occ,
                                     pos.whiteKing(),
                                     Squares::kG1,
                                     castlingRooks.white().kingside,
@@ -257,7 +249,7 @@ namespace stormphrax {
                                 generateFrcCastling(
                                     dst,
                                     pos,
-                                    occupancy,
+                                    occ,
                                     pos.whiteKing(),
                                     Squares::kC1,
                                     castlingRooks.white().queenside,
@@ -268,28 +260,28 @@ namespace stormphrax {
                     } else {
                         if (pos.stm() == Colors::kBlack) {
                             if (castlingRooks.black().kingside != Squares::kNone
-                                && (occupancy & U64(0x6000000000000000)).empty()
+                                && (occ & U64(0x6000000000000000)).empty()
                                 && (threats & U64(0x7000000000000000)).empty())
                             {
                                 pushCastling(dst, pos.blackKing(), Squares::kH8);
                             }
 
                             if (castlingRooks.black().queenside != Squares::kNone
-                                && (occupancy & U64(0x0E00000000000000)).empty()
+                                && (occ & U64(0x0E00000000000000)).empty()
                                 && (threats & U64(0x1C00000000000000)).empty())
                             {
                                 pushCastling(dst, pos.blackKing(), Squares::kA8);
                             }
                         } else {
                             if (castlingRooks.white().kingside != Squares::kNone
-                                && (occupancy & U64(0x0000000000000060)).empty()
+                                && (occ & U64(0x0000000000000060)).empty()
                                 && (threats & U64(0x0000000000000070)).empty())
                             {
                                 pushCastling(dst, pos.whiteKing(), Squares::kH1);
                             }
 
                             if (castlingRooks.white().queenside != Squares::kNone
-                                && (occupancy & U64(0x000000000000000E)).empty()
+                                && (occ & U64(0x000000000000000E)).empty()
                                 && (threats & U64(0x000000000000001C)).empty())
                             {
                                 pushCastling(dst, pos.whiteKing(), Squares::kA1);
@@ -305,7 +297,7 @@ namespace stormphrax {
 
             const auto us = pos.stm();
 
-            const auto occupancy = bbs.occupancy();
+            const auto occ = pos.occ();
             const auto pinned = pos.pinned(us);
 
             const auto king = pos.king(us);
@@ -315,38 +307,36 @@ namespace stormphrax {
             const auto bishops = queens | bbs.bishops(us);
 
             for (const auto src : rooks & ~pinned) {
-                const auto attacks = attacks::getRookAttacks(src, occupancy);
+                const auto attacks = attacks::getRookAttacks(src, occ);
                 pushStandards(dst, src, attacks & dstMask);
             }
 
             for (const auto src : bishops & ~pinned) {
-                const auto attacks = attacks::getBishopAttacks(src, occupancy);
+                const auto attacks = attacks::getBishopAttacks(src, occ);
                 pushStandards(dst, src, attacks & dstMask);
             }
 
             for (const auto src : rooks & pinned) {
                 const auto pinRay = rayPast(king, src);
-                const auto attacks = attacks::getRookAttacks(src, occupancy);
+                const auto attacks = attacks::getRookAttacks(src, occ);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
             }
 
             for (const auto src : bishops & pinned) {
                 const auto pinRay = rayPast(king, src);
-                const auto attacks = attacks::getBishopAttacks(src, occupancy);
+                const auto attacks = attacks::getBishopAttacks(src, occ);
                 pushStandards(dst, src, attacks & dstMask & pinRay);
             }
         }
     } // namespace
 
     void generateNoisy(ScoredMoveList& noisy, const Position& pos) {
-        const auto& bbs = pos.bbs();
-
         const auto us = pos.stm();
         const auto them = us.flip();
 
-        const auto ours = bbs.forColor(us);
+        const auto ours = pos.bb(us);
 
-        const auto kingDstMask = bbs.forColor(them);
+        const auto kingDstMask = pos.bb(them);
 
         auto dstMask = kingDstMask;
 
@@ -373,13 +363,11 @@ namespace stormphrax {
     }
 
     void generateQuiet(ScoredMoveList& quiet, const Position& pos) {
-        const auto& bbs = pos.bbs();
-
         const auto us = pos.stm();
         const auto them = us.flip();
 
-        const auto ours = bbs.forColor(us);
-        const auto theirs = bbs.forColor(them);
+        const auto ours = pos.bb(us);
+        const auto theirs = pos.bb(them);
 
         const auto kingDstMask = ~(ours | theirs);
 
@@ -407,11 +395,9 @@ namespace stormphrax {
     }
 
     void generateAll(ScoredMoveList& dst, const Position& pos) {
-        const auto& bbs = pos.bbs();
-
         const auto us = pos.stm();
 
-        const auto kingDstMask = ~bbs.forColor(pos.stm());
+        const auto kingDstMask = ~pos.bb(pos.stm());
 
         auto dstMask = kingDstMask;
 
@@ -426,7 +412,7 @@ namespace stormphrax {
 
         generateSliders(dst, pos, dstMask);
         generatePawnsNoisy(dst, pos, dstMask);
-        generatePawnsQuiet(dst, pos, dstMask, bbs.occupancy());
+        generatePawnsQuiet(dst, pos, dstMask, pos.occ());
         generateKnights(dst, pos, dstMask);
         generateKings<true>(dst, pos, kingDstMask);
     }

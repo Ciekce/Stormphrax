@@ -22,12 +22,10 @@
 
 #include <algorithm>
 #include <array>
-#include <istream>
-#include <ostream>
 #include <span>
 
 #include "../../core.h"
-#include "../../position/boards.h"
+#include "../../position.h"
 #include "../../util/multi_array.h"
 #include "../../util/simd.h"
 #include "features/psq.h"

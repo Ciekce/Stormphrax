@@ -20,11 +20,7 @@
 
 #include "../../types.h"
 
-#include <algorithm>
-#include <cmath>
 #include <concepts>
-#include <exception>
-#include <type_traits>
 
 #include "../../util/simd.h"
 

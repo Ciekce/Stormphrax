@@ -26,8 +26,8 @@
     #include <fstream>
 #endif
 
-#include "position/position.h"
-#include "stats.h"
+#include "opts.h"
+#include "position.h"
 #include "util/numa/numa.h"
 
 namespace stormphrax::bench {

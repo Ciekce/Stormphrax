@@ -16,24 +16,22 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "pv.h"
 
-#include "types.h"
+#include <algorithm>
 
-#include <span>
-#include <string_view>
+namespace stormphrax::search {
+    void PvList::update(Move move, const PvList& child) {
+        moves[0] = move;
+        std::copy_n(child.moves.begin(), child.length, moves.begin() + 1);
 
-#include "tunable.h"
-#include "util/range.h"
+        length = child.length + 1;
 
-namespace stormphrax::uci {
-    constexpr auto kContemptRange = util::Range<i32>{-1000, 1000};
+        assert(length == 1 || moves[0] != moves[1]);
+    }
 
-    i32 run();
-
-#if SP_EXTERNAL_TUNE
-    void printWfTuningParams(std::span<const std::string_view> params);
-    void printCttTuningParams(std::span<const std::string_view> params);
-    void printObTuningParams(std::span<const std::string_view> params);
-#endif
-} // namespace stormphrax::uci
+    void PvList::reset() {
+        moves[0] = kNullMove;
+        length = 0;
+    }
+} // namespace stormphrax::search

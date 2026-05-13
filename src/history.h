@@ -20,9 +20,11 @@
 
 #include "types.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <span>
 #include <utility>
 
 #include "bitboard.h"
@@ -158,7 +160,7 @@ namespace stormphrax {
         }
 
         inline void updateNoisyScore(Move move, Piece captured, Bitboard threats, HistoryScore bonus) {
-            noisyEntry(move, captured, threats[move.toSq()]).update(bonus, tunable::maxNoisyHistory());
+            noisyEntry(move, captured, threats.hasSq(move.toSq())).update(bonus, tunable::maxNoisyHistory());
         }
 
         [[nodiscard]] inline i32 getButterfly(Bitboard threats, Move move) const {
@@ -170,7 +172,7 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline i32 getNoisy(Move move, Piece captured, Bitboard threats) const {
-            return noisyEntry(move, captured, threats[move.toSq()]);
+            return noisyEntry(move, captured, threats.hasSq(move.toSq()));
         }
 
     private:
@@ -200,19 +202,21 @@ namespace stormphrax {
         }
 
         [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
+                              [threats.hasSq(move.toSq())];
         }
 
         [[nodiscard]] inline HistoryEntry& butterflyEntry(Bitboard threats, Move move) {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
+                              [threats.hasSq(move.toSq())];
         }
 
         [[nodiscard]] inline const HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) const {
-            return m_pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+            return m_pieceTo[moving.idx()][move.toSqIdx()][threats.hasSq(move.fromSq())][threats.hasSq(move.toSq())];
         }
 
         [[nodiscard]] inline HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) {
-            return m_pieceTo[moving.idx()][move.toSqIdx()][threats[move.fromSq()]][threats[move.toSq()]];
+            return m_pieceTo[moving.idx()][move.toSqIdx()][threats.hasSq(move.fromSq())][threats.hasSq(move.toSq())];
         }
 
         [[nodiscard]] inline const HistoryEntry& noisyEntry(Move move, Piece captured, bool defended) const {

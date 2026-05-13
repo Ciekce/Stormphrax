@@ -19,7 +19,6 @@
 #include "perft.h"
 
 #include "movegen.h"
-#include "uci.h"
 #include "util/timer.h"
 
 namespace stormphrax {

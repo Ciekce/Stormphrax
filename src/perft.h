@@ -20,8 +20,7 @@
 
 #include "types.h"
 
-#include "core.h"
-#include "position/position.h"
+#include "position.h"
 
 namespace stormphrax {
     void perft(const Position& pos, i32 depth);

@@ -20,15 +20,10 @@
 
 #include "../../../types.h"
 
-#include <array>
 #include <cassert>
-#include <istream>
-#include <ostream>
 #include <span>
 
-#include "../../../util/multi_array.h"
 #include "../../../util/simd.h"
-#include "../activation.h"
 #include "../loader.h"
 #include "../output.h"
 

@@ -20,10 +20,9 @@
 
 #include "types.h"
 
+#include <array>
 #include <atomic>
 #include <bit>
-#include <cstring>
-#include <vector>
 
 #include "arch.h"
 #include "core.h"
@@ -131,13 +130,12 @@ namespace stormphrax {
 
         struct alignas(32) Cluster {
             static constexpr usize kEntriesPerCluster = 3;
+            static constexpr usize kPadding =
+                std::bit_ceil(sizeof(Entry) * kEntriesPerCluster) - sizeof(Entry) * kEntriesPerCluster;
 
             std::array<Entry, kEntriesPerCluster> entries{};
-
             // round up to nearest power of 2 bytes
-            [[maybe_unused]] std::array<
-                u8,
-                std::bit_ceil(sizeof(Entry) * kEntriesPerCluster) - sizeof(Entry) * kEntriesPerCluster> padding{};
+            [[maybe_unused]] std::array<u8, kPadding> padding_{};
         };
 
         [[nodiscard]] inline u64 index(u64 key) const {

@@ -23,20 +23,20 @@
 #include <concepts>
 #include <type_traits>
 
-#include "../../position/boards.h"
+#include "../../position.h"
 #include "../../util/bits.h"
 
 namespace stormphrax::eval::nnue::output {
     template <typename T>
     concept OutputBucketing = requires {
         { T::kBucketCount } -> std::same_as<const u32&>;
-        { T::getBucket(BitboardSet{}) } -> std::same_as<u32>;
+        { T::getBucket(Position{}) } -> std::same_as<u32>;
     };
 
     struct [[maybe_unused]] Single {
         static constexpr u32 kBucketCount = 1;
 
-        static constexpr u32 getBucket(const BitboardSet&) {
+        static constexpr u32 getBucket(const Position&) {
             return 0;
         }
     };
@@ -48,16 +48,17 @@ namespace stormphrax::eval::nnue::output {
 
         static constexpr u32 kBucketCount = kCount;
 
-        static inline u32 getBucket(const BitboardSet& bbs) {
+        static inline u32 getBucket(const Position& pos) {
             static constexpr auto kDiv = 32 / kCount;
-            return (bbs.occupancy().popcount() - 2) / kDiv;
+            return (pos.occ().popcount() - 2) / kDiv;
         }
     };
 
     struct [[maybe_unused]] Ocb {
         static constexpr u32 kBucketCount = 2;
 
-        static inline u32 getBucket(const BitboardSet& bbs) {
+        static inline u32 getBucket(const Position& pos) {
+            const auto& bbs = pos.bbs();
             return (!bbs.blackBishops().empty() && !bbs.whiteBishops().empty()
                     && (bbs.blackBishops() & boards::kLightSquares).empty()
                            != (bbs.whiteBishops() & boards::kLightSquares).empty())
@@ -71,8 +72,8 @@ namespace stormphrax::eval::nnue::output {
     struct [[maybe_unused]] Combo {
         static constexpr u32 kBucketCount = L::kBucketCount * R::kBucketCount;
 
-        static inline u32 getBucket(const BitboardSet& bbs) {
-            return L::getBucket(bbs) * R::kBucketCount + R::getBucket(bbs);
+        static inline u32 getBucket(const Position& pos) {
+            return L::getBucket(pos) * R::kBucketCount + R::getBucket(pos);
         }
     };
 } // namespace stormphrax::eval::nnue::output

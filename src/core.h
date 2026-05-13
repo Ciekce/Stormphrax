@@ -20,15 +20,13 @@
 
 #include "types.h"
 
-#include <algorithm>
 #include <array>
 #include <cassert>
-#include <cmath>
-#include <cstring>
-#include <utility>
+#include <cstdlib>
+#include <string_view>
 
-#include "util/bitfield.h"
-#include "util/cemath.h"
+// include here to make globally available
+#include "stats.h"
 
 namespace stormphrax {
     class Color {
@@ -643,7 +641,7 @@ namespace stormphrax {
 
         [[nodiscard]] inline bool operator==(const KingPair& other) const = default;
 
-        [[nodiscard]] inline bool isValid() {
+        [[nodiscard]] inline bool isValid() const {
             return black() != Squares::kNone && white() != Squares::kNone && black() != white();
         }
     };

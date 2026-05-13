@@ -20,9 +20,7 @@
 
 #include "types.h"
 
-#include "movegen.h"
-#include "position/position.h"
-#include "ttable.h"
+#include "position.h"
 
 namespace stormphrax::tb {
     enum class InitStatus {

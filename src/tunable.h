@@ -21,15 +21,20 @@
 #include "types.h"
 
 #include <array>
-#include <functional>
-#include <string_view>
 
 #include "core.h"
 #include "util/multi_array.h"
-#include "util/range.h"
 
 #ifndef SP_EXTERNAL_TUNE
     #define SP_EXTERNAL_TUNE 0
+#endif
+
+#if SP_EXTERNAL_TUNE
+    #include <functional>
+    #include <string>
+    #include <string_view>
+
+    #include "util/range.h"
 #endif
 
 namespace stormphrax::tunable {

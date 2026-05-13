@@ -32,7 +32,7 @@ namespace stormphrax::attacks::lookup {
     extern const std::array<Bitboard, black_magic::kRookData.tableSize> g_rookAttacks;
     extern const std::array<Bitboard, black_magic::kBishopData.tableSize> g_bishopAttacks;
 
-    [[nodiscard]] inline usize getRookIdx(Bitboard occupancy, Square src) {
+    [[nodiscard]] inline usize getRookIdx(Bitboard occ, Square src) {
         const auto s = src.idx();
 
         const auto& data = black_magic::kRookData.data[s];
@@ -40,10 +40,10 @@ namespace stormphrax::attacks::lookup {
         const auto magic = black_magic::kRookMagics[s];
         const auto shift = black_magic::kRookShifts[s];
 
-        return ((occupancy | data.mask) * magic) >> shift;
+        return ((occ | data.mask) * magic) >> shift;
     }
 
-    [[nodiscard]] inline usize getBishopIdx(Bitboard occupancy, Square src) {
+    [[nodiscard]] inline usize getBishopIdx(Bitboard occ, Square src) {
         const auto s = src.idx();
 
         const auto& data = black_magic::kBishopData.data[s];
@@ -51,23 +51,23 @@ namespace stormphrax::attacks::lookup {
         const auto magic = black_magic::kBishopMagics[s];
         const auto shift = black_magic::kBishopShifts[s];
 
-        return ((occupancy | data.mask) * magic) >> shift;
+        return ((occ | data.mask) * magic) >> shift;
     }
 
-    [[nodiscard]] inline Bitboard getRookAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] inline Bitboard getRookAttacks(Square src, Bitboard occ) {
         const auto s = src.idx();
 
         const auto& data = black_magic::kRookData.data[s];
-        const auto idx = getRookIdx(occupancy, src);
+        const auto idx = getRookIdx(occ, src);
 
         return g_rookAttacks[data.offset + idx];
     }
 
-    [[nodiscard]] inline Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] inline Bitboard getBishopAttacks(Square src, Bitboard occ) {
         const auto s = src.idx();
 
         const auto& data = black_magic::kBishopData.data[s];
-        const auto idx = getBishopIdx(occupancy, src);
+        const auto idx = getBishopIdx(occ, src);
 
         return g_bishopAttacks[data.offset + idx];
     }

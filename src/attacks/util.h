@@ -51,7 +51,7 @@ namespace stormphrax::attacks {
             }
         }
 
-        [[nodiscard]] constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occupancy) {
+        [[nodiscard]] constexpr Bitboard generateSlidingAttacks(Square src, i32 dir, Bitboard occ) {
             Bitboard dst{};
 
             auto blockers = edges(dir);
@@ -65,7 +65,7 @@ namespace stormphrax::attacks {
                 return dst;
             }
 
-            blockers |= occupancy;
+            blockers |= occ;
 
             do {
                 if (right) {
@@ -102,24 +102,24 @@ namespace stormphrax::attacks {
     constexpr auto kAntiDiagonals = generateEmptyBoardAttacks<offsets::kUpLeft, offsets::kDownRight>();
 
     template <i32... kDirs>
-    [[nodiscard]] constexpr Bitboard genAllSlidingAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard genAllSlidingAttacks(Square src, Bitboard occ) {
         Bitboard dst{};
 
         for (const auto dir : {kDirs...}) {
-            dst |= internal::generateSlidingAttacks(src, dir, occupancy);
+            dst |= internal::generateSlidingAttacks(src, dir, occ);
         }
 
         return dst;
     }
 
-    [[nodiscard]] constexpr Bitboard genRookAttacks(Square src, Bitboard occupancy) {
-        return genAllSlidingAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>(src, occupancy);
+    [[nodiscard]] constexpr Bitboard genRookAttacks(Square src, Bitboard occ) {
+        return genAllSlidingAttacks<offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight>(src, occ);
     }
 
-    [[nodiscard]] constexpr Bitboard genBishopAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard genBishopAttacks(Square src, Bitboard occ) {
         return genAllSlidingAttacks<offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight>(
             src,
-            occupancy
+            occ
         );
     }
 } // namespace stormphrax::attacks

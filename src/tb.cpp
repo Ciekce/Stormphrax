@@ -75,8 +75,8 @@ namespace stormphrax::tb {
 
         const auto epSq = pos.enPassant();
         auto result = tb_probe_root_dtz(
-            bbs.whiteOccupancy(),
-            bbs.blackOccupancy(),
+            bbs.white(),
+            bbs.black(),
             bbs.kings(),
             bbs.queens(),
             bbs.rooks(),
@@ -94,8 +94,8 @@ namespace stormphrax::tb {
             println("info string DTZ probe failed, falling back to WDL probe at root");
 
             result = tb_probe_root_wdl(
-                bbs.whiteOccupancy(),
-                bbs.blackOccupancy(),
+                bbs.white(),
+                bbs.black(),
                 bbs.kings(),
                 bbs.queens(),
                 bbs.rooks(),
@@ -169,8 +169,8 @@ namespace stormphrax::tb {
 
         const auto epSq = pos.enPassant();
         const auto wdl = tb_probe_wdl(
-            bbs.whiteOccupancy(),
-            bbs.blackOccupancy(),
+            bbs.white(),
+            bbs.black(),
             bbs.kings(),
             bbs.queens(),
             bbs.rooks(),

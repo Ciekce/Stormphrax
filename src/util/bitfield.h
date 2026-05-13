@@ -20,6 +20,7 @@
 
 #include "../types.h"
 
+// clang-format off
 #define SP_ENUM_FLAG_OPERATOR(T, UT, O) \
     [[maybe_unused]] inline constexpr T operator O(T lhs, T rhs) { \
         return static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
@@ -27,6 +28,7 @@
     [[maybe_unused]] inline constexpr T& operator O##=(T & lhs, T rhs) { \
         return lhs = static_cast<T>(static_cast<UT>(lhs) O static_cast<UT>(rhs)); \
     }
+// clang-format on
 
 #define SP_ENUM_FLAGS(UT, T) \
     enum class T : UT; \
@@ -40,12 +42,12 @@
 
 namespace stormphrax {
     template <typename T>
-    constexpr bool testFlags(T field, T flags) {
+    [[nodiscard]] constexpr bool testFlags(T field, T flags) {
         return (field & flags) != T::kNone;
     }
 
     template <typename T>
-    constexpr T setFlags(T field, T flags, bool v) {
+    [[nodiscard]] constexpr T setFlags(T field, T flags, bool v) {
         if (v) {
             field |= flags;
         } else {
@@ -56,7 +58,7 @@ namespace stormphrax {
     }
 
     template <typename T>
-    constexpr T flipFlags(T field, T flags) {
+    [[nodiscard]] constexpr T flipFlags(T field, T flags) {
         return field ^ flags;
     }
 } // namespace stormphrax

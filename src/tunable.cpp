@@ -18,6 +18,7 @@
 
 #include "tunable.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace stormphrax::tunable {

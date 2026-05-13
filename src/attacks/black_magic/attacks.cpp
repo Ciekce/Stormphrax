@@ -33,15 +33,15 @@ namespace stormphrax::attacks::lookup {
                 const auto maxEntries = 1 << invMask.popcount();
 
                 for (u32 i = 0; i < maxEntries; ++i) {
-                    const auto occupancy = util::pdep(i, invMask);
-                    const auto idx = getRookIdx(occupancy, Square::fromRaw(sq));
+                    const auto occ = util::pdep(i, invMask);
+                    const auto idx = getRookIdx(occ, Square::fromRaw(sq));
 
                     if (!dst[data.offset + idx].empty()) {
                         continue;
                     }
 
                     for (const auto dir : {offsets::kUp, offsets::kDown, offsets::kLeft, offsets::kRight}) {
-                        dst[data.offset + idx] |= internal::generateSlidingAttacks(Square::fromRaw(sq), dir, occupancy);
+                        dst[data.offset + idx] |= internal::generateSlidingAttacks(Square::fromRaw(sq), dir, occ);
                     }
                 }
             }
@@ -59,8 +59,8 @@ namespace stormphrax::attacks::lookup {
                 const auto maxEntries = 1 << invMask.popcount();
 
                 for (u32 i = 0; i < maxEntries; ++i) {
-                    const auto occupancy = util::pdep(i, invMask);
-                    const auto idx = getBishopIdx(occupancy, Square::fromRaw(square));
+                    const auto occ = util::pdep(i, invMask);
+                    const auto idx = getBishopIdx(occ, Square::fromRaw(square));
 
                     if (!dst[data.offset + idx].empty()) {
                         continue;
@@ -69,8 +69,7 @@ namespace stormphrax::attacks::lookup {
                     for (const auto dir :
                          {offsets::kUpLeft, offsets::kUpRight, offsets::kDownLeft, offsets::kDownRight})
                     {
-                        dst[data.offset + idx] |=
-                            internal::generateSlidingAttacks(Square::fromRaw(square), dir, occupancy);
+                        dst[data.offset + idx] |= internal::generateSlidingAttacks(Square::fromRaw(square), dir, occ);
                     }
                 }
             }

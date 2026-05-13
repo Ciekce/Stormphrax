@@ -21,7 +21,7 @@
 #include "types.h"
 
 #include "move.h"
-#include "position/position.h"
+#include "position.h"
 
 namespace stormphrax {
     struct ScoredMove {

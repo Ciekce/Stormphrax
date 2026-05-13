@@ -20,84 +20,26 @@
 
 #include "types.h"
 
-#include <algorithm>
 #include <atomic>
-#include <cstring>
 
 #include "core.h"
-#include "position/position.h"
-#include "tunable.h"
-#include "util/cemath.h"
+#include "position.h"
 #include "util/multi_array.h"
 
 namespace stormphrax {
-    struct PlayedMove {
-        Piece moving;
-        Square dst;
-    };
-
     class CorrectionHistoryTable {
     public:
-        inline void clear() {
-            std::memset(&m_tables, 0, sizeof(m_tables));
-            std::memset(&m_cont, 0, sizeof(m_cont));
-        }
+        void clear();
 
-        inline void update(
+        void update(
             const Position& pos,
             std::span<const u64> keyHistory,
             i32 depth,
             Score searchScore,
             Score staticEval
-        ) {
-            auto& tables = m_tables[pos.stm().idx()];
+        );
 
-            const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
-
-            const auto updateCont = [&](const u64 offset) {
-                if (keyHistory.size() >= offset) {
-                    m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
-                }
-            };
-
-            tables.pawn[pos.pawnKey() % kEntries].update(bonus);
-            tables.blackNonPawn[pos.blackNonPawnKey() % kEntries].update(bonus);
-            tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries].update(bonus);
-            tables.major[pos.majorKey() % kEntries].update(bonus);
-
-            updateCont(1);
-            updateCont(2);
-            updateCont(4);
-        }
-
-        [[nodiscard]] inline Score correct(const Position& pos, std::span<const u64> keyHistory, Score score) const {
-            using namespace tunable;
-
-            auto& tables = m_tables[pos.stm().idx()];
-
-            const auto contAdjustment = [&](const u64 offset, i32 weight) {
-                if (keyHistory.size() >= offset) {
-                    return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
-                } else {
-                    return 0;
-                }
-            };
-
-            i32 correction{};
-
-            correction += pawnCorrhistWeight() * tables.pawn[pos.pawnKey() % kEntries];
-            correction += nonPawnCorrhistWeight() * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
-            correction += nonPawnCorrhistWeight() * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
-            correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
-
-            correction += contAdjustment(1, contCorrhist1Weight());
-            correction += contAdjustment(2, contCorrhist2Weight());
-            correction += contAdjustment(4, contCorrhist4Weight());
-
-            score += correction / 2048;
-
-            return std::clamp(score, -kScoreWin + 1, kScoreWin - 1);
-        }
+        [[nodiscard]] Score correct(const Position& pos, std::span<const u64> keyHistory, Score score) const;
 
     private:
         static constexpr usize kEntries = 16384;

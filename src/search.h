@@ -20,23 +20,20 @@
 
 #include "types.h"
 
-#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <string>
-#include <string_view>
+#include <span>
 #include <thread>
 #include <utility>
 #include <vector>
 
 #include "eval/eval.h"
 #include "limit.h"
-#include "position/position.h"
+#include "position.h"
 #include "tb.h"
 #include "thread.h"
 #include "ttable.h"
@@ -226,7 +223,15 @@ namespace stormphrax::search {
         ) = delete;
 
         template <bool kPvNode = false>
-        Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
+        Score qsearch(
+            ThreadData& thread,
+            const Position& pos,
+            PvList& pv,
+            i32 ply,
+            u32 moveStackIdx,
+            Score alpha,
+            Score beta
+        );
 
         void reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time);
         void report(const ThreadData& thread, i32 depth, f64 time);

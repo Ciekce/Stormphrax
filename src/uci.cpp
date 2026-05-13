@@ -32,7 +32,7 @@
 #include "movegen.h"
 #include "opts.h"
 #include "perft.h"
-#include "position/position.h"
+#include "position.h"
 #include "search.h"
 #include "tb.h"
 #include "ttable.h"
@@ -111,7 +111,7 @@ namespace stormphrax {
             search::Searcher m_searcher{};
 
             std::vector<u64> m_keyHistory{};
-            Position m_pos{Position::starting()};
+            Position m_pos{Position::startpos()};
 
             i32 m_moveOverhead{limit::kDefaultMoveOverheadMs};
         };
@@ -312,7 +312,7 @@ namespace stormphrax {
             usize next = 0;
 
             if (type == "startpos") {
-                m_pos = Position::starting();
+                m_pos = Position::startpos();
                 m_keyHistory.clear();
             } else if (type == "fen") {
                 const auto count = std::distance(args.begin(), std::ranges::find(args, "moves"));
@@ -960,7 +960,7 @@ namespace stormphrax {
                 return;
             }
 
-            if (m_pos.bbs().occupancy().popcount() > TB_LARGEST) {
+            if (m_pos.occ().popcount() > TB_LARGEST) {
                 eprintln("too many pieces");
                 return;
             }

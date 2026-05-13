@@ -18,7 +18,10 @@
 
 #include "limit.h"
 
+#include <algorithm>
+
 #include "tunable.h"
+#include "util/cemath.h"
 
 namespace stormphrax::limit {
     namespace {
@@ -50,7 +53,8 @@ namespace stormphrax::limit {
             m_prevBestMove = bestMove;
         }
 
-        if (isMating(pvMove.score)) {
+        // try to resolve >tb scores that aren't full mates yet
+        if (isMating(pvMove.score) && score >= kScoreMate - kMaxDepth) {
             m_scale = 0.15;
             return;
         }

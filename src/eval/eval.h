@@ -24,77 +24,34 @@
 
 #include "../core.h"
 #include "../correction.h"
-#include "../position/position.h"
-#include "../see.h"
-#include "../tunable.h"
-#include "nnue.h"
+#include "../position.h"
+#include "nnue_state.h"
 
 namespace stormphrax::eval {
     using Contempt = std::array<Score, Colors::kCount>;
     using Optimism = std::array<i32, Colors::kCount>;
 
     template <bool kCorrect = true>
-    inline Score adjustEval(
+    [[nodiscard]] Score adjustEval(
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
         const CorrectionHistoryTable* correction,
         i32 eval,
         i32* corrDelta = nullptr
-    ) {
-        using namespace tunable;
+    );
 
-        const auto bbs = pos.bbs();
-
-        const auto npMaterial = scalingValuePawn() * bbs.pawns().popcount()     //
-                              + scalingValueKnight() * bbs.knights().popcount() //
-                              + scalingValueBishop() * bbs.bishops().popcount() //
-                              + scalingValueRook() * bbs.rooks().popcount()     //
-                              + scalingValueQueen() * bbs.queens().popcount();
-
-        eval = (eval * (materialScalingBase() + npMaterial) + optimism[pos.stm().idx()] * (optimismBase() + npMaterial))
-             / 32768;
-
-        eval = eval * (200 - pos.halfmove()) / 200;
-
-        if constexpr (kCorrect) {
-            const auto corrected = correction->correct(pos, keyHistory, eval);
-
-            if (corrDelta) {
-                *corrDelta = std::abs(eval - corrected);
-            }
-
-            eval = corrected;
-        }
-
-        return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
-    }
-
-    inline Score adjustStatic(const Position& pos, const Contempt& contempt, Score eval) {
-        eval += contempt[pos.stm().idx()];
-        return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
-    }
-
-    inline Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {}) {
-        const auto eval = nnueState.evaluate(pos.boards(), pos.kings(), pos.stm());
-        return adjustStatic(pos, contempt, eval);
-    }
+    [[nodiscard]] Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {});
 
     template <bool kCorrect = true>
-    inline Score adjustedStaticEval(
+    [[nodiscard]] Score adjustedStaticEval(
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
         NnueState& nnueState,
         const CorrectionHistoryTable* correction,
         const Contempt& contempt = {}
-    ) {
-        const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<kCorrect>(pos, optimism, keyHistory, correction, eval);
-    }
+    );
 
-    inline Score staticEvalOnce(const Position& pos, const Contempt& contempt = {}) {
-        const auto eval = NnueState::evaluateOnce(pos.boards(), pos.kings(), pos.stm());
-        return adjustStatic(pos, contempt, eval);
-    }
+    [[nodiscard]] Score staticEvalOnce(const Position& pos, const Contempt& contempt = {});
 } // namespace stormphrax::eval

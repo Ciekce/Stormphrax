@@ -32,18 +32,18 @@ namespace stormphrax::attacks::lookup {
     extern const std::array<u16, bmi2::kRookData.tableSize> g_rookAttacks;
     extern const std::array<Bitboard, bmi2::kBishopData.tableSize> g_bishopAttacks;
 
-    inline Bitboard getRookAttacks(Square src, Bitboard occupancy) {
+    inline Bitboard getRookAttacks(Square src, Bitboard occ) {
         const auto& data = bmi2::kRookData.data[src.idx()];
 
-        const auto idx = util::pext(occupancy, data.srcMask);
+        const auto idx = util::pext(occ, data.srcMask);
         const auto attacks = util::pdep(g_rookAttacks[data.offset + idx], data.dstMask);
 
         return attacks;
     }
 
-    inline Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
+    inline Bitboard getBishopAttacks(Square src, Bitboard occ) {
         const auto& data = bmi2::kBishopData.data[src.idx()];
-        const auto idx = util::pext(occupancy, data.mask);
+        const auto idx = util::pext(occ, data.mask);
 
         return g_bishopAttacks[data.offset + idx];
     }

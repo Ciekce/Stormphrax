@@ -105,29 +105,29 @@ namespace stormphrax::attacks {
         return kKnightAttacks[src.idx()];
     }
 
-    [[nodiscard]] constexpr Bitboard getBishopAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard getBishopAttacks(Square src, Bitboard occ) {
         if (std::is_constant_evaluated()) {
-            return occupancy.empty() ? kEmptyBoardBishops[src.idx()] : genBishopAttacks(src, occupancy);
+            return occ.empty() ? kEmptyBoardBishops[src.idx()] : genBishopAttacks(src, occ);
         }
-        return lookup::getBishopAttacks(src, occupancy);
+        return lookup::getBishopAttacks(src, occ);
     }
 
     [[nodiscard]] constexpr Bitboard getKingAttacks(Square src) {
         return kKingAttacks[src.idx()];
     }
 
-    [[nodiscard]] constexpr Bitboard getRookAttacks(Square src, Bitboard occupancy) {
+    [[nodiscard]] constexpr Bitboard getRookAttacks(Square src, Bitboard occ) {
         if (std::is_constant_evaluated()) {
-            return occupancy.empty() ? kEmptyBoardRooks[src.idx()] : genRookAttacks(src, occupancy);
+            return occ.empty() ? kEmptyBoardRooks[src.idx()] : genRookAttacks(src, occ);
         }
-        return lookup::getRookAttacks(src, occupancy);
+        return lookup::getRookAttacks(src, occ);
     }
 
-    [[nodiscard]] constexpr Bitboard getQueenAttacks(Square src, Bitboard occupancy) {
-        return getRookAttacks(src, occupancy) | getBishopAttacks(src, occupancy);
+    [[nodiscard]] constexpr Bitboard getQueenAttacks(Square src, Bitboard occ) {
+        return getRookAttacks(src, occ) | getBishopAttacks(src, occ);
     }
 
-    [[nodiscard]] constexpr Bitboard getAttacks(Piece piece, Square src, Bitboard occupancy = Bitboard{}) {
+    [[nodiscard]] constexpr Bitboard getAttacks(Piece piece, Square src, Bitboard occ = Bitboard{}) {
         assert(piece != Pieces::kNone);
 
         switch (piece.type().raw()) {
@@ -136,11 +136,11 @@ namespace stormphrax::attacks {
             case PieceTypes::kKnight.raw():
                 return getKnightAttacks(src);
             case PieceTypes::kBishop.raw():
-                return getBishopAttacks(src, occupancy);
+                return getBishopAttacks(src, occ);
             case PieceTypes::kRook.raw():
-                return getRookAttacks(src, occupancy);
+                return getRookAttacks(src, occ);
             case PieceTypes::kQueen.raw():
-                return getQueenAttacks(src, occupancy);
+                return getQueenAttacks(src, occ);
             case PieceTypes::kKing.raw():
                 return getKingAttacks(src);
             default:

@@ -22,6 +22,8 @@
 
 #include <array>
 
+#include "../util/bitfield.h"
+
 namespace stormphrax::eval {
     SP_ENUM_FLAGS(u16, NetworkFlags){
         kNone = 0x0000,
