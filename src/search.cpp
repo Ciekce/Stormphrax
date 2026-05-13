@@ -576,7 +576,7 @@ namespace stormphrax::search {
         }
 
         if (depth <= 0) {
-            return qsearch<kPvNode>(thread, pos, ply, moveStackIdx, alpha, beta);
+            return qsearch<kPvNode>(thread, pos, pv, ply, moveStackIdx, alpha, beta);
         }
 
         if constexpr (kPvNode) {
@@ -790,7 +790,7 @@ namespace stormphrax::search {
             if (depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
                 && curr.staticEval + razoringMargin() * depth <= alpha)
             {
-                const auto score = qsearch(thread, pos, ply, moveStackIdx, alpha, alpha + 1);
+                const auto score = qsearch(thread, pos, pv, ply, moveStackIdx, alpha, alpha + 1);
                 if (score <= alpha) {
                     return score;
                 }
@@ -838,7 +838,7 @@ namespace stormphrax::search {
                     thread.minNmpPly = ply + (depth - R) * 3 / 4;
 
                     const auto verifScore =
-                        search(thread, pos, curr.pv, depth - R, ply, moveStackIdx + 1, beta - 1, beta, true);
+                        search(thread, pos, pv, depth - R, ply, moveStackIdx + 1, beta - 1, beta, true);
 
                     thread.minNmpPly = 0;
 
@@ -873,7 +873,8 @@ namespace stormphrax::search {
 
                     const auto [newPos, guard] = thread.applyMove(pos, ply, move);
 
-                    auto score = -qsearch(thread, newPos, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
+                    auto score =
+                        -qsearch(thread, newPos, curr.pv, ply + 1, moveStackIdx + 1, -probcutBeta, -probcutBeta + 1);
 
                     if (score >= probcutBeta) {
                         score = -search(
@@ -1023,7 +1024,7 @@ namespace stormphrax::search {
                     curr.excluded = move;
 
                     const auto score =
-                        search(thread, pos, curr.pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
+                        search(thread, pos, pv, sDepth, ply, moveStackIdx + 1, sBeta - 1, sBeta, cutnode);
 
                     curr.excluded = kNullMove;
 
@@ -1372,6 +1373,7 @@ namespace stormphrax::search {
     Score Searcher::qsearch(
         ThreadData& thread,
         const Position& pos,
+        PvList& pv,
         i32 ply,
         u32 moveStackIdx,
         Score alpha,
@@ -1413,6 +1415,8 @@ namespace stormphrax::search {
                              );
         }
 
+        auto& curr = thread.stack[ply];
+
         ProbedTTableEntry ttEntry{};
         const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
 
@@ -1424,7 +1428,7 @@ namespace stormphrax::search {
             return ttEntry.score;
         }
 
-        const bool ttpv = kPvNode || ttEntry.wasPv;
+        curr.ttpv = kPvNode || ttEntry.wasPv;
 
         Score rawStaticEval, eval;
 
@@ -1439,7 +1443,7 @@ namespace stormphrax::search {
             }
 
             if (!ttHit) {
-                m_ttable.putStaticEval(pos.key(), rawStaticEval, ttpv);
+                m_ttable.putStaticEval(pos.key(), rawStaticEval, curr.ttpv);
             }
 
             const auto staticEval =
@@ -1513,7 +1517,7 @@ namespace stormphrax::search {
 
             const auto score = newPos.isDrawn(ply, thread.keyHistory)
                                  ? draw
-                                 : -qsearch<kPvNode>(thread, newPos, ply + 1, moveStackIdx + 1, -beta, -alpha);
+                                 : -qsearch<kPvNode>(thread, newPos, curr.pv, ply + 1, moveStackIdx + 1, -beta, -alpha);
 
             if (hasStopped()) {
                 return 0;
@@ -1531,6 +1535,11 @@ namespace stormphrax::search {
                 alpha = score;
                 bestMove = move;
 
+                if constexpr (kPvNode) {
+                    assert(curr.pv.length + 1 <= kMaxDepth);
+                    pv.update(move, curr.pv);
+                }
+
                 ttFlag = TtFlag::kExact;
             }
 
@@ -1545,7 +1554,7 @@ namespace stormphrax::search {
             return -kScoreMate + ply;
         }
 
-        m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, ttpv);
+        m_ttable.put(pos.key(), bestScore, rawStaticEval, bestMove, 0, ply, ttFlag, curr.ttpv);
 
         return bestScore;
     }
