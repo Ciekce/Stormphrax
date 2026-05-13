@@ -391,7 +391,6 @@ namespace stormphrax::search {
         PvList rootPv{};
 
         searchData.nodes = 0;
-        thread.stack[0].killers.clear();
 
         thread.optimism = {};
 
@@ -903,8 +902,6 @@ namespace stormphrax::search {
             }
         }
 
-        thread.stack[ply + 1].killers.clear();
-
         moveStack.failLowQuiets.clear();
         moveStack.failLowNoisies.clear();
 
@@ -913,8 +910,7 @@ namespace stormphrax::search {
 
         auto ttFlag = TtFlag::kUpperBound;
 
-        auto generator =
-            MoveGenerator::main(pos, moveStack.movegenData, ttMove, curr.killers, thread.history, thread.conthist, ply);
+        auto generator = MoveGenerator::main(pos, moveStack.movegenData, ttMove, thread.history, thread.conthist, ply);
 
         i32 legalMoves = 0;
         i32 alphaRaises = 0;
@@ -1267,8 +1263,6 @@ namespace stormphrax::search {
             const auto historyDepth = depth + (!inCheck && curr.staticEval <= bestScore);
 
             if (!pos.isNoisy(bestMove)) {
-                curr.killers.push(bestMove);
-
                 const auto quietBonus =
                     historyBonus(historyDepth, quietBonusDepthScale(), quietBonusOffset(), maxQuietBonus());
 

@@ -69,18 +69,6 @@ namespace stormphrax {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kKiller: {
-                ++m_stage;
-
-                if (!m_skipQuiets && m_killers.killer && m_killers.killer != m_ttMove
-                    && m_pos.isLegal(m_killers.killer))
-                {
-                    return m_killers.killer;
-                }
-
-                [[fallthrough]];
-            }
-
             case MovegenStage::kGenQuiet: {
                 if (!m_skipQuiets) {
                     generateQuiet(m_data.moves, m_pos);

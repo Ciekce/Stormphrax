@@ -91,8 +91,6 @@ namespace stormphrax::search {
         Score staticEval{};
         bool ttpv{};
 
-        KillerTable killers{};
-
         Move excluded{};
         i32 reduction{};
 
