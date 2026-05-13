@@ -223,7 +223,15 @@ namespace stormphrax::search {
         ) = delete;
 
         template <bool kPvNode = false>
-        Score qsearch(ThreadData& thread, const Position& pos, i32 ply, u32 moveStackIdx, Score alpha, Score beta);
+        Score qsearch(
+            ThreadData& thread,
+            const Position& pos,
+            PvList& pv,
+            i32 ply,
+            u32 moveStackIdx,
+            Score alpha,
+            Score beta
+        );
 
         void reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time);
         void report(const ThreadData& thread, i32 depth, f64 time);
