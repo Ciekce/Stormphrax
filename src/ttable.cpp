@@ -186,7 +186,7 @@ namespace stormphrax {
         if (!(flag == TtFlag::kExact || newKey != entry.key || entry.age() != m_age
               || depth + 4 + pv * 2 > entry.depth()))
         {
-            if (entry.depth() >= 5 && entry.flag() != TtFlag::kExact && !isDecisive(entry.score)) {
+            if (entry.depth() >= 5 && entry.flag() != TtFlag::kExact && isDecisive(entry.score)) {
                 entry.setDepth(entry.depth() - 1);
                 *entryPtr = entry;
             }
