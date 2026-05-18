@@ -963,7 +963,7 @@ namespace stormphrax::search {
                 }();
 
                 if (!noisy) {
-                    if (legalMoves >= kLmpTable[improving][std::min(depth, 15)]) {
+                    if (legalMoves >= kLmpTable[improving][std::min(depth, 15)] + history * 1024 / 8388608) {
                         generator.skipQuiets();
                         continue;
                     }
