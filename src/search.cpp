@@ -1044,14 +1044,18 @@ namespace stormphrax::search {
                     } else if (cutnode) {
                         extension = -2;
                     }
-                } else if (
-                    depth <= 7 && !inCheck && curr.staticEval <= alpha - ldseMargin()
-                    && ttEntry.flag == TtFlag::kLowerBound
-                )
-                {
-                    extension = 1
-                              + (!kPvNode && !ttMoveNoisy && ttEntry.depth >= depth - 3
-                                 && curr.staticEval <= alpha - ldseDoubleExtMargin());
+                } else if (depth <= 7 && !inCheck && ttEntry.flag == TtFlag::kLowerBound) {
+                    const auto margin = [&] {
+                        auto margin = ldseBaseMargin();
+                        margin += complexity.value_or(0) * 300 / 8192;
+                        return margin;
+                    }();
+                    if (curr.staticEval <= alpha - margin) {
+                        const auto doubleMargin = margin + ldseDoubleExtMargin();
+                        extension = 1
+                                  + (!kPvNode && !ttMoveNoisy && ttEntry.depth >= depth - 3
+                                     && curr.staticEval <= alpha - doubleMargin);
+                    }
                 }
             }
 

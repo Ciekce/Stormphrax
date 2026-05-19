@@ -262,8 +262,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(multicutFailFirmT, 496, 0, 1024, 51)
 
-    SP_TUNABLE_PARAM(ldseMargin, 23, 10, 60, 3)
-    SP_TUNABLE_PARAM(ldseDoubleExtMargin, 39, 20, 80, 3)
+    SP_TUNABLE_PARAM(ldseBaseMargin, 19, 10, 60, 3)
+    SP_TUNABLE_PARAM(ldseDoubleExtMargin, 16, 2, 50, 3)
 
     SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 75, 50, 120, 5, updateQuietLmrTable)
     SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 246, 100, 300, 10, updateQuietLmrTable)
