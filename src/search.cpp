@@ -943,7 +943,7 @@ namespace stormphrax::search {
                 } else {
                     i32 history = 0;
 
-                    history += thread.history.getButterfly(pos.threats(), move) * searchButterflyWeight();
+                    history += thread.history.getButterfly(pos.stm(), pos.threats(), move) * searchButterflyWeight();
                     history += thread.history.getPieceTo(pos.threats(), moving, move) * searchPieceToWeight();
 
                     history += getConthist(thread.conthist, ply, moving, move, 1) * searchCont1Weight();
@@ -1077,7 +1077,8 @@ namespace stormphrax::search {
                         } else {
                             i32 history = 0;
 
-                            history += thread.history.getButterfly(pos.threats(), move) * lmrButterflyWeight();
+                            history +=
+                                thread.history.getButterfly(pos.stm(), pos.threats(), move) * lmrButterflyWeight();
                             history += thread.history.getPieceTo(pos.threats(), moving, move) * lmrPieceToWeight();
 
                             history += getConthist(thread.conthist, ply, moving, move, 1) * lmrCont1Weight();
