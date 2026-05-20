@@ -101,6 +101,7 @@ namespace stormphrax {
         inline void clear() {
             std::memset(&m_butterfly, 0, sizeof(m_butterfly));
             std::memset(&m_pieceTo, 0, sizeof(m_pieceTo));
+            std::memset(&m_pawn, 0, sizeof(m_pawn));
             std::memset(&m_continuation, 0, sizeof(m_continuation));
             std::memset(&m_noisy, 0, sizeof(m_noisy));
         }
@@ -151,11 +152,13 @@ namespace stormphrax {
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
             Bitboard threats,
+            u64 pawnKey,
             Piece moving,
             Move move,
             HistoryScore bonus
         ) {
             updateMainHistory(threats, moving, move, bonus);
+            pawnEntry(pawnKey, moving, move).update(bonus, 16384);
             updateConthist(continuations, ply, threats, moving, move, bonus);
         }
 
@@ -171,15 +174,23 @@ namespace stormphrax {
             return pieceToEntry(threats, moving, move);
         }
 
+        [[nodiscard]] inline i32 getPawn(u64 pawnKey, Piece moving, Move move) const {
+            return pawnEntry(pawnKey, moving, move);
+        }
+
         [[nodiscard]] inline i32 getNoisy(Move move, Piece captured, Bitboard threats) const {
             return noisyEntry(move, captured, threats.hasSq(move.toSq()));
         }
 
     private:
+        static constexpr usize kPawnHistSize = 8192;
+
         // [from][to][from attacked][to attacked]
         util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
         // [piece][to]
         util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> m_pieceTo{};
+        // [pawn key][piece][to]
+        util::MultiArray<HistoryEntry, kPawnHistSize, Pieces::kCount, Squares::kCount> m_pawn{};
         // [prev piece][to][curr piece type][to]
         util::MultiArray<ContinuationSubtable, Pieces::kCount, Squares::kCount> m_continuation{};
 
@@ -217,6 +228,14 @@ namespace stormphrax {
 
         [[nodiscard]] inline HistoryEntry& pieceToEntry(Bitboard threats, Piece moving, Move move) {
             return m_pieceTo[moving.idx()][move.toSqIdx()][threats.hasSq(move.fromSq())][threats.hasSq(move.toSq())];
+        }
+
+        [[nodiscard]] inline const HistoryEntry& pawnEntry(u64 pawnKey, Piece moving, Move move) const {
+            return m_pawn[pawnKey % kPawnHistSize][moving.idx()][move.toSqIdx()];
+        }
+
+        [[nodiscard]] inline HistoryEntry& pawnEntry(u64 pawnKey, Piece moving, Move move) {
+            return m_pawn[pawnKey % kPawnHistSize][moving.idx()][move.toSqIdx()];
         }
 
         [[nodiscard]] inline const HistoryEntry& noisyEntry(Move move, Piece captured, bool defended) const {
