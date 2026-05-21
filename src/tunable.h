@@ -167,8 +167,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(materialScalingBase, 26000, 10000, 40000, 1500)
     SP_TUNABLE_PARAM(optimismBase, 2000, 0, 12000, 400)
 
-    SP_TUNABLE_PARAM(optimismStretch, 102, 50, 200, 8)
-    SP_TUNABLE_PARAM(optimismScale, 141, 75, 300, 12)
+    SP_TUNABLE_PARAM(optimismStretch, 102, 50, 200, 12)
+    SP_TUNABLE_PARAM(optimismScale, 141, 75, 300, 16)
 
     SP_TUNABLE_PARAM(pawnCorrhistWeight, 177, 32, 384, 18)
     SP_TUNABLE_PARAM(nonPawnCorrhistWeight, 172, 32, 384, 18)
@@ -204,7 +204,6 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(hindsightReductionMargin, 201, 100, 400, 15)
 
-    SP_TUNABLE_PARAM(rfpConstantMargin, 2, -100, 100, 10)
     SP_TUNABLE_PARAM(rfpLinearMargin, 84, 25, 150, 5)
     SP_TUNABLE_PARAM(rfpQuadMargin, 7, 0, 25, 1.2)
     SP_TUNABLE_PARAM(rfpImprovingMargin, 74, 25, 150, 5)
@@ -213,12 +212,13 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(razoringMargin, 345, 100, 700, 40)
 
-    SP_TUNABLE_PARAM(nmpBetaBaseMargin, 204, 100, 400, 15)
-    SP_TUNABLE_PARAM(nmpBetaMarginDepthScale, 1275, 128, 2560, 32)
-    SP_TUNABLE_PARAM(nmpBetaImprovingMargin, 41, 10, 80, 3)
+    SP_TUNABLE_PARAM(nmpBetaBaseMargin, 204, 100, 400, 30)
+    SP_TUNABLE_PARAM(nmpBetaMarginDepthScale, 1275, 128, 2560, 60)
+    SP_TUNABLE_PARAM(nmpBetaImprovingMargin, 41, 10, 80, 6)
 
-    SP_TUNABLE_PARAM(probcutMargin, 308, 150, 400, 13)
-    SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 1)
+    SP_TUNABLE_PARAM(probcutMargin, 308, 150, 400, 40)
+    SP_TUNABLE_PARAM(probcutImprovingMargin, 0, -250, 250, 40)
+    SP_TUNABLE_PARAM(probcutSeeScale, 17, 6, 24, 3)
 
     SP_TUNABLE_PARAM(searchButterflyWeight, 489, 0, 4096, 100)
     SP_TUNABLE_PARAM(searchPieceToWeight, 435, 0, 4096, 100)
@@ -345,10 +345,16 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(pcmDepthMax, 4032, 2048, 8192, 300)
 
-    SP_TUNABLE_PARAM(pcmStaticEvalThreshold, 125, 60, 240, 9)
-    SP_TUNABLE_PARAM(pcmParentStaticEvalThreshold, 126, 60, 240, 9)
+    SP_TUNABLE_PARAM(pcmStaticEvalThreshold, 125, 40, 240, 20)
+    SP_TUNABLE_PARAM(pcmParentStaticEvalThreshold, 126, 40, 240, 20)
+
+    SP_TUNABLE_PARAM(pcmMainUpdateWeight, 1024, 512, 2048, 76)
+    SP_TUNABLE_PARAM(pcmContUpdateWeight, 1024, 512, 2048, 76)
 
     SP_TUNABLE_PARAM(noisyPcmBonus, 53, 0, 2048, 30)
+
+    SP_TUNABLE_PARAM(butterflyAgeingWeight, 1024, 0, 1536, 80)
+    SP_TUNABLE_PARAM(pieceToAgeingWeight, 1024, 0, 1536, 80)
 
     SP_TUNABLE_PARAM(butterflyUpdateWeight, 971, 512, 2048, 76)
     SP_TUNABLE_PARAM(pieceToUpdateWeight, 884, 512, 2048, 76)

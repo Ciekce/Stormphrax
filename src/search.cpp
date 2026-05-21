@@ -409,6 +409,8 @@ namespace stormphrax::search {
         thread.rootMoves.clear();
         std::ranges::copy(m_rootMoves, std::back_inserter(thread.rootMoves));
 
+        thread.history.age();
+
         auto& searchData = thread.search;
 
         PvList rootPv{};
@@ -814,7 +816,7 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = rfpConstantMargin();
+                i32 margin = 0;
                 margin += rfpLinearMargin() * depth;
                 margin += rfpQuadMargin() * depth * depth;
                 margin -= rfpImprovingMargin() * improving;
@@ -895,7 +897,7 @@ namespace stormphrax::search {
                 }
             }
 
-            const auto probcutBeta = beta + probcutMargin();
+            const auto probcutBeta = beta + probcutMargin() - improving * probcutImprovingMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
             if (!curr.ttpv && depth >= 7 && !isDecisive(beta) && (!ttMove || ttMoveNoisy)
@@ -1375,7 +1377,23 @@ namespace stormphrax::search {
 
                 weight = std::max(weight, 0);
 
-                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * weight / 1024);
+                const auto scaled = bonus * weight / 1024;
+
+                thread.history.updateMainHistory(
+                    parent->threats,
+                    parent->moving,
+                    parent->move,
+                    scaled * pcmMainUpdateWeight() / 1024
+                );
+
+                thread.history.updateConthist(
+                    thread.conthist,
+                    ply - 1,
+                    parent->threats,
+                    parent->moving,
+                    parent->move,
+                    scaled * pcmContUpdateWeight() / 1024
+                );
             } else {
                 thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
             }
