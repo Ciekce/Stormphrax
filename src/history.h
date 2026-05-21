@@ -115,7 +115,8 @@ namespace stormphrax {
 
         inline void updateMainHistory(Bitboard threats, Piece moving, Move move, HistoryScore bonus) {
             using namespace tunable;
-            butterflyEntry(threats, move).update(bonus * butterflyUpdateWeight() / 1024, maxButterflyHistory());
+            butterflyEntry(moving.color(), threats, move)
+                .update(bonus * butterflyUpdateWeight() / 1024, maxButterflyHistory());
             pieceToEntry(threats, moving, move).update(bonus * pieceToUpdateWeight() / 1024, maxPieceToHistory());
         }
 
@@ -131,7 +132,7 @@ namespace stormphrax {
 
             i32 base = 0;
 
-            base += getButterfly(threats, move) * contBaseButterflyWeight();
+            base += getButterfly(moving.color(), threats, move) * contBaseButterflyWeight();
             base += getPieceTo(threats, moving, move) * contBasePieceToWeight();
 
             base += getConthist(continuations, ply, moving, move, 1) * contBaseCont1Weight();
@@ -163,8 +164,8 @@ namespace stormphrax {
             noisyEntry(move, captured, threats.hasSq(move.toSq())).update(bonus, tunable::maxNoisyHistory());
         }
 
-        [[nodiscard]] inline i32 getButterfly(Bitboard threats, Move move) const {
-            return butterflyEntry(threats, move);
+        [[nodiscard]] inline i32 getButterfly(Color stm, Bitboard threats, Move move) const {
+            return butterflyEntry(stm, threats, move);
         }
 
         [[nodiscard]] inline i32 getPieceTo(Bitboard threats, Piece moving, Move move) const {
@@ -176,8 +177,8 @@ namespace stormphrax {
         }
 
     private:
-        // [from][to][from attacked][to attacked]
-        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
+        // [stm][from][to][from attacked][to attacked]
+        util::MultiArray<HistoryEntry, Colors::kCount, Squares::kCount, Squares::kCount, 2, 2> m_butterfly{};
         // [piece][to]
         util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount, 2, 2> m_pieceTo{};
         // [prev piece][to][curr piece type][to]
@@ -201,13 +202,13 @@ namespace stormphrax {
             }
         }
 
-        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Bitboard threats, Move move) const {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
+        [[nodiscard]] inline const HistoryEntry& butterflyEntry(Color stm, Bitboard threats, Move move) const {
+            return m_butterfly[stm.idx()][move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
                               [threats.hasSq(move.toSq())];
         }
 
-        [[nodiscard]] inline HistoryEntry& butterflyEntry(Bitboard threats, Move move) {
-            return m_butterfly[move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
+        [[nodiscard]] inline HistoryEntry& butterflyEntry(Color stm, Bitboard threats, Move move) {
+            return m_butterfly[stm.idx()][move.fromSqIdx()][move.toSqIdx()][threats.hasSq(move.fromSq())]
                               [threats.hasSq(move.toSq())];
         }
 

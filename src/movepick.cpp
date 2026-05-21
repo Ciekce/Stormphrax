@@ -245,7 +245,7 @@ namespace stormphrax {
 
             const auto moving = m_pos.pieceOn(move.fromSq());
 
-            score += m_history.getButterfly(threats, move) * movepickButterflyWeight();
+            score += m_history.getButterfly(m_pos.stm(), threats, move) * movepickButterflyWeight();
             score += m_history.getPieceTo(threats, moving, move) * movepickPieceToWeight();
 
             score += getConthist(m_continuations, m_ply, moving, move, 1) * movepickCont1Weight();
