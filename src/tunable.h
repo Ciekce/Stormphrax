@@ -267,11 +267,11 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(ldseMargin, 23, 10, 60, 3)
     SP_TUNABLE_PARAM(ldseDoubleExtMargin, 39, 20, 80, 3)
 
-    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 75, 50, 120, 5, updateQuietLmrTable)
-    SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 246, 100, 300, 10, updateQuietLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(quietLmrBase, 75, 50, 120, 10, updateQuietLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(quietLmrDivisor, 246, 100, 300, 20, updateQuietLmrTable)
 
-    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -12, -50, 75, 5, updateNoisyLmrTable)
-    SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 243, 150, 350, 10, updateNoisyLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(noisyLmrBase, -12, -50, 75, 10, updateNoisyLmrTable)
+    SP_TUNABLE_PARAM_CALLBACK(noisyLmrDivisor, 243, 150, 350, 20, updateNoisyLmrTable)
 
     SP_TUNABLE_PARAM(lmrButterflyWeight, 436, 0, 4096, 100)
     SP_TUNABLE_PARAM(lmrPieceToWeight, 369, 0, 4096, 100)
