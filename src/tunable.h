@@ -26,7 +26,7 @@
 #include "util/multi_array.h"
 
 #ifndef SP_EXTERNAL_TUNE
-    #define SP_EXTERNAL_TUNE 0
+    #define SP_EXTERNAL_TUNE 1
 #endif
 
 #if SP_EXTERNAL_TUNE
