@@ -128,7 +128,7 @@ namespace stormphrax::tunable {
 #endif
 
     SP_TUNABLE_PARAM(defaultMovesToGo, 19, 12, 40, 1)
-    SP_TUNABLE_PARAM_F64(incrementScale, 0.94, 0.5, 1.0, 0.05, 100)
+    SP_TUNABLE_PARAM_F64(incrementScale, 0.94, 0.5, 1.5, 0.05, 100)
     SP_TUNABLE_PARAM_F64(softTimeScale, 0.69, 0.5, 1.0, 0.05, 100)
     SP_TUNABLE_PARAM_F64(hardTimeScale, 0.65, 0.2, 1.0, 0.05, 100)
 
