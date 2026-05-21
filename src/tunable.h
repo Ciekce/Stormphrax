@@ -166,6 +166,7 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(materialScalingBase, 26000, 10000, 40000, 1500)
     SP_TUNABLE_PARAM(optimismBase, 2000, 0, 12000, 400)
+    SP_TUNABLE_PARAM(optimismMaterialScale, 1024, 0, 2048, 160)
 
     SP_TUNABLE_PARAM(optimismStretch, 102, 50, 200, 12)
     SP_TUNABLE_PARAM(optimismScale, 141, 75, 300, 16)

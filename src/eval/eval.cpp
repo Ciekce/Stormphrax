@@ -47,7 +47,8 @@ namespace stormphrax::eval {
                               + scalingValueRook() * bbs.rooks().popcount()     //
                               + scalingValueQueen() * bbs.queens().popcount();
 
-        eval = (eval * (materialScalingBase() + npMaterial) + optimism[pos.stm().idx()] * (optimismBase() + npMaterial))
+        eval = (eval * (materialScalingBase() + npMaterial)
+                + optimism[pos.stm().idx()] * (optimismBase() + npMaterial * optimismMaterialScale() / 1024))
              / 32768;
 
         eval = eval * (200 - pos.halfmove()) / 200;
