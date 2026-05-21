@@ -56,7 +56,7 @@ namespace stormphrax {
         updateCont(4);
     }
 
-    Score CorrectionHistoryTable::correct(const Position& pos, std::span<const u64> keyHistory, Score score) const {
+    i32 CorrectionHistoryTable::correction(const Position& pos, std::span<const u64> keyHistory) const {
         using namespace tunable;
 
         const auto& tables = m_tables[pos.stm().idx()];
@@ -80,8 +80,6 @@ namespace stormphrax {
         correction += contAdjustment(2, contCorrhist2Weight());
         correction += contAdjustment(4, contCorrhist4Weight());
 
-        score += correction / 2048;
-
-        return std::clamp(score, -kScoreWin + 1, kScoreWin - 1);
+        return correction;
     }
 } // namespace stormphrax

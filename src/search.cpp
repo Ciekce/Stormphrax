@@ -821,7 +821,7 @@ namespace stormphrax::search {
                 margin += rfpQuadMargin() * depth * depth;
                 margin -= rfpImprovingMargin() * improving;
                 if (complexity) {
-                    margin += *complexity * rfpCorrplexityScale() / 128;
+                    margin += *complexity * rfpCorrplexityScale() / 262144;
                 }
                 return margin;
             };
@@ -1073,15 +1073,19 @@ namespace stormphrax::search {
 
                     if (score < sBeta) {
                         const auto corr = complexity.value_or(0);
+                        const auto doubleCorr =
+                            static_cast<i32>(static_cast<i64>(corr) * doubleExtCorrScale() / 16777216);
+                        const auto tripleCorr =
+                            static_cast<i32>(static_cast<i64>(corr) * tripleExtCorrScale() / 16777216);
                         const auto doubleMargin = doubleExtBaseMargin()                                //
                                                 + kPvNode * doubleExtPvMargin()                        //
                                                 + (kPvNode && !ttEntry.wasPv) * doubleExtNewPvMargin() //
-                                                - corr * doubleExtCorrScale() / 8192;
+                                                - doubleCorr;
                         const auto tripleMargin = tripleExtBaseMargin()                                //
                                                 + kPvNode * tripleExtPvMargin()                        //
                                                 + (kPvNode && !ttEntry.wasPv) * tripleExtNewPvMargin() //
                                                 + ttMoveNoisy * tripleExtNoisyMargin()                 //
-                                                - corr * tripleExtCorrScale() / 8192;
+                                                - tripleCorr;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
@@ -1147,7 +1151,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-                    r -= complexity.value_or(0) * lmrComplexityScale() / 4096;
+                    r -= complexity.value_or(0) * lmrComplexityScale() / 262144;
                     r -= legalMoves * lmrMoveCountReductionScale();
 
                     // can't use std::clamp because newDepth can be <0
