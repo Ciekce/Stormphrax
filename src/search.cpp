@@ -467,6 +467,8 @@ namespace stormphrax::search {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
+                    delta += std::abs(rootMove.averageSquaredScore) * aspSqScoreScale() / 1048576;
+
                     const auto lastScore = rootMove.windowScore;
 
                     alpha = std::max(lastScore - delta, -kScoreInf);
@@ -1258,6 +1260,13 @@ namespace stormphrax::search {
                             rootMove.averageScore = score;
                         } else {
                             rootMove.averageScore = (rootMove.averageScore + score) / 2;
+                        }
+
+                        if (rootMove->averageSquaredScore == -kScoreInf) {
+                            rootMove->averageSquaredScore = score;
+                        } else {
+                            rootMove->averageSquaredScore =
+                                (rootMove->averageSquaredScore + score * std::abs(score)) / 2;
                         }
                     }
 
