@@ -1605,11 +1605,18 @@ namespace stormphrax::search {
 
         const auto& move = thread.rootMoves[pvIdx];
 
+        bool upperbound = move.upperbound;
+        bool lowerbound = move.lowerbound;
+
         auto score = move.displayScore;
 
         if (move.score == -kScoreInf) {
             score = move.previousScore;
             depth = std::max(1, depth - 1);
+
+            // previous scores must be exact, as the depth was completed
+            upperbound = false;
+            lowerbound = false;
         }
 
         usize nodes = 0;
@@ -1628,9 +1635,6 @@ namespace stormphrax::search {
         }
 
         print("depth {} seldepth {} time {} nodes {} nps {} score ", depth, move.seldepth, ms, nodes, nps);
-
-        bool upperbound = move.upperbound;
-        bool lowerbound = move.lowerbound;
 
         if (!move.tbRange.contains(score)) {
             score = move.tbRange.clamp(score);
