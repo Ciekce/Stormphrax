@@ -46,7 +46,7 @@ namespace stormphrax::tb {
         }
     }
 
-    search::GameResult probeRoot(const Position& pos, std::span<search::RootMove> rootMoves) {
+    std::pair<search::GameResult, bool> probeRoot(const Position& pos, std::span<search::RootMove> rootMoves) {
         const auto moveFromTb = [](auto tbMove) {
             static constexpr std::array kPromoPieces = {
                 PieceTypes::kNone,
@@ -72,6 +72,7 @@ namespace stormphrax::tb {
         const auto& bbs = pos.bbs();
 
         TbRootMoves tbRootMoves{};
+        bool dtzSucceeded = true;
 
         const auto epSq = pos.enPassant();
         auto result = tb_probe_root_dtz(
@@ -92,6 +93,8 @@ namespace stormphrax::tb {
 
         if (!result) { // DTZ tables unavailable, fall back to WDL
             println("info string DTZ probe failed, falling back to WDL probe at root");
+
+            dtzSucceeded = false;
 
             result = tb_probe_root_wdl(
                 bbs.white(),
@@ -115,7 +118,7 @@ namespace stormphrax::tb {
         }
 
         if (!result || tbRootMoves.size == 0) { // mate or stalemate at root, handled by search
-            return search::GameResult::kNone;
+            return {search::GameResult::kNone, dtzSucceeded};
         }
 
         std::stable_sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
@@ -140,7 +143,7 @@ namespace stormphrax::tb {
         const auto bestWdl = toWdl(tbRootMoves.moves[0].tbRank);
 
         if (rootMoves.empty()) {
-            return bestWdl;
+            return {bestWdl, dtzSucceeded};
         }
 
         const auto getRootMove = [&](Move move) -> search::RootMove* {
@@ -172,7 +175,7 @@ namespace stormphrax::tb {
             return a.tbRank > b.tbRank;
         });
 
-        return bestWdl;
+        return {bestWdl, dtzSucceeded};
     }
 
     search::GameResult probeWdl(const Position& pos) {

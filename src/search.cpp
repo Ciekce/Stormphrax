@@ -107,6 +107,7 @@ namespace stormphrax::search {
         m_resetBarrier.arriveAndWait();
 
         m_infinite = infinite;
+        m_probeWdl = !g_opts.syzygyProbeRootOnly;
 
         m_rootMoves.clear();
 
@@ -309,7 +310,15 @@ namespace stormphrax::search {
             return;
         }
 
-        tb::probeRoot(pos, m_rootMoves);
+        const auto [wdl, dtzSucceeded] = tb::probeRoot(pos, m_rootMoves);
+
+        if (wdl != GameResult::kNone) {
+            m_tbRoot = true;
+        }
+
+        if (dtzSucceeded || wdl != GameResult::kWin) {
+            m_probeWdl = false;
+        }
 
         if (g_opts.multiPv > 1) {
             return;
@@ -691,9 +700,9 @@ namespace stormphrax::search {
 
         // Probe the Syzygy tablebases for a WDL result
         // if there are few enough pieces left on the board
-        if (!kRootNode && !curr.excluded && g_opts.syzygyEnabled && !g_opts.syzygyProbeRootOnly
-            && pieceCount <= syzygyPieceLimit && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
-            && pos.halfmove() == 0 && pos.castlingRooks() == CastlingRooks{})
+        if (!kRootNode && !curr.excluded && g_opts.syzygyEnabled && m_probeWdl && pieceCount <= syzygyPieceLimit
+            && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth) && pos.halfmove() == 0
+            && pos.castlingRooks() == CastlingRooks{})
         {
             const auto result = tb::probeWdl(pos);
 
@@ -1674,11 +1683,8 @@ namespace stormphrax::search {
         if (g_opts.syzygyEnabled) {
             usize tbhits = 0;
 
-            for (const auto& rootMove : m_rootMoves) {
-                if (rootMove.tbWdl != GameResult::kNone) {
-                    ++tbhits;
-                    break;
-                }
+            if (m_tbRoot) {
+                ++tbhits;
             }
 
             for (const auto& worker : m_threadData) {

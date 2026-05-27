@@ -965,22 +965,28 @@ namespace stormphrax {
                 return;
             }
 
-            const auto wdl = tb::probeRoot(m_pos);
+            const auto [wdl, dtzSucceeded] = tb::probeRoot(m_pos);
 
             switch (wdl) {
                 case search::GameResult::kNone:
-                    println("failed");
+                    print("failed");
                     break;
                 case search::GameResult::kWin:
-                    println("win");
+                    print("win");
                     break;
                 case search::GameResult::kDraw:
-                    println("draw");
+                    print("draw");
                     break;
                 case search::GameResult::kLoss:
-                    println("loss");
+                    print("loss");
                     break;
             }
+
+            if (wdl != search::GameResult::kNone && !dtzSucceeded) {
+                print(" (DTZ probe failed)");
+            }
+
+            println();
         }
 
         void UciHandler::handleWait() {

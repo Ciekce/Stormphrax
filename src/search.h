@@ -163,6 +163,9 @@ namespace stormphrax::search {
         // specifically unfiltered root moves, when probing TBs at root
         usize m_rootMoveCount{};
 
+        bool m_tbRoot{false};
+        bool m_probeWdl{false};
+
         u32 m_multiPv{};
 
         eval::Contempt m_contempt{};

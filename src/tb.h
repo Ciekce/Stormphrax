@@ -33,6 +33,8 @@ namespace stormphrax::tb {
     InitStatus init(std::string_view path);
     void free();
 
-    search::GameResult probeRoot(const Position& pos, std::span<search::RootMove> rootMoves = {});
+    // [wdl, dtz succeeded]
+    std::pair<search::GameResult, bool> probeRoot(const Position& pos, std::span<search::RootMove> rootMoves = {});
+
     [[nodiscard]] search::GameResult probeWdl(const Position& pos);
 } // namespace stormphrax::tb
