@@ -53,15 +53,6 @@ namespace stormphrax::search {
         [[nodiscard]] constexpr Score drawScore(usize nodes) {
             return 2 - static_cast<Score>(nodes % 4);
         }
-
-        inline void generateLegal(MoveList& moves, const Position& pos) {
-            ScoredMoveList generated{};
-            generateAll(generated, pos);
-
-            for (const auto [move, _s] : generated) {
-                moves.push(move);
-            }
-        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMib) :
@@ -69,6 +60,7 @@ namespace stormphrax::search {
         m_threadData.resize(1);
         m_threads.emplace_back([this] { run(0); });
         m_initBarrier.arriveAndWait();
+        m_rootMoves.reserve(kDefaultMoveListCapacity);
     }
 
     void Searcher::newGame() {
@@ -116,20 +108,18 @@ namespace stormphrax::search {
 
         m_infinite = infinite;
 
-        m_minRootScore = -kScoreInf;
-        m_maxRootScore = kScoreInf;
-
-        m_rootProbeResult = tb::ProbeResult::kFailed;
+        m_rootMoves.clear();
 
         if (!moves.empty()) {
-            m_rootMoveList.resize(moves.size());
-            std::ranges::copy(moves, m_rootMoveList.begin());
+            for (const auto move : moves) {
+                m_rootMoves.emplace_back(move);
+            }
 
-            m_rootStatus = RootStatus::kSearchmoves;
+            m_rootMoveCount = moves.size();
         } else {
-            m_rootStatus = initRootMoveList(pos);
+            populateDefaultRootMoves(pos);
 
-            if (m_rootStatus == RootStatus::kNoLegalMoves) {
+            if (m_rootMoves.empty()) {
                 println("info string no legal moves");
                 return;
             }
@@ -137,11 +127,26 @@ namespace stormphrax::search {
 
         assert(!m_rootMoveList.empty());
 
-        m_multiPv = std::min<u32>(g_opts.multiPv, m_rootMoveList.size());
+        rankTbMoves(pos);
 
-        // Cap search time if we have one legal move, or if we're in a TB draw at root
-        if (m_rootMoveList.size() == 1 || m_rootProbeResult == tb::ProbeResult::kDraw) {
-            m_limiter->stopEarly();
+        m_multiPv = std::min<u32>(g_opts.multiPv, m_rootMoves.size());
+
+        if (g_opts.multiPv == 1) {
+            u32 rootMoveCount{};
+
+            for (const auto& rootMove : m_rootMoves) {
+                if (rootMove.tbRank < m_rootMoves[0].tbRank) {
+                    break;
+                }
+                ++rootMoveCount;
+            }
+
+            assert(rootMoveCount > 0);
+
+            // Cap search time if we have one unfiltered legal move, or if we're in a TB draw at root
+            if (rootMoveCount == 1 || m_rootMoves[0].tbWdl == GameResult::kDraw) {
+                m_limiter->stopEarly();
+            }
         }
 
         const auto contempt = g_opts.contempt;
@@ -205,9 +210,14 @@ namespace stormphrax::search {
     std::pair<Score, Score> Searcher::runDatagenSearch() {
         auto& thread = *m_threadData[0];
 
-        if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
+        m_rootMoves.clear();
+        populateDefaultRootMoves(thread.rootPos);
+
+        if (m_rootMoves.empty()) {
             return {-kScoreMate, -kScoreMate};
         }
+
+        rankTbMoves(thread.rootPos);
 
         m_multiPv = 1;
         m_infinite = false;
@@ -224,7 +234,10 @@ namespace stormphrax::search {
     void Searcher::runBenchSearch(BenchData& data) {
         auto& thread = *m_threadData[0];
 
-        if (initRootMoveList(thread.rootPos) == RootStatus::kNoLegalMoves) {
+        m_rootMoves.clear();
+        populateDefaultRootMoves(thread.rootPos);
+
+        if (m_rootMoves.empty()) {
             println("no legal moves");
             return;
         }
@@ -232,9 +245,6 @@ namespace stormphrax::search {
         m_infinite = false;
         m_multiPv = 1;
         m_contempt = {};
-
-        m_minRootScore = -kScoreInf;
-        m_maxRootScore = kScoreInf;
 
         thread.nnueState.reset(thread.rootPos);
 
@@ -281,42 +291,53 @@ namespace stormphrax::search {
         m_initBarrier.arriveAndWait();
     }
 
-    RootStatus Searcher::initRootMoveList(const Position& pos) {
-        m_rootMoveList.clear();
+    void Searcher::populateDefaultRootMoves(const Position& pos) {
+        ScoredMoveList generated{};
+        generateAll(generated, pos);
 
-        if (g_opts.syzygyEnabled
-            && pos.occ().popcount() <= std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
+        for (const auto [move, _s] : generated) {
+            m_rootMoves.emplace_back(move);
+        }
+
+        m_rootMoveCount = m_rootMoves.size();
+    }
+
+    void Searcher::rankTbMoves(const Position& pos) {
+        if (!g_opts.syzygyEnabled
+            || pos.occ().popcount() > std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
         {
-            bool success = true;
-
-            m_rootProbeResult = tb::probeRoot(&m_rootMoveList, pos);
-
-            switch (m_rootProbeResult) {
-                case tb::ProbeResult::kWin:
-                    m_minRootScore = kScoreTbWin;
-                    break;
-                case tb::ProbeResult::kDraw:
-                    m_minRootScore = m_maxRootScore = 0;
-                    break;
-                case tb::ProbeResult::kLoss:
-                    m_maxRootScore = -kScoreTbWin;
-                    break;
-                default:
-                    success = false;
-                    break;
-            }
-
-            if (success) {
-                assert(!m_rootMoveList.empty());
-                return RootStatus::kTablebase;
-            }
+            return;
         }
 
-        if (m_rootMoveList.empty()) {
-            generateLegal(m_rootMoveList, pos);
+        tb::probeRoot(pos, m_rootMoves);
+
+        if (g_opts.multiPv > 1) {
+            return;
         }
 
-        return m_rootMoveList.empty() ? RootStatus::kNoLegalMoves : RootStatus::kGenerated;
+        m_rootMoveCount = 0;
+
+        for (const auto& rootMove : m_rootMoves) {
+            if (rootMove.tbRank < m_rootMoves[0].tbRank) {
+                break;
+            }
+
+            ++m_rootMoveCount;
+        }
+
+        if (!m_silent) {
+            print("info string Filtered root moves:");
+
+            for (const auto& rootMove : m_rootMoves) {
+                if (rootMove.tbRank < m_rootMoves[0].tbRank) {
+                    break;
+                }
+
+                print(" {}", rootMove.move());
+            }
+
+            println();
+        }
     }
 
     void Searcher::stopThreads() {
@@ -377,14 +398,7 @@ namespace stormphrax::search {
         assert(!m_rootMoveList.empty());
 
         thread.rootMoves.clear();
-        thread.rootMoves.reserve(m_rootMoveList.size());
-
-        for (const auto move : m_rootMoveList) {
-            auto& rootMove = thread.rootMoves.emplace_back();
-
-            rootMove.pv.moves[0] = move;
-            rootMove.pv.length = 1;
-        }
+        std::ranges::copy(m_rootMoves, std::back_inserter(thread.rootMoves));
 
         auto& searchData = thread.search;
 
@@ -403,7 +417,28 @@ namespace stormphrax::search {
                 move.previousScore = move.score;
             }
 
+            thread.pvStart = 0;
+            thread.pvEnd = 0;
+
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
+                if (thread.pvIdx == thread.pvEnd) {
+                    // We've reached the end of this block of root moves (or this is the first PV).
+                    // Find the end of the next block by scanning to the next root move with a lower TB rank,
+                    //  or the end of the list.
+                    // When multipv == 1, this has the effect of filtering out all suboptimal root moves from being
+                    //  searched.
+
+                    thread.pvStart = thread.pvIdx;
+
+                    const auto& firstRootMove = thread.rootMoves[thread.pvIdx];
+
+                    for (thread.pvEnd = thread.pvIdx + 1; thread.pvEnd < thread.rootMoves.size(); ++thread.pvEnd) {
+                        if (thread.rootMoves[thread.pvEnd].tbRank < firstRootMove.tbRank) {
+                            break;
+                        }
+                    }
+                }
+
                 searchData.seldepth = 0;
 
                 const auto& rootMove = thread.rootMoves[thread.pvIdx];
@@ -660,18 +695,18 @@ namespace stormphrax::search {
             && pieceCount <= syzygyPieceLimit && (pieceCount < syzygyPieceLimit || depth >= g_opts.syzygyProbeDepth)
             && pos.halfmove() == 0 && pos.castlingRooks() == CastlingRooks{})
         {
-            const auto result = tb::probe(pos);
+            const auto result = tb::probeWdl(pos);
 
-            if (result != tb::ProbeResult::kFailed) {
+            if (result != GameResult::kNone) {
                 thread.search.incTbHits();
 
                 Score score;
                 TtFlag flag;
 
-                if (result == tb::ProbeResult::kWin) {
+                if (result == GameResult::kWin) {
                     score = kScoreTbWin - ply;
                     flag = TtFlag::kLowerBound;
-                } else if (result == tb::ProbeResult::kLoss) {
+                } else if (result == GameResult::kLoss) {
                     score = -kScoreTbWin + ply;
                     flag = TtFlag::kUpperBound;
                 } else {
@@ -1183,42 +1218,37 @@ namespace stormphrax::search {
             }
 
             if constexpr (kRootNode) {
-                auto* rootMove = thread.findRootMove(move);
+                auto& rootMove = thread.findRootMove(move);
 
-                if (!rootMove) {
-                    eprintln("Failed to find root move for {}", move);
-                    std::terminate();
-                }
-
-                rootMove->windowScore = score;
-                rootMove->nodes += thread.search.loadNodes() - prevNodes;
+                rootMove.windowScore = score;
+                rootMove.nodes += thread.search.loadNodes() - prevNodes;
 
                 if (legalMoves == 1 || score > alpha) {
-                    rootMove->seldepth = thread.search.seldepth;
+                    rootMove.seldepth = thread.search.seldepth;
 
-                    rootMove->score = score;
-                    rootMove->displayScore = score;
+                    rootMove.score = score;
+                    rootMove.displayScore = score;
 
-                    rootMove->upperbound = false;
-                    rootMove->lowerbound = false;
+                    rootMove.upperbound = false;
+                    rootMove.lowerbound = false;
 
                     if (score <= alpha) {
-                        rootMove->displayScore = alpha;
-                        rootMove->upperbound = true;
+                        rootMove.displayScore = alpha;
+                        rootMove.upperbound = true;
                     } else if (score >= beta) {
-                        rootMove->displayScore = beta;
-                        rootMove->lowerbound = true;
+                        rootMove.displayScore = beta;
+                        rootMove.lowerbound = true;
                     } else {
-                        if (rootMove->averageScore == -kScoreInf) {
-                            rootMove->averageScore = score;
+                        if (rootMove.averageScore == -kScoreInf) {
+                            rootMove.averageScore = score;
                         } else {
-                            rootMove->averageScore = (rootMove->averageScore + score) / 2;
+                            rootMove.averageScore = (rootMove.averageScore + score) / 2;
                         }
                     }
 
-                    rootMove->pv.update(move, curr.pv);
+                    rootMove.pv.update(move, curr.pv);
                 } else {
-                    rootMove->score = -kScoreInf;
+                    rootMove.score = -kScoreInf;
                 }
             }
 
@@ -1590,12 +1620,16 @@ namespace stormphrax::search {
 
         print("depth {} seldepth {} time {} nodes {} nps {} score ", depth, move.seldepth, ms, nodes, nps);
 
-        if (std::abs(score) <= 2) { // draw score
-            score = 0;
-        }
+        bool upperbound = move.upperbound;
+        bool lowerbound = move.lowerbound;
 
-        if (pvIdx == 0) {
-            score = std::clamp(score, m_minRootScore, m_maxRootScore);
+        if (!move.tbRange.contains(score)) {
+            score = move.tbRange.clamp(score);
+
+            upperbound = false;
+            lowerbound = false;
+        } else if (std::abs(score) <= 2) { // draw score
+            score = 0;
         }
 
         const auto material = thread.rootPos.classicalMaterial();
@@ -1613,11 +1647,11 @@ namespace stormphrax::search {
             print("cp {}", normScore);
         }
 
-        if (move.upperbound) {
+        if (upperbound) {
             print(" upperbound");
         }
 
-        if (move.lowerbound) {
+        if (lowerbound) {
             print(" lowerbound");
         }
 
@@ -1640,8 +1674,11 @@ namespace stormphrax::search {
         if (g_opts.syzygyEnabled) {
             usize tbhits = 0;
 
-            if (m_rootStatus == RootStatus::kTablebase) {
-                ++tbhits;
+            for (const auto& rootMove : m_rootMoves) {
+                if (rootMove.tbWdl != GameResult::kNone) {
+                    ++tbhits;
+                    break;
+                }
             }
 
             for (const auto& worker : m_threadData) {
@@ -1693,7 +1730,7 @@ namespace stormphrax::search {
         std::unordered_map<u16, i32> moveVotes{};
 
         const auto bestMoveVotes = [&](const ThreadData& thread) -> i32& {
-            return moveVotes[thread.pvMove().pv.moves[0].data()];
+            return moveVotes[thread.pvMove().move().data()];
         };
 
         for (const auto& thread : m_threadData) {
@@ -1787,6 +1824,6 @@ namespace stormphrax::search {
             report(bestThread, bestThread.depthCompleted, elapsed());
         }
 
-        println("bestmove {}", bestThread.pvMove().pv.moves[0]);
+        println("bestmove {}", bestThread.pvMove().move());
     }
 } // namespace stormphrax::search

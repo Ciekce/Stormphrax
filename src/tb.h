@@ -21,6 +21,7 @@
 #include "types.h"
 
 #include "position.h"
+#include "root_move.h"
 
 namespace stormphrax::tb {
     enum class InitStatus {
@@ -29,16 +30,9 @@ namespace stormphrax::tb {
         kSuccess,
     };
 
-    enum class ProbeResult {
-        kFailed,
-        kWin,
-        kDraw,
-        kLoss,
-    };
-
     InitStatus init(std::string_view path);
     void free();
 
-    ProbeResult probeRoot(MoveList* rootMoves, const Position& pos);
-    [[nodiscard]] ProbeResult probe(const Position& pos);
+    search::GameResult probeRoot(const Position& pos, std::span<search::RootMove> rootMoves = {});
+    [[nodiscard]] search::GameResult probeWdl(const Position& pos);
 } // namespace stormphrax::tb

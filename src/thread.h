@@ -145,7 +145,11 @@ namespace stormphrax::search {
 
         eval::NnueState nnueState{};
 
+        u32 pvStart{};
+        u32 pvEnd{};
+
         u32 pvIdx{};
+
         std::vector<RootMove> rootMoves{};
 
         eval::Optimism optimism{};
@@ -171,11 +175,9 @@ namespace stormphrax::search {
         [[nodiscard]] std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply);
         [[nodiscard]] std::pair<Position, ThreadPosGuard<true>> applyMove(const Position& pos, i32 ply, Move move);
 
-        [[nodiscard]] RootMove* findRootMove(Move move);
+        [[nodiscard]] RootMove& findRootMove(Move move);
 
-        [[nodiscard]] inline bool isLegalRootMove(Move move) {
-            return findRootMove(move) != nullptr;
-        }
+        [[nodiscard]] bool isLegalRootMove(Move move) const;
 
         void sortSearchedRootMoves();
         void sortRemainingRootMoves();

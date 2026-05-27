@@ -22,9 +22,22 @@
 
 #include "core.h"
 #include "pv.h"
+#include "util/range.h"
 
 namespace stormphrax::search {
+    enum class GameResult {
+        kNone,
+        kWin,
+        kDraw,
+        kLoss,
+    };
+
     struct RootMove {
+        explicit RootMove(Move move) {
+            pv.length = 1;
+            pv.moves[0] = move;
+        }
+
         Score score{-kScoreInf};
         Score windowScore{-kScoreInf};
         Score averageScore{-kScoreInf};
@@ -35,9 +48,40 @@ namespace stormphrax::search {
         bool upperbound{false};
         bool lowerbound{false};
 
+        GameResult tbWdl{GameResult::kNone};
+        i32 tbRank{0};
+
+        util::Range<Score> tbRange{-kScoreInf, kScoreInf};
+
         i32 seldepth{};
         PvList pv{};
 
         usize nodes{};
+
+        [[nodiscard]] Move move() const {
+            assert(pv.length > 0);
+            return pv.moves[0];
+        }
+
+        void setTbStatus(GameResult wdl, i32 rank) {
+            assert(wdl != GameResult::kNone);
+
+            tbWdl = wdl;
+            tbRank = rank;
+
+            switch (wdl) {
+                case GameResult::kWin:
+                    tbRange = {kScoreTbWin, kScoreInf};
+                    break;
+                case GameResult::kDraw:
+                    tbRange = {0, 0};
+                    break;
+                case GameResult::kLoss:
+                    tbRange = {kScoreInf, -kScoreTbWin};
+                    break;
+                default:
+                    break;
+            }
+        }
     };
 } // namespace stormphrax::search

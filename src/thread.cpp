@@ -65,28 +65,42 @@ namespace stormphrax::search {
         };
     }
 
-    RootMove* ThreadData::findRootMove(Move move) {
+    RootMove& ThreadData::findRootMove(Move move) {
         for (u32 idx = pvIdx; idx < rootMoves.size(); ++idx) {
             auto& rootMove = rootMoves[idx];
-            assert(rootMove.pv.length > 0);
-
-            if (move == rootMove.pv.moves[0]) {
-                return &rootMove;
+            if (move == rootMove.move()) {
+                return rootMove;
             }
         }
 
-        return nullptr;
+        eprintln("Failed to find root move for {}", move);
+        std::terminate();
+    }
+
+    bool ThreadData::isLegalRootMove(Move move) const {
+        for (u32 idx = pvIdx; idx < pvEnd; ++idx) {
+            const auto& rootMove = rootMoves[idx];
+            if (move == rootMove.move()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void ThreadData::sortSearchedRootMoves() {
-        std::stable_sort(rootMoves.begin(), rootMoves.begin() + pvIdx + 1, [](const RootMove& a, const RootMove& b) {
-            return a.score > b.score;
-        });
+        std::stable_sort(
+            rootMoves.begin() + pvStart,
+            rootMoves.begin() + pvIdx + 1,
+            [](const RootMove& a, const RootMove& b) { return a.score > b.score; }
+        );
     }
 
     void ThreadData::sortRemainingRootMoves() {
-        std::stable_sort(rootMoves.begin() + pvIdx, rootMoves.end(), [](const RootMove& a, const RootMove& b) {
-            return a.score > b.score;
-        });
+        std::stable_sort(
+            rootMoves.begin() + pvIdx,
+            rootMoves.begin() + pvEnd,
+            [](const RootMove& a, const RootMove& b) { return a.score > b.score; }
+        );
     }
 } // namespace stormphrax::search

@@ -43,7 +43,7 @@ namespace stormphrax::limit {
     }
 
     void TimeManager::update(i32 depth, usize totalNodes, const search::RootMove& pvMove) {
-        const auto bestMove = pvMove.pv.moves[0];
+        const auto bestMove = pvMove.move();
         const auto score = pvMove.score;
 
         if (bestMove == m_prevBestMove) {

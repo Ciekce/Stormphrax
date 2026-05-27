@@ -57,14 +57,14 @@ namespace stormphrax::datagen {
                 return {};
             }
 
-            switch (tb::probe(pos)) {
-                case tb::ProbeResult::kFailed:
+            switch (tb::probeWdl(pos)) {
+                case search::GameResult::kNone:
                     return {};
-                case tb::ProbeResult::kWin:
+                case search::GameResult::kWin:
                     return pos.stm() == Colors::kBlack ? Outcome::kWhiteLoss : Outcome::kWhiteWin;
-                case tb::ProbeResult::kDraw:
+                case search::GameResult::kDraw:
                     return Outcome::kDraw;
-                case tb::ProbeResult::kLoss:
+                case search::GameResult::kLoss:
                     return pos.stm() == Colors::kBlack ? Outcome::kWhiteWin : Outcome::kWhiteLoss;
             }
         }

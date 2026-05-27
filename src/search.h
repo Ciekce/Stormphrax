@@ -50,13 +50,6 @@ namespace stormphrax::search {
     constexpr auto kSyzygyProbeDepthRange = util::Range<i32>{1, kMaxDepth};
     constexpr auto kSyzygyProbeLimitRange = util::Range<i32>{0, 7};
 
-    enum class RootStatus {
-        kNoLegalMoves = 0,
-        kTablebase,
-        kGenerated,
-        kSearchmoves,
-    };
-
     struct SetupInfo {
         Position rootPos{};
 
@@ -165,22 +158,21 @@ namespace stormphrax::search {
         bool m_infinite{};
         i32 m_maxDepth{kMaxDepth};
 
-        MoveList m_rootMoveList{};
+        std::vector<RootMove> m_rootMoves{};
+
+        // specifically unfiltered root moves, when probing TBs at root
+        usize m_rootMoveCount{};
+
         u32 m_multiPv{};
-
-        Score m_minRootScore{};
-        Score m_maxRootScore{};
-
-        tb::ProbeResult m_rootProbeResult{};
 
         eval::Contempt m_contempt{};
 
-        RootStatus m_rootStatus{};
         SetupInfo m_setupInfo{};
 
         numa::NumaUniqueAllocation<CorrectionHistoryTable> m_corrhists{};
 
-        RootStatus initRootMoveList(const Position& pos);
+        void populateDefaultRootMoves(const Position& pos);
+        void rankTbMoves(const Position& pos);
 
         void stopThreads();
 

@@ -565,7 +565,7 @@ namespace stormphrax {
                 print("info string searching moves:");
 
                 for (const auto move : movesToSearch) {
-                    println(" {}", move);
+                    print(" {}", move);
                 }
 
                 println();
@@ -965,19 +965,19 @@ namespace stormphrax {
                 return;
             }
 
-            const auto wdl = tb::probeRoot(nullptr, m_pos);
+            const auto wdl = tb::probeRoot(m_pos);
 
             switch (wdl) {
-                case tb::ProbeResult::kFailed:
+                case search::GameResult::kNone:
                     println("failed");
                     break;
-                case tb::ProbeResult::kWin:
+                case search::GameResult::kWin:
                     println("win");
                     break;
-                case tb::ProbeResult::kDraw:
+                case search::GameResult::kDraw:
                     println("draw");
                     break;
-                case tb::ProbeResult::kLoss:
+                case search::GameResult::kLoss:
                     println("loss");
                     break;
             }

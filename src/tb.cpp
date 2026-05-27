@@ -46,7 +46,7 @@ namespace stormphrax::tb {
         }
     }
 
-    ProbeResult probeRoot(MoveList* rootMoves, const Position& pos) {
+    search::GameResult probeRoot(const Position& pos, std::span<search::RootMove> rootMoves) {
         const auto moveFromTb = [](auto tbMove) {
             static constexpr std::array kPromoPieces = {
                 PieceTypes::kNone,
@@ -115,56 +115,67 @@ namespace stormphrax::tb {
         }
 
         if (!result || tbRootMoves.size == 0) { // mate or stalemate at root, handled by search
-            return ProbeResult::kFailed;
+            return search::GameResult::kNone;
         }
 
         std::stable_sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
             return a.tbRank > b.tbRank;
         });
 
-        const auto bestRank = tbRootMoves.moves[0].tbRank;
-
-        const auto wdl = [&] {
+        const auto toWdl = [](i32 rank) {
             static constexpr i32 kMaxDtz = 262144;
 
             static constexpr i32 kWinBound = kMaxDtz - 100;
             static constexpr i32 kDrawBound = -kMaxDtz + 101;
 
-            if (bestRank >= kWinBound) {
-                return ProbeResult::kWin;
-            } else if (bestRank >= kDrawBound) { // includes cursed wins and blessed losses
-                return ProbeResult::kDraw;
+            if (rank >= kWinBound) {
+                return search::GameResult::kWin;
+            } else if (rank >= kDrawBound) { // includes cursed wins and blessed losses
+                return search::GameResult::kDraw;
             } else {
-                return ProbeResult::kLoss;
+                return search::GameResult::kLoss;
             }
-        }();
+        };
 
-        if (!rootMoves) {
-            return wdl;
+        const auto bestWdl = toWdl(tbRootMoves.moves[0].tbRank);
+
+        if (rootMoves.empty()) {
+            return bestWdl;
         }
+
+        const auto getRootMove = [&](Move move) -> search::RootMove* {
+            for (auto& rootMove : rootMoves) {
+                if (rootMove.move() == move) {
+                    return &rootMove;
+                }
+            }
+
+            return nullptr;
+        };
 
         for (u32 i = 0; i < tbRootMoves.size; ++i) {
-            const auto& move = tbRootMoves.moves[i];
+            const auto [tbMove, tbRank] = tbRootMoves.moves[i];
 
-            if (move.tbRank < bestRank) {
-                break;
+            const auto move = moveFromTb(tbMove);
+            auto* rootMove = getRootMove(move);
+
+            if (!rootMove) {
+                // excluded by searchmoves
+                continue;
             }
 
-            rootMoves->push(moveFromTb(move.move));
+            const auto wdl = toWdl(tbRank);
+            rootMove->setTbStatus(wdl, tbRank);
         }
 
-        print("info string Filtered root moves:");
+        std::ranges::stable_sort(rootMoves, [](const search::RootMove& a, const search::RootMove& b) {
+            return a.tbRank > b.tbRank;
+        });
 
-        for (const auto move : *rootMoves) {
-            print(" {}", move);
-        }
-
-        println();
-
-        return wdl;
+        return bestWdl;
     }
 
-    ProbeResult probe(const Position& pos) {
+    search::GameResult probeWdl(const Position& pos) {
         const auto& bbs = pos.bbs();
 
         const auto epSq = pos.enPassant();
@@ -182,15 +193,15 @@ namespace stormphrax::tb {
         );
 
         if (wdl == TB_RESULT_FAILED) {
-            return ProbeResult::kFailed;
+            return search::GameResult::kNone;
         }
 
         if (wdl == TB_WIN) {
-            return ProbeResult::kWin;
+            return search::GameResult::kWin;
         } else if (wdl == TB_LOSS) {
-            return ProbeResult::kLoss;
+            return search::GameResult::kLoss;
         } else {
-            return ProbeResult::kDraw;
+            return search::GameResult::kDraw;
         }
     }
 } // namespace stormphrax::tb
