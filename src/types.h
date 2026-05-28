@@ -20,6 +20,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <exception>
 
 #include <fmt/format.h>
 
