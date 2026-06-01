@@ -627,7 +627,7 @@ namespace stormphrax {
             ScoredMoveList moves{};
             generateAll(moves, *this);
 
-            return std::ranges::any_of(moves, [this](const auto move) { return isLegal(move.move); });
+            return !moves.empty();
         }
 
         if (isDrawnByRepetition(ply, keys)) {

@@ -143,35 +143,15 @@ namespace stormphrax::datagen {
 
                 const auto moveCount = 8 + (rng.nextU32() >> 31);
 
-                bool legalFound = false;
-
                 for (i32 i = 0; i < moveCount; ++i) {
                     ScoredMoveList moves{};
                     generateAll(moves, pos);
 
-                    std::shuffle(moves.begin(), moves.end(), rng);
+                    const auto idx = rng.nextU32(moves.size());
+                    const auto [move, _score] = moves[idx];
 
-                    legalFound = false;
-
-                    for (const auto [move, score] : moves) {
-                        if (pos.isLegal(move)) {
-                            thread.keyHistory.push_back(pos.key());
-                            pos = pos.applyMove(move);
-
-                            legalFound = true;
-                            break;
-                        }
-                    }
-
-                    if (!legalFound) {
-                        break;
-                    }
-                }
-
-                if (!legalFound) {
-                    // this game was useless, don't count it
-                    --game;
-                    continue;
+                    thread.keyHistory.push_back(pos.key());
+                    pos = pos.applyMove(move);
                 }
 
                 output.start(pos);
