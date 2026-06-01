@@ -166,6 +166,11 @@ namespace stormphrax::tb {
             [](const TbRootMove& a, const TbRootMove& b) { return a.tbRank > b.tbRank; }
         );
 
+        const auto isTwofold = [&](Move move) {
+            const auto posAfter = pos.applyMove(move);
+            return posAfter.isDrawnByRepetition(999999, keyStack);
+        };
+
         const auto toWdl = [](i32 rank) {
             static constexpr i32 kMaxDtz = 262144;
 
@@ -208,7 +213,13 @@ namespace stormphrax::tb {
             }
 
             const auto wdl = toWdl(tbRank);
-            rootMove->setTbStatus(wdl, tbRank);
+
+            auto adjustedRank = tbRank * 2;
+            if (wdl == search::GameResult::kWin && isTwofold(move)) {
+                adjustedRank -= 1;
+            }
+
+            rootMove->setTbStatus(wdl, adjustedRank);
         }
 
         std::ranges::stable_sort(rootMoves, [](const search::RootMove& a, const search::RootMove& b) {
