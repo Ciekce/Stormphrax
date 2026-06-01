@@ -30,7 +30,7 @@ namespace stormphrax::tb {
 
         [[nodiscard]] bool hasRepeated(const Position& pos, std::span<const u64> keys) {
             std::unordered_set<u64> keySet{};
-            keySet.reserve((keys.size() - 3 + 1) / 2 + 1);
+            keySet.reserve(keys.size() + 1);
             keySet.insert(pos.key());
 
             for (i32 i = static_cast<i32>(keys.size()) - 1; i >= 0; --i) {
