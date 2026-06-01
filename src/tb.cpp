@@ -18,13 +18,34 @@
 
 #include "tb.h"
 
+#include <unordered_set>
+#include <vector>
+
 #include "../3rdparty/pyrrhic/tbprobe.h"
 #include "move.h"
 
 namespace stormphrax::tb {
     namespace {
         bool s_initialized{false};
-    }
+
+        [[nodiscard]] bool hasRepeated(const Position& pos, std::span<const u64> keys) {
+            std::unordered_set<u64> keySet{};
+            keySet.reserve((keys.size() - 3 + 1) / 2 + 1);
+            keySet.insert(pos.key());
+
+            for (i32 i = static_cast<i32>(keys.size()) - 1; i >= 0; --i) {
+                const auto key = keys[i];
+
+                if (keySet.contains(key)) {
+                    return true;
+                }
+
+                keySet.insert(key);
+            }
+
+            return false;
+        }
+    } // namespace
 
     InitStatus init(std::string_view path) {
         const std::string pathStr{path};
@@ -46,7 +67,11 @@ namespace stormphrax::tb {
         }
     }
 
-    std::pair<search::GameResult, bool> probeRoot(const Position& pos, std::span<search::RootMove> rootMoves) {
+    std::pair<search::GameResult, bool> probeRoot(
+        const Position& pos,
+        std::span<const u64> keys,
+        std::span<search::RootMove> rootMoves
+    ) {
         const auto moveFromTb = [](auto tbMove) {
             static constexpr std::array kPromoPieces = {
                 PieceTypes::kNone,
@@ -87,7 +112,7 @@ namespace stormphrax::tb {
             pos.halfmove(),
             epSq == Squares::kNone ? 0 : epSq.raw(),
             pos.stm() == Colors::kWhite,
-            false, // TODO
+            hasRepeated(pos, keys),
             &tbRootMoves
         );
 
@@ -121,9 +146,25 @@ namespace stormphrax::tb {
             return {search::GameResult::kNone, dtzSucceeded};
         }
 
-        std::stable_sort(&tbRootMoves.moves[0], &tbRootMoves.moves[tbRootMoves.size], [](const auto& a, const auto& b) {
-            return a.tbRank > b.tbRank;
-        });
+        std::vector<u64> keyStack{};
+        keyStack.reserve(keys.size() + 1);
+        keyStack.assign(keys.begin(), keys.end());
+        keyStack.push_back(pos.key());
+
+        // Correct any moves that immediately threefold
+        for (u32 idx = 0; idx < tbRootMoves.size; ++idx) {
+            const auto move = moveFromTb(tbRootMoves.moves[idx].move);
+            const auto posAfter = pos.applyMove(move);
+            if (posAfter.isDrawnByRepetition(0, keyStack)) {
+                tbRootMoves.moves[idx].tbRank = 0;
+            }
+        }
+
+        std::sort(
+            tbRootMoves.moves,
+            tbRootMoves.moves + tbRootMoves.size,
+            [](const TbRootMove& a, const TbRootMove& b) { return a.tbRank > b.tbRank; }
+        );
 
         const auto toWdl = [](i32 rank) {
             static constexpr i32 kMaxDtz = 262144;
@@ -140,9 +181,8 @@ namespace stormphrax::tb {
             }
         };
 
-        const auto bestWdl = toWdl(tbRootMoves.moves[0].tbRank);
-
         if (rootMoves.empty()) {
+            const auto bestWdl = toWdl(tbRootMoves.moves[0].tbRank);
             return {bestWdl, dtzSucceeded};
         }
 
@@ -175,7 +215,7 @@ namespace stormphrax::tb {
             return a.tbRank > b.tbRank;
         });
 
-        return {bestWdl, dtzSucceeded};
+        return {rootMoves[0].tbWdl, dtzSucceeded};
     }
 
     search::GameResult probeWdl(const Position& pos) {

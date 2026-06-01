@@ -491,6 +491,8 @@ namespace stormphrax {
         }
 
         [[nodiscard]] bool hasUpcomingRepetition(i32 ply, std::span<const u64> keys) const;
+        [[nodiscard]] bool isDrawnByRepetition(i32 ply, std::span<const u64> keys) const;
+
         [[nodiscard]] bool isDrawn(i32 ply, std::span<const u64> keys) const;
 
         [[nodiscard]] Piece captureTarget(Move move) const;

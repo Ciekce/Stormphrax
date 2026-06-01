@@ -128,7 +128,7 @@ namespace stormphrax::search {
 
         assert(!m_rootMoveList.empty());
 
-        rankTbMoves(pos);
+        rankTbMoves(pos, keyHistory);
 
         m_multiPv = std::min<u32>(g_opts.multiPv, m_rootMoves.size());
 
@@ -218,7 +218,7 @@ namespace stormphrax::search {
             return {-kScoreMate, -kScoreMate};
         }
 
-        rankTbMoves(thread.rootPos);
+        rankTbMoves(thread.rootPos, thread.keyHistory);
 
         m_multiPv = 1;
         m_infinite = false;
@@ -303,14 +303,14 @@ namespace stormphrax::search {
         m_rootMoveCount = m_rootMoves.size();
     }
 
-    void Searcher::rankTbMoves(const Position& pos) {
+    void Searcher::rankTbMoves(const Position& pos, std::span<const u64> keys) {
         if (!g_opts.syzygyEnabled
             || pos.occ().popcount() > std::min(g_opts.syzygyProbeLimit, static_cast<i32>(TB_LARGEST)))
         {
             return;
         }
 
-        const auto [wdl, dtzSucceeded] = tb::probeRoot(pos, m_rootMoves);
+        const auto [wdl, dtzSucceeded] = tb::probeRoot(pos, keys, m_rootMoves);
 
         if (wdl != GameResult::kNone) {
             m_tbRoot = true;

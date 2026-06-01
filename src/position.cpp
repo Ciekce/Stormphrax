@@ -598,10 +598,26 @@ namespace stormphrax {
         return false;
     }
 
-    bool Position::isDrawn(i32 ply, std::span<const u64> keys) const {
-        const auto halfmove = m_halfmove;
+    bool Position::isDrawnByRepetition(i32 ply, std::span<const u64> keys) const {
+        const auto currKey = m_keys.all;
+        const auto limit = std::max(0, static_cast<i32>(keys.size()) - m_halfmove - 2);
 
-        if (halfmove >= 100) {
+        ply -= 4;
+
+        i32 repetitions = 0;
+
+        for (auto i = static_cast<i32>(keys.size()) - 4; i >= limit; i -= 2, ply -= 2) {
+            // require a threefold repetition before root
+            if (keys[i] == currKey && ++repetitions == 1 + (ply < 0)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool Position::isDrawn(i32 ply, std::span<const u64> keys) const {
+        if (m_halfmove >= 100) {
             if (!isCheck()) {
                 return true;
             }
@@ -614,18 +630,8 @@ namespace stormphrax {
             return std::ranges::any_of(moves, [this](const auto move) { return isLegal(move.move); });
         }
 
-        const auto currKey = m_keys.all;
-        const auto limit = std::max(0, static_cast<i32>(keys.size()) - halfmove - 2);
-
-        ply -= 4;
-
-        i32 repetitions = 0;
-
-        for (auto i = static_cast<i32>(keys.size()) - 4; i >= limit; i -= 2, ply -= 2) {
-            // require a threefold repetition before root
-            if (keys[i] == currKey && ++repetitions == 1 + (ply < 0)) {
-                return true;
-            }
+        if (isDrawnByRepetition(ply, keys)) {
+            return true;
         }
 
         const auto& bbs = this->bbs();

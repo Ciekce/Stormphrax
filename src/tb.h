@@ -34,7 +34,11 @@ namespace stormphrax::tb {
     void free();
 
     // [wdl, dtz succeeded]
-    std::pair<search::GameResult, bool> probeRoot(const Position& pos, std::span<search::RootMove> rootMoves = {});
+    std::pair<search::GameResult, bool> probeRoot(
+        const Position& pos,
+        std::span<const u64> keys,
+        std::span<search::RootMove> rootMoves = {}
+    );
 
     [[nodiscard]] search::GameResult probeWdl(const Position& pos);
 } // namespace stormphrax::tb

@@ -104,6 +104,8 @@ namespace stormphrax {
             void handleWait();
             void handleMove(std::span<const std::string_view> args);
 
+            void applyMove(Move move);
+
             bool m_quit{false};
 
             bool m_tbInitialized{false};
@@ -389,8 +391,7 @@ namespace stormphrax {
                     break;
                 }
 
-                m_keyHistory.push_back(m_pos.key());
-                m_pos = m_pos.applyMove(move);
+                applyMove(move);
             }
         }
 
@@ -965,7 +966,7 @@ namespace stormphrax {
                 return;
             }
 
-            const auto [wdl, dtzSucceeded] = tb::probeRoot(m_pos);
+            const auto [wdl, dtzSucceeded] = tb::probeRoot(m_pos, m_keyHistory);
 
             switch (wdl) {
                 case search::GameResult::kNone:
@@ -1010,8 +1011,16 @@ namespace stormphrax {
                 return;
             }
 
+            applyMove(move);
+        }
+
+        void UciHandler::applyMove(Move move) {
             m_keyHistory.push_back(m_pos.key());
             m_pos = m_pos.applyMove(move);
+
+            if (m_pos.halfmove() == 0) {
+                m_keyHistory.clear();
+            }
         }
     } // namespace
 
