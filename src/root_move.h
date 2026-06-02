@@ -77,7 +77,7 @@ namespace stormphrax::search {
                     tbRange = {0, 0};
                     break;
                 case GameResult::kLoss:
-                    tbRange = {kScoreInf, -kScoreTbWin};
+                    tbRange = {-kScoreInf, -kScoreTbWin};
                     break;
                 default:
                     break;
