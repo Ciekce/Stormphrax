@@ -24,46 +24,94 @@
 #include "tunable.h"
 
 namespace stormphrax {
-    void CorrectionHistoryTable::clear() {
-        std::memset(&m_tables, 0, sizeof(m_tables));
-        std::memset(&m_cont, 0, sizeof(m_cont));
+    namespace {
+        [[nodiscard]] constexpr u32 nextPowerOf2(u32 x) {
+            --x;
+
+            x |= x >> 1;
+            x |= x >> 2;
+            x |= x >> 4;
+            x |= x >> 8;
+            x |= x >> 16;
+
+            return x + 1;
+        }
+    } // namespace
+
+    Score CorrhistAccessor::correct(const Position& pos, std::span<const u64> keyHistory, Score score) const {
+        return corrhist->correct(numaId, pos, keyHistory, score);
     }
 
-    void CorrectionHistoryTable::update(
+    void CorrhistAccessor::update(
         const Position& pos,
         std::span<const u64> keyHistory,
         i32 depth,
         Score searchScore,
         Score staticEval
     ) {
-        auto& tables = m_tables[pos.stm().idx()];
+        corrhist->update(numaId, pos, keyHistory, depth, searchScore, staticEval);
+    }
+
+    CorrectionHistoryTable::CorrectionHistoryTable(u32 count) :
+            m_count{nextPowerOf2(count)},
+            m_tables{numa::NumaUniqueAllocation<EntrySet>{2 * kEntries * m_count}},
+            m_cont{numa::NumaUniqueAllocation<Entry>{kContEntries * m_count}},
+            m_mask{kEntries * m_count - 1},
+            m_contMask{kContEntries * m_count - 1} {}
+
+    void CorrectionHistoryTable::clear() {
+        for (i32 numaNode = 0; numaNode < numa::nodeCount(); ++numaNode) {
+            auto* tables = m_tables.get(numaNode);
+            auto* cont = m_cont.get(numaNode);
+
+            std::memset(tables, 0, sizeof(*tables));
+            std::memset(cont, 0, sizeof(*cont));
+        }
+    }
+
+    void CorrectionHistoryTable::update(
+        u32 numaId,
+        const Position& pos,
+        std::span<const u64> keyHistory,
+        i32 depth,
+        Score searchScore,
+        Score staticEval
+    ) {
+        auto* tables = m_tables.get(numaId) + (m_count * kEntries) * pos.stm().idx();
+        auto* cont = m_cont.get(numaId);
 
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
 
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
+                cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) & m_contMask].update(bonus);
             }
         };
 
-        tables.pawn[pos.pawnKey() % kEntries].update(bonus);
-        tables.blackNonPawn[pos.blackNonPawnKey() % kEntries].update(bonus);
-        tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries].update(bonus);
-        tables.major[pos.majorKey() % kEntries].update(bonus);
+        tables[pos.pawnKey() & m_mask].pawn.update(bonus);
+        tables[pos.blackNonPawnKey() % kEntries].blackNonPawn.update(bonus);
+        tables[pos.whiteNonPawnKey() % kEntries].whiteNonPawn.update(bonus);
+        tables[pos.majorKey() % kEntries].major.update(bonus);
 
         updateCont(1);
         updateCont(2);
         updateCont(4);
     }
 
-    Score CorrectionHistoryTable::correct(const Position& pos, std::span<const u64> keyHistory, Score score) const {
+    Score CorrectionHistoryTable::correct(
+        u32 numaId,
+        const Position& pos,
+        std::span<const u64> keyHistory,
+        Score score
+    ) const {
         using namespace tunable;
 
-        const auto& tables = m_tables[pos.stm().idx()];
+        const auto* tables = m_tables.get(numaId) + (m_count * kEntries) * pos.stm().idx();
+        const auto* cont = m_cont.get(numaId);
 
         const auto contAdjustment = [&](const u64 offset, i32 weight) {
             if (keyHistory.size() >= offset) {
-                return weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
+                return weight * cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) & m_contMask];
             } else {
                 return 0;
             }
@@ -71,10 +119,10 @@ namespace stormphrax {
 
         i32 correction{};
 
-        correction += pawnCorrhistWeight() * tables.pawn[pos.pawnKey() % kEntries];
-        correction += nonPawnCorrhistWeight() * tables.blackNonPawn[pos.blackNonPawnKey() % kEntries];
-        correction += nonPawnCorrhistWeight() * tables.whiteNonPawn[pos.whiteNonPawnKey() % kEntries];
-        correction += majorCorrhistWeight() * tables.major[pos.majorKey() % kEntries];
+        correction += pawnCorrhistWeight() * tables[pos.pawnKey() % kEntries].pawn;
+        correction += nonPawnCorrhistWeight() * tables[pos.blackNonPawnKey() % kEntries].blackNonPawn;
+        correction += nonPawnCorrhistWeight() * tables[pos.whiteNonPawnKey() % kEntries].whiteNonPawn;
+        correction += majorCorrhistWeight() * tables[pos.majorKey() % kEntries].major;
 
         correction += contAdjustment(1, contCorrhist1Weight());
         correction += contAdjustment(2, contCorrhist2Weight());

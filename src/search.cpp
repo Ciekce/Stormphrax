@@ -56,7 +56,7 @@ namespace stormphrax::search {
     } // namespace
 
     Searcher::Searcher(usize ttSizeMib) :
-            m_ttable{ttSizeMib}, m_startTime{Instant::now()} {
+            m_ttable{ttSizeMib}, m_startTime{Instant::now()}, m_corrhists{std::make_unique<CorrectionHistoryTable>(1)} {
         m_threadData.resize(1);
         m_threads.emplace_back([this] { run(0); });
         m_initBarrier.arriveAndWait();
@@ -69,9 +69,7 @@ namespace stormphrax::search {
             m_ttable.clear();
         }
 
-        for (i32 numaNode = 0; numaNode < numa::nodeCount(); ++numaNode) {
-            m_corrhists.get(numaNode)->clear();
-        }
+        m_corrhists->clear();
 
         for (auto& thread : m_threadData) {
             thread->history.clear();
@@ -203,7 +201,7 @@ namespace stormphrax::search {
 
         thread->numaId = numaId;
         thread->nnueState.setNetwork(eval::getNetwork(numaId));
-        thread->correctionHistory = m_corrhists.get(numaId);
+        thread->corrhist = m_corrhists->getAccessor(numaId);
 
         return *thread;
     }
@@ -266,6 +264,9 @@ namespace stormphrax::search {
         }
 
         stopThreads();
+
+        m_corrhists = nullptr;
+        m_corrhists = std::make_unique<CorrectionHistoryTable>(threadCount);
 
         m_quit.store(false, std::memory_order::seq_cst);
 
@@ -373,7 +374,7 @@ namespace stormphrax::search {
         thread.numaId = threadId;
 
         thread.nnueState.setNetwork(eval::getNetwork(threadId));
-        thread.correctionHistory = m_corrhists.get(threadId);
+        thread.corrhist = m_corrhists->getAccessor(threadId);
 
         m_initBarrier.arriveAndWait();
 
@@ -639,7 +640,7 @@ namespace stormphrax::search {
                                  thread.optimism,
                                  thread.keyHistory,
                                  thread.nnueState,
-                                 thread.correctionHistory,
+                                 thread.corrhist,
                                  m_contempt
                              );
         }
@@ -772,8 +773,8 @@ namespace stormphrax::search {
                     pos,
                     thread.optimism,
                     thread.keyHistory,
-                    thread.correctionHistory,
                     rawStaticEval,
+                    thread.corrhist,
                     &corrDelta
                 );
                 complexity = corrDelta;
@@ -1393,7 +1394,7 @@ namespace stormphrax::search {
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.correctionHistory->update(pos, thread.keyHistory, depth, bestScore, curr.staticEval);
+                thread.corrhist.update(pos, thread.keyHistory, depth, bestScore, curr.staticEval);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -1445,7 +1446,7 @@ namespace stormphrax::search {
                                  thread.optimism,
                                  thread.keyHistory,
                                  thread.nnueState,
-                                 thread.correctionHistory,
+                                 thread.corrhist,
                                  m_contempt
                              );
         }
@@ -1482,7 +1483,7 @@ namespace stormphrax::search {
             }
 
             const auto staticEval =
-                eval::adjustEval(pos, thread.optimism, thread.keyHistory, thread.correctionHistory, rawStaticEval);
+                eval::adjustEval(pos, thread.optimism, thread.keyHistory, rawStaticEval, thread.corrhist);
 
             if (ttEntry.flag == TtFlag::kExact                                         //
                 || (ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < staticEval) //

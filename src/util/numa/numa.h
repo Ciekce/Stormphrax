@@ -44,6 +44,7 @@ namespace stormphrax::numa {
         ~NumaUniqueAllocation();
 
         [[nodiscard]] T* get(u32 numaId);
+        [[nodiscard]] const T* get(u32 numaId) const;
 
     private:
         usize m_count;
@@ -84,6 +85,12 @@ namespace stormphrax::numa {
         const auto node = getNode(numaId);
         return m_data[node];
     }
+
+    template <typename T>
+    const T* NumaUniqueAllocation<T>::get(u32 numaId) const {
+        const auto node = getNode(numaId);
+        return m_data[node];
+    }
 #else
     template <typename T>
     NumaUniqueAllocation<T>::NumaUniqueAllocation(usize count) :
@@ -110,6 +117,12 @@ namespace stormphrax::numa {
 
     template <typename T>
     T* NumaUniqueAllocation<T>::get(u32 numaId) {
+        SP_UNUSED(numaId);
+        return m_data[0];
+    }
+
+    template <typename T>
+    const T* NumaUniqueAllocation<T>::get(u32 numaId) const {
         SP_UNUSED(numaId);
         return m_data[0];
     }

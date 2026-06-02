@@ -33,8 +33,8 @@ namespace stormphrax::eval {
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
-        const CorrectionHistoryTable* correction,
         i32 eval,
+        const CorrhistAccessor& corrhist,
         i32* corrDelta
     ) {
         using namespace tunable;
@@ -53,7 +53,7 @@ namespace stormphrax::eval {
         eval = eval * (200 - pos.halfmove()) / 200;
 
         if constexpr (kCorrect) {
-            const auto corrected = correction->correct(pos, keyHistory, eval);
+            const auto corrected = corrhist.correct(pos, keyHistory, eval);
 
             if (corrDelta) {
                 *corrDelta = std::abs(eval - corrected);
@@ -66,9 +66,9 @@ namespace stormphrax::eval {
     }
 
     template Score adjustEval<
-        false>(const Position&, const Optimism&, std::span<const u64>, const CorrectionHistoryTable*, i32, i32*);
+        false>(const Position&, const Optimism&, std::span<const u64>, i32, const CorrhistAccessor&, i32*);
     template Score adjustEval<
-        true>(const Position&, const Optimism&, std::span<const u64>, const CorrectionHistoryTable*, i32, i32*);
+        true>(const Position&, const Optimism&, std::span<const u64>, i32, const CorrhistAccessor&, i32*);
 
     Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt) {
         const auto eval = nnueState.evaluate(pos, pos.stm());
@@ -81,11 +81,11 @@ namespace stormphrax::eval {
         const Optimism& optimism,
         std::span<const u64> keyHistory,
         NnueState& nnueState,
-        const CorrectionHistoryTable* correction,
+        const CorrhistAccessor& corrhist,
         const Contempt& contempt
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<kCorrect>(pos, optimism, keyHistory, correction, eval);
+        return adjustEval<kCorrect>(pos, optimism, keyHistory, eval, corrhist);
     }
 
     template Score adjustedStaticEval<false>(
@@ -93,7 +93,7 @@ namespace stormphrax::eval {
         const Optimism&,
         std::span<const u64>,
         NnueState&,
-        const CorrectionHistoryTable*,
+        const CorrhistAccessor& corrhist,
         const Contempt&
     );
     template Score adjustedStaticEval<true>(
@@ -101,7 +101,7 @@ namespace stormphrax::eval {
         const Optimism&,
         std::span<const u64>,
         NnueState&,
-        const CorrectionHistoryTable*,
+        const CorrhistAccessor& corrhist,
         const Contempt&
     );
 

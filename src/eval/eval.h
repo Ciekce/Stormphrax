@@ -36,8 +36,8 @@ namespace stormphrax::eval {
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
-        const CorrectionHistoryTable* correction,
         i32 eval,
+        const CorrhistAccessor& corrhist = {},
         i32* corrDelta = nullptr
     );
 
@@ -49,7 +49,7 @@ namespace stormphrax::eval {
         const Optimism& optimism,
         std::span<const u64> keyHistory,
         NnueState& nnueState,
-        const CorrectionHistoryTable* correction,
+        const CorrhistAccessor& corrhist = {},
         const Contempt& contempt = {}
     );
 

@@ -24,12 +24,14 @@
 
 #include "core.h"
 #include "position.h"
-#include "util/multi_array.h"
+#include "util/numa/numa.h"
 
 namespace stormphrax {
-    class CorrectionHistoryTable {
-    public:
-        void clear();
+    class CorrectionHistoryTable;
+
+    struct CorrhistAccessor {
+        CorrectionHistoryTable* corrhist{nullptr};
+        u32 numaId{0};
 
         void update(
             const Position& pos,
@@ -40,6 +42,40 @@ namespace stormphrax {
         );
 
         [[nodiscard]] Score correct(const Position& pos, std::span<const u64> keyHistory, Score score) const;
+    };
+
+    class CorrectionHistoryTable {
+    public:
+        explicit CorrectionHistoryTable(u32 count);
+
+        void clear();
+
+        void update(
+            u32 numaId,
+            const Position& pos,
+            std::span<const u64> keyHistory,
+            i32 depth,
+            Score searchScore,
+            Score staticEval
+        );
+
+        [[nodiscard]] Score correct(
+            u32 numaId,
+            const Position& pos,
+            std::span<const u64> keyHistory,
+            Score score
+        ) const;
+
+        [[nodiscard]] u32 count() const {
+            return m_count;
+        }
+
+        [[nodiscard]] CorrhistAccessor getAccessor(u32 numaId) {
+            return CorrhistAccessor{
+                .corrhist = this,
+                .numaId = numaId,
+            };
+        }
 
     private:
         static constexpr usize kEntries = 16384;
@@ -62,14 +98,19 @@ namespace stormphrax {
             }
         };
 
-        struct SidedTables {
-            std::array<Entry, kEntries> pawn{};
-            std::array<Entry, kEntries> blackNonPawn{};
-            std::array<Entry, kEntries> whiteNonPawn{};
-            std::array<Entry, kEntries> major{};
+        struct EntrySet {
+            Entry pawn{};
+            Entry blackNonPawn{};
+            Entry whiteNonPawn{};
+            Entry major{};
         };
 
-        std::array<SidedTables, Colors::kCount> m_tables{};
-        std::array<Entry, kContEntries> m_cont{};
+        u32 m_count;
+
+        numa::NumaUniqueAllocation<EntrySet> m_tables{};
+        numa::NumaUniqueAllocation<Entry> m_cont{};
+
+        usize m_mask;
+        usize m_contMask;
     };
 } // namespace stormphrax

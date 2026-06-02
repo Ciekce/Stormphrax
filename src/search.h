@@ -172,7 +172,7 @@ namespace stormphrax::search {
 
         SetupInfo m_setupInfo{};
 
-        numa::NumaUniqueAllocation<CorrectionHistoryTable> m_corrhists{};
+        std::unique_ptr<CorrectionHistoryTable> m_corrhists{};
 
         void populateDefaultRootMoves(const Position& pos);
         void rankTbMoves(const Position& pos, std::span<const u64> keys);

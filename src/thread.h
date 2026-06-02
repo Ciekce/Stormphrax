@@ -162,7 +162,7 @@ namespace stormphrax::search {
 
         HistoryTables history{};
 
-        CorrectionHistoryTable* correctionHistory{};
+        CorrhistAccessor corrhist{};
 
         Position rootPos{};
 
