@@ -19,6 +19,7 @@
 #include "thread.h"
 
 #include <algorithm>
+#include <tuple>
 
 namespace stormphrax::search {
     std::pair<Position, ThreadPosGuard<false>> ThreadData::applyNullmove(const Position& pos, i32 ply) {
