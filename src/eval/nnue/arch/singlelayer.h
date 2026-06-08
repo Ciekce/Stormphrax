@@ -66,7 +66,7 @@ namespace stormphrax::eval::nnue::arch {
         ) const {
             using namespace util::simd;
 
-            static constexpr i32 Q = kFtQ * kL1Q;
+            static constexpr i32 kQ = kFtQ * kL1Q;
 
             assert(isAligned(stmPsqInputs.data()));
             assert(isAligned(nstmPsqInputs.data()));
@@ -86,7 +86,7 @@ namespace stormphrax::eval::nnue::arch {
                 auto inputs = load<i16>(&stmPsqInputs[inputIdx]);
 
                 if constexpr (FeatureSet::kThreatInputs) {
-                    inputs = add<i16>(load<i16>(&stmThreatInputs[inputIdx]));
+                    inputs = add<i16>(inputs, load<i16>(&stmThreatInputs[inputIdx]));
                 }
 
                 const auto weights = load<i16>(&l1Weights[weightOffset + inputIdx]);
@@ -99,7 +99,7 @@ namespace stormphrax::eval::nnue::arch {
                 auto inputs = load<i16>(&nstmPsqInputs[inputIdx]);
 
                 if constexpr (FeatureSet::kThreatInputs) {
-                    inputs = add<i16>(load<i16>(&nstmThreatInputs[inputIdx]));
+                    inputs = add<i16>(inputs, load<i16>(&nstmThreatInputs[inputIdx]));
                 }
 
                 const auto weights = load<i16>(&l1Weights[kL1Size + weightOffset + inputIdx]);
@@ -112,7 +112,7 @@ namespace stormphrax::eval::nnue::arch {
             const auto bias = static_cast<i32>(l1Biases[biasOffset]);
             const auto out = bias + Activation::template output<i32, kFtQ>(output);
 
-            outputs[0] = out * kScale / Q;
+            outputs[0] = out * kScale / kQ;
         }
 
         inline bool loadFrom(NetworkLoader& loader) {
