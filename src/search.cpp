@@ -1398,17 +1398,6 @@ namespace stormphrax::search {
                     parent->move,
                     scaled * pcmMainUpdateWeight() / 1024
                 );
-
-                /*
-                thread.history.updateConthist(
-                    thread.conthist,
-                    ply - 1,
-                    parent->threats,
-                    parent->moving,
-                    parent->move,
-                    scaled * pcmContUpdateWeight() / 1024
-                );
-                */
             } else {
                 thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
             }

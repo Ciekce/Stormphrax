@@ -351,7 +351,6 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(pcmParentStaticEvalThreshold, 131, 40, 240, 20)
 
     SP_TUNABLE_PARAM(pcmMainUpdateWeight, 1029, 512, 2048, 76)
-    SP_TUNABLE_PARAM(pcmContUpdateWeight, 1011, 512, 2048, 76)
 
     SP_TUNABLE_PARAM(noisyPcmBonus, 59, 0, 2048, 30)
 
