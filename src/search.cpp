@@ -409,6 +409,8 @@ namespace stormphrax::search {
         thread.rootMoves.clear();
         std::ranges::copy(m_rootMoves, std::back_inserter(thread.rootMoves));
 
+        thread.history.age();
+
         auto& searchData = thread.search;
 
         PvList rootPv{};
@@ -465,6 +467,8 @@ namespace stormphrax::search {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
+                    delta += std::abs(rootMove.averageSquaredScore) * aspSqScoreScale() / 1048576;
+
                     const auto lastScore = rootMove.windowScore;
 
                     alpha = std::max(lastScore - delta, -kScoreInf);
@@ -814,12 +818,12 @@ namespace stormphrax::search {
             }
 
             const auto rfpMargin = [&] {
-                auto margin = rfpConstantMargin();
+                i32 margin = 0;
                 margin += rfpLinearMargin() * depth;
                 margin += rfpQuadMargin() * depth * depth;
                 margin -= rfpImprovingMargin() * improving;
                 if (complexity) {
-                    margin += *complexity * rfpCorrplexityScale() / 128;
+                    margin += *complexity * rfpCorrplexityScale() / 262144;
                 }
                 return margin;
             };
@@ -895,7 +899,7 @@ namespace stormphrax::search {
                 }
             }
 
-            const auto probcutBeta = beta + probcutMargin();
+            const auto probcutBeta = beta + probcutMargin() - improving * probcutImprovingMargin();
             const auto probcutDepth = std::max(depth - 3, 1);
 
             if (!curr.ttpv && depth >= 7 && !isDecisive(beta) && (!ttMove || ttMoveNoisy)
@@ -1071,15 +1075,19 @@ namespace stormphrax::search {
 
                     if (score < sBeta) {
                         const auto corr = complexity.value_or(0);
+                        const auto doubleCorr =
+                            static_cast<i32>(static_cast<i64>(corr) * doubleExtCorrScale() / 16777216);
+                        const auto tripleCorr =
+                            static_cast<i32>(static_cast<i64>(corr) * tripleExtCorrScale() / 16777216);
                         const auto doubleMargin = doubleExtBaseMargin()                                //
                                                 + kPvNode * doubleExtPvMargin()                        //
                                                 + (kPvNode && !ttEntry.wasPv) * doubleExtNewPvMargin() //
-                                                - corr * doubleExtCorrScale() / 8192;
+                                                - doubleCorr;
                         const auto tripleMargin = tripleExtBaseMargin()                                //
                                                 + kPvNode * tripleExtPvMargin()                        //
                                                 + (kPvNode && !ttEntry.wasPv) * tripleExtNewPvMargin() //
                                                 + ttMoveNoisy * tripleExtNoisyMargin()                 //
-                                                - corr * tripleExtCorrScale() / 8192;
+                                                - tripleCorr;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
@@ -1145,7 +1153,7 @@ namespace stormphrax::search {
                     r += (curr.ttpv && ttHit && ttEntry.score <= alpha) * lmrTtpvFailLowReductionScale();
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
-                    r -= complexity.value_or(0) * lmrComplexityScale() / 4096;
+                    r -= complexity.value_or(0) * lmrComplexityScale() / 262144;
                     r -= legalMoves * lmrMoveCountReductionScale();
 
                     // can't use std::clamp because newDepth can be <0
@@ -1252,6 +1260,12 @@ namespace stormphrax::search {
                             rootMove.averageScore = score;
                         } else {
                             rootMove.averageScore = (rootMove.averageScore + score) / 2;
+                        }
+
+                        if (rootMove.averageSquaredScore == -kScoreInf) {
+                            rootMove.averageSquaredScore = score;
+                        } else {
+                            rootMove.averageSquaredScore = (rootMove.averageSquaredScore + score * std::abs(score)) / 2;
                         }
                     }
 
@@ -1375,7 +1389,14 @@ namespace stormphrax::search {
 
                 weight = std::max(weight, 0);
 
-                thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus * weight / 1024);
+                const auto scaled = bonus * weight / 1024;
+
+                thread.history.updateMainHistory(
+                    parent->threats,
+                    parent->moving,
+                    parent->move,
+                    scaled * pcmMainUpdateWeight() / 1024
+                );
             } else {
                 thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
             }

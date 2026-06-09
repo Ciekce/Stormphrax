@@ -40,7 +40,9 @@ namespace stormphrax::search {
 
         Score score{-kScoreInf};
         Score windowScore{-kScoreInf};
+
         Score averageScore{-kScoreInf};
+        Score averageSquaredScore{-kScoreInf};
 
         Score displayScore{-kScoreInf};
         Score previousScore{-kScoreInf};

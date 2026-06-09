@@ -39,7 +39,7 @@ namespace stormphrax {
             Score staticEval
         );
 
-        [[nodiscard]] Score correct(const Position& pos, std::span<const u64> keyHistory, Score score) const;
+        [[nodiscard]] i32 correction(const Position& pos, std::span<const u64> keyHistory) const;
 
     private:
         static constexpr usize kEntries = 16384;

@@ -46,7 +46,7 @@ namespace stormphrax {
             return value;
         }
 
-        [[nodiscard]] inline HistoryEntry& operator=(HistoryScore v) {
+        inline HistoryEntry& operator=(HistoryScore v) {
             value = v;
             return *this;
         }
@@ -103,6 +103,34 @@ namespace stormphrax {
             std::memset(&m_pieceTo, 0, sizeof(m_pieceTo));
             std::memset(&m_continuation, 0, sizeof(m_continuation));
             std::memset(&m_noisy, 0, sizeof(m_noisy));
+        }
+
+        inline void age() {
+            using namespace tunable;
+
+            for (i32 stm = 0; stm < Colors::kCount; ++stm) {
+                for (i32 from = 0; from < Squares::kCount; ++from) {
+                    for (i32 to = 0; to < Squares::kCount; ++to) {
+                        for (i32 srcThreat = 0; srcThreat < 2; ++srcThreat) {
+                            for (i32 dstThreat = 0; dstThreat < 2; ++dstThreat) {
+                                auto& v = m_butterfly[stm][from][to][srcThreat][dstThreat];
+                                v = v * butterflyAgeingWeight() / 1024;
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (i32 piece = 0; piece < Pieces::kCount; ++piece) {
+                for (i32 to = 0; to < Squares::kCount; ++to) {
+                    for (i32 srcThreat = 0; srcThreat < 2; ++srcThreat) {
+                        for (i32 dstThreat = 0; dstThreat < 2; ++dstThreat) {
+                            auto& v = m_pieceTo[piece][to][srcThreat][dstThreat];
+                            v = v * pieceToAgeingWeight() / 1024;
+                        }
+                    }
+                }
+            }
         }
 
         [[nodiscard]] inline const ContinuationSubtable& contTable(Piece moving, Square to) const {

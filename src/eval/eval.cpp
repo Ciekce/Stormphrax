@@ -33,7 +33,7 @@ namespace stormphrax::eval {
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
-        const CorrectionHistoryTable* correction,
+        const CorrectionHistoryTable* corrhist,
         i32 eval,
         i32* corrDelta
     ) {
@@ -47,19 +47,20 @@ namespace stormphrax::eval {
                               + scalingValueRook() * bbs.rooks().popcount()     //
                               + scalingValueQueen() * bbs.queens().popcount();
 
-        eval = (eval * (materialScalingBase() + npMaterial) + optimism[pos.stm().idx()] * (optimismBase() + npMaterial))
+        eval = (eval * (materialScalingBase() + npMaterial)
+                + optimism[pos.stm().idx()] * (optimismBase() + npMaterial * optimismMaterialScale() / 1024))
              / 32768;
 
         eval = eval * (200 - pos.halfmove()) / 200;
 
         if constexpr (kCorrect) {
-            const auto corrected = correction->correct(pos, keyHistory, eval);
+            const auto correction = corrhist->correction(pos, keyHistory);
 
             if (corrDelta) {
-                *corrDelta = std::abs(eval - corrected);
+                *corrDelta = std::abs(correction);
             }
 
-            eval = corrected;
+            eval += correction / 2048;
         }
 
         return std::clamp(eval, -kScoreWin + 1, kScoreWin - 1);
@@ -81,11 +82,11 @@ namespace stormphrax::eval {
         const Optimism& optimism,
         std::span<const u64> keyHistory,
         NnueState& nnueState,
-        const CorrectionHistoryTable* correction,
+        const CorrectionHistoryTable* corrhist,
         const Contempt& contempt
     ) {
         const auto eval = staticEval(pos, nnueState, contempt);
-        return adjustEval<kCorrect>(pos, optimism, keyHistory, correction, eval);
+        return adjustEval<kCorrect>(pos, optimism, keyHistory, corrhist, eval);
     }
 
     template Score adjustedStaticEval<false>(
