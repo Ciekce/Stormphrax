@@ -1399,6 +1399,7 @@ namespace stormphrax::search {
                     scaled * pcmMainUpdateWeight() / 1024
                 );
 
+                /*
                 thread.history.updateConthist(
                     thread.conthist,
                     ply - 1,
@@ -1407,6 +1408,7 @@ namespace stormphrax::search {
                     parent->move,
                     scaled * pcmContUpdateWeight() / 1024
                 );
+                */
             } else {
                 thread.history.updateNoisyScore(parent->move, parent->captured, parent->threats, noisyPcmBonus());
             }
