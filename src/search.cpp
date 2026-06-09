@@ -1262,11 +1262,11 @@ namespace stormphrax::search {
                             rootMove.averageScore = (rootMove.averageScore + score) / 2;
                         }
 
-                        if (rootMove->averageSquaredScore == -kScoreInf) {
-                            rootMove->averageSquaredScore = score;
+                        if (rootMove.averageSquaredScore == -kScoreInf) {
+                            rootMove.averageSquaredScore = score;
                         } else {
-                            rootMove->averageSquaredScore =
-                                (rootMove->averageSquaredScore + score * std::abs(score)) / 2;
+                            rootMove.averageSquaredScore =
+                                (rootMove.averageSquaredScore + score * std::abs(score)) / 2;
                         }
                     }
 
