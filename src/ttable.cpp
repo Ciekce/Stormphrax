@@ -49,9 +49,17 @@ namespace stormphrax {
                     return -kScoreWin + 1;
                 }
 
+                if (kScoreTbWin + score > 100 - halfmove) {
+                    return -kScoreWin + 1;
+                }
+
                 return score + ply;
             } else if (isWin(score)) {
                 if (score > kScoreTbWin && kScoreMate - score > 100 - halfmove) {
+                    return kScoreWin - 1;
+                }
+
+                if (kScoreTbWin - score > 100 - halfmove) {
                     return kScoreWin - 1;
                 }
 
