@@ -661,7 +661,7 @@ namespace stormphrax::search {
         bool ttHit = false;
 
         if (!curr.excluded) {
-            ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+            ttHit = m_ttable.probe(ttEntry, pos.key(), ply, pos.halfmove());
 
             if (!kPvNode && ttEntry.depth >= depth && (ttEntry.score <= alpha || cutnode)
                 && (ttEntry.flag == TtFlag::kExact                                     //
@@ -1474,7 +1474,7 @@ namespace stormphrax::search {
         auto& curr = thread.stack[ply];
 
         ProbedTTableEntry ttEntry{};
-        const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply);
+        const bool ttHit = m_ttable.probe(ttEntry, pos.key(), ply, pos.halfmove());
 
         if (!kPvNode
             && (ttEntry.flag == TtFlag::kExact                                     //

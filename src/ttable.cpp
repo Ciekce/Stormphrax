@@ -43,10 +43,26 @@ namespace stormphrax {
             return score;
         }
 
-        inline Score scoreFromTt(Score score, i32 ply) {
+        inline Score scoreFromTt(Score score, i32 ply, i32 halfmove) {
             if (isLoss(score)) {
+                if (score < -kScoreTbWin && kScoreMate + score > 100 - halfmove) {
+                    return -kScoreWin + 1;
+                }
+
+                if (kScoreTbWin + score > 100 - halfmove) {
+                    return -kScoreWin + 1;
+                }
+
                 return score + ply;
             } else if (isWin(score)) {
+                if (score > kScoreTbWin && kScoreMate - score > 100 - halfmove) {
+                    return kScoreWin - 1;
+                }
+
+                if (kScoreTbWin - score > 100 - halfmove) {
+                    return kScoreWin - 1;
+                }
+
                 return score - ply;
             }
             return score;
@@ -119,7 +135,7 @@ namespace stormphrax {
         return true;
     }
 
-    bool TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply) const {
+    bool TTable::probe(ProbedTTableEntry& dst, u64 key, i32 ply, i32 halfmove) const {
         assert(!m_pendingInit);
 
         const auto packedKey = packEntryKey(key);
@@ -127,7 +143,7 @@ namespace stormphrax {
         const auto& cluster = m_clusters[index(key)];
         for (const auto entry : cluster.entries) {
             if (entry.filled() && packedKey == entry.key) {
-                dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+                dst.score = scoreFromTt(static_cast<Score>(entry.score), ply, halfmove);
                 dst.staticEval = static_cast<Score>(entry.staticEval);
                 dst.depth = entry.depth();
                 dst.move = entry.move;
