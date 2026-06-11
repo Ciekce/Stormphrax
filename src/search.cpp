@@ -681,7 +681,9 @@ namespace stormphrax::search {
                     );
                 }
 
-                return ttEntry.score;
+                if (pos.halfmove() < 90) {
+                    return ttEntry.score;
+                }
             }
 
             curr.ttpv = kPvNode || ttEntry.wasPv;
