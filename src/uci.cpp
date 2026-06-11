@@ -1018,8 +1018,11 @@ namespace stormphrax {
             m_keyHistory.push_back(m_pos.key());
             m_pos = m_pos.applyMove(move);
 
-            if (m_pos.halfmove() == 0) {
-                m_keyHistory.clear();
+            // keep a few prior keys around for contcorr purposes
+            // bit hacky
+            if (m_pos.halfmove() == 0 && m_keyHistory.size() > 6) {
+                std::copy(m_keyHistory.end() - 6, m_keyHistory.end(), m_keyHistory.begin());
+                m_keyHistory.resize(6);
             }
         }
     } // namespace
