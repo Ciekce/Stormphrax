@@ -126,7 +126,7 @@ namespace stormphrax::search {
             }
         }
 
-        assert(!m_rootMoveList.empty());
+        assert(!m_rootMoves.empty());
 
         rankTbMoves(pos, keyHistory);
 
@@ -404,7 +404,7 @@ namespace stormphrax::search {
             m_setupBarrier.arriveAndWait();
         }
 
-        assert(!m_rootMoveList.empty());
+        assert(!m_rootMoves.empty());
 
         thread.rootMoves.clear();
         std::ranges::copy(m_rootMoves, std::back_inserter(thread.rootMoves));
