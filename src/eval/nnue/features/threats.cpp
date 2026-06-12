@@ -18,6 +18,7 @@
 
 #include "threats.h"
 
+#include <limits>
 #include <utility>
 
 #include "../../../attacks/attacks.h"
@@ -200,9 +201,6 @@ namespace stormphrax::eval::nnue::features::threats {
         if (c == Colors::kBlack) {
             a = a.flip();
             b = b.flip();
-
-            aSq = aSq.flipRank();
-            bSq = bSq.flipRank();
         }
 
         if (kingSq.file() >= kFileE) {
