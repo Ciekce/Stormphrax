@@ -131,5 +131,6 @@ namespace stormphrax::eval::nnue::features::threats {
         Square attackedSq
     );
 
-    [[nodiscard]] i32 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq);
+    [[nodiscard]] u16 ppPawnIdx(Color c, Square kingSq, Color pawnColor, Square sq);
+    [[nodiscard]] u16 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq);
 } // namespace stormphrax::eval::nnue::features::threats

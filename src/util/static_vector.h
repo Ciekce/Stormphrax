@@ -43,6 +43,12 @@ namespace stormphrax {
             m_data[m_size++] = std::move(elem);
         }
 
+        inline void pushConditional(const T& elem, bool cond) {
+            assert(m_size < kCapacity);
+            m_data[m_size] = elem;
+            m_size += cond;
+        }
+
         inline T pop() {
             assert(m_size > 0);
             return std::move(m_data[--m_size]);

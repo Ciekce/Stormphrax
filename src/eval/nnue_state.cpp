@@ -18,6 +18,12 @@
 
 #include "nnue_state.h"
 
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <span>
+
+#include "../attacks/attacks.h"
 #include "../util/static_vector.h"
 
 #include "nnue.h"
@@ -82,42 +88,292 @@ namespace stormphrax::eval {
             curr.setPsqUpdated(c);
         }
 
-        // Updates a threat accumulator in place.
-        // Assumed to already be initialised to the previous accumulator
+        template <
+            bool kZeroInit = false,
+            typename AddIndices = std::span<const u16>,
+            typename SubIndices = std::span<const u16>>
+        SP_ALWAYS_INLINE_NDEBUG inline void applyThreatRows(
+            std::span<i16, kL1Size> acc,
+            const FeatureTransformer& ft,
+            const AddIndices& addIndices,
+            const SubIndices& subIndices
+        ) {
+            namespace simd = util::simd;
+
+            constexpr usize kChunk = simd::kChunkSize<i16>;
+            static_assert(kL1Size % kChunk == 0);
+            constexpr usize kAccChunks = kL1Size / kChunk;
+
+#if SP_HAS_AVX512
+            constexpr usize kTileTarget = 32;
+#else
+            constexpr usize kTileTarget = 8;
+#endif
+            constexpr usize kTile = kAccChunks < kTileTarget ? kAccChunks : kTileTarget;
+            static_assert(kAccChunks % kTile == 0);
+
+            for (const auto index : subIndices) {
+                __builtin_prefetch(ft.threatWeightPtr(index));
+            }
+            for (const auto index : addIndices) {
+                __builtin_prefetch(ft.threatWeightPtr(index));
+            }
+
+            for (usize base = 0; base < kAccChunks; base += kTile) {
+                std::array<simd::Vector<i16>, kTile> v;
+                for (usize t = 0; t < kTile; ++t) {
+                    if constexpr (kZeroInit) {
+                        v[t] = simd::zero<i16>();
+                    } else {
+                        v[t] = simd::load<i16>(&acc[(base + t) * kChunk]);
+                    }
+                }
+
+                for (const auto index : subIndices) {
+                    const auto* sub = ft.threatWeightPtr(index);
+                    for (usize t = 0; t < kTile; ++t) {
+                        v[t] = simd::sub<i16>(v[t], simd::widenLoadI8ToI16(&sub[(base + t) * kChunk]));
+                    }
+                }
+
+                for (const auto index : addIndices) {
+                    const auto* add = ft.threatWeightPtr(index);
+                    for (usize t = 0; t < kTile; ++t) {
+                        v[t] = simd::add<i16>(v[t], simd::widenLoadI8ToI16(&add[(base + t) * kChunk]));
+                    }
+                }
+
+                for (usize t = 0; t < kTile; ++t) {
+                    simd::store<i16>(&acc[(base + t) * kChunk], v[t]);
+                }
+            }
+        }
+
+#if SP_HAS_VBMI2
+        SP_ALWAYS_INLINE_NDEBUG inline __m512i ppIndexEpi16(__m512i a, __m512i b) {
+            const auto hi = _mm512_max_epu16(a, b);
+            const auto lo = _mm512_min_epu16(a, b);
+            const auto prod = _mm512_mullo_epi16(hi, _mm512_sub_epi16(hi, _mm512_set1_epi16(1)));
+            return _mm512_add_epi16(_mm512_srli_epi16(prod, 1), lo);
+        }
+
+        SP_ALWAYS_INLINE_NDEBUG inline __m256i ppIndexEpi16(__m256i a, __m256i b) {
+            const auto hi = _mm256_max_epu16(a, b);
+            const auto lo = _mm256_min_epu16(a, b);
+            const auto prod = _mm256_mullo_epi16(hi, _mm256_sub_epi16(hi, _mm256_set1_epi16(1)));
+            return _mm256_add_epi16(_mm256_srli_epi16(prod, 1), lo);
+        }
+#endif
+
+        template <typename AddList, typename SubList>
+        SP_ALWAYS_INLINE_NDEBUG inline void generatePpRows(
+            Color c,
+            Square kingSq,
+            Bitboard blackBefore,
+            Bitboard whiteBefore,
+            Bitboard blackAfter,
+            Bitboard whiteAfter,
+            AddList& addIndices,
+            SubList& subIndices
+        ) {
+            using namespace nnue::features::threats;
+
+            u16* const addIdx = addIndices.end();
+            u16* const subIdx = subIndices.end();
+
+#if SP_HAS_VBMI2
+            const u8 sqMask = (c == Colors::kBlack ? 0b111000 : 0) ^ (kingSq.file() >= kFileE ? 0b000111 : 0);
+
+            const Bitboard friendlyBefore = (c == Colors::kWhite ? whiteBefore : blackBefore);
+            const Bitboard friendlyAfter = (c == Colors::kWhite ? whiteAfter : blackAfter);
+
+            const u64 afterAll = blackAfter | whiteAfter;
+
+            const auto addedAll = (blackAfter & ~blackBefore) | (whiteAfter & ~whiteBefore);
+            const auto removedAll = (blackBefore & ~blackAfter) | (whiteBefore & ~whiteAfter);
+            const u64 unchBb = afterAll & ~addedAll;
+
+            static constexpr auto kIota = [] {
+                std::array<u8, 64> table{};
+                for (u8 i = 0; i < 64; ++i) {
+                    table[i] = i;
+                }
+                return table;
+            }();
+
+            const auto iota = _mm512_loadu_si512(kIota.data());
+            const auto adjusted =
+                _mm512_sub_epi8(_mm512_xor_si512(iota, _mm512_set1_epi8(sqMask)), _mm512_set1_epi8(8));
+            const auto ids =
+                _mm512_mask_blend_epi8(friendlyAfter, _mm512_add_epi8(adjusted, _mm512_set1_epi8(48)), adjusted);
+
+            const auto compressed = _mm512_maskz_compress_epi8(unchBb, ids);
+            const auto idsU16 = _mm256_cvtepu8_epi16(_mm512_castsi512_si128(compressed));
+            const auto unchDoubled = _mm512_broadcast_i64x4(idsU16);
+
+            const auto unchCount = std::popcount(unchBb);
+            const u16 unchMask = (1u << unchCount) - 1;
+
+            const auto pawnIdFor = [&](Square sq, bool enemy) -> u16 {
+                return (sq.idx() ^ sqMask) - 8 + (enemy ? 48 : 0);
+            };
+            const auto bandMask = [&](Square sq) -> u16 { return _pext_u64(kPpMasks[sq.idx()] & unchBb, unchBb); };
+            const auto ppIndexScalar = [](u16 a, u16 b) -> u16 {
+                const auto hi = std::max(a, b);
+                const auto lo = std::min(a, b);
+                return hi * (hi - 1) / 2 + lo;
+            };
+
+            const auto nRemoved = removedAll.popcount();
+
+            auto remaining = removedAll;
+            const auto r0sq = remaining.popLowestSquare();
+            const auto r1sq = remaining.popLowestSquare();
+            const auto r0id = pawnIdFor(r0sq, !friendlyBefore.hasSq(r0sq));
+            const auto r1id = pawnIdFor(r1sq, !friendlyBefore.hasSq(r1sq));
+
+            const auto r0mask = nRemoved >= 1 ? unchMask & bandMask(r0sq) : 0;
+            const auto r1mask = nRemoved >= 2 ? unchMask & bandMask(r1sq) : 0;
+            const u32 rMask = r0mask | r1mask << 16;
+
+            const auto rv =
+                _mm512_insertf64x4(_mm512_castsi256_si512(_mm256_set1_epi16(r0id)), _mm256_set1_epi16(r1id), 1);
+            _mm512_storeu_epi16(subIdx, _mm512_maskz_compress_epi16(rMask, ppIndexEpi16(rv, unchDoubled)));
+            usize nSub = std::popcount(rMask);
+
+            if (nRemoved >= 2) {
+                assert(kPpMasks[r0sq.idx()].hasSq(r1sq));
+                subIdx[nSub++] = ppIndexScalar(r0id, r1id);
+            }
+
+            usize nAdd = 0;
+            if (!addedAll.empty()) {
+                const auto aSq = addedAll.lowestSquare();
+                const u16 aid = pawnIdFor(aSq, !friendlyAfter.hasSq(aSq));
+                const u16 aMask = unchMask & bandMask(aSq);
+
+                const auto ai = ppIndexEpi16(_mm256_set1_epi16(aid), idsU16);
+                _mm256_storeu_epi16(addIdx, _mm256_maskz_compress_epi16(aMask, ai));
+                nAdd = std::popcount(aMask);
+            }
+
+            addIndices.resize(addIndices.size() + nAdd);
+            subIndices.resize(subIndices.size() + nSub);
+#else
+            auto beforeRemaining = blackBefore | whiteBefore;
+            auto afterRemaining = blackAfter | whiteAfter;
+
+            const auto added = std::array{blackAfter & ~blackBefore, whiteAfter & ~whiteBefore};
+            const auto removed = std::array{blackBefore & ~blackAfter, whiteBefore & ~whiteAfter};
+
+            usize nAdd = 0;
+            usize nSub = 0;
+
+            for (const auto pawnColor : {Colors::kBlack, Colors::kWhite}) {
+                for (const auto a : added[pawnColor.idx()]) {
+                    afterRemaining &= ~a.bit();
+
+                    const auto mask = kPpMasks[a.idx()] & afterRemaining;
+
+                    for (const auto b : blackAfter& mask) {
+                        addIdx[nAdd++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
+                    }
+
+                    for (const auto b : whiteAfter& mask) {
+                        addIdx[nAdd++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
+                    }
+                }
+
+                for (const auto a : removed[pawnColor.idx()]) {
+                    beforeRemaining &= ~a.bit();
+
+                    const auto mask = kPpMasks[a.idx()] & beforeRemaining;
+
+                    for (const auto b : blackBefore& mask) {
+                        subIdx[nSub++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
+                    }
+
+                    for (const auto b : whiteBefore& mask) {
+                        subIdx[nSub++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
+                    }
+                }
+            }
+
+            addIndices.resize(addIndices.size() + nAdd);
+            subIndices.resize(subIndices.size() + nSub);
+#endif
+        }
+
+        void addThreatFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos) {
+            using namespace nnue::features::threats;
+
+            const auto& ft = network.featureTransformer();
+            const auto kingSq = pos.king(c);
+
+            StaticVector<u16, 256> indices;
+
+            const auto occ = pos.occ();
+            const auto kings = pos.bb(PieceTypes::kKing);
+
+            for (const auto from : occ & ~kings) {
+                const auto piece = pos.pieceOn(from);
+                for (const auto to : occ& attacks::getAttacks(piece, from, occ) & ~kings) {
+                    const auto attacked = pos.pieceOn(to);
+                    const auto feature = threatFeatureIndex(c, kingSq, piece, from, attacked, to);
+                    indices.pushConditional(static_cast<u16>(feature), feature >= 0);
+                }
+            }
+
+            if constexpr (InputFeatureSet::kPawnPawnInputs) {
+                const auto ourPawns = pos.bb(PieceTypes::kPawn, c);
+                const auto theirPawns = pos.bb(PieceTypes::kPawn, c.flip());
+
+                for (const auto [a, remaining] : ourPawns.iterWithRemaining()) {
+                    const auto mask = kPpMasks[a.idx()];
+
+                    for (const auto b : remaining& mask) {
+                        indices.push(ppFeatureIndex(c, kingSq, c, a, c, b));
+                    }
+
+                    for (const auto b : theirPawns& mask) {
+                        indices.push(ppFeatureIndex(c, kingSq, c, a, c.flip(), b));
+                    }
+                }
+
+                for (const auto [a, remaining] : theirPawns.iterWithRemaining()) {
+                    const auto mask = kPpMasks[a.idx()];
+                    for (const auto b : remaining& mask) {
+                        indices.push(ppFeatureIndex(c, kingSq, c.flip(), a, c.flip(), b));
+                    }
+                }
+            }
+
+            applyThreatRows<true>(acc, ft, indices, std::span<const u16>{});
+        }
+
         void applyThreatUpdates(const Network& network, UpdatableAccumulator& curr, const UpdateContext& ctx, Color c) {
             assert(!ctx.updates.requiresThreatRefresh(c));
 
             using namespace nnue::features::threats;
 
             const auto kingSq = ctx.kings.color(c);
+            const auto& ft = network.featureTransformer();
 
             auto acc = curr.threatAcc[0].forColor(c);
 
-            usize addIndex = 0, subIndex = 0;
-            StaticVector<u32, kMaxThreatsAdded + 16 * InputFeatureSet::kPawnPawnInputs> addFeatures;
-            StaticVector<u32, kMaxThreatsAdded + 32 * InputFeatureSet::kPawnPawnInputs> subFeatures;
-
-            if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
-                goto pawnPawn;
-            }
+            StaticVector<u16, kMaxThreatsAdded + 16 * InputFeatureSet::kPawnPawnInputs> addIndices;
+            StaticVector<u16, kMaxThreatsRemoved + 40 * InputFeatureSet::kPawnPawnInputs> subIndices;
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
                 const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
-                if (feature < 0) {
-                    continue;
-                }
-                addFeatures.push(feature);
+                addIndices.pushConditional(static_cast<u16>(feature), feature >= 0);
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
                 const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
-                if (feature < 0) {
-                    continue;
-                }
-                subFeatures.push(feature);
+                subIndices.pushConditional(static_cast<u16>(feature), feature >= 0);
             }
 
-        pawnPawn:
             if constexpr (InputFeatureSet::kPawnPawnInputs) {
                 const auto blackBefore = ctx.updates.pawnBbsBefore[Colors::kBlack.idx()];
                 const auto blackAfter = ctx.updates.pawnBbsAfter[Colors::kBlack.idx()];
@@ -125,73 +381,12 @@ namespace stormphrax::eval {
                 const auto whiteBefore = ctx.updates.pawnBbsBefore[Colors::kWhite.idx()];
                 const auto whiteAfter = ctx.updates.pawnBbsAfter[Colors::kWhite.idx()];
 
-                auto beforeRemaining = blackBefore | whiteBefore;
-                auto afterRemaining = blackAfter | whiteAfter;
-
-                const auto added = std::array{blackAfter & ~blackBefore, whiteAfter & ~whiteBefore};
-                const auto removed = std::array{blackBefore & ~blackAfter, whiteBefore & ~whiteAfter};
-
-                for (const auto pawnColor : {Colors::kBlack, Colors::kWhite}) {
-                    for (const auto a : added[pawnColor.idx()]) {
-                        afterRemaining &= ~a.bit();
-
-                        const auto mask = kPpMasks[a.idx()] & afterRemaining;
-
-                        for (const auto b : blackAfter & mask) {
-                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
-                            addFeatures.push(feature);
-                        }
-
-                        for (const auto b : whiteAfter & mask) {
-                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
-                            addFeatures.push(feature);
-                        }
-                    }
-
-                    for (const auto a : removed[pawnColor.idx()]) {
-                        beforeRemaining &= ~a.bit();
-
-                        const auto mask = kPpMasks[a.idx()] & beforeRemaining;
-
-                        for (const auto b : blackBefore & mask) {
-                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
-                            subFeatures.push(feature);
-                        }
-
-                        for (const auto b : whiteBefore & mask) {
-                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
-                            subFeatures.push(feature);
-                        }
-                    }
+                if (blackBefore != blackAfter || whiteBefore != whiteAfter) {
+                    generatePpRows(c, kingSq, blackBefore, whiteBefore, blackAfter, whiteAfter, addIndices, subIndices);
                 }
             }
 
-            while (addIndex < addFeatures.size() && subIndex < subFeatures.size()) {
-                const auto addFeature = addFeatures[addIndex++];
-                const auto subFeature = subFeatures[subIndex++];
-                const auto* add = network.featureTransformer().threatWeightPtr(addFeature);
-                const auto* sub = network.featureTransformer().threatWeightPtr(subFeature);
-                for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] += add[i];
-                    acc[i] -= sub[i];
-                }
-            }
-
-            while (addIndex < addFeatures.size()) {
-                const auto addFeature = addFeatures[addIndex++];
-                const auto* add = network.featureTransformer().threatWeightPtr(addFeature);
-                for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] += add[i];
-                }
-            }
-
-            while (subIndex < subFeatures.size()) {
-                const auto subFeature = subFeatures[subIndex++];
-                const auto* sub = network.featureTransformer().threatWeightPtr(subFeature);
-                for (i32 i = 0; i < kL1Size; ++i) {
-                    acc[i] -= sub[i];
-                }
-            }
+            applyThreatRows(acc, ft, addIndices, subIndices);
 
             curr.setThreatUpdated(c);
         }
@@ -254,7 +449,6 @@ namespace stormphrax::eval {
         void resetThreatAccumulator(const Network& network, Accumulator& accumulator, Color c, const Position& pos) {
             assert(c != Colors::kNone);
             if constexpr (InputFeatureSet::kThreatInputs) {
-                accumulator.clear(c);
                 addThreatFeatures(network, accumulator.forColor(c), c, pos);
             }
         }

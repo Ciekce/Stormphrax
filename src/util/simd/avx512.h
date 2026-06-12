@@ -140,6 +140,10 @@ namespace stormphrax::util::simd {
             _mm512_store_si512(ptr, v);
         }
 
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI16 widenLoadI8ToI16(const void* ptr) {
+            return _mm512_cvtepi8_epi16(_mm256_loadu_si256(static_cast<const __m256i*>(ptr)));
+        }
+
         SP_ALWAYS_INLINE_NDEBUG inline VectorI16 minI16(VectorI16 a, VectorI16 b) {
             return _mm512_min_epi16(a, b);
         }
