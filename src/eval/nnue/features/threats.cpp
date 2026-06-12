@@ -199,8 +199,8 @@ namespace stormphrax::eval::nnue::features::threats {
 
     i32 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq) {
         if (c == Colors::kBlack) {
-            a = a.flip();
-            b = b.flip();
+            aSq = aSq.flipRank();
+            bSq = bSq.flipRank();
         }
 
         if (kingSq.file() >= kFileE) {
