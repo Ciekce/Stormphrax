@@ -112,13 +112,6 @@ namespace stormphrax::eval {
             constexpr usize kTile = kAccChunks < kTileTarget ? kAccChunks : kTileTarget;
             static_assert(kAccChunks % kTile == 0);
 
-            for (const auto index : subIndices) {
-                __builtin_prefetch(ft.threatWeightPtr(index));
-            }
-            for (const auto index : addIndices) {
-                __builtin_prefetch(ft.threatWeightPtr(index));
-            }
-
             for (usize base = 0; base < kAccChunks; base += kTile) {
                 std::array<simd::Vector<i16>, kTile> v;
                 for (usize t = 0; t < kTile; ++t) {
