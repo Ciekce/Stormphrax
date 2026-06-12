@@ -325,9 +325,49 @@ namespace stormphrax::eval {
         return {header.name.data(), header.nameLen};
     }
 
+    void addPpFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos) {
+        using namespace nnue::features::threats;
+
+        const auto activateFeature = [&](i32 feature) {
+            const auto* start = network.featureTransformer().threatWeightPtr(feature);
+            for (i32 i = 0; i < kL1Size; ++i) {
+                acc[i] += start[i];
+            }
+        };
+
+        const auto kingSq = pos.king(c);
+
+        const auto ourPawns = pos.bb(PieceTypes::kPawn, c);
+        const auto theirPawns = pos.bb(PieceTypes::kPawn, c.flip());
+
+        for (const auto [a, remaining] : ourPawns.iterWithRemaining()) {
+            const auto mask = kPpMasks[a.idx()];
+
+            for (const auto b : remaining & mask) {
+                const auto feature = ppFeatureIndex(c, kingSq, c, a, c, b);
+                activateFeature(feature);
+            }
+
+            for (const auto b : theirPawns & mask) {
+                const auto feature = ppFeatureIndex(c, kingSq, c, a, c.flip(), b);
+                activateFeature(feature);
+            }
+        }
+
+        for (const auto [a, remaining] : theirPawns.iterWithRemaining()) {
+            const auto mask = kPpMasks[a.idx()];
+            for (const auto b : remaining & mask) {
+                const auto feature = ppFeatureIndex(c, kingSq, c.flip(), a, c.flip(), b);
+                activateFeature(feature);
+            }
+        }
+    }
+
     void addThreatFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos) {
-        const auto activateFeature = [&](u32 feature) {
-            const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
+        using namespace nnue::features::threats;
+
+        const auto activateFeature = [&](i32 feature) {
+            const auto* start = network.featureTransformer().threatWeightPtr(feature);
             for (i32 i = 0; i < kL1Size; ++i) {
                 acc[i] += start[i];
             }
@@ -342,8 +382,8 @@ namespace stormphrax::eval {
             const auto piece = pos.pieceOn(from);
             for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~kings) {
                 const auto attacked = pos.pieceOn(to);
-                const auto feature = nnue::features::threats::featureIndex(c, kingSq, piece, from, attacked, to);
-                if (feature < nnue::features::threats::kTotalThreatFeatures) {
+                const auto feature = threatFeatureIndex(c, kingSq, piece, from, attacked, to);
+                if (feature >= 0) {
                     activateFeature(feature);
                 }
             }

@@ -64,7 +64,7 @@ namespace stormphrax::eval {
         // clang-format on
         >;
 
-    using InputFeatureSet = nnue::features::threats::ThreatInputs<PsqFeatureSet>;
+    using InputFeatureSet = nnue::features::threats::PawnPawnThreatInputs<PsqFeatureSet>;
 
     using OutputBucketing = nnue::output::MaterialCount<8>;
 

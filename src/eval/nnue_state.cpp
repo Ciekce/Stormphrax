@@ -20,6 +20,12 @@
 
 #include "../util/static_vector.h"
 
+
+
+
+
+#include "nnue.h"
+
 namespace stormphrax::eval {
     namespace {
         void updatePsq(
@@ -85,6 +91,8 @@ namespace stormphrax::eval {
         void applyThreatUpdates(const Network& network, UpdatableAccumulator& curr, const UpdateContext& ctx, Color c) {
             assert(!ctx.updates.requiresThreatRefresh(c));
 
+            using namespace nnue::features::threats;
+
             if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
                 return;
             }
@@ -94,22 +102,20 @@ namespace stormphrax::eval {
             auto acc = curr.threatAcc[0].forColor(c);
 
             usize addIndex = 0, subIndex = 0;
-            StaticVector<u32, nnue::features::threats::kMaxThreatsAdded> addFeatures;
-            StaticVector<u32, nnue::features::threats::kMaxThreatsAdded> subFeatures;
+            StaticVector<u32, kMaxThreatsAdded> addFeatures;
+            StaticVector<u32, kMaxThreatsAdded> subFeatures;
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
-                const auto feature =
-                    nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
-                if (feature >= nnue::features::threats::kTotalThreatFeatures) {
+                const auto feature = threatFeatureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                if (feature < 0) {
                     continue;
                 }
                 addFeatures.push(feature);
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
-                const auto feature =
-                    nnue::features::threats::featureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
-                if (feature >= nnue::features::threats::kTotalThreatFeatures) {
+                const auto feature = threatFeatureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                if (feature < 0) {
                     continue;
                 }
                 subFeatures.push(feature);
@@ -118,8 +124,8 @@ namespace stormphrax::eval {
             while (addIndex < addFeatures.size() && subIndex < subFeatures.size()) {
                 const auto addFeature = addFeatures[addIndex++];
                 const auto subFeature = subFeatures[subIndex++];
-                const auto* add = &network.featureTransformer().threatWeights[addFeature * kL1Size];
-                const auto* sub = &network.featureTransformer().threatWeights[subFeature * kL1Size];
+                const auto* add = network.featureTransformer().threatWeightPtr(addFeature);
+                const auto* sub = network.featureTransformer().threatWeightPtr(subFeature);
                 for (i32 i = 0; i < kL1Size; ++i) {
                     acc[i] += add[i];
                     acc[i] -= sub[i];
@@ -128,7 +134,7 @@ namespace stormphrax::eval {
 
             while (addIndex < addFeatures.size()) {
                 const auto addFeature = addFeatures[addIndex++];
-                const auto* add = &network.featureTransformer().threatWeights[addFeature * kL1Size];
+                const auto* add = network.featureTransformer().threatWeightPtr(addFeature);
                 for (i32 i = 0; i < kL1Size; ++i) {
                     acc[i] += add[i];
                 }
@@ -136,7 +142,7 @@ namespace stormphrax::eval {
 
             while (subIndex < subFeatures.size()) {
                 const auto subFeature = subFeatures[subIndex++];
-                const auto* sub = &network.featureTransformer().threatWeights[subFeature * kL1Size];
+                const auto* sub = network.featureTransformer().threatWeightPtr(subFeature);
                 for (i32 i = 0; i < kL1Size; ++i) {
                     acc[i] -= sub[i];
                 }
@@ -154,20 +160,29 @@ namespace stormphrax::eval {
         ) {
             assert(stm != Colors::kNone);
             if constexpr (InputFeatureSet::kThreatInputs) {
+                util::simd::Array<i16, kL1Size> blackWithPp{};
+                util::simd::Array<i16, kL1Size> whiteWithPp{};
+
+                std::ranges::copy(threatAccumulator->black(), blackWithPp.begin());
+                std::ranges::copy(threatAccumulator->white(), whiteWithPp.begin());
+
+                addPpFeatures(network, blackWithPp, Colors::kBlack, pos);
+                addPpFeatures(network, whiteWithPp, Colors::kWhite, pos);
+
                 return stm == Colors::kBlack //
                          ? network.propagate(
                                pos,
                                psqAccumulator.black(),
                                psqAccumulator.white(),
-                               threatAccumulator->black(),
-                               threatAccumulator->white()
+                               blackWithPp,
+                               whiteWithPp
                            )[0]
                          : network.propagate(
                                pos,
                                psqAccumulator.white(),
                                psqAccumulator.black(),
-                               threatAccumulator->white(),
-                               threatAccumulator->black()
+                               whiteWithPp,
+                               blackWithPp
                            )[0];
             } else {
                 // just pass the psq accumulators again, they're unused

@@ -356,6 +356,10 @@ namespace stormphrax::eval::nnue {
         SP_NETWORK_PARAMS(ThreatWeightType, kThreatWeightCount, threatWeights);
         SP_NETWORK_PARAMS(OutputType, kBiasCount, biases);
 
+        [[nodiscard]] inline const ThreatWeightType* threatWeightPtr(u32 featureIdx) const {
+            return &threatWeights[featureIdx * kOutputCount];
+        }
+
         inline bool loadFrom(NetworkLoader& loader) {
             return loader.load(psqWeights) && loader.load(threatWeights) && loader.load(biases);
         }

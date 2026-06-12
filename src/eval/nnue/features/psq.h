@@ -36,7 +36,9 @@ namespace stormphrax::eval::nnue::features::psq {
 
     struct PsqFeaturesBase {
         static constexpr bool kThreatInputs = false;
+        static constexpr bool kPawnPawnThreats = false;
         static constexpr u32 kThreatFeatures = 0;
+        static constexpr u32 kThreatOffset = 0;
 
         struct Updates {
             using PieceSquare = std::pair<Piece, Square>;

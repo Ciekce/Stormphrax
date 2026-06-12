@@ -20,12 +20,16 @@
 
 #include "../../../types.h"
 
-#include <span>
+#include <array>
 
+#include "../../../bitboard.h"
 #include "psq.h"
 
 namespace stormphrax::eval::nnue::features::threats {
     constexpr u32 kTotalThreatFeatures = 60144;
+
+    constexpr u32 kTotalPpFeatures = 96 * 95 / 2;
+    constexpr u32 kTotalPpThreatFeatures = 59808 + kTotalPpFeatures;
 
     // just in case
     constexpr usize kMaxThreatsAdded = 128;
@@ -37,6 +41,7 @@ namespace stormphrax::eval::nnue::features::threats {
     template <typename PsqFeatureSet>
     struct ThreatInputs : PsqFeatureSet {
         static constexpr bool kThreatInputs = true;
+        static constexpr bool kPawnPawnThreats = true;
         static constexpr u32 kThreatFeatures = kTotalThreatFeatures;
 
         struct Updates : psq::PsqFeaturesBase::Updates {
@@ -74,12 +79,40 @@ namespace stormphrax::eval::nnue::features::threats {
         };
     };
 
-    [[nodiscard]] u32 featureIndex(
+    template <typename PsqFeatureSet>
+    struct PawnPawnThreatInputs : ThreatInputs<PsqFeatureSet> {
+        static constexpr bool kPawnPawnThreats = false;
+        static constexpr u32 kThreatFeatures = kTotalPpThreatFeatures;
+        static constexpr u32 kThreatOffset = kTotalPpFeatures;
+    };
+
+    constexpr std::array<Bitboard, Squares::kCount> kPpMasks = [] {
+        std::array<Bitboard, Squares::kCount> masks{};
+
+        for (u8 sqIdx = 8; sqIdx < 56; ++sqIdx) {
+            const auto sq = Square::fromRaw(sqIdx);
+
+            auto bb = Bitboard::fromSquare(sq);
+
+            bb |= bb.shiftLeft();
+            bb |= bb.shiftRight();
+
+            bb = bb.fillFile();
+
+            masks[sqIdx] = bb;
+        }
+
+        return masks;
+    }();
+
+    [[nodiscard]] i32 threatFeatureIndex(
         Color c,
-        Square king,
+        Square kingSq,
         Piece attacker,
         Square attackerSq,
         Piece attacked,
         Square attackedSq
     );
+
+    [[nodiscard]] i32 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq);
 } // namespace stormphrax::eval::nnue::features::threats

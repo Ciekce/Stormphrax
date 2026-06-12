@@ -23,6 +23,7 @@
 #include <span>
 
 #include "../../position.h"
+#include "../../util/simd.h"
 
 namespace stormphrax::eval::nnue {
     template <typename Ft, typename OutputBucketing, typename Arch>

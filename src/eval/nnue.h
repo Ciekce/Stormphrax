@@ -44,6 +44,7 @@ namespace stormphrax::eval {
 
     [[nodiscard]] std::string_view defaultNetworkName();
 
+    void addPpFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos);
     void addThreatFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos);
 
     template <bool kAdd>
