@@ -22,21 +22,21 @@
 
 #include <algorithm>
 
+#include "../../../bitboard.h"
 #include "../../../core.h"
 #include "../../../util/static_vector.h"
 
 namespace stormphrax::eval::nnue::features::psq {
-    struct UpdatedThreat {
+    struct ThreatDescriptor {
         Piece attacker;
         Square attackerSq;
         Piece attacked;
         Square attackedSq;
-        bool operator==(const UpdatedThreat&) const = default;
     };
 
     struct PsqFeaturesBase {
         static constexpr bool kThreatInputs = false;
-        static constexpr bool kPawnPawnThreats = false;
+        static constexpr bool kPawnPawnInputs = false;
         static constexpr u32 kThreatFeatures = 0;
         static constexpr u32 kThreatOffset = 0;
 
@@ -49,8 +49,11 @@ namespace stormphrax::eval::nnue::features::psq {
             StaticVector<PieceSquare, 2> sub{};
             StaticVector<PieceSquare, 2> add{};
 
-            StaticVector<UpdatedThreat, 0> threatsAdded{};
-            StaticVector<UpdatedThreat, 0> threatsRemoved{};
+            static constexpr StaticVector<ThreatDescriptor, 0> threatsAdded{};
+            static constexpr StaticVector<ThreatDescriptor, 0> threatsRemoved{};
+
+            static constexpr std::array<Bitboard, 0> pawnBbsBefore{};
+            static constexpr std::array<Bitboard, 0> pawnBbsAfter{};
 
             inline void setPsqRefresh(Color c) {
                 refresh[c.idx()] = true;
@@ -88,6 +91,15 @@ namespace stormphrax::eval::nnue::features::psq {
 
             inline void removeThreatFeature(Piece attacker, Square attackerSq, Piece attacked, Square attackedSq) {
                 SP_UNUSED(attacker, attackerSq, attacked, attackedSq);
+            }
+
+            inline void setPawnBbs(
+                Bitboard blackBefore,
+                Bitboard whiteBefore,
+                Bitboard blackAfter,
+                Bitboard whiteAfter
+            ) {
+                SP_UNUSED(blackBefore, whiteBefore, blackAfter, whiteAfter);
             }
         };
     };

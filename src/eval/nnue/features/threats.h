@@ -35,13 +35,12 @@ namespace stormphrax::eval::nnue::features::threats {
     constexpr usize kMaxThreatsAdded = 128;
     constexpr usize kMaxThreatsRemoved = 128;
 
-    using AddedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsAdded>;
-    using RemovedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsRemoved>;
+    using AddedThreatList = StaticVector<psq::ThreatDescriptor, kMaxThreatsAdded>;
+    using RemovedThreatList = StaticVector<psq::ThreatDescriptor, kMaxThreatsRemoved>;
 
     template <typename PsqFeatureSet>
     struct ThreatInputs : PsqFeatureSet {
         static constexpr bool kThreatInputs = true;
-        static constexpr bool kPawnPawnThreats = true;
         static constexpr u32 kThreatFeatures = kTotalThreatFeatures;
 
         struct Updates : psq::PsqFeaturesBase::Updates {
@@ -81,12 +80,30 @@ namespace stormphrax::eval::nnue::features::threats {
 
     template <typename PsqFeatureSet>
     struct PawnPawnThreatInputs : ThreatInputs<PsqFeatureSet> {
-        static constexpr bool kPawnPawnThreats = false;
+        static constexpr bool kPawnPawnInputs = true;
         static constexpr u32 kThreatFeatures = kTotalPpThreatFeatures;
         static constexpr u32 kThreatOffset = kTotalPpFeatures;
+
+        struct Updates : ThreatInputs<PsqFeatureSet>::Updates {
+            std::array<Bitboard, 2> pawnBbsBefore{};
+            std::array<Bitboard, 2> pawnBbsAfter{};
+
+            inline void setPawnBbs(
+                Bitboard blackBefore,
+                Bitboard whiteBefore,
+                Bitboard blackAfter,
+                Bitboard whiteAfter
+            ) {
+                pawnBbsBefore[Colors::kBlack.idx()] = blackBefore;
+                pawnBbsBefore[Colors::kWhite.idx()] = whiteBefore;
+
+                pawnBbsAfter[Colors::kBlack.idx()] = blackAfter;
+                pawnBbsAfter[Colors::kWhite.idx()] = whiteAfter;
+            }
+        };
     };
 
-    constexpr std::array<Bitboard, Squares::kCount> kPpMasks = [] {
+    constexpr auto kPpMasks = [] {
         std::array<Bitboard, Squares::kCount> masks{};
 
         for (u8 sqIdx = 8; sqIdx < 56; ++sqIdx) {

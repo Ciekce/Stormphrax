@@ -51,7 +51,7 @@ namespace stormphrax::eval::nnue::features::threats {
         }};
 
         constexpr auto kPieceTargetMap =
-            InputFeatureSet::kPawnPawnThreats ? kPieceTargetMapPpThreats : kPieceTargetMapNoPpThreats;
+            InputFeatureSet::kPawnPawnInputs ? kPieceTargetMapNoPpThreats : kPieceTargetMapPpThreats;
 
         constexpr std::array kPieceTargetCount = [] {
             std::array<i32, PieceTypes::kCount> counts{};

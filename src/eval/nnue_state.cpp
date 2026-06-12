@@ -20,10 +20,6 @@
 
 #include "../util/static_vector.h"
 
-
-
-
-
 #include "nnue.h"
 
 namespace stormphrax::eval {
@@ -93,20 +89,20 @@ namespace stormphrax::eval {
 
             using namespace nnue::features::threats;
 
-            if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
-                return;
-            }
-
-            const auto king = ctx.kings.color(c);
+            const auto kingSq = ctx.kings.color(c);
 
             auto acc = curr.threatAcc[0].forColor(c);
 
             usize addIndex = 0, subIndex = 0;
-            StaticVector<u32, kMaxThreatsAdded> addFeatures;
-            StaticVector<u32, kMaxThreatsAdded> subFeatures;
+            StaticVector<u32, kMaxThreatsAdded + 16 * InputFeatureSet::kPawnPawnInputs> addFeatures;
+            StaticVector<u32, kMaxThreatsAdded + 32 * InputFeatureSet::kPawnPawnInputs> subFeatures;
+
+            if (ctx.updates.threatsAdded.empty() && ctx.updates.threatsRemoved.empty()) {
+                goto pawnPawn;
+            }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
-                const auto feature = threatFeatureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
                 if (feature < 0) {
                     continue;
                 }
@@ -114,11 +110,60 @@ namespace stormphrax::eval {
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
-                const auto feature = threatFeatureIndex(c, king, attacker, attackerSq, attacked, attackedSq);
+                const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
                 if (feature < 0) {
                     continue;
                 }
                 subFeatures.push(feature);
+            }
+
+        pawnPawn:
+            if constexpr (InputFeatureSet::kPawnPawnInputs) {
+                const auto blackBefore = ctx.updates.pawnBbsBefore[Colors::kBlack.idx()];
+                const auto blackAfter = ctx.updates.pawnBbsAfter[Colors::kBlack.idx()];
+
+                const auto whiteBefore = ctx.updates.pawnBbsBefore[Colors::kWhite.idx()];
+                const auto whiteAfter = ctx.updates.pawnBbsAfter[Colors::kWhite.idx()];
+
+                auto beforeRemaining = blackBefore | whiteBefore;
+                auto afterRemaining = blackAfter | whiteAfter;
+
+                const auto added = std::array{blackAfter & ~blackBefore, whiteAfter & ~whiteBefore};
+                const auto removed = std::array{blackBefore & ~blackAfter, whiteBefore & ~whiteAfter};
+
+                for (const auto pawnColor : {Colors::kBlack, Colors::kWhite}) {
+                    for (const auto a : added[pawnColor.idx()]) {
+                        afterRemaining &= ~a.bit();
+
+                        const auto mask = kPpMasks[a.idx()] & afterRemaining;
+
+                        for (const auto b : blackAfter & mask) {
+                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
+                            addFeatures.push(feature);
+                        }
+
+                        for (const auto b : whiteAfter & mask) {
+                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
+                            addFeatures.push(feature);
+                        }
+                    }
+
+                    for (const auto a : removed[pawnColor.idx()]) {
+                        beforeRemaining &= ~a.bit();
+
+                        const auto mask = kPpMasks[a.idx()] & beforeRemaining;
+
+                        for (const auto b : blackBefore & mask) {
+                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
+                            subFeatures.push(feature);
+                        }
+
+                        for (const auto b : whiteBefore & mask) {
+                            const auto feature = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
+                            subFeatures.push(feature);
+                        }
+                    }
+                }
             }
 
             while (addIndex < addFeatures.size() && subIndex < subFeatures.size()) {
@@ -160,29 +205,20 @@ namespace stormphrax::eval {
         ) {
             assert(stm != Colors::kNone);
             if constexpr (InputFeatureSet::kThreatInputs) {
-                util::simd::Array<i16, kL1Size> blackWithPp{};
-                util::simd::Array<i16, kL1Size> whiteWithPp{};
-
-                std::ranges::copy(threatAccumulator->black(), blackWithPp.begin());
-                std::ranges::copy(threatAccumulator->white(), whiteWithPp.begin());
-
-                addPpFeatures(network, blackWithPp, Colors::kBlack, pos);
-                addPpFeatures(network, whiteWithPp, Colors::kWhite, pos);
-
                 return stm == Colors::kBlack //
                          ? network.propagate(
                                pos,
                                psqAccumulator.black(),
                                psqAccumulator.white(),
-                               blackWithPp,
-                               whiteWithPp
+                               threatAccumulator->black(),
+                               threatAccumulator->white()
                            )[0]
                          : network.propagate(
                                pos,
                                psqAccumulator.white(),
                                psqAccumulator.black(),
-                               whiteWithPp,
-                               blackWithPp
+                               threatAccumulator->white(),
+                               threatAccumulator->black()
                            )[0];
             } else {
                 // just pass the psq accumulators again, they're unused

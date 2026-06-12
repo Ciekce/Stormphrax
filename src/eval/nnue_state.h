@@ -41,7 +41,7 @@ namespace stormphrax::eval {
         void pieceMoved(const Position& pos, Piece piece, Square src, Square dst);
         void piecePromoted(const Position& pos, Piece oldPiece, Square src, Piece newPiece, Square dst);
 
-        void finalize(const Position& pos);
+        void finalize(const Position& posBefore, const Position& posAfter);
     };
 
     struct UpdatableAccumulator {
@@ -171,7 +171,17 @@ namespace stormphrax::eval {
         }
     }
 
-    inline void BoardObserver::finalize(const Position& pos) {
-        ctx.kings = pos.kings();
+    inline void BoardObserver::finalize(const Position& posBefore, const Position& posAfter) {
+        ctx.kings = posAfter.kings();
+
+        if constexpr (InputFeatureSet::kPawnPawnInputs) {
+            const auto blackPawnsBefore = posBefore.bb(PieceTypes::kPawn, Colors::kBlack);
+            const auto whitePawnsBefore = posBefore.bb(PieceTypes::kPawn, Colors::kWhite);
+
+            const auto blackPawnsAfter = posAfter.bb(PieceTypes::kPawn, Colors::kBlack);
+            const auto whitePawnsAfter = posAfter.bb(PieceTypes::kPawn, Colors::kWhite);
+
+            ctx.updates.setPawnBbs(blackPawnsBefore, whitePawnsBefore, blackPawnsAfter, whitePawnsAfter);
+        }
     }
 } // namespace stormphrax::eval
