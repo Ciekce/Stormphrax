@@ -201,6 +201,10 @@ namespace stormphrax::util::simd {
         return impl::loadI32(ptr);
     }
 
+    SP_ALWAYS_INLINE_NDEBUG inline Vector<i16> widenLoadI8ToI16(const void* ptr) {
+        return impl::widenLoadI8ToI16(ptr);
+    }
+
     template <typename T>
     SP_ALWAYS_INLINE_NDEBUG inline auto store(void* ptr, Vector<T> v) = delete;
     template <>

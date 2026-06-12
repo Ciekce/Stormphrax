@@ -139,6 +139,10 @@ namespace stormphrax::util::simd {
             vst1q_s16(static_cast<i16*>(ptr), v);
         }
 
+        SP_ALWAYS_INLINE_NDEBUG inline VectorI16 widenLoadI8ToI16(const void* ptr) {
+            return vmovl_s8(vld1_s8(static_cast<const i8*>(ptr)));
+        }
+
         SP_ALWAYS_INLINE_NDEBUG inline VectorI16 minI16(VectorI16 a, VectorI16 b) {
             return vminq_s16(a, b);
         }
