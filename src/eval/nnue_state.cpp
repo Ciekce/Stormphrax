@@ -48,8 +48,7 @@ namespace stormphrax::eval {
 
             const auto king = ctx.kings.color(c);
 
-            if (addCount == 1 && subCount == 1) // regular non-capture
-            {
+            if (addCount == 1 && subCount == 1) { // regular non-capture
                 const auto [subPiece, subSquare] = ctx.updates.sub[0];
                 const auto [addPiece, addSquare] = ctx.updates.add[0];
 
@@ -57,8 +56,7 @@ namespace stormphrax::eval {
                 const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
                 curr.psqAcc.subAddFrom(prev, network.featureTransformer(), c, sub, add);
-            } else if (addCount == 1 && subCount == 2) // any capture
-            {
+            } else if (addCount == 1 && subCount == 2) { // any capture
                 const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
                 const auto [subPiece1, subSquare1] = ctx.updates.sub[1];
                 const auto [addPiece, addSquare] = ctx.updates.add[0];
@@ -68,8 +66,7 @@ namespace stormphrax::eval {
                 const auto add = nnue::features::psq::featureIndex<InputFeatureSet>(c, addPiece, addSquare, king);
 
                 curr.psqAcc.subSubAddFrom(prev, network.featureTransformer(), c, sub0, sub1, add);
-            } else if (addCount == 2 && subCount == 2) // castling
-            {
+            } else if (addCount == 2 && subCount == 2) { // castling
                 const auto [subPiece0, subSquare0] = ctx.updates.sub[0];
                 const auto [subPiece1, subSquare1] = ctx.updates.sub[1];
                 const auto [addPiece0, addSquare0] = ctx.updates.add[0];
@@ -100,20 +97,24 @@ namespace stormphrax::eval {
         ) {
             namespace simd = util::simd;
 
-            constexpr usize kChunk = simd::kChunkSize<i16>;
+            static constexpr usize kChunk = simd::kChunkSize<i16>;
             static_assert(kL1Size % kChunk == 0);
-            constexpr usize kAccChunks = kL1Size / kChunk;
+
+            static constexpr usize kAccChunks = kL1Size / kChunk;
 
 #if SP_HAS_AVX512
-            constexpr usize kTileTarget = 32;
+            static constexpr usize kTileTarget = 32;
 #else
-            constexpr usize kTileTarget = 8;
+            static constexpr usize kTileTarget = 8;
 #endif
-            constexpr usize kTile = kAccChunks < kTileTarget ? kAccChunks : kTileTarget;
+
+            static constexpr usize kTile = kAccChunks < kTileTarget ? kAccChunks : kTileTarget;
+
             static_assert(kAccChunks % kTile == 0);
 
             for (usize base = 0; base < kAccChunks; base += kTile) {
                 std::array<simd::Vector<i16>, kTile> v;
+
                 for (usize t = 0; t < kTile; ++t) {
                     if constexpr (kZeroInit) {
                         v[t] = simd::zero<i16>();
@@ -143,14 +144,14 @@ namespace stormphrax::eval {
         }
 
 #if SP_HAS_VBMI2
-        SP_ALWAYS_INLINE_NDEBUG inline __m512i ppIndexEpi16(__m512i a, __m512i b) {
+        SP_ALWAYS_INLINE_NDEBUG inline __m512i ppIdxEpi16(__m512i a, __m512i b) {
             const auto hi = _mm512_max_epu16(a, b);
             const auto lo = _mm512_min_epu16(a, b);
             const auto prod = _mm512_mullo_epi16(hi, _mm512_sub_epi16(hi, _mm512_set1_epi16(1)));
             return _mm512_add_epi16(_mm512_srli_epi16(prod, 1), lo);
         }
 
-        SP_ALWAYS_INLINE_NDEBUG inline __m256i ppIndexEpi16(__m256i a, __m256i b) {
+        SP_ALWAYS_INLINE_NDEBUG inline __m256i ppIdxEpi16(__m256i a, __m256i b) {
             const auto hi = _mm256_max_epu16(a, b);
             const auto lo = _mm256_min_epu16(a, b);
             const auto prod = _mm256_mullo_epi16(hi, _mm256_sub_epi16(hi, _mm256_set1_epi16(1)));
@@ -177,20 +178,19 @@ namespace stormphrax::eval {
 #if SP_HAS_VBMI2
             const u8 sqMask = (c == Colors::kBlack ? 0b111000 : 0) ^ (kingSq.file() >= kFileE ? 0b000111 : 0);
 
-            const Bitboard friendlyBefore = (c == Colors::kWhite ? whiteBefore : blackBefore);
-            const Bitboard friendlyAfter = (c == Colors::kWhite ? whiteAfter : blackAfter);
+            const auto friendlyBefore = c == Colors::kBlack ? blackBefore : whiteBefore;
+            const auto friendlyAfter = c == Colors::kBlack ? blackAfter : whiteAfter;
 
             const u64 afterAll = blackAfter | whiteAfter;
 
             const auto addedAll = (blackAfter & ~blackBefore) | (whiteAfter & ~whiteBefore);
             const auto removedAll = (blackBefore & ~blackAfter) | (whiteBefore & ~whiteAfter);
+
             const u64 unchBb = afterAll & ~addedAll;
 
             static constexpr auto kIota = [] {
-                std::array<u8, 64> table{};
-                for (u8 i = 0; i < 64; ++i) {
-                    table[i] = i;
-                }
+                std::array<u8, Squares::kCount> table{};
+                std::iota(table.begin(), table.end(), 0);
                 return table;
             }();
 
@@ -205,13 +205,15 @@ namespace stormphrax::eval {
             const auto unchDoubled = _mm512_broadcast_i64x4(idsU16);
 
             const auto unchCount = std::popcount(unchBb);
-            const u16 unchMask = (1u << unchCount) - 1;
+            const u16 unchMask = (1 << unchCount) - 1;
 
             const auto pawnIdFor = [&](Square sq, bool enemy) -> u16 {
                 return (sq.idx() ^ sqMask) - 8 + (enemy ? 48 : 0);
             };
+
             const auto bandMask = [&](Square sq) -> u16 { return _pext_u64(kPpMasks[sq.idx()] & unchBb, unchBb); };
-            const auto ppIndexScalar = [](u16 a, u16 b) -> u16 {
+
+            const auto ppIdx = [](u16 a, u16 b) -> u16 {
                 const auto hi = std::max(a, b);
                 const auto lo = std::min(a, b);
                 return hi * (hi - 1) / 2 + lo;
@@ -220,32 +222,37 @@ namespace stormphrax::eval {
             const auto nRemoved = removedAll.popcount();
 
             auto remaining = removedAll;
+
             const auto r0sq = remaining.popLowestSquare();
             const auto r1sq = remaining.popLowestSquare();
+
             const auto r0id = pawnIdFor(r0sq, !friendlyBefore.hasSq(r0sq));
             const auto r1id = pawnIdFor(r1sq, !friendlyBefore.hasSq(r1sq));
 
             const auto r0mask = nRemoved >= 1 ? unchMask & bandMask(r0sq) : 0;
             const auto r1mask = nRemoved >= 2 ? unchMask & bandMask(r1sq) : 0;
+
             const u32 rMask = r0mask | r1mask << 16;
 
             const auto rv =
                 _mm512_insertf64x4(_mm512_castsi256_si512(_mm256_set1_epi16(r0id)), _mm256_set1_epi16(r1id), 1);
-            _mm512_storeu_epi16(subIdx, _mm512_maskz_compress_epi16(rMask, ppIndexEpi16(rv, unchDoubled)));
+            _mm512_storeu_epi16(subIdx, _mm512_maskz_compress_epi16(rMask, ppIdxEpi16(rv, unchDoubled)));
             usize nSub = std::popcount(rMask);
 
             if (nRemoved >= 2) {
                 assert(kPpMasks[r0sq.idx()].hasSq(r1sq));
-                subIdx[nSub++] = ppIndexScalar(r0id, r1id);
+                subIdx[nSub++] = ppIdx(r0id, r1id);
             }
 
             usize nAdd = 0;
             if (!addedAll.empty()) {
                 const auto aSq = addedAll.lowestSquare();
+
                 const u16 aid = pawnIdFor(aSq, !friendlyAfter.hasSq(aSq));
                 const u16 aMask = unchMask & bandMask(aSq);
 
-                const auto ai = ppIndexEpi16(_mm256_set1_epi16(aid), idsU16);
+                const auto ai = ppIdxEpi16(_mm256_set1_epi16(aid), idsU16);
+
                 _mm256_storeu_epi16(addIdx, _mm256_maskz_compress_epi16(aMask, ai));
                 nAdd = std::popcount(aMask);
             }
@@ -268,11 +275,11 @@ namespace stormphrax::eval {
 
                     const auto mask = kPpMasks[a.idx()] & afterRemaining;
 
-                    for (const auto b : blackAfter& mask) {
+                    for (const auto b : blackAfter & mask) {
                         addIdx[nAdd++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
                     }
 
-                    for (const auto b : whiteAfter& mask) {
+                    for (const auto b : whiteAfter & mask) {
                         addIdx[nAdd++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
                     }
                 }
@@ -282,11 +289,11 @@ namespace stormphrax::eval {
 
                     const auto mask = kPpMasks[a.idx()] & beforeRemaining;
 
-                    for (const auto b : blackBefore& mask) {
+                    for (const auto b : blackBefore & mask) {
                         subIdx[nSub++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kBlack, b);
                     }
 
-                    for (const auto b : whiteBefore& mask) {
+                    for (const auto b : whiteBefore & mask) {
                         subIdx[nSub++] = ppFeatureIndex(c, kingSq, pawnColor, a, Colors::kWhite, b);
                     }
                 }
@@ -310,7 +317,7 @@ namespace stormphrax::eval {
 
             for (const auto from : occ & ~kings) {
                 const auto piece = pos.pieceOn(from);
-                for (const auto to : occ& attacks::getAttacks(piece, from, occ) & ~kings) {
+                for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~kings) {
                     const auto attacked = pos.pieceOn(to);
                     const auto feature = threatFeatureIndex(c, kingSq, piece, from, attacked, to);
                     indices.pushConditional(static_cast<u16>(feature), feature >= 0);
@@ -324,18 +331,18 @@ namespace stormphrax::eval {
                 for (const auto [a, remaining] : ourPawns.iterWithRemaining()) {
                     const auto mask = kPpMasks[a.idx()];
 
-                    for (const auto b : remaining& mask) {
+                    for (const auto b : remaining & mask) {
                         indices.push(ppFeatureIndex(c, kingSq, c, a, c, b));
                     }
 
-                    for (const auto b : theirPawns& mask) {
+                    for (const auto b : theirPawns & mask) {
                         indices.push(ppFeatureIndex(c, kingSq, c, a, c.flip(), b));
                     }
                 }
 
                 for (const auto [a, remaining] : theirPawns.iterWithRemaining()) {
                     const auto mask = kPpMasks[a.idx()];
-                    for (const auto b : remaining& mask) {
+                    for (const auto b : remaining & mask) {
                         indices.push(ppFeatureIndex(c, kingSq, c.flip(), a, c.flip(), b));
                     }
                 }

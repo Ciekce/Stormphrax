@@ -197,7 +197,7 @@ namespace stormphrax::eval::nnue::features::threats {
         return InputFeatureSet::kThreatOffset + attackIdx + offset + pieceIdx;
     }
 
-    u16 ppPawnIdx(Color c, Square kingSq, Color pawnColor, Square sq) {
+    u16 ppPawnId(Color c, Square kingSq, Color pawnColor, Square sq) {
         if (c == Colors::kBlack) {
             sq = sq.flipRank();
         }
@@ -211,8 +211,8 @@ namespace stormphrax::eval::nnue::features::threats {
     }
 
     u16 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq) {
-        const auto aId = ppPawnIdx(c, kingSq, a, aSq);
-        const auto bId = ppPawnIdx(c, kingSq, b, bSq);
+        const auto aId = ppPawnId(c, kingSq, a, aSq);
+        const auto bId = ppPawnId(c, kingSq, b, bSq);
 
         const auto hi = std::max(aId, bId);
         const auto lo = std::min(aId, bId);
