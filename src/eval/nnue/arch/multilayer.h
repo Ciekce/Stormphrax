@@ -159,7 +159,7 @@ namespace stormphrax::eval::nnue::arch {
         ) const {
             using namespace util::simd;
 
-            static constexpr i32 kShift = 16 + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
+            static constexpr i32 kShift = 16 + kQuantBits + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
 
             const auto weightOffset = bucket * kL2Size * kL1Size;
             const auto biasOffset = bucket * kL2Size;
@@ -223,7 +223,7 @@ namespace stormphrax::eval::nnue::arch {
                 const auto halfSums_1 = add<i32>(v[2], v[3]);
 
                 const auto sums = add<i32>(halfSums_0, halfSums_1);
-                const auto biases = load<i32>(&l1Biases[biasOffset + idx]);
+                const auto biases = shiftLeft<i32>(load<i32>(&l1Biases[biasOffset + idx]), kQuantBits);
 
                 auto out = shift<i32, kShift>(sums);
 
@@ -231,13 +231,13 @@ namespace stormphrax::eval::nnue::arch {
 
                 if constexpr (kDualActivation) {
                     // crelu side
-                    auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(kQ));
-                    out0 = shiftLeft<i32>(out0, kQuantBits);
+                    auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(kQ * kQ));
 
                     // screlu side
                     // SF-style square-then-clip
                     auto out1 = mulLo<i32>(out, out);
-                    out1 = min<i32>(out1, set1<i32>(kQ * kQ));
+                    out1 = min<i32>(out1, set1<i32>(kQ * kQ * kQ * kQ));
+                    out1 = shiftRight<i32>(out1, kQuantBits * 2);
 
                     store<i32>(&outputs[idx], out0);
                     store<i32>(&outputs[idx + kL2Size], out1);
@@ -433,7 +433,7 @@ namespace stormphrax::eval::nnue::arch {
                 s = add<i32>(s0, s1);
             }
 
-            outputs[0] = (l3Biases[biasOffset] + hsum<i32>(s)) / kQ;
+            outputs[0] = l3Biases[biasOffset] + hsum<i32>(s);
         }
 
     public:
@@ -471,7 +471,12 @@ namespace stormphrax::eval::nnue::arch {
             sparse::trackActivations(ftOut);
 #endif
 
-            outputs[0] = l3Out[0] * kScale / (kQ * kQ * kQ);
+            auto out = static_cast<i64>(l3Out[0]);
+
+            out *= kScale;
+            out /= kQ * kQ * kQ * kQ;
+
+            outputs[0] = static_cast<i32>(out);
         }
 
         inline bool loadFrom(NetworkLoader& loader) {
