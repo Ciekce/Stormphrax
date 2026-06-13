@@ -469,10 +469,8 @@ namespace stormphrax::search {
                 if (depth >= 3) {
                     delta += std::abs(rootMove.averageSquaredScore) * aspSqScoreScale() / 1048576;
 
-                    const auto lastScore = rootMove.windowScore;
-
-                    alpha = std::max(lastScore - delta, -kScoreInf);
-                    beta = std::min(lastScore + delta, kScoreInf);
+                    alpha = std::max(rootMove.averageScore - delta, -kScoreInf);
+                    beta = std::min(rootMove.averageScore + delta, kScoreInf);
                 }
 
                 i32 aspReduction = 0;
@@ -1258,7 +1256,7 @@ namespace stormphrax::search {
                         rootMove.displayScore = beta;
                         rootMove.lowerbound = true;
                     } else {
-                        if (rootMove.averageScore == -kScoreInf) {
+                        if (isDecisive(score) || rootMove.averageScore == -kScoreInf) {
                             rootMove.averageScore = score;
                         } else {
                             rootMove.averageScore = (rootMove.averageScore + score) / 2;
