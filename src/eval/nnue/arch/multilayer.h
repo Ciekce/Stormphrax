@@ -159,7 +159,7 @@ namespace stormphrax::eval::nnue::arch {
         ) const {
             using namespace util::simd;
 
-            static constexpr i32 kShift = 16 + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
+            static constexpr i32 kShift = 16 + kQuantBits + kQuantBits - kFtScaleBits - kFtQBits - kFtQBits - kL1QBits;
 
             const auto weightOffset = bucket * kL2Size * kL1Size;
             const auto biasOffset = bucket * kL2Size;
@@ -231,19 +231,25 @@ namespace stormphrax::eval::nnue::arch {
 
                 if constexpr (kDualActivation) {
                     // crelu side
-                    auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(kQ));
-                    out0 = shiftLeft<i32>(out0, kQuantBits);
+                    auto out0 = clamp<i32>(out, zero<i32>(), set1<i32>(kQ * kQ));
+
+                    if constexpr (kSkipL2) {
+                        out0 = shiftLeft<i32>(out0, kQuantBits);
+                    }
 
                     // screlu side
                     // SF-style square-then-clip
                     auto out1 = mulLo<i32>(out, out);
-                    out1 = min<i32>(out1, set1<i32>(kQ * kQ));
+                    out1 = min<i32>(out1, set1<i32>(kQ * kQ * kQ * kQ));
+                    out1 = shiftRight<i32>(out1, kSkipL2 ? kQuantBits : kQuantBits * 2);
 
                     store<i32>(&outputs[idx], out0);
                     store<i32>(&outputs[idx + kL2Size], out1);
                 } else {
-                    out = clamp<i32>(out, zero<i32>(), set1<i32>(kQ));
+                    out = clamp<i32>(out, zero<i32>(), set1<i32>(kQ * kQ));
                     out = mulLo<i32>(out, out);
+
+                    out = shiftRight<i32>(out, kSkipL2 ? kQuantBits : kQuantBits * 2);
 
                     store<i32>(&outputs[idx], out);
                 }
@@ -269,7 +275,13 @@ namespace stormphrax::eval::nnue::arch {
                 for (u32 inputIdx = 0; inputIdx < kL2SizeFull; ++inputIdx) {
                     const auto weightsStart = weightOffset + inputIdx * kL3Size;
 
-                    const auto i = set1<i32>(inputs[inputIdx]);
+                    auto input = inputs[inputIdx];
+
+                    if constexpr (kSkipL2) {
+                        input >>= kQuantBits;
+                    }
+
+                    const auto i = set1<i32>(input);
 
                     for (u32 outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize<i32> * 2) {
                         const auto w_0 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 0]);
@@ -292,7 +304,13 @@ namespace stormphrax::eval::nnue::arch {
                 for (u32 inputIdx = 0; inputIdx < kL2SizeFull; ++inputIdx) {
                     const auto weightsStart = weightOffset + inputIdx * kL3Size;
 
-                    const auto i = set1<i32>(inputs[inputIdx]);
+                    auto input = inputs[inputIdx];
+
+                    if constexpr (kSkipL2) {
+                        input >>= kQuantBits;
+                    }
+
+                    const auto i = set1<i32>(input);
 
                     for (u32 outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize<i32> * 4) {
                         const auto w_0 = load<i32>(&l2Weights[weightsStart + outputIdx + kChunkSize<i32> * 0]);
@@ -360,9 +378,6 @@ namespace stormphrax::eval::nnue::arch {
                         const auto s_0 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 0]);
                         const auto s_1 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 1]);
 
-                        s_0 = shiftLeft<i32>(s_0, kQuantBits);
-                        s_1 = shiftLeft<i32>(s_1, kQuantBits);
-
                         i_0 = add<i32>(i_0, s_0);
                         i_1 = add<i32>(i_1, s_1);
                     }
@@ -405,11 +420,6 @@ namespace stormphrax::eval::nnue::arch {
                         auto s_2 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 2]);
                         auto s_3 = load<i32>(&skippedL1Out[inputIdx + kChunkSize<i32> * 3]);
 
-                        s_0 = shiftLeft<i32>(s_0, kQuantBits);
-                        s_1 = shiftLeft<i32>(s_1, kQuantBits);
-                        s_2 = shiftLeft<i32>(s_2, kQuantBits);
-                        s_3 = shiftLeft<i32>(s_3, kQuantBits);
-
                         i_0 = add<i32>(i_0, s_0);
                         i_1 = add<i32>(i_1, s_1);
                         i_2 = add<i32>(i_2, s_2);
@@ -433,7 +443,7 @@ namespace stormphrax::eval::nnue::arch {
                 s = add<i32>(s0, s1);
             }
 
-            outputs[0] = (l3Biases[biasOffset] + hsum<i32>(s)) / kQ;
+            outputs[0] = l3Biases[biasOffset] + hsum<i32>(s);
         }
 
     public:
@@ -471,7 +481,12 @@ namespace stormphrax::eval::nnue::arch {
             sparse::trackActivations(ftOut);
 #endif
 
-            outputs[0] = l3Out[0] * kScale / (kQ * kQ * kQ);
+            auto out = static_cast<i64>(l3Out[0]);
+
+            out *= kScale;
+            out /= kQ * kQ * kQ * kQ;
+
+            outputs[0] = static_cast<i32>(out);
         }
 
         inline bool loadFrom(NetworkLoader& loader) {
