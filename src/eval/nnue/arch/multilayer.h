@@ -223,7 +223,7 @@ namespace stormphrax::eval::nnue::arch {
                 const auto halfSums_1 = add<i32>(v[2], v[3]);
 
                 const auto sums = add<i32>(halfSums_0, halfSums_1);
-                const auto biases = shiftLeft<i32>(load<i32>(&l1Biases[biasOffset + idx]), kQuantBits);
+                const auto biases = load<i32>(&l1Biases[biasOffset + idx]);
 
                 auto out = shift<i32, kShift>(sums);
 
