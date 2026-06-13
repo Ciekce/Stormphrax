@@ -494,7 +494,7 @@ namespace stormphrax::search {
                     if (thread.isMainThread() && !m_silent && !g_opts.minimal && g_opts.multiPv == 1) {
                         const auto time = elapsed();
                         if (time >= kWidenReportDelay) {
-                            reportSingle(thread, thread.pvIdx, depth, time);
+                            reportSingle(thread, thread.pvIdx, time);
                         }
                     }
 
@@ -529,7 +529,7 @@ namespace stormphrax::search {
                     if (!m_silent
                         && (hasStopped() || (!g_opts.minimal && (lastPv || elapsed() >= kMultipvVerboseDelay))))
                     {
-                        report(thread, searchData.rootDepth, elapsed());
+                        report(thread, elapsed());
                     }
                 }
 
@@ -1243,6 +1243,7 @@ namespace stormphrax::search {
                 rootMove.nodes += thread.search.loadNodes() - prevNodes;
 
                 if (legalMoves == 1 || score > alpha) {
+                    rootMove.searchedDepth = thread.search.rootDepth;
                     rootMove.seldepth = thread.search.seldepth;
 
                     rootMove.score = score;
@@ -1621,7 +1622,7 @@ namespace stormphrax::search {
         return bestScore;
     }
 
-    void Searcher::reportSingle(const ThreadData& thread, u32 pvIdx, i32 depth, f64 time) {
+    void Searcher::reportSingle(const ThreadData& thread, u32 pvIdx, f64 time) {
         if (m_silent) {
             return;
         }
@@ -1635,7 +1636,6 @@ namespace stormphrax::search {
 
         if (move.score == -kScoreInf) {
             score = move.previousScore;
-            depth = std::max(1, depth - 1);
 
             // previous scores must be exact, as the depth was completed
             upperbound = false;
@@ -1657,7 +1657,7 @@ namespace stormphrax::search {
             print("multipv {} ", pvIdx + 1);
         }
 
-        print("depth {} seldepth {} time {} nodes {} nps {} score ", depth, move.seldepth, ms, nodes, nps);
+        print("depth {} seldepth {} time {} nodes {} nps {} score ", move.searchedDepth, move.seldepth, ms, nodes, nps);
 
         if (!move.tbRange.contains(score)) {
             score = move.tbRange.clamp(score);
@@ -1730,13 +1730,13 @@ namespace stormphrax::search {
         println();
     }
 
-    void Searcher::report(const ThreadData& thread, i32 depth, f64 time) {
+    void Searcher::report(const ThreadData& thread, f64 time) {
         if (m_silent) {
             return;
         }
 
         for (u32 pvIdx = 0; pvIdx < m_multiPv; ++pvIdx) {
-            reportSingle(thread, pvIdx, depth, time);
+            reportSingle(thread, pvIdx, time);
         }
     }
 
@@ -1854,7 +1854,7 @@ namespace stormphrax::search {
 
         // the main thread already printed its info before stopping
         if (!bestThread.isMainThread()) {
-            report(bestThread, bestThread.depthCompleted, elapsed());
+            report(bestThread, elapsed());
         }
 
         println("bestmove {}", bestThread.pvMove().move());

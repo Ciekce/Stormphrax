@@ -55,17 +55,19 @@ namespace stormphrax::search {
 
         util::Range<Score> tbRange{-kScoreInf, kScoreInf};
 
+        i32 searchedDepth{1};
         i32 seldepth{};
+
         PvList pv{};
 
         usize nodes{};
 
-        [[nodiscard]] Move move() const {
+        [[nodiscard]] inline Move move() const {
             assert(pv.length > 0);
             return pv.moves[0];
         }
 
-        void setTbStatus(GameResult wdl, i32 rank) {
+        inline void setTbStatus(GameResult wdl, i32 rank) {
             assert(wdl != GameResult::kNone);
 
             tbWdl = wdl;
