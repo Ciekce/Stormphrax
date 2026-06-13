@@ -22,6 +22,7 @@
 
 #include <array>
 #include <cassert>
+#include <utility>
 
 #include "core.h"
 #include "util/bits.h"
@@ -79,6 +80,7 @@ namespace stormphrax {
     } // namespace shifts
 
     class Biterator;
+    class RemainingBiteratorProxy;
 
     class Bitboard {
     public:
@@ -459,8 +461,10 @@ namespace stormphrax {
             return sq.bit();
         }
 
-        [[nodiscard]] inline Biterator begin() const;
-        [[nodiscard]] inline Biterator end() const;
+        [[nodiscard]] constexpr Biterator begin() const;
+        [[nodiscard]] constexpr Biterator end() const;
+
+        [[nodiscard]] constexpr RemainingBiteratorProxy iterWithRemaining() const;
 
     private:
         u64 m_board;
@@ -488,12 +492,61 @@ namespace stormphrax {
         friend class Bitboard;
     };
 
-    inline Biterator Bitboard::begin() const {
+    constexpr Biterator Bitboard::begin() const {
         return Biterator{*this};
     }
 
-    inline Biterator Bitboard::end() const {
+    constexpr Biterator Bitboard::end() const {
         return Biterator{Bitboard{}};
+    }
+
+    class RemainingBiterator {
+    public:
+        constexpr RemainingBiterator& operator++() {
+            m_nextSq = m_bb ? m_bb.popLowestSquare() : Squares::kNone;
+            return *this;
+        }
+
+        [[nodiscard]] constexpr std::pair<Square, Bitboard> operator*() const {
+            assert(!m_bb.hasSq(m_nextSq));
+            return {m_nextSq, m_bb};
+        }
+
+        constexpr bool operator==(const RemainingBiterator&) const = default;
+
+    private:
+        explicit constexpr RemainingBiterator(Bitboard bb) :
+                m_bb{bb} {
+            ++*this;
+        }
+
+        Bitboard m_bb;
+        Square m_nextSq;
+
+        friend class RemainingBiteratorProxy;
+    };
+
+    class RemainingBiteratorProxy {
+    public:
+        [[nodiscard]] constexpr RemainingBiterator begin() const {
+            return RemainingBiterator{m_bb};
+        }
+
+        [[nodiscard]] constexpr RemainingBiterator end() const {
+            return RemainingBiterator{Bitboard{}};
+        }
+
+    private:
+        explicit constexpr RemainingBiteratorProxy(Bitboard bb) :
+                m_bb{bb} {}
+
+        Bitboard m_bb;
+
+        friend class Bitboard;
+    };
+
+    constexpr RemainingBiteratorProxy Bitboard::iterWithRemaining() const {
+        return RemainingBiteratorProxy{*this};
     }
 
     namespace boards {

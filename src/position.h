@@ -331,8 +331,9 @@ namespace stormphrax {
             SP_UNUSED(pos, oldPiece, src, newPiece, dst);
         }
 
-        void finalize(const Position& pos) {
-            (void)pos;
+        void finalize(const Position& posBefore, const Position& posAfter) {
+            (void)posBefore;
+            (void)posAfter;
         }
     };
 

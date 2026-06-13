@@ -69,10 +69,6 @@ namespace stormphrax::eval::nnue {
             return m_outputs[c.idx()];
         }
 
-        inline void clear(Color c) {
-            m_outputs[c.idx()].fill(0);
-        }
-
         inline void initBoth(const Ft& featureTransformer) {
             std::ranges::copy(featureTransformer.biases, m_outputs[0].begin());
             std::ranges::copy(featureTransformer.biases, m_outputs[1].begin());
@@ -355,6 +351,10 @@ namespace stormphrax::eval::nnue {
         SP_NETWORK_PARAMS(PsqWeightType, kPsqWeightCount, psqWeights);
         SP_NETWORK_PARAMS(ThreatWeightType, kThreatWeightCount, threatWeights);
         SP_NETWORK_PARAMS(OutputType, kBiasCount, biases);
+
+        [[nodiscard]] inline const ThreatWeightType* threatWeightPtr(u32 featureIdx) const {
+            return &threatWeights[featureIdx * kOutputCount];
+        }
 
         inline bool loadFrom(NetworkLoader& loader) {
             return loader.load(psqWeights) && loader.load(threatWeights) && loader.load(biases);

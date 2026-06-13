@@ -20,19 +20,23 @@
 
 #include "../../../types.h"
 
-#include <span>
+#include <array>
 
+#include "../../../bitboard.h"
 #include "psq.h"
 
 namespace stormphrax::eval::nnue::features::threats {
     constexpr u32 kTotalThreatFeatures = 60144;
 
+    constexpr u32 kTotalPpFeatures = 96 * 95 / 2;
+    constexpr u32 kTotalPpThreatFeatures = 59808 + kTotalPpFeatures;
+
     // just in case
     constexpr usize kMaxThreatsAdded = 128;
     constexpr usize kMaxThreatsRemoved = 128;
 
-    using AddedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsAdded>;
-    using RemovedThreatList = StaticVector<psq::UpdatedThreat, kMaxThreatsRemoved>;
+    using AddedThreatList = StaticVector<psq::ThreatDescriptor, kMaxThreatsAdded>;
+    using RemovedThreatList = StaticVector<psq::ThreatDescriptor, kMaxThreatsRemoved>;
 
     template <typename PsqFeatureSet>
     struct ThreatInputs : PsqFeatureSet {
@@ -74,12 +78,59 @@ namespace stormphrax::eval::nnue::features::threats {
         };
     };
 
-    [[nodiscard]] u32 featureIndex(
+    template <typename PsqFeatureSet>
+    struct PawnPawnThreatInputs : ThreatInputs<PsqFeatureSet> {
+        static constexpr bool kPawnPawnInputs = true;
+        static constexpr u32 kThreatFeatures = kTotalPpThreatFeatures;
+        static constexpr u32 kThreatOffset = kTotalPpFeatures;
+
+        struct Updates : ThreatInputs<PsqFeatureSet>::Updates {
+            std::array<Bitboard, 2> pawnBbsBefore{};
+            std::array<Bitboard, 2> pawnBbsAfter{};
+
+            inline void setPawnBbs(
+                Bitboard blackBefore,
+                Bitboard whiteBefore,
+                Bitboard blackAfter,
+                Bitboard whiteAfter
+            ) {
+                pawnBbsBefore[Colors::kBlack.idx()] = blackBefore;
+                pawnBbsBefore[Colors::kWhite.idx()] = whiteBefore;
+
+                pawnBbsAfter[Colors::kBlack.idx()] = blackAfter;
+                pawnBbsAfter[Colors::kWhite.idx()] = whiteAfter;
+            }
+        };
+    };
+
+    constexpr auto kPpMasks = [] {
+        std::array<Bitboard, Squares::kCount> masks{};
+
+        for (u8 sqIdx = 8; sqIdx < 56; ++sqIdx) {
+            const auto sq = Square::fromRaw(sqIdx);
+
+            auto bb = Bitboard::fromSquare(sq);
+
+            bb |= bb.shiftLeft();
+            bb |= bb.shiftRight();
+
+            bb = bb.fillFile();
+
+            masks[sqIdx] = bb;
+        }
+
+        return masks;
+    }();
+
+    [[nodiscard]] i32 threatFeatureIndex(
         Color c,
-        Square king,
+        Square kingSq,
         Piece attacker,
         Square attackerSq,
         Piece attacked,
         Square attackedSq
     );
+
+    [[nodiscard]] u16 ppPawnId(Color c, Square kingSq, Color pawnColor, Square sq);
+    [[nodiscard]] u16 ppFeatureIndex(Color c, Square kingSq, Color a, Square aSq, Color b, Square bSq);
 } // namespace stormphrax::eval::nnue::features::threats

@@ -325,34 +325,9 @@ namespace stormphrax::eval {
         return {header.name.data(), header.nameLen};
     }
 
-    void addThreatFeatures(const Network& network, std::span<i16, kL1Size> acc, Color c, const Position& pos) {
-        const auto activateFeature = [&](u32 feature) {
-            const auto* start = &network.featureTransformer().threatWeights[feature * kL1Size];
-            for (i32 i = 0; i < kL1Size; ++i) {
-                acc[i] += start[i];
-            }
-        };
-
-        const auto occ = pos.occ();
-
-        const auto kingSq = pos.king(c);
-        const auto kings = pos.bb(PieceTypes::kKing);
-
-        for (const auto from : occ & ~kings) {
-            const auto piece = pos.pieceOn(from);
-            for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~kings) {
-                const auto attacked = pos.pieceOn(to);
-                const auto feature = nnue::features::threats::featureIndex(c, kingSq, piece, from, attacked, to);
-                if (feature < nnue::features::threats::kTotalThreatFeatures) {
-                    activateFeature(feature);
-                }
-            }
-        }
-    }
-
     namespace {
         namespace geometry = nnue::features::threats::geometry;
-        using UpdatedThreat = nnue::features::psq::UpdatedThreat;
+        using UpdatedThreat = nnue::features::psq::ThreatDescriptor;
 
 #if SP_HAS_VBMI2
         static_assert(sizeof(UpdatedThreat) == sizeof(u32));
