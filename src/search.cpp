@@ -1053,8 +1053,11 @@ namespace stormphrax::search {
             thread.search.incNodes();
             curr.moveCount = ++legalMoves;
 
-            if (kRootNode && g_opts.showCurrMove && elapsed() > kCurrmoveReportDelay) {
-                println("info depth {} currmove {} currmovenumber {}", depth, move, legalMoves);
+            if (kRootNode && g_opts.showCurrMove && !m_silent && !g_opts.minimal && thread.isMainThread()
+                && elapsed() > kCurrmoveReportDelay)
+            {
+                const auto moveNumber = thread.pvIdx + legalMoves;
+                println("info depth {} currmove {} currmovenumber {}", depth, move, moveNumber);
             }
 
             i32 extension{};
