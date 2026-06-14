@@ -71,6 +71,8 @@ namespace stormphrax::util {
             return std::countr_zero(v);
         }
 
+        assert(v != 0);
+
         return __builtin_ctzll(v);
     }
 

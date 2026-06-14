@@ -220,16 +220,17 @@ namespace stormphrax::eval {
             };
 
             const auto nRemoved = removedAll.popcount();
+            assert(nRemoved > 0);
 
             auto remaining = removedAll;
 
             const auto r0sq = remaining.popLowestSquare();
-            const auto r1sq = remaining.popLowestSquare();
+            const auto r1sq = nRemoved >= 2 ? remaining.popLowestSquare() : Squares::kNone;
 
             const auto r0id = pawnIdFor(r0sq, !friendlyBefore.hasSq(r0sq));
-            const auto r1id = pawnIdFor(r1sq, !friendlyBefore.hasSq(r1sq));
+            const auto r1id = nRemoved >= 2 ? pawnIdFor(r1sq, !friendlyBefore.hasSq(r1sq)) : u16{};
 
-            const auto r0mask = nRemoved >= 1 ? unchMask & bandMask(r0sq) : 0;
+            const auto r0mask = unchMask & bandMask(r0sq);
             const auto r1mask = nRemoved >= 2 ? unchMask & bandMask(r1sq) : 0;
 
             const u32 rMask = r0mask | r1mask << 16;
