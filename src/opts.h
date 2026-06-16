@@ -20,10 +20,7 @@
 
 #include "types.h"
 
-#include <string_view>
-
 #include "util/range.h"
-#include "wdl.h"
 
 namespace stormphrax {
     namespace opts {
@@ -70,11 +67,6 @@ namespace stormphrax {
 
             i32 contempt{kDefaultContempt};
         };
-
-        void setCheck(std::string_view name, bool value);
-        void setSpin(std::string_view name, i32 value);
-        void setButton(std::string_view name);
-        void setString(std::string_view name, std::string_view value);
 
         GlobalOptions& mutableOpts();
     } // namespace opts
