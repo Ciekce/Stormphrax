@@ -25,17 +25,11 @@
 #include "core.h"
 
 namespace stormphrax::wdl {
-    // Only used for unnormalisation, as a kind of best effort attempt
-    // Normalisation goes through the wdl model so as to be independent of material
-    constexpr Score kMaterial58NormalizationK = 396;
-
     [[nodiscard]] std::pair<f64, f64> wdlParams(i32 material);
     [[nodiscard]] std::pair<i32, i32> wdlModel(Score povScore, i32 material); // [win, loss]
 
     template <bool kSharpen = true>
     [[nodiscard]] Score normalizeScore(Score score, i32 material);
 
-    inline Score unnormalizeScoreMaterial58(Score score) {
-        return score == 0 || isDecisive(score) ? score : score * kMaterial58NormalizationK / 100;
-    }
+    [[nodiscard]] Score unnormalizeScore(Score score, i32 material);
 } // namespace stormphrax::wdl

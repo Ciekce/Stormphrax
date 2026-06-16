@@ -30,8 +30,8 @@
 #include "util/range.h"
 
 namespace stormphrax {
-    constexpr usize kDefaultTtSizeMib = 64;
-    constexpr util::Range<usize> kTtSizeMibRange{1, 67108864};
+    constexpr i32 kDefaultTtSizeMib = 64;
+    constexpr util::Range<i32> kTtSizeMibRange{1, 67108864};
 
     enum class TtFlag : u8 {
         kNone = 0,

@@ -20,33 +20,41 @@
 
 #include "types.h"
 
+#include <string_view>
+
 #include "util/range.h"
 #include "wdl.h"
 
 namespace stormphrax {
     namespace opts {
         constexpr u32 kDefaultThreadCount = 1;
-        constexpr auto kThreadCountRange = util::Range<u32>{1, 2048};
+        constexpr auto kThreadCountRange = util::Range<i32>{1, 2048};
+
+        constexpr u32 kDefaultMoveOverheadMs = 10;
+        constexpr auto kMoveOverheadRange = util::Range<i32>{0, 50000};
 
         constexpr auto kSoftNodeHardLimitMultiplierRange = util::Range<i32>{1, 5000};
 
-        constexpr auto kMultiPvRange = util::Range<u32>{1, 256};
+        constexpr auto kMultiPvRange = util::Range<i32>{1, 256};
 
         constexpr i32 kDefaultEvalSharpness = 115;
         constexpr auto kEvalSharpnessRange = util::Range<i32>{100, 120};
 
-        constexpr i32 kDefaultNormalizedContempt = 0;
+        constexpr i32 kDefaultContempt = 0;
+        constexpr auto kContemptRange = util::Range<i32>{-1000, 1000};
 
         struct GlobalOptions {
-            u32 threads{kDefaultThreadCount};
+            i32 threads{kDefaultThreadCount};
 
             bool chess960{false};
             bool showWdl{true};
             bool showCurrMove{false};
 
+            i32 moveOverhead{kDefaultMoveOverheadMs};
+
             i32 evalSharpness{kDefaultEvalSharpness};
 
-            u32 multiPv{1};
+            i32 multiPv{1};
 
             bool softNodes{false};
             i32 softNodeHardLimitMultiplier{1678};
@@ -60,8 +68,13 @@ namespace stormphrax {
             i32 syzygyProbeLimit{7};
             bool syzygyProbeRootOnly{false};
 
-            i32 contempt{wdl::unnormalizeScoreMaterial58(kDefaultNormalizedContempt)};
+            i32 contempt{kDefaultContempt};
         };
+
+        void setCheck(std::string_view name, bool value);
+        void setSpin(std::string_view name, i32 value);
+        void setButton(std::string_view name);
+        void setString(std::string_view name, std::string_view value);
 
         GlobalOptions& mutableOpts();
     } // namespace opts

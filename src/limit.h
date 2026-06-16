@@ -27,9 +27,6 @@
 #include "util/timer.h"
 
 namespace stormphrax::limit {
-    constexpr u32 kDefaultMoveOverheadMs = 10;
-    constexpr util::Range<i32> kMoveOverheadRange{0, 50000};
-
     struct TimeLimits {
         f64 remaining{};
         f64 increment{};
@@ -38,7 +35,7 @@ namespace stormphrax::limit {
 
     class TimeManager {
     public:
-        TimeManager(const TimeLimits& limits, u32 moveOverheadMs);
+        explicit TimeManager(const TimeLimits& limits);
 
         void update(i32 depth, usize totalNodes, const search::RootMove& pvMove);
 
@@ -68,7 +65,7 @@ namespace stormphrax::limit {
 
         bool setMoveTime(f64 time);
 
-        bool setTournamentTime(const TimeLimits& limits, u32 moveOverheadMs);
+        bool setTournamentTime(const TimeLimits& limits);
 
         void update(i32 depth, usize totalNodes, const search::RootMove& pvMove);
 

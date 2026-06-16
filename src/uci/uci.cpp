@@ -25,22 +25,23 @@
 #include <string>
 #include <vector>
 
-#include "../3rdparty/pyrrhic/tbprobe.h"
-#include "bench.h"
-#include "eval/eval.h"
-#include "limit.h"
-#include "movegen.h"
-#include "opts.h"
-#include "perft.h"
-#include "position.h"
-#include "search.h"
-#include "tb.h"
-#include "ttable.h"
-#include "tunable.h"
-#include "util/parse.h"
-#include "util/split.h"
-#include "util/timer.h"
-#include "wdl.h"
+#include "../../3rdparty/pyrrhic/tbprobe.h"
+#include "../bench.h"
+#include "../eval/eval.h"
+#include "../limit.h"
+#include "../movegen.h"
+#include "../opts.h"
+#include "../perft.h"
+#include "../position.h"
+#include "../search.h"
+#include "../tb.h"
+#include "../ttable.h"
+#include "../tunable.h"
+#include "../util/parse.h"
+#include "../util/split.h"
+#include "../util/timer.h"
+#include "../wdl.h"
+#include "option.h"
 
 namespace stormphrax {
     using namespace uci;
@@ -76,6 +77,7 @@ namespace stormphrax {
 
         class UciHandler {
         public:
+            UciHandler();
             ~UciHandler();
 
             i32 run();
@@ -106,6 +108,31 @@ namespace stormphrax {
 
             void applyMove(Move move);
 
+            void checkNewOption(std::string_view name);
+
+            void registerCheckOption(
+                std::string_view name,
+                bool* ptr,
+                bool nullDefault,
+                std::function<void(bool)> callback = nullptr
+            );
+            void registerSpinOption(
+                std::string_view name,
+                i32* ptr,
+                i32 nullDefault,
+                util::Range<i32> range,
+                std::function<void(i32)> callback = nullptr
+            );
+            void registerButtonOption(std::string_view name, std::function<void()> callback);
+            void registerStringOption(
+                std::string_view name,
+                std::string* ptr,
+                std::string_view nullDefault,
+                std::function<void(std::string_view)> callback = nullptr
+            );
+
+            std::vector<option::Option> m_options{};
+
             bool m_quit{false};
 
             bool m_tbInitialized{false};
@@ -114,9 +141,65 @@ namespace stormphrax {
 
             std::vector<u64> m_keyHistory{};
             Position m_pos{Position::startpos()};
-
-            i32 m_moveOverhead{limit::kDefaultMoveOverheadMs};
         };
+
+        UciHandler::UciHandler() {
+            using namespace opts;
+
+            static const GlobalOptions s_defaultOpts{};
+
+            auto& opts = mutableOpts();
+
+            registerSpinOption("Hash", nullptr, kDefaultTtSizeMib, kTtSizeMibRange, [&](i32 newHash) {
+                m_searcher.setTtSize(newHash);
+            });
+            registerButtonOption("ClearHash", [&] { m_searcher.newGame(); });
+            registerSpinOption("Threads", &opts.threads, s_defaultOpts.threads, kThreadCountRange, [&](i32 newThreads) {
+                m_searcher.setThreads(newThreads);
+            });
+            registerSpinOption("MultiPV", &opts.multiPv, s_defaultOpts.multiPv, kMultiPvRange);
+            registerSpinOption("Contempt", &opts.contempt, s_defaultOpts.contempt, kContemptRange);
+            registerCheckOption("UCI_Chess960", &opts.chess960, s_defaultOpts.chess960);
+            registerCheckOption("UCI_ShowWDL", &opts.showWdl, s_defaultOpts.showWdl);
+            registerSpinOption("EvalSharpness", &opts.evalSharpness, s_defaultOpts.evalSharpness, kEvalSharpnessRange);
+            registerCheckOption("ShowCurrMove", &opts.showCurrMove, s_defaultOpts.showCurrMove);
+            registerSpinOption("MoveOverhead", &opts.moveOverhead, s_defaultOpts.moveOverhead, kMoveOverheadRange);
+            registerCheckOption("SoftNodes", &opts.softNodes, s_defaultOpts.softNodes);
+            registerSpinOption(
+                "SoftNodeHardLimitMultiplier",
+                &opts.softNodeHardLimitMultiplier,
+                s_defaultOpts.softNodeHardLimitMultiplier,
+                kSoftNodeHardLimitMultiplierRange
+            );
+            registerCheckOption("EnableWeirdTCs", &opts.enableWeirdTcs, s_defaultOpts.enableWeirdTcs);
+            registerCheckOption("Minimal", &opts.minimal, s_defaultOpts.minimal);
+            registerStringOption("SyzygyPath", nullptr, "<empty>", [&](std::string_view value) {
+                if (value == "<empty>") {
+                    opts.syzygyEnabled = false;
+                    if (m_tbInitialized) {
+                        tb::free();
+                        m_tbInitialized = false;
+                    }
+                    return;
+                }
+
+                opts.syzygyEnabled = tb::init(value) == tb::InitStatus::kSuccess;
+                m_tbInitialized = true;
+            });
+            registerSpinOption(
+                "SyzygyProbeDepth",
+                &opts.syzygyProbeDepth,
+                s_defaultOpts.syzygyProbeDepth,
+                search::kSyzygyProbeDepthRange
+            );
+            registerSpinOption(
+                "SyzygyProbeLimit",
+                &opts.syzygyProbeLimit,
+                s_defaultOpts.syzygyProbeLimit,
+                search::kSyzygyProbeLimitRange
+            );
+            registerCheckOption("SyzygyProbeRootOnly", &opts.syzygyProbeRootOnly, s_defaultOpts.syzygyProbeRootOnly);
+        }
 
         UciHandler::~UciHandler() {
             // can't do this in a destructor, because it will run after tb::free() is called
@@ -196,8 +279,6 @@ namespace stormphrax {
         }
 
         void UciHandler::handleUci() {
-            static const opts::GlobalOptions defaultOpts{};
-
 #ifdef SP_COMMIT_HASH
             println("id name {} {} {}", kName, kVersion, SP_STRINGIFY(SP_COMMIT_HASH));
 #else
@@ -205,69 +286,9 @@ namespace stormphrax {
 #endif
             println("id author {}", kAuthor);
 
-            println(
-                "option name Hash type spin default {} min {} max {}",
-                kDefaultTtSizeMib,
-                kTtSizeMibRange.min(),
-                kTtSizeMibRange.max()
-            );
-            println("option name Clear Hash type button");
-            println(
-                "option name Threads type spin default {} min {} max {}",
-                opts::kDefaultThreadCount,
-                opts::kThreadCountRange.min(),
-                opts::kThreadCountRange.max()
-            );
-            println(
-                "option name MultiPV type spin default {} min {} max {}",
-                defaultOpts.multiPv,
-                opts::kMultiPvRange.min(),
-                opts::kMultiPvRange.max()
-            );
-            println(
-                "option name Contempt type spin default {} min {} max {}",
-                opts::kDefaultNormalizedContempt,
-                kContemptRange.min(),
-                kContemptRange.max()
-            );
-            println("option name UCI_Chess960 type check default {}", defaultOpts.chess960);
-            println("option name UCI_ShowWDL type check default {}", defaultOpts.showWdl);
-            println(
-                "option name EvalSharpness type spin default {} min {} max {}",
-                defaultOpts.evalSharpness,
-                opts::kEvalSharpnessRange.min(),
-                opts::kEvalSharpnessRange.max()
-            );
-            println("option name ShowCurrMove type check default {}", defaultOpts.showCurrMove);
-            println(
-                "option name Move Overhead type spin default {} min {} max {}",
-                limit::kDefaultMoveOverheadMs,
-                limit::kMoveOverheadRange.min(),
-                limit::kMoveOverheadRange.max()
-            );
-            println("option name SoftNodes type check default {}", defaultOpts.softNodes);
-            println(
-                "option name SoftNodeHardLimitMultiplier type spin default {} min {} max {}",
-                defaultOpts.softNodeHardLimitMultiplier,
-                opts::kSoftNodeHardLimitMultiplierRange.min(),
-                opts::kSoftNodeHardLimitMultiplierRange.max()
-            );
-            println("option name EnableWeirdTCs type check default {}", defaultOpts.enableWeirdTcs);
-            println("option name Minimal type check default {}", defaultOpts.minimal);
-            println("option name SyzygyPath type string default <empty>");
-            println(
-                "option name SyzygyProbeDepth type spin default {} min {} max {}",
-                defaultOpts.syzygyProbeDepth,
-                search::kSyzygyProbeDepthRange.min(),
-                search::kSyzygyProbeDepthRange.max()
-            );
-            println(
-                "option name SyzygyProbeLimit type spin default {} min {} max {}",
-                defaultOpts.syzygyProbeLimit,
-                search::kSyzygyProbeLimitRange.min(),
-                search::kSyzygyProbeLimitRange.max()
-            );
-            println("option name SyzygyProbeRootOnly type check default {}", defaultOpts.syzygyProbeRootOnly);
+            for (const auto& option : m_options) {
+                option.display();
+            }
 
 #if SP_EXTERNAL_TUNE
             for (const auto& param : tunableParams()) {
@@ -620,7 +641,7 @@ namespace stormphrax {
                     }
                 }
 
-                limiter.setTournamentTime(limits, m_moveOverhead);
+                limiter.setTournamentTime(limits);
             }
 
             m_searcher.setLimiter(limiter);
@@ -645,169 +666,70 @@ namespace stormphrax {
                 return;
             }
 
-            if (args.empty()) {
+            if (args.size() < 2 || args[0] != "name") {
                 return;
             }
 
-            usize i = 0;
+            const auto valueIdx = std::distance(args.begin(), std::ranges::find(args, "value"));
 
-            for (; i < args.size() - 1 && args[i] != "name"; ++i) {
-                //
-            }
-
-            if (++i == args.size()) {
+            if (valueIdx == 1) {
+                eprintln("Missing option name");
                 return;
             }
 
-            std::string name{};
-            auto nameItr = std::back_inserter(name);
+            if (valueIdx > 2) {
+                std::string str{};
+                auto itr = std::back_inserter(str);
 
-            for (; i < args.size() && args[i] != "value"; ++i) {
-                if (!name.empty()) {
-                    fmt::format_to(nameItr, " ");
+                bool first = true;
+                for (usize i = 2; i < valueIdx; ++i) {
+                    if (!first) {
+                        fmt::format_to(itr, " {}", args[i]);
+                    } else {
+                        fmt::format_to(itr, "{}", args[i]);
+                        first = false;
+                    }
                 }
 
-                fmt::format_to(nameItr, "{}", args[i]);
+                eprintln("Warning: spaces in option names not supported, skipping \"{}\"", str);
             }
 
-            if (++i == args.size()) {
-                return;
-            }
+            const auto name = args[1];
 
             std::string value{};
-            auto valueItr = std::back_inserter(value);
 
-            for (; i < args.size(); ++i) {
-                if (!value.empty()) {
-                    fmt::format_to(valueItr, " ");
+            if (valueIdx < args.size()) {
+                auto itr = std::back_inserter(value);
+
+                bool first = true;
+                for (usize i = valueIdx + 1; i < args.size(); ++i) {
+                    if (!first) {
+                        fmt::format_to(itr, " {}", args[i]);
+                    } else {
+                        fmt::format_to(itr, "{}", args[i]);
+                        first = false;
+                    }
                 }
-
-                fmt::format_to(valueItr, "{}", args[i]);
             }
 
-            if (!name.empty()) {
-                std::transform(name.begin(), name.end(), name.begin(), [](auto c) { return std::tolower(c); });
-
-                if (name == "hash") {
-                    if (!value.empty()) {
-                        if (const auto newTtSize = util::tryParse<usize>(value)) {
-                            m_searcher.setTtSize(kTtSizeMibRange.clamp(*newTtSize));
-                        }
-                    }
-                } else if (name == "clear hash") {
-                    if (m_searcher.searching()) {
-                        eprintln("still searching");
-                    }
-
-                    m_searcher.newGame();
-                } else if (name == "threads") {
-                    if (!value.empty()) {
-                        if (const auto newThreads = util::tryParse<u32>(value)) {
-                            opts::mutableOpts().threads = *newThreads;
-                            m_searcher.setThreads(opts::kThreadCountRange.clamp(*newThreads));
-                        }
-                    }
-                } else if (name == "multipv") {
-                    if (!value.empty()) {
-                        if (const auto newMultiPv = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().multiPv = opts::kMultiPvRange.clamp(*newMultiPv);
-                        }
-                    }
-                } else if (name == "contempt") {
-                    if (!value.empty()) {
-                        if (const auto newContempt = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().contempt =
-                                wdl::unnormalizeScoreMaterial58(kContemptRange.clamp(*newContempt));
-                        }
-                    }
-                } else if (name == "uci_chess960") {
-                    if (!value.empty()) {
-                        if (const auto newChess960 = util::tryParseBool(value)) {
-                            opts::mutableOpts().chess960 = *newChess960;
-                        }
-                    }
-                } else if (name == "uci_showwdl") {
-                    if (!value.empty()) {
-                        if (const auto newShowWdl = util::tryParseBool(value)) {
-                            opts::mutableOpts().showWdl = *newShowWdl;
-                        }
-                    }
-                } else if (name == "evalsharpness") {
-                    if (!value.empty()) {
-                        if (const auto newEvalSharpness = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().evalSharpness = opts::kEvalSharpnessRange.clamp(*newEvalSharpness);
-                        }
-                    }
-                } else if (name == "showcurrmove") {
-                    if (!value.empty()) {
-                        if (const auto newShowCurrMove = util::tryParseBool(value)) {
-                            opts::mutableOpts().showCurrMove = *newShowCurrMove;
-                        }
-                    }
-                } else if (name == "move overhead") {
-                    if (!value.empty()) {
-                        if (const auto newMoveOverhead = util::tryParse<i32>(value)) {
-                            m_moveOverhead = limit::kMoveOverheadRange.clamp(*newMoveOverhead);
-                        }
-                    }
-                } else if (name == "softnodes") {
-                    if (!value.empty()) {
-                        if (const auto newSoftNodes = util::tryParseBool(value)) {
-                            opts::mutableOpts().softNodes = *newSoftNodes;
-                        }
-                    }
-                } else if (name == "softnodehardlimitmultiplier") {
-                    if (!value.empty()) {
-                        if (const auto newSoftNodeHardLimitMultiplier = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().softNodeHardLimitMultiplier =
-                                opts::kSoftNodeHardLimitMultiplierRange.clamp(*newSoftNodeHardLimitMultiplier);
-                        }
-                    }
-                } else if (name == "enableweirdtcs") {
-                    if (!value.empty()) {
-                        if (const auto newEnableWeirdTcs = util::tryParseBool(value)) {
-                            opts::mutableOpts().enableWeirdTcs = *newEnableWeirdTcs;
-                        }
-                    }
-                } else if (name == "minimal") {
-                    if (!value.empty()) {
-                        if (const auto newMinimal = util::tryParseBool(value)) {
-                            opts::mutableOpts().minimal = *newMinimal;
-                        }
-                    }
-                } else if (name == "syzygypath") {
-                    m_tbInitialized = true;
-                    opts::mutableOpts().syzygyEnabled = tb::init(value) == tb::InitStatus::kSuccess;
-                } else if (name == "syzygyprobedepth") {
-                    if (!value.empty()) {
-                        if (const auto newSyzygyProbeDepth = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().syzygyProbeDepth =
-                                search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeDepth);
-                        }
-                    }
-                } else if (name == "syzygyprobelimit") {
-                    if (!value.empty()) {
-                        if (const auto newSyzygyProbeLimit = util::tryParse<i32>(value)) {
-                            opts::mutableOpts().syzygyProbeLimit =
-                                search::kSyzygyProbeLimitRange.clamp(*newSyzygyProbeLimit);
-                        }
-                    }
-                } else if (name == "syzygyproberootonly") {
-                    if (!value.empty()) {
-                        if (const auto newSyzygyProbeRootOnly = util::tryParseBool(value)) {
-                            opts::mutableOpts().syzygyProbeRootOnly = *newSyzygyProbeRootOnly;
-                        }
-                    }
+            const auto id = option::Option::toId(name);
+            for (auto& option : m_options) {
+                if (option.id() == id) {
+                    option.set(value);
+                    return;
                 }
+            }
+
 #if SP_EXTERNAL_TUNE
-                else if (auto* param = lookupTunableParam(name))
-                {
-                    if (!value.empty() && util::tryParse<i32>(param->value, value) && param->callback) {
-                        param->callback();
-                    }
+            if (auto* param = lookupTunableParam(name)) {
+                if (!value.empty() && util::tryParse<i32>(param->value, value) && param->callback) {
+                    param->callback();
                 }
-#endif
+                return;
             }
+#endif
+
+            eprintln("Unknown option {}", name);
         }
 
         void UciHandler::handleD() {
@@ -1024,6 +946,58 @@ namespace stormphrax {
                 std::copy(m_keyHistory.end() - 6, m_keyHistory.end(), m_keyHistory.begin());
                 m_keyHistory.resize(6);
             }
+        }
+
+        void UciHandler::checkNewOption(std::string_view name) {
+            if (std::ranges::find(name, ' ') != name.end()) {
+                eprintln("Option name \"{}\" must not contain any spaces!", name);
+                std::terminate();
+            }
+
+            const auto id = option::Option::toId(name);
+
+            for (const auto& option : m_options) {
+                if (option.id() == id) {
+                    eprintln("Duplicate option {}!", name);
+                    std::terminate();
+                }
+            }
+        }
+
+        void UciHandler::registerCheckOption(
+            std::string_view name,
+            bool* ptr,
+            bool nullDefault,
+            std::function<void(bool)> callback
+        ) {
+            checkNewOption(name);
+            m_options.emplace_back(name, ptr, nullDefault, std::move(callback));
+        }
+
+        void UciHandler::registerSpinOption(
+            std::string_view name,
+            i32* ptr,
+            i32 nullDefault,
+            util::Range<i32> range,
+            std::function<void(i32)> callback
+        ) {
+            checkNewOption(name);
+            m_options.emplace_back(name, ptr, nullDefault, std::move(callback), range);
+        }
+
+        void UciHandler::registerButtonOption(std::string_view name, std::function<void()> callback) {
+            checkNewOption(name);
+            m_options.emplace_back(name, std::move(callback));
+        }
+
+        void UciHandler::registerStringOption(
+            std::string_view name,
+            std::string* ptr,
+            std::string_view nullDefault,
+            std::function<void(std::string_view)> callback
+        ) {
+            checkNewOption(name);
+            m_options.emplace_back(name, ptr, nullDefault, std::move(callback));
         }
     } // namespace
 

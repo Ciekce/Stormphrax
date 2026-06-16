@@ -21,7 +21,7 @@
 #include "datagen/datagen.h"
 #include "eval/nnue.h"
 #include "tunable.h"
-#include "uci.h"
+#include "uci/uci.h"
 #include "util/numa/numa.h"
 #include "util/parse.h"
 

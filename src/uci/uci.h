@@ -18,17 +18,14 @@
 
 #pragma once
 
-#include "types.h"
+#include "../types.h"
 
 #include <span>
 #include <string_view>
 
-#include "tunable.h"
-#include "util/range.h"
+#include "../tunable.h"
 
 namespace stormphrax::uci {
-    constexpr auto kContemptRange = util::Range<i32>{-1000, 1000};
-
     i32 run();
 
 #if SP_EXTERNAL_TUNE

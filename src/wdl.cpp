@@ -27,6 +27,8 @@
 
 namespace stormphrax::wdl {
     std::pair<f64, f64> wdlParams(i32 material) {
+        static constexpr Score kMaterial58NormalizationK = 396;
+
         static constexpr std::array kAs = {-244.97139595, 687.39969858, -654.38002091, 608.47087786};
         static constexpr std::array kBs = {68.24072080, -111.17718819, 74.50316570, 71.16566713};
 
@@ -78,4 +80,10 @@ namespace stormphrax::wdl {
 
     template Score normalizeScore<false>(Score, i32);
     template Score normalizeScore<true>(Score, i32);
+
+    Score unnormalizeScore(Score score, i32 material) {
+        const auto [a, b] = wdlParams(material);
+        const auto unnormalized = static_cast<f64>(score) * a / 100.0;
+        return static_cast<Score>(std::round(unnormalized));
+    }
 } // namespace stormphrax::wdl

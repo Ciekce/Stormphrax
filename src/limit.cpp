@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include "opts.h"
 #include "tunable.h"
 #include "util/cemath.h"
 
@@ -30,8 +31,8 @@ namespace stormphrax::limit {
 
     using namespace stormphrax::tunable;
 
-    TimeManager::TimeManager(const TimeLimits& limits, u32 moveOverheadMs) {
-        const auto moveOverhead = static_cast<f64>(moveOverheadMs) / 1000.0;
+    TimeManager::TimeManager(const TimeLimits& limits) {
+        const auto moveOverhead = static_cast<f64>(g_opts.moveOverhead) / 1000.0;
 
         const auto limit = std::max(0.001, limits.remaining - moveOverhead);
 
@@ -146,12 +147,12 @@ namespace stormphrax::limit {
         return true;
     }
 
-    bool SearchLimiter::setTournamentTime(const TimeLimits& limits, u32 moveOverheadMs) {
+    bool SearchLimiter::setTournamentTime(const TimeLimits& limits) {
         if (m_timeManager) {
             return false;
         }
 
-        m_timeManager = TimeManager{limits, moveOverheadMs};
+        m_timeManager = TimeManager{limits};
         return true;
     }
 

@@ -43,7 +43,7 @@ find_package(Threads REQUIRED)
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 option(SP_DISABLE_NEON_DOTPROD "whether to disable NEON dotprod on ARM machines" OFF)
 
-add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp src/core.h src/core.cpp src/util/bitfield.h
+add_executable(stormphrax-native src/types.h src/main.cpp src/uci/uci.h src/uci/uci.cpp src/core.h src/core.cpp src/util/bitfield.h
 	src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h
 	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position.h src/position.cpp src/search.h
 	src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h
@@ -67,7 +67,7 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci.h src/uci.cpp 
 	src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp src/attacks/black_magic/data.h
 	src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp
 	src/eval/header.h src/correction.cpp src/movepick.cpp src/pv.cpp src/see.cpp src/eval/nnue_state.h
-	src/eval/nnue_state.cpp src/eval/eval.cpp)
+	src/eval/nnue_state.cpp src/eval/eval.cpp src/uci/option.h src/uci/option.cpp)
 
 target_include_directories(stormphrax-native PUBLIC 3rdparty/fmt/include)
 target_compile_options(stormphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)

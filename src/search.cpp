@@ -24,7 +24,7 @@
 #include "../3rdparty/pyrrhic/tbprobe.h"
 #include "opts.h"
 #include "see.h"
-#include "uci.h"
+#include "uci/uci.h"
 #include "util/numa/numa.h" // iei
 
 namespace stormphrax::search {
@@ -150,7 +150,7 @@ namespace stormphrax::search {
             }
         }
 
-        const auto contempt = g_opts.contempt;
+        const auto contempt = wdl::unnormalizeScore(g_opts.contempt, pos.classicalMaterial());
 
         m_contempt[pos.stm().idx()] = contempt;
         m_contempt[pos.nstm().idx()] = -contempt;
