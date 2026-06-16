@@ -26,6 +26,7 @@
 #include "see.h"
 #include "uci/uci.h"
 #include "util/numa/numa.h" // iei
+#include "wdl.h"
 
 namespace stormphrax::search {
     using namespace stormphrax::tunable;
