@@ -171,7 +171,9 @@ namespace stormphrax {
                 s_defaultOpts.softNodeHardLimitMultiplier,
                 kSoftNodeHardLimitMultiplierRange
             );
-            registerCheckOption("EnableWeirdTCs", &opts.enableWeirdTcs, s_defaultOpts.enableWeirdTcs);
+            registerCheckOption("EnableWeirdTCs", &opts.enableWeirdTcs, s_defaultOpts.enableWeirdTcs, [](bool) {
+                println("info string Note: EnableWeirdTCs is deprecated, and will be removed in a future release.");
+            });
             registerCheckOption("Minimal", &opts.minimal, s_defaultOpts.minimal);
             registerStringOption("SyzygyPath", nullptr, "<empty>", [&](std::string_view value) {
                 if (value == "<empty>") {
