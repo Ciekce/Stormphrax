@@ -558,27 +558,22 @@ namespace stormphrax {
                     }
                 } else if (limitStr == "searchmoves" && i + 1 < args.size()) {
                     while (i + 1 < args.size()) {
-                        const auto& candidate = args[i + 1];
+                        const auto candidate = args[i + 1];
+                        const auto move = m_pos.moveFromUci(candidate);
 
-                        if (candidate.length() >= 4 && candidate.length() <= 5 //
-                            && candidate[0] >= 'a' && candidate[0] <= 'h' && candidate[1] >= '1' && candidate[1] <= '8'
-                            && candidate[2] >= 'a' && candidate[2] <= 'h' && candidate[3] >= '1' && candidate[3] <= '8'
-                            && (candidate.length() < 5 || PieceType::fromChar(candidate[4]).isValidPromotion()))
-                        {
-                            const auto move = m_pos.moveFromUci(candidate);
-
-                            if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
-                                if (m_pos.isLegal(move)) {
-                                    movesToSearch.push(move);
-                                } else {
-                                    println("info string ignoring illegal move {}", candidate);
-                                }
-                            }
-
-                            ++i;
-                        } else {
+                        if (!move) {
                             break;
                         }
+
+                        if (std::ranges::find(movesToSearch, move) == movesToSearch.end()) {
+                            if (m_pos.isLegal(move)) {
+                                movesToSearch.push(move);
+                            } else {
+                                println("info string ignoring illegal move {}", candidate);
+                            }
+                        }
+
+                        ++i;
                     }
                 }
             }
@@ -659,7 +654,6 @@ namespace stormphrax {
             m_searcher.stop();
         }
 
-        //TODO refactor
         void UciHandler::handleSetoption(std::span<const std::string_view> args) {
             if (m_searcher.searching()) {
                 eprintln("still searching");
