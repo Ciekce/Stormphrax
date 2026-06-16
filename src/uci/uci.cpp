@@ -222,7 +222,10 @@ namespace stormphrax {
                     continue;
                 }
 
-                const auto command = tokens[0];
+                std::string command{};
+                command.reserve(tokens[0].size());
+                std::ranges::transform(tokens[0], std::back_inserter(command), [](auto c) { return std::tolower(c); });
+
                 const auto args = std::span{tokens}.subspan<1>();
 
                 if (command == "quit") {
@@ -270,6 +273,8 @@ namespace stormphrax {
                     handleWait();
                 } else if (command == "move") {
                     handleMove(args);
+                } else {
+                    eprintln("Unknown command {}", command);
                 }
 
                 if (m_quit) {
