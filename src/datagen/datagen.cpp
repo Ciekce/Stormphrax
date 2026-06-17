@@ -23,6 +23,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <optional>
 #include <thread>
 
@@ -47,6 +48,7 @@ namespace stormphrax::datagen {
 
     namespace {
         std::atomic_bool s_stop{false};
+        std::mutex s_printMutex{};
 
         void initCtrlCHandler() {
             util::signal::setCtrlCHandler([] { s_stop.store(true, std::memory_order::seq_cst); });
@@ -69,10 +71,13 @@ namespace stormphrax::datagen {
             }
         }
 
-        constexpr usize kVerificationHardNodeLimit = 25165814;
+        constexpr usize kTtSize = 16;
 
-        constexpr usize kDatagenSoftNodeLimit = 24000;
-        constexpr usize kDatagenHardNodeLimit = 8388608;
+        constexpr i32 kVerificationDepth = 10;
+        constexpr usize kVerificationHardNodeLimit = 500'000;
+
+        constexpr usize kDatagenSoftNodeLimit = 24'000;
+        constexpr usize kDatagenHardNodeLimit = 1'000'000;
 
         constexpr Score kVerificationScoreLimit = 500;
 
@@ -84,7 +89,9 @@ namespace stormphrax::datagen {
         constexpr u32 kWinAdjPlyCount = 5;
         constexpr u32 kDrawAdjPlyCount = 10;
 
-        constexpr i32 kReportInterval = 512;
+        constexpr u32 kMaxExplosions = 3;
+
+        constexpr usize kReportInterval = 32;
 
         template <OutputFormat Format>
         void runThread(u32 id, bool dfrc, u64 seed, const std::filesystem::path& outDir) {
@@ -94,7 +101,10 @@ namespace stormphrax::datagen {
             std::ofstream out{outFile, std::ios::binary | std::ios::app};
 
             if (!out) {
-                eprintln("failed to open output file {}", outFile);
+                {
+                    const std::unique_lock printLock{s_printMutex};
+                    eprintln("failed to open output file {}", outFile);
+                }
                 return;
             }
 
@@ -110,7 +120,7 @@ namespace stormphrax::datagen {
             const auto verifLimiter = createLimiter(kVerificationHardNodeLimit);
             const auto datagenLimiter = createLimiter(kDatagenHardNodeLimit, kDatagenSoftNodeLimit);
 
-            search::Searcher searcher{};
+            search::Searcher searcher{kTtSize};
             searcher.setSilent(true);
 
             auto& thread = searcher.take(id);
@@ -118,7 +128,7 @@ namespace stormphrax::datagen {
 
             auto& pos = thread.rootPos;
 
-            const auto resetSearch = [&searcher, &thread]() {
+            const auto resetSearch = [&searcher, &thread] {
                 searcher.newGame();
 
                 thread.search = search::SearchData{};
@@ -129,11 +139,10 @@ namespace stormphrax::datagen {
 
             const auto startTime = Instant::now();
 
+            usize gameNumber = 0;
             usize totalPositions{};
 
-            for (i32 game = 0; !s_stop.load(std::memory_order::seq_cst); ++game) {
-                resetSearch();
-
+            while (!s_stop.load(std::memory_order::seq_cst)) {
                 if (dfrc) {
                     const auto dfrcIndex = rng.nextU32(960 * 960);
                     pos = *Position::fromDfrcIndex(dfrcIndex);
@@ -143,9 +152,16 @@ namespace stormphrax::datagen {
 
                 const auto moveCount = 8 + (rng.nextU32() >> 31);
 
+                bool terminalReached = false;
+
                 for (i32 i = 0; i < moveCount; ++i) {
                     ScoredMoveList moves{};
                     generateAll(moves, pos);
+
+                    if (moves.empty()) {
+                        terminalReached = true;
+                        break;
+                    }
 
                     const auto idx = rng.nextU32(moves.size());
                     const auto [move, _score] = moves[idx];
@@ -154,11 +170,15 @@ namespace stormphrax::datagen {
                     pos = pos.applyMove(move);
                 }
 
-                output.start(pos);
+                if (terminalReached) {
+                    continue;
+                }
+
+                resetSearch();
 
                 thread.nnueState.reset(pos);
 
-                searcher.setMaxDepth(10);
+                searcher.setMaxDepth(kVerificationDepth);
                 searcher.setLimiter(verifLimiter);
 
                 const auto [firstScore, normFirstScore] = searcher.runDatagenSearch();
@@ -166,21 +186,25 @@ namespace stormphrax::datagen {
                 searcher.setMaxDepth(kMaxDepth);
                 searcher.setLimiter(datagenLimiter);
 
+                // Also excludes positions where we reached a terminal position with the last random move
                 if (std::abs(normFirstScore) > kVerificationScoreLimit) {
-                    --game;
                     continue;
                 }
 
                 resetSearch();
+                output.start(pos);
 
                 u32 winPlies{};
                 u32 lossPlies{};
                 u32 drawPlies{};
 
+                u32 explosionStrikes{};
+
                 std::optional<Outcome> outcome{};
 
                 while (true) {
                     const auto [score, normScore] = searcher.runDatagenSearch();
+                    const auto nodes = thread.search.loadNodes();
                     thread.search = search::SearchData{};
 
                     const auto move = thread.rootMoves[0].pv.moves[0];
@@ -255,11 +279,20 @@ namespace stormphrax::datagen {
                         break;
                     }
 
-                    output.push(filtered, move, score);
+                    if (nodes >= kDatagenHardNodeLimit && ++explosionStrikes >= kMaxExplosions) {
+                        break;
+                    }
+
+                    const auto clampedScore = std::abs(score) <= 2 ? 0 : score;
+                    output.push(filtered, move, clampedScore);
 
                     if (outcome) {
                         break;
                     }
+                }
+
+                if (explosionStrikes >= kMaxExplosions) {
+                    continue;
                 }
 
                 assert(outcome.has_value());
@@ -267,13 +300,16 @@ namespace stormphrax::datagen {
                 const auto positions = output.writeAllWithOutcome(out, *outcome);
                 totalPositions += positions;
 
-                if (((game + 1) % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
+                ++gameNumber;
+
+                if ((gameNumber % kReportInterval) == 0 || s_stop.load(std::memory_order::seq_cst)) {
                     const auto time = startTime.elapsed();
+                    const std::unique_lock printLock{s_printMutex};
                     println(
-                        "thread {}: wrote {} positions from {} games in {} sec ({:.6g} positions/sec)",
+                        "thread {}: wrote {} positions from {} games in {:.3f} sec ({:.3f} positions/sec)",
                         id,
                         totalPositions,
-                        game + 1,
+                        gameNumber,
                         time,
                         static_cast<f64>(totalPositions) / time
                     );
@@ -345,7 +381,7 @@ namespace stormphrax::datagen {
 
         for (u32 i = 0; i < threads; ++i) {
             const auto seed = seedGenerator.nextSeed();
-            theThreads.emplace_back([&, i, seed]() { threadFunc(i, dfrc, seed, outDir); });
+            theThreads.emplace_back([&, i, seed] { threadFunc(i, dfrc, seed, outDir); });
         }
 
         for (auto& thread : theThreads) {

@@ -212,6 +212,11 @@ namespace stormphrax::search {
     std::pair<Score, Score> Searcher::runDatagenSearch() {
         auto& thread = *m_threadData[0];
 
+        if (!thread.rootMoves.empty()) {
+            // ensure a nullmove is returned in mate and stalemate
+            thread.pvMove().pv.reset();
+        }
+
         m_rootMoves.clear();
         populateDefaultRootMoves(thread.rootPos);
 
@@ -487,6 +492,10 @@ namespace stormphrax::search {
                         search<true, true>(thread, thread.rootPos, rootPv, aspDepth, 0, 0, alpha, beta, false);
 
                     thread.sortRemainingRootMoves();
+
+                    if (thread.datagen && isDecisive(score)) {
+                        m_stop.store(true, std::memory_order::relaxed);
+                    }
 
                     if ((score > alpha && score < beta) || hasStopped()) {
                         break;
@@ -1108,7 +1117,7 @@ namespace stormphrax::search {
                 )
                 {
                     extension = 1
-                              + (!kPvNode && !ttMoveNoisy && ttEntry.depth >= depth - 3
+                              + (!kPvNode && !thread.datagen && !ttMoveNoisy && ttEntry.depth >= depth - 3
                                  && curr.staticEval <= alpha - ldseDoubleExtMargin());
                 }
             }
