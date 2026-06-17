@@ -590,7 +590,7 @@ namespace stormphrax {
 
                 // otherwise, require a threefold
                 for (i32 i = d + 2; i <= end; ++i) {
-                    if (currKey == prevKey(d)) {
+                    if (currKey == prevKey(i)) {
                         return true;
                     }
                 }
