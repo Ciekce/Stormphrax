@@ -52,10 +52,10 @@ namespace stormphrax {
         inline bool tryPush(const T& elem)
             requires kPadded
         {
-            const bool nonEmpty = m_size < kCapacity;
+            const bool hasCapacity = m_size < kCapacity;
             m_data[m_size] = elem;
-            m_size += nonEmpty;
-            return nonEmpty;
+            m_size += hasCapacity;
+            return hasCapacity;
         }
 
         inline T pop() {
