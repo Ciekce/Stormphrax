@@ -274,7 +274,7 @@ namespace stormphrax {
                 } else if (command == "move") {
                     handleMove(args);
                 } else {
-                    eprintln("Unknown command {}", command);
+                    eprintln("Unknown command '{}'", command);
                 }
 
                 if (m_quit) {
@@ -730,7 +730,7 @@ namespace stormphrax {
             }
 #endif
 
-            eprintln("Unknown option {}", name);
+            eprintln("Unknown option '{}'", name);
         }
 
         void UciHandler::handleD() {
