@@ -473,7 +473,12 @@ namespace stormphrax::search {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
-                    delta += std::abs(rootMove.averageSquaredScore) * aspSqScoreScale() / 1048576;
+                    // messy but we can overflow here
+                    delta += static_cast<i32>(
+                        static_cast<i64>(std::abs(rootMove.averageSquaredScore)) * aspSqScoreScale() / 1048576
+                    );
+
+                    assert(delta > 0);
 
                     const auto lastScore = rootMove.windowScore;
 
@@ -606,6 +611,7 @@ namespace stormphrax::search {
         assert(ply >= 0 && ply <= kMaxDepth);
         assert(kRootNode || ply > 0);
         assert(kPvNode || alpha + 1 == beta);
+        assert(alpha < beta);
 
         if (!kRootNode && thread.isMainThread() && thread.search.rootDepth > 1) {
             if (m_limiter->stopHard(thread.search.loadNodes())) {
@@ -1654,6 +1660,8 @@ namespace stormphrax::search {
             upperbound = false;
             lowerbound = false;
         }
+
+        assert(std::abs(score) < kScoreMate);
 
         usize nodes = 0;
 
