@@ -30,8 +30,8 @@
 #include "nnue/output.h"
 
 namespace stormphrax::eval {
-    // current arch: (704x16hm+60144->640)x2->(32x2->32->1)x8
-    // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU
+    // current arch: ((704x16+59808+pp)hm->640)x2->(32x2->64->1)x8
+    // pairwise clipped ReLU -> dual clipped + clipped squared ReLU -> clipped ReLU, skip connection over L2
 
     constexpr u32 kFtQBits = 8;
     constexpr u32 kL1QBits = 7;
