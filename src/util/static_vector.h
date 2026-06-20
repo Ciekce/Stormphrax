@@ -49,12 +49,16 @@ namespace stormphrax {
             m_size += cond;
         }
 
-        inline bool tryPush(const T& elem)
-            requires kPadded
-        {
+        inline bool tryPush(const T& elem) {
             const bool hasCapacity = m_size < kCapacity;
-            m_data[m_size] = elem;
-            m_size += hasCapacity;
+
+            if constexpr (kPadded) {
+                m_data[m_size] = elem;
+                m_size += hasCapacity;
+            } else if (hasCapacity) {
+                push(elem);
+            }
+
             return hasCapacity;
         }
 
