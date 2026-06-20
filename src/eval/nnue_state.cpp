@@ -321,7 +321,7 @@ namespace stormphrax::eval {
                 for (const auto to : occ & attacks::getAttacks(piece, from, occ) & ~kings) {
                     const auto attacked = pos.pieceOn(to);
                     const auto feature = threatFeatureIndex(c, kingSq, piece, from, attacked, to);
-                    indices.pushConditional(static_cast<u16>(feature), feature >= 0);
+                    indices.pushIf(static_cast<u16>(feature), feature >= 0);
                 }
             }
 
@@ -367,12 +367,12 @@ namespace stormphrax::eval {
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsAdded) {
                 const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
-                addIndices.pushConditional(static_cast<u16>(feature), feature >= 0);
+                addIndices.pushIf(static_cast<u16>(feature), feature >= 0);
             }
 
             for (const auto [attacker, attackerSq, attacked, attackedSq] : ctx.updates.threatsRemoved) {
                 const auto feature = threatFeatureIndex(c, kingSq, attacker, attackerSq, attacked, attackedSq);
-                subIndices.pushConditional(static_cast<u16>(feature), feature >= 0);
+                subIndices.pushIf(static_cast<u16>(feature), feature >= 0);
             }
 
             if constexpr (InputFeatureSet::kPawnPawnInputs) {

@@ -24,7 +24,7 @@
 #include <cassert>
 
 namespace stormphrax {
-    template <typename T, usize kCapacity>
+    template <typename T, usize kCapacity, bool kPadded = false>
     class StaticVector {
     public:
         StaticVector() = default;
@@ -43,10 +43,19 @@ namespace stormphrax {
             m_data[m_size++] = std::move(elem);
         }
 
-        inline void pushConditional(const T& elem, bool cond) {
+        inline void pushIf(const T& elem, bool cond) {
             assert(m_size < kCapacity);
             m_data[m_size] = elem;
             m_size += cond;
+        }
+
+        inline bool tryPush(const T& elem)
+            requires kPadded
+        {
+            const bool nonEmpty = m_size < kCapacity;
+            m_data[m_size] = elem;
+            m_size += nonEmpty;
+            return nonEmpty;
         }
 
         inline T pop() {
@@ -109,7 +118,7 @@ namespace stormphrax {
         }
 
     private:
-        std::array<T, kCapacity> m_data{};
+        std::array<T, kCapacity + kPadded> m_data{};
         usize m_size{0};
     };
 } // namespace stormphrax

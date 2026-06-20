@@ -100,8 +100,8 @@ namespace stormphrax::search {
 
     struct MoveStackEntry {
         MovegenData movegenData{};
-        StaticVector<Move, 256> failLowQuiets{};
-        StaticVector<Move, 32> failLowNoisies{};
+        StaticVector<Move, 64, true> failLowQuiets{};
+        StaticVector<Move, 32, true> failLowNoisies{};
     };
 
     template <bool kUpdateNnue>

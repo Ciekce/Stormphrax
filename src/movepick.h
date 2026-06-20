@@ -24,18 +24,6 @@
 #include "movegen.h"
 
 namespace stormphrax {
-    struct KillerTable {
-        Move killer{};
-
-        inline void push(Move move) {
-            killer = move;
-        }
-
-        inline void clear() {
-            killer = kNullMove;
-        }
-    };
-
     struct MovegenData {
         ScoredMoveList moves;
     };

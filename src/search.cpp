@@ -1316,9 +1316,9 @@ namespace stormphrax::search {
 
             if (move != bestMove) {
                 if (noisy) {
-                    moveStack.failLowNoisies.push(move);
+                    moveStack.failLowNoisies.tryPush(move);
                 } else {
-                    moveStack.failLowQuiets.push(move);
+                    moveStack.failLowQuiets.tryPush(move);
                 }
             }
         }
