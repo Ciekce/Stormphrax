@@ -84,6 +84,10 @@ zen2: $(EVALFILE)
 armv8-4: $(EVALFILE)
 	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
 
+.PHONY: apple-m1
+apple-m1: $(EVALFILE)
+	$(MAKE) -f build.mk TYPE=$@ IS_CALLED_FROM_MAKEFILE=yea
+
 .PHONY: bench
 bench: $(EVALFILE)
 	$(MAKE) -f build.mk TYPE=native bench IS_CALLED_FROM_MAKEFILE=yea
