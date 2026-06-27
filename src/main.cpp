@@ -16,6 +16,10 @@
  * along with Stormphrax. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <span>
+#include <string_view>
+#include <vector>
+
 #include "bench.h"
 #include "cuckoo.h"
 #include "datagen/datagen.h"
@@ -32,59 +36,56 @@
 using namespace stormphrax;
 
 namespace {
-    i32 run(i32 argc, const char* argv[]) {
-        if (argc > 1) {
-            const std::string_view mode{argv[1]};
+    i32 run(std::span<const std::string_view> args) {
+        if (args.size() > 1) {
+            const auto mode = args[1];
 
-            if (mode == "bench") {
-                bench::run();
-                return 0;
-            } else if (mode == "datagen") {
-                const auto printUsage = [&]() {
+            if (mode == "datagen") {
+                const auto printUsage = [&] {
                     eprintln(
                         "usage: {} datagen <marlinformat/viriformat/fen> <standard/dfrc> <path> [threads] [syzygy path]",
-                        argv[0]
+                        args[0]
                     );
                 };
 
-                if (argc < 5) {
+                if (args.size() < 5) {
                     printUsage();
                     return 1;
                 }
 
                 bool dfrc = false;
 
-                if (std::string_view{argv[3]} == "dfrc") {
+                if (args[3] == "dfrc") {
                     dfrc = true;
-                } else if (std::string_view{argv[3]} != "standard") {
-                    eprintln("invalid variant {}", argv[3]);
+                } else if (args[3] != "standard") {
+                    eprintln("invalid variant '{}'", args[3]);
                     printUsage();
                     return 1;
                 }
 
                 u32 threads = 1;
-                if (argc > 5 && !util::tryParse<u32>(threads, argv[5])) {
-                    eprintln("invalid number of threads {}", argv[5]);
+                if (args.size() > 5 && !util::tryParse<u32>(threads, args[5])) {
+                    eprintln("invalid number of threads '{}'", args[5]);
                     printUsage();
                     return 1;
                 }
 
                 std::optional<std::string_view> tbPath{};
-                if (argc > 6) {
-                    tbPath = std::string_view{argv[6]};
+                if (args.size() > 6) {
+                    tbPath = args[6];
                 }
 
-                return datagen::run(printUsage, argv[2], dfrc, argv[4], static_cast<i32>(threads), tbPath);
+                return datagen::run(printUsage, args[2], dfrc, args[4], static_cast<i32>(threads), tbPath);
             }
 #if SP_EXTERNAL_TUNE
             else if (mode == "printwf" || mode == "printctt" || mode == "printob")
             {
-                if (argc == 2) {
+                if (args.size() == 2) {
                     return 0;
                 }
 
                 std::vector<std::string_view> params{};
-                split::split(params, argv[2], ',');
+                split::split(params, args[2], ',');
 
                 if (mode == "printwf") {
                     uci::printWfTuningParams(params);
@@ -99,7 +100,7 @@ namespace {
 #endif
         }
 
-        return uci::run();
+        return uci::run(args.subspan<1>());
     }
 } // namespace
 
@@ -114,7 +115,14 @@ i32 main(i32 argc, const char* argv[]) {
 
     eval::init();
 
-    const auto exitCode = run(argc, argv);
+    std::vector<std::string_view> args{};
+    args.reserve(argc);
+
+    for (i32 i = 0; i < argc; ++i) {
+        args.emplace_back(argv[i]);
+    }
+
+    const auto exitCode = run(args);
 
     eval::shutdown();
 

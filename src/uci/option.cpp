@@ -18,6 +18,8 @@
 
 #include "option.h"
 
+#include <iterator>
+
 #include "../util/parse.h"
 
 namespace stormphrax::uci::option {

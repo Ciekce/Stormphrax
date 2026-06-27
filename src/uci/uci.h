@@ -26,7 +26,7 @@
 #include "../tunable.h"
 
 namespace stormphrax::uci {
-    i32 run();
+    i32 run(std::span<const std::string_view> commands = {});
 
 #if SP_EXTERNAL_TUNE
     void printWfTuningParams(std::span<const std::string_view> params);

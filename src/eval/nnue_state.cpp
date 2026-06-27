@@ -22,6 +22,7 @@
 #include <array>
 #include <bit>
 #include <span>
+#include <numeric>
 
 #include "../attacks/attacks.h"
 #include "../util/static_vector.h"
@@ -172,8 +173,8 @@ namespace stormphrax::eval {
         ) {
             using namespace nnue::features::threats;
 
-            u16* const addIdx = addIndices.end();
-            u16* const subIdx = subIndices.end();
+            u16* const addIdx = &*addIndices.end();
+            u16* const subIdx = &*subIndices.end();
 
 #if SP_HAS_VBMI2
             const u8 sqMask = (c == Colors::kBlack ? 0b111000 : 0) ^ (kingSq.file() >= kFileE ? 0b000111 : 0);

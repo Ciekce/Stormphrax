@@ -80,9 +80,11 @@ namespace stormphrax {
             UciHandler();
             ~UciHandler();
 
-            i32 run();
+            i32 run(std::span<const std::string_view> commands);
 
         private:
+            void handleCommand(std::span<std::string_view> tokens, Instant startTime);
+
             void handleUci();
             void handleUcinewgame();
             void handleIsready();
@@ -209,80 +211,88 @@ namespace stormphrax {
             tb::free();
         }
 
-        i32 UciHandler::run() {
+        i32 UciHandler::run(std::span<const std::string_view> commands) {
             std::vector<std::string_view> tokens{};
 
-            for (std::string line{}; std::getline(std::cin, line);) {
+            const auto handleLine = [&](std::string_view line) {
                 const auto startTime = Instant::now();
 
                 tokens.clear();
                 split::split(tokens, line, ' ');
 
-                if (tokens.empty()) {
-                    continue;
-                }
+                handleCommand(tokens, startTime);
+            };
 
-                std::string command{};
-                command.reserve(tokens[0].size());
-                std::ranges::transform(tokens[0], std::back_inserter(command), [](auto c) { return std::tolower(c); });
+            for (const auto line : commands) {
+                handleLine(line);
+            }
 
-                const auto args = std::span{tokens}.subspan<1>();
-
-                if (command == "quit") {
-                    return 0;
-                } else if (command == "uci") {
-                    handleUci();
-                } else if (command == "ucinewgame") {
-                    handleUcinewgame();
-                } else if (command == "isready") {
-                    handleIsready();
-                } else if (command == "position") {
-                    handlePosition(args);
-                } else if (command == "go") {
-                    handleGo(args, startTime);
-                } else if (command == "stop") {
-                    handleStop();
-                } else if (command == "setoption") {
-                    handleSetoption(args);
-                    // V ======= NONSTANDARD ======= V
-                } else if (command == "d") {
-                    handleD();
-                } else if (command == "fen") {
-                    handleFen();
-                } else if (command == "eval") {
-                    handleEval();
-                } else if (command == "raweval") {
-                    handleRawEval();
-                } else if (command == "checkers") {
-                    handleCheckers();
-                } else if (command == "threats") {
-                    handleThreats();
-                } else if (command == "regen") {
-                    handleRegen();
-                } else if (command == "moves") {
-                    handleMoves();
-                } else if (command == "perft") {
-                    handlePerft(args);
-                } else if (command == "splitperft") {
-                    handleSplitperft(args);
-                } else if (command == "bench") {
-                    handleBench(args);
-                } else if (command == "probewdl") {
-                    handleProbeWdl();
-                } else if (command == "wait") {
-                    handleWait();
-                } else if (command == "move") {
-                    handleMove(args);
-                } else {
-                    eprintln("Unknown command '{}'", command);
-                }
-
-                if (m_quit) {
-                    break;
-                }
+            for (std::string line{}; !m_quit && std::getline(std::cin, line);) {
+                handleLine(line);
             }
 
             return 0;
+        }
+
+        void UciHandler::handleCommand(std::span<std::string_view> tokens, Instant startTime) {
+            if (tokens.empty()) {
+                return;
+            }
+
+            std::string command{};
+            command.reserve(tokens[0].size());
+            std::ranges::transform(tokens[0], std::back_inserter(command), [](auto c) { return std::tolower(c); });
+
+            const auto args = std::span{tokens}.subspan<1>();
+
+            if (command == "quit") {
+                m_quit = true;
+            } else if (command == "uci") {
+                handleUci();
+            } else if (command == "ucinewgame") {
+                handleUcinewgame();
+            } else if (command == "isready") {
+                handleIsready();
+            } else if (command == "position") {
+                handlePosition(args);
+            } else if (command == "go") {
+                handleGo(args, startTime);
+            } else if (command == "stop") {
+                handleStop();
+            } else if (command == "setoption") {
+                handleSetoption(args);
+                // V ======= NONSTANDARD ======= V
+            } else if (command == "d") {
+                handleD();
+            } else if (command == "fen") {
+                handleFen();
+            } else if (command == "eval") {
+                handleEval();
+            } else if (command == "raweval") {
+                handleRawEval();
+            } else if (command == "checkers") {
+                handleCheckers();
+            } else if (command == "threats") {
+                handleThreats();
+            } else if (command == "regen") {
+                handleRegen();
+            } else if (command == "moves") {
+                handleMoves();
+            } else if (command == "perft") {
+                handlePerft(args);
+            } else if (command == "splitperft") {
+                handleSplitperft(args);
+            } else if (command == "bench") {
+                handleBench(args);
+            } else if (command == "probewdl") {
+                handleProbeWdl();
+            } else if (command == "wait") {
+                handleWait();
+            } else if (command == "move") {
+                handleMove(args);
+            } else {
+                eprintln("Unknown command '{}'", command);
+            }
         }
 
         void UciHandler::handleUci() {
@@ -1021,10 +1031,9 @@ namespace stormphrax {
 
             std::string strName{name};
 
-            auto lowerName = strName;
-            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](auto c) {
-                return std::tolower(c);
-            });
+            std::string lowerName{};
+            lowerName.reserve(strName.size());
+            std::ranges::transform(strName, std::back_inserter(lowerName), [](auto c) { return std::tolower(c); });
 
             return params.emplace_back(
                 TunableParam{
@@ -1042,9 +1051,9 @@ namespace stormphrax {
 #endif
 
     namespace uci {
-        i32 run() {
+        i32 run(std::span<const std::string_view> commands) {
             UciHandler handler{};
-            return handler.run();
+            return handler.run(commands);
         }
 
 #if SP_EXTERNAL_TUNE
@@ -1062,15 +1071,16 @@ namespace stormphrax {
                 }
 
                 for (const auto paramName : params) {
-                    std::string lowerName{paramName};
-                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](auto c) {
+                    std::string lowerName{};
+                    lowerName.reserve(paramName.size());
+                    std::ranges::transform(paramName, std::back_inserter(lowerName), [](auto c) {
                         return std::tolower(c);
                     });
 
                     if (const auto* param = lookupTunableParam(paramName)) {
                         printParam(*param);
                     } else {
-                        eprintln("unknown parameter {}", paramName);
+                        eprintln("unknown parameter '{}'", paramName);
                         return;
                     }
                 }
