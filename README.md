@@ -74,6 +74,8 @@ Requires Make, Clang and LLD.
   - if not specified, the default build is `native`
 - if you wish, you can have Stormphrax include the current git commit hash in its UCI version string - pass `COMMIT_HASH=on`
 
+Stormphrax includes optimisations for NUMA machines on Linux via libnuma, which can be enabled by passing `USE_LIBNUMA=on`. This is useful when running one instance of Stormphrax with many threads across multiple NUMA nodes. Running multiple instances of Stormphrax compiled with this option is not recommended.
+
 ## Credit
 Stormphrax makes use of the following libraries:
 - a slightly modified version of [Pyrrhic] for tablebase probing, licensed under the MIT license
