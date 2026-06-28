@@ -57,8 +57,10 @@ This project is a continuation of my HCE engine [Polaris].
 
 ## Builds
 `avx512`: requires BMI2, AVX-512, VNNI and VBMI2 (Zen 4/Ice Lake and up)  
-`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep`
-`zen2`: requires BMI and AVX2, but doesn't assume fast `pext` and `pdep` - if you have an older AMD CPU (3000-series Ryzen or earlier), you want this one
+`avx2-bmi2`: requires BMI2 and AVX2 and assumes fast `pext` and `pdep`  
+`zen2`: requires BMI and AVX2, but doesn't assume fast `pext` and `pdep` - if you have an older AMD CPU (3000-series Ryzen or earlier), you want this one  
+`apple-m1`: for Apple silicon devices  
+`armv8-4`: ARMv8.4-a. requires NEON with dotprod
 
 Alternatively, build the makefile target `native` for a binary tuned for your specific CPU (see below)  
 
