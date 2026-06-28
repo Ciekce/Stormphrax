@@ -74,8 +74,6 @@ Requires Make, Clang and LLD.
   - if not specified, the default build is `native`
 - if you wish, you can have Stormphrax include the current git commit hash in its UCI version string - pass `COMMIT_HASH=on`
 
-By default, the makefile builds binaries without profile-guided optimisation (PGO). To enable it, though I do not measure a speedup from it, pass `PGO=on`. When using Clang with PGO enabled, `llvm-profdata` must be in your PATH.
-
 ## Credit
 Stormphrax makes use of the following libraries:
 - a slightly modified version of [Pyrrhic] for tablebase probing, licensed under the MIT license
