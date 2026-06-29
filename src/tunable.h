@@ -354,8 +354,8 @@ namespace stormphrax::tunable {
 
     SP_TUNABLE_PARAM(noisyPcmBonus, 59, 0, 2048, 30)
 
-    SP_TUNABLE_PARAM(butterflyAgeingWeight, 977, 0, 1536, 80)
-    SP_TUNABLE_PARAM(pieceToAgeingWeight, 1024, 0, 1536, 80)
+    SP_TUNABLE_PARAM(butterflyAgeingWeight, 750, 0, 1024, 80)
+    SP_TUNABLE_PARAM(pieceToAgeingWeight, 750, 0, 1024, 80)
 
     SP_TUNABLE_PARAM(butterflyUpdateWeight, 975, 512, 2048, 76)
     SP_TUNABLE_PARAM(pieceToUpdateWeight, 891, 512, 2048, 76)
