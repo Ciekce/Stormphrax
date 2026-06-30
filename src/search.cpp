@@ -946,7 +946,7 @@ namespace stormphrax::search {
                             thread,
                             newPos,
                             curr.pv,
-                            probcutDepth - 1,
+                            probcutDepth - improving - 1,
                             ply + 1,
                             moveStackIdx + 1,
                             -probcutBeta,
