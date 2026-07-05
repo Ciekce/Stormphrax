@@ -368,10 +368,13 @@ namespace stormphrax::eval {
             constexpr u64 mask = kOutgoing ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
             const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
 
-            (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
-                _mm512_storeu_si512(ptr, vector);
-                return std::popcount(br);
-            });
+            // threatsAdded and threatsRemoved are constexpr without threat inputs
+            if constexpr (InputFeatureSet::kThreatInputs) {
+                (kAdd ? updates.threatsAdded : updates.threatsRemoved).unsafeWrite([&](UpdatedThreat* ptr) {
+                    _mm512_storeu_si512(ptr, vector);
+                    return std::popcount(br);
+                });
+            }
         }
 
         template <bool kAdd>
@@ -398,14 +401,17 @@ namespace stormphrax::eval {
             const auto tuple1 = _mm_unpacklo_epi16(pair1, pair2);
             const auto tuple2 = _mm_unpackhi_epi16(pair1, pair2);
 
-            // Opposite polarity:
-            // - Adding focus piece removes x-ray threats (a.k.a. slider threat retraction)
-            // - Removing focus piece adds x-ray threats (a.k.a. slider threat extension)
-            (kAdd ? updates.threatsRemoved : updates.threatsAdded).unsafeWrite([&](UpdatedThreat* ptr) {
-                _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 0, tuple1);
-                _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 1, tuple2);
-                return count;
-            });
+            // see above
+            if constexpr (InputFeatureSet::kThreatInputs) {
+                // Opposite polarity:
+                // - Adding focus piece removes x-ray threats (a.k.a. slider threat retraction)
+                // - Removing focus piece adds x-ray threats (a.k.a. slider threat extension)
+                (kAdd ? updates.threatsRemoved : updates.threatsAdded).unsafeWrite([&](UpdatedThreat* ptr) {
+                    _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 0, tuple1);
+                    _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 1, tuple2);
+                    return count;
+                });
+            }
         }
 #else
         template <bool kAdd, bool kOutgoing>
