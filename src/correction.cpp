@@ -80,6 +80,6 @@ namespace stormphrax {
         correction += contAdjustment(2, contCorrhist2Weight());
         correction += contAdjustment(4, contCorrhist4Weight());
 
-        return correction;
+        return correction * 160 / 128;
     }
 } // namespace stormphrax
