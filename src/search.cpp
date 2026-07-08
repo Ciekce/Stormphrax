@@ -796,12 +796,14 @@ namespace stormphrax::search {
                 complexity = corrDelta;
             }
 
+            /*
             if (!kRootNode && !inCheck && parent->move && parent->quiet && parent->staticEval != kScoreNone) {
                 const auto parentGain = -parent->staticEval - curr.staticEval;
                 const auto bonus =
                     std::clamp(parentGain * evalPolicyScale(), evalPolicyMin(), evalPolicyMax()) + evalPolicyOffset();
                 thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
             }
+            */
         }
 
         const bool improving = [&] {
@@ -1399,10 +1401,10 @@ namespace stormphrax::search {
                 weight += std::min(depth * pcmDepthWeight(), pcmDepthMax());
                 weight += (parent->moveCount >= 8) * pcmParentMoveCountWeight();
                 weight += (parent->move == parent->ttMove) * pcmParentTtMoveWeight();
-                weight += (!inCheck && bestScore < curr.staticEval - pcmStaticEvalThreshold()) * pcmStaticEvalWeight();
-                weight += (parent->staticEval != kScoreNone
-                           && bestScore < -parent->staticEval - pcmParentStaticEvalThreshold())
-                        * pcmParentStaticEvalWeight();
+                //weight += (!inCheck && bestScore < curr.staticEval - pcmStaticEvalThreshold()) * pcmStaticEvalWeight();
+                //weight += (parent->staticEval != kScoreNone
+                //           && bestScore < -parent->staticEval - pcmParentStaticEvalThreshold())
+                //        * pcmParentStaticEvalWeight();
 
                 weight = std::max(weight, 0);
 
