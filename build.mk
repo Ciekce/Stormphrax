@@ -11,8 +11,7 @@ USE_LIBNUMA = off
 # https://stackoverflow.com/a/1825832
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
-SOURCES_3RDPARTY := 3rdparty/fmt/src/format.cc 3rdparty/pyrrhic/tbprobe.cpp 3rdparty/zstd/zstddeclib.c
-SOURCES_PERMUTE := preprocess/permute.cpp 3rdparty/fmt/src/format.cc
+SOURCES_3RDPARTY := 3rdparty/fmt/src/format.cc 3rdparty/pyrrhic/tbprobe.cpp
 
 HEADERS := $(call rwildcard,src,*.h)
 SOURCES := $(call rwildcard,src,*.cpp)
@@ -23,13 +22,10 @@ SOURCES_ALL := $(SOURCES) $(SOURCES_3RDPARTY)
 CFLAGS := -std=c11
 CXXFLAGS := -std=c++20 -fconstexpr-steps=2097152
 
-CXXFLAGS_PERMUTE := $(CXXFLAGS) -O1 -DNDEBUG
-
 CFLAGS_ENGINE := $(CFLAGS)
 CXXFLAGS_ENGINE := $(CXXFLAGS)
 
-# disable -Wunused-function and -Wunused-const-variable for zstd
-FLAGS := -I3rdparty/fmt/include -Wall -Wextra -Wno-sign-compare -Wno-unused-function -Wno-unused-const-variable -DSP_VERSION=$(VERSION)
+FLAGS := -I3rdparty/fmt/include -Wall -Wextra -Wno-sign-compare -DSP_VERSION=$(VERSION)
 
 FLAGS_NATIVE := -DSP_NATIVE -march=native
 FLAGS_TUNABLE := -DSP_NATIVE -march=native -DSP_EXTERNAL_TUNE=1
@@ -127,8 +123,6 @@ else
     $(error Unknown build type)
 endif
 
-CXXFLAGS_PERMUTE += $(FLAGS) $(PERMUTE_FLAGS)
-
 CFLAGS_ENGINE += $(FLAGS) $(ENGINE_FLAGS)
 CXXFLAGS_ENGINE += $(FLAGS) $(ENGINE_FLAGS)
 
@@ -147,26 +141,18 @@ $(foreach dir,$(sort $(dir $(OBJECTS))),$(eval $(call create_mkdir_target,$(dir)
 tmp:
 	$(MKDIR) tmp
 
-EVALFILE_NAME := $(notdir $(EVALFILE))
-
 .DEFAULT_GOAL := $(OUTFILE)
 
 .SECONDEXPANSION:
 
-tmp/permute-$(TYPE): tmp $(SOURCES_PERMUTE)
-	$(CXX) $(CXXFLAGS_PERMUTE) $(LDFLAGS) -o tmp/permute-$(TYPE) $(filter-out $<,$^)
+$(BUILD_DIR)/%.o: %.c version.txt | $$(@D)/
+	$(CC) $(CFLAGS_ENGINE) -c -o $@ $<
 
-tmp/$(EVALFILE_NAME)_permuted_$(TYPE): $(EVALFILE) tmp/permute-$(TYPE)
-	tmp/permute-$(TYPE) $< $@
+$(BUILD_DIR)/%.o: %.cpp version.txt | $$(@D)/
+	$(CXX) $(CXXFLAGS_ENGINE) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.c version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CC) $(CFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
-
-$(BUILD_DIR)/%.o: %.cpp version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CXX) $(CXXFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
-
-$(BUILD_DIR)/%.o: %.cc version.txt tmp/$(EVALFILE_NAME)_permuted_$(TYPE) | $$(@D)/
-	$(CXX) $(CXXFLAGS_ENGINE) -DSP_NETWORK_FILE=\"tmp/$(EVALFILE_NAME)_permuted_$(TYPE)\" -c -o $@ $<
+$(BUILD_DIR)/%.o: %.cc version.txt | $$(@D)/
+	$(CXX) $(CXXFLAGS_ENGINE) -c -o $@ $<
 
 $(OUTFILE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS_ENGINE) $(LDFLAGS) -o $(OUTFILE) $(OBJECTS)
@@ -174,6 +160,6 @@ $(OUTFILE): $(OBJECTS)
 bench: $(OUTFILE)
 	./$(OUTFILE) bench
 
-format: $(HEADERS) $(SOURCES) preprocess/permute.cpp
+format: $(HEADERS) $(SOURCES)
 	clang-format -i $^
 

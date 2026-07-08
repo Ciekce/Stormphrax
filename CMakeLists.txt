@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(SP_CLANG CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 if(MSVC AND NOT SP_CLANG)
-	message(FATAL_ERROR Stormphrax does not support building with MSVC)
+	message(FATAL_ERROR Northphrax does not support building with MSVC)
 endif()
 
 option(SP_EMBED_COMMIT_HASH "whether to include the current git commit in the UCI version string" ON)
@@ -26,9 +26,8 @@ if(SP_EMBED_COMMIT_HASH)
 	endif()
 endif()
 
-# disable -Wunused-function and -Wunused-const-variable for zstd
 if(MSVC)
-	add_compile_options(/EHsc /W4 /clang:-Wno-sign-compare /clang:-Wno-unused-function /clang:-Wno-unused-const-variable /WX /clang:-fconstexpr-steps=2097152)
+	add_compile_options(/EHsc /W4 /clang:-Wno-sign-compare /WX /clang:-fconstexpr-steps=2097152)
 	# for pyrrhic
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
@@ -41,7 +40,7 @@ find_package(Threads REQUIRED)
 option(SP_FAST_PEXT "whether pext and pdep are usably fast on this architecture, for building native binaries" ON)
 option(SP_DISABLE_NEON_DOTPROD "whether to disable NEON dotprod on ARM machines" OFF)
 
-add_executable(stormphrax-native src/types.h src/main.cpp src/uci/uci.h src/uci/uci.cpp src/core.h src/core.cpp src/util/bitfield.h
+add_executable(northphrax-native src/types.h src/main.cpp src/uci/uci.h src/uci/uci.cpp src/core.h src/core.cpp src/util/bitfield.h
 	src/util/bits.h src/util/parse.h src/util/split.h src/util/split.cpp src/util/rng.h src/util/static_vector.h
 	src/bitboard.h src/move.h src/move.cpp src/keys.h src/position.h src/position.cpp src/search.h
 	src/search.cpp src/movegen.h src/movegen.cpp src/attacks/util.h src/attacks/attacks.h src/util/timer.h
@@ -56,7 +55,7 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci/uci.h src/uci/
 	src/datagen/format.h src/datagen/common.h src/datagen/marlinformat.h src/datagen/marlinformat.cpp
 	src/datagen/viriformat.h src/datagen/viriformat.cpp src/tb.h src/tb.cpp src/movepick.h src/history.h
 	src/util/multi_array.h src/correction.h src/util/simd/avx512.h src/util/simd/avx2.h
-	src/util/simd/neon.h src/util/align.h 3rdparty/zstd/zstddeclib.c
+	src/util/simd/neon.h src/util/align.h
 	src/datagen/fen.h src/datagen/fen.cpp src/util/ctrlc.h src/util/ctrlc.cpp
 	src/stats.h src/stats.cpp
 	3rdparty/fmt/src/format.cc src/thread.cpp src/root_move.h src/pv.h src/limit.h
@@ -65,25 +64,22 @@ add_executable(stormphrax-native src/types.h src/main.cpp src/uci/uci.h src/uci/
 	src/attacks/bmi2/attacks.h src/attacks/bmi2/attacks.cpp src/attacks/black_magic/data.h
 	src/attacks/black_magic/attacks.h src/attacks/black_magic/attacks.cpp
 	src/correction.cpp src/movepick.cpp src/pv.cpp src/see.cpp
-	src/eval/eval.cpp src/uci/option.h src/uci/option.cpp
-	src/eval/tapered.h
-	src/eval/material.h
-	src/eval/material.cpp)
+	src/eval/eval.cpp src/uci/option.h src/uci/option.cpp src/eval/tapered.h src/eval/material.h src/eval/material.cpp)
 
-target_include_directories(stormphrax-native PUBLIC 3rdparty/fmt/include)
-target_compile_options(stormphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)
-target_link_options(stormphrax-native PUBLIC -fuse-ld=lld)
-target_link_libraries(stormphrax-native PUBLIC Threads::Threads)
-target_compile_definitions(stormphrax-native PUBLIC SP_NATIVE SP_VERSION=${CMAKE_PROJECT_VERSION})
+target_include_directories(northphrax-native PUBLIC 3rdparty/fmt/include)
+target_compile_options(northphrax-native PUBLIC -march=native $<$<CONFIG:Release>:-flto>)
+target_link_options(northphrax-native PUBLIC -fuse-ld=lld)
+target_link_libraries(northphrax-native PUBLIC Threads::Threads)
+target_compile_definitions(northphrax-native PUBLIC SP_NATIVE SP_VERSION=${CMAKE_PROJECT_VERSION})
 
 if(SP_EMBED_COMMIT_HASH)
-	target_compile_definitions(stormphrax-native PUBLIC SP_COMMIT_HASH=${SP_COMMIT_HASH})
+	target_compile_definitions(northphrax-native PUBLIC SP_COMMIT_HASH=${SP_COMMIT_HASH})
 endif()
 
 if(SP_FAST_PEXT)
-	target_compile_definitions(stormphrax-native PUBLIC SP_FAST_PEXT)
+	target_compile_definitions(northphrax-native PUBLIC SP_FAST_PEXT)
 endif()
 
 if(SP_DISABLE_NEON_DOTPROD)
-	target_compile_definitions(stormphrax-native PUBLIC SP_DISABLE_NEON_DOTPROD)
+	target_compile_definitions(northphrax-native PUBLIC SP_DISABLE_NEON_DOTPROD)
 endif()
