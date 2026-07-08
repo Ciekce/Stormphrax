@@ -357,22 +357,18 @@ namespace stormphrax::eval {
             ours.pawnStructure +=
                 kOpenPawn * (ourPawns & ~theirPawns.fillDownRelative(us) & ~ours.pawnAttacks).popcount();
 
-            auto phalanx = ourPawns & ourPawns.shiftLeft();
-            while (!phalanx.empty()) {
-                const auto square = phalanx.popLowestSquare();
-                const auto rank = relativeRank(us, square.rank());
-
+            const auto phalanx = ourPawns & ourPawns.shiftLeft();
+            for (const auto sq : phalanx) {
+                const auto rank = relativeRank(us, sq.rank());
                 ours.pawnStructure += kPawnPhalanx[rank];
             }
 
-            auto pawns = ourPawns;
-            while (!pawns.empty()) {
-                const auto square = pawns.popLowestSquare();
-                const auto pawn = Bitboard::fromSquare(square);
+            for (const auto sq : ourPawns) {
+                const auto pawn = Bitboard::fromSquare(sq);
 
-                const auto rank = relativeRank(us, square.rank());
+                const auto rank = relativeRank(us, sq.rank());
 
-                const auto antiPassers = theirPawns & kAntiPasserMasks[us.idx()][square.idx()];
+                const auto antiPassers = theirPawns & kAntiPasserMasks[us.idx()][sq.idx()];
 
                 if (antiPassers.empty()) {
                     ours.pawnStructure += kPasser[rank];
@@ -385,7 +381,7 @@ namespace stormphrax::eval {
                         ours.pawnStructure += kDoubledPasser;
                     }
 
-                    const auto helpers = ourPawns & kPawnHelperMasks[us.idx()][square.idx()];
+                    const auto helpers = ourPawns & kPawnHelperMasks[us.idx()][sq.idx()];
                     ours.pawnStructure += kPasserHelper * helpers.popcount();
 
                     ours.passers |= pawn;
@@ -418,17 +414,15 @@ namespace stormphrax::eval {
             ours.pawns += kPawnAttackingRook * (ours.pawnAttacks & bbs.rooks(them)).popcount();
             ours.pawns += kPawnAttackingQueen * (ours.pawnAttacks & bbs.queens(them)).popcount();
 
-            auto passers = ours.passers;
-            while (!passers.empty()) {
-                const auto square = passers.popLowestSquare();
-                const auto passer = Bitboard::fromSquare(square);
+            for (const auto sq : ours.passers) {
+                const auto passer = Bitboard::fromSquare(sq);
 
-                const auto rank = relativeRank(us, square.rank());
+                const auto rank = relativeRank(us, sq.rank());
 
-                const auto promotion = Square::fromFileRank(square.file(), relativeRank(us, 7));
+                const auto promotion = Square::fromFileRank(sq.file(), relativeRank(us, 7));
 
                 if (bbs.nonPk(them).empty()
-                    && (std::min(5, chebyshev(square, promotion)) + (us == m_pos.stm()))
+                    && (std::min(5, chebyshev(sq, promotion)) + (us == m_pos.stm()))
                            < chebyshev(m_pos.king(them), promotion))
                 {
                     ours.pawns += kPasserSquareRule;
@@ -445,7 +439,7 @@ namespace stormphrax::eval {
 
             const auto& bbs = m_pos.bbs();
 
-            auto knights = bbs.knights(us);
+            const auto knights = bbs.knights(us);
 
             if (knights.empty()) {
                 return;
@@ -453,18 +447,16 @@ namespace stormphrax::eval {
 
             ours.knights += kMinorBehindPawn * (knights.shiftUpRelative(us) & bbs.pawns(us)).popcount();
 
-            while (!knights.empty()) {
-                const auto square = knights.popLowestSquare();
-                const auto knight = Bitboard::fromSquare(square);
+            for (const auto sq : knights) {
+                const auto knight = Bitboard::fromSquare(sq);
 
-                if ((kAntiPasserMasks[us.idx()][square.idx()] & ~boards::kFiles[square.file()] & bbs.pawns(them))
-                        .empty()
+                if ((kAntiPasserMasks[us.idx()][sq.idx()] & ~boards::kFiles[sq.file()] & bbs.pawns(them)).empty()
                     && !(knight & ours.pawnAttacks).empty())
                 {
                     ours.knights += kKnightOutpost;
                 }
 
-                const auto attacks = attacks::getKnightAttacks(square);
+                const auto attacks = attacks::getKnightAttacks(sq);
 
                 ours.knights += kMinorAttackingRook * (attacks & bbs.rooks(them)).popcount();
                 ours.knights += kMinorAttackingQueen * (attacks & bbs.queens(them)).popcount();
@@ -478,7 +470,7 @@ namespace stormphrax::eval {
 
             const auto& bbs = m_pos.bbs();
 
-            auto bishops = bbs.bishops(us);
+            const auto bishops = bbs.bishops(us);
 
             if (bishops.empty()) {
                 return;
@@ -493,15 +485,13 @@ namespace stormphrax::eval {
             const auto occupancy = bbs.occ();
             const auto xrayOcc = occupancy ^ bbs.bishops(us) ^ bbs.queens(us);
 
-            while (!bishops.empty()) {
-                const auto square = bishops.popLowestSquare();
-
-                const auto attacks = attacks::getBishopAttacks(square, occupancy);
+            for (const auto sq : bishops) {
+                const auto attacks = attacks::getBishopAttacks(sq, occupancy);
 
                 ours.bishops += kMinorAttackingRook * (attacks & bbs.rooks(them)).popcount();
                 ours.bishops += kMinorAttackingQueen * (attacks & bbs.queens(them)).popcount();
 
-                const auto mobilityAttacks = attacks::getBishopAttacks(square, xrayOcc);
+                const auto mobilityAttacks = attacks::getBishopAttacks(sq, xrayOcc);
                 ours.mobility += kBishopMobility[(mobilityAttacks & ours.available).popcount()];
             }
         }
@@ -511,7 +501,7 @@ namespace stormphrax::eval {
 
             const auto& bbs = m_pos.bbs();
 
-            auto rooks = bbs.rooks(us);
+            const auto rooks = bbs.rooks(us);
 
             if (rooks.empty()) {
                 return;
@@ -520,9 +510,8 @@ namespace stormphrax::eval {
             const auto occupancy = bbs.occ();
             const auto xrayOcc = occupancy ^ bbs.rooks(us) ^ bbs.queens(us);
 
-            while (!rooks.empty()) {
-                const auto square = rooks.lowestSquare();
-                const auto rook = rooks.popLowestBit();
+            for (const auto sq : rooks) {
+                const auto rook = Bitboard::fromSquare(sq);
 
                 if (!(rook & m_openFiles).empty()) {
                     ours.rooks += kRookOnOpenFile;
@@ -534,11 +523,11 @@ namespace stormphrax::eval {
                     ours.rooks += kRookSupportingPasser;
                 }
 
-                const auto attacks = attacks::getRookAttacks(square, occupancy);
+                const auto attacks = attacks::getRookAttacks(sq, occupancy);
 
                 ours.rooks += kRookAttackingQueen * (attacks & bbs.queens(them)).popcount();
 
-                const auto mobilityAttacks = attacks::getRookAttacks(square, xrayOcc);
+                const auto mobilityAttacks = attacks::getRookAttacks(sq, xrayOcc);
                 ours.mobility += kRookMobility[(mobilityAttacks & ours.available).popcount()];
             }
         }
@@ -546,7 +535,7 @@ namespace stormphrax::eval {
         void Evaluator::evalQueens(Color us, EvalData& ours, [[maybe_unused]] const EvalData& theirs) {
             const auto& bbs = m_pos.bbs();
 
-            auto queens = bbs.queens(us);
+            const auto queens = bbs.queens(us);
 
             if (queens.empty()) {
                 return;
@@ -555,10 +544,8 @@ namespace stormphrax::eval {
             const auto occupancy = bbs.occ();
             const auto xrayOcc = occupancy ^ bbs.bishops(us) ^ bbs.rooks(us) ^ bbs.queens(us);
 
-            while (!queens.empty()) {
-                const auto square = queens.popLowestSquare();
-
-                const auto mobilityAttacks = attacks::getQueenAttacks(square, xrayOcc);
+            for (const auto sq : queens) {
+                const auto mobilityAttacks = attacks::getQueenAttacks(sq, xrayOcc);
                 ours.mobility += kQueenMobility[(mobilityAttacks & ours.available).popcount()];
             }
         }
