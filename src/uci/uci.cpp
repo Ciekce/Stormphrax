@@ -49,7 +49,7 @@ namespace stormphrax {
     using util::Instant;
 
     namespace {
-        constexpr auto kName = "Stormphrax";
+        constexpr auto kName = "Northphrax";
         constexpr auto kVersion = SP_STRINGIFY(SP_VERSION);
         constexpr auto kAuthor = "Ciekce";
 
@@ -776,6 +776,9 @@ namespace stormphrax {
 
             println("Static eval (white-relative): {:+}", static_cast<f64>(whiteNormalized) / 100.0);
             println("Unsharpened eval: {:+}", static_cast<f64>(whiteUnsharpened) / 100.0);
+
+            const auto& material = m_pos.material();
+            println("Material balance: ({}, {})", material.material.midgame(), material.material.endgame());
         }
 
         void UciHandler::handleFen() {
