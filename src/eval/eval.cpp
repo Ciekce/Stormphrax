@@ -337,6 +337,8 @@ namespace stormphrax::eval {
 
             m_final = pos.material().interp(m_total);
 
+            m_final = m_final * 270 / 100;
+
             if (isLikelyDrawn(pos)) {
                 m_final /= 8;
             }

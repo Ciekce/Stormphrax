@@ -56,7 +56,7 @@ namespace stormphrax::wdl {
     template <bool kSharpen>
     Score normalizeScore(Score score, i32 material) {
         SP_UNUSED(material);
-        return score;
+        return score * 100 / 250;
     }
 
     template Score normalizeScore<false>(Score, i32);
@@ -64,6 +64,6 @@ namespace stormphrax::wdl {
 
     Score unnormalizeScore(Score score, i32 material) {
         SP_UNUSED(material);
-        return score;
+        return score * 250 / 100;
     }
 } // namespace stormphrax::wdl
