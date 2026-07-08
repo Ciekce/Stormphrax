@@ -93,11 +93,6 @@ namespace stormphrax::bench {
     };
 
     void run(i32 depth, usize ttSize) {
-        if (!eval::isNetworkLoaded()) {
-            eprintln("No network loaded");
-            return;
-        }
-
         const auto prevMinimal = g_opts.minimal;
         const auto prevChess960 = g_opts.chess960;
 

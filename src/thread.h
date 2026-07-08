@@ -104,26 +104,20 @@ namespace stormphrax::search {
         StaticVector<Move, 32, true> failLowNoisies{};
     };
 
-    template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
-        explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::NnueState& nnueState) :
-                m_keyHistory{keyHistory}, m_nnueState{nnueState} {}
+        explicit ThreadPosGuard(std::vector<u64>& keyHistory) :
+                m_keyHistory{keyHistory} {}
 
         ThreadPosGuard(const ThreadPosGuard&) = delete;
         ThreadPosGuard(ThreadPosGuard&&) = delete;
 
         inline ~ThreadPosGuard() {
             m_keyHistory.pop_back();
-
-            if constexpr (kUpdateNnue) {
-                m_nnueState.pop();
-            }
         }
 
     private:
         std::vector<u64>& m_keyHistory;
-        eval::NnueState& m_nnueState;
     };
 
     struct alignas(kCacheLineSize) ThreadData {
@@ -144,7 +138,7 @@ namespace stormphrax::search {
 
         i32 minNmpPly{};
 
-        eval::NnueState nnueState{};
+        eval::PawnCache pawnCache{};
 
         u32 pvStart{};
         u32 pvEnd{};
@@ -173,8 +167,8 @@ namespace stormphrax::search {
             return id == 0;
         }
 
-        [[nodiscard]] std::pair<Position, ThreadPosGuard<false>> applyNullmove(const Position& pos, i32 ply);
-        [[nodiscard]] std::pair<Position, ThreadPosGuard<true>> applyMove(const Position& pos, i32 ply, Move move);
+        [[nodiscard]] std::pair<Position, ThreadPosGuard> applyNullmove(const Position& pos, i32 ply);
+        [[nodiscard]] std::pair<Position, ThreadPosGuard> applyMove(const Position& pos, i32 ply, Move move);
 
         [[nodiscard]] RootMove& findRootMove(Move move);
 

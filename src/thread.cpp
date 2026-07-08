@@ -22,7 +22,7 @@
 #include <tuple>
 
 namespace stormphrax::search {
-    std::pair<Position, ThreadPosGuard<false>> ThreadData::applyNullmove(const Position& pos, i32 ply) {
+    std::pair<Position, ThreadPosGuard> ThreadData::applyNullmove(const Position& pos, i32 ply) {
         assert(ply <= kMaxDepth);
 
         stack[ply].move = kNullMove;
@@ -36,14 +36,14 @@ namespace stormphrax::search {
 
         keyHistory.push_back(pos.key());
 
-        return std::pair<Position, ThreadPosGuard<false>>{
+        return std::pair<Position, ThreadPosGuard>{
             std::piecewise_construct,
             std::forward_as_tuple(pos.applyNullMove()),
-            std::forward_as_tuple(keyHistory, nnueState)
+            std::forward_as_tuple(keyHistory)
         };
     }
 
-    std::pair<Position, ThreadPosGuard<true>> ThreadData::applyMove(const Position& pos, i32 ply, Move move) {
+    std::pair<Position, ThreadPosGuard> ThreadData::applyMove(const Position& pos, i32 ply, Move move) {
         assert(ply <= kMaxDepth);
 
         const auto moving = pos.pieceOn(move.fromSq());
@@ -59,10 +59,10 @@ namespace stormphrax::search {
 
         keyHistory.push_back(pos.key());
 
-        return std::pair<Position, ThreadPosGuard<true>>{
+        return std::pair<Position, ThreadPosGuard>{
             std::piecewise_construct,
-            std::forward_as_tuple(pos.applyMove(move, nnueState.push())),
-            std::forward_as_tuple(keyHistory, nnueState)
+            std::forward_as_tuple(pos.applyMove(move)),
+            std::forward_as_tuple(keyHistory)
         };
     }
 

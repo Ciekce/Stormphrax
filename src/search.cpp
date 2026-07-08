@@ -76,6 +76,7 @@ namespace stormphrax::search {
 
         for (auto& thread : m_threadData) {
             thread->history.clear();
+            thread->pawnCache.clear();
         }
     }
 
@@ -203,7 +204,6 @@ namespace stormphrax::search {
         thread->id = 0;
 
         thread->numaId = numaId;
-        thread->nnueState.setNetwork(eval::getNetwork(numaId));
         thread->correctionHistory = m_corrhists.get(numaId);
 
         return *thread;
@@ -252,8 +252,6 @@ namespace stormphrax::search {
         m_infinite = false;
         m_multiPv = 1;
         m_contempt = {};
-
-        thread.nnueState.reset(thread.rootPos);
 
         m_runningThreads.store(1);
         m_stop.store(false, std::memory_order::seq_cst);
@@ -378,7 +376,6 @@ namespace stormphrax::search {
         thread.id = threadId;
         thread.numaId = threadId;
 
-        thread.nnueState.setNetwork(eval::getNetwork(threadId));
         thread.correctionHistory = m_corrhists.get(threadId);
 
         m_initBarrier.arriveAndWait();
@@ -404,8 +401,6 @@ namespace stormphrax::search {
             thread.keyHistory.reserve(m_setupInfo.keyHistorySize);
 
             std::ranges::copy(m_setupInfo.keyHistory, std::back_inserter(thread.keyHistory));
-
-            thread.nnueState.reset(thread.rootPos);
 
             m_setupBarrier.arriveAndWait();
         }
@@ -658,8 +653,8 @@ namespace stormphrax::search {
                                  pos,
                                  thread.optimism,
                                  thread.keyHistory,
-                                 thread.nnueState,
                                  thread.correctionHistory,
+                                 &thread.pawnCache,
                                  m_contempt
                              );
         }
@@ -779,7 +774,7 @@ namespace stormphrax::search {
             } else if (ttHit && ttEntry.staticEval != kScoreNone) {
                 rawStaticEval = ttEntry.staticEval;
             } else {
-                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+                rawStaticEval = eval::staticEval(pos, &thread.pawnCache, m_contempt);
             }
 
             if (!ttHit) {
@@ -1487,8 +1482,8 @@ namespace stormphrax::search {
                                  pos,
                                  thread.optimism,
                                  thread.keyHistory,
-                                 thread.nnueState,
                                  thread.correctionHistory,
+                                 &thread.pawnCache,
                                  m_contempt
                              );
         }
@@ -1517,7 +1512,7 @@ namespace stormphrax::search {
             if (ttHit && ttEntry.staticEval != kScoreNone) {
                 rawStaticEval = ttEntry.staticEval;
             } else {
-                rawStaticEval = eval::staticEval(pos, thread.nnueState, m_contempt);
+                rawStaticEval = eval::staticEval(pos, &thread.pawnCache, m_contempt);
             }
 
             if (!ttHit) {

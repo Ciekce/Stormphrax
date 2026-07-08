@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "attacks/attacks.h"
+#include "eval/material.h"
 #include "keys.h"
 #include "move.h"
 
@@ -400,6 +401,10 @@ namespace stormphrax {
             return m_stm.flip();
         }
 
+        [[nodiscard]] inline const eval::MaterialState& material() const {
+            return m_material;
+        }
+
         [[nodiscard]] inline const CastlingRooks& castlingRooks() const {
             return m_castlingRooks;
         }
@@ -575,6 +580,8 @@ namespace stormphrax {
         std::array<Bitboard, 2> m_pinned{};
         Bitboard m_threats{};
 
+        eval::MaterialState m_material{};
+
         CastlingRooks m_castlingRooks{};
 
         u16 m_halfmove{};
@@ -587,7 +594,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 248);
+    static_assert(sizeof(Position) == 256);
 
     class BoardIterator {
     public:

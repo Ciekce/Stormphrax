@@ -434,11 +434,6 @@ namespace stormphrax {
         }
 
         void UciHandler::handleGo(std::span<const std::string_view> args, Instant startTime) {
-            if (!eval::isNetworkLoaded()) {
-                eprintln("No network loaded");
-                return;
-            }
-
             if (m_searcher.searching()) {
                 eprintln("already searching");
                 return;

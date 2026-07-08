@@ -25,11 +25,41 @@
 #include "../core.h"
 #include "../correction.h"
 #include "../position.h"
-#include "nnue_state.h"
+#include "tapered.h"
 
 namespace stormphrax::eval {
     using Contempt = std::array<Score, Colors::kCount>;
     using Optimism = std::array<i32, Colors::kCount>;
+
+    constexpr usize PawnCacheEntries = 262144;
+
+    struct PawnCacheEntry {
+        u64 key{};
+        TaperedScore eval{};
+        Bitboard passers{};
+    };
+
+    static_assert(sizeof(PawnCacheEntry) == 24);
+
+    class PawnCache {
+    public:
+        PawnCache() {
+            m_cache.resize(PawnCacheEntries);
+        }
+
+        inline PawnCacheEntry& probe(u64 key) {
+            return m_cache[key % PawnCacheEntries];
+        }
+
+        inline void clear() {
+            std::memset(m_cache.data(), 0, m_cache.size() * sizeof(PawnCacheEntry));
+        }
+
+    private:
+        std::vector<PawnCacheEntry> m_cache{};
+    };
+
+    constexpr Score kTempo = 16;
 
     template <bool kCorrect = true>
     [[nodiscard]] Score adjustEval(
@@ -41,15 +71,14 @@ namespace stormphrax::eval {
         i32* corrDelta = nullptr
     );
 
-    [[nodiscard]] Score staticEval(const Position& pos, NnueState& nnueState, const Contempt& contempt = {});
+    [[nodiscard]] Score staticEval(const Position& pos, PawnCache* pawnCache = nullptr, const Contempt& contempt = {});
 
     template <bool kCorrect = true>
     [[nodiscard]] Score adjustedStaticEval(
         const Position& pos,
         const Optimism& optimism,
         std::span<const u64> keyHistory,
-        NnueState& nnueState,
-        const CorrectionHistoryTable* corrhist,
+        const CorrectionHistoryTable* corrhist, PawnCache* pawnCache = nullptr,
         const Contempt& contempt = {}
     );
 

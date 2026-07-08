@@ -176,8 +176,6 @@ namespace stormphrax::datagen {
 
                 resetSearch();
 
-                thread.nnueState.reset(pos);
-
                 searcher.setMaxDepth(kVerificationDepth);
                 searcher.setLimiter(verifLimiter);
 
@@ -254,10 +252,8 @@ namespace stormphrax::datagen {
 
                     const bool filtered = pos.isCheck() || pos.isNoisy(move);
 
-                    eval::UpdateContext ctx{};
                     thread.keyHistory.push_back(pos.key());
-                    pos = pos.applyMove(move, eval::BoardObserver{ctx});
-                    thread.nnueState.applyImmediately(ctx, pos);
+                    pos = pos.applyMove(move);
 
                     assert(eval::staticEvalOnce(pos) == eval::staticEval(pos, thread.nnueState));
 
@@ -330,11 +326,6 @@ namespace stormphrax::datagen {
         i32 threads,
         std::optional<std::string_view> tbPath
     ) {
-        if (!eval::isNetworkLoaded()) {
-            eprintln("No network loaded");
-            return 1;
-        }
-
         std::function<decltype(runThread<Marlinformat>)> threadFunc{};
 
         if (format == "marlinformat") {

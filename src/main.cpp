@@ -23,7 +23,6 @@
 #include "bench.h"
 #include "cuckoo.h"
 #include "datagen/datagen.h"
-#include "eval/nnue.h"
 #include "tunable.h"
 #include "uci/uci.h"
 #include "util/numa/numa.h"
@@ -113,8 +112,6 @@ i32 main(i32 argc, const char* argv[]) {
     tunable::init();
     cuckoo::init();
 
-    eval::init();
-
     std::vector<std::string_view> args{};
     args.reserve(argc);
 
@@ -123,8 +120,6 @@ i32 main(i32 argc, const char* argv[]) {
     }
 
     const auto exitCode = run(args);
-
-    eval::shutdown();
 
     return exitCode;
 }

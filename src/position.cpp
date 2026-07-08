@@ -27,7 +27,6 @@
 
 #include "attacks/attacks.h"
 #include "cuckoo.h"
-#include "eval/nnue_state.h"
 #include "movegen.h"
 #include "opts.h"
 #include "rays.h"
@@ -103,8 +102,6 @@ namespace stormphrax {
             return dst;
         }
     } // namespace
-
-    using NnueObserver = eval::BoardObserver;
 
     template <typename Observer>
     Position Position::applyMove(Move move, Observer observer) const {
@@ -197,7 +194,6 @@ namespace stormphrax {
     }
 
     template Position Position::applyMove<NullObserver>(Move, NullObserver) const;
-    template Position Position::applyMove<NnueObserver>(Move, NnueObserver) const;
 
     bool Position::isLegal(Move move) const {
         assert(move != kNullMove);
@@ -783,6 +779,8 @@ namespace stormphrax {
         m_mailbox.fill(Pieces::kNone);
         m_keys.clear();
 
+        m_material = eval::MaterialState{};
+
         for (u32 pieceIdx = 0; pieceIdx < Pieces::kCount; ++pieceIdx) {
             const auto piece = Piece::fromRaw(pieceIdx);
             for (const auto sq : m_bbs.bb(piece)) {
@@ -795,6 +793,8 @@ namespace stormphrax {
                 }
 
                 m_keys.flipPiece(piece, sq);
+
+                m_material.add(piece, sq);
             }
         }
 
@@ -1328,10 +1328,13 @@ namespace stormphrax {
             if constexpr (kUpdateKey) {
                 m_keys.flipPiece(captured, dst);
             }
+            m_material.sub(captured, dst);
         } else {
             movePieceInternal(src, dst, piece);
             observer.pieceMoved(*this, piece, src, dst);
         }
+
+        m_material.subAdd(piece, src, dst);
 
         if constexpr (kUpdateKey) {
             m_keys.movePiece(piece, src, dst);
@@ -1342,8 +1345,6 @@ namespace stormphrax {
 
     template Piece Position::movePiece<false, NullObserver>(Piece, Square, Square, NullObserver);
     template Piece Position::movePiece<true, NullObserver>(Piece, Square, Square, NullObserver);
-    template Piece Position::movePiece<false, NnueObserver>(Piece, Square, Square, NnueObserver);
-    template Piece Position::movePiece<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
     template <bool kUpdateKey, typename Observer>
     Piece Position::promotePawn(Piece pawn, Square src, Square dst, PieceType promo, Observer observer) {
@@ -1371,10 +1372,14 @@ namespace stormphrax {
             if constexpr (kUpdateKey) {
                 m_keys.flipPiece(captured, dst);
             }
+            m_material.sub(captured, dst);
         } else {
             moveAndChangePieceInternal(src, dst, pawn, promo);
             observer.piecePromoted(*this, pawn, src, coloredPromo, dst);
         }
+
+        m_material.sub(pawn, src);
+        m_material.add(coloredPromo, dst);
 
         if constexpr (kUpdateKey) {
             m_keys.flipPiece(pawn, src);
@@ -1386,8 +1391,6 @@ namespace stormphrax {
 
     template Piece Position::promotePawn<false, NullObserver>(Piece, Square, Square, PieceType, NullObserver);
     template Piece Position::promotePawn<true, NullObserver>(Piece, Square, Square, PieceType, NullObserver);
-    template Piece Position::promotePawn<false, NnueObserver>(Piece, Square, Square, PieceType, NnueObserver);
-    template Piece Position::promotePawn<true, NnueObserver>(Piece, Square, Square, PieceType, NnueObserver);
 
     template <bool kUpdateKey, typename Observer>
     void Position::castle(Piece king, Square kingSrc, Square rookSrc, Observer observer) {
@@ -1428,6 +1431,9 @@ namespace stormphrax {
         setPieceInternal(rookDst, rook);
         observer.pieceAdded(*this, rook, rookDst);
 
+        m_material.subAdd(king, kingSrc, kingDst);
+        m_material.subAdd(rook, rookSrc, rookDst);
+
         if constexpr (kUpdateKey) {
             m_keys.movePiece(king, kingSrc, kingDst);
             m_keys.movePiece(rook, rookSrc, rookDst);
@@ -1436,8 +1442,6 @@ namespace stormphrax {
 
     template void Position::castle<false, NullObserver>(Piece, Square, Square, NullObserver);
     template void Position::castle<true, NullObserver>(Piece, Square, Square, NullObserver);
-    template void Position::castle<false, NnueObserver>(Piece, Square, Square, NnueObserver);
-    template void Position::castle<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
     template <bool kUpdateKey, typename Observer>
     Piece Position::enPassant(Piece pawn, Square src, Square dst, Observer observer) {
@@ -1457,6 +1461,9 @@ namespace stormphrax {
         movePieceInternal(src, dst, pawn);
         observer.pieceMoved(*this, pawn, src, dst);
 
+        m_material.sub(enemyPawn, captureSquare);
+        m_material.subAdd(pawn, src, dst);
+
         if constexpr (kUpdateKey) {
             m_keys.movePiece(pawn, src, dst);
             m_keys.flipPiece(enemyPawn, captureSquare);
@@ -1467,8 +1474,6 @@ namespace stormphrax {
 
     template Piece Position::enPassant<false, NullObserver>(Piece, Square, Square, NullObserver);
     template Piece Position::enPassant<true, NullObserver>(Piece, Square, Square, NullObserver);
-    template Piece Position::enPassant<false, NnueObserver>(Piece, Square, Square, NnueObserver);
-    template Piece Position::enPassant<true, NnueObserver>(Piece, Square, Square, NnueObserver);
 
     void Position::setPieceInternal(Square sq, Piece piece) {
         assert(sq != Squares::kNone);
