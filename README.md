@@ -20,15 +20,15 @@ This project is a continuation of my HCE engine [Polaris].
 ## Strength
 |    Version    | [SP-CC UHO-Top15][spcc] | [CCRL 40/15][ccrl-4015] | [CCRL Blitz][ccrl-blitz] | [CCRL 40/2 FRC][ccrl-402-frc] | [CEGT 40/4][cegt-404] | [CEGT 40/20][cegt-4020] | [MCERL] |
 |:-------------:|:-----------------------:|:-----------------------:|:------------------------:|:-----------------------------:|:---------------------:|:-----------------------:|:-------:|
-| [8.0.0][sp8]  |            -            |            -            |            -             |               -               |           -           |            -            |    -    |
-| [7.0.0][sp7]  |  formerly 3682 (11th)   |          3582           |           3722           |          4024 (9th)           |           -           |          3567           |    -    |
-| [6.0.0][sp6]  |      formerly 3621      |          3558           |           3677           |             3979              |         3565          |          3524           |    -    |
-| [5.0.0][sp5]  |            -            |          3504           |           3622           |             3879              |         3501          |          3456           |    -    |
-| [4.1.0][sp41] |            -            |          3487           |           3584           |             3820              |           -           |          3426           |    -    |
-| [4.0.0][sp4]  |            -            |          3473           |           3564           |             3791              |         3440          |          3415           |  3542   |
-| [3.0.0][sp3]  |            -            |          3407           |           3490           |             3705              |           -           |          3350           |  3495   |
-| [2.0.0][sp2]  |            -            |          3397           |           3480           |             3683              |         3339          |            -            |  3482   |
-| [1.0.0][sp1]  |            -            |          3317           |           3370           |             3527              |         3235          |            -            |  3346   |
+| [8.0.0][sp8]  |       3741 (10th)       |       3605 (8th)        |        3747 (8th)        |          4073 (7th)           |           -           |            -            |    -    |
+| [7.0.0][sp7]  |  formerly 3682 (11th)   |          3582           |           3719           |          4024 (9th)           |           -           |          3567           |    -    |
+| [6.0.0][sp6]  |      formerly 3621      |          3558           |           3674           |             3980              |         3565          |          3524           |    -    |
+| [5.0.0][sp5]  |            -            |          3504           |           3619           |             3880              |         3501          |          3456           |    -    |
+| [4.1.0][sp41] |            -            |          3487           |           3581           |             3821              |           -           |          3426           |    -    |
+| [4.0.0][sp4]  |            -            |          3473           |           3561           |             3792              |         3440          |          3415           |  3542   |
+| [3.0.0][sp3]  |            -            |          3406           |           3487           |             3706              |           -           |          3350           |  3495   |
+| [2.0.0][sp2]  |            -            |          3396           |           3477           |             3685              |         3339          |            -            |  3482   |
+| [1.0.0][sp1]  |            -            |          3316           |           3368           |             3529              |         3235          |            -            |  3346   |
 
 ## To-do
 - make it stronger uwu
@@ -82,7 +82,7 @@ Stormphrax includes optimisations for NUMA machines on Linux via libnuma, which 
 Stormphrax makes use of the following libraries:
 - a slightly modified version of [Pyrrhic] for tablebase probing, licensed under the MIT license
 - a slightly modified version of [incbin] for embedding neural network files, under the Unlicense
-- [Zstandard] for decompressing NNUE files, under GPLv2 (see [COPYING](src/3rdparty/zstd/COPYING))
+- [Zstandard] for decompressing NNUE files, under GPLv2 (see [COPYING](3rdparty/zstd/COPYING))
 - [{fmt}][fmtlib] for convenient printing and string formatting
 
 Stormphrax is tested on [this OpenBench instance][ob] - thanks to all the people there, SP would be much weaker without your support :3
