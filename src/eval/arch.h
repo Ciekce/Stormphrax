@@ -38,7 +38,7 @@ namespace stormphrax::eval {
 
     constexpr u32 kFtScaleBits = 7;
 
-    constexpr u32 kL1Size = 640;
+    constexpr u32 kL1Size = 1024;
     constexpr u32 kL2Size = 32;
     constexpr u32 kL3Size = 64;
 
