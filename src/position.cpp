@@ -946,11 +946,6 @@ namespace stormphrax {
             return {};
         }
 
-        if (pos.occ().popcount() > 32) {
-            eprintln("too many pieces");
-            return {};
-        }
-
         const auto color = fen[1];
 
         if (color.length() != 1) {

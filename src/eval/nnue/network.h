@@ -44,7 +44,7 @@ namespace stormphrax::eval::nnue {
         ) const {
             util::simd::Array<typename Arch::OutputType, Arch::kOutputCount> outputs;
 
-            const auto bucket = OutputBucketing::getBucket(pos);
+            const auto bucket = std::min(OutputBucketing::getBucket(pos), OutputBucketing::kBucketCount - 1);
             m_arch.propagate(bucket, stmPsqInputs, nstmPsqInputs, stmThreatInputs, nstmThreatInputs, outputs);
 
             return outputs;
