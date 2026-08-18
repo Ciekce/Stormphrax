@@ -1111,6 +1111,10 @@ namespace stormphrax::search {
                                                 - tripleCorr;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
+                        if (!inCheck && score > curr.staticEval) {
+                            const auto bonus = (score - curr.staticEval) * depth / 8;
+                            thread.correctionHistory->update(pos, thread.keyHistory, bonus);
+                        }
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
                     } else if (ttEntry.score >= beta) {
                         extension = -3;
@@ -1436,7 +1440,8 @@ namespace stormphrax::search {
                     || (ttFlag == TtFlag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == TtFlag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.correctionHistory->update(pos, thread.keyHistory, depth, bestScore, curr.staticEval);
+                const auto bonus = (bestScore - curr.staticEval) * depth / 8;
+                thread.correctionHistory->update(pos, thread.keyHistory, bonus);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {

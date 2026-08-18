@@ -32,13 +32,11 @@ namespace stormphrax {
     void CorrectionHistoryTable::update(
         const Position& pos,
         std::span<const u64> keyHistory,
-        i32 depth,
-        Score searchScore,
-        Score staticEval
+        i32 bonus
     ) {
         auto& tables = m_tables[pos.stm().idx()];
 
-        const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
+        bonus = std::clamp(bonus, -kMaxBonus, kMaxBonus);
 
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {

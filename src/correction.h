@@ -31,13 +31,7 @@ namespace stormphrax {
     public:
         void clear();
 
-        void update(
-            const Position& pos,
-            std::span<const u64> keyHistory,
-            i32 depth,
-            Score searchScore,
-            Score staticEval
-        );
+        void update(const Position& pos, std::span<const u64> keyHistory, i32 bonus);
 
         [[nodiscard]] i32 correction(const Position& pos, std::span<const u64> keyHistory) const;
 
