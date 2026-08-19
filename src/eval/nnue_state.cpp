@@ -109,7 +109,8 @@ namespace stormphrax::eval {
             static constexpr usize kTileTarget = 8;
 #endif
 
-            static constexpr usize kTile = kAccChunks < kTileTarget ? kAccChunks : kTileTarget;
+            static constexpr usize kTileMax = kAccChunks & -kAccChunks;
+            static constexpr usize kTile = kTileMax < kTileTarget ? kTileMax : kTileTarget;
 
             static_assert(kAccChunks % kTile == 0);
 
