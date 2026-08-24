@@ -1094,6 +1094,11 @@ namespace stormphrax::search {
 
                     curr.excluded = kNullMove;
 
+                    if (!inCheck && score >= sBeta && score >= beta && score > curr.staticEval) {
+                        const auto bonus = (score - curr.staticEval) * sDepth * 128 / 1024;
+                        thread.correctionHistory->update(pos, thread.keyHistory, bonus);
+                    }
+
                     if (score < sBeta) {
                         const auto corr = complexity.value_or(0);
                         const auto doubleCorr =
@@ -1111,10 +1116,6 @@ namespace stormphrax::search {
                                                 - tripleCorr;
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
-                        if (!inCheck && score > curr.staticEval) {
-                            const auto bonus = (score - curr.staticEval) * sDepth * 100 / 1024;
-                            thread.correctionHistory->update(pos, thread.keyHistory, bonus);
-                        }
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
                     } else if (ttEntry.score >= beta) {
                         extension = -3;
