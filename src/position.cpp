@@ -1535,9 +1535,12 @@ namespace stormphrax {
 
     void Position::calcCheckersAndPins() {
         m_checkers = nonSliderAttackersTo(m_kings.color(m_stm), m_stm.flip());
+
+        m_pinners = {};
         m_pinned = {};
 
         for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+            auto& pinners = m_pinned[c.flip().idx()];
             auto& pinned = m_pinned[c.idx()];
 
             const auto king = m_kings.color(c);
@@ -1558,6 +1561,7 @@ namespace stormphrax {
                     assert(c == m_stm);
                     m_checkers.setSq(potentialAttacker);
                 } else if (maybePinned.one()) {
+                    pinners.setSq(potentialAttacker);
                     pinned |= maybePinned;
                 }
             }

@@ -479,11 +479,19 @@ namespace stormphrax {
             return m_checkers;
         }
 
+        [[nodiscard]] inline Bitboard pinners(Color c) const {
+            return m_pinners[c.idx()];
+        }
+
+        [[nodiscard]] inline std::span<const Bitboard, 2> pinners() const {
+            return m_pinners;
+        }
+
         [[nodiscard]] inline Bitboard pinned(Color c) const {
             return m_pinned[c.idx()];
         }
 
-        [[nodiscard]] inline std::array<Bitboard, 2> pinned() const {
+        [[nodiscard]] inline std::span<const Bitboard, 2> pinned() const {
             return m_pinned;
         }
 
@@ -572,8 +580,10 @@ namespace stormphrax {
         Keys m_keys{};
 
         Bitboard m_checkers{};
-        std::array<Bitboard, 2> m_pinned{};
         Bitboard m_threats{};
+
+        std::array<Bitboard, 2> m_pinners{};
+        std::array<Bitboard, 2> m_pinned{};
 
         CastlingRooks m_castlingRooks{};
 
@@ -587,7 +597,7 @@ namespace stormphrax {
         Color m_stm{};
     };
 
-    static_assert(sizeof(Position) == 248);
+    static_assert(sizeof(Position) == 264);
 
     class BoardIterator {
     public:
