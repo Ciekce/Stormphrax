@@ -1540,7 +1540,7 @@ namespace stormphrax {
         m_pinned = {};
 
         for (const auto c : {Colors::kBlack, Colors::kWhite}) {
-            auto& pinners = m_pinned[c.flip().idx()];
+            auto& pinners = m_pinners[c.flip().idx()];
             auto& pinned = m_pinned[c.idx()];
 
             const auto king = m_kings.color(c);
