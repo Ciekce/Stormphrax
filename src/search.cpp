@@ -1112,7 +1112,7 @@ namespace stormphrax::search {
                         extension = 1 + (score < sBeta - doubleMargin) + (score < sBeta - tripleMargin);
                     } else if (!kPvNode && score >= beta) {
                         if (!inCheck && score > curr.staticEval) {
-                            const auto bonus = (score - curr.staticEval) * sDepth / 8;
+                            const auto bonus = (score - curr.staticEval) * sDepth * 100 / 1024;
                             thread.correctionHistory->update(pos, thread.keyHistory, bonus);
                         }
                         return !isDecisive(score) ? util::ilerp<1024>(score, beta, multicutFailFirmT()) : score;
