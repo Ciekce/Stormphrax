@@ -840,6 +840,7 @@ namespace stormphrax::search {
                 margin += rfpLinearMargin() * depth;
                 margin += rfpQuadMargin() * depth * depth;
                 margin -= rfpImprovingMargin() * improving;
+                margin -= !ttHit * 40;
                 if (complexity) {
                     margin += *complexity * rfpCorrplexityScale() / 262144;
                 }
