@@ -237,11 +237,15 @@ namespace stormphrax::eval::nnue::arch {
                         out0 = shiftLeft<i32>(out0, kQuantBits);
                     }
 
+                    static constexpr i32 kExtraShift = 4;
+                    static constexpr i32 kFinalShift = (kSkipL2 ? kQuantBits : kQuantBits * 2) - (kExtraShift * 2);
+
                     // screlu side
                     // SF-style square-then-clip
-                    auto out1 = mulLo<i32>(out, out);
-                    out1 = min<i32>(out1, set1<i32>(kQ * kQ * kQ * kQ));
-                    out1 = shiftRight<i32>(out1, kSkipL2 ? kQuantBits : kQuantBits * 2);
+                    auto out1 = shiftRight<i32>(out, kExtraShift);
+                    out1 = mulLo<i32>(out1, out1);
+                    out1 = min<i32>(out1, set1<i32>((kQ * kQ * kQ * kQ) >> (kExtraShift * 2)));
+                    out1 = shift<i32, -kFinalShift>(out1);
 
                     store<i32>(&outputs[idx], out0);
                     store<i32>(&outputs[idx + kL2Size], out1);
