@@ -262,6 +262,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(tripleExtCorrScale, 1014, 0, 8192, 128)
     SP_TUNABLE_PARAM(tripleExtNewPvMargin, 50, 0, 100, 5)
 
+    SP_TUNABLE_PARAM(quadExtBaseMargin, 300, 100, 500, 20)
+
     SP_TUNABLE_PARAM(multicutFailFirmT, 503, 0, 1024, 51)
 
     SP_TUNABLE_PARAM(ldseMargin, 22, 10, 60, 3)
