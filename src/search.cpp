@@ -1167,7 +1167,7 @@ namespace stormphrax::search {
 
                     r += !kPvNode * lmrNonPvReductionScale();
                     r -= curr.ttpv * lmrTtpvReductionScale();
-                    r -= lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 4096;
+                    r -= 2 * lmrHistory * (noisy ? lmrNoisyHistoryScale() : lmrQuietHistoryScale()) / 4096;
                     r -= improving * lmrImprovingReductionScale();
                     r -= givesCheck * lmrCheckReductionScale();
                     r += cutnode * lmrCutnodeReductionScale();
