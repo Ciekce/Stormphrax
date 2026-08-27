@@ -1187,23 +1187,26 @@ namespace stormphrax::search {
                     curr.reduction = 0;
 
                     if (score > alpha) {
-                        const bool doDeeperSearch = score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
-                        const bool doShallowerSearch = score < bestScore + newDepth;
+                        if (!isMate(score)) {
+                            const bool doDeeperSearch =
+                                score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
+                            const bool doShallowerSearch = score < bestScore + newDepth;
 
-                        newDepth += doDeeperSearch - doShallowerSearch;
+                            newDepth += doDeeperSearch - doShallowerSearch;
 
-                        if (reduced < newDepth) {
-                            score = -search(
-                                thread,
-                                newPos,
-                                curr.pv,
-                                newDepth,
-                                ply + 1,
-                                moveStackIdx + 1,
-                                -alpha - 1,
-                                -alpha,
-                                !cutnode
-                            );
+                            if (reduced < newDepth) {
+                                score = -search(
+                                    thread,
+                                    newPos,
+                                    curr.pv,
+                                    newDepth,
+                                    ply + 1,
+                                    moveStackIdx + 1,
+                                    -alpha - 1,
+                                    -alpha,
+                                    !cutnode
+                                );
+                            }
                         }
 
                         if (!noisy && (score <= alpha || score >= beta) && !hasStopped()) {
@@ -1245,7 +1248,7 @@ namespace stormphrax::search {
                 //   - we're searching the first legal move, or
                 //   - alpha was raised by a previous zero-window search,
                 // then do a full-window search to get the true score of this node
-                if (kPvNode && (legalMoves == 1 || score > alpha)) {
+                if (kPvNode && (legalMoves == 1 || (score > alpha && !isMate(score)))) {
                     score = -search<
                         true>(thread, newPos, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
                 }
