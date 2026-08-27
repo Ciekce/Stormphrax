@@ -1187,7 +1187,7 @@ namespace stormphrax::search {
                     curr.reduction = 0;
 
                     if (score > alpha) {
-                        if (!isMate(score)) {
+                        if (!isMating(score)) {
                             const bool doDeeperSearch =
                                 score > bestScore + lmrDeeperBase() + lmrDeeperScale() * newDepth;
                             const bool doShallowerSearch = score < bestScore + newDepth;
