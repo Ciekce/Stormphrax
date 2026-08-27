@@ -1248,7 +1248,7 @@ namespace stormphrax::search {
                 //   - we're searching the first legal move, or
                 //   - alpha was raised by a previous zero-window search,
                 // then do a full-window search to get the true score of this node
-                if (kPvNode && (legalMoves == 1 || (score > alpha && !isMate(score)))) {
+                if (kPvNode && (legalMoves == 1 || score > alpha)) {
                     score = -search<
                         true>(thread, newPos, curr.pv, newDepth, ply + 1, moveStackIdx + 1, -beta, -alpha, false);
                 }
