@@ -291,8 +291,8 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(lmrTtMoveNoisyReductionScale, 1081, 256, 3072, 96)
     SP_TUNABLE_PARAM(lmrMoveCountReductionScale, 42, 0, 128, 10)
 
-    SP_TUNABLE_PARAM(lmrQuietHistoryScale, 447, 192, 768, 28)
-    SP_TUNABLE_PARAM(lmrNoisyHistoryScale, 423, 192, 768, 28)
+    SP_TUNABLE_PARAM(lmrQuietHistoryScale, 600, 192, 768, 28)
+    SP_TUNABLE_PARAM(lmrNoisyHistoryScale, 600, 192, 768, 28)
 
     SP_TUNABLE_PARAM(lmrComplexityScale, 480, 256, 1024, 38)
 
