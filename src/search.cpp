@@ -1001,7 +1001,7 @@ namespace stormphrax::search {
 
             const auto captured = pos.captureTarget(move);
 
-            const auto baseLmr = g_lmrTable[noisy][depth][legalMoves + 1];
+            const auto baseLmr = g_lmrTable[noisy][depth];
 
             const auto history = [&] {
                 if (noisy) {
@@ -1175,7 +1175,6 @@ namespace stormphrax::search {
                     r += alphaRaises * lmrAlphaRaiseReductionScale();
                     r += ttMoveNoisy * lmrTtMoveNoisyReductionScale();
                     r -= complexity.value_or(0) * lmrComplexityScale() / 262144;
-                    r -= legalMoves * lmrMoveCountReductionScale();
 
                     // can't use std::clamp because newDepth can be <0
                     const auto reduced = std::min(std::max(newDepth - r / 1024, 1), newDepth) + kPvNode

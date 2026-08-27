@@ -40,8 +40,8 @@
 namespace stormphrax::tunable {
     void init();
 
-    // [noisy][depth][legal moves]
-    extern util::MultiArray<i32, 2, 256, 256> g_lmrTable;
+    // [noisy][depth]
+    extern util::MultiArray<i32, 2, 256> g_lmrTable;
 
     // [coloured piece], +1 for none
     extern std::array<i32, 13> g_seeValues;
