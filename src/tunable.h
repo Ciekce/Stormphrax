@@ -212,7 +212,7 @@ namespace stormphrax::tunable {
     SP_TUNABLE_PARAM(rfpCorrplexityScale, 62, 16, 128, 5)
     SP_TUNABLE_PARAM(rfpFailFirmT, 711, 0, 1024, 51)
 
-    SP_TUNABLE_PARAM(razoringMargin, 347, 100, 700, 40)
+    SP_TUNABLE_PARAM(razoringMargin, 300, 100, 700, 40)
 
     SP_TUNABLE_PARAM(nmpBetaBaseMargin, 213, 100, 400, 30)
     SP_TUNABLE_PARAM(nmpBetaMarginDepthScale, 1281, 128, 2560, 60)

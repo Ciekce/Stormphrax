@@ -852,7 +852,7 @@ namespace stormphrax::search {
                          : curr.staticEval;
             }
 
-            if (depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
+            if (!cutnode && depth <= 4 && std::abs(alpha) < 2000 && (!ttMove || ttMoveNoisy)
                 && curr.staticEval + razoringMargin() * depth <= alpha)
             {
                 const auto score = qsearch(thread, pos, pv, ply, moveStackIdx, alpha, alpha + 1);
