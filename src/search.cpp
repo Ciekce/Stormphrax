@@ -868,7 +868,7 @@ namespace stormphrax::search {
                 return std::max(margin, 0);
             };
 
-            if (depth >= 4 && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
+            if (depth >= 4 && !thread.inNmp && ply >= thread.minNmpPly && curr.staticEval >= beta + nmpBetaMargin()
                 && !parent->move.isNull() && !(ttEntry.flag == TtFlag::kUpperBound && ttEntry.score < beta)
                 && !pos.bbs().nonPk(pos.stm()).empty())
             {
@@ -876,6 +876,7 @@ namespace stormphrax::search {
 
                 const auto R = 6 + depth / 5;
 
+                thread.inNmp = true;
                 const auto score = [&] {
                     const auto [newPos, guard] = thread.applyNullmove(pos, ply);
                     return -search(
@@ -890,6 +891,7 @@ namespace stormphrax::search {
                         !cutnode
                     );
                 }();
+                thread.inNmp = false;
 
                 if (hasStopped()) {
                     return 0;

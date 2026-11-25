@@ -142,6 +142,7 @@ namespace stormphrax::search {
 
         bool datagen{false};
 
+        bool inNmp{};
         i32 minNmpPly{};
 
         eval::NnueState nnueState{};
