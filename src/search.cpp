@@ -807,6 +807,15 @@ namespace stormphrax::search {
                     std::clamp(parentGain * evalPolicyScale(), evalPolicyMin(), evalPolicyMax()) + evalPolicyOffset();
                 thread.history.updateMainHistory(parent->threats, parent->moving, parent->move, bonus);
             }
+
+            if (!kRootNode && !parent->move) {
+                assert(!inCheck);
+                assert(parent->staticEval != kScoreNone);
+                const auto parentGain = -parent->staticEval - curr.staticEval;
+                if (parentGain > 20) {
+                    return beta;
+                }
+            }
         }
 
         const bool improving = [&] {
